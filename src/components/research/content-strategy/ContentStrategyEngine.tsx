@@ -17,7 +17,8 @@ import {
   Trash2,
   Eye,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
@@ -28,7 +29,9 @@ import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationMod
 import { StrategySessionManager } from './StrategySessionManager';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
+import { GoalProgressIndicator } from './GoalProgressIndicator';
 import { ProposalSelectionTracker } from './ProposalSelectionTracker';
+import { ConversationalStrategyEngine } from './ConversationalStrategyEngine';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -45,6 +48,7 @@ export const ContentStrategyEngine = ({ serpMetrics, goals }: ContentStrategyEng
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [useConversationalMode, setUseConversationalMode] = useState(true);
   const { toast } = useToast();
 
   // Sync with context and calculate metrics
@@ -499,49 +503,92 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         </motion.div>
       )}
 
-      {/* Proposal Selection Tracker */}
-      {proposals.length > 0 && targetCount > 0 && (
-        <ProposalSelectionTracker
-          totalProposals={proposals.length}
-          selectedCount={selectedCount}
-          targetCount={targetCount}
-          estimatedTraffic={estimatedTraffic}
-          targetTraffic={targetTraffic}
-          onSelectAll={handleSelectAllProposals}
-          onClearSelection={handleClearSelection}
-          onLoadMore={loadMoreProposals}
-          loadingMore={loadingMore}
+      {/* Engine Selection */}
+      {useConversationalMode ? (
+        <ConversationalStrategyEngine 
+          goals={goals}
+          onComplete={(strategy) => {
+            console.log('Conversational strategy completed:', strategy);
+            // Handle completion
+          }}
         />
-      )}
+      ) : (
+        <>
+          {/* Proposal Selection Tracker */}
+          {proposals.length > 0 && targetCount > 0 && (
+            <ProposalSelectionTracker
+              totalProposals={proposals.length}
+              selectedCount={selectedCount}
+              targetCount={targetCount}
+              estimatedTraffic={estimatedTraffic}
+              targetTraffic={targetTraffic}
+              onSelectAll={handleSelectAllProposals}
+              onClearSelection={handleClearSelection}
+              onLoadMore={loadMoreProposals}
+              loadingMore={loadingMore}
+            />
+          )}
 
       {/* Enhanced Header */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-green-500/10 border border-white/10 p-6 mb-6">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 blur-xl" />
-        <div className="relative flex items-center justify-between">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-              Content Strategy Engine
-            </h2>
-            <p className="text-white/60 text-lg">
-              AI-powered strategic content planning with competitive intelligence
+        <div className="relative">
+          <div className="text-center space-y-4 mb-6">
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <Sparkles className="h-6 w-6" />
+              <h3 className="text-xl font-semibold">AI Content Strategy Engine</h3>
+            </div>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Generate intelligent content strategies using our new conversational AI approach or traditional method.
             </p>
+            
+            {/* Mode Toggle */}
+            <div className="flex items-center justify-center gap-4 p-4 bg-muted/20 rounded-lg">
+              <Button
+                variant={useConversationalMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseConversationalMode(true)}
+              >
+                Conversational AI (Recommended)
+              </Button>
+              <Button
+                variant={!useConversationalMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseConversationalMode(false)}
+              >
+                Traditional Method
+              </Button>
+            </div>
           </div>
           
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Button
-              onClick={generateBlueprint}
-              disabled={generating}
-              className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg px-6 py-3 text-base"
-              size="lg"
-            >
-              <Lightbulb className="h-5 w-5" />
-              {generating ? 'Generating Strategy...' : 'Generate AI Strategy'}
-            </Button>
-          </motion.div>
+          {!useConversationalMode && (
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                  Content Strategy Engine
+                </h2>
+                <p className="text-white/60 text-lg">
+                  AI-powered strategic content planning with competitive intelligence
+                </p>
+              </div>
+              
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Button
+                  onClick={generateBlueprint}
+                  disabled={generating}
+                  className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg px-6 py-3 text-base"
+                  size="lg"
+                >
+                  <Lightbulb className="h-5 w-5" />
+                  {generating ? 'Generating Strategy...' : 'Generate AI Strategy'}
+                </Button>
+              </motion.div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -663,196 +710,198 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         </div>
       )}
 
-      {/* Content Clusters or Proposals */}
-      <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
-            Content Clusters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="all" className="space-y-4">
-            <TabsList className="bg-white/10 border-white/20">
-              <TabsTrigger 
-                value="all"
-                className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70"
-              >
-                {proposals.length > 0 ? 'All Proposals' : 'All Clusters'}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="quick_win"
-                className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70"
-              >
-                Quick Wins
-              </TabsTrigger>
-              <TabsTrigger 
-                value="high_return"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70"
-              >
-                High Return
-              </TabsTrigger>
-              <TabsTrigger 
-                value="evergreen"
-                className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70"
-              >
-                Evergreen
-              </TabsTrigger>
-            </TabsList>
+          {/* Content Clusters or Proposals */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Lightbulb className="h-5 w-5" />
+                Content Clusters
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="all" className="space-y-4">
+                <TabsList className="bg-white/10 border-white/20">
+                  <TabsTrigger 
+                    value="all"
+                    className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70"
+                  >
+                    {proposals.length > 0 ? 'All Proposals' : 'All Clusters'}
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="quick_win"
+                    className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70"
+                  >
+                    Quick Wins
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="high_return"
+                    className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70"
+                  >
+                    High Return
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="evergreen"
+                    className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70"
+                  >
+                    Evergreen
+                  </TabsTrigger>
+                </TabsList>
 
-          <TabsContent value="all" className="space-y-4">
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                  >
-                    <Card className="h-96 bg-white/5 border-white/10">
-                      <CardContent className="p-6">
-                        <div className="space-y-4 animate-pulse">
-                          <div className="h-4 bg-white/10 rounded"></div>
-                          <div className="h-3 bg-white/10 rounded w-3/4"></div>
-                          <div className="h-20 bg-white/10 rounded"></div>
-                          <div className="space-y-2">
-                            <div className="h-3 bg-white/10 rounded"></div>
-                            <div className="h-3 bg-white/10 rounded w-2/3"></div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            ) : proposals.length > 0 ? (
-              <>
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ staggerChildren: 0.1 }}
-                >
-                  {proposals.map((proposal, idx) => (
-                    <motion.div
-                      key={proposal.primary_keyword || idx}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                    >
-                       <ProposalCard 
-                         proposal={proposal}
-                         index={idx}
-                         isSelected={selected[idx] || false}
-                         onSelectionChange={(index, isSelected) => {
-                           const newSelected = { ...selected, [index]: isSelected };
-                           setSelected(newSelected);
-                           setSelectedProposals(newSelected);
-                         }}
-                         onSendToBuilder={sendProposalToContentBuilder}
-                       />
-                    </motion.div>
-                  ))}
-                </motion.div>
-                
-                {/* Load More Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex justify-center mt-8"
-                >
-                  <Button
-                    onClick={loadMoreProposals}
-                    disabled={loadingMore}
-                    variant="outline"
-                    className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${loadingMore ? 'animate-spin' : ''}`} />
-                    {loadingMore ? 'Finding New Proposals...' : 'Load More Proposals'}
-                  </Button>
-                </motion.div>
-              </>
-            ) : clusters.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="space-y-4">
-                  <Lightbulb className="h-12 w-12 text-white/40 mx-auto" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">No Content Clusters Yet</h3>
-                    <p className="text-white/60">
-                      Generate your first AI strategy to get started
-                    </p>
+              <TabsContent value="all" className="space-y-4">
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <Card className="h-96 bg-white/5 border-white/10">
+                          <CardContent className="p-6">
+                            <div className="space-y-4 animate-pulse">
+                              <div className="h-4 bg-white/10 rounded"></div>
+                              <div className="h-3 bg-white/10 rounded w-3/4"></div>
+                              <div className="h-20 bg-white/10 rounded"></div>
+                              <div className="space-y-2">
+                                <div className="h-3 bg-white/10 rounded"></div>
+                                <div className="h-3 bg-white/10 rounded w-2/3"></div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
                   </div>
-                  <Button onClick={generateBlueprint} disabled={generating}>
-                    {generating ? 'Generating...' : 'Generate AI Strategy'}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ staggerChildren: 0.1 }}
-              >
-                {clusters.map((cluster, idx) => (
-                  <motion.div
-                    key={cluster.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                  >
-                    <ClusterCard cluster={cluster} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </TabsContent>
-
-          {['quick_win', 'high_return', 'evergreen'].map((tag) => (
-            <TabsContent key={tag} value={tag} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {proposals.length > 0 ? (
-                  proposals
-                    .filter((proposal) => (proposal.priority_tag || 'evergreen') === tag)
-                    .map((proposal, idx) => (
-                       <ProposalCard 
-                         key={proposal.primary_keyword || idx}
-                         proposal={proposal}
-                         index={proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)}
-                         isSelected={selected[proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false}
-                         onSelectionChange={(index, isSelected) => {
-                           const newSelected = { ...selected, [index]: isSelected };
-                           setSelected(newSelected);
-                           setSelectedProposals(newSelected);
-                         }}
-                         onSendToBuilder={sendProposalToContentBuilder}
-                       />
-                    ))
+                ) : proposals.length > 0 ? (
+                  <>
+                    <motion.div 
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ staggerChildren: 0.1 }}
+                    >
+                      {proposals.map((proposal, idx) => (
+                        <motion.div
+                          key={proposal.primary_keyword || idx}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.1 }}
+                        >
+                           <ProposalCard 
+                             proposal={proposal}
+                             index={idx}
+                             isSelected={selected[idx] || false}
+                             onSelectionChange={(index, isSelected) => {
+                               const newSelected = { ...selected, [index]: isSelected };
+                               setSelected(newSelected);
+                               setSelectedProposals(newSelected);
+                             }}
+                             onSendToBuilder={sendProposalToContentBuilder}
+                           />
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                    
+                    {/* Load More Button */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="flex justify-center mt-8"
+                    >
+                      <Button
+                        onClick={loadMoreProposals}
+                        disabled={loadingMore}
+                        variant="outline"
+                        className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${loadingMore ? 'animate-spin' : ''}`} />
+                        {loadingMore ? 'Finding New Proposals...' : 'Load More Proposals'}
+                      </Button>
+                    </motion.div>
+                  </>
+                ) : clusters.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <div className="space-y-4">
+                      <Lightbulb className="h-12 w-12 text-white/40 mx-auto" />
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">No Content Clusters Yet</h3>
+                        <p className="text-white/60">
+                          Generate your first AI strategy to get started
+                        </p>
+                      </div>
+                      <Button onClick={generateBlueprint} disabled={generating}>
+                        {generating ? 'Generating...' : 'Generate AI Strategy'}
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  clusters
-                    .filter((cluster) => cluster.priority_tag === tag)
-                    .map((cluster) => (
-                      <ClusterCard key={cluster.id} cluster={cluster} />
-                    ))
+                  <motion.div 
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ staggerChildren: 0.1 }}
+                  >
+                    {clusters.map((cluster, idx) => (
+                      <motion.div
+                        key={cluster.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                      >
+                        <ClusterCard cluster={cluster} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 )}
-              </div>
-              {(proposals.length > 0 
-                ? proposals.filter((proposal) => (proposal.priority_tag || 'evergreen') === tag).length === 0
-                : clusters.filter((cluster) => cluster.priority_tag === tag).length === 0
-              ) && (
-                <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">
-                    No {tag.replace('_', ' ')} {proposals.length > 0 ? 'proposals' : 'clusters'} found
-                  </p>
-                </Card>
-              )}
-            </TabsContent>
-          ))}
-        </Tabs>
-        </CardContent>
-      </Card>
+              </TabsContent>
+
+              {['quick_win', 'high_return', 'evergreen'].map((tag) => (
+                <TabsContent key={tag} value={tag} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {proposals.length > 0 ? (
+                      proposals
+                        .filter((proposal) => (proposal.priority_tag || 'evergreen') === tag)
+                        .map((proposal, idx) => (
+                           <ProposalCard 
+                             key={proposal.primary_keyword || idx}
+                             proposal={proposal}
+                             index={proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)}
+                             isSelected={selected[proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false}
+                             onSelectionChange={(index, isSelected) => {
+                               const newSelected = { ...selected, [index]: isSelected };
+                               setSelected(newSelected);
+                               setSelectedProposals(newSelected);
+                             }}
+                             onSendToBuilder={sendProposalToContentBuilder}
+                           />
+                        ))
+                    ) : (
+                      clusters
+                        .filter((cluster) => cluster.priority_tag === tag)
+                        .map((cluster) => (
+                          <ClusterCard key={cluster.id} cluster={cluster} />
+                        ))
+                    )}
+                  </div>
+                  {(proposals.length > 0 
+                    ? proposals.filter((proposal) => (proposal.priority_tag || 'evergreen') === tag).length === 0
+                    : clusters.filter((cluster) => cluster.priority_tag === tag).length === 0
+                  ) && (
+                    <Card className="p-8 text-center">
+                      <p className="text-muted-foreground">
+                        No {tag.replace('_', ' ')} {proposals.length > 0 ? 'proposals' : 'clusters'} found
+                      </p>
+                    </Card>
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+            </CardContent>
+          </Card>
+        </>
+      )}
       <StrategyGenerationModal open={showGenModal} steps={genSteps} onCancel={() => { if (!generating) setShowGenModal(false); }} />
       <StrategyBuilderDialog 
         open={showStrategyBuilder} 
