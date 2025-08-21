@@ -118,18 +118,6 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     }
   }, [open, proposal]);
 
-  // Context-aware step validation using ContentBuilder state
-  const ContentBuilderStepValidator = ({ children }: { children: React.ReactNode }) => {
-    return (
-      <ContentBuilderProvider>
-        <StrategyContentInit proposal={proposal} />
-        <StepValidationWrapper>
-          {children}
-        </StepValidationWrapper>
-      </ContentBuilderProvider>
-    );
-  };
-
   const StepValidationWrapper = ({ children }: { children: React.ReactNode }) => {
     const { state } = useContentBuilder();
     const [isValidating, setIsValidating] = useState(true);
@@ -202,78 +190,78 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-xl font-semibold">
-            Strategy Content Builder
-          </DialogTitle>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>Step {currentStep + 1} of {STEPS.length}</span>
-                <span>{Math.round(progress)}% Complete</span>
+        <ContentBuilderProvider>
+          <StrategyContentInit proposal={proposal} />
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-xl font-semibold">
+              Strategy Content Builder
+            </DialogTitle>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Step {currentStep + 1} of {STEPS.length}</span>
+                  <span>{Math.round(progress)}% Complete</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+                <ProgressIndicator currentStep={currentStep} />
               </div>
-              <Progress value={progress} className="h-2" />
-              <ProgressIndicator currentStep={currentStep} />
-            </div>
-        </DialogHeader>
+          </DialogHeader>
 
-        {/* Step Navigation */}
-        <div className="flex-shrink-0 grid grid-cols-5 gap-2 mb-6">
-          <ContentBuilderProvider>
-            <StrategyContentInit proposal={proposal} />
+          {/* Step Navigation */}
+          <div className="flex-shrink-0 grid grid-cols-5 gap-2 mb-6">
             <StepNavigationItems 
               currentStep={currentStep} 
               onStepClick={setCurrentStep}
               steps={STEPS}
             />
-          </ContentBuilderProvider>
-        </div>
-
-        {/* Step Content */}
-        <div className="flex-1 overflow-y-auto">
-          <LoadingStateWrapper
-            isLoading={false}
-            error={initializationError}
-            onRetry={() => setInitializationError(null)}
-            loadingMessage="Initializing strategy builder..."
-          >
-            <ContentBuilderStepValidator>
-              <StepContent 
-                currentStep={currentStep}
-                proposal={proposal}
-                handleClose={handleClose}
-              />
-            </ContentBuilderStepValidator>
-          </LoadingStateWrapper>
-        </div>
-
-        {/* Navigation Footer */}
-        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 0}
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Previous
-          </Button>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            
-            {currentStep < STEPS.length - 1 ? (
-              <Button onClick={handleNext}>
-                Next
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            ) : (
-              <Button onClick={handleClose}>
-                Complete
-              </Button>
-            )}
           </div>
-        </div>
+
+          {/* Step Content */}
+          <div className="flex-1 overflow-y-auto">
+            <LoadingStateWrapper
+              isLoading={false}
+              error={initializationError}
+              onRetry={() => setInitializationError(null)}
+              loadingMessage="Initializing strategy builder..."
+            >
+              <StepValidationWrapper>
+                <StepContent 
+                  currentStep={currentStep}
+                  proposal={proposal}
+                  handleClose={handleClose}
+                />
+              </StepValidationWrapper>
+            </LoadingStateWrapper>
+          </div>
+
+          {/* Navigation Footer */}
+          <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 0}
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              
+              {currentStep < STEPS.length - 1 ? (
+                <Button onClick={handleNext}>
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button onClick={handleClose}>
+                  Complete
+                </Button>
+              )}
+            </div>
+          </div>
+        </ContentBuilderProvider>
       </DialogContent>
       
       {/* Exit Confirmation Dialog */}
