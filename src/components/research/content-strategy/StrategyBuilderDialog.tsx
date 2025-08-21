@@ -50,7 +50,7 @@ function StrategyContentInit({ proposal }: { proposal: any }) {
     
     const initializeStrategy = async () => {
       try {
-        console.log('[StrategyInit] Initializing strategy with proposal:', proposal);
+        
         
         // Initialize content builder context with strategy data
         if (proposal.primary_keyword) {
@@ -75,11 +75,9 @@ function StrategyContentInit({ proposal }: { proposal: any }) {
         
         // Auto-trigger SERP analysis for strategy keyword with delay to ensure context is ready
         if (proposal.primary_keyword && !state.serpData) {
-          console.log('[StrategyInit] Auto-triggering SERP analysis for:', proposal.primary_keyword);
           setTimeout(async () => {
             try {
               await analyzeKeyword(proposal.primary_keyword);
-              console.log('[StrategyInit] SERP analysis completed successfully');
             } catch (error) {
               console.error('[StrategyInit] SERP analysis failed:', error);
               // Don't block the flow, user can manually trigger SERP analysis
@@ -116,7 +114,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
         return;
       }
       
-      console.log('[StrategyDialog] Dialog opened with proposal:', proposal);
+      
     }
   }, [open, proposal]);
 

@@ -93,14 +93,10 @@ const generateBlueprint = async () => {
     setGenerating(true);
     startProgress();
     
-    console.log('🚀 Starting AI strategy generation with goals:', goals);
-    
     const result = await contentStrategyService.generateAIStrategy({ 
       goals: goals || {}, 
       location: 'United States' 
     });
-    
-    console.log('✅ Strategy generation result:', result);
     
     setProposals(result.proposals || []);
     

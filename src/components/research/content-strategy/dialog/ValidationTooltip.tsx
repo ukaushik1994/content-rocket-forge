@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock, Loader2 } from 'lucide-react';
 
 interface ValidationTooltipProps {
   step: number;
@@ -86,19 +86,27 @@ export function ValidationTooltip({ step, children }: ValidationTooltipProps) {
             {/* Validation indicator */}
             <div className="absolute -top-1 -right-1">
               {validation.type === 'success' && (
-                <CheckCircle className="h-4 w-4 text-green-500 bg-background rounded-full" />
+                <CheckCircle className="h-4 w-4 text-success bg-background rounded-full" />
               )}
               {validation.type === 'warning' && (
-                <AlertCircle className="h-4 w-4 text-yellow-500 bg-background rounded-full" />
+                <AlertCircle className="h-4 w-4 text-warning bg-background rounded-full" />
               )}
               {validation.type === 'pending' && (
-                <Clock className="h-4 w-4 text-blue-500 bg-background rounded-full animate-pulse" />
+                <Loader2 className="h-4 w-4 text-primary bg-background rounded-full animate-spin" />
               )}
             </div>
           </div>
         </TooltipTrigger>
-        <TooltipContent>
-          <p className="text-xs max-w-48">{validation.message}</p>
+        <TooltipContent side="top" className="max-w-xs">
+          <div className="space-y-1">
+            <p className="text-xs font-medium">{validation.message}</p>
+            {validation.type === 'pending' && (
+              <p className="text-xs text-muted-foreground">Please wait...</p>
+            )}
+            {validation.type === 'warning' && (
+              <p className="text-xs text-muted-foreground">Complete this step to continue</p>
+            )}
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
