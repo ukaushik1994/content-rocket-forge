@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertTriangle, Settings } from 'lucide-react';
 
 export const SerpAnalysisStep = () => {
-  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
+  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections, navigateToStep } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [apiKeysStatus, setApiKeysStatus] = useState({
     serpApi: { configured: false, working: false },
@@ -164,6 +164,33 @@ export const SerpAnalysisStep = () => {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  // Handle empty keyword case
+  if (!mainKeyword) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <CardTitle className="flex items-center justify-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              No Keyword Selected
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              Please select a keyword first to analyze SERP data and competition.
+            </p>
+            <button
+              onClick={() => navigateToStep(0)}
+              className="w-full px-4 py-2 bg-neon-purple hover:bg-neon-purple/80 text-white rounded-lg transition-colors"
+            >
+              Go to Keyword Selection
+            </button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
