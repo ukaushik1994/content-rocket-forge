@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { analyzeKeywordSerp, SerpAnalysisResult } from '@/services/serpApiService';
 import { toast } from 'sonner';
-import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 
 interface StrategyCreationModalProps {
   open: boolean;
@@ -53,7 +53,7 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
   const [reviewReady, setReviewReady] = useState(false);
   const [creating, setCreating] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
-  const { createStrategy } = useContentStrategy();
+  const contentStrategy = useContentStrategyOptional();
   const [plan, setPlan] = useState<any[] | null>(null);
   const [planSummary, setPlanSummary] = useState<{forecast_best:number; forecast_cons:number; clusters:number; pieces:number} | null>(null);
 
@@ -259,14 +259,14 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
   };
 
   const handleCreate = async () => {
-    if (!reviewReady) return;
+    if (!reviewReady || !contentStrategy) return;
     setCreating(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       // Create the Content Strategy record
-      await createStrategy({
+      await contentStrategy.createStrategy({
         name: `Content Strategy — ${new Date().toLocaleDateString()}`,
         monthly_traffic_goal: planSummary?.forecast_best || undefined,
         content_pieces_per_month: Math.max(4, Math.min(12, Math.ceil(((planSummary?.pieces ?? 6) / 3)))),
@@ -363,7 +363,7 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
                 )}
                 <div className="flex items-center justify-end gap-2">
                   <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-white/80 hover:text-white hover:bg-white/10">Back</Button>
-                  <Button onClick={handleCreate} disabled={creating} className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0">
+                  <Button onClick={handleCreate} disabled={creating || !contentStrategy} className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0">
                     {creating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating…</> : 'Create Strategy'}
                   </Button>
                 </div>
