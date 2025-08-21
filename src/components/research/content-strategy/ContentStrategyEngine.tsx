@@ -234,7 +234,9 @@ const loadMoreProposals = async () => {
     
     if (result.proposals && result.proposals.length > 0) {
       // Append new proposals to existing ones
-      setProposals(prev => [...prev, ...result.proposals]);
+      const updatedProposals = [...proposals, ...result.proposals];
+      setProposals(updatedProposals);
+      setAiProposals(updatedProposals);
       
       toast({
         title: 'New Proposals Generated',
