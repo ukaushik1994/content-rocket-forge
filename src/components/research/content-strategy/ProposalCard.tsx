@@ -2,14 +2,18 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Send, Target, BarChart3, Calendar } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { TrendingUp, Send, Target, BarChart3, Calendar, CheckCircle2 } from 'lucide-react';
 
 interface ProposalCardProps {
   proposal: any;
+  index: number;
+  isSelected: boolean;
+  onSelectionChange: (index: number, selected: boolean) => void;
   onSendToBuilder: (proposal: any) => void;
 }
 
-export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) => {
+export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, onSendToBuilder }: ProposalCardProps) => {
   const primaryKw = proposal.primary_keyword;
   const primaryMetrics = proposal.serp_data?.[primaryKw] || {};
   const estImpressions = proposal.estimated_impressions ?? Math.round((primaryMetrics.searchVolume || 0) * 0.05);
@@ -33,24 +37,42 @@ export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) =
   };
 
   return (
-    <Card className="relative overflow-hidden bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300">
-      <CardHeader className="pb-3">
+    <Card className={`relative overflow-hidden border transition-all duration-300 ${
+      isSelected 
+        ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/50 shadow-lg shadow-blue-500/20'
+        : 'bg-white/5 border-white/10 hover:bg-white/10'
+    }`}>
+      {/* Selection Checkbox */}
+      <div className="absolute top-3 right-3 z-10">
+        <div className={`p-1 rounded transition-all duration-200 ${
+          isSelected ? 'bg-blue-500/20' : 'bg-white/10'
+        }`}>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => onSelectionChange(index, !!checked)}
+            className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+          />
+        </div>
+      </div>
+
+      <CardHeader className="pb-3 pr-12">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold line-clamp-2 text-white">
+            <CardTitle className="text-lg font-semibold line-clamp-2 text-white flex items-center gap-2">
+              {isSelected && <CheckCircle2 className="h-4 w-4 text-blue-400" />}
               {proposal.title || 'Untitled Proposal'}
             </CardTitle>
             <CardDescription className="text-sm text-white/60 line-clamp-2">
               {proposal.description}
             </CardDescription>
           </div>
-          <Badge 
-            variant="outline" 
-            className={`text-xs ${getPriorityColor(proposal.priority_tag || 'evergreen')}`}
-          >
-            {getPriorityLabel(proposal.priority_tag || 'evergreen')}
-          </Badge>
         </div>
+        <Badge 
+          variant="outline" 
+          className={`text-xs w-fit ${getPriorityColor(proposal.priority_tag || 'evergreen')}`}
+        >
+          {getPriorityLabel(proposal.priority_tag || 'evergreen')}
+        </Badge>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -112,6 +134,19 @@ export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) =
 
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t border-white/20">
+          <Button
+            onClick={() => onSelectionChange(index, !isSelected)}
+            size="sm"
+            variant={isSelected ? "default" : "outline"}
+            className={`gap-2 ${
+              isSelected 
+                ? 'bg-blue-500 hover:bg-blue-600 text-white border-0'
+                : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/20'
+            }`}
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            {isSelected ? 'Selected' : 'Select'}
+          </Button>
           <Button
             onClick={() => onSendToBuilder(proposal)}
             size="sm"

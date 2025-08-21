@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Calculator, DollarSign, TrendingUp, Target } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Calculator, DollarSign, TrendingUp, Target, Lightbulb, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 
 interface ROICalculatorProps {
   goals: any;
@@ -14,6 +16,7 @@ interface ROICalculatorProps {
 }
 
 export const ROICalculator = ({ goals, serpMetrics }: ROICalculatorProps) => {
+  const { aiProposals, selectedProposals } = useContentStrategy();
   const [investment, setInvestment] = useState({
     contentCreation: '5000',
     toolsAndSoftware: '500',
@@ -29,7 +32,30 @@ export const ROICalculator = ({ goals, serpMetrics }: ROICalculatorProps) => {
 
   const calculateROI = () => {
     const totalInvestment = Object.values(investment).reduce((acc, val) => acc + parseFloat(val || '0'), 0);
-    const estimatedTraffic = serpMetrics ? Math.floor(serpMetrics.searchVolume * 0.1) : 2500;
+    
+    // Calculate traffic from AI proposals if available, otherwise use SERP metrics
+    let estimatedTraffic = 0;
+    const selectedCount = Object.values(selectedProposals).filter(Boolean).length;
+    
+    if (aiProposals.length > 0 && selectedCount > 0) {
+      // Use selected AI proposals for more accurate traffic estimation
+      estimatedTraffic = aiProposals
+        .filter((_, index) => selectedProposals[index])
+        .reduce((sum, proposal) => {
+          const primaryKw = proposal.primary_keyword;
+          const metrics = proposal.serp_data?.[primaryKw] || {};
+          const est = proposal.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+          return sum + est;
+        }, 0);
+    } else if (serpMetrics) {
+      // Fallback to SERP metrics
+      estimatedTraffic = Math.floor(serpMetrics.searchVolume * 0.1);
+    } else {
+      // Default estimation based on goals
+      const targetTraffic = parseInt(goals?.monthlyTraffic) || 10000;
+      estimatedTraffic = Math.floor(targetTraffic * 0.1); // Conservative 10% of target
+    }
+    
     const conversions = estimatedTraffic * (parseFloat(metrics.conversionRate) / 100);
     const revenue = conversions * parseFloat(metrics.averageOrderValue);
     const roi = ((revenue - totalInvestment) / totalInvestment) * 100;
@@ -40,7 +66,9 @@ export const ROICalculator = ({ goals, serpMetrics }: ROICalculatorProps) => {
       conversions,
       revenue,
       roi,
-      profitLoss: revenue - totalInvestment
+      profitLoss: revenue - totalInvestment,
+      selectedProposals: selectedCount,
+      totalProposals: aiProposals.length
     };
   };
 
@@ -60,7 +88,53 @@ export const ROICalculator = ({ goals, serpMetrics }: ROICalculatorProps) => {
   ];
 
   return (
-    <Card className="glass-panel border-white/10 shadow-2xl">
+    <div className="space-y-6">
+      {/* AI Proposal Insights */}
+      {aiProposals.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-white/10">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <BarChart3 className="h-5 w-5 text-blue-400" />
+                <div>
+                  <div className="text-lg font-bold text-white">{results.selectedProposals}/{results.totalProposals}</div>
+                  <div className="text-xs text-white/60">Proposals Selected</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-white/10">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="h-5 w-5 text-green-400" />
+                <div>
+                  <div className="text-lg font-bold text-white">{results.estimatedTraffic.toLocaleString()}</div>
+                  <div className="text-xs text-white/60">Est. Monthly Traffic</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-white/10">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Target className="h-5 w-5 text-purple-400" />
+                <div>
+                  <div className="text-lg font-bold text-white">{Math.floor(results.conversions)}</div>
+                  <div className="text-xs text-white/60">Est. Conversions/mo</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      <Card className="glass-panel border-white/10 shadow-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-2xl">
           <div className="p-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl backdrop-blur-sm border border-white/10">
@@ -209,10 +283,19 @@ export const ROICalculator = ({ goals, serpMetrics }: ROICalculatorProps) => {
 
             {/* Recommendations */}
             <div className="p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20">
-              <h4 className="font-medium text-yellow-400 mb-2">💡 Optimization Tips</h4>
+              <h4 className="font-medium text-yellow-400 mb-2 flex items-center gap-2">
+                <Lightbulb className="h-4 w-4" />
+                Optimization Tips
+              </h4>
               <ul className="text-sm text-white/80 space-y-1">
                 {results.roi < 100 && <li>• Consider reducing investment or improving conversion rates</li>}
                 {results.roi > 200 && <li>• Excellent ROI! Consider scaling your investment</li>}
+                {aiProposals.length > 0 && results.selectedProposals === 0 && (
+                  <li>• Select AI proposals from the Strategies tab to improve traffic estimates</li>
+                )}
+                {results.selectedProposals > 0 && (
+                  <li>• Your {results.selectedProposals} selected proposals are factored into traffic estimates</li>
+                )}
                 <li>• Focus on high-converting content formats</li>
                 <li>• Monitor and optimize conversion funnel</li>
               </ul>
@@ -220,6 +303,7 @@ export const ROICalculator = ({ goals, serpMetrics }: ROICalculatorProps) => {
           </div>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 };

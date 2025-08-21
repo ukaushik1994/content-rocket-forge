@@ -741,10 +741,17 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1 }}
                     >
-                      <ProposalCard 
-                        proposal={proposal}
-                        onSendToBuilder={sendProposalToContentBuilder}
-                      />
+                       <ProposalCard 
+                         proposal={proposal}
+                         index={idx}
+                         isSelected={selected[idx] || false}
+                         onSelectionChange={(index, isSelected) => {
+                           const newSelected = { ...selected, [index]: isSelected };
+                           setSelected(newSelected);
+                           setSelectedProposals(newSelected);
+                         }}
+                         onSendToBuilder={sendProposalToContentBuilder}
+                       />
                     </motion.div>
                   ))}
                 </motion.div>
@@ -810,11 +817,18 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                   proposals
                     .filter((proposal) => (proposal.priority_tag || 'evergreen') === tag)
                     .map((proposal, idx) => (
-                      <ProposalCard 
-                        key={proposal.primary_keyword || idx}
-                        proposal={proposal}
-                        onSendToBuilder={sendProposalToContentBuilder}
-                      />
+                       <ProposalCard 
+                         key={proposal.primary_keyword || idx}
+                         proposal={proposal}
+                         index={proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)}
+                         isSelected={selected[proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false}
+                         onSelectionChange={(index, isSelected) => {
+                           const newSelected = { ...selected, [index]: isSelected };
+                           setSelected(newSelected);
+                           setSelectedProposals(newSelected);
+                         }}
+                         onSendToBuilder={sendProposalToContentBuilder}
+                       />
                     ))
                 ) : (
                   clusters
