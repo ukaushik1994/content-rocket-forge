@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
 import { StrategySessionManager } from './StrategySessionManager';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
+import { ProposalCard } from './ProposalCard';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -368,171 +369,162 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         goals={goals}
       />
 
-{/* AI Strategy Proposals */}
-{proposals.length > 0 ? (
-  <Card>
-    <CardHeader>
-      <CardTitle className="text-lg">AI Strategy Proposals</CardTitle>
-      <CardDescription>Select a proposal to start writing in the Content Builder.</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8"></TableHead>
-              <TableHead>Proposal</TableHead>
-              <TableHead>Primary Keyword</TableHead>
-              <TableHead>Est. Impressions</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {proposals.map((p, idx) => {
-              const id = p.primary_keyword || `${idx}`;
-              const primaryKw = p.primary_keyword;
-              const primaryMetrics = p.serp_data?.[primaryKw] || {};
-              const estImpr = p.estimated_impressions ?? Math.round((primaryMetrics.searchVolume || 0) * 0.05);
-              return (
-                <TableRow key={id}>
-                  <TableCell>
-                    <Checkbox checked={!!selected[id]} onCheckedChange={(v) => setSelected({ ...selected, [id]: !!v })} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{p.title || 'Untitled Proposal'}</div>
-                    <div className="text-sm text-muted-foreground line-clamp-1">{p.description}</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{primaryKw}</Badge>
-                  </TableCell>
-                  <TableCell>{estImpr.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{p.priority_tag || 'evergreen'}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" onClick={() => sendProposalToContentBuilder(p)} className="gap-2">
-                      <Send className="h-4 w-4" />
-                      Send to Builder
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    </CardContent>
-  </Card>
-) : (
-  // Fallback: legacy clusters UI (hidden until proposals are generated)
-  <>
-    {/* Strategy Overview */}
-    {clusters.length > 0 && (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Strategy Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{clusters.length}</div>
-              <div className="text-sm text-muted-foreground">Content Clusters</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
-                {clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Est. Monthly Traffic</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
-                {clusters.reduce((sum, c) => sum + Object.values(c.suggested_assets).reduce((a: number, b: number) => a + b, 0), 0)}
-              </div>
-              <div className="text-sm text-muted-foreground">Suggested Assets</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
-                {Math.round(clusters.reduce((sum, c) => sum + c.timeframe_weeks, 0) / clusters.length)}
-              </div>
-              <div className="text-sm text-muted-foreground">Avg Weeks</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )}
-
-    {/* Content Clusters */}
-    <div>
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All Clusters</TabsTrigger>
-          <TabsTrigger value="quick_win">Quick Wins</TabsTrigger>
-          <TabsTrigger value="high_return">High Return</TabsTrigger>
-          <TabsTrigger value="evergreen">Evergreen</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="h-96 animate-pulse">
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      <div className="h-4 bg-muted rounded"></div>
-                      <div className="h-3 bg-muted rounded w-3/4"></div>
-                      <div className="h-20 bg-muted rounded"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : clusters.length === 0 ? (
-            <Card className="p-12 text-center">
-              <div className="space-y-4">
-                <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto" />
-                <div>
-                  <h3 className="text-lg font-semibold">No Content Clusters Yet</h3>
-                  <p className="text-muted-foreground">
-                    Generate your first AI strategy to get started
-                  </p>
+      {/* Strategy Proposals or Clusters Display */}
+      {/* Strategy Overview */}
+      {(clusters.length > 0 || proposals.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Strategy Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {proposals.length > 0 ? proposals.length : clusters.length}
                 </div>
-                <Button onClick={generateBlueprint} disabled={generating}>
-                  {generating ? 'Generating...' : 'Generate AI Strategy'}
-                </Button>
+                <div className="text-sm text-muted-foreground">
+                  {proposals.length > 0 ? 'Strategy Proposals' : 'Content Clusters'}
+                </div>
               </div>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {clusters.map((cluster) => (
-                <ClusterCard key={cluster.id} cluster={cluster} />
-              ))}
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {proposals.length > 0 
+                    ? proposals.reduce((sum, p) => {
+                        const primaryKw = p.primary_keyword;
+                        const metrics = p.serp_data?.[primaryKw] || {};
+                        const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+                        return sum + est;
+                      }, 0).toLocaleString()
+                    : clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()
+                  }
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {proposals.length > 0 ? 'Est. Monthly Impressions' : 'Est. Monthly Traffic'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {proposals.length > 0 
+                    ? proposals.reduce((sum, p) => sum + (p.related_keywords?.length || 0), 0)
+                    : clusters.reduce((sum, c) => sum + Object.values(c.suggested_assets).reduce((a: number, b: number) => a + b, 0), 0)
+                  }
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {proposals.length > 0 ? 'Related Keywords' : 'Suggested Assets'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {proposals.length > 0 
+                    ? proposals.filter(p => p.priority_tag === 'quick_win').length
+                    : Math.round(clusters.reduce((sum, c) => sum + c.timeframe_weeks, 0) / Math.max(clusters.length, 1))
+                  }
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {proposals.length > 0 ? 'Quick Wins' : 'Avg Weeks'}
+                </div>
+              </div>
             </div>
-          )}
-        </TabsContent>
+          </CardContent>
+        </Card>
+      )}
 
-        {['quick_win', 'high_return', 'evergreen'].map((tag) => (
-          <TabsContent key={tag} value={tag} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {clusters
-                .filter((cluster) => cluster.priority_tag === tag)
-                .map((cluster) => (
+      {/* Content Clusters or Proposals */}
+      <div>
+        <Tabs defaultValue="all" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="all">
+              {proposals.length > 0 ? 'All Proposals' : 'All Clusters'}
+            </TabsTrigger>
+            <TabsTrigger value="quick_win">Quick Wins</TabsTrigger>
+            <TabsTrigger value="high_return">High Return</TabsTrigger>
+            <TabsTrigger value="evergreen">Evergreen</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="space-y-4">
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="h-96 animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div className="h-4 bg-muted rounded"></div>
+                        <div className="h-3 bg-muted rounded w-3/4"></div>
+                        <div className="h-20 bg-muted rounded"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : proposals.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {proposals.map((proposal, idx) => (
+                  <ProposalCard 
+                    key={proposal.primary_keyword || idx}
+                    proposal={proposal}
+                    onSendToBuilder={sendProposalToContentBuilder}
+                  />
+                ))}
+              </div>
+            ) : clusters.length === 0 ? (
+              <Card className="p-12 text-center">
+                <div className="space-y-4">
+                  <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto" />
+                  <div>
+                    <h3 className="text-lg font-semibold">No Content Clusters Yet</h3>
+                    <p className="text-muted-foreground">
+                      Generate your first AI strategy to get started
+                    </p>
+                  </div>
+                  <Button onClick={generateBlueprint} disabled={generating}>
+                    {generating ? 'Generating...' : 'Generate AI Strategy'}
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {clusters.map((cluster) => (
                   <ClusterCard key={cluster.id} cluster={cluster} />
                 ))}
-            </div>
-            {clusters.filter((cluster) => cluster.priority_tag === tag).length === 0 && (
-              <Card className="p-8 text-center">
-                <p className="text-muted-foreground">
-                  No {tag.replace('_', ' ')} clusters found
-                </p>
-              </Card>
+              </div>
             )}
           </TabsContent>
-        ))}
-      </Tabs>
-    </div>
-  </>
-)}
+
+          {['quick_win', 'high_return', 'evergreen'].map((tag) => (
+            <TabsContent key={tag} value={tag} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {proposals.length > 0 ? (
+                  proposals
+                    .filter((proposal) => (proposal.priority_tag || 'evergreen') === tag)
+                    .map((proposal, idx) => (
+                      <ProposalCard 
+                        key={proposal.primary_keyword || idx}
+                        proposal={proposal}
+                        onSendToBuilder={sendProposalToContentBuilder}
+                      />
+                    ))
+                ) : (
+                  clusters
+                    .filter((cluster) => cluster.priority_tag === tag)
+                    .map((cluster) => (
+                      <ClusterCard key={cluster.id} cluster={cluster} />
+                    ))
+                )}
+              </div>
+              {(proposals.length > 0 
+                ? proposals.filter((proposal) => (proposal.priority_tag || 'evergreen') === tag).length === 0
+                : clusters.filter((cluster) => cluster.priority_tag === tag).length === 0
+              ) && (
+                <Card className="p-8 text-center">
+                  <p className="text-muted-foreground">
+                    No {tag.replace('_', ' ')} {proposals.length > 0 ? 'proposals' : 'clusters'} found
+                  </p>
+                </Card>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
       <StrategyGenerationModal open={showGenModal} steps={genSteps} onCancel={() => { if (!generating) setShowGenModal(false); }} />
       <StrategyBuilderDialog 
         open={showStrategyBuilder} 
