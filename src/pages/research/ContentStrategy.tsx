@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { ContentStrategyHero } from '@/components/research/content-strategy/ContentStrategyHero';
 import { GoalSettingCard } from '@/components/research/content-strategy/GoalSettingCard';
+import { ContentStrategyDashboard } from '@/components/research/content-strategy/ContentStrategyDashboard';
 import { StrategyTabs } from '@/components/research/content-strategy/StrategyTabs';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
@@ -64,6 +65,7 @@ const ContentStrategyContent = React.memo(() => {
   return (
     <>
       <GoalSettingCard />
+      <ContentStrategyDashboard />
       <StrategyTabs />
     </>
   );
