@@ -415,7 +415,7 @@ async function generateAIStrategy(supabase: any, payload: any) {
   // 1) Fetch minimal user context
   const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
     supabase.from('solutions').select('*').eq('user_id', user_id).limit(20),
-    supabase.from('company_info').select('*').eq('user_id', user_id).maybeSingle?.() ?? supabase.from('company_info').select('*').eq('user_id', user_id).single(),
+    supabase.from('company_info').select('*').eq('user_id', user_id).maybeSingle(),
     supabase.from('content_items').select('id,title,metadata').eq('user_id', user_id).order('updated_at', { ascending: false }).limit(20),
   ]);
 
