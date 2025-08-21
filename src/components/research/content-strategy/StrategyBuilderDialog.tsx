@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, Send, Save, FileText, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Send, Save, FileText, Sparkles, Target, Zap, Rocket } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
@@ -189,77 +190,248 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-border/50">
         <ContentBuilderProvider>
           <StrategyContentInit proposal={proposal} />
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-xl font-semibold">
-              Strategy Content Builder
-            </DialogTitle>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Step {currentStep + 1} of {STEPS.length}</span>
-                  <span>{Math.round(progress)}% Complete</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-                <ProgressIndicator currentStep={currentStep} />
-              </div>
-          </DialogHeader>
-
-          {/* Step Navigation */}
-          <div className="flex-shrink-0 grid grid-cols-5 gap-2 mb-6">
-            <StepNavigationItems 
-              currentStep={currentStep} 
-              onStepClick={setCurrentStep}
-              steps={STEPS}
+          
+          {/* Interactive Background Effects */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Animated gradient orbs */}
+            <motion.div 
+              className="absolute top-10 left-10 w-48 h-48 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-full blur-3xl"
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0.6, 0.3],
+                x: [0, 30, 0],
+                y: [0, -20, 0]
+              }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             />
+            <motion.div 
+              className="absolute bottom-20 right-10 w-64 h-64 bg-gradient-to-r from-purple-500/15 to-pink-500/15 rounded-full blur-3xl"
+              animate={{ 
+                scale: [1.2, 1, 1.2],
+                opacity: [0.2, 0.5, 0.2],
+                x: [0, -30, 0],
+                y: [0, 30, 0]
+              }}
+              transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+            />
+            
+            {/* Interactive floating particles */}
+            {Array.from({ length: 8 }).map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-primary/40 rounded-full"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  y: [0, -100, 0],
+                  opacity: [0, 1, 0],
+                  scale: [0, 1.5, 0],
+                }}
+                transition={{
+                  duration: 4 + Math.random() * 4,
+                  repeat: Infinity,
+                  delay: Math.random() * 6,
+                  ease: "easeInOut"
+                }}
+              />
+            ))}
           </div>
 
-          {/* Step Content */}
-          <div className="flex-1 overflow-y-auto">
-            <LoadingStateWrapper
-              isLoading={false}
-              error={initializationError}
-              onRetry={() => setInitializationError(null)}
-              loadingMessage="Initializing strategy builder..."
+          <div className="relative z-10 flex-1 flex flex-col">
+            {/* Hero Header Section */}
+            <motion.div 
+              className="flex-shrink-0 text-center mb-8 relative"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              <StepValidationWrapper>
-                <StepContent 
-                  currentStep={currentStep}
-                  proposal={proposal}
-                  handleClose={handleClose}
-                />
-              </StepValidationWrapper>
-            </LoadingStateWrapper>
-          </div>
-
-          {/* Navigation Footer */}
-          <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 0}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Previous
-            </Button>
-
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-2xl blur-2xl"
+                animate={{ opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              />
               
-              {currentStep < STEPS.length - 1 ? (
-                <Button onClick={handleNext}>
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-2" />
+              <div className="relative">
+                <motion.div 
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-4"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">AI-Powered Strategy Builder</span>
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                </motion.div>
+                
+                <DialogTitle className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+                  Strategy Content Builder
+                </DialogTitle>
+                
+                <motion.p 
+                  className="text-muted-foreground max-w-2xl mx-auto mb-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Transform your content strategy with AI-powered analysis and optimization
+                </motion.p>
+
+                {/* Progress Section */}
+                <motion.div 
+                  className="max-w-lg mx-auto bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 p-4"
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
+                >
+                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+                    <span>Step {currentStep + 1} of {STEPS.length}</span>
+                    <span>{Math.round(progress)}% Complete</span>
+                  </div>
+                  <Progress value={progress} className="h-2 mb-4" />
+                  <ProgressIndicator currentStep={currentStep} />
+                </motion.div>
+
+                {/* Quick Stats */}
+                <motion.div 
+                  className="flex justify-center gap-6 mt-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  {[
+                    { icon: Target, label: "Strategy Steps", value: "5" },
+                    { icon: Zap, label: "AI Analysis", value: "< 30s" },
+                    { icon: Rocket, label: "Success Rate", value: "95%" }
+                  ].map((stat, index) => (
+                    <motion.div 
+                      key={stat.label}
+                      className="text-center"
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <div className="inline-flex items-center justify-center w-10 h-10 bg-background/60 backdrop-blur-xl rounded-lg border border-border/50 mb-2">
+                        <stat.icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-xs font-bold text-foreground">{stat.value}</div>
+                      <div className="text-xs text-muted-foreground">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+            </motion.div>
+
+            {/* Enhanced Step Navigation */}
+            <motion.div 
+              className="flex-shrink-0 mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <div className="grid grid-cols-5 gap-3">
+                <StepNavigationItems 
+                  currentStep={currentStep} 
+                  onStepClick={setCurrentStep}
+                  steps={STEPS}
+                />
+              </div>
+            </motion.div>
+
+            {/* Enhanced Step Content Area */}
+            <motion.div 
+              className="flex-1 overflow-y-auto bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1, type: "spring", stiffness: 200 }}
+            >
+              <div className="relative p-6">
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-br from-primary/5 to-blue-500/5 rounded-2xl"
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 6, repeat: Infinity }}
+                />
+                
+                <div className="relative z-10">
+                  <LoadingStateWrapper
+                    isLoading={false}
+                    error={initializationError}
+                    onRetry={() => setInitializationError(null)}
+                    loadingMessage="Initializing strategy builder..."
+                  >
+                    <StepValidationWrapper>
+                      <StepContent 
+                        currentStep={currentStep}
+                        proposal={proposal}
+                        handleClose={handleClose}
+                      />
+                    </StepValidationWrapper>
+                  </LoadingStateWrapper>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Enhanced Navigation Footer */}
+            <motion.div 
+              className="flex-shrink-0 flex justify-between items-center pt-6 mt-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 }}
+            >
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={currentStep === 0}
+                  className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
                 </Button>
-              ) : (
-                <Button onClick={handleClose}>
-                  Complete
-                </Button>
-              )}
-            </div>
+              </motion.div>
+
+              <div className="flex gap-3">
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button 
+                    variant="outline" 
+                    onClick={handleClose}
+                    className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+                  >
+                    Cancel
+                  </Button>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {currentStep < STEPS.length - 1 ? (
+                    <Button 
+                      onClick={handleNext}
+                      className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 shadow-lg"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleClose}
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-500/90 hover:to-emerald-500/90 shadow-lg"
+                    >
+                      Complete
+                    </Button>
+                  )}
+                </motion.div>
+              </div>
+            </motion.div>
           </div>
         </ContentBuilderProvider>
       </DialogContent>
