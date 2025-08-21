@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
+import { aiStrategyService } from '@/services/aiStrategyService';
 import { useToast } from '@/hooks/use-toast';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
 import { StrategySessionManager } from './StrategySessionManager';
@@ -37,6 +38,7 @@ export function ContentStrategyEngine({ serpMetrics, goals }: ContentStrategyEng
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 const { toast } = useToast();
 
   // Generation modal state
@@ -125,6 +127,58 @@ const generateBlueprint = async () => {
     });
   } finally {
     setGenerating(false);
+  }
+};
+
+const loadMoreProposals = async () => {
+  try {
+    setLoadingMore(true);
+    
+    // Extract keywords from existing proposals to exclude them
+    const existingKeywords = proposals.flatMap(proposal => {
+      const keywords = [proposal.primary_keyword];
+      if (proposal.related_keywords && Array.isArray(proposal.related_keywords)) {
+        keywords.push(...proposal.related_keywords);
+      }
+      return keywords.filter(Boolean);
+    });
+    
+    // Generate new proposals excluding existing keywords
+    const result = await aiStrategyService.generateNewStrategy({
+      goals: goals || {},
+      location: 'United States',
+      excludeKeywords: existingKeywords
+    });
+    
+    if (result.proposals && result.proposals.length > 0) {
+      // Append new proposals to existing ones
+      setProposals(prev => [...prev, ...result.proposals]);
+      
+      toast({
+        title: 'New Proposals Generated',
+        description: `Found ${result.proposals.length} additional strategy proposals`
+      });
+    } else {
+      toast({
+        title: 'No New Proposals',
+        description: 'No additional unique proposals could be generated at this time',
+        variant: 'default'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error loading more proposals:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Failed to load more proposals';
+    
+    toast({
+      title: 'Load More Failed',
+      description: errorMessage.includes('API key') 
+        ? 'Please configure your OpenAI and SERP API keys in Settings'
+        : errorMessage,
+      variant: 'destructive'
+    });
+  } finally {
+    setLoadingMore(false);
   }
 };
 
@@ -553,26 +607,46 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                 ))}
               </div>
             ) : proposals.length > 0 ? (
-              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ staggerChildren: 0.1 }}
-              >
-                {proposals.map((proposal, idx) => (
-                  <motion.div
-                    key={proposal.primary_keyword || idx}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
+              <>
+                <motion.div 
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ staggerChildren: 0.1 }}
+                >
+                  {proposals.map((proposal, idx) => (
+                    <motion.div
+                      key={proposal.primary_keyword || idx}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                    >
+                      <ProposalCard 
+                        proposal={proposal}
+                        onSendToBuilder={sendProposalToContentBuilder}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+                
+                {/* Load More Button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex justify-center mt-8"
+                >
+                  <Button
+                    onClick={loadMoreProposals}
+                    disabled={loadingMore}
+                    variant="outline"
+                    className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
                   >
-                    <ProposalCard 
-                      proposal={proposal}
-                      onSendToBuilder={sendProposalToContentBuilder}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
+                    <RefreshCw className={`h-4 w-4 ${loadingMore ? 'animate-spin' : ''}`} />
+                    {loadingMore ? 'Finding New Proposals...' : 'Load More Proposals'}
+                  </Button>
+                </motion.div>
+              </>
             ) : clusters.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="space-y-4">
