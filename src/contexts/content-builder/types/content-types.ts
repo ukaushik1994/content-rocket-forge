@@ -31,4 +31,5 @@ export interface SaveContentParams {
   outline?: string[];
   serpSelections?: any[];
   serpData?: any;
+  metadata?: any; // Allow additional metadata to be passed through
 }

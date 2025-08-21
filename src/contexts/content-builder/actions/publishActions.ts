@@ -48,7 +48,8 @@ export const createPublishActions = (
           metaDescription: content.metaDescription,
           outline: content.outline || [],
           serpSelections: content.serpSelections || [],
-          serpData: content.serpData
+          serpData: content.serpData,
+          ...(content.metadata || {}) // Include any additional metadata passed in
         }
       };
 
@@ -173,7 +174,8 @@ export const createPublishActions = (
           metaDescription: content.metaDescription,
           outline: content.outline || [],
           serpSelections: content.serpSelections || [],
-          serpData: content.serpData
+          serpData: content.serpData,
+          ...(content.metadata || {}) // Include any additional metadata passed in
         }
       };
 

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { StepContent } from './dialog/StepContent';
+import { StepNavigationItems } from './dialog/StepNavigationItems';
 import { ContentBuilderProvider, useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { EnhancedSolution } from '@/contexts/content-builder/types';
 import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
@@ -81,12 +82,36 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     return (
       <ContentBuilderProvider>
         <StrategyContentInit proposal={proposal} />
-        <StepValidationLogic>{children}</StepValidationLogic>
+        <StepValidationWrapper>
+          {children}
+        </StepValidationWrapper>
       </ContentBuilderProvider>
     );
   };
 
-  const StepValidationLogic = ({ children }: { children: React.ReactNode }) => {
+  const StepValidationWrapper = ({ children }: { children: React.ReactNode }) => {
+    const { state } = useContentBuilder();
+    const [isValidating, setIsValidating] = useState(true);
+    
+    // Allow context to initialize
+    useEffect(() => {
+      const timer = setTimeout(() => setIsValidating(false), 100);
+      return () => clearTimeout(timer);
+    }, []);
+
+    if (isValidating) {
+      return (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full"></div>
+        </div>
+      );
+    }
+
+    return <>{children}</>;
+  };
+
+  // Context-aware navigation with validation
+  const NavigationController = () => {
     const { state } = useContentBuilder();
     
     const canProceedToStep = (step: number): boolean => {
@@ -100,7 +125,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
       }
     };
 
-    return React.cloneElement(children as React.ReactElement, { canProceedToStep });
+    return { canProceedToStep };
   };
 
   const handleNext = () => {
@@ -139,44 +164,14 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
 
         {/* Step Navigation */}
         <div className="flex-shrink-0 grid grid-cols-5 gap-2 mb-6">
-          {STEPS.map((step, index) => {
-            const Icon = step.icon;
-            const isActive = index === currentStep;
-            const isCompleted = false; // Will be updated by context
-            const isAccessible = true; // Will be updated by context
-
-            return (
-              <Card 
-                key={step.id}
-                className={`cursor-pointer transition-all ${
-                  isActive 
-                    ? 'ring-2 ring-primary bg-primary/5' 
-                    : isAccessible 
-                      ? 'hover:bg-muted/50' 
-                      : 'opacity-50 cursor-not-allowed'
-                }`}
-                onClick={() => setCurrentStep(index)}
-              >
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      isActive 
-                        ? 'bg-primary text-primary-foreground' 
-                        : isCompleted 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-muted'
-                    }`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm truncate">{step.title}</div>
-                      <div className="text-xs text-muted-foreground truncate">{step.description}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          <ContentBuilderProvider>
+            <StrategyContentInit proposal={proposal} />
+            <StepNavigationItems 
+              currentStep={currentStep} 
+              onStepClick={setCurrentStep}
+              steps={STEPS}
+            />
+          </ContentBuilderProvider>
         </div>
 
         {/* Step Content */}

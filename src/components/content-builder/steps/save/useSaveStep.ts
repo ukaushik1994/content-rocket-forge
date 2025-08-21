@@ -26,6 +26,10 @@ export const useSaveStep = () => {
   const navigate = useNavigate();
   const { handlePublish, handleSaveToDraft } = useSaveContent();
   
+  // Override with ContentBuilder actions if available
+  const contentBuilderContext = useContentBuilder();
+  const hasSaveActions = contentBuilderContext?.saveContentToDraft && contentBuilderContext?.saveContentToPublished;
+  
   // Track optimizations
   const hasAppliedOptimizations = seoImprovements?.some(improvement => improvement.applied) || false;
   
@@ -124,14 +128,39 @@ export const useSaveStep = () => {
       return;
     }
 
-    // Save to content library
+    // Save to content library using ContentBuilder context if available
     try {
       setIsSubmitting(true);
       console.log("[SaveStep] Saving content with title:", title);
       console.log("[SaveStep] Using description:", description);
       console.log("[SaveStep] Applied optimizations:", hasAppliedOptimizations ? "Yes" : "No");
       
-      await handleSaveToDraft();
+      if (hasSaveActions) {
+        // Use ContentBuilder's save function with enhanced params
+        const saveParams = {
+          title,
+          content,
+          mainKeyword,
+          secondaryKeywords: selectedKeywords,
+          contentType,
+          metaTitle: title,
+          metaDescription: description,
+          status: 'draft' as const,
+          notes: '',
+          seoScore,
+          outline: state.outline,
+          serpSelections: state.serpSelections,
+          serpData: state.serpData
+        };
+        
+        const result = await contentBuilderContext.saveContentToDraft(saveParams);
+        if (!result) {
+          throw new Error('Failed to save content');
+        }
+      } else {
+        // Fallback to original save method
+        await handleSaveToDraft();
+      }
       
       // Clear auto-saved content now that it's properly saved
       localStorage.removeItem('content_builder_draft');

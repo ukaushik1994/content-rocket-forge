@@ -52,4 +52,5 @@ export interface ContentBuilderContextType {
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;
   saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;
   setAdditionalInstructions: (instructions: string) => void;
+  setSelectedSolution: (solution: EnhancedSolution | null) => void;
 }
