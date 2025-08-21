@@ -341,26 +341,14 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
           </p>
         </div>
         
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={refreshClusters}
-            disabled={loading}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          
-          <Button
-            onClick={generateBlueprint}
-            disabled={generating}
-            className="gap-2"
-          >
-            <Lightbulb className="h-4 w-4" />
-            {generating ? 'Generating...' : 'Generate Strategy'}
-          </Button>
-        </div>
+        <Button
+          onClick={generateBlueprint}
+          disabled={generating}
+          className="gap-2"
+        >
+          <Lightbulb className="h-4 w-4" />
+          {generating ? 'Generating...' : 'Generate Strategy'}
+        </Button>
       </div>
 
       {/* Strategy Session Manager */}

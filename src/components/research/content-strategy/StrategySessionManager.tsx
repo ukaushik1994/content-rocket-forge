@@ -159,27 +159,16 @@ export function StrategySessionManager({ onStrategyGenerated, goals }: StrategyS
               Manage your AI-generated content strategies and avoid keyword duplication
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadData}
-              disabled={loading}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button
-              onClick={generateNewStrategy}
-              disabled={generating}
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              {generating ? 'Generating...' : 'New Strategy'}
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadData}
+            disabled={loading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
       </CardHeader>
 

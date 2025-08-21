@@ -25,23 +25,14 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
             Generate custom content strategies using our advanced AI engine
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowComparison(true)}
-            className="bg-background/50 border-border/50 hover:bg-muted/50"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Compare Strategies
-          </Button>
-          <Button
-            onClick={() => setShowCustomCreator(true)}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Create Custom Strategy
-          </Button>
-        </div>
+        <Button
+          onClick={() => setShowCustomCreator(true)}
+          variant="outline"
+          className="bg-background/50 border-border/50 hover:bg-muted/50"
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          Custom Strategy
+        </Button>
       </div>
 
       <ContentStrategyEngine serpMetrics={serpMetrics} goals={goals} />
