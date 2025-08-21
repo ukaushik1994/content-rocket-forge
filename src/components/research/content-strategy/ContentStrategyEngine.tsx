@@ -15,8 +15,10 @@ import {
   BarChart3,
   Lightbulb,
   Trash2,
-  Eye
+  Eye,
+  FileText
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { useToast } from '@/hooks/use-toast';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
@@ -210,25 +212,30 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
   };
 
   const ClusterCard = ({ cluster }: { cluster: ContentCluster }) => (
-    <Card className="relative overflow-hidden border border-border/50 hover:border-border transition-colors">
+    <Card className="relative overflow-hidden bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold">{cluster.name}</CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
+            <CardTitle className="text-lg font-semibold text-white">{cluster.name}</CardTitle>
+            <CardDescription className="text-sm text-white/60">
               {cluster.description}
             </CardDescription>
           </div>
           <div className="flex gap-2">
             <Badge 
               variant="outline" 
-              className={`text-xs ${contentStrategyService.getPriorityTagColor(cluster.priority_tag)}`}
+              className={`text-xs border-white/20 ${
+                cluster.priority_tag === 'quick_win' ? 'text-green-400 bg-green-500/10' :
+                cluster.priority_tag === 'high_return' ? 'text-blue-400 bg-blue-500/10' :
+                cluster.priority_tag === 'evergreen' ? 'text-purple-400 bg-purple-500/10' :
+                'text-white/80 bg-white/10'
+              }`}
             >
               {contentStrategyService.getPriorityTagLabel(cluster.priority_tag)}
             </Badge>
             <Badge 
               variant="outline"
-              className={`text-xs ${contentStrategyService.getStatusColor(cluster.status)}`}
+              className="text-xs text-white/80 border-white/20 bg-white/10"
             >
               {cluster.status.replace('_', ' ')}
             </Badge>
@@ -238,11 +245,11 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
 
       <CardContent className="space-y-4">
         {/* Traffic Estimation */}
-        <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg border border-border/30">
-          <TrendingUp className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-white/10">
+          <TrendingUp className="h-5 w-5 text-green-400" />
           <div>
-            <div className="text-sm font-medium">Estimated Monthly Traffic</div>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-sm font-medium text-white/80">Estimated Monthly Traffic</div>
+            <div className="text-2xl font-bold text-white">
               {cluster.estimated_traffic.toLocaleString()}
             </div>
           </div>
@@ -250,41 +257,41 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
 
         {/* Suggested Assets */}
         <div className="space-y-2">
-          <div className="text-sm font-medium flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+          <div className="text-sm font-medium flex items-center gap-2 text-white/80">
+            <BarChart3 className="h-4 w-4 text-blue-400" />
             Recommended Content Assets
           </div>
           <div className="grid grid-cols-2 gap-2">
               {Object.entries(cluster.suggested_assets).map(([type, count]) => (
-                <div key={type} className="flex justify-between text-xs p-2 bg-muted/50 rounded">
-                  <span className="capitalize">{type}:</span>
-                  <span className="font-medium">{count as number}</span>
+                <div key={type} className="flex justify-between text-xs p-2 bg-white/10 rounded border border-white/20">
+                  <span className="capitalize text-white/80">{type}:</span>
+                  <span className="font-medium text-white">{count as number}</span>
                 </div>
               ))}
           </div>
         </div>
 
         {/* Timeline */}
-        <div className="flex items-center gap-2 text-sm">
-          <Calendar className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-2 text-sm text-white/80">
+          <Calendar className="h-4 w-4 text-orange-400" />
           <span>Suggested Timeline: {cluster.timeframe_weeks} weeks</span>
         </div>
 
         {/* Solution Mapping */}
         {cluster.solution_mapping.length > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <Target className="h-4 w-4" />
+            <div className="text-sm font-medium flex items-center gap-2 text-white/80">
+              <Target className="h-4 w-4 text-purple-400" />
               Mapped Solutions
             </div>
             <div className="flex flex-wrap gap-1">
               {cluster.solution_mapping.slice(0, 3).map((solution, index) => (
-                <Badge key={index} variant="secondary" className="text-xs">
+                <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
                   {solution}
                 </Badge>
               ))}
               {cluster.solution_mapping.length > 3 && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
                   +{cluster.solution_mapping.length - 3} more
                 </Badge>
               )}
@@ -293,11 +300,11 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         )}
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2 border-t border-border/30">
+        <div className="flex gap-2 pt-2 border-t border-white/20">
           <Button
             onClick={() => sendToContentBuilder(cluster)}
             size="sm"
-            className="flex-1 gap-2"
+            className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
           >
             <Send className="h-4 w-4" />
             Send to Builder
@@ -312,6 +319,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                                  cluster.status === 'in_progress' ? 'published' : 'new';
                 updateStatus(cluster.id, nextStatus);
               }}
+              className="border-white/20 text-white/80 hover:bg-white/10"
             >
               <Eye className="h-4 w-4" />
             </Button>
@@ -320,7 +328,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                 variant="outline"
                 size="sm"
                 onClick={() => deleteCluster(cluster.id)}
-                className="text-destructive"
+                className="border-red-400/30 text-red-400 hover:bg-red-500/10"
               >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -360,22 +368,44 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
       {/* Strategy Proposals or Clusters Display */}
       {/* Strategy Overview */}
       {(clusters.length > 0 || proposals.length > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Strategy Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-white/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  {proposals.length > 0 ? 'Strategy Proposals' : 'Content Clusters'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
                   {proposals.length > 0 ? proposals.length : clusters.length}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {proposals.length > 0 ? 'Strategy Proposals' : 'Content Clusters'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
+                <p className="text-xs text-white/60 mt-1">
+                  Available options
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-white/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  {proposals.length > 0 ? 'Est. Monthly Impressions' : 'Est. Monthly Traffic'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
                   {proposals.length > 0 
                     ? proposals.reduce((sum, p) => {
                         const primaryKw = p.primary_keyword;
@@ -386,48 +416,103 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                     : clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()
                   }
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {proposals.length > 0 ? 'Est. Monthly Impressions' : 'Est. Monthly Traffic'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
+                <p className="text-xs text-white/60 mt-1">
+                  Potential reach
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-white/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  {proposals.length > 0 ? 'Related Keywords' : 'Suggested Assets'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
                   {proposals.length > 0 
                     ? proposals.reduce((sum, p) => sum + (p.related_keywords?.length || 0), 0)
                     : clusters.reduce((sum, c) => sum + Object.values(c.suggested_assets).reduce((a: number, b: number) => a + b, 0), 0)
                   }
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {proposals.length > 0 ? 'Related Keywords' : 'Suggested Assets'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
+                <p className="text-xs text-white/60 mt-1">
+                  Total opportunities
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-white/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  {proposals.length > 0 ? 'Quick Wins' : 'Avg Timeline'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
                   {proposals.length > 0 
                     ? proposals.filter(p => p.priority_tag === 'quick_win').length
-                    : Math.round(clusters.reduce((sum, c) => sum + c.timeframe_weeks, 0) / Math.max(clusters.length, 1))
+                    : `${Math.round(clusters.reduce((sum, c) => sum + c.timeframe_weeks, 0) / Math.max(clusters.length, 1))}w`
                   }
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {proposals.length > 0 ? 'Quick Wins' : 'Avg Weeks'}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <p className="text-xs text-white/60 mt-1">
+                  {proposals.length > 0 ? 'High-impact options' : 'Average duration'}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       )}
 
       {/* Content Clusters or Proposals */}
-      <div>
-        <Tabs defaultValue="all" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="all">
-              {proposals.length > 0 ? 'All Proposals' : 'All Clusters'}
-            </TabsTrigger>
-            <TabsTrigger value="quick_win">Quick Wins</TabsTrigger>
-            <TabsTrigger value="high_return">High Return</TabsTrigger>
-            <TabsTrigger value="evergreen">Evergreen</TabsTrigger>
-          </TabsList>
+      <Card className="bg-white/5 border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Lightbulb className="h-5 w-5" />
+            Content Clusters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="all" className="space-y-4">
+            <TabsList className="bg-white/10 border-white/20">
+              <TabsTrigger 
+                value="all"
+                className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70"
+              >
+                {proposals.length > 0 ? 'All Proposals' : 'All Clusters'}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="quick_win"
+                className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70"
+              >
+                Quick Wins
+              </TabsTrigger>
+              <TabsTrigger 
+                value="high_return"
+                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70"
+              >
+                High Return
+              </TabsTrigger>
+              <TabsTrigger 
+                value="evergreen"
+                className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70"
+              >
+                Evergreen
+              </TabsTrigger>
+            </TabsList>
 
           <TabsContent value="all" className="space-y-4">
             {loading ? (
@@ -455,12 +540,12 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                 ))}
               </div>
             ) : clusters.length === 0 ? (
-              <Card className="p-12 text-center">
+              <div className="p-12 text-center">
                 <div className="space-y-4">
-                  <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto" />
+                  <Lightbulb className="h-12 w-12 text-white/40 mx-auto" />
                   <div>
-                    <h3 className="text-lg font-semibold">No Content Clusters Yet</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className="text-lg font-semibold text-white">No Content Clusters Yet</h3>
+                    <p className="text-white/60">
                       Generate your first AI strategy to get started
                     </p>
                   </div>
@@ -468,7 +553,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                     {generating ? 'Generating...' : 'Generate AI Strategy'}
                   </Button>
                 </div>
-              </Card>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {clusters.map((cluster) => (
@@ -512,7 +597,8 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             </TabsContent>
           ))}
         </Tabs>
-      </div>
+        </CardContent>
+      </Card>
       <StrategyGenerationModal open={showGenModal} steps={genSteps} onCancel={() => { if (!generating) setShowGenModal(false); }} />
       <StrategyBuilderDialog 
         open={showStrategyBuilder} 

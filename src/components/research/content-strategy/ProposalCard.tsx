@@ -16,10 +16,10 @@ export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) =
   
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'quick_win': return 'bg-green-100 text-green-800 border-green-200';
-      case 'high_return': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'evergreen': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'quick_win': return 'text-green-400 bg-green-500/10 border-green-400/30';
+      case 'high_return': return 'text-blue-400 bg-blue-500/10 border-blue-400/30';
+      case 'evergreen': return 'text-purple-400 bg-purple-500/10 border-purple-400/30';
+      default: return 'text-white/80 bg-white/10 border-white/20';
     }
   };
 
@@ -33,14 +33,14 @@ export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) =
   };
 
   return (
-    <Card className="relative overflow-hidden border border-border/50 hover:border-border transition-colors">
+    <Card className="relative overflow-hidden bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold line-clamp-2">
+            <CardTitle className="text-lg font-semibold line-clamp-2 text-white">
               {proposal.title || 'Untitled Proposal'}
             </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground line-clamp-2">
+            <CardDescription className="text-sm text-white/60 line-clamp-2">
               {proposal.description}
             </CardDescription>
           </div>
@@ -56,19 +56,19 @@ export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) =
       <CardContent className="space-y-4">
         {/* Primary Keyword */}
         <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">Primary Keyword:</span>
-          <Badge variant="outline" className="text-xs">
+          <Target className="h-4 w-4 text-purple-400" />
+          <span className="text-sm font-medium text-white/80">Primary Keyword:</span>
+          <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
             {primaryKw}
           </Badge>
         </div>
 
         {/* Traffic Estimation */}
-        <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg border border-border/30">
-          <TrendingUp className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-white/10">
+          <TrendingUp className="h-5 w-5 text-green-400" />
           <div>
-            <div className="text-sm font-medium">Estimated Monthly Impressions</div>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-sm font-medium text-white/80">Estimated Monthly Impressions</div>
+            <div className="text-2xl font-bold text-white">
               {estImpressions.toLocaleString()}
             </div>
           </div>
@@ -77,18 +77,18 @@ export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) =
         {/* Related Keywords */}
         {proposal.related_keywords && proposal.related_keywords.length > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
+            <div className="text-sm font-medium flex items-center gap-2 text-white/80">
+              <BarChart3 className="h-4 w-4 text-blue-400" />
               Related Keywords
             </div>
             <div className="flex flex-wrap gap-1">
               {proposal.related_keywords.slice(0, 3).map((keyword: string, index: number) => (
-                <Badge key={index} variant="secondary" className="text-xs">
+                <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
                   {keyword}
                 </Badge>
               ))}
               {proposal.related_keywords.length > 3 && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
                   +{proposal.related_keywords.length - 3} more
                 </Badge>
               )}
@@ -99,11 +99,11 @@ export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) =
         {/* Content Suggestions */}
         {proposal.content_suggestions && proposal.content_suggestions.length > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+            <div className="text-sm font-medium flex items-center gap-2 text-white/80">
+              <Calendar className="h-4 w-4 text-orange-400" />
               Content Ideas
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-white/60">
               {proposal.content_suggestions.slice(0, 2).join(', ')}
               {proposal.content_suggestions.length > 2 && '...'}
             </div>
@@ -111,11 +111,11 @@ export const ProposalCard = ({ proposal, onSendToBuilder }: ProposalCardProps) =
         )}
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2 border-t border-border/30">
+        <div className="flex gap-2 pt-2 border-t border-white/20">
           <Button
             onClick={() => onSendToBuilder(proposal)}
             size="sm"
-            className="flex-1 gap-2"
+            className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
           >
             <Send className="h-4 w-4" />
             Send to Builder
