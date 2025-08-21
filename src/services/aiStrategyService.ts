@@ -174,53 +174,94 @@ class AIStrategyService {
     location?: string;
     excludeKeywords?: string[];
   }): Promise<{ proposals: any[]; message: string }> {
-    // Import the content strategy service to use existing generation logic
-    const { contentStrategyService } = await import('./contentStrategyService');
-    
-    // Get previously used keywords
-    const usedKeywords = await this.getUsedKeywords();
-    const excludeKeywords = [...(params.excludeKeywords || []), ...usedKeywords];
-
-    console.log('🚀 Generating new strategy excluding keywords:', excludeKeywords);
-
-    // Generate new strategy with keyword exclusions
-    const result = await contentStrategyService.generateAIStrategy({
+    console.log('🚀 Starting generateNewStrategy with params:', {
       goals: params.goals,
-      location: params.location
+      location: params.location,
+      excludeKeywords: params.excludeKeywords?.length || 0
     });
 
-    // Filter out proposals that use already-used keywords
-    const filteredProposals = result.proposals.filter(proposal => {
-      const proposalKeywords = [
-        proposal.primary_keyword,
-        ...(proposal.keywords || [])
-      ].filter(Boolean);
+    try {
+      // Import the content strategy service to use existing generation logic
+      const { contentStrategyService } = await import('./contentStrategyService');
       
-      return !proposalKeywords.some(kw => 
-        excludeKeywords.some(used => 
-          used.toLowerCase() === kw.toLowerCase()
-        )
-      );
-    });
+      // Get previously used keywords
+      const usedKeywords = await this.getUsedKeywords();
+      const excludeKeywords = [...(params.excludeKeywords || []), ...usedKeywords];
 
-    if (filteredProposals.length === 0) {
-      throw new Error('No new strategy proposals found. All generated keywords have been used before.');
+      console.log('📝 Excluding keywords:', excludeKeywords.length, 'total keywords');
+
+      // Generate new strategy with keyword exclusions
+      const result = await contentStrategyService.generateAIStrategy({
+        goals: params.goals,
+        location: params.location
+      });
+
+      console.log('✅ Generated base strategy:', result.proposals?.length || 0, 'proposals');
+
+      // Filter out proposals that use already-used keywords
+      const filteredProposals = result.proposals.filter(proposal => {
+        const proposalKeywords = [
+          proposal.primary_keyword,
+          ...(proposal.keywords || [])
+        ].filter(Boolean);
+        
+        const hasUsedKeyword = proposalKeywords.some(kw => 
+          excludeKeywords.some(used => 
+            used.toLowerCase() === kw.toLowerCase()
+          )
+        );
+        
+        return !hasUsedKeyword;
+      });
+
+      console.log('🔍 After filtering:', filteredProposals.length, 'unique proposals');
+
+      // If no filtered proposals but we have base proposals, use relaxed filtering
+      if (filteredProposals.length === 0 && result.proposals.length > 0) {
+        console.log('⚠️ No unique proposals found, using relaxed filtering (exclude only exact matches)');
+        
+        const relaxedFiltered = result.proposals.filter(proposal => {
+          const primaryKeyword = proposal.primary_keyword?.toLowerCase() || '';
+          return !excludeKeywords.some(used => 
+            used.toLowerCase() === primaryKeyword
+          );
+        });
+        
+        if (relaxedFiltered.length > 0) {
+          console.log('✅ Found', relaxedFiltered.length, 'proposals with relaxed filtering');
+          return {
+            proposals: relaxedFiltered.slice(0, 5), // Limit to prevent overwhelming
+            message: `Generated ${relaxedFiltered.length} proposals using relaxed keyword filtering`
+          };
+        }
+      }
+
+      if (filteredProposals.length === 0) {
+        console.warn('❌ No new strategy proposals found after all filtering attempts');
+        throw new Error('No new strategy proposals found. All generated keywords have been used before. Try adjusting your goals or clearing your strategy history.');
+      }
+
+      // Save the new strategy
+      await this.saveStrategy({
+        title: `AI Strategy - ${new Date().toLocaleDateString()}`,
+        description: 'Auto-generated strategy with new keyword opportunities',
+        goals: params.goals || {},
+        proposals: filteredProposals,
+        serp_data: result.proposals.reduce((acc, p) => ({ ...acc, ...p.serp_data }), {}),
+        keywords: this.extractKeywordsFromProposals(filteredProposals)
+      });
+
+      console.log('💾 Strategy saved successfully');
+
+      return {
+        proposals: filteredProposals,
+        message: `Generated ${filteredProposals.length} new strategy proposals`
+      };
+    } catch (error) {
+      console.error('❌ Error in generateNewStrategy:', error);
+      // Re-throw with more context
+      throw new Error(`Failed to generate new strategy: ${error.message}`);
     }
-
-    // Save the new strategy
-    await this.saveStrategy({
-      title: `AI Strategy - ${new Date().toLocaleDateString()}`,
-      description: 'Auto-generated strategy with new keyword opportunities',
-      goals: params.goals || {},
-      proposals: filteredProposals,
-      serp_data: result.proposals.reduce((acc, p) => ({ ...acc, ...p.serp_data }), {}),
-      keywords: this.extractKeywordsFromProposals(filteredProposals)
-    });
-
-    return {
-      proposals: filteredProposals,
-      message: `Generated ${filteredProposals.length} new strategy proposals`
-    };
   }
 
   async archiveStrategy(strategyId: string): Promise<void> {

@@ -188,7 +188,10 @@ const generateBlueprint = async () => {
 };
 
 const loadMoreProposals = async () => {
+  console.log('🔄 Starting loadMoreProposals');
+  
   if (!goals?.contentPieces) {
+    console.warn('❌ No goals.contentPieces found');
     toast({
       title: "Goals Required",
       description: "Please set your content goals first to load more targeted proposals.",
@@ -199,11 +202,17 @@ const loadMoreProposals = async () => {
 
   try {
     setLoadingMore(true);
+    console.log('📊 Current state:', {
+      currentProposalsCount: proposals.length,
+      targetContentPieces: goals.contentPieces,
+      goals: goals
+    });
     
     const targetCount = parseInt(goals.contentPieces);
     const remainingNeeded = targetCount - proposals.length;
     
     if (remainingNeeded <= 0) {
+      console.log('🎯 Goal already reached, generating extra proposals');
       toast({
         title: "Goal Reached!",
         description: `You already have ${proposals.length} proposals matching your ${targetCount} content pieces goal. Generate extra proposals?`,
@@ -220,7 +229,10 @@ const loadMoreProposals = async () => {
       return keywords.filter(Boolean);
     });
     
+    console.log('🔍 Excluding existing keywords:', existingKeywords.length);
+    
     // Generate new proposals excluding existing keywords
+    console.log('🤖 Calling aiStrategyService.generateNewStrategy...');
     const result = await aiStrategyService.generateNewStrategy({
       goals: {
         monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
@@ -232,9 +244,20 @@ const loadMoreProposals = async () => {
       excludeKeywords: existingKeywords
     });
     
+    console.log('✅ Generated new strategy result:', {
+      proposalCount: result.proposals?.length || 0,
+      message: result.message
+    });
+    
     if (result.proposals && result.proposals.length > 0) {
       // Append new proposals to existing ones
       const updatedProposals = [...proposals, ...result.proposals];
+      console.log('📈 Updating proposals:', {
+        before: proposals.length,
+        after: updatedProposals.length,
+        new: result.proposals.length
+      });
+      
       setProposals(updatedProposals);
       setAiProposals(updatedProposals);
       
@@ -243,26 +266,44 @@ const loadMoreProposals = async () => {
         description: `Found ${result.proposals.length} additional strategy proposals`
       });
     } else {
+      console.warn('⚠️ No proposals returned from generateNewStrategy');
       toast({
         title: 'No New Proposals',
-        description: 'No additional unique proposals could be generated at this time',
+        description: 'No additional unique proposals could be generated at this time. Try adjusting your goals or clearing strategy history.',
         variant: 'default'
       });
     }
   } catch (error) {
-    console.error('❌ Error loading more proposals:', error);
+    console.error('❌ Error in loadMoreProposals:', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Failed to load more proposals';
     
+    // Enhanced error messaging
+    let userFriendlyMessage = errorMessage;
+    let title = 'Load More Failed';
+    
+    if (errorMessage.includes('API key')) {
+      userFriendlyMessage = 'Please configure your OpenAI and SERP API keys in Settings';
+      title = 'API Configuration Required';
+    } else if (errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
+      userFriendlyMessage = 'API rate limit reached. Please try again in a few minutes.';
+      title = 'Rate Limit Reached';
+    } else if (errorMessage.includes('All generated keywords have been used')) {
+      userFriendlyMessage = 'All keywords have been used. Try different goals or clear your strategy history to generate fresh proposals.';
+      title = 'No New Keywords Available';
+    } else if (errorMessage.includes('Failed to generate final strategy')) {
+      userFriendlyMessage = 'Strategy generation failed. Please check your API keys and try again.';
+      title = 'Generation Failed';
+    }
+    
     toast({
-      title: 'Load More Failed',
-      description: errorMessage.includes('API key') 
-        ? 'Please configure your OpenAI and SERP API keys in Settings'
-        : errorMessage,
+      title,
+      description: userFriendlyMessage,
       variant: 'destructive'
     });
   } finally {
     setLoadingMore(false);
+    console.log('🏁 loadMoreProposals completed');
   }
 };
 

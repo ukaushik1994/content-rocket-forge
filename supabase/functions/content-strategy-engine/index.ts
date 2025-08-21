@@ -423,26 +423,38 @@ async function generateAIStrategy(supabase: any, payload: any) {
   console.log('🤖 Calling OpenAI to generate keywords...');
   const kwProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      service: 'openai',
-      endpoint: 'chat',
-      apiKey: api_keys.openai,
-      params: {
-        messages: [
-          { role: 'system', content: 'You are an SEO strategist. Return pure JSON only.' },
-          { role: 'user', content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords. Return JSON: {"keywords":[{"keyword":string,"intent":string}]}.
+      provider: 'openai',
+      operation: 'chat',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a content strategist specializing in SEO keyword research. Generate strategic keywords based on the user's goals and company context. Return ONLY a JSON object with this structure: {"keywords": [{"keyword": "example keyword", "intent": "informational|commercial|transactional|navigational"}]}`
+        },
+        {
+          role: 'user',
+          content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords for content strategy.
 
 Company: ${JSON.stringify(companyInfo || {})}
 Solutions: ${JSON.stringify(solutions || [])}
-RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}` }
-        ],
-        temperature: 0.3,
-        maxTokens: 1200
-      }
+Recent Content Titles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}
+Goals: ${JSON.stringify(goals)}
+
+Return ONLY the JSON object.`
+        }
+      ],
+      temperature: 0.3,
+      maxTokens: 1500
     }
   });
 
+  console.log('🔍 OpenAI keyword response received:', {
+    hasError: !!kwProxy.error,
+    dataType: typeof kwProxy.data,
+    dataKeys: kwProxy.data ? Object.keys(kwProxy.data) : null
+  });
+
   if (kwProxy.error) {
-    console.error('❌ Failed to generate keywords:', kwProxy.error);
+    console.error('❌ OpenAI keyword generation failed:', kwProxy.error);
     const errorMessage = kwProxy.error?.message || kwProxy.error || 'AI service error';
     return new Response(
       JSON.stringify({ error: `Failed to generate strategy: ${errorMessage}` }),
@@ -464,14 +476,27 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
       console.warn('⚠️ Unexpected OpenAI response structure for keywords:', JSON.stringify(kwProxy.data, null, 2));
       kwText = '{}';
     }
+    console.log('📝 Extracted keyword text:', kwText.substring(0, 200) + '...');
   } catch (parseError) {
     console.error('❌ Error parsing OpenAI keywords response:', parseError);
     kwText = '{}';
   }
+  
   let kwList: Array<{ keyword: string; intent?: string }> = [];
-  try { kwList = JSON.parse(kwText).keywords || []; } catch { kwList = []; }
+  try { 
+    const parsed = JSON.parse(kwText);
+    kwList = parsed.keywords || [];
+    console.log('✅ Parsed keywords successfully:', kwList.length, 'keywords');
+  } catch (jsonError) { 
+    console.error('❌ Failed to parse keywords JSON:', jsonError);
+    console.log('Raw keyword text that failed to parse:', kwText);
+    kwList = [];
+  }
+  
   kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 20);
+  
   if (kwList.length === 0) {
+    console.error('❌ No valid keywords generated');
     return new Response(JSON.stringify({ proposals: [], message: 'No keywords proposed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
@@ -479,24 +504,44 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
   const chunk = <T,>(arr: T[], size: number) => arr.reduce((acc: T[][], _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), [] as T[][]);
   const serpMap: Record<string, any> = {};
   console.log('🔍 Fetching SERP data for keywords...');
+  
   for (const group of chunk(kwList, 5)) {
     const results = await Promise.all(group.map(async (k) => {
+      try {
+        console.log(`🔍 Fetching SERP for: ${k.keyword}`);
         const resp = await supabase.functions.invoke('api-proxy', {
           body: {
-            service: 'serp',
-            endpoint: 'analyze',
-            apiKey: api_keys.serp,
-            params: { keyword: k.keyword, location, language: 'en' }
+            provider: 'serp',
+            operation: 'analyze',
+            keyword: k.keyword,
+            location,
+            language: 'en'
           }
         });
-      if (resp.error) {
-        console.warn(`⚠️ SERP error for "${k.keyword}":`, resp.error);
+        
+        if (resp.error) {
+          console.warn(`⚠️ SERP error for "${k.keyword}":`, resp.error);
+          return { keyword: k.keyword, data: null };
+        }
+        
+        console.log(`✅ SERP data received for "${k.keyword}"`);
+        return { keyword: k.keyword, data: resp.data };
+      } catch (error) {
+        console.error(`❌ Error fetching SERP for "${k.keyword}":`, error);
         return { keyword: k.keyword, data: null };
       }
-      return { keyword: k.keyword, data: resp.data };
     }));
-    for (const r of results) { serpMap[r.keyword] = r.data; }
+    
+    for (const r of results) { 
+      serpMap[r.keyword] = r.data;
+    }
   }
+
+  console.log('📊 SERP fetch completed:', {
+    total: kwList.length,
+    withData: Object.values(serpMap).filter(d => d).length,
+    failed: Object.values(serpMap).filter(d => !d).length
+  });
 
   // 4) Ask AI (via unified proxy) to assemble the content strategy
   const enriched = kwList.map(k => ({
@@ -513,21 +558,30 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
   console.log('🎯 Generating content strategy from enriched data...');
   const stratProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      service: 'openai',
-      endpoint: 'chat',
-      apiKey: api_keys.openai,
-      params: {
-        messages: [
-          { role: 'system', content: 'Return pure JSON only.' },
-          { role: 'user', content: `Create a simple content strategy from these keywords with metrics. Group into 5-8 proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.
+      provider: 'openai',
+      operation: 'chat',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert content strategist. Return ONLY a JSON object with the specified structure.'
+        },
+        {
+          role: 'user',
+          content: `Create a comprehensive content strategy from these keywords with metrics. Group into 5-8 strategic proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.
 
 Goals: ${JSON.stringify(goals)}
-Data: ${JSON.stringify(enriched).slice(0, 12000)}` }
-        ],
-        temperature: 0.2,
-        maxTokens: 2000
-      }
+Data: ${JSON.stringify(enriched).slice(0, 12000)}`
+        }
+      ],
+      temperature: 0.2,
+      maxTokens: 3000
     }
+  });
+
+  console.log('🔍 OpenAI strategy response received:', {
+    hasError: !!stratProxy.error,
+    dataType: typeof stratProxy.data,
+    dataKeys: stratProxy.data ? Object.keys(stratProxy.data) : null
   });
 
   if (stratProxy.error) {
@@ -553,17 +607,40 @@ Data: ${JSON.stringify(enriched).slice(0, 12000)}` }
       console.warn('⚠️ Unexpected OpenAI response structure:', JSON.stringify(stratProxy.data, null, 2));
       stratText = '{}';
     }
+    console.log('📝 Extracted strategy text:', stratText.substring(0, 200) + '...');
   } catch (parseError) {
     console.error('❌ Error parsing OpenAI response:', parseError);
     stratText = '{}';
   }
+  
   let proposals: any[] = [];
-  try { proposals = JSON.parse(stratText).proposals || []; } catch { proposals = []; }
+  try { 
+    const parsed = JSON.parse(stratText);
+    proposals = parsed.proposals || [];
+    console.log('✅ Parsed proposals successfully:', proposals.length, 'proposals');
+  } catch (jsonError) { 
+    console.error('❌ Failed to parse strategy JSON:', jsonError);
+    console.log('Raw strategy text that failed to parse:', stratText);
+    proposals = [];
+  }
 
   const withSerp = proposals.map((p) => {
     const kws = (p.keywords || []).map((k: any) => (typeof k === 'string' ? { keyword: k } : k));
     const estImpr = kws.reduce((sum: number, k: any) => sum + ((serpMap[k.keyword]?.searchVolume || 0) * 0.05), 0);
-    return { ...p, keywords: kws, serp_data: serpMap, estimated_impressions: Math.round(estImpr) };
+    return { 
+      ...p, 
+      keywords: kws, 
+      serp_data: serpMap, 
+      estimated_impressions: Math.round(estImpr),
+      id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      generated_at: new Date().toISOString()
+    };
+  });
+
+  console.log('✅ Strategy generation completed:', {
+    proposalsGenerated: withSerp.length,
+    totalKeywords: kwList.length,
+    avgEstimatedImpressions: withSerp.reduce((sum, p) => sum + p.estimated_impressions, 0) / withSerp.length
   });
 
   return new Response(
