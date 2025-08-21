@@ -44,9 +44,12 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
     }`}>
       {/* Selection Checkbox */}
       <div className="absolute top-3 right-3 z-10">
-        <div className={`p-1 rounded transition-all duration-200 ${
-          isSelected ? 'bg-blue-500/20' : 'bg-white/10'
-        }`}>
+        <div 
+          className={`p-1 rounded transition-all duration-200 ${
+            isSelected ? 'bg-blue-500/20' : 'bg-white/10'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <Checkbox
             checked={isSelected}
             onCheckedChange={(checked) => onSelectionChange(index, !!checked)}
@@ -135,7 +138,10 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t border-white/20">
           <Button
-            onClick={() => onSelectionChange(index, !isSelected)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectionChange(index, !isSelected);
+            }}
             size="sm"
             variant={isSelected ? "default" : "outline"}
             className={`gap-2 ${
@@ -148,7 +154,10 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             {isSelected ? 'Selected' : 'Select'}
           </Button>
           <Button
-            onClick={() => onSendToBuilder(proposal)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSendToBuilder(proposal);
+            }}
             size="sm"
             className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
           >
