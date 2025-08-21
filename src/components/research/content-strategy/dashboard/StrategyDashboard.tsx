@@ -4,7 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, Target, Calendar, FileText, Users, BarChart3, AlertCircle } from 'lucide-react';
+import { 
+  TrendingUp, 
+  Target, 
+  Calendar, 
+  FileText, 
+  Users, 
+  BarChart3, 
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  ArrowRight
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
@@ -12,6 +23,7 @@ import { StrategyOptimization } from '../StrategyOptimization';
 
 interface StrategyDashboardProps {
   serpMetrics?: any;
+  strategy?: any;
   goals: {
     monthlyTraffic: string;
     contentPieces: string;
@@ -20,7 +32,7 @@ interface StrategyDashboardProps {
   };
 }
 
-export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetrics, goals }) => {
+export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetrics, goals, strategy }) => {
   const { 
     currentStrategy, 
     calendarItems, 
@@ -77,6 +89,72 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
 
   // Get recent insights
   const recentInsights = insights.slice(0, 3);
+
+  // Progress tracking calculations (from StrategyProgressTracker)
+  const targetContentPieces = parseInt(goals.contentPieces) || 0;
+  const targetTraffic = parseInt(goals.monthlyTraffic) || 0;
+  const inPipeline = pipelineItems.length;
+  const published = calendarItems.filter(item => item.status === 'published').length;
+
+  // Timeline progress (assuming 3 months default)
+  const startDate = strategy ? new Date(strategy.created_at) : new Date();
+  const timelineMonths = goals.timeline === '1 month' ? 1 : goals.timeline === '6 months' ? 6 : goals.timeline === '12 months' ? 12 : 3;
+  const endDate = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + timelineMonths);
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const daysPassed = Math.ceil((new Date().getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const timeProgress = Math.min((daysPassed / totalDays) * 100, 100);
+
+  // Progress stages
+  const stages = [
+    {
+      name: 'Strategy Created',
+      completed: true,
+      progress: 100,
+      icon: Target,
+      color: 'text-green-400',
+      bgColor: 'bg-green-400/10'
+    },
+    {
+      name: 'AI Proposals',
+      completed: proposalsGenerated >= targetContentPieces,
+      progress: proposalProgress,
+      icon: FileText,
+      color: proposalsGenerated >= targetContentPieces ? 'text-green-400' : 'text-blue-400',
+      bgColor: proposalsGenerated >= targetContentPieces ? 'bg-green-400/10' : 'bg-blue-400/10',
+      description: `${proposalsGenerated}/${targetContentPieces} generated`
+    },
+    {
+      name: 'Selection',
+      completed: selectedCount > 0,
+      progress: selectionProgress,
+      icon: CheckCircle2,
+      color: selectedCount > 0 ? 'text-green-400' : 'text-orange-400',
+      bgColor: selectedCount > 0 ? 'bg-green-400/10' : 'bg-orange-400/10',
+      description: `${selectedCount} selected`
+    },
+    {
+      name: 'Pipeline',
+      completed: inPipeline > 0,
+      progress: selectedCount > 0 ? (inPipeline / selectedCount) * 100 : 0,
+      icon: Clock,
+      color: inPipeline > 0 ? 'text-green-400' : 'text-purple-400',
+      bgColor: inPipeline > 0 ? 'bg-green-400/10' : 'bg-purple-400/10',
+      description: `${inPipeline} pieces`
+    },
+    {
+      name: 'Published',
+      completed: published > 0,
+      progress: (published / targetContentPieces) * 100,
+      icon: Calendar,
+      color: published > 0 ? 'text-green-400' : 'text-gray-400',
+      bgColor: published > 0 ? 'bg-green-400/10' : 'bg-gray-400/10',
+      description: `${published}/${targetContentPieces} live`
+    }
+  ];
+
+  const currentStage = stages.find(stage => !stage.completed) || stages[stages.length - 1];
+  const overallProgress = stages.reduce((sum, stage) => sum + (stage.completed ? 20 : stage.progress * 0.2), 0);
 
   return (
     <div className="space-y-6">
@@ -301,6 +379,91 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
           </CardContent>
         </Card>
       </div>
+
+      {/* Strategy Progress Stages */}
+      <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-white/10">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-white">
+            <span className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Strategy Progress
+            </span>
+            <Badge variant="outline" className="text-white/80 border-white/20">
+              {Math.round(overallProgress)}% Complete
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Overall Progress */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-white/80">Overall Progress</span>
+              <span className="text-white">{Math.round(overallProgress)}%</span>
+            </div>
+            <Progress value={overallProgress} className="h-3" />
+          </div>
+
+          {/* Timeline Progress */}
+          {strategy && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-white/80">Timeline Progress</span>
+                <span className="text-white">{Math.round(timeProgress)}% ({daysPassed}/{totalDays} days)</span>
+              </div>
+              <Progress value={timeProgress} className="h-2" />
+            </div>
+          )}
+
+          {/* Progress Stages */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {stages.map((stage, index) => (
+              <div key={stage.name} className="text-center">
+                <div className={`
+                  w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300
+                  ${stage.completed 
+                    ? 'bg-green-400/20 text-green-400' 
+                    : stage === currentStage 
+                      ? `${stage.bgColor} ${stage.color} animate-pulse`
+                      : 'bg-white/10 text-white/40'
+                  }
+                `}>
+                  <stage.icon className="h-6 w-6" />
+                </div>
+                <div className={`text-sm font-medium mb-1 ${
+                  stage.completed ? 'text-green-400' : 
+                  stage === currentStage ? stage.color : 'text-white/60'
+                }`}>
+                  {stage.name}
+                </div>
+                {stage.description && (
+                  <div className="text-xs text-white/50">{stage.description}</div>
+                )}
+                {stage.progress > 0 && stage.progress < 100 && (
+                  <div className="mt-2">
+                    <Progress value={stage.progress} className="h-1" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Next Actions */}
+          {currentStage && !currentStage.completed && (
+            <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <currentStage.icon className={`h-5 w-5 ${currentStage.color}`} />
+                  <div>
+                    <div className="font-medium text-white">Next: {currentStage.name}</div>
+                    <div className="text-sm text-white/60">{currentStage.description}</div>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-white/40" />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Insights */}
       {recentInsights.length > 0 && (
