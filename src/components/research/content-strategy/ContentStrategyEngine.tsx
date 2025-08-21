@@ -534,6 +534,11 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
   </>
 )}
       <StrategyGenerationModal open={showGenModal} steps={genSteps} onCancel={() => { if (!generating) setShowGenModal(false); }} />
+      <StrategyBuilderDialog 
+        open={showStrategyBuilder} 
+        onOpenChange={setShowStrategyBuilder}
+        proposal={selectedProposal}
+      />
     </div>
   );
 }
