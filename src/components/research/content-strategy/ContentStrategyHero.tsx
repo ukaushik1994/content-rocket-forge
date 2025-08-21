@@ -25,7 +25,7 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.3 }}
-        className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
+        className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed"
       >
         AI-powered content strategy with SERP analysis, competitor research, and data-driven recommendations
       </motion.p>
@@ -36,7 +36,11 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
         transition={{ delay: 0.35, duration: 0.3 }}
         className="flex items-center justify-center"
       >
-        <Button size="lg" className="hover-scale" onClick={onCreate}>
+        <Button 
+          size="lg" 
+          className="hover-scale bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg px-8 py-3" 
+          onClick={onCreate}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create New Strategy
         </Button>
@@ -46,20 +50,29 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.3 }}
-        className="flex items-center justify-center gap-8 text-sm text-muted-foreground"
+        className="flex items-center justify-center gap-8 text-sm text-white/60"
       >
-        <div className="flex items-center gap-2 px-4 py-2 bg-glass rounded-full border border-white/10">
+        <motion.div 
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all duration-300"
+          whileHover={{ scale: 1.05 }}
+        >
           <Target className="h-4 w-4 text-blue-400" />
           <span>SERP Analysis</span>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-glass rounded-full border border-white/10">
+        </motion.div>
+        <motion.div 
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all duration-300"
+          whileHover={{ scale: 1.05 }}
+        >
           <TrendingUp className="h-4 w-4 text-purple-400" />
           <span>Competitor Research</span>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-glass rounded-full border border-white/10">
+        </motion.div>
+        <motion.div 
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all duration-300"
+          whileHover={{ scale: 1.05 }}
+        >
           <BarChart3 className="h-4 w-4 text-green-400" />
           <span>Performance Tracking</span>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );

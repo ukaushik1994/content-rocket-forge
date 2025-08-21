@@ -292,19 +292,19 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!isRunning) onOpenChange(v); }}>
-      <DialogContent className="max-w-3xl bg-card border border-white/10">
+      <DialogContent className="max-w-3xl bg-white/5 border border-white/10 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-white">
+            <Sparkles className="h-5 w-5 text-purple-400" />
             Create New Strategy
           </DialogTitle>
         </DialogHeader>
 
         {/* Journey */}
         <div className="space-y-6">
-          <div className="w-full h-2 bg-muted rounded overflow-hidden">
+          <div className="w-full h-2 bg-white/10 rounded overflow-hidden">
             <motion.div
-              className="h-full bg-primary"
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
               initial={{ width: '0%' }}
               animate={{ width: `${Math.round((steps.filter(s => s.status === 'success').length / steps.length) * 100)}%` }}
               transition={{ type: 'spring', stiffness: 120, damping: 20 }}
@@ -313,20 +313,20 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
 
           <div className="space-y-3">
             {steps.map((step, idx) => (
-              <motion.div key={step.key} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-white/10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <motion.div key={step.key} className="flex items-start gap-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="mt-0.5">
-                  {step.status === 'success' && <CheckCircle2 className="h-5 w-5 text-success" />}
-                  {step.status === 'running' && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-                  {step.status === 'error' && <XCircle className="h-5 w-5 text-destructive" />}
-                  {step.status === 'idle' && <Target className="h-5 w-5 text-muted-foreground" />}
+                  {step.status === 'success' && <CheckCircle2 className="h-5 w-5 text-green-400" />}
+                  {step.status === 'running' && <Loader2 className="h-5 w-5 animate-spin text-blue-400" />}
+                  {step.status === 'error' && <XCircle className="h-5 w-5 text-red-400" />}
+                  {step.status === 'idle' && <Target className="h-5 w-5 text-white/40" />}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{idx + 1}) {step.title}</p>
-                      <p className="text-sm text-muted-foreground">{step.subtext}</p>
+                      <p className="font-medium text-white">{idx + 1}) {step.title}</p>
+                      <p className="text-sm text-white/60">{step.subtext}</p>
                     </div>
-                    <div className="text-xs text-muted-foreground">{step.log}</div>
+                    <div className="text-xs text-white/60">{step.log}</div>
                   </div>
                 </div>
               </motion.div>
@@ -335,35 +335,35 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
 
           <AnimatePresence>
             {reviewReady && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-4 rounded-lg border border-white/10 bg-background/60">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-4 rounded-lg border border-white/10 bg-white/5">
                 <div className="flex items-center gap-3 mb-3">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  <p className="font-medium">Review Summary</p>
+                  <BarChart3 className="h-5 w-5 text-green-400" />
+                  <p className="font-medium text-white">Review Summary</p>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">A compact plan is ready. You can create the strategy now and iterate in the Strategy workspace.</p>
+                <p className="text-sm text-white/60 mb-4">A compact plan is ready. You can create the strategy now and iterate in the Strategy workspace.</p>
                 {planSummary && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                    <div className="p-3 rounded-md bg-muted/40 border border-white/10">
-                      <p className="text-xs text-muted-foreground">Clusters</p>
-                      <p className="text-lg font-semibold">{planSummary.clusters}</p>
+                    <div className="p-3 rounded-md bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-white/10">
+                      <p className="text-xs text-white/60">Clusters</p>
+                      <p className="text-lg font-semibold text-white">{planSummary.clusters}</p>
                     </div>
-                    <div className="p-3 rounded-md bg-muted/40 border border-white/10">
-                      <p className="text-xs text-muted-foreground">Pieces</p>
-                      <p className="text-lg font-semibold">{planSummary.pieces}</p>
+                    <div className="p-3 rounded-md bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-white/10">
+                      <p className="text-xs text-white/60">Pieces</p>
+                      <p className="text-lg font-semibold text-white">{planSummary.pieces}</p>
                     </div>
-                    <div className="p-3 rounded-md bg-muted/40 border border-white/10">
-                      <p className="text-xs text-muted-foreground">Forecast (Best)</p>
-                      <p className="text-lg font-semibold">{planSummary.forecast_best}</p>
+                    <div className="p-3 rounded-md bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-white/10">
+                      <p className="text-xs text-white/60">Forecast (Best)</p>
+                      <p className="text-lg font-semibold text-white">{planSummary.forecast_best}</p>
                     </div>
-                    <div className="p-3 rounded-md bg-muted/40 border border-white/10">
-                      <p className="text-xs text-muted-foreground">Forecast (Conservative)</p>
-                      <p className="text-lg font-semibold">{planSummary.forecast_cons}</p>
+                    <div className="p-3 rounded-md bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-white/10">
+                      <p className="text-xs text-white/60">Forecast (Conservative)</p>
+                      <p className="text-lg font-semibold text-white">{planSummary.forecast_cons}</p>
                     </div>
                   </div>
                 )}
                 <div className="flex items-center justify-end gap-2">
-                  <Button variant="ghost" onClick={() => onOpenChange(false)}>Back</Button>
-                  <Button onClick={handleCreate} disabled={creating}>
+                  <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-white/80 hover:text-white hover:bg-white/10">Back</Button>
+                  <Button onClick={handleCreate} disabled={creating} className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0">
                     {creating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating…</> : 'Create Strategy'}
                   </Button>
                 </div>
@@ -372,18 +372,18 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
           </AnimatePresence>
 
           <div className="flex items-center justify-between">
-            <div className="text-xs text-muted-foreground">You can cancel anytime. Partial results are kept in this run.</div>
+            <div className="text-xs text-white/60">You can cancel anytime. Partial results are kept in this run.</div>
             <div className="flex gap-2">
               {!isRunning && !reviewReady && (
-                <Button onClick={start} className="hover-scale">
+                <Button onClick={start} className="hover-scale bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0">
                   <Search className="h-4 w-4 mr-2" /> Start
                 </Button>
               )}
               {isRunning && (
-                <Button variant="outline" onClick={() => { setCancelled(true); setIsRunning(false); toast.message('Run cancelled'); }}>Cancel</Button>
+                <Button variant="outline" onClick={() => { setCancelled(true); setIsRunning(false); toast.message('Run cancelled'); }} className="border-white/20 text-white/80 hover:bg-white/10">Cancel</Button>
               )}
               {canRetry && !isRunning && (
-                <Button variant="secondary" onClick={start}>Retry</Button>
+                <Button variant="secondary" onClick={start} className="bg-white/10 text-white hover:bg-white/20">Retry</Button>
               )}
             </div>
           </div>
