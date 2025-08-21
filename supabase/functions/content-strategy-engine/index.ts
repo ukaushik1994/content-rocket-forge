@@ -446,11 +446,28 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
     const errorMessage = kwProxy.error?.message || kwProxy.error || 'AI service error';
     return new Response(
       JSON.stringify({ error: `Failed to generate strategy: ${errorMessage}` }),
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  const kwText = kwProxy.data?.data?.choices?.[0]?.message?.content || '{}';
+  // Better response handling for OpenAI via api-proxy
+  let kwText = '{}';
+  try {
+    // Handle different response structures from api-proxy
+    if (kwProxy.data?.choices?.[0]?.message?.content) {
+      kwText = kwProxy.data.choices[0].message.content;
+    } else if (kwProxy.data?.data?.choices?.[0]?.message?.content) {
+      kwText = kwProxy.data.data.choices[0].message.content;
+    } else if (typeof kwProxy.data === 'string') {
+      kwText = kwProxy.data;
+    } else {
+      console.warn('⚠️ Unexpected OpenAI response structure for keywords:', JSON.stringify(kwProxy.data, null, 2));
+      kwText = '{}';
+    }
+  } catch (parseError) {
+    console.error('❌ Error parsing OpenAI keywords response:', parseError);
+    kwText = '{}';
+  }
   let kwList: Array<{ keyword: string; intent?: string }> = [];
   try { kwList = JSON.parse(kwText).keywords || []; } catch { kwList = []; }
   kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 20);
@@ -518,11 +535,28 @@ Data: ${JSON.stringify(enriched).slice(0, 12000)}` }
     const errorMessage = stratProxy.error?.message || stratProxy.error || 'Strategy generation failed';
     return new Response(
       JSON.stringify({ error: `Failed to generate final strategy: ${errorMessage}` }),
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  const stratText = stratProxy.data?.data?.choices?.[0]?.message?.content || '{}';
+  // Better response handling for OpenAI via api-proxy
+  let stratText = '{}';
+  try {
+    // Handle different response structures from api-proxy
+    if (stratProxy.data?.choices?.[0]?.message?.content) {
+      stratText = stratProxy.data.choices[0].message.content;
+    } else if (stratProxy.data?.data?.choices?.[0]?.message?.content) {
+      stratText = stratProxy.data.data.choices[0].message.content;
+    } else if (typeof stratProxy.data === 'string') {
+      stratText = stratProxy.data;
+    } else {
+      console.warn('⚠️ Unexpected OpenAI response structure:', JSON.stringify(stratProxy.data, null, 2));
+      stratText = '{}';
+    }
+  } catch (parseError) {
+    console.error('❌ Error parsing OpenAI response:', parseError);
+    stratText = '{}';
+  }
   let proposals: any[] = [];
   try { proposals = JSON.parse(stratText).proposals || []; } catch { proposals = []; }
 
