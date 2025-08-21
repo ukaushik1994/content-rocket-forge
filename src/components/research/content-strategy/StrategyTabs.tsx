@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StrategySuggestions } from './tabs/StrategySuggestions';
+import { ContentStrategyFlow } from './ContentStrategyFlow';
 import { GlassCard } from '@/components/ui/GlassCard';
 
 import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
@@ -95,7 +95,7 @@ export const StrategyTabs = React.memo(() => {
 
             <TabsContent value="strategies" className="animate-fade-in">
               <div className="space-y-6">
-                <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
+                <ContentStrategyFlow goals={goals} />
               </div>
             </TabsContent>
           </div>

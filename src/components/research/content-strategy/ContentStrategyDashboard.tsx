@@ -16,8 +16,9 @@ export const ContentStrategyDashboard = React.memo(() => {
   const selectedPieces = pipelineItems.length;
   const createdPieces = calendarItems.length;
   
-  // Calculate progress percentage (assuming each piece contributes equally to the goal)
-  const progressPercentage = monthlyTrafficGoal > 0 ? Math.min((createdPieces / (monthlyTrafficGoal / 1000)) * 100, 100) : 0;
+  // Calculate progress percentage based on realistic traffic estimates
+  const estimatedTrafficPerPiece = 500; // Conservative estimate per content piece
+  const progressPercentage = monthlyTrafficGoal > 0 ? Math.min((createdPieces * estimatedTrafficPerPiece / monthlyTrafficGoal) * 100, 100) : 0;
 
   return (
     <GlassCard className="p-6">
