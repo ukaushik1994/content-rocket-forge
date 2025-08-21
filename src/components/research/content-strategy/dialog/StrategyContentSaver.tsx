@@ -5,41 +5,24 @@ import { EnhancedSolution } from '@/contexts/content-builder/types';
 
 interface StrategyContentSaverProps {
   proposal: any;
-  selectedSolution: EnhancedSolution | null;
-  outline: string[];
-  content: string;
-  title: string;
   onSaveComplete: () => void;
 }
 
 export function StrategyContentSaver({ 
   proposal, 
-  selectedSolution, 
-  outline,
-  content,
-  title,
   onSaveComplete
 }: StrategyContentSaverProps) {
-  const { setContent, setContentTitle, setMetaTitle, setMetaDescription } = useContentBuilder();
+  const { state, setMetaDescription } = useContentBuilder();
   
-  // Initialize content builder context with the strategy data
+  // Update meta description with strategy context
   useEffect(() => {
-    if (content) {
-      setContent(content);
-    }
-    if (title) {
-      setContentTitle(title);
-      setMetaTitle(title);
-    }
-    
-    // Set meta description based on proposal and solution
     const primaryKeyword = proposal?.primary_keyword || '';
-    const description = selectedSolution 
-      ? `Learn about ${primaryKeyword} and discover how ${selectedSolution.name} can help.`
+    const description = state.selectedSolution 
+      ? `Learn about ${primaryKeyword} and discover how ${state.selectedSolution.name} can help.`
       : `A comprehensive guide about ${primaryKeyword}`;
     
     setMetaDescription(description);
-  }, [content, title, proposal, selectedSolution, setContent, setContentTitle, setMetaTitle, setMetaDescription]);
+  }, [proposal, state.selectedSolution, setMetaDescription]);
   
   return <SaveStep />;
 }

@@ -166,6 +166,10 @@ Requirements:
     }).join('\n');
   };
 
+  const setSelectedSolution = (solution: any) => {
+    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
+  };
+
   return {
     setContentType,
     setContentFormat,
@@ -180,6 +184,7 @@ Requirements:
     setContentTitle,
     setSuggestedTitles,
     setMetaTitle,
-    setMetaDescription
+    setMetaDescription,
+    setSelectedSolution
   };
 };

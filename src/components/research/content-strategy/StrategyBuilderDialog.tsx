@@ -6,10 +6,7 @@ import { ChevronLeft, ChevronRight, Send, Save, FileText, Sparkles } from 'lucid
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { DialogSolutionSelector } from './dialog/DialogSolutionSelector';
-import { DialogOutlineGenerator } from './dialog/DialogOutlineGenerator';
-import { DialogContentGenerator } from './dialog/DialogContentGenerator';
-import { StrategyContentSaver } from './dialog/StrategyContentSaver';
+import { StepContent } from './dialog/StepContent';
 import { ContentBuilderProvider, useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { EnhancedSolution } from '@/contexts/content-builder/types';
 import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
@@ -31,74 +28,90 @@ const STEPS = [
 
 // Content initialization component to set up context
 function StrategyContentInit({ proposal }: { proposal: any }) {
-  const { setMainKeyword, setContentTitle } = useContentBuilder();
+  const { 
+    setMainKeyword, 
+    setContentTitle, 
+    setMetaTitle, 
+    setMetaDescription,
+    setContentType,
+    setContentFormat,
+    setContentIntent,
+    analyzeKeyword
+  } = useContentBuilder();
   
   useEffect(() => {
     if (proposal) {
       // Initialize content builder context with strategy data
       if (proposal.primary_keyword) {
         setMainKeyword(proposal.primary_keyword);
+        // Auto-analyze keyword for SERP data
+        analyzeKeyword(proposal.primary_keyword);
       }
       if (proposal.title) {
         setContentTitle(proposal.title);
+        setMetaTitle(proposal.title);
       }
+      
+      // Set default content settings
+      setContentType('blog');
+      setContentFormat('long-form');
+      setContentIntent('inform');
+      
+      // Set meta description based on proposal
+      const description = proposal.description || `A comprehensive guide about ${proposal.primary_keyword || 'your topic'}`;
+      setMetaDescription(description);
     }
-  }, [proposal, setMainKeyword, setContentTitle]);
+  }, [proposal, setMainKeyword, setContentTitle, setMetaTitle, setMetaDescription, setContentType, setContentFormat, setContentIntent, analyzeKeyword]);
   
   return null;
 }
 
 export function StrategyBuilderDialog({ open, onOpenChange, proposal }: StrategyBuilderDialogProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
-  const [generatedOutline, setGeneratedOutline] = useState<string[]>([]);
-  const [generatedContent, setGeneratedContent] = useState<string>('');
-  const [contentTitle, setContentTitle] = useState(proposal?.title || '');
 
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
       setCurrentStep(0);
-      setSelectedSolution(null);
-      setGeneratedOutline([]);
-      setGeneratedContent('');
-      setContentTitle(proposal?.title || '');
     }
-  }, [open, proposal]);
+  }, [open]);
 
-  const canProceedToStep = (step: number): boolean => {
-    switch (step) {
-      case 0: return true; // Always can access solution selection
-      case 1: return !!selectedSolution; // Need solution selected
-      case 2: return !!selectedSolution; // Need solution for SERP analysis
-      case 3: return !!selectedSolution && generatedOutline.length > 0; // Need solution and outline
-      case 4: return !!selectedSolution && generatedOutline.length > 0 && !!generatedContent; // Need everything
-      default: return false;
-    }
+  // Context-aware step validation using ContentBuilder state
+  const ContentBuilderStepValidator = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <ContentBuilderProvider>
+        <StrategyContentInit proposal={proposal} />
+        <StepValidationLogic>{children}</StepValidationLogic>
+      </ContentBuilderProvider>
+    );
+  };
+
+  const StepValidationLogic = ({ children }: { children: React.ReactNode }) => {
+    const { state } = useContentBuilder();
+    
+    const canProceedToStep = (step: number): boolean => {
+      switch (step) {
+        case 0: return true; // Always can access solution selection
+        case 1: return !!state.selectedSolution; // Need solution selected
+        case 2: return !!state.selectedSolution && state.serpSelections.some(item => item.selected); // Need solution and SERP selections
+        case 3: return !!state.selectedSolution && state.outline.length > 0; // Need solution and outline
+        case 4: return !!state.selectedSolution && !!state.content && state.content.length > 100; // Need everything
+        default: return false;
+      }
+    };
+
+    return React.cloneElement(children as React.ReactElement, { canProceedToStep });
   };
 
   const handleNext = () => {
-    const nextStep = currentStep + 1;
-    if (nextStep < STEPS.length && canProceedToStep(nextStep)) {
-      setCurrentStep(nextStep);
-    } else {
-      toast({
-        title: "Cannot proceed",
-        description: "Please complete the current step before continuing",
-        variant: "destructive"
-      });
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleStepClick = (stepIndex: number) => {
-    if (canProceedToStep(stepIndex)) {
-      setCurrentStep(stepIndex);
     }
   };
 
@@ -129,8 +142,8 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
           {STEPS.map((step, index) => {
             const Icon = step.icon;
             const isActive = index === currentStep;
-            const isCompleted = canProceedToStep(index + 1) || (index === STEPS.length - 1 && generatedContent);
-            const isAccessible = canProceedToStep(index);
+            const isCompleted = false; // Will be updated by context
+            const isAccessible = true; // Will be updated by context
 
             return (
               <Card 
@@ -142,7 +155,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                       ? 'hover:bg-muted/50' 
                       : 'opacity-50 cursor-not-allowed'
                 }`}
-                onClick={() => handleStepClick(index)}
+                onClick={() => setCurrentStep(index)}
               >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
@@ -168,55 +181,13 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
 
         {/* Step Content */}
         <div className="flex-1 overflow-y-auto">
-          <ContentBuilderProvider>
-            <StrategyContentInit proposal={proposal} />
-            
-            {currentStep === 0 && (
-              <DialogSolutionSelector
-                selectedSolution={selectedSolution}
-                onSolutionSelect={setSelectedSolution}
-                proposal={proposal}
-              />
-            )}
-            
-            {currentStep === 1 && (
-              <div className="h-full">
-                <SerpAnalysisStep />
-              </div>
-            )}
-            
-            {currentStep === 2 && (
-              <DialogOutlineGenerator
-                proposal={proposal}
-                selectedSolution={selectedSolution}
-                onOutlineGenerated={setGeneratedOutline}
-                generatedOutline={generatedOutline}
-              />
-            )}
-
-            {currentStep === 3 && (
-              <DialogContentGenerator
-                proposal={proposal}
-                selectedSolution={selectedSolution}
-                outline={generatedOutline}
-                onContentGenerated={setGeneratedContent}
-                generatedContent={generatedContent}
-                contentTitle={contentTitle}
-                onTitleChange={setContentTitle}
-              />
-            )}
-
-            {currentStep === 4 && (
-              <StrategyContentSaver
-                proposal={proposal}
-                selectedSolution={selectedSolution}
-                outline={generatedOutline}
-                content={generatedContent}
-                title={contentTitle}
-                onSaveComplete={handleClose}
-              />
-            )}
-          </ContentBuilderProvider>
+          <ContentBuilderStepValidator>
+            <StepContent 
+              currentStep={currentStep}
+              proposal={proposal}
+              handleClose={handleClose}
+            />
+          </ContentBuilderStepValidator>
         </div>
 
         {/* Navigation Footer */}
@@ -236,18 +207,12 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
             </Button>
             
             {currentStep < STEPS.length - 1 ? (
-              <Button 
-                onClick={handleNext}
-                disabled={!canProceedToStep(currentStep + 1)}
-              >
+              <Button onClick={handleNext}>
                 Next
                 <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <Button 
-                onClick={handleClose}
-                disabled={!generatedContent}
-              >
+              <Button onClick={handleClose}>
                 Complete
               </Button>
             )}
