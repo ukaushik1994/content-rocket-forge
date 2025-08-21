@@ -26,7 +26,9 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
     calendarItems, 
     pipelineItems, 
     contentItems,
-    insights 
+    insights,
+    aiProposals,
+    selectedProposals
   } = useContentStrategy();
 
   // Calculate dashboard metrics
@@ -56,13 +58,30 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
   const contentPiecesGoal = parseInt(goals.contentPieces) || 0;
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
 
+  // AI Proposals metrics
+  const proposalsGenerated = aiProposals.length;
+  const selectedCount = Object.values(selectedProposals).filter(Boolean).length;
+  const proposalProgress = contentPiecesGoal > 0 ? Math.min((proposalsGenerated / contentPiecesGoal) * 100, 100) : 0;
+  const selectionProgress = proposalsGenerated > 0 ? (selectedCount / proposalsGenerated) * 100 : 0;
+
+  // Estimate traffic based on selected AI proposals
+  const estimatedTraffic = aiProposals
+    .filter((_, index) => Object.values(selectedProposals)[index])
+    .reduce((sum, proposal) => {
+      const primaryKw = proposal.primary_keyword;
+      const metrics = proposal.serp_data?.[primaryKw] || {};
+      const est = proposal.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+      return sum + est;
+    }, 0);
+  const trafficProgress = monthlyTrafficGoal > 0 ? Math.min((estimatedTraffic / monthlyTrafficGoal) * 100, 100) : 0;
+
   // Get recent insights
   const recentInsights = insights.slice(0, 3);
 
   return (
     <div className="space-y-6">
       {/* Strategy Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -82,6 +101,14 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
               <p className="text-xs text-white/60 mt-1">
                 Target for {currentMonth}
               </p>
+              {estimatedTraffic > 0 && (
+                <div className="mt-2">
+                  <Progress value={trafficProgress} className="h-1" />
+                  <p className="text-xs text-green-400 mt-1">
+                    {estimatedTraffic.toLocaleString()} est. from AI proposals
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -105,6 +132,45 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
               <p className="text-xs text-white/60 mt-1">
                 Pieces this month
               </p>
+              {contentPiecesGoal > 0 && (
+                <div className="mt-2">
+                  <Progress value={(completedCalendarItems / contentPiecesGoal) * 100} className="h-1" />
+                  <p className="text-xs text-blue-400 mt-1">
+                    {proposalsGenerated} AI proposals generated
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-white/10">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                AI Proposals
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {selectedCount}/{proposalsGenerated}
+              </div>
+              <p className="text-xs text-white/60 mt-1">
+                Selected proposals
+              </p>
+              {proposalsGenerated > 0 && (
+                <div className="mt-2">
+                  <Progress value={selectionProgress} className="h-1" />
+                  <p className="text-xs text-orange-400 mt-1">
+                    {Math.round(selectionProgress)}% selection rate
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -134,7 +200,45 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
       </div>
 
       {/* Progress Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              AI Proposals Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {proposalsGenerated === 0 ? (
+              <div className="text-center py-4">
+                <FileText className="h-8 w-8 text-white/20 mx-auto mb-2" />
+                <p className="text-white/40 text-sm">No AI proposals yet</p>
+                <p className="text-white/30 text-xs">Generate proposals to see progress</p>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-white/80">Proposal Generation</span>
+                    <span className="text-white">{Math.round(proposalProgress)}%</span>
+                  </div>
+                  <Progress value={proposalProgress} className="h-2" />
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-white/60">Generated</div>
+                    <div className="text-xl font-semibold text-white">{proposalsGenerated}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/60">Selected</div>
+                    <div className="text-xl font-semibold text-green-400">{selectedCount}</div>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">

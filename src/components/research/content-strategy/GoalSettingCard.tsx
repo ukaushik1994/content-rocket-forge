@@ -22,6 +22,8 @@ export const GoalSettingCard = React.memo(() => {
     saveInsight,
     loading 
   } = useContentStrategy();
+  
+  const ctx = useContentStrategy();
 
   const [goals, setGoals] = useState({
     monthlyTraffic: '',
@@ -108,6 +110,15 @@ export const GoalSettingCard = React.memo(() => {
         await updateStrategy(currentStrategy.id, strategyData);
       } else {
         await createStrategy(strategyData);
+      }
+      
+      // Auto-generate AI proposals based on goals after saving strategy
+      const { generateGoalBasedProposals } = ctx || {};
+      if (generateGoalBasedProposals && goals.contentPieces) {
+        toast.success('Strategy saved! Generating AI proposals to match your goals...');
+        setTimeout(() => {
+          generateGoalBasedProposals(goals);
+        }, 500);
       }
     } catch (error) {
       console.error('Strategy save error:', error);

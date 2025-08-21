@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
@@ -18,32 +17,41 @@ interface ContentItem {
 }
 
 interface ContentStrategyContextType {
-  // Strategy state
+  // Current state
   currentStrategy: ContentStrategy | null;
   strategies: ContentStrategy[];
   calendarItems: CalendarItem[];
-  pipelineItems: PipelineItem[];
+  pipelineItems: PipelineItem[];  
   contentItems: ContentItem[];
   insights: StrategyInsight[];
   loading: boolean;
 
-  // Strategy actions
+  // AI Proposals state
+  aiProposals: any[];
+  setAiProposals: (proposals: any[] | ((prev: any[]) => any[])) => void;
+  selectedProposals: Record<string, boolean>;
+  setSelectedProposals: (selected: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => void;
+
+  // Strategy management
   createStrategy: (strategy: Partial<ContentStrategy>) => Promise<void>;
   updateStrategy: (id: string, updates: Partial<ContentStrategy>) => Promise<void>;
   
-  // Calendar actions
+  // Calendar management
   createCalendarItem: (item: Partial<CalendarItem>) => Promise<void>;
   updateCalendarItem: (id: string, updates: Partial<CalendarItem>) => Promise<void>;
   deleteCalendarItem: (id: string) => Promise<void>;
   
-  // Pipeline actions
+  // Pipeline management
   createPipelineItem: (item: Partial<PipelineItem>) => Promise<void>;
   updatePipelineItem: (id: string, updates: Partial<PipelineItem>) => Promise<void>;
   deletePipelineItem: (id: string) => Promise<void>;
   
-  // SERP analysis
+  // Analysis and insights
   analyzeSERP: (keyword: string) => Promise<any>;
   saveInsight: (insight: Partial<StrategyInsight>) => Promise<void>;
+  
+  // AI Strategy Generation
+  generateGoalBasedProposals: (goals: any) => Promise<void>;
   
   // Data refresh
   refreshData: () => Promise<void>;
@@ -60,6 +68,10 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [insights, setInsights] = useState<StrategyInsight[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // AI Proposals state
+  const [aiProposals, setAiProposals] = useState<any[]>([]);
+  const [selectedProposals, setSelectedProposals] = useState<Record<string, boolean>>({});
 
   const loadData = async () => {
     if (!user) {
@@ -243,6 +255,32 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     }
   };
 
+  const generateGoalBasedProposals = async (goals: any) => {
+    if (!user) return;
+    
+    try {
+      const targetCount = parseInt(goals.contentPieces) || 5;
+      const result = await contentStrategyService.generateAIStrategy({ 
+        goals: {
+          monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
+          contentPieces: targetCount,
+          timeline: goals.timeline || '3 months',
+          mainKeyword: goals.mainKeyword || ''
+        }, 
+        location: 'United States' 
+      });
+      
+      // Take exactly the number of proposals matching the goal
+      const limitedProposals = result.proposals?.slice(0, targetCount) || [];
+      setAiProposals(limitedProposals);
+      
+      toast.success(`Generated ${limitedProposals.length} proposals matching your ${targetCount} content pieces goal`);
+    } catch (error) {
+      console.error('Error generating goal-based proposals:', error);
+      toast.error('Failed to generate proposals');
+    }
+  };
+
   const refreshData = async () => {
     await loadData();
   };
@@ -250,6 +288,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   return (
     <ContentStrategyContext.Provider
       value={{
+        // Current state
         currentStrategy,
         strategies,
         calendarItems,
@@ -257,17 +296,36 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
         contentItems,
         insights,
         loading,
+        
+        // AI Proposals state
+        aiProposals,
+        setAiProposals,
+        selectedProposals,
+        setSelectedProposals,
+        
+        // Strategy management
         createStrategy,
         updateStrategy,
+        
+        // Calendar management
         createCalendarItem,
         updateCalendarItem,
         deleteCalendarItem,
+        
+        // Pipeline management
         createPipelineItem,
         updatePipelineItem,
         deletePipelineItem,
+        
+        // Analysis and insights
         analyzeSERP,
         saveInsight,
-        refreshData
+        
+        // AI Strategy Generation
+        generateGoalBasedProposals,
+        
+        // Data refresh
+        refreshData,
       }}
     >
       {children}

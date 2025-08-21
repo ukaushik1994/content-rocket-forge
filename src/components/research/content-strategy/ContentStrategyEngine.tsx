@@ -22,6 +22,7 @@ import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { aiStrategyService } from '@/services/aiStrategyService';
 import { useToast } from '@/hooks/use-toast';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
 import { StrategySessionManager } from './StrategySessionManager';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
@@ -32,14 +33,23 @@ interface ContentStrategyEngineProps {
   goals?: any;
 }
 
-export function ContentStrategyEngine({ serpMetrics, goals }: ContentStrategyEngineProps) {
+export const ContentStrategyEngine = ({ serpMetrics, goals }: ContentStrategyEngineProps) => {
+  const ctx = useContentStrategy();
+  const { aiProposals, setAiProposals, selectedProposals, setSelectedProposals } = ctx;
+  
   const [clusters, setClusters] = useState<ContentCluster[]>([]);
-  const [proposals, setProposals] = useState<any[]>([]);
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [proposals, setProposals] = useState<any[]>(aiProposals || []);
+  const [selected, setSelected] = useState<Record<string, boolean>>(selectedProposals || {});
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-const { toast } = useToast();
+  const { toast } = useToast();
+
+  // Sync with context
+  useEffect(() => {
+    setProposals(aiProposals);
+    setSelected(selectedProposals);
+  }, [aiProposals, selectedProposals]);
 
   // Generation modal state
   const [showGenModal, setShowGenModal] = useState(false);
@@ -94,20 +104,38 @@ const { toast } = useToast();
   };
 
 const generateBlueprint = async () => {
+  if (!goals?.contentPieces) {
+    toast({
+      title: "Set Your Goals First",
+      description: "Please set your content goals in the Goal Setting section before generating proposals.",
+      variant: "destructive"
+    });
+    return;
+  }
+
   try {
     setGenerating(true);
     startProgress();
     
+    const targetCount = parseInt(goals.contentPieces) || 5;
     const result = await contentStrategyService.generateAIStrategy({ 
-      goals: goals || {}, 
+      goals: {
+        monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
+        contentPieces: targetCount,
+        timeline: goals.timeline || '3 months',
+        mainKeyword: goals.mainKeyword || ''
+      }, 
       location: 'United States' 
     });
     
-    setProposals(result.proposals || []);
+    // Take exactly the number of proposals matching the goal
+    const limitedProposals = result.proposals?.slice(0, targetCount) || [];
+    setProposals(limitedProposals);
+    setAiProposals(limitedProposals);
     
     toast({ 
-      title: 'Strategy Proposals Ready', 
-      description: result.message || 'Select a proposal to continue.' 
+      title: `${limitedProposals.length} Strategy Proposals Ready`, 
+      description: `Generated ${limitedProposals.length} proposals to match your ${targetCount} content pieces goal.` 
     });
     
     finishProgress();
@@ -131,8 +159,28 @@ const generateBlueprint = async () => {
 };
 
 const loadMoreProposals = async () => {
+  if (!goals?.contentPieces) {
+    toast({
+      title: "Goals Required",
+      description: "Please set your content goals first to load more targeted proposals.",
+      variant: "destructive"
+    });
+    return;
+  }
+
   try {
     setLoadingMore(true);
+    
+    const targetCount = parseInt(goals.contentPieces);
+    const remainingNeeded = targetCount - proposals.length;
+    
+    if (remainingNeeded <= 0) {
+      toast({
+        title: "Goal Reached!",
+        description: `You already have ${proposals.length} proposals matching your ${targetCount} content pieces goal. Generate extra proposals?`,
+      });
+      // Still allow generating extra proposals beyond the goal
+    }
     
     // Extract keywords from existing proposals to exclude them
     const existingKeywords = proposals.flatMap(proposal => {
@@ -145,7 +193,12 @@ const loadMoreProposals = async () => {
     
     // Generate new proposals excluding existing keywords
     const result = await aiStrategyService.generateNewStrategy({
-      goals: goals || {},
+      goals: {
+        monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
+        contentPieces: Math.max(remainingNeeded, 3), // Generate at least 3 more
+        timeline: goals.timeline || '3 months',
+        mainKeyword: goals.mainKeyword || ''
+      },
       location: 'United States',
       excludeKeywords: existingKeywords
     });
