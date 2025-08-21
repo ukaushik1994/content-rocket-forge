@@ -1,6 +1,7 @@
 import React from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
+import { ValidationTooltip } from './ValidationTooltip';
 
 interface StepNavigationItemsProps {
   currentStep: number;
@@ -36,35 +37,36 @@ export function StepNavigationItems({ currentStep, onStepClick, steps }: StepNav
         const isAccessible = canProceedToStep(index);
 
         return (
-          <Card 
-            key={step.id}
-            className={`cursor-pointer transition-all ${
-              isActive 
-                ? 'ring-2 ring-primary bg-primary/5' 
-                : isAccessible 
-                  ? 'hover:bg-muted/50' 
-                  : 'opacity-50 cursor-not-allowed'
-            }`}
-            onClick={() => isAccessible && onStepClick(index)}
-          >
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${
-                  isActive 
-                    ? 'bg-primary text-primary-foreground' 
-                    : isCompleted 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-muted'
-                }`}>
-                  <Icon className="h-4 w-4" />
+          <ValidationTooltip key={step.id} step={index}>
+            <Card 
+              className={`cursor-pointer transition-all ${
+                isActive 
+                  ? 'ring-2 ring-primary bg-primary/5' 
+                  : isAccessible 
+                    ? 'hover:bg-muted/50' 
+                    : 'opacity-50 cursor-not-allowed'
+              }`}
+              onClick={() => isAccessible && onStepClick(index)}
+            >
+              <CardContent className="p-3">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    isActive 
+                      ? 'bg-primary text-primary-foreground' 
+                      : isCompleted 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-muted'
+                  }`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-sm truncate">{step.title}</div>
+                    <div className="text-xs text-muted-foreground truncate">{step.description}</div>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm truncate">{step.title}</div>
-                  <div className="text-xs text-muted-foreground truncate">{step.description}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </ValidationTooltip>
         );
       })}
     </>

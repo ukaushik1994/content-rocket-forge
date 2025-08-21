@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { StepContent } from './dialog/StepContent';
 import { StepNavigationItems } from './dialog/StepNavigationItems';
+import { ProgressIndicator } from './dialog/ProgressIndicator';
+import { LoadingStateWrapper } from './dialog/LoadingStateWrapper';
+import { ConfirmationDialog } from './dialog/ConfirmationDialog';
 import { ContentBuilderProvider, useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { EnhancedSolution } from '@/contexts/content-builder/types';
 import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
@@ -37,45 +40,85 @@ function StrategyContentInit({ proposal }: { proposal: any }) {
     setContentType,
     setContentFormat,
     setContentIntent,
-    analyzeKeyword
+    analyzeKeyword,
+    state
   } = useContentBuilder();
   
+  // Enhanced initialization with error handling and loading states
   useEffect(() => {
-    if (proposal) {
-      // Initialize content builder context with strategy data
-      if (proposal.primary_keyword) {
-        setMainKeyword(proposal.primary_keyword);
-        // Auto-analyze keyword for SERP data
-        analyzeKeyword(proposal.primary_keyword);
+    if (!proposal) return;
+    
+    const initializeStrategy = async () => {
+      try {
+        console.log('[StrategyInit] Initializing strategy with proposal:', proposal);
+        
+        // Initialize content builder context with strategy data
+        if (proposal.primary_keyword) {
+          setMainKeyword(proposal.primary_keyword);
+        }
+        
+        if (proposal.title) {
+          setContentTitle(proposal.title);
+          setMetaTitle(proposal.title);
+        }
+        
+        // Set default content settings optimized for strategy content
+        setContentType('blog');
+        setContentFormat('long-form');
+        setContentIntent('inform');
+        
+        // Set enhanced meta description with strategy context
+        const description = proposal.description || 
+          `A comprehensive guide about ${proposal.primary_keyword || 'your topic'}. ` +
+          `Discover strategies, insights, and solutions to help you succeed.`;
+        setMetaDescription(description);
+        
+        // Auto-trigger SERP analysis for strategy keyword with delay to ensure context is ready
+        if (proposal.primary_keyword && !state.serpData) {
+          console.log('[StrategyInit] Auto-triggering SERP analysis for:', proposal.primary_keyword);
+          setTimeout(async () => {
+            try {
+              await analyzeKeyword(proposal.primary_keyword);
+              console.log('[StrategyInit] SERP analysis completed successfully');
+            } catch (error) {
+              console.error('[StrategyInit] SERP analysis failed:', error);
+              // Don't block the flow, user can manually trigger SERP analysis
+            }
+          }, 500);
+        }
+        
+      } catch (error) {
+        console.error('[StrategyInit] Failed to initialize strategy:', error);
+        // Don't throw - allow dialog to continue with partial initialization
       }
-      if (proposal.title) {
-        setContentTitle(proposal.title);
-        setMetaTitle(proposal.title);
-      }
-      
-      // Set default content settings
-      setContentType('blog');
-      setContentFormat('long-form');
-      setContentIntent('inform');
-      
-      // Set meta description based on proposal
-      const description = proposal.description || `A comprehensive guide about ${proposal.primary_keyword || 'your topic'}`;
-      setMetaDescription(description);
-    }
-  }, [proposal, setMainKeyword, setContentTitle, setMetaTitle, setMetaDescription, setContentType, setContentFormat, setContentIntent, analyzeKeyword]);
+    };
+    
+    initializeStrategy();
+  }, [proposal, setMainKeyword, setContentTitle, setMetaTitle, setMetaDescription, setContentType, setContentFormat, setContentIntent, analyzeKeyword, state.serpData]);
   
   return null;
 }
 
 export function StrategyBuilderDialog({ open, onOpenChange, proposal }: StrategyBuilderDialogProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [initializationError, setInitializationError] = useState<string | null>(null);
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
 
-  // Reset state when dialog opens
+  // Reset state when dialog opens with error handling
   useEffect(() => {
     if (open) {
       setCurrentStep(0);
+      setInitializationError(null);
+      
+      // Validate proposal data
+      if (!proposal?.primary_keyword) {
+        setInitializationError('Strategy proposal is missing primary keyword');
+        return;
+      }
+      
+      console.log('[StrategyDialog] Dialog opened with proposal:', proposal);
     }
-  }, [open]);
+  }, [open, proposal]);
 
   // Context-aware step validation using ContentBuilder state
   const ContentBuilderStepValidator = ({ children }: { children: React.ReactNode }) => {
@@ -141,7 +184,19 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
   };
 
   const handleClose = () => {
+    // Check if user has made progress that would be lost
+    const hasProgress = currentStep > 0;
+    
+    if (hasProgress) {
+      setShowExitConfirmation(true);
+    } else {
+      onOpenChange(false);
+    }
+  };
+
+  const handleConfirmExit = () => {
     onOpenChange(false);
+    setShowExitConfirmation(false);
   };
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;
@@ -153,13 +208,14 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
           <DialogTitle className="text-xl font-semibold">
             Strategy Content Builder
           </DialogTitle>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Step {currentStep + 1} of {STEPS.length}</span>
-              <span>{Math.round(progress)}% Complete</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Step {currentStep + 1} of {STEPS.length}</span>
+                <span>{Math.round(progress)}% Complete</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+              <ProgressIndicator currentStep={currentStep} />
             </div>
-            <Progress value={progress} className="h-2" />
-          </div>
         </DialogHeader>
 
         {/* Step Navigation */}
@@ -176,13 +232,20 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
 
         {/* Step Content */}
         <div className="flex-1 overflow-y-auto">
-          <ContentBuilderStepValidator>
-            <StepContent 
-              currentStep={currentStep}
-              proposal={proposal}
-              handleClose={handleClose}
-            />
-          </ContentBuilderStepValidator>
+          <LoadingStateWrapper
+            isLoading={false}
+            error={initializationError}
+            onRetry={() => setInitializationError(null)}
+            loadingMessage="Initializing strategy builder..."
+          >
+            <ContentBuilderStepValidator>
+              <StepContent 
+                currentStep={currentStep}
+                proposal={proposal}
+                handleClose={handleClose}
+              />
+            </ContentBuilderStepValidator>
+          </LoadingStateWrapper>
         </div>
 
         {/* Navigation Footer */}
@@ -214,6 +277,18 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
           </div>
         </div>
       </DialogContent>
+      
+      {/* Exit Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showExitConfirmation}
+        onOpenChange={setShowExitConfirmation}
+        title="Exit Strategy Builder?"
+        description="You have made progress in this strategy builder. Are you sure you want to exit? Your progress will be lost."
+        confirmText="Exit"
+        cancelText="Continue Working"
+        onConfirm={handleConfirmExit}
+        variant="destructive"
+      />
     </Dialog>
   );
 }

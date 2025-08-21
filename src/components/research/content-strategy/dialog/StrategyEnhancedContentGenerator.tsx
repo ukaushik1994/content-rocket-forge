@@ -17,7 +17,8 @@ export function StrategyEnhancedContentGenerator({ proposal }: StrategyEnhancedC
     state, 
     generateContent, 
     setContentTitle,
-    setContent 
+    setContent,
+    setAdditionalInstructions 
   } = useContentBuilder();
   
   const { 
@@ -39,17 +40,52 @@ export function StrategyEnhancedContentGenerator({ proposal }: StrategyEnhancedC
       return;
     }
 
-    // Convert outline to OutlineSection format for generateContent
-    const outlineSections = outline.map((item, index) => ({
-      id: `section-${index}`,
-      title: item,
-      level: 1,
-      content: '',
-      order: index,
-      isExpanded: false
-    }));
+    // Enhanced content generation with strategy context
+    try {
+      // Convert outline to OutlineSection format for generateContent
+      const outlineSections = outline.map((item, index) => ({
+        id: `section-${index}`,
+        title: item,
+        level: 1,
+        content: '',
+        order: index,
+        isExpanded: false
+      }));
 
-    await generateContent(outlineSections);
+      // Add strategy-specific instructions to content generation
+      const strategyInstructions = [
+        `Primary focus: ${proposal?.primary_keyword}`,
+        selectedSolution ? `Featured solution: ${selectedSolution.name}` : '',
+        serpSelections.length > 0 ? `Incorporate insights from ${serpSelections.length} SERP research items` : '',
+        proposal?.priority_tag ? `Content priority: ${proposal.priority_tag}` : '',
+        'Ensure content addresses user search intent and provides actionable value',
+        'Integrate the solution naturally throughout relevant sections',
+        'Include specific examples and use cases where appropriate'
+      ].filter(Boolean).join('\n- ');
+
+      // Temporarily set additional instructions for this generation
+      const originalInstructions = state.additionalInstructions;
+      setAdditionalInstructions(strategyInstructions);
+
+      await generateContent(outlineSections);
+
+      // Restore original instructions
+      setAdditionalInstructions(originalInstructions);
+
+      // Success feedback
+      toast({
+        title: "Content Generated",
+        description: `Successfully created ${wordCount > 0 ? wordCount + ' word' : ''} strategy-focused content`,
+      });
+
+    } catch (error) {
+      console.error('Enhanced content generation failed:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate content. Please try again or check your AI configuration.",
+        variant: "destructive"
+      });
+    }
   };
 
   const selectedSerpCount = serpSelections.filter(item => item.selected).length;
