@@ -1,10 +1,13 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ContentStrategyFlow } from './ContentStrategyFlow';
+import { StrategySuggestions } from './tabs/StrategySuggestions';
+import { StrategyDashboard } from './dashboard/StrategyDashboard';
+import { ROICalculator } from './performance/ROICalculator';
+import { StrategyProgressTracker } from './StrategyProgressTracker';
 import { GlassCard } from '@/components/ui/GlassCard';
 
 import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, LayoutDashboard, BarChart2, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const StrategyTabs = React.memo(() => {
@@ -32,7 +35,9 @@ export const StrategyTabs = React.memo(() => {
   // Removed counts for calendar/pipeline as they moved to standalone pages
 
   const getInitialTab = () => {
-    const allowed = new Set(['strategies']);
+    const allowed = new Set([
+      'strategies','dashboard','performance','progress'
+    ]);
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
       if (hash && allowed.has(hash)) return hash;
@@ -49,7 +54,7 @@ export const StrategyTabs = React.memo(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
       const stored = localStorage.getItem('cs.activeTab') || '';
-      const legacyTabs = new Set(['calendar', 'pipeline', 'content-gaps', 'dashboard', 'performance', 'progress']);
+      const legacyTabs = new Set(['calendar', 'pipeline', 'content-gaps']);
       const redirectMap: Record<string, string> = {
         'calendar': '/research/calendar',
         'pipeline': '/research/pipeline',
@@ -88,14 +93,53 @@ export const StrategyTabs = React.memo(() => {
                   className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
                 >
                   <Lightbulb className="h-4 w-4" />
-                  <span>AI Strategy Proposals</span>
+                  <span>Strategies</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="dashboard"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="performance"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <BarChart2 className="h-4 w-4" />
+                  <span>Performance</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="progress"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Progress</span>
                 </TabsTrigger>
               </TabsList>
             </div>
 
             <TabsContent value="strategies" className="animate-fade-in">
               <div className="space-y-6">
-                <ContentStrategyFlow goals={goals} />
+                <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="dashboard" className="animate-fade-in">
+              <div className="space-y-6">
+                <StrategyDashboard goals={goals} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="performance" className="animate-fade-in">
+              <div className="space-y-6">
+                <ROICalculator goals={goals} serpMetrics={serpMetrics} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="progress" className="animate-fade-in">
+              <div className="space-y-6">
+                <StrategyProgressTracker strategy={currentStrategy} goals={goals} />
               </div>
             </TabsContent>
           </div>
