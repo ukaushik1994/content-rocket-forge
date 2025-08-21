@@ -72,10 +72,11 @@ export function StrategyEnhancedContentGenerator({ proposal }: StrategyEnhancedC
       // Restore original instructions
       setAdditionalInstructions(originalInstructions);
 
-      // Success feedback
+      // Success feedback with word count
+      const generatedWordCount = content.split(' ').filter(word => word.length > 0).length;
       toast({
         title: "Content Generated",
-        description: `Successfully created ${wordCount > 0 ? wordCount + ' word' : ''} strategy-focused content`,
+        description: `Successfully created ${generatedWordCount > 0 ? generatedWordCount + ' word' : ''} strategy-focused content`,
       });
 
     } catch (error) {

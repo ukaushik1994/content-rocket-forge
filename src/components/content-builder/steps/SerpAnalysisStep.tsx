@@ -168,8 +168,8 @@ export const SerpAnalysisStep = () => {
     );
   }
 
-  // Handle empty keyword case
-  if (!mainKeyword) {
+  // Better handling of empty keyword case with context state checking
+  if (!mainKeyword || mainKeyword.trim() === '') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="max-w-md mx-auto">

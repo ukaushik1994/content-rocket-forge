@@ -45,16 +45,17 @@ function StrategyContentInit({ proposal }: { proposal: any }) {
     state
   } = useContentBuilder();
   
-  // Enhanced initialization with error handling and loading states
+  // Immediate initialization without delays to prevent race conditions
   useEffect(() => {
     if (!proposal) return;
     
     const initializeStrategy = async () => {
       try {
+        console.log('[StrategyInit] Initializing with proposal:', proposal);
         
-        
-        // Initialize content builder context with strategy data
+        // Initialize content builder context with strategy data IMMEDIATELY
         if (proposal.primary_keyword) {
+          console.log('[StrategyInit] Setting mainKeyword:', proposal.primary_keyword);
           setMainKeyword(proposal.primary_keyword);
         }
         
@@ -74,18 +75,6 @@ function StrategyContentInit({ proposal }: { proposal: any }) {
           `Discover strategies, insights, and solutions to help you succeed.`;
         setMetaDescription(description);
         
-        // Auto-trigger SERP analysis for strategy keyword with delay to ensure context is ready
-        if (proposal.primary_keyword && !state.serpData) {
-          setTimeout(async () => {
-            try {
-              await analyzeKeyword(proposal.primary_keyword);
-            } catch (error) {
-              console.error('[StrategyInit] SERP analysis failed:', error);
-              // Don't block the flow, user can manually trigger SERP analysis
-            }
-          }, 500);
-        }
-        
       } catch (error) {
         console.error('[StrategyInit] Failed to initialize strategy:', error);
         // Don't throw - allow dialog to continue with partial initialization
@@ -93,7 +82,7 @@ function StrategyContentInit({ proposal }: { proposal: any }) {
     };
     
     initializeStrategy();
-  }, [proposal, setMainKeyword, setContentTitle, setMetaTitle, setMetaDescription, setContentType, setContentFormat, setContentIntent, analyzeKeyword, state.serpData]);
+  }, [proposal, setMainKeyword, setContentTitle, setMetaTitle, setMetaDescription, setContentType, setContentFormat, setContentIntent]);
   
   return null;
 }
@@ -119,24 +108,8 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     }
   }, [open, proposal]);
 
+  // Simplified wrapper without artificial delays
   const StepValidationWrapper = ({ children }: { children: React.ReactNode }) => {
-    const { state } = useContentBuilder();
-    const [isValidating, setIsValidating] = useState(true);
-    
-    // Allow context to initialize
-    useEffect(() => {
-      const timer = setTimeout(() => setIsValidating(false), 100);
-      return () => clearTimeout(timer);
-    }, []);
-
-    if (isValidating) {
-      return (
-        <div className="flex items-center justify-center min-h-[200px]">
-          <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full"></div>
-        </div>
-      );
-    }
-
     return <>{children}</>;
   };
 
