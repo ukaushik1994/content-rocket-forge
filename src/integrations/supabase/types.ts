@@ -223,6 +223,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_strategy_conversations: {
+        Row: {
+          company_context: Json | null
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          final_strategy_id: string | null
+          goals: Json
+          id: string
+          solutions_context: Json | null
+          status: string
+          total_steps: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_context?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          final_strategy_id?: string | null
+          goals?: Json
+          id?: string
+          solutions_context?: Json | null
+          status?: string
+          total_steps?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_context?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          final_strategy_id?: string | null
+          goals?: Json
+          id?: string
+          solutions_context?: Json | null
+          status?: string
+          total_steps?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_workflow_states: {
         Row: {
           conversation_id: string | null
@@ -1618,6 +1663,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      conversation_steps: {
+        Row: {
+          ai_input: Json
+          ai_output: Json
+          completed_at: string | null
+          conversation_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          processing_time_ms: number | null
+          status: string
+          step_name: string
+          step_number: number
+          user_feedback: Json | null
+        }
+        Insert: {
+          ai_input?: Json
+          ai_output?: Json
+          completed_at?: string | null
+          conversation_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          status?: string
+          step_name: string
+          step_number: number
+          user_feedback?: Json | null
+        }
+        Update: {
+          ai_input?: Json
+          ai_output?: Json
+          completed_at?: string | null
+          conversation_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          status?: string
+          step_name?: string
+          step_number?: number
+          user_feedback?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_conversation_steps_conversation_id"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_strategy_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dashboard_alerts: {
         Row: {
