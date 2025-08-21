@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -218,6 +218,51 @@ export type Database = {
           session_metadata?: Json
           status?: string
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_strategy_conversations: {
+        Row: {
+          company_context: Json | null
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          final_strategy_id: string | null
+          goals: Json
+          id: string
+          solutions_context: Json | null
+          status: string
+          total_steps: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_context?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          final_strategy_id?: string | null
+          goals?: Json
+          id?: string
+          solutions_context?: Json | null
+          status?: string
+          total_steps?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_context?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          final_strategy_id?: string | null
+          goals?: Json
+          id?: string
+          solutions_context?: Json | null
+          status?: string
+          total_steps?: number
           updated_at?: string
           user_id?: string
         }
@@ -1454,10 +1499,13 @@ export type Database = {
           created_at: string
           due_date: string | null
           id: string
+          image_url: string | null
           notes: string | null
           priority: string
           progress_percentage: number | null
+          proposal_data: Json | null
           seo_score: number | null
+          source_proposal_id: string | null
           stage: string
           strategy_id: string | null
           target_keyword: string | null
@@ -1475,10 +1523,13 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          image_url?: string | null
           notes?: string | null
           priority?: string
           progress_percentage?: number | null
+          proposal_data?: Json | null
           seo_score?: number | null
+          source_proposal_id?: string | null
           stage?: string
           strategy_id?: string | null
           target_keyword?: string | null
@@ -1496,10 +1547,13 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          image_url?: string | null
           notes?: string | null
           priority?: string
           progress_percentage?: number | null
+          proposal_data?: Json | null
           seo_score?: number | null
+          source_proposal_id?: string | null
           stage?: string
           strategy_id?: string | null
           target_keyword?: string | null
@@ -1618,6 +1672,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      conversation_steps: {
+        Row: {
+          ai_input: Json
+          ai_output: Json
+          completed_at: string | null
+          conversation_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          processing_time_ms: number | null
+          status: string
+          step_name: string
+          step_number: number
+          user_feedback: Json | null
+        }
+        Insert: {
+          ai_input?: Json
+          ai_output?: Json
+          completed_at?: string | null
+          conversation_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          status?: string
+          step_name: string
+          step_number: number
+          user_feedback?: Json | null
+        }
+        Update: {
+          ai_input?: Json
+          ai_output?: Json
+          completed_at?: string | null
+          conversation_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          status?: string
+          step_name?: string
+          step_number?: number
+          user_feedback?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_conversation_steps_conversation_id"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_strategy_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dashboard_alerts: {
         Row: {
@@ -2983,7 +3090,7 @@ export type Database = {
         Returns: undefined
       }
       get_serp_usage_count: {
-        Args: { p_user_id: string; p_start_date: string }
+        Args: { p_start_date: string; p_user_id: string }
         Returns: number
       }
       get_user_role: {
@@ -2996,11 +3103,11 @@ export type Database = {
       }
       log_serp_usage: {
         Args: {
-          p_user_id: string
-          p_provider: string
-          p_operation: string
-          p_success: boolean
           p_metadata?: Json
+          p_operation: string
+          p_provider: string
+          p_success: boolean
+          p_user_id: string
         }
         Returns: undefined
       }

@@ -8,6 +8,7 @@ import {
   PipelineItem, 
   StrategyInsight 
 } from '@/services/contentStrategyService';
+import { proposalPipelineSync } from '@/services/proposalPipelineSync';
 
 interface ContentItem {
   id: string;
@@ -122,6 +123,34 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       setLoading(false);
     }
   };
+
+  // Auto-sync selected proposals to pipeline
+  useEffect(() => {
+    const syncProposalsToPipeline = async () => {
+      if (!user || !aiProposals.length || Object.keys(selectedProposals).length === 0) return;
+      
+      try {
+        await proposalPipelineSync.syncSelectedProposals(
+          selectedProposals,
+          aiProposals,
+          pipelineItems,
+          user.id,
+          currentStrategy?.id
+        );
+        
+        // Refresh pipeline data to show new items
+        const updatedPipelineData = await contentStrategyService.getPipelineItems();
+        setPipelineItems(updatedPipelineData);
+      } catch (error) {
+        console.error('Error syncing proposals to pipeline:', error);
+        toast.error('Failed to sync proposals to pipeline');
+      }
+    };
+
+    // Debounce the sync to avoid too many calls
+    const timeoutId = setTimeout(syncProposalsToPipeline, 500);
+    return () => clearTimeout(timeoutId);
+  }, [selectedProposals, aiProposals, user, currentStrategy?.id]);
 
   useEffect(() => {
     loadData();

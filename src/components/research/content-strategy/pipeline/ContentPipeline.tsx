@@ -166,92 +166,120 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
 
                   <div className="space-y-3 min-h-[200px]">
                     {stageItems.map(item => (
-                      <motion.div
-                        key={item.id}
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        className="p-4 bg-white/5 border border-white/10 rounded-lg hover:border-white/20 transition-all cursor-pointer group"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{getTypeIcon(item.content_type)}</span>
-                            <Badge variant="outline" className={getPriorityColor(item.priority)}>
-                              {item.priority}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {item.due_date || 'No date'}
-                            </div>
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditItem(item);
-                                }}
-                                className="hover:text-blue-400"
-                              >
-                                <Edit className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteItem(item.id);
-                                }}
-                                className="hover:text-red-400"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                       <motion.div
+                         key={item.id}
+                         whileHover={{ scale: 1.02, y: -2 }}
+                         className="p-4 bg-white/5 border border-white/10 rounded-lg hover:border-white/20 transition-all cursor-pointer group"
+                       >
+                         <div className="flex items-start gap-3 mb-3">
+                           {/* Item Image */}
+                           {item.image_url && (
+                             <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                               <img 
+                                 src={item.image_url} 
+                                 alt={item.title}
+                                 className="w-full h-full object-cover"
+                                 onError={(e) => {
+                                   const target = e.target as HTMLImageElement;
+                                   target.style.display = 'none';
+                                   const parent = target.parentElement;
+                                   if (parent) {
+                                     parent.innerHTML = `<div class="w-full h-full bg-primary/20 flex items-center justify-center text-lg">${getTypeIcon(item.content_type)}</div>`;
+                                   }
+                                 }}
+                               />
+                             </div>
+                           )}
+                           
+                           <div className="flex-1">
+                             <div className="flex items-start justify-between mb-2">
+                               <div className="flex items-center gap-2">
+                                 <span className="text-lg">{getTypeIcon(item.content_type)}</span>
+                                 <Badge variant="outline" className={getPriorityColor(item.priority)}>
+                                   {item.priority}
+                                 </Badge>
+                                 {item.source_proposal_id && (
+                                   <Badge variant="secondary" className="text-xs bg-primary/20 text-primary-foreground">
+                                     AI Proposal
+                                   </Badge>
+                                 )}
+                               </div>
+                               <div className="flex items-center gap-1">
+                                 <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                   <Clock className="h-3 w-3" />
+                                   {item.due_date || 'No date'}
+                                 </div>
+                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
+                                   <button
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handleEditItem(item);
+                                     }}
+                                     className="hover:text-blue-400"
+                                   >
+                                     <Edit className="h-3 w-3" />
+                                   </button>
+                                   <button
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handleDeleteItem(item.id);
+                                     }}
+                                     className="hover:text-red-400"
+                                   >
+                                     <Trash2 className="h-3 w-3" />
+                                   </button>
+                                 </div>
+                               </div>
+                             </div>
 
-                        <h4 className="font-medium text-white text-sm mb-2 line-clamp-2">
-                          {item.title}
-                        </h4>
+                             <h4 className="font-medium text-white text-sm mb-2 line-clamp-2">
+                               {item.title}
+                             </h4>
+                           </div>
+                         </div>
 
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <User className="h-3 w-3" />
-                            {item.assigned_to || 'Unassigned'}
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between text-xs mb-1">
-                              <span className="text-muted-foreground">Progress</span>
-                              <span className="text-white">{item.progress_percentage || 0}%</span>
-                            </div>
-                            <Progress 
-                              value={item.progress_percentage || 0} 
-                              className="h-2 bg-gray-800"
-                            />
-                          </div>
+                         <div className="space-y-2">
+                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                             <User className="h-3 w-3" />
+                             {item.assigned_to || 'Unassigned'}
+                           </div>
+                           
+                           <div>
+                             <div className="flex justify-between text-xs mb-1">
+                               <span className="text-muted-foreground">Progress</span>
+                               <span className="text-white">{item.progress_percentage || 0}%</span>
+                             </div>
+                             <Progress 
+                               value={item.progress_percentage || 0} 
+                               className="h-2 bg-gray-800"
+                             />
+                           </div>
 
-                          {/* Stage Navigation */}
-                          <div className="flex justify-between items-center pt-2">
-                            {index > 0 && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-xs p-1 h-6"
-                                onClick={() => handleStageChange(item, stages[index - 1].id)}
-                              >
-                                ←
-                              </Button>
-                            )}
-                            {index < stages.length - 1 && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-xs p-1 h-6 ml-auto"
-                                onClick={() => handleStageChange(item, stages[index + 1].id)}
-                              >
-                                →
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
+                           {/* Stage Navigation */}
+                           <div className="flex justify-between items-center pt-2">
+                             {index > 0 && (
+                               <Button
+                                 size="sm"
+                                 variant="ghost"
+                                 className="text-xs p-1 h-6"
+                                 onClick={() => handleStageChange(item, stages[index - 1].id)}
+                               >
+                                 ←
+                               </Button>
+                             )}
+                             {index < stages.length - 1 && (
+                               <Button
+                                 size="sm"
+                                 variant="ghost"
+                                 className="text-xs p-1 h-6 ml-auto"
+                                 onClick={() => handleStageChange(item, stages[index + 1].id)}
+                               >
+                                 →
+                               </Button>
+                             )}
+                           </div>
+                         </div>
+                       </motion.div>
                     ))}
                     
                     {stageItems.length === 0 && (

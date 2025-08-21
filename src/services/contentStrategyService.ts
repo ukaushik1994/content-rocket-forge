@@ -87,6 +87,9 @@ export interface PipelineItem {
   priority: string;
   blockers?: string[];
   notes?: string;
+  image_url?: string;
+  source_proposal_id?: string;
+  proposal_data?: any;
   created_at: string;
   updated_at: string;
 }
@@ -333,7 +336,10 @@ class ContentStrategyService {
         assigned_to: item.assigned_to,
         priority: item.priority || 'medium',
         blockers: item.blockers || [],
-        notes: item.notes
+        notes: item.notes,
+        image_url: item.image_url,
+        source_proposal_id: item.source_proposal_id,
+        proposal_data: item.proposal_data || {}
       })
       .select()
       .single();
