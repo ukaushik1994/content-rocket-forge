@@ -195,7 +195,7 @@ export const KeywordSelectionStep = () => {
         ))}
       </div>
 
-      <div className="relative z-10 w-full px-0 pt-24 pb-12">
+      <div className="relative z-10 w-full min-h-screen px-0">
         {/* Hero Search Section */}
         <motion.div 
           className="text-center mb-16 relative"
