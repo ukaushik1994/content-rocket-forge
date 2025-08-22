@@ -29,6 +29,7 @@ import { StrategySessionManager } from './StrategySessionManager';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
 import { ProposalSelectionTracker } from './ProposalSelectionTracker';
+import { SelectedProposalsSidebar } from './SelectedProposalsSidebar';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -45,13 +46,22 @@ export const ContentStrategyEngine = ({ serpMetrics, goals }: ContentStrategyEng
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
 
   // Sync with context and calculate metrics
   useEffect(() => {
-    setProposals(aiProposals);
-    setSelected(selectedProposals);
-  }, [aiProposals, selectedProposals]);
+    if (aiProposals && aiProposals.length > 0) {
+      setProposals(aiProposals);
+    }
+  }, [aiProposals]);
+
+  // Initialize selection state only if not already set
+  useEffect(() => {
+    if (selectedProposals && Object.keys(selected).length === 0) {
+      setSelected(selectedProposals);
+    }
+  }, [selectedProposals]);
 
   // Calculate selection metrics
   const targetCount = parseInt(goals?.contentPieces) || 0;
@@ -788,11 +798,12 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                          proposal={proposal}
                          index={idx}
                          isSelected={selected[idx] || false}
-                         onSelectionChange={(index, isSelected) => {
-                           const newSelected = { ...selected, [index]: isSelected };
-                           setSelected(newSelected);
-                           setSelectedProposals(newSelected);
-                         }}
+                          onSelectionChange={(index, isSelected) => {
+                            const newSelected = { ...selected, [index]: isSelected };
+                            setSelected(newSelected);
+                            // Debounce context update to prevent race conditions
+                            setTimeout(() => setSelectedProposals(newSelected), 50);
+                          }}
                          onSendToBuilder={sendProposalToContentBuilder}
                        />
                     </motion.div>
@@ -865,11 +876,12 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                          proposal={proposal}
                          index={proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)}
                          isSelected={selected[proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false}
-                         onSelectionChange={(index, isSelected) => {
-                           const newSelected = { ...selected, [index]: isSelected };
-                           setSelected(newSelected);
-                           setSelectedProposals(newSelected);
-                         }}
+                          onSelectionChange={(index, isSelected) => {
+                            const newSelected = { ...selected, [index]: isSelected };
+                            setSelected(newSelected);
+                            // Debounce context update to prevent race conditions
+                            setTimeout(() => setSelectedProposals(newSelected), 50);
+                          }}
                          onSendToBuilder={sendProposalToContentBuilder}
                        />
                     ))
@@ -901,6 +913,20 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         open={showStrategyBuilder} 
         onOpenChange={setShowStrategyBuilder}
         proposal={selectedProposal}
+      />
+
+      {/* Selected Proposals Sidebar */}
+      <SelectedProposalsSidebar
+        proposals={proposals}
+        selected={selected}
+        onSelectionChange={(index, isSelected) => {
+          const newSelected = { ...selected, [index]: isSelected };
+          setSelected(newSelected);
+          setTimeout(() => setSelectedProposals(newSelected), 50);
+        }}
+        onSendToBuilder={sendProposalToContentBuilder}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
     </div>
   );
