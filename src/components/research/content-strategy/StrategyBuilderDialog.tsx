@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Send, Save, FileText, Sparkles, Target, Zap,
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { StepContent } from './dialog/StepContent';
 import { StepNavigationItems } from './dialog/StepNavigationItems';
 import { ProgressIndicator } from './dialog/ProgressIndicator';
@@ -118,20 +118,31 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     const { state } = useContentBuilder();
     
     const canProceedToStep = (step: number): boolean => {
+      console.log('Checking step', step, 'with state:', {
+        selectedSolution: !!state.selectedSolution,
+        mainKeyword: !!state.mainKeyword,
+        outlineLength: state.outline.length,
+        serpSelectionsLength: state.serpSelections.length,
+        hasContent: !!state.content
+      });
+      
       switch (step) {
         case 0: return true; // Always can access solution selection
-        case 1: return !!state.selectedSolution; // Need solution selected for SERP analysis
-        case 2: return !!state.selectedSolution && !!state.mainKeyword; // Need solution and keyword for outline generation
-        case 3: return !!state.selectedSolution && !!state.mainKeyword && (state.outline.length > 0 || state.serpSelections.length > 0); // Need solution, keyword and some content structure
-        case 4: return !!state.selectedSolution && !!state.mainKeyword && (!!state.content || state.outline.length > 0); // Need solution, keyword and generated content or outline
+        case 1: return !!state.selectedSolution || !!proposal; // Need solution selected OR have proposal for SERP analysis  
+        case 2: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword); // Need solution/proposal and keyword for outline generation
+        case 3: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (state.outline.length > 0 || state.serpSelections.length > 0); // Need solution/proposal, keyword and some content structure
+        case 4: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (!!state.content || state.outline.length > 0); // Need solution/proposal, keyword and generated content or outline
         default: return false;
       }
     };
 
     const getStepRequirement = (step: number): string => {
+      const hasSolution = !!state.selectedSolution || !!proposal;
+      const hasKeyword = !!state.mainKeyword || !!proposal?.primary_keyword;
+      
       switch (step) {
-        case 1: return state.selectedSolution ? 'Ready for SERP analysis' : 'Please select a solution first';
-        case 2: return state.mainKeyword ? 'Ready to generate outline' : state.selectedSolution ? 'Set the primary keyword to continue' : 'Select a solution and set keyword first';
+        case 1: return hasSolution ? 'Ready for SERP analysis' : 'Please select a solution first';
+        case 2: return hasKeyword ? 'Ready to generate outline' : hasSolution ? 'Primary keyword will be set automatically' : 'Select a solution first';
         case 3: return (state.outline.length > 0 || state.serpSelections.length > 0) ? 'Ready to generate content' : 'Complete outline generation first';
         case 4: return (state.content || state.outline.length > 0) ? 'Ready to save content' : 'Generate content first';
         default: return 'Step available';
@@ -142,18 +153,58 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
   };
 
   const handleNext = () => {
+    const { state } = useContentBuilder();
     const { canProceedToStep, getStepRequirement } = NavigationController();
-    const nextStep = currentStep + 1;
     
-    if (nextStep < STEPS.length) {
-      if (canProceedToStep(nextStep)) {
-        setCurrentStep(nextStep);
+    console.log('Next clicked, current step:', currentStep, 'selected solution:', state.selectedSolution);
+    
+    if (currentStep < STEPS.length - 1) {
+      const nextStep = currentStep + 1;
+      
+      // Special handling for solution selection step (0 -> 1)
+      // Use a timeout to allow React state to update after solution selection
+      if (currentStep === 0) {
+        setTimeout(() => {
+          const canProceed = canProceedToStep(nextStep);
+          const requirement = getStepRequirement(nextStep);
+          
+          console.log('After timeout - Can proceed to step', nextStep, ':', canProceed, 'Selected solution:', state.selectedSolution);
+          
+          if (canProceed) {
+            setCurrentStep(nextStep);
+            toast(`Moved to ${STEPS[nextStep]?.title || `Step ${nextStep + 1}`}`, { 
+              description: 'Step completed successfully' 
+            });
+          } else {
+            toast(`Cannot proceed to ${STEPS[nextStep]?.title}`, { 
+              description: requirement,
+              action: {
+                label: 'Got it',
+                onClick: () => {}
+              }
+            });
+          }
+        }, 100);
       } else {
-        toast({
-          title: `Cannot proceed to ${STEPS[nextStep].title}`,
-          description: getStepRequirement(nextStep),
-          variant: "destructive"
-        });
+        const canProceed = canProceedToStep(nextStep);
+        const requirement = getStepRequirement(nextStep);
+        
+        console.log('Can proceed to step', nextStep, ':', canProceed, 'Requirement:', requirement);
+        
+        if (canProceed) {
+          setCurrentStep(nextStep);
+          toast(`Moved to ${STEPS[nextStep]?.title || `Step ${nextStep + 1}`}`, { 
+            description: 'Step completed successfully' 
+          });
+        } else {
+          toast(`Cannot proceed to ${STEPS[nextStep]?.title}`, { 
+            description: requirement,
+            action: {
+              label: 'Got it',
+              onClick: () => {}
+            }
+          });
+        }
       }
     }
   };

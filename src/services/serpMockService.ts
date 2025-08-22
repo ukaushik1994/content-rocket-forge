@@ -9,10 +9,13 @@ import { SerpAnalysisResult } from '@/types/serp';
  * Generate comprehensive mock SERP data for demonstration
  */
 export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
-  console.log(`🔄 Generating mock SERP data for keyword: "${keyword}"`);
+  console.log(`🔄 Generating comprehensive mock SERP data for keyword: "${keyword}"`);
+  
+  // Ensure we have a valid keyword
+  const cleanKeyword = keyword?.trim() || 'digital marketing';
   
   const mockData: SerpAnalysisResult = {
-    keyword,
+    keyword: cleanKeyword,
     searchVolume: Math.floor(Math.random() * 50000) + 5000,
     competitionScore: Math.floor(Math.random() * 80) + 20,
     keywordDifficulty: Math.floor(Math.random() * 70) + 30,
@@ -40,9 +43,9 @@ export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
     // Entities found in SERP
     entities: [
       {
-        name: keyword.split(' ')[0] || 'Topic',
+        name: cleanKeyword.split(' ')[0] || 'Topic',
         type: 'main_topic',
-        description: `Primary entity related to ${keyword}`,
+        description: `Primary entity related to ${cleanKeyword}`,
         source: 'organic_results'
       },
       {
@@ -59,43 +62,73 @@ export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
       }
     ],
     
-    // People Also Ask questions
+    // People Also Ask questions (10 comprehensive questions)
     peopleAlsoAsk: [
       {
-        question: `What is ${keyword}?`,
-        answer: `${keyword} is a comprehensive approach that involves multiple strategies and considerations.`,
+        question: `What is ${cleanKeyword}?`,
+        answer: `${cleanKeyword} is a comprehensive approach that involves multiple strategies and considerations.`,
         source: 'Featured snippet from example.com',
         position: 1
       },
       {
-        question: `How does ${keyword} work?`,
-        answer: `${keyword} works through a systematic process that begins with understanding the fundamentals.`,
+        question: `How does ${cleanKeyword} work?`,
+        answer: `${cleanKeyword} works through a systematic process that begins with understanding the fundamentals.`,
         source: 'Expert guide from authority-site.com',
         position: 2
       },
       {
-        question: `Why is ${keyword} important?`,
-        answer: `${keyword} is important because it provides significant benefits for businesses and individuals.`,
+        question: `Why is ${cleanKeyword} important?`,
+        answer: `${cleanKeyword} is important because it provides significant benefits for businesses and individuals.`,
         source: 'Research from industry-leader.org',
         position: 3
       },
       {
-        question: `What are the benefits of ${keyword}?`,
+        question: `What are the benefits of ${cleanKeyword}?`,
         answer: `Key benefits include improved efficiency, better outcomes, and enhanced performance.`,
         source: 'Analysis from trusted-source.net',
         position: 4
       },
       {
-        question: `How to get started with ${keyword}?`,
+        question: `How to get started with ${cleanKeyword}?`,
         answer: `Getting started involves understanding the basics, setting clear goals, and taking systematic steps.`,
         source: 'Beginner guide from helpful-resource.com',
         position: 5
+      },
+      {
+        question: `What are the best ${cleanKeyword} tools?`,
+        answer: `The best tools include comprehensive platforms that offer analytics, automation, and collaboration features.`,
+        source: 'Tool comparison from expert-reviews.com',
+        position: 6
+      },
+      {
+        question: `Common ${cleanKeyword} mistakes to avoid?`,
+        answer: `Common mistakes include insufficient planning, ignoring data insights, and failing to adapt strategies.`,
+        source: 'Best practices from consulting-firm.net',
+        position: 7
+      },
+      {
+        question: `What is the cost of ${cleanKeyword}?`,
+        answer: `Costs vary depending on scope, tools used, and whether you use in-house resources or external agencies.`,
+        source: 'Pricing guide from business-advisor.org',
+        position: 8
+      },
+      {
+        question: `How long does ${cleanKeyword} take?`,
+        answer: `Timeline depends on complexity and goals, typically ranging from weeks to months for full implementation.`,
+        source: 'Timeline guide from project-management.com',
+        position: 9
+      },
+      {
+        question: `${cleanKeyword} vs alternatives?`,
+        answer: `Compared to alternatives, ${cleanKeyword} offers unique advantages in flexibility, scalability, and results.`,
+        source: 'Comparison study from research-institute.edu',
+        position: 10
       }
     ],
     
     // Content headings found in top results
     headings: [
-      { text: `Understanding ${keyword}: A Complete Guide`, level: 'h1' },
+      { text: `Understanding ${cleanKeyword}: A Complete Guide`, level: 'h1' },
       { text: 'What You Need to Know', level: 'h2', subtext: 'Essential fundamentals' },
       { text: 'Getting Started', level: 'h2', subtext: 'Step-by-step approach' },
       { text: 'Best Practices', level: 'h2', subtext: 'Proven strategies' },
@@ -110,31 +143,31 @@ export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
     // Content gaps identified
     contentGaps: [
       {
-        topic: `Beginner's Guide to ${keyword}`,
+        topic: `Beginner's Guide to ${cleanKeyword}`,
         description: 'Comprehensive introduction missing from top results',
         recommendation: 'Create detailed beginner-friendly content',
-        content: `A step-by-step guide that explains ${keyword} from the ground up`,
+        content: `A step-by-step guide that explains ${cleanKeyword} from the ground up`,
         source: 'Content gap analysis'
       },
       {
-        topic: `${keyword} Tools Comparison`,
+        topic: `${cleanKeyword} Tools Comparison`,
         description: 'No comprehensive tool comparison found',
         recommendation: 'Compare popular tools and platforms',
-        content: `Side-by-side comparison of top ${keyword} tools`,
+        content: `Side-by-side comparison of top ${cleanKeyword} tools`,
         source: 'Competitive analysis'
       },
       {
-        topic: `${keyword} Case Studies`,
+        topic: `${cleanKeyword} Case Studies`,
         description: 'Limited real-world examples in current results',
         recommendation: 'Include detailed case studies',
-        content: `Success stories and lessons learned from ${keyword} implementations`,
+        content: `Success stories and lessons learned from ${cleanKeyword} implementations`,
         source: 'Market research'
       },
       {
-        topic: `Common ${keyword} Mistakes`,
+        topic: `Common ${cleanKeyword} Mistakes`,
         description: 'Error prevention content is lacking',
         recommendation: 'Address common pitfalls',
-        content: `What to avoid when implementing ${keyword} strategies`,
+        content: `What to avoid when implementing ${cleanKeyword} strategies`,
         source: 'Expert insights'
       }
     ],
@@ -142,23 +175,23 @@ export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
     // Top organic results
     topResults: [
       {
-        title: `${keyword}: Complete Guide and Best Practices`,
+        title: `${cleanKeyword}: Complete Guide and Best Practices`,
         link: 'https://example-authority.com/guide',
-        snippet: `Learn everything about ${keyword} with this comprehensive guide covering fundamentals, implementation, and advanced strategies.`,
+        snippet: `Learn everything about ${cleanKeyword} with this comprehensive guide covering fundamentals, implementation, and advanced strategies.`,
         position: 1,
         source: 'Organic result #1'
       },
       {
-        title: `How to Master ${keyword} in 2024`,
+        title: `How to Master ${cleanKeyword} in 2024`,
         link: 'https://industry-expert.com/mastery',
-        snippet: `Step-by-step approach to ${keyword} with practical tips, tools, and real-world examples from industry experts.`,
+        snippet: `Step-by-step approach to ${cleanKeyword} with practical tips, tools, and real-world examples from industry experts.`,
         position: 2,
         source: 'Organic result #2'
       },
       {
-        title: `${keyword} Tools and Resources`,
+        title: `${cleanKeyword} Tools and Resources`,
         link: 'https://tools-directory.com/resources',
-        snippet: `Comprehensive directory of ${keyword} tools, platforms, and resources for beginners and professionals.`,
+        snippet: `Comprehensive directory of ${cleanKeyword} tools, platforms, and resources for beginners and professionals.`,
         position: 3,
         source: 'Organic result #3'
       }
@@ -166,32 +199,32 @@ export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
     
     // Related searches
     relatedSearches: [
-      { query: `${keyword} guide`, volume: Math.floor(Math.random() * 10000) + 1000 },
-      { query: `${keyword} tools`, volume: Math.floor(Math.random() * 8000) + 800 },
-      { query: `${keyword} best practices`, volume: Math.floor(Math.random() * 6000) + 600 },
-      { query: `${keyword} tutorial`, volume: Math.floor(Math.random() * 5000) + 500 },
-      { query: `${keyword} examples`, volume: Math.floor(Math.random() * 4000) + 400 },
-      { query: `how to ${keyword}`, volume: Math.floor(Math.random() * 7000) + 700 },
-      { query: `${keyword} tips`, volume: Math.floor(Math.random() * 3000) + 300 }
+      { query: `${cleanKeyword} guide`, volume: Math.floor(Math.random() * 10000) + 1000 },
+      { query: `${cleanKeyword} tools`, volume: Math.floor(Math.random() * 8000) + 800 },
+      { query: `${cleanKeyword} best practices`, volume: Math.floor(Math.random() * 6000) + 600 },
+      { query: `${cleanKeyword} tutorial`, volume: Math.floor(Math.random() * 5000) + 500 },
+      { query: `${cleanKeyword} examples`, volume: Math.floor(Math.random() * 4000) + 400 },
+      { query: `how to ${cleanKeyword}`, volume: Math.floor(Math.random() * 7000) + 700 },
+      { query: `${cleanKeyword} tips`, volume: Math.floor(Math.random() * 3000) + 300 }
     ],
     
     // Relevant keywords
     keywords: [
-      keyword,
-      `${keyword} strategy`,
-      `${keyword} implementation`,
-      `${keyword} benefits`,
-      `${keyword} guide`,
-      `${keyword} tools`,
-      `${keyword} best practices`,
-      `${keyword} examples`,
-      `${keyword} tutorial`,
-      `${keyword} tips`
+      cleanKeyword,
+      `${cleanKeyword} strategy`,
+      `${cleanKeyword} implementation`,
+      `${cleanKeyword} benefits`,
+      `${cleanKeyword} guide`,
+      `${cleanKeyword} tools`,
+      `${cleanKeyword} best practices`,
+      `${cleanKeyword} examples`,
+      `${cleanKeyword} tutorial`,
+      `${cleanKeyword} tips`
     ],
     
     // Content recommendations
     recommendations: [
-      `Create comprehensive ${keyword} guide for beginners`,
+      `Create comprehensive ${cleanKeyword} guide for beginners`,
       `Develop tool comparison and reviews`,
       `Include real-world case studies and examples`,
       `Address common challenges and solutions`,
@@ -204,8 +237,8 @@ export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
     // Featured snippets
     featuredSnippets: [
       {
-        title: `What is ${keyword}?`,
-        content: `${keyword} is a strategic approach that combines multiple methodologies to achieve optimal results. It involves careful planning, systematic implementation, and continuous optimization.`,
+        title: `What is ${cleanKeyword}?`,
+        content: `${cleanKeyword} is a strategic approach that combines multiple methodologies to achieve optimal results. It involves careful planning, systematic implementation, and continuous optimization.`,
         source: 'authoritative-source.com',
         type: 'paragraph'
       }
@@ -213,9 +246,9 @@ export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
     
     // Knowledge graph data
     knowledgeGraph: {
-      title: keyword,
+      title: cleanKeyword,
       type: 'Topic',
-      description: `${keyword} encompasses various strategies and methodologies used to achieve specific goals and objectives.`,
+      description: `${cleanKeyword} encompasses various strategies and methodologies used to achieve specific goals and objectives.`,
       attributes: {
         'Related to': 'Strategy, Implementation, Best Practices',
         'Used for': 'Optimization, Performance, Results',
@@ -234,18 +267,18 @@ export const getMockSerpData = (keyword: string): SerpAnalysisResult => {
         type: 'images',
         count: 25,
         suggestions: [
-          { title: `${keyword} process diagram`, source: 'Visual content opportunity' },
-          { title: `${keyword} comparison chart`, source: 'Infographic potential' },
-          { title: `${keyword} step-by-step guide`, source: 'Tutorial images' }
+          { title: `${cleanKeyword} process diagram`, source: 'Visual content opportunity' },
+          { title: `${cleanKeyword} comparison chart`, source: 'Infographic potential' },
+          { title: `${cleanKeyword} step-by-step guide`, source: 'Tutorial images' }
         ]
       },
       {
         type: 'videos',
         count: 15,
         suggestions: [
-          { title: `${keyword} tutorial series`, source: 'Educational content' },
-          { title: `${keyword} case study presentation`, source: 'Success stories' },
-          { title: `${keyword} expert interview`, source: 'Authority content' }
+          { title: `${cleanKeyword} tutorial series`, source: 'Educational content' },
+          { title: `${cleanKeyword} case study presentation`, source: 'Success stories' },
+          { title: `${cleanKeyword} expert interview`, source: 'Authority content' }
         ]
       }
     ],
