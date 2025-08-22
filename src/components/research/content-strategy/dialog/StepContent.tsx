@@ -19,7 +19,7 @@ export function StepContent({ currentStep, proposal, handleClose }: StepContentP
     case 1:
       return (
         <div className="h-full">
-          <SerpAnalysisStep />
+          <SerpAnalysisStep proposal={proposal} />
         </div>
       );
     

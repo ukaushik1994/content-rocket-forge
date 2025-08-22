@@ -113,27 +113,48 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     return <>{children}</>;
   };
 
-  // Context-aware navigation with validation
+  // Context-aware navigation with enhanced validation
   const NavigationController = () => {
     const { state } = useContentBuilder();
     
     const canProceedToStep = (step: number): boolean => {
       switch (step) {
         case 0: return true; // Always can access solution selection
-        case 1: return !!state.selectedSolution; // Need solution selected
-        case 2: return !!state.selectedSolution && state.serpSelections.some(item => item.selected); // Need solution and SERP selections
-        case 3: return !!state.selectedSolution && state.outline.length > 0; // Need solution and outline
-        case 4: return !!state.selectedSolution && !!state.content && state.content.length > 100; // Need everything
+        case 1: return true; // Always allow SERP analysis (with mock data fallback)
+        case 2: return !!state.mainKeyword; // Need keyword for outline generation
+        case 3: return !!state.mainKeyword && (state.outline.length > 0 || state.serpSelections.length > 0); // Need keyword and some content structure
+        case 4: return !!state.mainKeyword && (!!state.content || state.outline.length > 0); // Need keyword and generated content or outline
         default: return false;
       }
     };
 
-    return { canProceedToStep };
+    const getStepRequirement = (step: number): string => {
+      switch (step) {
+        case 1: return state.selectedSolution ? 'Ready for SERP analysis' : 'Select a solution first';
+        case 2: return state.mainKeyword ? 'Ready to generate outline' : 'Complete SERP analysis first';
+        case 3: return (state.outline.length > 0 || state.serpSelections.length > 0) ? 'Ready to generate content' : 'Complete outline generation first';
+        case 4: return (state.content || state.outline.length > 0) ? 'Ready to save content' : 'Generate content first';
+        default: return 'Step available';
+      }
+    };
+
+    return { canProceedToStep, getStepRequirement };
   };
 
   const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
+    const { canProceedToStep, getStepRequirement } = NavigationController();
+    const nextStep = currentStep + 1;
+    
+    if (nextStep < STEPS.length) {
+      if (canProceedToStep(nextStep)) {
+        setCurrentStep(nextStep);
+      } else {
+        toast({
+          title: `Cannot proceed to ${STEPS[nextStep].title}`,
+          description: getStepRequirement(nextStep),
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -163,7 +184,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-border/50">
+      <DialogContent className="w-full max-w-7xl h-[90vh] flex flex-col bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-border/50 sm:max-w-[95vw] lg:max-w-6xl xl:max-w-7xl">
         <ContentBuilderProvider>
           <StrategyContentInit proposal={proposal} />
           
@@ -215,10 +236,10 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
             ))}
           </div>
 
-          <div className="relative z-10 flex-1 flex flex-col">
+          <div className="relative z-10 flex flex-col h-full min-h-0">
             {/* Hero Header Section */}
             <motion.div 
-              className="flex-shrink-0 text-center mb-8 relative"
+              className="flex-shrink-0 text-center mb-4 relative"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
@@ -240,12 +261,12 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                 </motion.div>
                 
-                <DialogTitle className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+                <DialogTitle className="text-2xl md:text-3xl font-bold mb-3 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
                   Strategy Content Builder
                 </DialogTitle>
                 
                 <motion.p 
-                  className="text-muted-foreground max-w-2xl mx-auto mb-6"
+                  className="text-muted-foreground max-w-2xl mx-auto mb-4 text-sm"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
@@ -255,56 +276,29 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
 
                 {/* Progress Section */}
                 <motion.div 
-                  className="max-w-lg mx-auto bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 p-4"
+                  className="max-w-lg mx-auto bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 p-3"
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
                 >
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                     <span>Step {currentStep + 1} of {STEPS.length}</span>
                     <span>{Math.round(progress)}% Complete</span>
                   </div>
-                  <Progress value={progress} className="h-2 mb-4" />
+                  <Progress value={progress} className="h-2 mb-3" />
                   <ProgressIndicator currentStep={currentStep} />
-                </motion.div>
-
-                {/* Quick Stats */}
-                <motion.div 
-                  className="flex justify-center gap-6 mt-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  {[
-                    { icon: Target, label: "Strategy Steps", value: "5" },
-                    { icon: Zap, label: "AI Analysis", value: "< 30s" },
-                    { icon: Rocket, label: "Success Rate", value: "95%" }
-                  ].map((stat, index) => (
-                    <motion.div 
-                      key={stat.label}
-                      className="text-center"
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <div className="inline-flex items-center justify-center w-10 h-10 bg-background/60 backdrop-blur-xl rounded-lg border border-border/50 mb-2">
-                        <stat.icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="text-xs font-bold text-foreground">{stat.value}</div>
-                      <div className="text-xs text-muted-foreground">{stat.label}</div>
-                    </motion.div>
-                  ))}
                 </motion.div>
               </div>
             </motion.div>
 
             {/* Enhanced Step Navigation */}
             <motion.div 
-              className="flex-shrink-0 mb-8"
+              className="flex-shrink-0 mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
             >
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-5 gap-2">
                 <StepNavigationItems 
                   currentStep={currentStep} 
                   onStepClick={setCurrentStep}
@@ -313,21 +307,21 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
               </div>
             </motion.div>
 
-            {/* Enhanced Step Content Area */}
+            {/* Enhanced Step Content Area with ScrollArea */}
             <motion.div 
-              className="flex-1 overflow-y-auto bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50"
+              className="flex-1 min-h-0 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1, type: "spring", stiffness: 200 }}
             >
-              <div className="relative p-6">
+              <div className="relative h-full">
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-br from-primary/5 to-blue-500/5 rounded-2xl"
                   animate={{ opacity: [0.3, 0.6, 0.3] }}
                   transition={{ duration: 6, repeat: Infinity }}
                 />
                 
-                <div className="relative z-10">
+                <div className="relative z-10 h-full overflow-auto p-4 md:p-6">
                   <LoadingStateWrapper
                     isLoading={false}
                     error={initializationError}

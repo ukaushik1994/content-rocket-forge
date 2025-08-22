@@ -14,10 +14,15 @@ import { getApiKey } from '@/services/apiKeyService';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CheckCircle, AlertTriangle, Settings } from 'lucide-react';
 
-export const SerpAnalysisStep = () => {
-  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections, navigateToStep } = useContentBuilder();
+interface SerpAnalysisStepProps {
+  proposal?: any;
+}
+
+export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
+  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections, navigateToStep, setMainKeyword } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [apiKeysStatus, setApiKeysStatus] = useState({
     serpApi: { configured: false, working: false },
@@ -176,19 +181,32 @@ export const SerpAnalysisStep = () => {
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center gap-2">
               <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              No Keyword Selected
+              Keyword Detection
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              Please select a keyword first to analyze SERP data and competition.
-            </p>
-            <button
+            <div className="text-muted-foreground mb-4">
+              <p className="font-medium">Keyword Detection</p>
+              <p className="text-sm">Main keyword: {mainKeyword || 'Not set'}</p>
+              <p className="text-sm">Proposal keyword: {proposal?.primary_keyword || 'Not available'}</p>
+            </div>
+            {proposal?.primary_keyword && (
+              <Button 
+                onClick={() => {
+                  console.log('Setting keyword from proposal:', proposal.primary_keyword);
+                  setMainKeyword(proposal.primary_keyword);
+                }}
+                variant="default"
+              >
+                Use "{proposal.primary_keyword}"
+              </Button>
+            )}
+            <Button
               onClick={() => navigateToStep(0)}
-              className="w-full px-4 py-2 bg-neon-purple hover:bg-neon-purple/80 text-white rounded-lg transition-colors"
+              variant="outline"
             >
               Go to Keyword Selection
-            </button>
+            </Button>
           </CardContent>
         </Card>
       </div>
