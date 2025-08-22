@@ -120,18 +120,18 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     const canProceedToStep = (step: number): boolean => {
       switch (step) {
         case 0: return true; // Always can access solution selection
-        case 1: return true; // Always allow SERP analysis (with mock data fallback)
-        case 2: return !!state.mainKeyword; // Need keyword for outline generation
-        case 3: return !!state.mainKeyword && (state.outline.length > 0 || state.serpSelections.length > 0); // Need keyword and some content structure
-        case 4: return !!state.mainKeyword && (!!state.content || state.outline.length > 0); // Need keyword and generated content or outline
+        case 1: return !!state.selectedSolution; // Need solution selected for SERP analysis
+        case 2: return !!state.selectedSolution && !!state.mainKeyword; // Need solution and keyword for outline generation
+        case 3: return !!state.selectedSolution && !!state.mainKeyword && (state.outline.length > 0 || state.serpSelections.length > 0); // Need solution, keyword and some content structure
+        case 4: return !!state.selectedSolution && !!state.mainKeyword && (!!state.content || state.outline.length > 0); // Need solution, keyword and generated content or outline
         default: return false;
       }
     };
 
     const getStepRequirement = (step: number): string => {
       switch (step) {
-        case 1: return state.selectedSolution ? 'Ready for SERP analysis' : 'Select a solution first';
-        case 2: return state.mainKeyword ? 'Ready to generate outline' : 'Complete SERP analysis first';
+        case 1: return state.selectedSolution ? 'Ready for SERP analysis' : 'Please select a solution first';
+        case 2: return state.mainKeyword ? 'Ready to generate outline' : state.selectedSolution ? 'Set the primary keyword to continue' : 'Select a solution and set keyword first';
         case 3: return (state.outline.length > 0 || state.serpSelections.length > 0) ? 'Ready to generate content' : 'Complete outline generation first';
         case 4: return (state.content || state.outline.length > 0) ? 'Ready to save content' : 'Generate content first';
         default: return 'Step available';

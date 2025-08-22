@@ -50,7 +50,7 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
         setApiKeysStatus(newStatus);
 
         // Enable enhanced mode if we have at least one API key configured
-        if ((serpApiKey || serpstackKey) && mainKeyword) {
+        if ((serpApiKey || serpstackKey) && (mainKeyword || proposal?.primary_keyword)) {
           setUseEnhancedMode(true);
         }
 
@@ -68,8 +68,14 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
       setShowApiSetup(true);
     }
 
+    // Auto-set proposal keyword if available and no main keyword is set
+    if (proposal?.primary_keyword && !mainKeyword) {
+      console.log('Auto-setting keyword from proposal:', proposal.primary_keyword);
+      setMainKeyword(proposal.primary_keyword);
+    }
+
     checkApiKeys();
-  }, [mainKeyword]);
+  }, [mainKeyword, proposal?.primary_keyword, setMainKeyword]);
 
   const handleStatusChange = (status: any) => {
     setApiKeysStatus(status);
