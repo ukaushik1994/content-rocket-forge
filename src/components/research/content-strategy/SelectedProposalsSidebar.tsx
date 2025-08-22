@@ -78,10 +78,10 @@ export const SelectedProposalsSidebar = ({
       animate={{ x: 0 }}
       exit={{ x: 400 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed right-0 top-0 h-screen w-96 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-lg border-l border-white/10 shadow-2xl z-50 flex flex-col"
+      className="fixed right-0 top-20 bottom-0 w-96 bg-background/95 backdrop-blur-lg border-l border-border/20 shadow-2xl z-40 flex flex-col"
     >
       {/* Header */}
-      <div className="flex-shrink-0 p-4 border-b border-white/10 bg-gradient-to-r from-blue-900/30 to-purple-900/20">
+      <div className="flex-shrink-0 p-4 border-b border-border/20 bg-card/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full">
