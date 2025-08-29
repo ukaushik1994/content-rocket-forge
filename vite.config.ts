@@ -28,8 +28,22 @@ export default defineConfig(({ mode }) => ({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@radix-ui') || id.includes('@headlessui')) {
+              return 'ui-vendor';
+            }
+            if (id.includes('framer-motion') || id.includes('lucide-react')) {
+              return 'animation-vendor';
+            }
+            return 'vendor';
+          }
+          if (id.includes('src/pages/research/')) {
+            return 'research-pages';
+          }
         },
       },
     },
