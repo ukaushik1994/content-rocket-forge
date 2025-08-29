@@ -28,12 +28,6 @@ export default defineConfig(({ mode }) => ({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name && assetInfo.name.endsWith('.css')) {
-            return 'assets/[name]-[hash].css';
-          }
-          return 'assets/[name]-[hash][extname]';
-        },
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('react') || id.includes('react-dom')) {
@@ -56,10 +50,5 @@ export default defineConfig(({ mode }) => ({
   },
   css: {
     devSourcemap: mode === 'development',
-    preprocessorOptions: {
-      css: {
-        charset: false,
-      },
-    },
   },
 }));
