@@ -99,7 +99,7 @@ export default function Settings() {
   };
   return <motion.div className="min-h-screen flex flex-col bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
       <Helmet>
-        
+        <title>Settings | ContentRocketForge</title>
         <meta name="description" content="Manage your account settings and preferences" />
       </Helmet>
       
@@ -132,7 +132,10 @@ export default function Settings() {
         </div>
 
         {/* Static mesh background */}
-        
+        <div className="absolute inset-0 opacity-30" style={{
+        background: 'linear-gradient(45deg, transparent 30%, rgba(155, 135, 245, 0.1) 50%, transparent 70%)',
+        backgroundSize: '60px 60px'
+      }} />
 
         {/* Content container */}
       <div className="relative z-10 container mx-auto px-8 py-16 lg:py-24">
