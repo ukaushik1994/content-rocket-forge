@@ -68,7 +68,7 @@ class AIServiceController {
       category: 'AI Services',
       setup_url: 'https://openrouter.ai/keys',
       capabilities: ['chat', 'completion', 'multimodal'],
-      available_models: ['gpt-4.1-2025-04-14', 'claude-opus-4-20250514', 'claude-sonnet-4-20250514'],
+      available_models: ['gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-4.1-2025-04-14', 'claude-opus-4-20250514', 'claude-sonnet-4-20250514'],
       is_required: false
     },
     openai: {
@@ -78,7 +78,7 @@ class AIServiceController {
       category: 'AI Services',
       setup_url: 'https://platform.openai.com/api-keys',
       capabilities: ['chat', 'completion', 'vision', 'embedding'],
-      available_models: ['gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16'],
+      available_models: ['gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16'],
       is_required: false
     },
     anthropic: {
@@ -492,8 +492,8 @@ class AIServiceController {
    */
   getDefaultModel(provider: string): string {
     const defaults = {
-      openrouter: 'gpt-4.1-2025-04-14',
-      openai: 'gpt-4.1-2025-04-14',
+      openrouter: 'gpt-5-2025-08-07',
+      openai: 'gpt-5-2025-08-07',
       anthropic: 'claude-opus-4-20250514',
       gemini: 'gemini-1.5-pro',
       mistral: 'mistral-large',

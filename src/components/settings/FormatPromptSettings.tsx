@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Pencil, Save, Sparkles, Loader2 } from 'lucide-react';
+import { Pencil, Save, Sparkles, Loader2, BarChart3 } from 'lucide-react';
 // Import both the contentFormats array and the getFormatIconComponent function 
 import { contentFormats, getFormatByIdOrDefault, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { 
@@ -19,7 +20,8 @@ import {
 } from '@/services/userPreferencesService';
 import { logActivity } from '@/services/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
-import { enhancePromptWithFeedback, EnhancementResult } from '@/services/promptEnhancementService';
+import { enhancePromptWithFeedback, EnhancementResult, getRecentApprovalFeedback, FeedbackData } from '@/services/promptEnhancementService';
+import { FeedbackStatsDialog } from './FeedbackStatsDialog';
 
 export function FormatPromptSettings() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -28,6 +30,8 @@ export function FormatPromptSettings() {
   const [isEnhancing, setIsEnhancing] = useState<string | null>(null);
   const [enhancementResult, setEnhancementResult] = useState<EnhancementResult | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [feedbackStatsOpen, setFeedbackStatsOpen] = useState(false);
+  const [currentFeedback, setCurrentFeedback] = useState<FeedbackData[]>([]);
   const { user } = useAuth();
   const handleOpenEditor = (formatId: string) => {
     setActiveFormatId(formatId);
@@ -111,11 +115,21 @@ export function FormatPromptSettings() {
       setPreviewDialogOpen(true);
       
       if (result.feedbackAnalysis) {
-        toast.success(result.feedbackAnalysis);
+        toast.success(`✨ Template enhanced! ${result.feedbackAnalysis}`);
       }
     } catch (error: any) {
       console.error('Error enhancing template:', error);
-      toast.error('Failed to enhance template: ' + error.message);
+      if (error.message?.includes('No recent feedback')) {
+        toast.error('No recent feedback available. Create content and get reviewer feedback first.', {
+          description: 'The AI needs approval feedback to improve your templates.'
+        });
+      } else if (error.message?.includes('AI service unavailable')) {
+        toast.error('AI service is currently unavailable', {
+          description: 'Please check your AI provider settings and try again.'
+        });
+      } else {
+        toast.error('Failed to enhance template: ' + error.message);
+      }
     } finally {
       setIsEnhancing(null);
     }
@@ -126,22 +140,64 @@ export function FormatPromptSettings() {
     
     try {
       await updatePromptTemplate(editingTemplate as PromptTemplate);
-      toast.success('Template enhanced and saved successfully!');
+      toast.success('🎉 Template enhanced and saved successfully!', {
+        description: 'Your template now incorporates recent feedback to improve content quality.'
+      });
       setPreviewDialogOpen(false);
       setEnhancementResult(null);
+      
+      // Log the enhancement activity
+      if (user) {
+        await logActivity({
+          userId: user.id,
+          module: 'settings',
+          action: 'enhance_prompt_template',
+          changeSummary: `Enhanced ${getFormatByIdOrDefault(activeFormatId).name} template using AI feedback analysis`,
+          details: {
+            format_type: activeFormatId,
+            format_name: getFormatByIdOrDefault(activeFormatId).name,
+            feedback_count: enhancementResult?.feedbackAnalysis?.match(/\d+/)?.[0] || '0',
+            enhancement_type: 'ai_feedback_analysis'
+          }
+        });
+      }
     } catch (error) {
       toast.error('Failed to save enhanced template');
       console.error('Error saving enhanced template:', error);
     }
   };
 
+  const handleViewFeedbackStats = async (formatId?: string) => {
+    try {
+      const feedback = await getRecentApprovalFeedback(30);
+      setCurrentFeedback(feedback);
+      setFeedbackStatsOpen(true);
+    } catch (error) {
+      console.error('Error fetching feedback stats:', error);
+      toast.error('Failed to load feedback statistics');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Format Prompt Templates</h2>
-        <p className="text-muted-foreground">
-          Customize prompts used for generating different content formats
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Format Prompt Templates</h2>
+            <p className="text-muted-foreground">
+              Customize prompts used for generating different content formats
+            </p>
+          </div>
+          <Button 
+            onClick={() => handleViewFeedbackStats()}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            View Feedback Stats
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -191,7 +247,7 @@ export function FormatPromptSettings() {
                       size="sm"
                       disabled={isEnhancing === format.id}
                       className="px-2"
-                      title="Refresh with AI Feedback"
+                      title={`Refresh ${format.name} template with AI feedback analysis`}
                     >
                       {isEnhancing === format.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -290,23 +346,28 @@ export function FormatPromptSettings() {
           
           <div className="grid gap-6 py-4">
             {enhancementResult?.feedbackAnalysis && (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <h4 className="font-medium text-sm mb-2">Feedback Analysis</h4>
+              <div className="p-4 bg-gradient-to-r from-primary/10 to-purple/10 rounded-lg border border-primary/20">
+                <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Feedback Analysis
+                </h4>
                 <p className="text-sm text-muted-foreground">{enhancementResult.feedbackAnalysis}</p>
               </div>
             )}
             
             {enhancementResult?.suggestions && enhancementResult.suggestions.length > 0 && (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <h4 className="font-medium text-sm mb-2">Common Issues Addressed</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
+              <div className="p-4 bg-gradient-to-r from-secondary/10 to-accent/10 rounded-lg border border-secondary/20">
+                <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-secondary" />
+                  Common Issues Addressed
+                </h4>
+                <div className="flex flex-wrap gap-2">
                   {enhancementResult.suggestions.map((suggestion, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
+                    <Badge key={index} variant="secondary" className="text-xs">
                       {suggestion}
-                    </li>
+                    </Badge>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
 
@@ -353,6 +414,13 @@ export function FormatPromptSettings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Feedback Stats Dialog */}
+      <FeedbackStatsDialog 
+        open={feedbackStatsOpen}
+        onOpenChange={setFeedbackStatsOpen}
+        feedback={currentFeedback}
+      />
     </div>
   );
 }
