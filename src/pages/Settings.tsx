@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Card } from '@/components/ui/card';
@@ -19,12 +18,12 @@ import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Sparkles } from 'lucide-react';
 import SettingsTopBar from '@/components/settings/SettingsTopBar';
 export default function Settings() {
-  const { loading } = useAuth();
+  const {
+    loading
+  } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
-  
   if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
+    return <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
         <main className="flex-1 container py-8 flex items-center justify-center">
           <div className="relative">
@@ -34,10 +33,8 @@ export default function Settings() {
             </div>
           </div>
         </main>
-      </div>
-    );
+      </div>;
   }
-
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
   };
@@ -85,7 +82,6 @@ export default function Settings() {
       }
     }
   };
-  
   const itemVariants = {
     initial: {
       y: 20,
@@ -101,15 +97,7 @@ export default function Settings() {
       }
     }
   };
-
-  return (
-    <motion.div 
-      className="min-h-screen flex flex-col bg-background" 
-      variants={pageVariants} 
-      initial="initial" 
-      animate="animate" 
-      exit="exit"
-    >
+  return <motion.div className="min-h-screen flex flex-col bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
       <Helmet>
         <title>Settings | ContentRocketForge</title>
         <meta name="description" content="Manage your account settings and preferences" />
@@ -124,56 +112,36 @@ export default function Settings() {
         
         {/* Floating gradient orbs */}
         <div className="absolute inset-0 overflow-hidden">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full blur-2xl"
-              style={{
-                width: Math.random() * 300 + 100,
-                height: Math.random() * 300 + 100,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                background: i % 3 === 0 
-                  ? 'linear-gradient(45deg, rgba(155, 135, 245, 0.4), rgba(217, 70, 239, 0.2))' 
-                  : i % 3 === 1 
-                  ? 'linear-gradient(45deg, rgba(51, 195, 240, 0.3), rgba(155, 135, 245, 0.2))'
-                  : 'linear-gradient(45deg, rgba(217, 70, 239, 0.3), rgba(249, 115, 22, 0.2))',
-              }}
-              animate={{
-                x: [0, Math.random() * 100 - 50],
-                y: [0, Math.random() * 100 - 50],
-                scale: [1, 1.2, 1],
-                opacity: [0.2, 0.6, 0.2],
-              }}
-              transition={{
-                duration: Math.random() * 20 + 20,
-                repeat: Infinity,
-                repeatType: "reverse",
-                ease: "easeInOut",
-              }}
-            />
-          ))}
+          {[...Array(8)].map((_, i) => <motion.div key={i} className="absolute rounded-full blur-2xl" style={{
+          width: Math.random() * 300 + 100,
+          height: Math.random() * 300 + 100,
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+          background: i % 3 === 0 ? 'linear-gradient(45deg, rgba(155, 135, 245, 0.4), rgba(217, 70, 239, 0.2))' : i % 3 === 1 ? 'linear-gradient(45deg, rgba(51, 195, 240, 0.3), rgba(155, 135, 245, 0.2))' : 'linear-gradient(45deg, rgba(217, 70, 239, 0.3), rgba(249, 115, 22, 0.2))'
+        }} animate={{
+          x: [0, Math.random() * 100 - 50],
+          y: [0, Math.random() * 100 - 50],
+          scale: [1, 1.2, 1],
+          opacity: [0.2, 0.6, 0.2]
+        }} transition={{
+          duration: Math.random() * 20 + 20,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut"
+        }} />)}
         </div>
 
         {/* Static mesh background */}
-        <div 
-          className="absolute inset-0 opacity-30"
-          style={{
-            background: 'linear-gradient(45deg, transparent 30%, rgba(155, 135, 245, 0.1) 50%, transparent 70%)',
-            backgroundSize: '60px 60px',
-          }}
-        />
+        <div className="absolute inset-0 opacity-30" style={{
+        background: 'linear-gradient(45deg, transparent 30%, rgba(155, 135, 245, 0.1) 50%, transparent 70%)',
+        backgroundSize: '60px 60px'
+      }} />
 
         {/* Content container */}
-<div className="relative z-10 container mx-auto px-8 py-16 lg:py-24">
-          <div className="mb-6">
-            <SettingsTopBar />
-          </div>
+      <div className="relative z-10 container mx-auto px-8 py-16 lg:py-24">
+          
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div 
-              variants={itemVariants}
-              className="space-y-8"
-            >
+            <motion.div variants={itemVariants} className="space-y-8">
               <motion.div variants={itemVariants} className="inline-block">
                 <div className="flex items-center space-x-3 bg-gradient-to-r from-neon-purple/30 to-neon-blue/20 rounded-full px-6 py-3 border border-white/20 backdrop-blur-xl">
                   <Sparkles className="h-5 w-5 text-neon-purple animate-pulse" />
@@ -181,10 +149,7 @@ export default function Settings() {
                 </div>
               </motion.div>
               
-              <motion.h1 
-                variants={itemVariants} 
-                className="text-5xl lg:text-7xl font-black leading-tight"
-              >
+              <motion.h1 variants={itemVariants} className="text-5xl lg:text-7xl font-black leading-tight">
                 <span className="bg-gradient-to-r from-white via-neon-purple to-neon-blue bg-clip-text text-transparent animate-gradient-shift bg-300%">
                   Transform
                 </span>
@@ -192,58 +157,62 @@ export default function Settings() {
                 <span className="text-white">Your Workflow</span>
               </motion.h1>
               
-              <motion.p 
-                variants={itemVariants} 
-                className="text-xl text-muted-foreground leading-relaxed max-w-lg"
-              >
+              <motion.p variants={itemVariants} className="text-xl text-muted-foreground leading-relaxed max-w-lg">
                 Unlock the full potential of your content creation with advanced API integrations, personalized settings, and intelligent automation.
               </motion.p>
 
-              <motion.div 
-                variants={itemVariants}
-                className="flex flex-wrap gap-4 pt-4"
-              >
-                {['8 Categories', 'Real-time Status', 'Auto-sync', 'Cloud Backup'].map((feature, index) => (
-                  <motion.div
-                    key={feature}
-                    className="flex items-center space-x-2 bg-glass/20 rounded-full px-4 py-2 border border-white/10 backdrop-blur-sm"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5 + index * 0.1 }}
-                  >
+              <motion.div variants={itemVariants} className="flex flex-wrap gap-4 pt-4">
+                {['8 Categories', 'Real-time Status', 'Auto-sync', 'Cloud Backup'].map((feature, index) => <motion.div key={feature} className="flex items-center space-x-2 bg-glass/20 rounded-full px-4 py-2 border border-white/10 backdrop-blur-sm" initial={{
+                opacity: 0,
+                scale: 0.8
+              }} animate={{
+                opacity: 1,
+                scale: 1
+              }} transition={{
+                delay: 0.5 + index * 0.1
+              }}>
                     <div className="w-2 h-2 rounded-full bg-neon-purple animate-pulse"></div>
                     <span className="text-sm font-medium text-white/90">{feature}</span>
-                  </motion.div>
-                ))}
+                  </motion.div>)}
               </motion.div>
             </motion.div>
 
             {/* Stats section */}
-            <motion.div 
-              variants={itemVariants}
-              className="grid grid-cols-2 gap-6"
-            >
-              {[
-                { number: '8', label: 'Settings Categories', icon: SettingsIcon },
-                { number: '25+', label: 'API Integrations', icon: Sparkles },
-                { number: '99.9%', label: 'Uptime Guaranteed', icon: SettingsIcon },
-                { number: '24/7', label: 'Real-time Sync', icon: Sparkles },
-              ].map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  className="relative group"
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1, type: "spring", stiffness: 100 }}
-                >
+            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-6">
+              {[{
+              number: '8',
+              label: 'Settings Categories',
+              icon: SettingsIcon
+            }, {
+              number: '25+',
+              label: 'API Integrations',
+              icon: Sparkles
+            }, {
+              number: '99.9%',
+              label: 'Uptime Guaranteed',
+              icon: SettingsIcon
+            }, {
+              number: '24/7',
+              label: 'Real-time Sync',
+              icon: Sparkles
+            }].map((stat, index) => <motion.div key={stat.label} className="relative group" initial={{
+              opacity: 0,
+              y: 50
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              delay: 0.3 + index * 0.1,
+              type: "spring",
+              stiffness: 100
+            }}>
                   <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/20 to-neon-blue/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
                   <div className="relative bg-glass/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 text-center group-hover:bg-glass/20 transition-all duration-300">
                     <stat.icon className="h-8 w-8 text-neon-purple mx-auto mb-3 animate-float" />
                     <h3 className="text-3xl lg:text-4xl font-bold text-gradient mb-2">{stat.number}</h3>
                     <p className="text-muted-foreground text-sm font-medium">{stat.label}</p>
                   </div>
-                </motion.div>
-              ))}
+                </motion.div>)}
             </motion.div>
           </div>
         </div>
@@ -252,23 +221,23 @@ export default function Settings() {
       {/* Full-width main content */}
       <main className="w-full">
         <motion.div variants={itemVariants} className="w-full">
-          <SettingsLayout
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-          >
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="w-full"
-            >
+          <SettingsLayout activeTab={activeTab} onTabChange={handleTabChange}>
+            <motion.div key={activeTab} initial={{
+            opacity: 0,
+            y: 20
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} exit={{
+            opacity: 0,
+            y: -20
+          }} transition={{
+            duration: 0.3
+          }} className="w-full">
               {renderTabContent()}
             </motion.div>
           </SettingsLayout>
         </motion.div>
       </main>
-    </motion.div>
-  );
+    </motion.div>;
 }
