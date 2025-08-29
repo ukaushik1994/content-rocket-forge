@@ -53,13 +53,13 @@ export const SelectedProposalsSidebar = ({
   if (!isOpen) {
     return (
       <motion.div
-        initial={{ x: -300 }}
+        initial={{ x: 300 }}
         animate={{ x: 0 }}
-        className="fixed bottom-6 left-6 z-50"
+        className="fixed right-4 top-1/2 -translate-y-1/2 z-50"
       >
         <Button
           onClick={onToggle}
-          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg rounded-full p-3"
+          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg rounded-l-lg rounded-r-none p-3"
         >
           <ListPlus className="h-5 w-5" />
           {selectedCount > 0 && (
