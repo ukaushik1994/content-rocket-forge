@@ -52,8 +52,8 @@ export function SettingsLayout({
     icon: SettingsIcon
   }];
   return <div className="flex w-full min-h-screen">
-      {/* Fixed Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-80 z-40 border-r border-white/10 bg-gradient-to-b from-background/95 via-background/90 to-neon-purple/5 backdrop-blur-xl">
+      {/* Sidebar - now using flex instead of fixed */}
+      <aside className="w-80 border-r border-white/10 bg-gradient-to-b from-background/95 via-background/90 to-neon-purple/5 backdrop-blur-xl flex-shrink-0">
         <div className="p-6 h-full">
           {/* Sidebar Header */}
           <motion.div initial={{
@@ -99,8 +99,8 @@ export function SettingsLayout({
         </div>
       </aside>
       
-      {/* Main Content Area */}
-      <div className="flex-1 ml-80 min-h-screen">
+      {/* Main Content Area - now using flex-1 without margin */}
+      <div className="flex-1 min-h-screen">
         <motion.div initial={{
         opacity: 0,
         y: 10
