@@ -146,6 +146,16 @@ export async function deletePromptTemplate(id: string): Promise<boolean> {
 }
 
 /**
+ * Get recent approval feedback for prompt enhancement
+ */
+export const getRecentApprovalFeedback = async (days: number = 30) => {
+  // This function is now implemented in promptEnhancementService.ts
+  // to avoid circular dependencies with supabase client
+  const { getRecentApprovalFeedback } = await import('./promptEnhancementService');
+  return getRecentApprovalFeedback(days);
+};
+
+/**
  * Create default prompt templates if none exist
  */
 export async function initializeDefaultPromptTemplates(): Promise<void> {

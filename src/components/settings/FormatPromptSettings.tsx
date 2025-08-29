@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Pencil, Save } from 'lucide-react';
+import { Pencil, Save, Sparkles, Loader2 } from 'lucide-react';
 // Import both the contentFormats array and the getFormatIconComponent function 
 import { contentFormats, getFormatByIdOrDefault, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { 
@@ -19,11 +19,15 @@ import {
 } from '@/services/userPreferencesService';
 import { logActivity } from '@/services/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import { enhancePromptWithFeedback, EnhancementResult } from '@/services/promptEnhancementService';
 
 export function FormatPromptSettings() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeFormatId, setActiveFormatId] = useState("");
   const [editingTemplate, setEditingTemplate] = useState<Partial<PromptTemplate> | null>(null);
+  const [isEnhancing, setIsEnhancing] = useState<string | null>(null);
+  const [enhancementResult, setEnhancementResult] = useState<EnhancementResult | null>(null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const { user } = useAuth();
   const handleOpenEditor = (formatId: string) => {
     setActiveFormatId(formatId);
@@ -77,6 +81,60 @@ export function FormatPromptSettings() {
     }
   };
 
+  const handleRefreshWithFeedback = async (formatId: string) => {
+    setIsEnhancing(formatId);
+    try {
+      // Get existing template
+      const existingTemplates = getPromptTemplatesByType(formatId);
+      if (existingTemplates.length === 0) {
+        toast.error('No existing template found. Create a template first.');
+        return;
+      }
+
+      const currentTemplate = existingTemplates[0];
+      
+      // Enhance the template with AI
+      const result = await enhancePromptWithFeedback(currentTemplate, 30);
+      
+      if (!result.success) {
+        toast.error(result.error || 'Failed to enhance template');
+        return;
+      }
+
+      // Show preview dialog
+      setEnhancementResult(result);
+      setEditingTemplate({
+        ...currentTemplate,
+        promptTemplate: result.enhancedTemplate
+      });
+      setActiveFormatId(formatId);
+      setPreviewDialogOpen(true);
+      
+      if (result.feedbackAnalysis) {
+        toast.success(result.feedbackAnalysis);
+      }
+    } catch (error: any) {
+      console.error('Error enhancing template:', error);
+      toast.error('Failed to enhance template: ' + error.message);
+    } finally {
+      setIsEnhancing(null);
+    }
+  };
+
+  const handleApplyEnhancement = async () => {
+    if (!editingTemplate || !editingTemplate.id) return;
+    
+    try {
+      await updatePromptTemplate(editingTemplate as PromptTemplate);
+      toast.success('Template enhanced and saved successfully!');
+      setPreviewDialogOpen(false);
+      setEnhancementResult(null);
+    } catch (error) {
+      toast.error('Failed to save enhanced template');
+      console.error('Error saving enhanced template:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -108,22 +166,41 @@ export function FormatPromptSettings() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">{format.description}</p>
-                <Button 
-                  onClick={() => handleOpenEditor(format.id)} 
-                  variant={hasTemplate ? "default" : "outline"} 
-                  size="sm"
-                  className="w-full"
-                >
-                  {hasTemplate ? (
-                    <>
-                      <Pencil className="h-3 w-3 mr-1" /> Edit Template
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-3 w-3 mr-1" /> Create Template
-                    </>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => handleOpenEditor(format.id)} 
+                    variant={hasTemplate ? "default" : "outline"} 
+                    size="sm"
+                    className="flex-1"
+                  >
+                    {hasTemplate ? (
+                      <>
+                        <Pencil className="h-3 w-3 mr-1" /> Edit Template
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-3 w-3 mr-1" /> Create Template
+                      </>
+                    )}
+                  </Button>
+                  
+                  {hasTemplate && (
+                    <Button 
+                      onClick={() => handleRefreshWithFeedback(format.id)}
+                      variant="outline" 
+                      size="sm"
+                      disabled={isEnhancing === format.id}
+                      className="px-2"
+                      title="Refresh with AI Feedback"
+                    >
+                      {isEnhancing === format.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                    </Button>
                   )}
-                </Button>
+                </div>
               </CardContent>
             </Card>
           );
@@ -194,6 +271,85 @@ export function FormatPromptSettings() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveTemplate}>Save Template</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enhancement Preview Dialog */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI-Enhanced Template Preview
+            </DialogTitle>
+            <DialogDescription>
+              Review the AI-enhanced template based on recent feedback
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-6 py-4">
+            {enhancementResult?.feedbackAnalysis && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-medium text-sm mb-2">Feedback Analysis</h4>
+                <p className="text-sm text-muted-foreground">{enhancementResult.feedbackAnalysis}</p>
+              </div>
+            )}
+            
+            {enhancementResult?.suggestions && enhancementResult.suggestions.length > 0 && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-medium text-sm mb-2">Common Issues Addressed</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  {enhancementResult.suggestions.map((suggestion, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Current Template</Label>
+                <div className="p-3 bg-muted/30 rounded-md border">
+                  <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
+                    {getPromptTemplatesByType(activeFormatId)[0]?.promptTemplate || 'No template found'}
+                  </pre>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Enhanced Template</Label>
+                <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
+                  <pre className="text-xs whitespace-pre-wrap font-mono">
+                    {enhancementResult?.enhancedTemplate || 'No enhancement available'}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="enhanced-template">Edit Enhanced Template (Optional)</Label>
+              <Textarea
+                id="enhanced-template"
+                rows={8}
+                value={editingTemplate?.promptTemplate || ''}
+                onChange={(e) => setEditingTemplate(prev => ({...prev!, promptTemplate: e.target.value}))}
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleApplyEnhancement} className="bg-primary">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Apply Enhancement
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
