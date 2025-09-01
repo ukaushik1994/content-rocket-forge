@@ -28,17 +28,16 @@ const ContentStrategy = () => {
         <Navbar />
         
         {/* Service Status Indicators */}
-        <div className="relative z-20 flex justify-center pt-4 pb-2">
-          <div className="flex items-center gap-4 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2 shadow-sm">
+        <div className="relative z-20 flex justify-end pr-6 pt-4">
+          <div className="flex items-center gap-3 bg-card/90 border border-border/30 rounded-lg px-3 py-1.5">
             <SimpleAIServiceIndicator size="sm" />
             <SimpleSerpServiceIndicator size="sm" />
           </div>
         </div>
         
-        {/* Optimized Background */}
+        {/* Subtle Background */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl opacity-30 will-change-transform transform-gpu animate-float" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full filter blur-3xl opacity-20 will-change-transform transform-gpu animate-float" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-primary/3 rounded-full filter blur-2xl opacity-50" />
         </div>
         
         <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
