@@ -21,6 +21,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardSummaryData {
   content_created: {
@@ -73,6 +75,8 @@ export const DashboardSummary = () => {
   const [data, setData] = useState<DashboardSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const context = useContentStrategyOptional();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardSummary();
@@ -412,39 +416,87 @@ export const DashboardSummary = () => {
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="space-y-3">
-                {data.next_moves.length > 0 ? (
-                  data.next_moves.map((move, index) => (
-                    <motion.div 
-                      key={index} 
-                      className="flex items-center justify-between p-4 border border-white/10 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group/item"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.8 + (index * 0.1) }}
-                      whileHover={{ x: 4 }}
-                    >
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm text-white/90 truncate group-hover/item:text-white transition-colors">
-                          {move.cluster}
-                        </h4>
-                        <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
-                          <div className="text-neon-blue">
-                            {getContentTypeIcon(move.type)}
-                          </div>
-                          <span className="capitalize">{move.type}</span>
-                          <span>•</span>
-                          <span className="text-neon-purple">{move.volume.toLocaleString()} volume</span>
-                        </div>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        className="bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border-neon-purple/30 text-white hover:from-neon-purple/30 hover:to-neon-blue/30 hover-scale"
+                {/* Existing next moves from data */}
+                {data.next_moves.length > 0 && (
+                  <>
+                    {data.next_moves.map((move, index) => (
+                      <motion.div 
+                        key={index} 
+                        className="flex items-center justify-between p-4 border border-white/10 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group/item"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8 + (index * 0.1) }}
+                        whileHover={{ x: 4 }}
                       >
-                        {move.cta}
-                        <ArrowRight className="w-3 h-3 ml-1" />
-                      </Button>
-                    </motion.div>
-                  ))
-                ) : (
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm text-white/90 truncate group-hover/item:text-white transition-colors">
+                            {move.cluster}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
+                            <div className="text-neon-blue">
+                              {getContentTypeIcon(move.type)}
+                            </div>
+                            <span className="capitalize">{move.type}</span>
+                            <span>•</span>
+                            <span className="text-neon-purple">{move.volume.toLocaleString()} volume</span>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border-neon-purple/30 text-white hover:from-neon-purple/30 hover:to-neon-blue/30 hover-scale"
+                        >
+                          {move.cta}
+                          <ArrowRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </>
+                )}
+                
+                {/* Content Strategy Proposals */}
+                {context?.aiProposals && context.aiProposals.length > 0 && (
+                  <>
+                    {context.aiProposals.slice(0, 3).map((proposal, index) => (
+                      <motion.div 
+                        key={`proposal-${index}`}
+                        className="flex items-center justify-between p-4 border border-primary/20 rounded-lg bg-primary/5 hover:bg-primary/10 transition-all duration-300 group/item"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8 + ((data.next_moves.length + index) * 0.1) }}
+                        whileHover={{ x: 4 }}
+                      >
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm text-white/90 truncate group-hover/item:text-white transition-colors">
+                            {proposal.primary_keyword || 'Content Strategy Opportunity'}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
+                            <div className="text-primary">
+                              <FileText className="w-3 h-3" />
+                            </div>
+                            <span className="capitalize">{proposal.content_type || 'Article'}</span>
+                            {proposal.search_volume && (
+                              <>
+                                <span>•</span>
+                                <span className="text-primary">{proposal.search_volume} searches/mo</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          onClick={() => navigate('/research/content-strategy#strategies')}
+                          className="bg-gradient-to-r from-primary/20 to-blue-500/20 border-primary/30 text-white hover:from-primary/30 hover:to-blue-500/30 hover-scale"
+                        >
+                          Explore
+                          <ArrowRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </>
+                )}
+                
+                {/* Show empty state only if no proposals or moves */}
+                {(!data.next_moves.length && (!context?.aiProposals || !context.aiProposals.length)) && (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 flex items-center justify-center mx-auto mb-3">
                       <CheckCircle className="w-8 h-8 text-emerald-400" />

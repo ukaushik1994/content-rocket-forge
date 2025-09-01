@@ -12,7 +12,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
 import { DashboardFooter } from '@/components/layout/DashboardFooter';
-import { ContentStrategyCarousel } from '@/components/dashboard/ContentStrategyCarousel';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 
 const Index = () => {
@@ -165,11 +164,6 @@ const Index = () => {
               {/* Quick Actions */}
               <motion.section variants={sectionVariants}>
                 <QuickActions />
-              </motion.section>
-              
-              {/* Content Strategy Carousel */}
-              <motion.section variants={sectionVariants}>
-                <ContentStrategyCarousel />
               </motion.section>
               
               {/* Strategic Momentum Panel */}
