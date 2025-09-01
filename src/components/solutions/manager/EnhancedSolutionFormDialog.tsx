@@ -439,57 +439,66 @@ useEffect(() => {
       }}
     >
         <DialogContent className="glass-panel sm:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col shadow-neon rounded-xl">
-        <DialogHeader className="sticky top-0 z-10 bg-background/60 backdrop-blur-sm border-b border-border/50">
-          <DialogTitle className="text-xl">
-            {solution ? `Edit ${solution.name}` : 'Add New Solution'}
-          </DialogTitle>
-          <DialogDescription>
-            {solution 
-              ? 'Update your business solution details below.'
-              : 'Create a comprehensive profile for your business solution.'}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex items-center justify-between mb-2">
-          <div />
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={async () => {
-                try {
-                  await refreshStatus();
-                  if (!isEnabled) {
-                    toast.error('AI service is disabled. Enable it in Settings.');
-                    return;
+        <DialogHeader className="flex-shrink-0 px-6 py-4 border-b border-border/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl">
+                {solution ? `Edit ${solution.name}` : 'Add New Solution'}
+              </DialogTitle>
+              <DialogDescription className="mt-1">
+                {solution 
+                  ? 'Update your business solution details below.'
+                  : 'Create a comprehensive profile for your business solution.'}
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={async () => {
+                  try {
+                    await refreshStatus();
+                    if (!isEnabled) {
+                      toast.error('AI service is disabled. Enable it in Settings.');
+                      return;
+                    }
+                    if (!hasProviders || activeProviders === 0) {
+                      toast.error('No AI providers configured. Add one in Settings.');
+                      return;
+                    }
+                    toast.success(`AI ready: ${activeProviders} provider(s) active`);
+                  } catch (e: any) {
+                    toast.error(e?.message || 'Failed to check AI status');
                   }
-                  if (!hasProviders || activeProviders === 0) {
-                    toast.error('No AI providers configured. Add one in Settings.');
-                    return;
-                  }
-                  toast.success(`AI ready: ${activeProviders} provider(s) active`);
-                } catch (e: any) {
-                  toast.error(e?.message || 'Failed to check AI status');
-                }
-              }}
-              variant="outline"
-              disabled={isAIAutofillOpen}
-            >
-              Test AI connection
-            </Button>
-            <Button onClick={handleAutofillFromDoc} variant="outline" disabled={isAIAutofillOpen}>
-              <Wand2 className="mr-2 h-4 w-4" />
-              Autofill from document
-            </Button>
+                }}
+                variant="ghost"
+                size="sm"
+                disabled={isAIAutofillOpen}
+                className="h-8 px-2"
+              >
+                Test AI
+              </Button>
+              <Button 
+                onClick={handleAutofillFromDoc} 
+                variant="ghost" 
+                size="sm"
+                disabled={isAIAutofillOpen}
+                className="h-8 px-2"
+              >
+                <Wand2 className="mr-1 h-3 w-3" />
+                Autofill
+              </Button>
+            </div>
           </div>
-        </div>
+        </DialogHeader>
         {missingInfo.length > 0 && (
-          <div className="mb-3 rounded-lg border border-white/10 bg-background/20 backdrop-blur-sm p-3">
-            <div className="text-sm mb-2">Missing information:</div>
+          <div className="flex-shrink-0 mx-6 mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+            <div className="text-sm mb-2 text-amber-600 dark:text-amber-400">Missing information:</div>
             <div className="flex flex-wrap items-center gap-2">
               {missingInfo.map((item) => (
                 <button
                   key={item.key}
                   type="button"
                   onClick={() => setActiveTab(item.tab)}
-                  className="px-2 py-1 text-xs rounded-md bg-background/40 border border-white/10 hover:bg-accent/30 transition-colors"
+                  className="px-2 py-1 text-xs rounded-md bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors text-amber-700 dark:text-amber-300"
                 >
                   {item.label}
                 </button>
@@ -510,26 +519,26 @@ useEffect(() => {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0 bg-background/20 backdrop-blur-sm border border-white/10 rounded-lg">
-              <TabsTrigger value="basic" className="data-[state=active]:bg-neon-purple/20">Overview</TabsTrigger>
-              <TabsTrigger value="features" className="data-[state=active]:bg-neon-purple/20">Features</TabsTrigger>
-              <TabsTrigger value="market" className="data-[state=active]:bg-neon-purple/20">Market</TabsTrigger>
-              <TabsTrigger value="technical" className="data-[state=active]:bg-neon-purple/20">Technical</TabsTrigger>
-              <TabsTrigger value="pricing" className="data-[state=active]:bg-neon-purple/20">Pricing</TabsTrigger>
-            </TabsList>
-            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
-              <TabsTrigger value="competitors">Competitors</TabsTrigger>
-              <TabsTrigger value="cases">Case Studies</TabsTrigger>
-              <TabsTrigger value="personas">Personas</TabsTrigger>
-              <TabsTrigger value="resources">Resources</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
-            <TabsList className="grid w-full grid-cols-1 mb-4 flex-shrink-0">
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-            </TabsList>
+            <div className="flex-shrink-0 px-6 mb-4">
+              <div className="grid grid-cols-6 gap-1 p-1 bg-background/20 backdrop-blur-sm border border-white/10 rounded-lg">
+                <TabsTrigger value="basic" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Overview</TabsTrigger>
+                <TabsTrigger value="features" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Features</TabsTrigger>
+                <TabsTrigger value="market" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Market</TabsTrigger>
+                <TabsTrigger value="technical" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Technical</TabsTrigger>
+                <TabsTrigger value="pricing" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Pricing</TabsTrigger>
+                <TabsTrigger value="competitors" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Competitors</TabsTrigger>
+              </div>
+              <div className="grid grid-cols-5 gap-1 p-1 bg-background/20 backdrop-blur-sm border border-white/10 rounded-lg mt-2">
+                <TabsTrigger value="cases" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Case Studies</TabsTrigger>
+                <TabsTrigger value="personas" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Personas</TabsTrigger>
+                <TabsTrigger value="resources" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Resources</TabsTrigger>
+                <TabsTrigger value="analytics" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Analytics</TabsTrigger>
+                <TabsTrigger value="preview" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Preview</TabsTrigger>
+              </div>
+            </div>
             
             <div className="flex-1 overflow-hidden">
-              <ScrollArea className="h-full">
+              <ScrollArea className="h-full px-6">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -537,7 +546,7 @@ useEffect(() => {
                     initial="hidden"
                     animate="visible"
                     exit="exit"
-                    className="p-1"
+                    className="pb-6"
                   >
                   <TabsContent value="basic" className="mt-0">
                     <BasicInfoTab
@@ -616,7 +625,7 @@ useEffect(() => {
         )}
         
         {/* Footer Actions */}
-        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t border-border/50 bg-background/60 backdrop-blur-sm sticky bottom-0">
+        <div className="flex-shrink-0 flex justify-between items-center px-6 py-4 border-t border-border/50 bg-background/80 backdrop-blur-sm">
           <div className="flex items-center gap-4">
             {isDirty && (
               <span className="flex items-center gap-1 text-sm text-muted-foreground">
