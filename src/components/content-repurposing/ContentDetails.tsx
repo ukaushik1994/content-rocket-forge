@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { contentFormats, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { motion } from 'framer-motion';
+import { Building2, ExternalLink } from 'lucide-react';
 
 interface ContentDetailsProps {
   content: ContentItemType;
@@ -87,6 +88,30 @@ const ContentDetails: React.FC<ContentDetailsProps> = ({ content }) => {
                   </Tooltip>
                 ))}
               </TooltipProvider>
+            </div>
+          </div>
+        )}
+        
+        {(content.metadata?.solution || content.metadata?.selectedSolution) && (
+          <div>
+            <p className="text-sm font-medium mb-2">Associated Solution:</p>
+            <div className="p-3 rounded-lg bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-blue-400" />
+                <span className="font-medium text-sm">
+                  {content.metadata?.solution?.name || content.metadata?.selectedSolution?.name}
+                </span>
+                {(content.metadata?.solution?.logoUrl || content.metadata?.selectedSolution?.logoUrl) && (
+                  <img 
+                    src={content.metadata?.solution?.logoUrl || content.metadata?.selectedSolution?.logoUrl} 
+                    alt="Solution logo" 
+                    className="h-4 w-4 rounded"
+                  />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Content can be personalized for this solution's target personas
+              </p>
             </div>
           </div>
         )}

@@ -8,6 +8,7 @@ import Navbar from '@/components/layout/Navbar';
 import ContentDetails from '@/components/content-repurposing/ContentDetails';
 import ContentFormatSelection from '@/components/content-repurposing/ContentFormatSelection';
 import GeneratedContentDisplay from '@/components/content-repurposing/GeneratedContentDisplay';
+import PersonaSelector from '@/components/content-repurposing/PersonaSelector';
 import { ContentItemType } from '@/contexts/content/types';
 import ContentRepurposingTour from '@/components/content-repurposing/tour/ContentRepurposingTour';
 import ContentPreviewDialog from '@/components/content-repurposing/preview/ContentPreviewDialog';
@@ -28,7 +29,7 @@ interface ContentRepurposingViewProps {
   availableProviders: AiProvider[];
   setSelectedFormats: (formats: string[]) => void;
   setActiveFormat: (format: string) => void;
-  handleGenerateContent: (formats: string[]) => void;
+  handleGenerateContent: (formats: string[], personaIds?: string[]) => void;
   copyToClipboard: (content: string) => void;
   downloadAsText: (content: string, formatName: string) => void;
   saveAsNewContent: (formatId: string, content: string) => Promise<boolean>;
@@ -71,6 +72,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
     formatId: string;
     formatName: string;
   } | null>(null);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
 
   const handleOpenPreview = (content: string, formatId: string, formatName: string) => {
     setPreviewContent({ content, formatId, formatName });
@@ -120,16 +122,18 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
           <div className="md:col-span-1 space-y-6">
             <ContentDetails content={content} />
             
-            {/* AI Service Status */}
-            <div className="bg-gradient-to-br from-dark-bg via-dark-surface to-dark-bg border border-white/10 backdrop-blur-sm rounded-xl p-4">
-              <h3 className="text-sm font-medium text-white/90 mb-3">AI Service</h3>
-              <AiProviderSelector />
-            </div>
+            <PersonaSelector
+              solutionId={content.metadata?.solution?.id || content.metadata?.selectedSolution?.id}
+              selectedPersonas={selectedPersonas}
+              onPersonaChange={setSelectedPersonas}
+            />
+            
+            <AiProviderSelector />
             
             <ContentFormatSelection
               selectedFormats={selectedFormats}
               setSelectedFormats={setSelectedFormats}
-              onGenerateContent={handleGenerateContent}
+              onGenerateContent={() => handleGenerateContent(selectedFormats, selectedPersonas)}
               isGenerating={isGenerating}
               generatedContents={generatedContents}
               onSaveAllContent={handleSaveAllContent}

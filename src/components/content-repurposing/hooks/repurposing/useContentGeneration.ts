@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useRepurposedContentData } from './useRepurposedContentData';
 import { AiProvider } from '@/services/aiService/types';
+import { solutionService } from '@/services/solutionService';
 import { getUserPreference } from '@/services/userPreferencesService';
 
 export const useContentGeneration = (content: ContentItemType | null) => {
@@ -99,7 +100,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
   }, [content?.id]);
 
-  const handleGenerateContent = useCallback(async (formats: string[]) => {
+  const handleGenerateContent = useCallback(async (formats: string[], personaIds?: string[]) => {
     if (!content || formats.length === 0) {
       toast.error('Please select content and formats to generate');
       return;
@@ -119,29 +120,64 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         const format = contentFormats.find(f => f.id === formatId);
         if (!format) continue;
 
-        console.log(`[useContentGeneration] Generating content for format: ${format.name} using ${aiProvider}`);
-        toast.info(`Generating ${format.name} format...`);
+        console.log(`[useContentGeneration] Generating content for format: ${format.name} using ${aiProvider}${personaIds?.length ? ` with ${personaIds.length} personas` : ''}`);
+        toast.info(`Generating ${format.name} format${personaIds?.length ? ` for ${personaIds.length} persona(s)` : ''}...`);
 
         try {
+          let personaContext = '';
+          
+          // If personas are selected, fetch their details and create context
+          if (personaIds && personaIds.length > 0) {
+            try {
+              const solutionId = content.metadata?.solution?.id || content.metadata?.selectedSolution?.id;
+              if (solutionId) {
+                const allPersonas = await solutionService.getPersonasForSolution(solutionId);
+                const selectedPersonasData = allPersonas.filter(p => personaIds.includes(p.id));
+                
+                if (selectedPersonasData.length > 0) {
+                  personaContext = `
+Target Audience Context:
+${selectedPersonasData.map(persona => `
+- ${persona.personaName} (${persona.roleTitle})
+  Goals: ${persona.typicalGoals?.join(', ') || 'N/A'}
+  Pain Points: ${persona.painPoints?.join(', ') || 'N/A'}
+  Preferred Tone: ${persona.preferredTone || 'Professional'}
+  Key Topics: ${persona.keyTopics?.join(', ') || 'N/A'}
+`).join('')}
+
+Please tailor the content specifically for these personas, addressing their goals, pain points, and using appropriate tone and topics.`;
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching persona context:', error);
+            }
+          }
+
           // Try template-based generation first
           let generatedContent = await generateContentByFormatType(
             formatId,
             content.title,
             {
               content: content.content?.substring(0, 1500) || '',
-              keyword: content.metadata?.mainKeyword || ''
+              keyword: content.metadata?.mainKeyword || '',
+              personaContext
             }
           );
 
           // Fallback to AI service if template generation fails
           if (!generatedContent?.content) {
             console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service`);
+            
+            const basePrompt = `Transform this content titled "${content.title}" for the ${format.name} format.
+                       
+Content: ${content.content?.substring(0, 1500)}...
+
+${personaContext}
+
+Make it appropriate for the ${format.name} format with all necessary elements.`;
+            
             const response = await AIServiceController.generate({
-              input: `Transform this content titled "${content.title}" for the ${format.name} format.
-                      
-                      Content: ${content.content?.substring(0, 1500)}...
-                      
-                      Make it appropriate for the ${format.name} format with all necessary elements.`,
+              input: basePrompt,
               use_case: 'repurpose',
               temperature: 0.7,
               max_tokens: 1500
