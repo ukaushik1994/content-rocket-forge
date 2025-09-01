@@ -5,20 +5,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Lightbulb, TrendingUp, Target, Calendar, Eye, FileText } from 'lucide-react';
-import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 import { useNavigate } from 'react-router-dom';
 
 export const ContentStrategyCarousel = () => {
-  const { aiProposals } = useContentStrategy();
+  const context = useContentStrategyOptional();
   const navigate = useNavigate();
   const [displayProposals, setDisplayProposals] = useState<any[]>([]);
 
   useEffect(() => {
-    if (aiProposals && aiProposals.length > 0) {
+    if (context?.aiProposals && context.aiProposals.length > 0) {
       // Take first 6 proposals for the carousel
-      setDisplayProposals(aiProposals.slice(0, 6));
+      setDisplayProposals(context.aiProposals.slice(0, 6));
     }
-  }, [aiProposals]);
+  }, [context?.aiProposals]);
 
   if (!displayProposals || displayProposals.length === 0) {
     return null;
