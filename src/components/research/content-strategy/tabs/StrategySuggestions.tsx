@@ -48,7 +48,7 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
               >
                 <TrendingUp className="h-6 w-6 text-primary" />
               </motion.div>
-              <h2 className="text-3xl font-bold text-holographic">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
                 AI Strategy Engine
               </h2>
             </div>

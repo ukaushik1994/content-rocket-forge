@@ -164,12 +164,24 @@ export const GoalSettingCard = React.memo(() => {
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="relative z-10 space-y-8">
-          {/* Keyword Analysis Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Search className="h-5 w-5 text-blue-400" />
-              <Label className="text-base font-medium">Main Keyword Analysis</Label>
+        <CardContent className="relative space-y-6 p-6 sm:p-8">
+          {/* Keyword Analysis Section with Enhanced UI */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <motion.div
+                initial={{ scale: 0, rotate: -90 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="p-2 rounded-lg glass-panel border border-white/20"
+              >
+                <Search className="h-5 w-5 text-blue-400" />
+              </motion.div>
+              <Label className="text-base font-semibold text-white">Keyword Analysis & Strategy Goals</Label>
             </div>
             
             <div className="flex gap-4">
@@ -199,7 +211,7 @@ export const GoalSettingCard = React.memo(() => {
                 )}
               </Button>
             </div>
-          </div>
+          </motion.div>
 
           {/* SERP Metrics Display */}
           {serpMetrics && (
