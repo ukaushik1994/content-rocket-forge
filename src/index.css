@@ -123,11 +123,13 @@
     @apply bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent;
   }
   
-  .text-gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-foreground)));
+  .text-holographic {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7);
+    background-size: 400% 400%;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    animation: holographic 3s ease-in-out infinite;
   }
   
   .futuristic-grid {
@@ -206,17 +208,8 @@
     animation: gradientShift 8s ease-in-out infinite;
   }
   
-  /* High Contrast Mode */
-  .high-contrast-mode {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --primary: 45 100% 60%;
-    --border: 0 0% 30%;
-    --card: 0 0% 10%;
-  }
-  
-  .high-contrast {
-    filter: contrast(150%) brightness(120%);
+  .animate-holographic {
+    animation: holographic 4s ease-in-out infinite;
   }
   
   .custom-scrollbar {
