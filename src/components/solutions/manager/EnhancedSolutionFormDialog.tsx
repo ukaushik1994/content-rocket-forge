@@ -519,22 +519,22 @@ useEffect(() => {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <div className="flex-shrink-0 px-6 mb-4">
-              <div className="grid grid-cols-6 gap-1 p-1 bg-background/20 backdrop-blur-sm border border-white/10 rounded-lg">
+            <div className="flex-shrink-0 px-6 mb-4 space-y-2">
+              <TabsList className="grid grid-cols-6 gap-1 p-1 bg-background/20 backdrop-blur-sm border border-white/10 rounded-lg w-full">
                 <TabsTrigger value="basic" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Overview</TabsTrigger>
                 <TabsTrigger value="features" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Features</TabsTrigger>
                 <TabsTrigger value="market" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Market</TabsTrigger>
                 <TabsTrigger value="technical" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Technical</TabsTrigger>
                 <TabsTrigger value="pricing" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Pricing</TabsTrigger>
                 <TabsTrigger value="competitors" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Competitors</TabsTrigger>
-              </div>
-              <div className="grid grid-cols-5 gap-1 p-1 bg-background/20 backdrop-blur-sm border border-white/10 rounded-lg mt-2">
+              </TabsList>
+              <TabsList className="grid grid-cols-5 gap-1 p-1 bg-background/20 backdrop-blur-sm border border-white/10 rounded-lg w-full">
                 <TabsTrigger value="cases" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Case Studies</TabsTrigger>
                 <TabsTrigger value="personas" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Personas</TabsTrigger>
                 <TabsTrigger value="resources" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Resources</TabsTrigger>
                 <TabsTrigger value="analytics" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Analytics</TabsTrigger>
                 <TabsTrigger value="preview" className="data-[state=active]:bg-neon-purple/20 text-xs px-2">Preview</TabsTrigger>
-              </div>
+              </TabsList>
             </div>
             
             <div className="flex-1 overflow-hidden">
