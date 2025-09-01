@@ -92,6 +92,23 @@ export interface SolutionMetrics {
   }>;
 }
 
+export type PersonaCategory = 'end_user' | 'decision_maker' | 'influencer';
+
+export interface SolutionPersona {
+  id: string;
+  solutionId: string;
+  personaCategory: PersonaCategory;
+  personaName: string;
+  roleTitle: string;
+  typicalGoals: string[];
+  painPoints: string[];
+  preferredTone: string;
+  keyTopics: string[];
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface EnhancedSolution {
   id: string;
   name: string;
@@ -122,6 +139,9 @@ export interface EnhancedSolution {
   positioningStatement?: string;
   keyDifferentiators?: string[];
   
+  // User personas
+  personas?: SolutionPersona[];
+  
   metadata?: {
     websiteTitle?: string;
     websiteDescription?: string;
@@ -146,4 +166,34 @@ export const RESOURCE_CATEGORIES: Array<{
   { value: 'case-study', label: 'Case Study', icon: 'TrendingUp', description: 'Success stories and use cases' },
   { value: 'whitepaper', label: 'Whitepaper', icon: 'FileCheck', description: 'Research papers and whitepapers' },
   { value: 'other', label: 'Other', icon: 'Link', description: 'Other helpful resources' }
+];
+
+export const PERSONA_CATEGORIES: Array<{
+  value: PersonaCategory;
+  label: string;
+  icon: string;
+  description: string;
+  examples: string[];
+}> = [
+  { 
+    value: 'end_user', 
+    label: 'End User', 
+    icon: 'User', 
+    description: 'Direct users of the solution',
+    examples: ['Developers', 'Marketing Managers', 'Sales Reps', 'Content Creators']
+  },
+  { 
+    value: 'decision_maker', 
+    label: 'Decision Maker', 
+    icon: 'Crown', 
+    description: 'Key decision makers and budget holders',
+    examples: ['CTOs', 'VPs', 'Directors', 'CEOs']
+  },
+  { 
+    value: 'influencer', 
+    label: 'Influencer', 
+    icon: 'Users', 
+    description: 'Technical influencers and advisors',
+    examples: ['Tech Leads', 'Architects', 'Consultants', 'Analysts']
+  }
 ];

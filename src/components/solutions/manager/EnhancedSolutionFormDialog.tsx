@@ -25,7 +25,7 @@ import { CompetitiveAnalysisTab } from './tabs/CompetitiveAnalysisTab';
 import { TechnicalSpecsTab } from './tabs/TechnicalSpecsTab';
 import { PricingTab } from './tabs/PricingTab';
 import { CaseStudiesTab } from './tabs/CaseStudiesTab';
-import { AnalyticsTab } from './tabs/AnalyticsTab';
+import { PersonaManagementTab } from './tabs/PersonaManagementTab';
 import { solutionService } from '@/services/solutionService';
 import { AutoSaveStatus } from './AutoSaveStatus';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
@@ -520,8 +520,11 @@ useEffect(() => {
             <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
               <TabsTrigger value="competitors">Competitors</TabsTrigger>
               <TabsTrigger value="cases">Case Studies</TabsTrigger>
+              <TabsTrigger value="personas">Personas</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            </TabsList>
+            <TabsList className="grid w-full grid-cols-1 mb-4 flex-shrink-0">
               <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
             
@@ -575,6 +578,10 @@ useEffect(() => {
                   
                   <TabsContent value="competitors" className="mt-0">
                     <CompetitiveAnalysisTab formData={formData} updateFormData={updateFormData} />
+                  </TabsContent>
+                  
+                  <TabsContent value="personas" className="mt-0">
+                    <PersonaManagementTab formData={formData} updateFormData={updateFormData} />
                   </TabsContent>
                   
                   <TabsContent value="cases" className="mt-0">

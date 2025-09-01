@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { EnhancedSolution, EnhancedSolutionResource } from '@/contexts/content-builder/types/enhanced-solution-types';
+import { EnhancedSolution, EnhancedSolutionResource, SolutionPersona, PersonaCategory } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { toast } from 'sonner';
 
 export interface SolutionCreateData {
@@ -46,7 +46,17 @@ class SolutionService {
         return [];
       }
 
-      return this.transformDatabaseToEnhanced(data || []);
+      const solutions = this.transformDatabaseToEnhanced(data || []);
+      
+      // Fetch personas for each solution
+      const solutionsWithPersonas = await Promise.all(
+        solutions.map(async (solution) => {
+          const personas = await this.getPersonasForSolution(solution.id);
+          return { ...solution, personas };
+        })
+      );
+
+      return solutionsWithPersonas;
     } catch (error) {
       console.error('Service error fetching solutions:', error);
       toast.error('Failed to load solutions');
@@ -68,7 +78,13 @@ class SolutionService {
         return null;
       }
 
-      return this.transformDatabaseToEnhanced([data])[0] || null;
+      const solution = this.transformDatabaseToEnhanced([data])[0] || null;
+      if (solution) {
+        const personas = await this.getPersonasForSolution(solution.id);
+        solution.personas = personas;
+      }
+      
+      return solution;
     } catch (error) {
       console.error('Service error fetching solution:', error);
       toast.error('Failed to load solution');
@@ -383,6 +399,173 @@ class SolutionService {
       console.error('Service error searching solutions:', error);
       return [];
     }
+  }
+
+  // Persona management methods
+  async getPersonasForSolution(solutionId: string): Promise<SolutionPersona[]> {
+    try {
+      const { data, error } = await supabase
+        .from('solution_personas')
+        .select('*')
+        .eq('solution_id', solutionId)
+        .order('persona_category');
+
+      if (error) {
+        console.error('Error fetching personas:', error);
+        return [];
+      }
+
+      return (data || []).map(persona => ({
+        id: persona.id,
+        solutionId: persona.solution_id,
+        personaCategory: persona.persona_category as PersonaCategory,
+        personaName: persona.persona_name,
+        roleTitle: persona.role_title,
+        typicalGoals: Array.isArray(persona.typical_goals) ? persona.typical_goals as string[] : [],
+        painPoints: Array.isArray(persona.pain_points) ? persona.pain_points as string[] : [],
+        preferredTone: persona.preferred_tone,
+        keyTopics: Array.isArray(persona.key_topics) ? persona.key_topics as string[] : [],
+        userId: persona.user_id,
+        createdAt: persona.created_at,
+        updatedAt: persona.updated_at
+      }));
+    } catch (error) {
+      console.error('Service error fetching personas:', error);
+      return [];
+    }
+  }
+
+  async createPersona(personaData: Omit<SolutionPersona, 'id' | 'createdAt' | 'updatedAt'>): Promise<SolutionPersona | null> {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('You must be logged in to create a persona');
+      }
+
+      const { data, error } = await supabase
+        .from('solution_personas')
+        .insert([{
+          solution_id: personaData.solutionId,
+          persona_category: personaData.personaCategory,
+          persona_name: personaData.personaName,
+          role_title: personaData.roleTitle,
+          typical_goals: personaData.typicalGoals,
+          pain_points: personaData.painPoints,
+          preferred_tone: personaData.preferredTone,
+          key_topics: personaData.keyTopics,
+          user_id: user.id
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating persona:', error);
+        throw new Error(`Failed to create persona: ${error.message}`);
+      }
+
+      return {
+        id: data.id,
+        solutionId: data.solution_id,
+        personaCategory: data.persona_category as PersonaCategory,
+        personaName: data.persona_name,
+        roleTitle: data.role_title,
+        typicalGoals: Array.isArray(data.typical_goals) ? data.typical_goals as string[] : [],
+        painPoints: Array.isArray(data.pain_points) ? data.pain_points as string[] : [],
+        preferredTone: data.preferred_tone,
+        keyTopics: Array.isArray(data.key_topics) ? data.key_topics as string[] : [],
+        userId: data.user_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+    } catch (error) {
+      console.error('Service error creating persona:', error);
+      throw error;
+    }
+  }
+
+  async updatePersona(personaId: string, updates: Partial<SolutionPersona>): Promise<SolutionPersona | null> {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('You must be logged in to update a persona');
+      }
+
+      const updateData: any = {};
+      if (updates.personaName !== undefined) updateData.persona_name = updates.personaName;
+      if (updates.roleTitle !== undefined) updateData.role_title = updates.roleTitle;
+      if (updates.typicalGoals !== undefined) updateData.typical_goals = updates.typicalGoals;
+      if (updates.painPoints !== undefined) updateData.pain_points = updates.painPoints;
+      if (updates.preferredTone !== undefined) updateData.preferred_tone = updates.preferredTone;
+      if (updates.keyTopics !== undefined) updateData.key_topics = updates.keyTopics;
+
+      const { data, error } = await supabase
+        .from('solution_personas')
+        .update(updateData)
+        .eq('id', personaId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating persona:', error);
+        throw new Error(`Failed to update persona: ${error.message}`);
+      }
+
+      return {
+        id: data.id,
+        solutionId: data.solution_id,
+        personaCategory: data.persona_category as PersonaCategory,
+        personaName: data.persona_name,
+        roleTitle: data.role_title,
+        typicalGoals: Array.isArray(data.typical_goals) ? data.typical_goals as string[] : [],
+        painPoints: Array.isArray(data.pain_points) ? data.pain_points as string[] : [],
+        preferredTone: data.preferred_tone,
+        keyTopics: Array.isArray(data.key_topics) ? data.key_topics as string[] : [],
+        userId: data.user_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+    } catch (error) {
+      console.error('Service error updating persona:', error);
+      throw error;
+    }
+  }
+
+  async deletePersona(personaId: string): Promise<boolean> {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('You must be logged in to delete a persona');
+      }
+
+      const { error } = await supabase
+        .from('solution_personas')
+        .delete()
+        .eq('id', personaId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting persona:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Service error deleting persona:', error);
+      return false;
+    }
+  }
+
+  async validateSolutionPersonas(solutionId: string): Promise<{ isValid: boolean; missingCategories: PersonaCategory[] }> {
+    const personas = await this.getPersonasForSolution(solutionId);
+    const existingCategories = new Set(personas.map(p => p.personaCategory));
+    const requiredCategories: PersonaCategory[] = ['end_user', 'decision_maker', 'influencer'];
+    const missingCategories = requiredCategories.filter(cat => !existingCategories.has(cat));
+    
+    return {
+      isValid: missingCategories.length === 0,
+      missingCategories
+    };
   }
 }
 
