@@ -133,8 +133,8 @@ export const PersonaManagementTab: React.FC<PersonaManagementTabProps> = ({
   };
 
   const handleSavePersona = async (category: PersonaCategory, formKey: string) => {
-    const formData = personaForms[formKey];
-    if (!formData || !formData.personaName.trim() || !formData.roleTitle.trim()) {
+    const personaFormData = personaForms[formKey];
+    if (!personaFormData || !personaFormData.personaName.trim() || !personaFormData.roleTitle.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -150,12 +150,12 @@ export const PersonaManagementTab: React.FC<PersonaManagementTabProps> = ({
         const newPersona = await solutionService.createPersona({
           solutionId: formData.id,
           personaCategory: category,
-          personaName: formData.personaName,
-          roleTitle: formData.roleTitle,
-          typicalGoals: formData.typicalGoals,
-          painPoints: formData.painPoints,
-          preferredTone: formData.preferredTone,
-          keyTopics: formData.keyTopics,
+          personaName: personaFormData.personaName,
+          roleTitle: personaFormData.roleTitle,
+          typicalGoals: personaFormData.typicalGoals,
+          painPoints: personaFormData.painPoints,
+          preferredTone: personaFormData.preferredTone,
+          keyTopics: personaFormData.keyTopics,
           userId: '', // Will be set by the service
         });
 
@@ -168,12 +168,12 @@ export const PersonaManagementTab: React.FC<PersonaManagementTabProps> = ({
       } else {
         // Update existing persona
         const updatedPersona = await solutionService.updatePersona(formKey, {
-          personaName: formData.personaName,
-          roleTitle: formData.roleTitle,
-          typicalGoals: formData.typicalGoals,
-          painPoints: formData.painPoints,
-          preferredTone: formData.preferredTone,
-          keyTopics: formData.keyTopics
+          personaName: personaFormData.personaName,
+          roleTitle: personaFormData.roleTitle,
+          typicalGoals: personaFormData.typicalGoals,
+          painPoints: personaFormData.painPoints,
+          preferredTone: personaFormData.preferredTone,
+          keyTopics: personaFormData.keyTopics
         });
 
         if (updatedPersona) {
@@ -354,7 +354,7 @@ export const PersonaManagementTab: React.FC<PersonaManagementTabProps> = ({
                           <Badge key={index} variant="outline" className="text-xs">
                             {example}
                           </Badge>
-                        ))
+                        ))}
                       </div>
                     </div>
 
@@ -393,7 +393,7 @@ export const PersonaManagementTab: React.FC<PersonaManagementTabProps> = ({
                           onCancel={() => handleCancelEdit(`new-${category.value}`)}
                           onUpdate={(field, value) => updatePersonaForm(`new-${category.value}`, field, value)}
                           onAddArrayField={(field, value) => addArrayField(`new-${category.value}`, field, value)}
-                          onRemoveArrayField={(field, index) => removeArrayField(`new-${category.value}`, field, value)}
+                          onRemoveArrayField={(field, index) => removeArrayField(`new-${category.value}`, field, index)}
                         />
                       </div>
                     ) : (

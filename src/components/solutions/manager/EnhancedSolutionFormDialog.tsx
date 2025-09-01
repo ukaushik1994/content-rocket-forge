@@ -589,7 +589,9 @@ useEffect(() => {
                   </TabsContent>
                   
                   <TabsContent value="analytics" className="mt-0">
-                    <AnalyticsTab formData={formData} updateFormData={updateFormData} />
+                    <div className="p-8 text-center text-muted-foreground">
+                      <p>Analytics tab content coming soon...</p>
+                    </div>
                   </TabsContent>
                   
                   <TabsContent value="preview" className="mt-0">
