@@ -18,7 +18,7 @@ const ContentStrategy = () => {
   const [creatorOpen, setCreatorOpen] = useState(false);
   return (
     <ContentStrategyProvider>
-      <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden">
         <Helmet>
           <title>Content Strategy — Plan, Calendar, Pipeline</title>
           <meta name="description" content="Content strategy workspace to plan, track, and optimize: strategies, dashboard, calendar, pipeline, opportunities, performance, gaps, progress." />
@@ -28,24 +28,30 @@ const ContentStrategy = () => {
         <Navbar />
         
         {/* Service Status Indicators */}
-        <div className="relative z-20 flex justify-center pt-4 pb-2">
-          <div className="flex items-center gap-4 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2 shadow-sm">
+        <div className="relative z-20 flex justify-end pr-6 pt-4">
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-3 bg-card/95 backdrop-blur-md border border-border/40 rounded-xl px-4 py-2 shadow-lg"
+          >
             <SimpleAIServiceIndicator size="sm" />
             <SimpleSerpServiceIndicator size="sm" />
-          </div>
+          </motion.div>
         </div>
         
-        {/* Optimized Background */}
+        {/* Modern Background Elements */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl opacity-30 will-change-transform transform-gpu animate-float" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full filter blur-3xl opacity-20 will-change-transform transform-gpu animate-float" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-1/4 left-1/6 w-72 h-72 bg-primary/4 rounded-full filter blur-3xl opacity-60" />
+          <div className="absolute bottom-1/3 right-1/5 w-96 h-96 bg-accent/3 rounded-full filter blur-3xl opacity-40" />
+          <div className="absolute top-3/4 left-1/2 w-48 h-48 bg-secondary/5 rounded-full filter blur-2xl opacity-50" />
         </div>
         
-        <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
+        <main className="flex-1 container py-12 z-10 relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="space-y-12"
           >
             <ContentStrategyHero onCreate={() => setCreatorOpen(true)} />
             

@@ -130,11 +130,11 @@ export const GoalSettingCard = React.memo(() => {
 
   if (loading) {
     return (
-      <Card className="glass-panel border-white/10 shadow-2xl">
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-2 text-white">Loading strategy...</span>
+      <Card className="bg-card/80 backdrop-blur-md border-border/40 shadow-2xl rounded-2xl">
+        <CardContent className="p-12">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary"></div>
+            <span className="text-xl font-medium text-foreground">Loading strategy...</span>
           </div>
         </CardContent>
       </Card>
@@ -147,29 +147,32 @@ export const GoalSettingCard = React.memo(() => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <Card className="glass-panel border-white/10 shadow-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5" />
+      <Card className="bg-card/80 backdrop-blur-md border-border/40 shadow-2xl overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-accent/3" />
         
-        <CardHeader className="relative z-10 pb-6">
-          <CardTitle className="flex items-center gap-3 text-2xl">
-            <div className="p-2 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-xl backdrop-blur-sm border border-white/10">
-              <Target className="h-6 w-6 text-primary" />
-            </div>
-            <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+        <CardHeader className="relative z-10 pb-8 pt-8">
+          <CardTitle className="flex items-center gap-4 text-3xl">
+            <motion.div 
+              className="p-3 bg-primary/10 rounded-2xl border border-primary/20"
+              whileHover={{ scale: 1.05 }}
+            >
+              <Target className="h-7 w-7 text-primary" />
+            </motion.div>
+            <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent font-semibold">
               Strategy Goals & SERP Analysis
             </span>
-            <Badge variant="outline" className="text-primary border-primary ml-auto">
+            <Badge variant="secondary" className="ml-auto px-4 py-1 rounded-full text-sm font-medium">
               {currentStrategy ? 'Active Strategy' : 'New Strategy'}
             </Badge>
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="relative z-10 space-y-8">
+        <CardContent className="relative z-10 space-y-10 px-8 pb-8">
           {/* Keyword Analysis Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Search className="h-5 w-5 text-blue-400" />
-              <Label className="text-base font-medium">Main Keyword Analysis</Label>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Search className="h-6 w-6 text-blue-500" />
+              <Label className="text-xl font-semibold text-foreground">Main Keyword Analysis</Label>
             </div>
             
             <div className="flex gap-4">
@@ -178,22 +181,22 @@ export const GoalSettingCard = React.memo(() => {
                   placeholder="Enter your main keyword (e.g., content marketing)"
                   value={goals.mainKeyword}
                   onChange={(e) => setGoals({...goals, mainKeyword: e.target.value})}
-                  className="bg-glass border-white/10 h-12 text-base focus:border-primary transition-all"
+                  className="h-14 text-lg px-6 rounded-xl border-border/40 bg-background/50 backdrop-blur-sm focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </div>
               <Button 
                 onClick={handleAnalyzeKeyword} 
                 disabled={isGenerating || !goals.mainKeyword.trim()}
-                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                className="h-14 px-8 text-lg font-medium bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl shadow-lg transition-all duration-300"
               >
                 {isGenerating ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                     Analyzing...
                   </>
                 ) : (
                   <>
-                    <TrendingUp className="h-4 w-4 mr-2" />
+                    <TrendingUp className="h-5 w-5 mr-3" />
                     Analyze
                   </>
                 )}
@@ -203,60 +206,72 @@ export const GoalSettingCard = React.memo(() => {
 
           {/* SERP Metrics Display */}
           {serpMetrics && (
-            <SerpMetricsDisplay metrics={serpMetrics} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <SerpMetricsDisplay metrics={serpMetrics} />
+            </motion.div>
           )}
 
           {/* Goal Progress Indicator */}
           {currentStrategy && goals.contentPieces && (
-            <GoalProgressIndicator goals={goals} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <GoalProgressIndicator goals={goals} />
+            </motion.div>
           )}
 
           {/* Goals Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Target className="h-5 w-5 text-purple-400" />
-              <Label className="text-base font-medium">Content Goals</Label>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Target className="h-6 w-6 text-purple-500" />
+              <Label className="text-xl font-semibold text-foreground">Content Goals</Label>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <motion.div 
-                className="space-y-3"
-                whileHover={{ scale: 1.02 }}
+                className="space-y-4"
+                whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-                <Label htmlFor="traffic" className="text-base font-medium">Monthly Traffic Goal</Label>
+                <Label htmlFor="traffic" className="text-lg font-medium text-foreground">Monthly Traffic Goal</Label>
                 <Input
                   id="traffic"
                   placeholder="e.g., 50,000"
                   value={goals.monthlyTraffic}
                   onChange={(e) => setGoals({...goals, monthlyTraffic: e.target.value})}
-                  className="bg-glass border-white/10 h-12 text-base focus:border-primary transition-all"
+                  className="h-14 text-lg px-6 rounded-xl border-border/40 bg-background/50 backdrop-blur-sm focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </motion.div>
               
               <motion.div 
-                className="space-y-3"
-                whileHover={{ scale: 1.02 }}
+                className="space-y-4"
+                whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-                <Label htmlFor="content" className="text-base font-medium">Content Pieces per Month</Label>
+                <Label htmlFor="content" className="text-lg font-medium text-foreground">Content Pieces per Month</Label>
                 <Input
                   id="content"
                   placeholder="e.g., 8"
                   value={goals.contentPieces}
                   onChange={(e) => setGoals({...goals, contentPieces: e.target.value})}
-                  className="bg-glass border-white/10 h-12 text-base focus:border-purple-400 transition-all"
+                  className="h-14 text-lg px-6 rounded-xl border-border/40 bg-background/50 backdrop-blur-sm focus:border-purple-500/60 focus:ring-1 focus:ring-purple-500/20 transition-all"
                 />
               </motion.div>
               
               <motion.div 
-                className="space-y-3"
-                whileHover={{ scale: 1.02 }}
+                className="space-y-4"
+                whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-                <Label htmlFor="timeline" className="text-base font-medium">Timeline</Label>
+                <Label htmlFor="timeline" className="text-lg font-medium text-foreground">Timeline</Label>
                 <select 
-                  className="w-full px-4 py-3 bg-glass border border-white/10 rounded-md text-white h-12 text-base focus:border-green-400 transition-all"
+                  className="w-full px-6 py-4 bg-background/50 backdrop-blur-sm border border-border/40 rounded-xl text-foreground h-14 text-lg focus:border-green-500/60 focus:ring-1 focus:ring-green-500/20 transition-all"
                   value={goals.timeline}
                   onChange={(e) => setGoals({...goals, timeline: e.target.value})}
                 >
@@ -270,22 +285,23 @@ export const GoalSettingCard = React.memo(() => {
           </div>
 
           <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="pt-4"
           >
             <Button 
               onClick={handleSaveStrategy} 
               disabled={isGenerating}
-              className="w-full h-14 px-8 text-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg"
+              className="w-full h-16 px-10 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary rounded-xl transition-all duration-300 shadow-xl"
             >
               {isGenerating ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
                   Saving Strategy...
                 </>
               ) : (
                 <>
-                  <Target className="h-5 w-5 mr-2" />
+                  <Target className="h-6 w-6 mr-3" />
                   {currentStrategy ? 'Update Strategy' : 'Save Strategy & Generate AI Proposals'}
                 </>
               )}
@@ -296,18 +312,18 @@ export const GoalSettingCard = React.memo(() => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center"
+                className="text-center pt-4"
               >
                 {!currentStrategy ? (
-                  <div className="flex items-center justify-center gap-2 text-white/60 text-sm">
-                    <AlertCircle className="h-4 w-4" />
+                  <div className="flex items-center justify-center gap-3 text-muted-foreground text-base">
+                    <AlertCircle className="h-5 w-5" />
                     <span>Save your goals to unlock AI proposal generation</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-2 text-green-400 text-sm">
-                    <CheckCircle2 className="h-4 w-4" />
+                  <div className="flex items-center justify-center gap-3 text-green-500 text-base font-medium">
+                    <CheckCircle2 className="h-5 w-5" />
                     <span>Strategy saved! AI proposals will generate automatically</span>
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-5 w-5" />
                   </div>
                 )}
               </motion.div>
