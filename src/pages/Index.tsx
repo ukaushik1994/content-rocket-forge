@@ -12,6 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
 import { DashboardFooter } from '@/components/layout/DashboardFooter';
+import { ContentStrategyCarousel } from '@/components/dashboard/ContentStrategyCarousel';
+import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 
 const Index = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -52,7 +54,8 @@ const Index = () => {
   };
   
   return (
-    <GrandTourProvider>
+    <ContentStrategyProvider>
+      <GrandTourProvider>
       <div className="min-h-screen flex flex-col bg-background overflow-hidden">
         {/* Enhanced background with multiple animated layers */}
         <div className="absolute inset-0 -z-10">
@@ -164,6 +167,11 @@ const Index = () => {
                 <QuickActions />
               </motion.section>
               
+              {/* Content Strategy Carousel */}
+              <motion.section variants={sectionVariants}>
+                <ContentStrategyCarousel />
+              </motion.section>
+              
               {/* Strategic Momentum Panel */}
               <motion.section variants={sectionVariants}>
                 <div className="space-y-6">
@@ -191,6 +199,7 @@ const Index = () => {
         <DashboardFooter />
       </div>
     </GrandTourProvider>
+    </ContentStrategyProvider>
   );
 };
 
