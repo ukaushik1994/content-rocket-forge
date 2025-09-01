@@ -1308,7 +1308,6 @@ export type Database = {
           review_deadline: string | null
           reviewer_id: string | null
           seo_score: number | null
-          solution_id: string | null
           status: string
           submitted_for_review_at: string | null
           title: string
@@ -1327,7 +1326,6 @@ export type Database = {
           review_deadline?: string | null
           reviewer_id?: string | null
           seo_score?: number | null
-          solution_id?: string | null
           status?: string
           submitted_for_review_at?: string | null
           title: string
@@ -1346,7 +1344,6 @@ export type Database = {
           review_deadline?: string | null
           reviewer_id?: string | null
           seo_score?: number | null
-          solution_id?: string | null
           status?: string
           submitted_for_review_at?: string | null
           title?: string
@@ -1359,13 +1356,6 @@ export type Database = {
             columns: ["glossary_id"]
             isOneToOne: false
             referencedRelation: "glossaries"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "content_items_solution_id_fkey"
-            columns: ["solution_id"]
-            isOneToOne: false
-            referencedRelation: "solutions"
             referencedColumns: ["id"]
           },
           {
@@ -2546,51 +2536,6 @@ export type Database = {
           operation?: string
           provider?: string
           success?: boolean
-          user_id?: string
-        }
-        Relationships: []
-      }
-      solution_personas: {
-        Row: {
-          created_at: string
-          id: string
-          key_topics: Json
-          pain_points: Json
-          persona_category: string
-          persona_name: string
-          preferred_tone: string
-          role_title: string
-          solution_id: string
-          typical_goals: Json
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          key_topics?: Json
-          pain_points?: Json
-          persona_category: string
-          persona_name: string
-          preferred_tone: string
-          role_title: string
-          solution_id: string
-          typical_goals?: Json
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          key_topics?: Json
-          pain_points?: Json
-          persona_category?: string
-          persona_name?: string
-          preferred_tone?: string
-          role_title?: string
-          solution_id?: string
-          typical_goals?: Json
-          updated_at?: string
           user_id?: string
         }
         Relationships: []
