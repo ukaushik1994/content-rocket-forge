@@ -11,6 +11,7 @@ const ContentRepurposing: React.FC = () => {
     contentItems,
     selectedFormats,
     generatedContents,
+    personasMap,
     isGenerating,
     activeFormat,
     repurposedDialogOpen,
@@ -70,6 +71,7 @@ const ContentRepurposing: React.FC = () => {
         content={content}
         selectedFormats={selectedFormats}
         generatedContents={generatedContents}
+        personasMap={personasMap}
         isGenerating={isGenerating}
         activeFormat={activeFormat}
         isSaving={isSaving}

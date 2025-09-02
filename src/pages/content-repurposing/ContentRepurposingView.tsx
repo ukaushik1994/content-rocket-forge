@@ -20,6 +20,7 @@ interface ContentRepurposingViewProps {
   content: ContentItemType;
   selectedFormats: string[];
   generatedContents: Record<string, string>;
+  personasMap?: Record<string, string[]>;
   isGenerating: boolean;
   activeFormat: string | null;
   isSaving: boolean;
@@ -49,6 +50,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   content,
   selectedFormats,
   generatedContents,
+  personasMap = {},
   isGenerating,
   activeFormat,
   isSaving,
@@ -175,6 +177,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               savedContentFormats={savedContentFormats}
               selectedPersonas={selectedPersonas}
               availablePersonas={availablePersonas}
+              personasMap={personasMap}
             />
           </div>
         </div>

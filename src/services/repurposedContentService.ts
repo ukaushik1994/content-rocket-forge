@@ -8,6 +8,7 @@ export interface RepurposedContentData {
   content: string;
   title: string;
   userId: string;
+  personas?: string[]; // Array of persona IDs used to generate this content
 }
 
 export interface RepurposedContentRecord {
@@ -48,7 +49,10 @@ export const repurposedContentService = {
             content: data.content,
             title: data.title,
             updated_at: new Date().toISOString(),
-            status: 'saved'
+            status: 'saved',
+            metadata: {
+              personas: data.personas || []
+            }
           })
           .eq('id', existingContent.id)
           .select()
@@ -68,7 +72,9 @@ export const repurposedContentService = {
             title: data.title,
             user_id: data.userId,
             status: 'saved',
-            metadata: {}
+            metadata: {
+              personas: data.personas || []
+            }
           })
           .select()
           .single();

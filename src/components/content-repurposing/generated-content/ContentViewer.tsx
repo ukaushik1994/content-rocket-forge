@@ -1,5 +1,6 @@
 
 import React, { memo } from 'react';
+import { User, Target, Hash } from 'lucide-react';
 import { getFormatByIdOrDefault } from '../formats';
 
 interface ContentViewerProps {
@@ -93,15 +94,32 @@ const ContentViewer: React.FC<ContentViewerProps> = memo(({
 
   return (
     <div className="flex-1 overflow-auto bg-muted/10 rounded-md p-4 mb-4">
-      {/* Show persona context if multiple personas are selected */}
-      {selectedPersonas.length > 1 && (
+      {/* Show persona context if personas are selected */}
+      {selectedPersonas.length > 0 && (
         <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
-          <p className="text-sm font-medium">
-            Content generated for {selectedPersonas.length} personas
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            This content has been tailored for multiple target personas
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-sm font-medium">
+              Content generated for {selectedPersonas.length} persona{selectedPersonas.length > 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {availablePersonas
+              .filter(p => selectedPersonas.includes(p.id))
+              .slice(0, 3)
+              .map((persona, idx) => (
+                <div key={idx} className="flex items-center gap-1 text-xs">
+                  {persona.personaType === 'end_user' && <User className="h-3 w-3" />}
+                  {persona.personaType === 'decision_maker' && <Target className="h-3 w-3" />}
+                  {persona.personaType === 'influencer' && <Hash className="h-3 w-3" />}
+                  <span>{persona.personaName}</span>
+                </div>
+              ))}
+            {selectedPersonas.length > 3 && (
+              <span className="text-xs text-muted-foreground">
+                +{selectedPersonas.length - 3} more
+              </span>
+            )}
+          </div>
         </div>
       )}
       {formatContent(content, formatId)}

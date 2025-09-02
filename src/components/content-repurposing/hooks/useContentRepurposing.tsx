@@ -31,6 +31,7 @@ export const useContentRepurposing = () => {
   const {
     selectedFormats,
     generatedContents,
+    personasMap,
     isGenerating,
     activeFormat,
     savedContentFormats,
@@ -129,6 +130,7 @@ export const useContentRepurposing = () => {
     contentItems: contentItems || [],
     selectedFormats,
     generatedContents,
+    personasMap,
     isGenerating,
     activeFormat,
     repurposedDialogOpen,

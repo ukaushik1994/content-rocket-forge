@@ -17,6 +17,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   const { user } = useAuth();
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [generatedContents, setGeneratedContents] = useState<Record<string, string>>({});
+  const [personasMap, setPersonasMap] = useState<Record<string, string[]>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -99,6 +100,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       console.log('[useContentGeneration] Content cleared, resetting state');
       setSelectedFormats([]);
       setGeneratedContents({});
+      setPersonasMap({});
       setActiveFormat(null);
       setSelectedPersonas([]);
       setAvailablePersonas([]);
@@ -152,6 +154,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     console.log('[useContentGeneration] Selected personas:', selectedPersonas);
     setIsGenerating(true);
     const newGeneratedContents: Record<string, string> = { ...generatedContents };
+    const newPersonasMap: Record<string, string[]> = { ...personasMap };
 
     try {
       for (const formatId of formats) {
@@ -190,6 +193,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
 
           if (personaContents.length > 0) {
             newGeneratedContents[formatId] = personaContents.join('\n\n---\n\n');
+            newPersonasMap[formatId] = selectedPersonas; // Track which personas were used
             toast.success(`${format.name} generated for ${personaContents.length} persona(s)`);
           }
         } else {
@@ -239,6 +243,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
             console.log(`[useContentGeneration] Generated content for ${format.name}:`, generatedContent?.content?.substring(0, 100) + '...');
             if (generatedContent?.content) {
               newGeneratedContents[formatId] = generatedContent.content;
+              newPersonasMap[formatId] = []; // No personas used for general content
             }
             toast.success(`${format.name} format generated successfully`);
 
@@ -285,7 +290,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         formatCode: formatId,
         content: generatedContent,
         title: `${content.title} - ${formatName}`,
-        userId: user.id
+        userId: user.id,
+        personas: selectedPersonas.length > 0 ? selectedPersonas : undefined
       });
 
       if (result) {
@@ -358,6 +364,13 @@ export const useContentGeneration = (content: ContentItemType | null) => {
           const newContents = { ...prev };
           delete newContents[formatId];
           return newContents;
+        });
+        
+        // Remove from personas map as well
+        setPersonasMap(prev => {
+          const newMap = { ...prev };
+          delete newMap[formatId];
+          return newMap;
         });
         
         // Reset active format if deleted
@@ -441,6 +454,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         // Refresh data to get latest from database
         await refreshRepurposedData();
         setGeneratedContents({});
+        setPersonasMap({});
         setActiveFormat(null);
         toast.success(`${deletedCount} format(s) deleted successfully`);
         return true;
@@ -521,6 +535,7 @@ Generate content that resonates specifically with ${persona.personaName} and the
   return {
     selectedFormats,
     generatedContents,
+    personasMap,
     isGenerating,
     activeFormat,
     savedContentFormats,

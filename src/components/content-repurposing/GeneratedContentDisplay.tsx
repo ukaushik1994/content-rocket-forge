@@ -26,6 +26,7 @@ interface GeneratedContentDisplayProps {
   savedContentFormats?: string[];
   selectedPersonas?: string[];
   availablePersonas?: any[];
+  personasMap?: Record<string, string[]>; // Map of formatId to personas used
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = memo(({
@@ -43,7 +44,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   isDeleting = false,
   savedContentFormats = [],
   selectedPersonas = [],
-  availablePersonas = []
+  availablePersonas = [],
+  personasMap = {}
 }) => {
   // Debug logging to help identify the issue
   console.log('[GeneratedContentDisplay] generatedContents:', generatedContents);
@@ -79,6 +81,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
             activeFormat={activeFormat}
             setActiveFormat={setActiveFormat}
             savedFormats={savedContentFormats}
+            personasMap={personasMap}
+            availablePersonas={availablePersonas}
           />
         )}
       </CardHeader>
