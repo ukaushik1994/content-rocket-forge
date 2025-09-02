@@ -2,14 +2,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   CheckSquare, 
   Square, 
-  Download, 
   Save, 
-  Trash2, 
-  Copy,
-  FileText 
+  Trash2
 } from 'lucide-react';
 
 interface BulkOperationsBarProps {
@@ -84,39 +82,25 @@ export const BulkOperationsBar: React.FC<BulkOperationsBarProps> = ({
 
       <div className="flex items-center gap-2">
         {hasGenerated && (
-          <>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onCopyAll}
-              disabled={isLoading}
-              className="bg-card hover:bg-accent text-foreground border-border"
-            >
-              <Copy className="h-4 w-4 mr-1" />
-              Copy All
-            </Button>
-            
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onExportAll}
-              disabled={isLoading}
-              className="bg-card hover:bg-accent text-foreground border-border"
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Export All
-            </Button>
-            
+          <>            
             {onSaveAll && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={onSaveAll}
-                disabled={isLoading || isSaving}
-              >
-                <Save className="h-4 w-4 mr-1" />
-                {isSaving ? 'Saving...' : 'Save All'}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="default"
+                      size="icon"
+                      onClick={onSaveAll}
+                      disabled={isLoading || isSaving}
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isSaving ? 'Saving...' : 'Save All'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             
             {onDeleteAll && (
