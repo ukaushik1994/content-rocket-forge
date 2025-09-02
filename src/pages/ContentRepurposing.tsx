@@ -24,7 +24,10 @@ const ContentRepurposing: React.FC = () => {
     aiProvider,
     setAiProvider,
     availableProviders,
-    setSelectedFormats,
+        selectedPersonas={selectedPersonas}
+        setSelectedPersonas={setSelectedPersonas}
+        availablePersonas={availablePersonas}
+        setSelectedFormats={setSelectedFormats}
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
@@ -75,6 +78,9 @@ const ContentRepurposing: React.FC = () => {
         aiProvider={aiProvider}
         setAiProvider={setAiProvider}
         availableProviders={availableProviders}
+        selectedPersonas={selectedPersonas}
+        setSelectedPersonas={setSelectedPersonas}
+        availablePersonas={availablePersonas}
         setSelectedFormats={setSelectedFormats}
         setActiveFormat={setActiveFormat}
         handleGenerateContent={handleGenerateContent}

@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { useRepurposedContentData } from './useRepurposedContentData';
 import { AiProvider } from '@/services/aiService/types';
 import { getUserPreference } from '@/services/userPreferencesService';
+import { solutionPersonaService } from '@/services/solutionPersonaService';
+import { SolutionPersona } from '@/contexts/content-builder/types/solution-types';
 
 export const useContentGeneration = (content: ContentItemType | null) => {
   const { user } = useAuth();
@@ -21,6 +23,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [aiProvider, setAiProvider] = useState<AiProvider>('openrouter');
   const [availableProviders, setAvailableProviders] = useState<AiProvider[]>([]);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
+  const [availablePersonas, setAvailablePersonas] = useState<SolutionPersona[]>([]);
 
   // Use the repurposed content data hook
   const {
@@ -96,8 +100,42 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       setSelectedFormats([]);
       setGeneratedContents({});
       setActiveFormat(null);
+      setSelectedPersonas([]);
+      setAvailablePersonas([]);
     }
   }, [content?.id]);
+
+  // Load available personas when content changes  
+  useEffect(() => {
+    const loadPersonas = async () => {
+      if (!content?.metadata?.selectedSolution || !user) {
+        setAvailablePersonas([]);
+        setSelectedPersonas([]);
+        return;
+      }
+
+      try {
+        const solutionId = typeof content.metadata.selectedSolution === 'string' 
+          ? content.metadata.selectedSolution 
+          : content.metadata.selectedSolution?.id;
+        
+        if (!solutionId) {
+          setAvailablePersonas([]);
+          setSelectedPersonas([]);
+          return;
+        }
+        
+        const personas = await solutionPersonaService.getPersonasBySolution(solutionId);
+        setAvailablePersonas(personas);
+        console.log('[useContentGeneration] Loaded personas:', personas.length);
+      } catch (error) {
+        console.error('Error loading personas:', error);
+        setAvailablePersonas([]);
+      }
+    };
+
+    loadPersonas();
+  }, [content?.metadata?.selectedSolution, user]);
 
   const handleGenerateContent = useCallback(async (formats: string[]) => {
     if (!content || formats.length === 0) {
@@ -111,6 +149,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
 
     console.log('[useContentGeneration] Starting content generation for formats:', formats);
+    console.log('[useContentGeneration] Selected personas:', selectedPersonas);
     setIsGenerating(true);
     const newGeneratedContents: Record<string, string> = { ...generatedContents };
 
@@ -119,53 +158,90 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         const format = contentFormats.find(f => f.id === formatId);
         if (!format) continue;
 
-        console.log(`[useContentGeneration] Generating content for format: ${format.name} using ${aiProvider}`);
-        toast.info(`Generating ${format.name} format...`);
+        // Generate content for each selected persona, or general content if none selected
+        if (selectedPersonas.length > 0) {
+          const personaContents: string[] = [];
+          
+          for (const personaId of selectedPersonas) {
+            const persona = availablePersonas.find(p => p.id === personaId);
+            if (!persona) continue;
 
-        try {
-          // Try template-based generation first
-          let generatedContent = await generateContentByFormatType(
-            formatId,
-            content.title,
-            {
-              content: content.content?.substring(0, 1500) || '',
-              keyword: content.metadata?.mainKeyword || ''
-            }
-          );
+            console.log(`[useContentGeneration] Generating ${format.name} for persona: ${persona.personaName}`);
+            toast.info(`Generating ${format.name} for ${persona.personaName}...`);
 
-          // Fallback to AI service if template generation fails
-          if (!generatedContent?.content) {
-            console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service`);
-            const response = await AIServiceController.generate({
-              input: `Transform this content titled "${content.title}" for the ${format.name} format.
-                      
-                      Content: ${content.content?.substring(0, 1500)}...
-                      
-                      Make it appropriate for the ${format.name} format with all necessary elements.`,
-              use_case: 'repurpose',
-              temperature: 0.7,
-              max_tokens: 1500
-            });
+            const personaPrompt = buildPersonaPrompt(content, format, persona);
+            
+            try {
+              const response = await AIServiceController.generate({
+                input: personaPrompt,
+                use_case: 'repurpose',
+                temperature: 0.7,
+                max_tokens: 1500
+              });
 
-            if (response?.content) {
-              generatedContent = { 
-                content: response.content, 
-                templateUsed: { name: `Default ${format.name}`, isCustom: false } 
-              };
-            } else {
-              throw new Error(`Failed to generate content for ${format.name}`);
+              if (response?.content) {
+                personaContents.push(`=== For ${persona.personaName} (${persona.roleTitle}) ===\n\n${response.content}`);
+              }
+            } catch (personaError) {
+              console.error(`Error generating content for ${persona.personaName}:`, personaError);
+              toast.error(`Failed to generate content for ${persona.personaName}`);
             }
           }
 
-          console.log(`[useContentGeneration] Generated content for ${format.name}:`, generatedContent?.content?.substring(0, 100) + '...');
-          if (generatedContent?.content) {
-            newGeneratedContents[formatId] = generatedContent.content;
+          if (personaContents.length > 0) {
+            newGeneratedContents[formatId] = personaContents.join('\n\n---\n\n');
+            toast.success(`${format.name} generated for ${personaContents.length} persona(s)`);
           }
-          toast.success(`${format.name} format generated successfully`);
+        } else {
+          // Generate general content without persona targeting
+          console.log(`[useContentGeneration] Generating content for format: ${format.name} using ${aiProvider}`);
+          toast.info(`Generating ${format.name} format...`);
 
-        } catch (formatError) {
-          console.error(`Error generating ${format.name}:`, formatError);
-          toast.error(`Failed to generate ${format.name} format`);
+          try {
+            // Try template-based generation first
+            let generatedContent = await generateContentByFormatType(
+              formatId,
+              content.title,
+              {
+                content: content.content?.substring(0, 1500) || '',
+                keyword: content.metadata?.mainKeyword || ''
+              }
+            );
+
+            // Fallback to AI service if template generation fails
+            if (!generatedContent?.content) {
+              console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service`);
+              const response = await AIServiceController.generate({
+                input: `Transform this content titled "${content.title}" for the ${format.name} format.
+                        
+                        Content: ${content.content?.substring(0, 1500)}...
+                        
+                        Make it appropriate for the ${format.name} format with all necessary elements.`,
+                use_case: 'repurpose',
+                temperature: 0.7,
+                max_tokens: 1500
+              });
+
+              if (response?.content) {
+                generatedContent = { 
+                  content: response.content, 
+                  templateUsed: { name: `Default ${format.name}`, isCustom: false } 
+                };
+              } else {
+                throw new Error(`Failed to generate content for ${format.name}`);
+              }
+            }
+
+            console.log(`[useContentGeneration] Generated content for ${format.name}:`, generatedContent?.content?.substring(0, 100) + '...');
+            if (generatedContent?.content) {
+              newGeneratedContents[formatId] = generatedContent.content;
+            }
+            toast.success(`${format.name} format generated successfully`);
+
+          } catch (formatError) {
+            console.error(`Error generating ${format.name}:`, formatError);
+            toast.error(`Failed to generate ${format.name} format`);
+          }
         }
       }
 
@@ -185,7 +261,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     } finally {
       setIsGenerating(false);
     }
-  }, [content, generatedContents, activeFormat, aiProvider, availableProviders]);
+  }, [content, generatedContents, activeFormat, aiProvider, availableProviders, selectedPersonas, availablePersonas]);
 
   const saveAsNewContent = useCallback(async (formatId: string, generatedContent: string): Promise<boolean> => {
     if (!content || !user || !formatId || !generatedContent) {
@@ -373,6 +449,71 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
   }, [generatedContents, content, refreshRepurposedData]);
 
+  // Helper function to build persona-specific prompts
+  const buildPersonaPrompt = (content: ContentItemType, format: any, persona: SolutionPersona): string => {
+    const personaContext = `
+PERSONA PROFILE:
+- Name: ${persona.personaName}
+- Role: ${persona.roleTitle}
+- Communication Style: ${persona.preferredTone}
+- Key Goals: ${persona.typicalGoals.join(', ')}
+- Pain Points: ${persona.painPoints.join(', ')}
+- Topics of Interest: ${persona.keyTopics.join(', ')}`;
+
+    const personaInstructions = getPersonaInstructions(persona.personaType);
+
+    return `Transform this content for the ${format.name} format, specifically targeting this persona:
+
+${personaContext}
+
+ORIGINAL CONTENT:
+Title: ${content.title}
+Content: ${content.content?.substring(0, 1500)}...
+
+INSTRUCTIONS:
+${personaInstructions}
+
+- Write in a ${persona.preferredTone} tone
+- Address their goals: ${persona.typicalGoals.join(', ')}
+- Acknowledge their pain points: ${persona.painPoints.join(', ')}
+- Focus on topics they care about: ${persona.keyTopics.join(', ')}
+- Make it appropriate for the ${format.name} format with all necessary elements
+
+Generate content that resonates specifically with ${persona.personaName} and their role as ${persona.roleTitle}.`;
+  };
+
+  // Get persona-specific instructions based on persona type
+  const getPersonaInstructions = (personaType: string): string => {
+    switch (personaType) {
+      case 'end_user':
+        return `END USER FOCUS:
+- Emphasize usability and direct impact on daily work
+- Include practical, actionable steps
+- Focus on ease of use and time savings
+- Use clear, jargon-free language
+- Highlight immediate benefits and user experience improvements`;
+        
+      case 'decision_maker':
+        return `DECISION MAKER FOCUS:
+- Highlight ROI, efficiency gains, and cost savings
+- Include metrics, data, and business impact
+- Address risk mitigation and competitive advantages
+- Use professional, data-driven language
+- Focus on strategic benefits and bottom-line results`;
+        
+      case 'influencer':
+        return `TECHNICAL INFLUENCER FOCUS:
+- Provide technical credibility and detailed specifications
+- Include comparisons with alternatives
+- Address implementation considerations and technical requirements
+- Use precise, technical language
+- Focus on architecture, integration, and technical benefits`;
+        
+      default:
+        return 'Create engaging, informative content appropriate for the target audience.';
+    }
+  };
+
   return {
     selectedFormats,
     generatedContents,
@@ -386,6 +527,9 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     aiProvider,
     setAiProvider,
     availableProviders,
+    selectedPersonas,
+    setSelectedPersonas,
+    availablePersonas,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,

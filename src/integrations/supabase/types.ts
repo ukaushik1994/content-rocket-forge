@@ -2556,8 +2556,8 @@ export type Database = {
           id: string
           key_topics: Json
           pain_points: Json
-          persona_category: string
           persona_name: string
+          persona_type: Database["public"]["Enums"]["persona_type"]
           preferred_tone: string
           role_title: string
           solution_id: string
@@ -2570,8 +2570,8 @@ export type Database = {
           id?: string
           key_topics?: Json
           pain_points?: Json
-          persona_category: string
           persona_name: string
+          persona_type: Database["public"]["Enums"]["persona_type"]
           preferred_tone: string
           role_title: string
           solution_id: string
@@ -2584,8 +2584,8 @@ export type Database = {
           id?: string
           key_topics?: Json
           pain_points?: Json
-          persona_category?: string
           persona_name?: string
+          persona_type?: Database["public"]["Enums"]["persona_type"]
           preferred_tone?: string
           role_title?: string
           solution_id?: string
@@ -3187,6 +3187,7 @@ export type Database = {
         | "social_post"
         | "email"
         | "landing_page"
+      persona_type: "end_user" | "decision_maker" | "influencer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3331,6 +3332,7 @@ export const Constants = {
         "email",
         "landing_page",
       ],
+      persona_type: ["end_user", "decision_maker", "influencer"],
     },
   },
 } as const

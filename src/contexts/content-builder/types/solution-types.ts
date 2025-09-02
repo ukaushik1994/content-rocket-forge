@@ -8,6 +8,25 @@ export interface SolutionResource {
   url: string;
 }
 
+// Persona type enum
+export type PersonaType = 'end_user' | 'decision_maker' | 'influencer';
+
+// Solution persona interface
+export interface SolutionPersona {
+  id: string;
+  solutionId: string;
+  personaType: PersonaType;
+  personaName: string;
+  roleTitle: string;
+  typicalGoals: string[];
+  painPoints: string[];
+  preferredTone: string;
+  keyTopics: string[];
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Solution {
   id: string;
   name: string;
@@ -20,6 +39,7 @@ export interface Solution {
   logoUrl: string | null;
   externalUrl: string | null;
   resources: SolutionResource[];
+  personas?: SolutionPersona[]; // Optional personas array
 }
 
 export interface SolutionIntegrationMetrics {

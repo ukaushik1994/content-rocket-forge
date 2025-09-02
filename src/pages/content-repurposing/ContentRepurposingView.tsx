@@ -8,11 +8,13 @@ import Navbar from '@/components/layout/Navbar';
 import ContentDetails from '@/components/content-repurposing/ContentDetails';
 import ContentFormatSelection from '@/components/content-repurposing/ContentFormatSelection';
 import GeneratedContentDisplay from '@/components/content-repurposing/GeneratedContentDisplay';
+import { PersonaSelector } from '@/components/content-repurposing/PersonaSelector';
 import { ContentItemType } from '@/contexts/content/types';
 import ContentRepurposingTour from '@/components/content-repurposing/tour/ContentRepurposingTour';
 import ContentPreviewDialog from '@/components/content-repurposing/preview/ContentPreviewDialog';
 import { AiProviderSelector } from '@/components/content-builder/outline/ai-generator/AiProviderSelector';
 import { AiProvider } from '@/services/aiService/types';
+import { SolutionPersona } from '@/contexts/content-builder/types/solution-types';
 
 interface ContentRepurposingViewProps {
   content: ContentItemType;
@@ -26,6 +28,9 @@ interface ContentRepurposingViewProps {
   aiProvider: AiProvider;
   setAiProvider: (provider: AiProvider) => void;
   availableProviders: AiProvider[];
+  selectedPersonas: string[];
+  setSelectedPersonas: (personas: string[]) => void;
+  availablePersonas: SolutionPersona[];
   setSelectedFormats: (formats: string[]) => void;
   setActiveFormat: (format: string) => void;
   handleGenerateContent: (formats: string[]) => void;
@@ -52,6 +57,9 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   aiProvider,
   setAiProvider,
   availableProviders,
+  selectedPersonas,
+  setSelectedPersonas,
+  availablePersonas,
   setSelectedFormats,
   setActiveFormat,
   handleGenerateContent,

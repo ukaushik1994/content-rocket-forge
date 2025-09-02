@@ -26,6 +26,7 @@ import { TechnicalSpecsTab } from './tabs/TechnicalSpecsTab';
 import { PricingTab } from './tabs/PricingTab';
 import { CaseStudiesTab } from './tabs/CaseStudiesTab';
 import { AnalyticsTab } from './tabs/AnalyticsTab';
+import { PersonasTab } from './tabs/PersonasTab';
 import { solutionService } from '@/services/solutionService';
 import { AutoSaveStatus } from './AutoSaveStatus';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
@@ -517,7 +518,8 @@ useEffect(() => {
               <TabsTrigger value="technical" className="data-[state=active]:bg-neon-purple/20">Technical</TabsTrigger>
               <TabsTrigger value="pricing" className="data-[state=active]:bg-neon-purple/20">Pricing</TabsTrigger>
             </TabsList>
-            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-6 mb-4 flex-shrink-0">
+              <TabsTrigger value="personas">Personas</TabsTrigger>
               <TabsTrigger value="competitors">Competitors</TabsTrigger>
               <TabsTrigger value="cases">Case Studies</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -571,6 +573,10 @@ useEffect(() => {
                   
                   <TabsContent value="pricing" className="mt-0">
                     <PricingTab formData={formData} updateFormData={updateFormData} />
+                  </TabsContent>
+                  
+                  <TabsContent value="personas" className="mt-0">
+                    <PersonasTab formData={formData} updateFormData={updateFormData} />
                   </TabsContent>
                   
                   <TabsContent value="competitors" className="mt-0">
