@@ -71,6 +71,7 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
             <Checkbox
               checked={selectedPersonas.length === personas.length}
               onCheckedChange={handleSelectAll}
+              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-border/60 bg-card/80 hover:border-primary/50"
             />
             <span className="text-sm text-muted-foreground">All</span>
           </div>
@@ -84,11 +85,13 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
         {personas.map((persona) => (
           <div
             key={persona.id}
-            className="flex items-start gap-3 p-3 rounded-lg border bg-card/50 hover:bg-accent/50 transition-colors"
+            className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-accent/30 transition-colors cursor-pointer"
+            onClick={() => handlePersonaToggle(persona.id, !selectedPersonas.includes(persona.id))}
           >
             <Checkbox
               checked={selectedPersonas.includes(persona.id)}
               onCheckedChange={(checked) => handlePersonaToggle(persona.id, Boolean(checked))}
+              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-border/60 bg-card/80 hover:border-primary/50"
             />
             
             <div className="flex-1 space-y-2">
