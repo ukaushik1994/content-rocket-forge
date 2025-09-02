@@ -99,9 +99,9 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
   const generatedFormatsCount = Object.keys(generatedContents).length;
   
   return (
-    <Card className="formats-selection">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Content Formats</CardTitle>
+    <Card className="formats-selection shadow-lg border-border/50">
+      <CardHeader className="pb-3 bg-card/50">
+        <CardTitle className="text-lg text-foreground">Content Formats</CardTitle>
         <CardDescription>
           {selectedPersonas.length > 0 
             ? `Generate content for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}`
@@ -136,20 +136,19 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
                 {contentFormats.map((format) => (
                   <div 
                     key={format.id}
-                    className="relative"
+                    className="relative cursor-pointer"
                     onClick={() => toggleFormatSelection(format.id)}
                   >
                     <FormatInfoCard 
                       format={format} 
                       isRecommended={false}
                     />
-                    <div className="absolute inset-0 bg-transparent cursor-pointer" />
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-3 right-3 z-10">
                       <div 
-                        className={`w-5 h-5 rounded-md border ${
+                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
                           selectedFormats.includes(format.id) 
-                            ? 'bg-primary border-primary' 
-                            : 'bg-background border-muted-foreground/30'
+                            ? 'bg-primary border-primary shadow-lg' 
+                            : 'bg-card border-border hover:border-primary/50 shadow-sm'
                         }`}
                       >
                         {selectedFormats.includes(format.id) && (
@@ -169,7 +168,7 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
       
       <CardFooter>
         <Button 
-          className="w-full generate-button"
+          className="w-full generate-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg border-0"
           disabled={selectedFormats.length === 0 || isGenerating}
           onClick={handleGenerateContent}
         >

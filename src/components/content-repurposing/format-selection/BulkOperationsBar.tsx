@@ -44,14 +44,15 @@ export const BulkOperationsBar: React.FC<BulkOperationsBarProps> = ({
   const hasGenerated = generatedCount > 0;
 
   return (
-    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+    <div className="flex items-center justify-between p-3 bg-card/80 backdrop-blur-sm rounded-lg border border-border/50 shadow-sm">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={isAllSelected ? onClearAll : onSelectAll}
             disabled={isLoading}
+            className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
           >
             {isAllSelected ? (
               <>
@@ -66,14 +67,14 @@ export const BulkOperationsBar: React.FC<BulkOperationsBarProps> = ({
             )}
           </Button>
           
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-foreground/80 font-medium">
             {selectedCount} of {totalCount} selected
           </span>
           
           {generatedCount > 0 && (
             <>
-              <Separator orientation="vertical" className="h-4" />
-              <span className="text-sm text-muted-foreground">
+              <Separator orientation="vertical" className="h-4 bg-border/60" />
+              <span className="text-sm text-foreground/70 font-medium">
                 {generatedCount} generated
               </span>
             </>
@@ -85,20 +86,22 @@ export const BulkOperationsBar: React.FC<BulkOperationsBarProps> = ({
         {hasGenerated && (
           <>
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={onCopyAll}
               disabled={isLoading}
+              className="bg-card hover:bg-accent text-foreground border-border"
             >
               <Copy className="h-4 w-4 mr-1" />
               Copy All
             </Button>
             
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={onExportAll}
               disabled={isLoading}
+              className="bg-card hover:bg-accent text-foreground border-border"
             >
               <Download className="h-4 w-4 mr-1" />
               Export All
@@ -106,7 +109,7 @@ export const BulkOperationsBar: React.FC<BulkOperationsBarProps> = ({
             
             {onSaveAll && (
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={onSaveAll}
                 disabled={isLoading || isSaving}
@@ -118,11 +121,10 @@ export const BulkOperationsBar: React.FC<BulkOperationsBarProps> = ({
             
             {onDeleteAll && (
               <Button
-                variant="outline"
+                variant="destructive"
                 size="sm"
                 onClick={onDeleteAll}
                 disabled={isLoading}
-                className="text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-1" />
                 Delete All
