@@ -24,10 +24,10 @@ const ContentRepurposing: React.FC = () => {
     aiProvider,
     setAiProvider,
     availableProviders,
-        selectedPersonas={selectedPersonas}
-        setSelectedPersonas={setSelectedPersonas}
-        availablePersonas={availablePersonas}
-        setSelectedFormats={setSelectedFormats}
+    selectedPersonas,
+    setSelectedPersonas,
+    availablePersonas,
+    setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
