@@ -24,6 +24,8 @@ interface GeneratedContentDisplayProps {
   isSavingAll?: boolean;
   isDeleting?: boolean;
   savedContentFormats?: string[];
+  selectedPersonas?: string[];
+  availablePersonas?: any[];
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = memo(({
@@ -39,7 +41,9 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   isSaving = false,
   isSavingAll = false,
   isDeleting = false,
-  savedContentFormats = []
+  savedContentFormats = [],
+  selectedPersonas = [],
+  availablePersonas = []
 }) => {
   // Debug logging to help identify the issue
   console.log('[GeneratedContentDisplay] generatedContents:', generatedContents);
@@ -62,7 +66,9 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
           <CardTitle className="text-lg">Generated Content</CardTitle>
           <CardDescription>
             {hasGeneratedContent
-              ? `${generatedFormats.length} format(s) generated`
+              ? selectedPersonas.length > 0
+                ? `${generatedFormats.length} format(s) generated for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}`
+                : `${generatedFormats.length} format(s) generated`
               : 'Select formats and generate content'}
           </CardDescription>
         </div>
@@ -84,7 +90,9 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
           <div className="flex flex-col h-full">
             <ContentViewer 
               content={generatedContents[activeFormat]} 
-              formatId={activeFormat} 
+              formatId={activeFormat}
+              selectedPersonas={selectedPersonas}
+              availablePersonas={availablePersonas}
             />
             <ActionButtons 
               onCopy={() => onCopyToClipboard(generatedContents[activeFormat])}

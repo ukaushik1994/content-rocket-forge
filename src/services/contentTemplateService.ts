@@ -36,7 +36,8 @@ export async function generateContentByFormatType(
   formatType: string,
   topic: string,
   additionalContext?: Record<string, string>,
-  solutionContext?: any
+  solutionContext?: any,
+  personaContext?: any[]
 ): Promise<{ content: string | null; templateUsed: { name: string; isCustom: boolean } | null }> {
   try {
     console.log(`🎯 Generating content for format type: ${formatType}, topic: ${topic}`);
@@ -75,11 +76,12 @@ async function generateWithDefaultPrompt(
   formatType: string,
   topic: string,
   additionalContext?: Record<string, string>,
-  solutionContext?: any
+  solutionContext?: any,
+  personaContext?: any[]
 ): Promise<string | null> {
   try {
     // Create default prompt based on format type
-    const { prompt, systemMessage } = createDefaultPrompt(formatType, topic, additionalContext, solutionContext);
+    const { prompt, systemMessage } = createDefaultPrompt(formatType, topic, additionalContext, solutionContext, personaContext);
     
     // Try OpenRouter first if available, then fallback to OpenAI
     let response;
@@ -118,7 +120,8 @@ function createDefaultPrompt(
   formatType: string, 
   topic: string, 
   additionalContext?: Record<string, string>,
-  solutionContext?: any
+  solutionContext?: any,
+  personaContext?: any[]
 ): { prompt: string, systemMessage: string } {
   const content = additionalContext?.content || '';
   const keyword = additionalContext?.keyword || topic;
@@ -137,6 +140,25 @@ Target Audience: ${solutionContext.targetAudience?.join(', ') || 'N/A'}
 Naturally integrate this solution into the content where relevant.`;
   }
 
+  // Add persona context if available
+  let personaPromptAddition = '';
+  if (personaContext && personaContext.length > 0) {
+    const personaDescriptions = personaContext.map(persona => {
+      return `- ${persona.personaName} (${persona.roleTitle}): ${persona.personaType} - Prefers ${persona.preferredTone} tone`;
+    }).join('\n');
+    
+    personaPromptAddition = `
+
+PERSONA TARGETING:
+Create content specifically tailored for these target personas:
+${personaDescriptions}
+
+${personaContext.length === 1 ? 
+  `Focus specifically on this persona's needs, challenges, and preferred communication style.` :
+  `Create content that resonates with all these personas while maintaining clarity and engagement.`
+}`;
+  }
+
   switch (formatType) {
     case 'meme':
       return {
@@ -149,7 +171,7 @@ Naturally integrate this solution into the content where relevant.`;
         Top text: [catchy phrase for the top of the meme]
         Bottom text: [punchline for the bottom of the meme]
         Alternative caption: [single caption alternative]
-        Context explanation: [brief explanation of the joke for those who might not get it]${solutionPromptAddition}`
+        Context explanation: [brief explanation of the joke for those who might not get it]${solutionPromptAddition}${personaPromptAddition}`
       };
       
     case 'carousel':
@@ -174,14 +196,14 @@ Naturally integrate this solution into the content where relevant.`;
         
         Final Slide: [call to action]
         
-        Each slide should have no more than 2-3 sentences. Make it engaging and visual-friendly.${solutionPromptAddition}`
+        Each slide should have no more than 2-3 sentences. Make it engaging and visual-friendly.${solutionPromptAddition}${personaPromptAddition}`
       };
       
     // Handle other format types with their specific structures
     case 'social-twitter':
       return {
         systemMessage: 'You are a Twitter/X specialist who creates engaging tweets within character limits.',
-        prompt: `Create a Twitter/X post (max 280 characters) about "${topic}" based on this content: ${content.substring(0, 300)}...${solutionPromptAddition}`
+        prompt: `Create a Twitter/X post (max 280 characters) about "${topic}" based on this content: ${content.substring(0, 300)}...${solutionPromptAddition}${personaPromptAddition}`
       };
       
     case 'glossary':
@@ -195,7 +217,7 @@ Naturally integrate this solution into the content where relevant.`;
         Definition: [concise definition]
         Usage example: [example of the term in context]
         
-        Include at least 5-8 key terms from the content.${solutionPromptAddition}`
+        Include at least 5-8 key terms from the content.${solutionPromptAddition}${personaPromptAddition}`
       };
       
     default:
@@ -203,7 +225,7 @@ Naturally integrate this solution into the content where relevant.`;
         systemMessage: 'You are an expert content writer who creates high-quality, engaging content.',
         prompt: `Transform this content about "${topic}" for the ${formatType} format.
                 Content: ${content.substring(0, 800)}...
-                Make it appropriate for the ${formatType} format with all necessary elements.${solutionPromptAddition}`
+                Make it appropriate for the ${formatType} format with all necessary elements.${solutionPromptAddition}${personaPromptAddition}`
       };
   }
 }
@@ -215,7 +237,8 @@ async function generateWithTemplate(
   template: PromptTemplate,
   topic: string,
   additionalContext?: Record<string, string>,
-  solutionContext?: any
+  solutionContext?: any,
+  personaContext?: any[]
 ): Promise<string | null> {
   try {
     // Replace placeholders in the prompt template
@@ -250,6 +273,22 @@ Benefits: ${solutionContext.benefits?.slice(0,3).join(', ') || 'N/A'}
 Target Audience: ${solutionContext.targetAudience?.join(', ') || 'N/A'}
 
 Naturally integrate this solution into the content where relevant.`;
+    }
+
+    // Add persona context if available
+    if (personaContext && personaContext.length > 0) {
+      const personaDescriptions = personaContext.map(persona => {
+        return `- ${persona.personaName} (${persona.roleTitle}): ${persona.personaType} - Prefers ${persona.preferredTone} tone`;
+      }).join('\n');
+      
+      promptText += `\n\nPERSONA TARGETING:
+Create content specifically tailored for these target personas:
+${personaDescriptions}
+
+${personaContext.length === 1 ? 
+  `Focus specifically on this persona's needs, challenges, and preferred communication style.` :
+  `Create content that resonates with all these personas while maintaining clarity and engagement.`
+}`;
     }
     
     console.log(`🚀 Sending request to AI service using template: ${template.name}`);

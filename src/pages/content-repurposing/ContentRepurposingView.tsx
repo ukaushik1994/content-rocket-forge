@@ -128,6 +128,15 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
           <div className="md:col-span-1 space-y-6">
             <ContentDetails content={content} />
             
+            {/* Persona Selection */}
+            {availablePersonas.length > 0 && (
+              <PersonaSelector
+                personas={availablePersonas}
+                selectedPersonas={selectedPersonas}
+                onSelectionChange={setSelectedPersonas}
+              />
+            )}
+            
             {/* AI Service Status */}
             <div className="bg-gradient-to-br from-dark-bg via-dark-surface to-dark-bg border border-white/10 backdrop-blur-sm rounded-xl p-4">
               <h3 className="text-sm font-medium text-white/90 mb-3">AI Service</h3>
@@ -144,6 +153,8 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               onExportAll={handleExportAllContent}
               onCopyAll={handleCopyAllContent}
               isSaving={isSavingAll}
+              selectedPersonas={selectedPersonas}
+              availablePersonas={availablePersonas}
             />
           </div>
 
@@ -162,6 +173,8 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               isSavingAll={isSavingAll}
               isDeleting={isDeleting}
               savedContentFormats={savedContentFormats}
+              selectedPersonas={selectedPersonas}
+              availablePersonas={availablePersonas}
             />
           </div>
         </div>

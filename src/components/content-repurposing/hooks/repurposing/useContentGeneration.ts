@@ -205,7 +205,11 @@ export const useContentGeneration = (content: ContentItemType | null) => {
               {
                 content: content.content?.substring(0, 1500) || '',
                 keyword: content.metadata?.mainKeyword || ''
-              }
+              },
+              undefined,
+              selectedPersonas.length > 0 ? selectedPersonas.map(personaId => 
+                availablePersonas.find(p => p.id === personaId)
+              ).filter(Boolean) : undefined
             );
 
             // Fallback to AI service if template generation fails

@@ -5,9 +5,16 @@ import { getFormatByIdOrDefault } from '../formats';
 interface ContentViewerProps {
   content: string;
   formatId: string;
+  selectedPersonas?: string[];
+  availablePersonas?: any[];
 }
 
-const ContentViewer: React.FC<ContentViewerProps> = memo(({ content, formatId }) => {
+const ContentViewer: React.FC<ContentViewerProps> = memo(({ 
+  content, 
+  formatId, 
+  selectedPersonas = [], 
+  availablePersonas = [] 
+}) => {
   // Function to format special content types
   const formatContent = (content: string, formatId: string) => {
     if (formatId === 'meme') {
@@ -86,6 +93,17 @@ const ContentViewer: React.FC<ContentViewerProps> = memo(({ content, formatId })
 
   return (
     <div className="flex-1 overflow-auto bg-muted/10 rounded-md p-4 mb-4">
+      {/* Show persona context if multiple personas are selected */}
+      {selectedPersonas.length > 1 && (
+        <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+          <p className="text-sm font-medium">
+            Content generated for {selectedPersonas.length} personas
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            This content has been tailored for multiple target personas
+          </p>
+        </div>
+      )}
       {formatContent(content, formatId)}
     </div>
   );

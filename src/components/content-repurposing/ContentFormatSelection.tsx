@@ -19,6 +19,8 @@ interface ContentFormatSelectionProps {
   onExportAll?: () => void;
   onCopyAll?: () => void;
   isSaving?: boolean;
+  selectedPersonas?: string[];
+  availablePersonas?: any[];
 }
 
 export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
@@ -30,7 +32,9 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
   onSaveAllContent,
   onExportAll,
   onCopyAll,
-  isSaving = false
+  isSaving = false,
+  selectedPersonas = [],
+  availablePersonas = []
 }) => {
   const [showProgress, setShowProgress] = useState(false);
   
@@ -99,7 +103,10 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Content Formats</CardTitle>
         <CardDescription>
-          Select formats to generate repurposed content
+          {selectedPersonas.length > 0 
+            ? `Generate content for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}`
+            : 'Select formats to generate repurposed content'
+          }
         </CardDescription>
       </CardHeader>
       
@@ -169,15 +176,19 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
           {isGenerating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {selectedFormats.length > 0 
-                ? `Generating ${selectedFormats.length} format${selectedFormats.length !== 1 ? 's' : ''}...` 
-                : 'Generating...'}
+              {selectedFormats.length > 0 && selectedPersonas.length > 0
+                ? `Generating ${selectedFormats.length} format${selectedFormats.length !== 1 ? 's' : ''} for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}...`
+                : selectedFormats.length > 0 
+                  ? `Generating ${selectedFormats.length} format${selectedFormats.length !== 1 ? 's' : ''}...` 
+                  : 'Generating...'}
             </>
           ) : (
             <>
-              {selectedFormats.length > 0 
-                ? `Generate ${selectedFormats.length} format${selectedFormats.length !== 1 ? 's' : ''}` 
-                : 'Select formats to generate'}
+              {selectedFormats.length > 0 && selectedPersonas.length > 0
+                ? `Generate ${selectedFormats.length} format${selectedFormats.length !== 1 ? 's' : ''} for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}`
+                : selectedFormats.length > 0 
+                  ? `Generate ${selectedFormats.length} format${selectedFormats.length !== 1 ? 's' : ''}` 
+                  : 'Select formats to generate'}
             </>
           )}
         </Button>
