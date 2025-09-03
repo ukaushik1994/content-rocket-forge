@@ -163,6 +163,62 @@ export const DashboardSummary = () => {
     }
   };
 
+  // Combine all opportunities for the carousel
+  const combinedOpportunities = React.useMemo(() => {
+    const combined = [];
+
+    // Add opportunities from Opportunity Hunter
+    opportunities.forEach(opp => {
+      combined.push({
+        ...opp,
+        type: 'opportunity' as const,
+        title: opp.keyword || opp.title,
+        description: opp.description || `Content opportunity for "${opp.keyword}"`,
+        keywords: opp.related_keywords ? [opp.keyword, ...opp.related_keywords.slice(0, 4)] : [opp.keyword],
+        volume: opp.search_volume,
+        difficulty: opp.keyword_difficulty,
+        priority: opp.priority,
+        content_format: opp.content_format,
+        cta: 'Explore Opportunity',
+        createdAt: opp.created_at
+      });
+    });
+
+    // Add AI strategy proposals
+    aiStrategies.forEach(strategy => {
+      strategy.proposals?.forEach((proposal: any) => {
+        combined.push({
+          ...proposal,
+          type: 'ai-strategy' as const,
+          title: proposal.title,
+          description: proposal.description,
+          keywords: proposal.keywords || [],
+          volume: proposal.search_volume || proposal.estimatedImpressions,
+          priority: proposal.priority,
+          cta: 'Use Strategy',
+          createdAt: strategy.created_at
+        });
+      });
+    });
+
+    // Add dashboard next moves
+    data?.next_moves?.forEach(move => {
+      combined.push({
+        ...move,
+        type: 'dashboard' as const,
+        title: move.cluster,
+        keywords: [move.cluster],
+        volume: move.volume,
+        priority: move.priority,
+        content_format: move.type,
+        cta: move.cta,
+        createdAt: data.month
+      });
+    });
+
+    return combined;
+  }, [opportunities, aiStrategies, data]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -347,431 +403,309 @@ export const DashboardSummary = () => {
         ))}
       </motion.div>
 
-      {/* Top Performer & Next Moves */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Top Performer */}
-        {data.top_performer && (
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            whileHover={{ scale: 1.01 }}
-          >
-            <Card className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 group overflow-hidden relative">
-              {/* Glowing border effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/20 via-neon-purple/20 to-neon-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
-              
-              <CardHeader className="relative z-10">
-                <CardTitle className="flex items-center gap-3 text-white">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-neon-blue/30 to-neon-purple/30 flex items-center justify-center backdrop-blur-xl border border-white/20">
-                    <TrendingUp className="w-5 h-5 text-neon-blue" />
-                  </div>
-                  <span className="bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
-                    Top Performing Content
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative z-10">
-                <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                    <h3 className="font-semibold text-white/90 truncate mb-2">{data.top_performer.title}</h3>
-                    <div className="flex items-center gap-2 text-sm text-white/60 mb-3">
-                      {getContentTypeIcon(data.top_performer.type)}
-                      <span className="capitalize">{data.top_performer.type}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-3xl font-bold bg-gradient-to-r from-neon-blue to-cyan-400 bg-clip-text text-transparent">
-                          {data.top_performer.views}
-                        </p>
-                        <p className="text-xs text-white/50">views last 7 days</p>
-                      </div>
-                      {data.top_performer.growth > 0 && (
-                        <Badge className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border-emerald-500/30">
-                          +{data.top_performer.growth}%
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      asChild 
-                      className="border-white/20 bg-white/10 hover:bg-white/20 text-white hover-scale"
-                    >
-                      <a href={data.top_performer.url}>
-                        View Content
-                        <ExternalLink className="w-3 h-3 ml-1" />
-                      </a>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="border-neon-purple/30 bg-neon-purple/10 hover:bg-neon-purple/20 text-neon-purple hover-scale"
-                    >
-                      Repurpose
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Next Best Moves */}
+      {/* Top Performer */}
+      {data.top_performer && (
         <motion.div
-          initial={{ opacity: 0, x: 30 }}
+          initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
           whileHover={{ scale: 1.01 }}
+          className="max-w-2xl mx-auto"
         >
-          <Card className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 group overflow-hidden relative h-full">
-            {/* Animated background gradient */}
-            <motion.div 
-              className="absolute inset-0 bg-gradient-to-br from-neon-pink/10 via-neon-purple/10 to-neon-blue/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              animate={{
-                background: [
-                  "linear-gradient(135deg, rgba(255,20,147,0.1), rgba(138,43,226,0.1), rgba(30,144,255,0.1))",
-                  "linear-gradient(135deg, rgba(30,144,255,0.1), rgba(255,20,147,0.1), rgba(138,43,226,0.1))",
-                  "linear-gradient(135deg, rgba(138,43,226,0.1), rgba(30,144,255,0.1), rgba(255,20,147,0.1))",
-                ]
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
+          <Card className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 group overflow-hidden relative">
+            {/* Glowing border effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/20 via-neon-purple/20 to-neon-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
             
             <CardHeader className="relative z-10">
               <CardTitle className="flex items-center gap-3 text-white">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-neon-pink/30 to-neon-blue/30 flex items-center justify-center backdrop-blur-xl border border-white/20">
-                  <Lightbulb className="w-5 h-5 text-neon-pink" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-neon-blue/30 to-neon-purple/30 flex items-center justify-center backdrop-blur-xl border border-white/20">
+                  <TrendingUp className="w-5 h-5 text-neon-blue" />
                 </div>
                 <span className="bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
-                  Next Best Moves
+                  Top Performing Content
                 </span>
               </CardTitle>
-              <CardDescription className="text-white/60">
-                AI-identified opportunities based on your content gaps
-              </CardDescription>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="space-y-3">
-                {(() => {
-                  // Combine all opportunities into a unified list - SHOW ALL
-                  const allOpportunities = [
-                    // Dashboard next moves
-                    ...data.next_moves.map((move, index) => ({
-                      id: `dashboard-${index}`,
-                      title: move.cluster,
-                      type: 'dashboard' as const,
-                      contentType: move.type,
-                      volume: move.volume,
-                      priority: move.priority,
-                      cta: move.cta,
-                      description: `Strategic content opportunity: ${move.cluster}`,
-                      keywords: [move.cluster],
-                      data: move
-                    })),
-                    
-                    // ALL Opportunity Hunter discoveries
-                    ...opportunities.map((opp) => ({
-                      id: `opportunity-${opp.id}`,
-                      title: opp.primary_keyword || opp.keyword || 'Content Opportunity',
-                      type: 'opportunity' as const,
-                      contentType: opp.content_type || 'article',
-                      volume: opp.search_volume || 0,
-                      priority: opp.priority || 'medium',
-                      difficulty: opp.keyword_difficulty,
-                      description: opp.brief_description || opp.description || `SEO opportunity for "${opp.primary_keyword || opp.keyword}"`,
-                      keywords: [opp.primary_keyword || opp.keyword, ...(opp.secondary_keywords || [])].filter(Boolean),
-                      competitorCount: opp.competitor_count,
-                      opportunityScore: opp.opportunity_score,
-                      detectedAt: opp.created_at,
-                      data: opp
-                    })),
-                    
-                    // ALL AI Strategy proposals from ALL strategies
-                    ...aiStrategies.flatMap(strategy => 
-                      strategy.proposals?.map((proposal: any) => ({
-                        id: `ai-strategy-${strategy.id}-${proposal.primary_keyword}`,
-                        title: proposal.primary_keyword || proposal.title || 'AI Strategy Opportunity',
-                        type: 'ai-strategy' as const,
-                        contentType: proposal.content_type || 'article',
-                        volume: proposal.search_volume || 0,
-                        priority: proposal.priority || 'medium',
-                        description: proposal.description || `AI-generated content strategy for "${proposal.primary_keyword}"`,
-                        keywords: [proposal.primary_keyword, ...(proposal.secondary_keywords || [])].filter(Boolean),
-                        estimatedImpressions: proposal.estimated_impressions,
-                        competitionLevel: proposal.competition_level,
-                        createdAt: strategy.created_at,
-                        strategySession: strategy.session_id,
-                        data: proposal
-                      })) || []
-                    )
-                  ];
-
-                  // Sort by priority and volume - show ALL
-                  const sortedOpportunities = allOpportunities
-                    .sort((a, b) => {
-                      const priorityOrder = { high: 3, medium: 2, low: 1 };
-                      const aPriority = priorityOrder[a.priority?.toLowerCase() as keyof typeof priorityOrder] || 1;
-                      const bPriority = priorityOrder[b.priority?.toLowerCase() as keyof typeof priorityOrder] || 1;
-                      
-                      if (aPriority !== bPriority) return bPriority - aPriority;
-                      return (b.volume || 0) - (a.volume || 0);
-                    });
-
-                  return sortedOpportunities.length > 0 ? (
-                    <div className="relative">
-                      {/* Carousel Container */}
-                      <div className="overflow-hidden">
-                        <motion.div 
-                          className="flex gap-6 pb-4"
-                          animate={{ x: ["0%", "-100%"] }}
-                          transition={{ 
-                            duration: sortedOpportunities.length * 8, // 8 seconds per item
-                            repeat: Infinity, 
-                            ease: "linear" 
-                          }}
-                          style={{ width: `${sortedOpportunities.length * 400 + (sortedOpportunities.length - 1) * 24}px` }}
-                        >
-                          {sortedOpportunities.concat(sortedOpportunities).map((item, index) => {
-                            const isOriginal = index < sortedOpportunities.length;
-                            return (
-                              <motion.div 
-                                key={`${item.id}-${index}`}
-                                className="flex-shrink-0 w-[380px] p-6 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group/item cursor-pointer backdrop-blur-sm"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.8 + (index * 0.05) }}
-                                whileHover={{ y: -4, scale: 1.02 }}
-                                onClick={() => handleOpportunityClick(item.data, item.type)}
-                              >
-                                {/* Header */}
-                                <div className="flex items-start justify-between mb-4">
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/20 ${
-                                      item.type === 'opportunity' ? 'bg-neon-blue/20 text-neon-blue' : 
-                                      item.type === 'ai-strategy' ? 'bg-neon-purple/20 text-neon-purple' : 
-                                      'bg-neon-pink/20 text-neon-pink'
-                                    }`}>
-                                      {getOpportunityTypeIcon(item.type)}
-                                    </div>
-                                    <div>
-                                      <div className="flex items-center gap-2">
-                                        <span className={`text-xs px-2 py-1 rounded-full ${
-                                          item.type === 'opportunity' ? 'bg-neon-blue/20 text-neon-blue' : 
-                                          item.type === 'ai-strategy' ? 'bg-neon-purple/20 text-neon-purple' : 
-                                          'bg-neon-pink/20 text-neon-pink'
-                                        }`}>
-                                          {item.type === 'opportunity' ? 'SEO' : item.type === 'ai-strategy' ? 'AI' : 'Strategic'}
-                                        </span>
-                                        {item.priority && (
-                                          <Badge 
-                                            variant="outline" 
-                                            className={`text-xs ${getPriorityColor(item.priority)} border-current/30 bg-current/10`}
-                                          >
-                                            {item.priority.toUpperCase()}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Title */}
-                                <h4 className="font-semibold text-lg text-white/90 mb-3 group-hover/item:text-white transition-colors line-clamp-2">
-                                  {item.title}
-                                </h4>
-
-                                {/* Description */}
-                                <p className="text-sm text-white/70 mb-4 line-clamp-3">
-                                  {item.description}
-                                </p>
-
-                                {/* Keywords */}
-                                {item.keywords.length > 0 && (
-                                  <div className="mb-4">
-                                    <div className="flex flex-wrap gap-1">
-                                      {item.keywords.slice(0, 4).map((keyword, i) => (
-                                        <span 
-                                          key={i}
-                                          className="text-xs px-2 py-1 rounded bg-white/10 text-white/80"
-                                        >
-                                          {keyword}
-                                        </span>
-                                      ))}
-                                      {item.keywords.length > 4 && (
-                                        <span className="text-xs px-2 py-1 rounded bg-white/10 text-white/60">
-                                          +{item.keywords.length - 4} more
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Metrics */}
-                                <div className="grid grid-cols-2 gap-3 mb-4">
-                                  {item.volume > 0 && (
-                                    <div className="text-center p-2 rounded bg-white/5">
-                                      <div className={`text-sm font-semibold ${
-                                        item.type === 'opportunity' ? 'text-neon-blue' : 
-                                        item.type === 'ai-strategy' ? 'text-neon-purple' : 
-                                        'text-neon-pink'
-                                      }`}>
-                                        {item.volume.toLocaleString()}
-                                      </div>
-                                      <div className="text-xs text-white/60">
-                                        {item.type === 'dashboard' ? 'Volume' : 'Monthly Searches'}
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  {item.difficulty && (
-                                    <div className="text-center p-2 rounded bg-white/5">
-                                      <div className="text-sm font-semibold text-yellow-400">
-                                        {item.difficulty}
-                                      </div>
-                                      <div className="text-xs text-white/60">Difficulty</div>
-                                    </div>
-                                  )}
-
-                                  {item.opportunityScore && (
-                                    <div className="text-center p-2 rounded bg-white/5">
-                                      <div className="text-sm font-semibold text-emerald-400">
-                                        {Math.round(item.opportunityScore)}
-                                      </div>
-                                      <div className="text-xs text-white/60">Opp. Score</div>
-                                    </div>
-                                  )}
-
-                                  {item.competitorCount && (
-                                    <div className="text-center p-2 rounded bg-white/5">
-                                      <div className="text-sm font-semibold text-orange-400">
-                                        {item.competitorCount}
-                                      </div>
-                                      <div className="text-xs text-white/60">Competitors</div>
-                                    </div>
-                                  )}
-
-                                  {item.estimatedImpressions && (
-                                    <div className="text-center p-2 rounded bg-white/5">
-                                      <div className="text-sm font-semibold text-blue-400">
-                                        {item.estimatedImpressions.toLocaleString()}
-                                      </div>
-                                      <div className="text-xs text-white/60">Est. Impressions</div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Content Type & Date */}
-                                <div className="flex items-center justify-between mb-4 text-xs text-white/60">
-                                  <div className="flex items-center gap-2">
-                                    <div className={`${
-                                      item.type === 'opportunity' ? 'text-neon-blue' : 
-                                      item.type === 'ai-strategy' ? 'text-neon-purple' : 
-                                      'text-neon-pink'
-                                    }`}>
-                                      {getContentTypeIcon(item.contentType)}
-                                    </div>
-                                    <span className="capitalize">{item.contentType}</span>
-                                  </div>
-                                  {(item.detectedAt || item.createdAt) && (
-                                    <span>
-                                      {new Date(item.detectedAt || item.createdAt).toLocaleDateString()}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Action Button */}
-                                <Button 
-                                  size="sm" 
-                                  className={`w-full ${
-                                    item.type === 'opportunity' 
-                                      ? 'bg-gradient-to-r from-neon-blue/20 to-cyan-400/20 border-neon-blue/30 hover:from-neon-blue/30 hover:to-cyan-400/30' 
-                                      : item.type === 'ai-strategy'
-                                      ? 'bg-gradient-to-r from-neon-purple/20 to-purple-400/20 border-neon-purple/30 hover:from-neon-purple/30 hover:to-purple-400/30'
-                                      : 'bg-gradient-to-r from-neon-pink/20 to-pink-400/20 border-neon-pink/30 hover:from-neon-pink/30 hover:to-pink-400/30'
-                                  } text-white hover-scale`}
-                                >
-                                  {item.type === 'dashboard' ? item.cta : item.type === 'opportunity' ? 'Explore Opportunity' : 'Build Content'}
-                                  <ArrowRight className="w-3 h-3 ml-2" />
-                                </Button>
-                              </motion.div>
-                            );
-                          })}
-                        </motion.div>
-                      </div>
-                      
-                      {/* Carousel Info */}
-                      <div className="flex justify-center mt-4">
-                        <div className="text-sm text-white/60 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                          {sortedOpportunities.length} opportunities found
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 flex items-center justify-center mx-auto mb-3">
-                        <CheckCircle className="w-8 h-8 text-emerald-400" />
-                      </div>
-                      <p className="text-sm text-white/70">
-                        No new opportunities available. Great job staying on top of your content strategy!
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                  <h3 className="font-semibold text-white/90 truncate mb-2">{data.top_performer.title}</h3>
+                  <div className="flex items-center gap-2 text-sm text-white/60 mb-3">
+                    {getContentTypeIcon(data.top_performer.type)}
+                    <span className="capitalize">{data.top_performer.type}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-3xl font-bold bg-gradient-to-r from-neon-blue to-cyan-400 bg-clip-text text-transparent">
+                        {data.top_performer.views}
                       </p>
+                      <p className="text-xs text-white/50">views last 7 days</p>
                     </div>
-                  );
-                })()}
+                    {data.top_performer.growth > 0 && (
+                      <Badge className="bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border-emerald-500/30">
+                        +{data.top_performer.growth}%
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    asChild 
+                    className="border-white/20 bg-white/10 hover:bg-white/20 text-white hover-scale"
+                  >
+                    <a href={data.top_performer.url}>
+                      View Content
+                      <ExternalLink className="w-3 h-3 ml-1" />
+                    </a>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border-neon-purple/30 bg-neon-purple/10 hover:bg-neon-purple/20 text-neon-purple hover-scale"
+                  >
+                    Repurpose
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
-      </div>
+      )}
 
-      {/* Encouragement Message */}
+      {/* Next Best Moves - Full Width Carousel */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.8 }}
-        whileHover={{ scale: 1.01 }}
+        transition={{ duration: 0.8, delay: 0.6 }}
+        className="w-full"
       >
         <Card className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 group overflow-hidden relative">
-          {/* Flowing gradient background */}
+          {/* Animated background gradient */}
           <motion.div 
-            className="absolute inset-0 opacity-30 group-hover:opacity-50 transition-opacity duration-500"
-            style={{
-              background: "linear-gradient(45deg, rgba(255,20,147,0.1), transparent, rgba(30,144,255,0.1), transparent, rgba(138,43,226,0.1))",
-              backgroundSize: "400% 400%",
-            }}
+            className="absolute inset-0 bg-gradient-to-br from-neon-pink/10 via-neon-purple/10 to-neon-blue/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             animate={{
-              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+              background: [
+                "linear-gradient(135deg, rgba(255,20,147,0.1), rgba(138,43,226,0.1), rgba(30,144,255,0.1))",
+                "linear-gradient(135deg, rgba(30,144,255,0.1), rgba(255,20,147,0.1), rgba(138,43,226,0.1))",
+                "linear-gradient(135deg, rgba(138,43,226,0.1), rgba(30,144,255,0.1), rgba(255,20,147,0.1))",
+              ]
             }}
             transition={{
-              duration: 10,
+              duration: 8,
               repeat: Infinity,
               ease: "easeInOut"
             }}
           />
           
-          <CardContent className="p-6 relative z-10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-neon-purple/30 to-neon-blue/30 flex items-center justify-center backdrop-blur-xl border border-white/20 group-hover:scale-110 transition-transform duration-300">
-                <Calendar className="w-6 h-6 text-neon-blue" />
+          <CardHeader className="relative z-10">
+            <CardTitle className="flex items-center gap-3 text-white">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-neon-pink/30 to-neon-blue/30 flex items-center justify-center backdrop-blur-xl border border-white/20">
+                <Lightbulb className="w-5 h-5 text-neon-pink" />
               </div>
-              <div className="flex-1">
-                <p className="font-semibold text-white/90 text-lg mb-1">{data.encouragement}</p>
-                <p className="text-sm text-white/60">
-                  Based on your <span className="text-neon-purple font-medium">
-                    {new Date(data.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </span> progress
-                </p>
+              <span className="bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+                Next Best Moves
+              </span>
+            </CardTitle>
+            <CardDescription className="text-white/60 ml-13">
+              {combinedOpportunities.length > 0 
+                ? `${combinedOpportunities.length} content opportunities available` 
+                : "No opportunities available"}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="relative z-10 p-0">
+            {combinedOpportunities.length > 0 ? (
+              <div className="relative overflow-hidden">
+                {/* Carousel Container */}
+                <motion.div
+                  className="flex gap-6 px-6 pb-6"
+                  animate={{
+                    x: [0, -50, 0],
+                  }}
+                  transition={{
+                    duration: 20,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                  style={{
+                    width: `${Math.max(combinedOpportunities.length * 320, typeof window !== 'undefined' ? window.innerWidth : 1200)}px`
+                  }}
+                >
+                  {combinedOpportunities.map((item, index) => (
+                    <motion.div
+                      key={`${item.type}-${index}`}
+                      className="flex-shrink-0 w-80 p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group/tile"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      onClick={() => handleOpportunityClick(item, item.type)}
+                    >
+                      {/* Opportunity Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                            item.type === 'opportunity' ? 'bg-neon-blue/20 text-neon-blue' :
+                            item.type === 'ai-strategy' ? 'bg-neon-purple/20 text-neon-purple' :
+                            'bg-neon-pink/20 text-neon-pink'
+                          }`}>
+                            {getOpportunityTypeIcon(item.type)}
+                          </div>
+                          <Badge variant="outline" className="text-xs border-white/20 text-white/70">
+                            {item.type === 'opportunity' ? 'Opportunity' : 
+                             item.type === 'ai-strategy' ? 'AI Strategy' : 'Dashboard'}
+                          </Badge>
+                        </div>
+                        {item.priority && (
+                          <Badge className={`text-xs ${getPriorityColor(item.priority)} bg-white/10 border-white/20`}>
+                            {item.priority}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="font-semibold text-white/90 mb-2 line-clamp-2 leading-tight">
+                        {item.title || item.cluster}
+                      </h3>
+
+                      {/* Description */}
+                      {item.description && (
+                        <p className="text-sm text-white/60 mb-3 line-clamp-3 leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+
+                      {/* Keywords */}
+                      {item.keywords?.length > 0 && (
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-1">
+                            {item.keywords.slice(0, 3).map((keyword: string, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs border-white/10 text-white/50 bg-white/5">
+                                {keyword}
+                              </Badge>
+                            ))}
+                            {item.keywords.length > 3 && (
+                              <Badge variant="outline" className="text-xs border-white/10 text-white/40 bg-white/5">
+                                +{item.keywords.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Metrics Row */}
+                      <div className="flex items-center justify-between text-xs text-white/50 mb-4">
+                        <div className="flex items-center gap-3">
+                          {item.volume && (
+                            <span className="flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />
+                              {item.volume > 1000 ? `${(item.volume / 1000).toFixed(1)}k` : item.volume}
+                            </span>
+                          )}
+                          {item.difficulty !== undefined && (
+                            <span className="flex items-center gap-1">
+                              <Target className="w-3 h-3" />
+                              {item.difficulty}/100
+                            </span>
+                          )}
+                          {item.content_format && (
+                            <span className="capitalize">{item.content_format}</span>
+                          )}
+                        </div>
+                        <span className="text-white/40">
+                          {item.createdAt ? new Intl.DateTimeFormat('en-US', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                          }).format(new Date(item.createdAt)) : 'Recent'}
+                        </span>
+                      </div>
+
+                      {/* Action Button */}
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 group-hover/tile:bg-neon-blue/20 group-hover/tile:border-neon-blue/30 transition-all duration-300"
+                      >
+                        <span className="flex items-center gap-2">
+                          {item.cta || 'View Details'}
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </Button>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                {/* Fade edges for infinite scroll effect */}
+                <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background/80 to-transparent pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background/80 to-transparent pointer-events-none" />
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-white">{data.progress.percentage}%</div>
-                <div className="text-xs text-white/60">Complete</div>
+            ) : (
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                  <Lightbulb className="w-8 h-8 text-white/40" />
+                </div>
+                <p className="text-white/60 mb-2">No content opportunities found</p>
+                <p className="text-sm text-white/40">Check back later for new opportunities</p>
               </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Encouragement Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.8 }}
+      >
+        <Card className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl text-center overflow-hidden relative">
+          {/* Subtle animated background */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+            animate={{
+              x: [-200, 200],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          
+          <CardContent className="p-8 relative z-10">
+            <motion.div
+              animate={{ 
+                scale: [1, 1.02, 1],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-emerald-400/20 to-green-400/20 border border-emerald-400/30 mb-4"
+            >
+              <CheckCircle className="w-8 h-8 text-emerald-400" />
+            </motion.div>
+            <h3 className="text-xl font-semibold text-white mb-2">
+              {data.encouragement}
+            </h3>
+            <p className="text-white/60 mb-6">
+              You're making great progress on your content goals for {new Date(data.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                className="bg-gradient-to-r from-neon-blue/20 to-neon-purple/20 hover:from-neon-blue/30 hover:to-neon-purple/30 text-white border border-white/20 hover-scale"
+                onClick={() => navigate('/content-builder')}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Create New Content
+              </Button>
+              <Button 
+                variant="outline"
+                className="border-white/20 bg-white/10 hover:bg-white/20 text-white hover-scale"
+                onClick={() => navigate('/research/content-strategy')}
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                View Strategy
+              </Button>
             </div>
           </CardContent>
         </Card>
