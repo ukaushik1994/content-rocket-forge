@@ -187,12 +187,17 @@ export const DashboardSummary = () => {
     // Add AI strategy proposals
     aiStrategies.forEach(strategy => {
       strategy.proposals?.forEach((proposal: any) => {
+        // Ensure keywords are always strings, not objects
+        const normalizedKeywords = proposal.keywords ? 
+          proposal.keywords.map((k: any) => typeof k === 'string' ? k : k.keyword || String(k)) : 
+          [];
+        
         combined.push({
           ...proposal,
           type: 'ai-strategy' as const,
           title: proposal.title,
           description: proposal.description,
-          keywords: proposal.keywords || [],
+          keywords: normalizedKeywords,
           volume: proposal.search_volume || proposal.estimatedImpressions,
           priority: proposal.priority,
           cta: 'Use Strategy',
