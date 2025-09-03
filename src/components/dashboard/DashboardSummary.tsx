@@ -633,9 +633,9 @@ export const DashboardSummary = () => {
                   ))}
                 </motion.div>
 
-                {/* Fade edges for infinite scroll effect */}
-                <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background/80 to-transparent pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background/80 to-transparent pointer-events-none" />
+                {/* Enhanced fade edges for full-width carousel */}
+                <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background/90 via-background/60 to-transparent pointer-events-none z-10" />
+                <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background/90 via-background/60 to-transparent pointer-events-none z-10" />
               </div>
             ) : (
               <div className="p-6 text-center">
