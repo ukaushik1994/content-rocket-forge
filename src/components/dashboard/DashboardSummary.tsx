@@ -23,6 +23,8 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 import { useNavigate } from 'react-router-dom';
+import { opportunityHunterService } from '@/services/opportunityHunterService';
+import { aiStrategyService } from '@/services/aiStrategyService';
 
 interface DashboardSummaryData {
   content_created: {
@@ -73,6 +75,8 @@ interface DashboardSummaryData {
 
 export const DashboardSummary = () => {
   const [data, setData] = useState<DashboardSummaryData | null>(null);
+  const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [aiStrategies, setAiStrategies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const context = useContentStrategyOptional();
@@ -84,11 +88,18 @@ export const DashboardSummary = () => {
 
   const fetchDashboardSummary = async () => {
     try {
-      const { data: response, error } = await supabase.functions.invoke('dashboard-summary');
+      // Fetch dashboard summary, opportunities, and AI strategies in parallel
+      const [dashboardResponse, opportunitiesData, aiStrategiesData] = await Promise.all([
+        supabase.functions.invoke('dashboard-summary'),
+        opportunityHunterService.getOpportunities().catch(() => []),
+        aiStrategyService.getStrategies().catch(() => [])
+      ]);
       
-      if (error) throw error;
+      if (dashboardResponse.error) throw dashboardResponse.error;
       
-      setData(response);
+      setData(dashboardResponse.data);
+      setOpportunities(opportunitiesData || []);
+      setAiStrategies(aiStrategiesData || []);
     } catch (error) {
       console.error('Error fetching dashboard summary:', error);
       toast({
@@ -117,6 +128,38 @@ export const DashboardSummary = () => {
       case 'glossary': return <Book className="w-4 h-4" />;
       case 'strategy': return <Zap className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
+    }
+  };
+
+  const getOpportunityTypeIcon = (type: 'opportunity' | 'ai-strategy' | 'dashboard') => {
+    switch (type) {
+      case 'opportunity': return <Target className="w-3 h-3" />;
+      case 'ai-strategy': return <Zap className="w-3 h-3" />;
+      case 'dashboard': return <Lightbulb className="w-3 h-3" />;
+      default: return <Lightbulb className="w-3 h-3" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'text-red-400';
+      case 'medium': return 'text-yellow-400';
+      case 'low': return 'text-green-400';
+      default: return 'text-white/60';
+    }
+  };
+
+  const handleOpportunityClick = (item: any, type: 'opportunity' | 'ai-strategy' | 'dashboard') => {
+    switch (type) {
+      case 'opportunity':
+        navigate('/research/opportunity-hunter');
+        break;
+      case 'ai-strategy':
+        navigate('/research/content-strategy#strategies');
+        break;
+      case 'dashboard':
+        // Handle existing dashboard moves
+        break;
     }
   };
 
@@ -416,96 +459,134 @@ export const DashboardSummary = () => {
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="space-y-3">
-                {/* Existing next moves from data */}
-                {data.next_moves.length > 0 && (
-                  <>
-                    {data.next_moves.map((move, index) => (
+                {(() => {
+                  // Combine all opportunities into a unified list
+                  const allOpportunities = [
+                    // Dashboard next moves
+                    ...data.next_moves.map((move, index) => ({
+                      id: `dashboard-${index}`,
+                      title: move.cluster,
+                      type: 'dashboard' as const,
+                      contentType: move.type,
+                      volume: move.volume,
+                      priority: move.priority,
+                      cta: move.cta,
+                      data: move
+                    })),
+                    
+                    // Opportunity Hunter discoveries
+                    ...opportunities.slice(0, 5).map((opp) => ({
+                      id: `opportunity-${opp.id}`,
+                      title: opp.primary_keyword || opp.keyword || 'Content Opportunity',
+                      type: 'opportunity' as const,
+                      contentType: opp.content_type || 'article',
+                      volume: opp.search_volume || 0,
+                      priority: opp.priority || 'medium',
+                      difficulty: opp.keyword_difficulty,
+                      data: opp
+                    })),
+                    
+                    // AI Strategy proposals
+                    ...aiStrategies.flatMap(strategy => 
+                      strategy.proposals?.slice(0, 3).map((proposal: any) => ({
+                        id: `ai-strategy-${strategy.id}-${proposal.primary_keyword}`,
+                        title: proposal.primary_keyword || proposal.title || 'AI Strategy Opportunity',
+                        type: 'ai-strategy' as const,
+                        contentType: proposal.content_type || 'article',
+                        volume: proposal.search_volume || 0,
+                        priority: proposal.priority || 'medium',
+                        data: proposal
+                      })) || []
+                    )
+                  ];
+
+                  // Sort by priority and volume
+                  const sortedOpportunities = allOpportunities
+                    .sort((a, b) => {
+                      const priorityOrder = { high: 3, medium: 2, low: 1 };
+                      const aPriority = priorityOrder[a.priority?.toLowerCase() as keyof typeof priorityOrder] || 1;
+                      const bPriority = priorityOrder[b.priority?.toLowerCase() as keyof typeof priorityOrder] || 1;
+                      
+                      if (aPriority !== bPriority) return bPriority - aPriority;
+                      return (b.volume || 0) - (a.volume || 0);
+                    })
+                    .slice(0, 8); // Limit to top 8 opportunities
+
+                  return sortedOpportunities.length > 0 ? (
+                    sortedOpportunities.map((item, index) => (
                       <motion.div 
-                        key={index} 
-                        className="flex items-center justify-between p-4 border border-white/10 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group/item"
+                        key={item.id}
+                        className="flex items-center justify-between p-4 border border-white/10 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group/item cursor-pointer"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.8 + (index * 0.1) }}
                         whileHover={{ x: 4 }}
+                        onClick={() => handleOpportunityClick(item.data, item.type)}
                       >
                         <div className="flex-1">
-                          <h4 className="font-medium text-sm text-white/90 truncate group-hover/item:text-white transition-colors">
-                            {move.cluster}
-                          </h4>
-                          <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
-                            <div className="text-neon-blue">
-                              {getContentTypeIcon(move.type)}
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
+                              {getOpportunityTypeIcon(item.type)}
                             </div>
-                            <span className="capitalize">{move.type}</span>
-                            <span>•</span>
-                            <span className="text-neon-purple">{move.volume.toLocaleString()} volume</span>
+                            <h4 className="font-medium text-sm text-white/90 truncate group-hover/item:text-white transition-colors">
+                              {item.title}
+                            </h4>
+                            {item.priority && (
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${getPriorityColor(item.priority)} border-current/30 bg-current/10`}
+                              >
+                                {item.priority.toUpperCase()}
+                              </Badge>
+                            )}
                           </div>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          className="bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border-neon-purple/30 text-white hover:from-neon-purple/30 hover:to-neon-blue/30 hover-scale"
-                        >
-                          {move.cta}
-                          <ArrowRight className="w-3 h-3 ml-1" />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </>
-                )}
-                
-                {/* Content Strategy Proposals */}
-                {context?.aiProposals && context.aiProposals.length > 0 && (
-                  <>
-                    {context.aiProposals.slice(0, 3).map((proposal, index) => (
-                      <motion.div 
-                        key={`proposal-${index}`}
-                        className="flex items-center justify-between p-4 border border-primary/20 rounded-lg bg-primary/5 hover:bg-primary/10 transition-all duration-300 group/item"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.8 + ((data.next_moves.length + index) * 0.1) }}
-                        whileHover={{ x: 4 }}
-                      >
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm text-white/90 truncate group-hover/item:text-white transition-colors">
-                            {proposal.primary_keyword || 'Content Strategy Opportunity'}
-                          </h4>
                           <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
-                            <div className="text-primary">
-                              <FileText className="w-3 h-3" />
+                            <div className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
+                              {getContentTypeIcon(item.contentType)}
                             </div>
-                            <span className="capitalize">{proposal.content_type || 'Article'}</span>
-                            {proposal.search_volume && (
+                            <span className="capitalize">{item.contentType}</span>
+                            {item.volume > 0 && (
                               <>
                                 <span>•</span>
-                                <span className="text-primary">{proposal.search_volume} searches/mo</span>
+                                <span className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
+                                  {item.volume.toLocaleString()} {item.type === 'dashboard' ? 'volume' : 'searches/mo'}
+                                </span>
+                              </>
+                            )}
+                            {item.difficulty && (
+                              <>
+                                <span>•</span>
+                                <span className="text-yellow-400">Difficulty: {item.difficulty}</span>
                               </>
                             )}
                           </div>
                         </div>
                         <Button 
                           size="sm" 
-                          onClick={() => navigate('/research/content-strategy#strategies')}
-                          className="bg-gradient-to-r from-primary/20 to-blue-500/20 border-primary/30 text-white hover:from-primary/30 hover:to-blue-500/30 hover-scale"
+                          className={`${
+                            item.type === 'opportunity' 
+                              ? 'bg-gradient-to-r from-neon-blue/20 to-cyan-400/20 border-neon-blue/30 hover:from-neon-blue/30 hover:to-cyan-400/30' 
+                              : item.type === 'ai-strategy'
+                              ? 'bg-gradient-to-r from-neon-purple/20 to-purple-400/20 border-neon-purple/30 hover:from-neon-purple/30 hover:to-purple-400/30'
+                              : 'bg-gradient-to-r from-neon-pink/20 to-pink-400/20 border-neon-pink/30 hover:from-neon-pink/30 hover:to-pink-400/30'
+                          } text-white hover-scale`}
                         >
-                          Explore
+                          {item.type === 'dashboard' ? item.cta : item.type === 'opportunity' ? 'Explore' : 'Build'}
                           <ArrowRight className="w-3 h-3 ml-1" />
                         </Button>
                       </motion.div>
-                    ))}
-                  </>
-                )}
-                
-                {/* Show empty state only if no proposals or moves */}
-                {(!data.next_moves.length && (!context?.aiProposals || !context.aiProposals.length)) && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 flex items-center justify-center mx-auto mb-3">
-                      <CheckCircle className="w-8 h-8 text-emerald-400" />
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 flex items-center justify-center mx-auto mb-3">
+                        <CheckCircle className="w-8 h-8 text-emerald-400" />
+                      </div>
+                      <p className="text-sm text-white/70">
+                        No new opportunities available. Great job staying on top of your content strategy!
+                      </p>
                     </div>
-                    <p className="text-sm text-white/70">
-                      No new opportunities available. Great job staying on top of your content strategy!
-                    </p>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
