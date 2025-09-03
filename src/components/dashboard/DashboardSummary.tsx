@@ -460,7 +460,7 @@ export const DashboardSummary = () => {
             <CardContent className="relative z-10">
               <div className="space-y-3">
                 {(() => {
-                  // Combine all opportunities into a unified list
+                  // Combine all opportunities into a unified list - SHOW ALL
                   const allOpportunities = [
                     // Dashboard next moves
                     ...data.next_moves.map((move, index) => ({
@@ -471,11 +471,13 @@ export const DashboardSummary = () => {
                       volume: move.volume,
                       priority: move.priority,
                       cta: move.cta,
+                      description: `Strategic content opportunity: ${move.cluster}`,
+                      keywords: [move.cluster],
                       data: move
                     })),
                     
-                    // Opportunity Hunter discoveries
-                    ...opportunities.slice(0, 5).map((opp) => ({
+                    // ALL Opportunity Hunter discoveries
+                    ...opportunities.map((opp) => ({
                       id: `opportunity-${opp.id}`,
                       title: opp.primary_keyword || opp.keyword || 'Content Opportunity',
                       type: 'opportunity' as const,
@@ -483,24 +485,35 @@ export const DashboardSummary = () => {
                       volume: opp.search_volume || 0,
                       priority: opp.priority || 'medium',
                       difficulty: opp.keyword_difficulty,
+                      description: opp.brief_description || opp.description || `SEO opportunity for "${opp.primary_keyword || opp.keyword}"`,
+                      keywords: [opp.primary_keyword || opp.keyword, ...(opp.secondary_keywords || [])].filter(Boolean),
+                      competitorCount: opp.competitor_count,
+                      opportunityScore: opp.opportunity_score,
+                      detectedAt: opp.created_at,
                       data: opp
                     })),
                     
-                    // AI Strategy proposals
+                    // ALL AI Strategy proposals from ALL strategies
                     ...aiStrategies.flatMap(strategy => 
-                      strategy.proposals?.slice(0, 3).map((proposal: any) => ({
+                      strategy.proposals?.map((proposal: any) => ({
                         id: `ai-strategy-${strategy.id}-${proposal.primary_keyword}`,
                         title: proposal.primary_keyword || proposal.title || 'AI Strategy Opportunity',
                         type: 'ai-strategy' as const,
                         contentType: proposal.content_type || 'article',
                         volume: proposal.search_volume || 0,
                         priority: proposal.priority || 'medium',
+                        description: proposal.description || `AI-generated content strategy for "${proposal.primary_keyword}"`,
+                        keywords: [proposal.primary_keyword, ...(proposal.secondary_keywords || [])].filter(Boolean),
+                        estimatedImpressions: proposal.estimated_impressions,
+                        competitionLevel: proposal.competition_level,
+                        createdAt: strategy.created_at,
+                        strategySession: strategy.session_id,
                         data: proposal
                       })) || []
                     )
                   ];
 
-                  // Sort by priority and volume
+                  // Sort by priority and volume - show ALL
                   const sortedOpportunities = allOpportunities
                     .sort((a, b) => {
                       const priorityOrder = { high: 3, medium: 2, low: 1 };
@@ -509,73 +522,197 @@ export const DashboardSummary = () => {
                       
                       if (aPriority !== bPriority) return bPriority - aPriority;
                       return (b.volume || 0) - (a.volume || 0);
-                    })
-                    .slice(0, 8); // Limit to top 8 opportunities
+                    });
 
                   return sortedOpportunities.length > 0 ? (
-                    sortedOpportunities.map((item, index) => (
-                      <motion.div 
-                        key={item.id}
-                        className="flex items-center justify-between p-4 border border-white/10 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group/item cursor-pointer"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.8 + (index * 0.1) }}
-                        whileHover={{ x: 4 }}
-                        onClick={() => handleOpportunityClick(item.data, item.type)}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
-                              {getOpportunityTypeIcon(item.type)}
-                            </div>
-                            <h4 className="font-medium text-sm text-white/90 truncate group-hover/item:text-white transition-colors">
-                              {item.title}
-                            </h4>
-                            {item.priority && (
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs ${getPriorityColor(item.priority)} border-current/30 bg-current/10`}
-                              >
-                                {item.priority.toUpperCase()}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
-                            <div className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
-                              {getContentTypeIcon(item.contentType)}
-                            </div>
-                            <span className="capitalize">{item.contentType}</span>
-                            {item.volume > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
-                                  {item.volume.toLocaleString()} {item.type === 'dashboard' ? 'volume' : 'searches/mo'}
-                                </span>
-                              </>
-                            )}
-                            {item.difficulty && (
-                              <>
-                                <span>•</span>
-                                <span className="text-yellow-400">Difficulty: {item.difficulty}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          className={`${
-                            item.type === 'opportunity' 
-                              ? 'bg-gradient-to-r from-neon-blue/20 to-cyan-400/20 border-neon-blue/30 hover:from-neon-blue/30 hover:to-cyan-400/30' 
-                              : item.type === 'ai-strategy'
-                              ? 'bg-gradient-to-r from-neon-purple/20 to-purple-400/20 border-neon-purple/30 hover:from-neon-purple/30 hover:to-purple-400/30'
-                              : 'bg-gradient-to-r from-neon-pink/20 to-pink-400/20 border-neon-pink/30 hover:from-neon-pink/30 hover:to-pink-400/30'
-                          } text-white hover-scale`}
+                    <div className="relative">
+                      {/* Carousel Container */}
+                      <div className="overflow-hidden">
+                        <motion.div 
+                          className="flex gap-6 pb-4"
+                          animate={{ x: ["0%", "-100%"] }}
+                          transition={{ 
+                            duration: sortedOpportunities.length * 8, // 8 seconds per item
+                            repeat: Infinity, 
+                            ease: "linear" 
+                          }}
+                          style={{ width: `${sortedOpportunities.length * 400 + (sortedOpportunities.length - 1) * 24}px` }}
                         >
-                          {item.type === 'dashboard' ? item.cta : item.type === 'opportunity' ? 'Explore' : 'Build'}
-                          <ArrowRight className="w-3 h-3 ml-1" />
-                        </Button>
-                      </motion.div>
-                    ))
+                          {sortedOpportunities.concat(sortedOpportunities).map((item, index) => {
+                            const isOriginal = index < sortedOpportunities.length;
+                            return (
+                              <motion.div 
+                                key={`${item.id}-${index}`}
+                                className="flex-shrink-0 w-[380px] p-6 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group/item cursor-pointer backdrop-blur-sm"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.8 + (index * 0.05) }}
+                                whileHover={{ y: -4, scale: 1.02 }}
+                                onClick={() => handleOpportunityClick(item.data, item.type)}
+                              >
+                                {/* Header */}
+                                <div className="flex items-start justify-between mb-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/20 ${
+                                      item.type === 'opportunity' ? 'bg-neon-blue/20 text-neon-blue' : 
+                                      item.type === 'ai-strategy' ? 'bg-neon-purple/20 text-neon-purple' : 
+                                      'bg-neon-pink/20 text-neon-pink'
+                                    }`}>
+                                      {getOpportunityTypeIcon(item.type)}
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`text-xs px-2 py-1 rounded-full ${
+                                          item.type === 'opportunity' ? 'bg-neon-blue/20 text-neon-blue' : 
+                                          item.type === 'ai-strategy' ? 'bg-neon-purple/20 text-neon-purple' : 
+                                          'bg-neon-pink/20 text-neon-pink'
+                                        }`}>
+                                          {item.type === 'opportunity' ? 'SEO' : item.type === 'ai-strategy' ? 'AI' : 'Strategic'}
+                                        </span>
+                                        {item.priority && (
+                                          <Badge 
+                                            variant="outline" 
+                                            className={`text-xs ${getPriorityColor(item.priority)} border-current/30 bg-current/10`}
+                                          >
+                                            {item.priority.toUpperCase()}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Title */}
+                                <h4 className="font-semibold text-lg text-white/90 mb-3 group-hover/item:text-white transition-colors line-clamp-2">
+                                  {item.title}
+                                </h4>
+
+                                {/* Description */}
+                                <p className="text-sm text-white/70 mb-4 line-clamp-3">
+                                  {item.description}
+                                </p>
+
+                                {/* Keywords */}
+                                {item.keywords.length > 0 && (
+                                  <div className="mb-4">
+                                    <div className="flex flex-wrap gap-1">
+                                      {item.keywords.slice(0, 4).map((keyword, i) => (
+                                        <span 
+                                          key={i}
+                                          className="text-xs px-2 py-1 rounded bg-white/10 text-white/80"
+                                        >
+                                          {keyword}
+                                        </span>
+                                      ))}
+                                      {item.keywords.length > 4 && (
+                                        <span className="text-xs px-2 py-1 rounded bg-white/10 text-white/60">
+                                          +{item.keywords.length - 4} more
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Metrics */}
+                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                  {item.volume > 0 && (
+                                    <div className="text-center p-2 rounded bg-white/5">
+                                      <div className={`text-sm font-semibold ${
+                                        item.type === 'opportunity' ? 'text-neon-blue' : 
+                                        item.type === 'ai-strategy' ? 'text-neon-purple' : 
+                                        'text-neon-pink'
+                                      }`}>
+                                        {item.volume.toLocaleString()}
+                                      </div>
+                                      <div className="text-xs text-white/60">
+                                        {item.type === 'dashboard' ? 'Volume' : 'Monthly Searches'}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {item.difficulty && (
+                                    <div className="text-center p-2 rounded bg-white/5">
+                                      <div className="text-sm font-semibold text-yellow-400">
+                                        {item.difficulty}
+                                      </div>
+                                      <div className="text-xs text-white/60">Difficulty</div>
+                                    </div>
+                                  )}
+
+                                  {item.opportunityScore && (
+                                    <div className="text-center p-2 rounded bg-white/5">
+                                      <div className="text-sm font-semibold text-emerald-400">
+                                        {Math.round(item.opportunityScore)}
+                                      </div>
+                                      <div className="text-xs text-white/60">Opp. Score</div>
+                                    </div>
+                                  )}
+
+                                  {item.competitorCount && (
+                                    <div className="text-center p-2 rounded bg-white/5">
+                                      <div className="text-sm font-semibold text-orange-400">
+                                        {item.competitorCount}
+                                      </div>
+                                      <div className="text-xs text-white/60">Competitors</div>
+                                    </div>
+                                  )}
+
+                                  {item.estimatedImpressions && (
+                                    <div className="text-center p-2 rounded bg-white/5">
+                                      <div className="text-sm font-semibold text-blue-400">
+                                        {item.estimatedImpressions.toLocaleString()}
+                                      </div>
+                                      <div className="text-xs text-white/60">Est. Impressions</div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Content Type & Date */}
+                                <div className="flex items-center justify-between mb-4 text-xs text-white/60">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`${
+                                      item.type === 'opportunity' ? 'text-neon-blue' : 
+                                      item.type === 'ai-strategy' ? 'text-neon-purple' : 
+                                      'text-neon-pink'
+                                    }`}>
+                                      {getContentTypeIcon(item.contentType)}
+                                    </div>
+                                    <span className="capitalize">{item.contentType}</span>
+                                  </div>
+                                  {(item.detectedAt || item.createdAt) && (
+                                    <span>
+                                      {new Date(item.detectedAt || item.createdAt).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Action Button */}
+                                <Button 
+                                  size="sm" 
+                                  className={`w-full ${
+                                    item.type === 'opportunity' 
+                                      ? 'bg-gradient-to-r from-neon-blue/20 to-cyan-400/20 border-neon-blue/30 hover:from-neon-blue/30 hover:to-cyan-400/30' 
+                                      : item.type === 'ai-strategy'
+                                      ? 'bg-gradient-to-r from-neon-purple/20 to-purple-400/20 border-neon-purple/30 hover:from-neon-purple/30 hover:to-purple-400/30'
+                                      : 'bg-gradient-to-r from-neon-pink/20 to-pink-400/20 border-neon-pink/30 hover:from-neon-pink/30 hover:to-pink-400/30'
+                                  } text-white hover-scale`}
+                                >
+                                  {item.type === 'dashboard' ? item.cta : item.type === 'opportunity' ? 'Explore Opportunity' : 'Build Content'}
+                                  <ArrowRight className="w-3 h-3 ml-2" />
+                                </Button>
+                              </motion.div>
+                            );
+                          })}
+                        </motion.div>
+                      </div>
+                      
+                      {/* Carousel Info */}
+                      <div className="flex justify-center mt-4">
+                        <div className="text-sm text-white/60 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                          {sortedOpportunities.length} opportunities found
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 flex items-center justify-center mx-auto mb-3">
