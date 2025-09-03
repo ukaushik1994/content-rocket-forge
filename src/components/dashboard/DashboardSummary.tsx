@@ -457,8 +457,8 @@ export const DashboardSummary = () => {
                 AI-identified opportunities based on your content gaps
               </CardDescription>
             </CardHeader>
-            <CardContent className="relative z-10 overflow-hidden">
-              <div className="relative">
+            <CardContent className="relative z-10">
+              <div className="space-y-3">
                 {(() => {
                   // Combine all opportunities into a unified list
                   const allOpportunities = [
@@ -475,7 +475,7 @@ export const DashboardSummary = () => {
                     })),
                     
                     // Opportunity Hunter discoveries
-                    ...opportunities.map((opp) => ({
+                    ...opportunities.slice(0, 5).map((opp) => ({
                       id: `opportunity-${opp.id}`,
                       title: opp.primary_keyword || opp.keyword || 'Content Opportunity',
                       type: 'opportunity' as const,
@@ -486,9 +486,9 @@ export const DashboardSummary = () => {
                       data: opp
                     })),
                     
-                    // AI Strategy proposals - show ALL proposals
+                    // AI Strategy proposals
                     ...aiStrategies.flatMap(strategy => 
-                      strategy.proposals?.map((proposal: any) => ({
+                      strategy.proposals?.slice(0, 3).map((proposal: any) => ({
                         id: `ai-strategy-${strategy.id}-${proposal.primary_keyword}`,
                         title: proposal.primary_keyword || proposal.title || 'AI Strategy Opportunity',
                         type: 'ai-strategy' as const,
@@ -509,127 +509,78 @@ export const DashboardSummary = () => {
                       
                       if (aPriority !== bPriority) return bPriority - aPriority;
                       return (b.volume || 0) - (a.volume || 0);
-                    });
+                    })
+                    .slice(0, 8); // Limit to top 8 opportunities
 
                   return sortedOpportunities.length > 0 ? (
-                    <div className="relative">
-                      {/* Carousel Container */}
+                    sortedOpportunities.map((item, index) => (
                       <motion.div 
-                        className="flex gap-4 pb-4"
-                        animate={{
-                          x: [0, -300, -600, -900, -1200, 0]
-                        }}
-                        transition={{
-                          duration: 30,
-                          repeat: Infinity,
-                          ease: "linear"
-                        }}
-                        style={{
-                          width: `${sortedOpportunities.length * 320}px`
-                        }}
+                        key={item.id}
+                        className="flex items-center justify-between p-4 border border-white/10 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group/item cursor-pointer"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8 + (index * 0.1) }}
+                        whileHover={{ x: 4 }}
+                        onClick={() => handleOpportunityClick(item.data, item.type)}
                       >
-                        {sortedOpportunities.map((item, index) => (
-                          <motion.div
-                            key={item.id}
-                            className="flex-shrink-0 w-80 p-4 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group cursor-pointer backdrop-blur-sm"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            whileHover={{ 
-                              scale: 1.02, 
-                              y: -4,
-                              boxShadow: "0 10px 30px rgba(0,0,0,0.3)"
-                            }}
-                            onClick={() => handleOpportunityClick(item.data, item.type)}
-                          >
-                            {/* Tile Header */}
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <div className={`p-2 rounded-lg ${
-                                  item.type === 'opportunity' 
-                                    ? 'bg-neon-blue/20 text-neon-blue' 
-                                    : item.type === 'ai-strategy'
-                                    ? 'bg-neon-purple/20 text-neon-purple'
-                                    : 'bg-neon-pink/20 text-neon-pink'
-                                }`}>
-                                  {getOpportunityTypeIcon(item.type)}
-                                </div>
-                                <div className="text-xs text-white/60 uppercase tracking-wider font-semibold">
-                                  {item.type === 'opportunity' ? 'Hunter' : item.type === 'ai-strategy' ? 'AI Strategy' : 'Dashboard'}
-                                </div>
-                              </div>
-                              {item.priority && (
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs ${getPriorityColor(item.priority)} border-current/30 bg-current/10`}
-                                >
-                                  {item.priority.toUpperCase()}
-                                </Badge>
-                              )}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
+                              {getOpportunityTypeIcon(item.type)}
                             </div>
-
-                            {/* Tile Content */}
-                            <div className="space-y-3">
-                              <h4 className="font-semibold text-white/90 group-hover:text-white transition-colors leading-tight line-clamp-2">
-                                {item.title}
-                              </h4>
-
-                              <div className="flex items-center gap-2 text-sm text-white/70">
-                                <div className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
-                                  {getContentTypeIcon(item.contentType)}
-                                </div>
-                                <span className="capitalize">{item.contentType}</span>
-                              </div>
-
-                              {/* Metrics */}
-                              <div className="space-y-2">
-                                {item.volume > 0 && (
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span className="text-white/60">
-                                      {item.type === 'dashboard' ? 'Volume' : 'Monthly Searches'}
-                                    </span>
-                                    <span className={`font-semibold ${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
-                                      {item.volume.toLocaleString()}
-                                    </span>
-                                  </div>
-                                )}
-                                {item.difficulty && (
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span className="text-white/60">Difficulty</span>
-                                    <span className="text-yellow-400 font-semibold">{item.difficulty}</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Action Button */}
-                              <Button 
-                                size="sm" 
-                                className={`w-full ${
-                                  item.type === 'opportunity' 
-                                    ? 'bg-gradient-to-r from-neon-blue/20 to-cyan-400/20 border-neon-blue/30 hover:from-neon-blue/30 hover:to-cyan-400/30' 
-                                    : item.type === 'ai-strategy'
-                                    ? 'bg-gradient-to-r from-neon-purple/20 to-purple-400/20 border-neon-purple/30 hover:from-neon-purple/30 hover:to-purple-400/30'
-                                    : 'bg-gradient-to-r from-neon-pink/20 to-pink-400/20 border-neon-pink/30 hover:from-neon-pink/30 hover:to-pink-400/30'
-                                } text-white hover-scale`}
+                            <h4 className="font-medium text-sm text-white/90 truncate group-hover/item:text-white transition-colors">
+                              {item.title}
+                            </h4>
+                            {item.priority && (
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${getPriorityColor(item.priority)} border-current/30 bg-current/10`}
                               >
-                                {item.type === 'dashboard' ? item.cta : item.type === 'opportunity' ? 'Explore Opportunity' : 'Build Content'}
-                                <ArrowRight className="w-3 h-3 ml-2" />
-                              </Button>
+                                {item.priority.toUpperCase()}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
+                            <div className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
+                              {getContentTypeIcon(item.contentType)}
                             </div>
-                          </motion.div>
-                        ))}
+                            <span className="capitalize">{item.contentType}</span>
+                            {item.volume > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className={`${item.type === 'opportunity' ? 'text-neon-blue' : item.type === 'ai-strategy' ? 'text-neon-purple' : 'text-neon-pink'}`}>
+                                  {item.volume.toLocaleString()} {item.type === 'dashboard' ? 'volume' : 'searches/mo'}
+                                </span>
+                              </>
+                            )}
+                            {item.difficulty && (
+                              <>
+                                <span>•</span>
+                                <span className="text-yellow-400">Difficulty: {item.difficulty}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className={`${
+                            item.type === 'opportunity' 
+                              ? 'bg-gradient-to-r from-neon-blue/20 to-cyan-400/20 border-neon-blue/30 hover:from-neon-blue/30 hover:to-cyan-400/30' 
+                              : item.type === 'ai-strategy'
+                              ? 'bg-gradient-to-r from-neon-purple/20 to-purple-400/20 border-neon-purple/30 hover:from-neon-purple/30 hover:to-purple-400/30'
+                              : 'bg-gradient-to-r from-neon-pink/20 to-pink-400/20 border-neon-pink/30 hover:from-neon-pink/30 hover:to-pink-400/30'
+                          } text-white hover-scale`}
+                        >
+                          {item.type === 'dashboard' ? item.cta : item.type === 'opportunity' ? 'Explore' : 'Build'}
+                          <ArrowRight className="w-3 h-3 ml-1" />
+                        </Button>
                       </motion.div>
-
-                      {/* Gradient Overlays for smooth edges */}
-                      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background/80 to-transparent pointer-events-none z-10" />
-                      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background/80 to-transparent pointer-events-none z-10" />
-                    </div>
+                    ))
                   ) : (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 flex items-center justify-center mx-auto mb-4">
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 flex items-center justify-center mx-auto mb-3">
                         <CheckCircle className="w-8 h-8 text-emerald-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-white/90 mb-2">All Caught Up!</h3>
                       <p className="text-sm text-white/70">
                         No new opportunities available. Great job staying on top of your content strategy!
                       </p>
