@@ -49,6 +49,7 @@ export const createPublishActions = (
           outline: content.outline || [],
           serpSelections: content.serpSelections || [],
           serpData: content.serpData,
+          source_proposal_id: (content.metadata as any)?.source_proposal_id, // Track proposal source
           ...(content.metadata || {}) // Include any additional metadata passed in
         }
       };
@@ -121,6 +122,20 @@ export const createPublishActions = (
 
       toast.success('Content saved as draft successfully');
       
+      // Auto-track completion if content was created from a proposal
+      if ((content.metadata as any)?.source_proposal_id) {
+        try {
+          await import('@/services/contentCompletionTracking').then(module => {
+            module.contentCompletionTracking.markContentCompleted(
+              (content.metadata as any).source_proposal_id,
+              data.id
+            );
+          });
+        } catch (error) {
+          console.error('Error tracking proposal completion:', error);
+        }
+      }
+      
       // Set saving state to false
       dispatch({ type: 'SET_IS_SAVING', payload: false });
       
@@ -175,6 +190,7 @@ export const createPublishActions = (
           outline: content.outline || [],
           serpSelections: content.serpSelections || [],
           serpData: content.serpData,
+          source_proposal_id: (content.metadata as any)?.source_proposal_id, // Track proposal source
           ...(content.metadata || {}) // Include any additional metadata passed in
         }
       };
@@ -246,6 +262,20 @@ export const createPublishActions = (
       }
 
       toast.success('Content published successfully');
+      
+      // Auto-track completion if content was created from a proposal
+      if ((content.metadata as any)?.source_proposal_id) {
+        try {
+          await import('@/services/contentCompletionTracking').then(module => {
+            module.contentCompletionTracking.markContentCompleted(
+              (content.metadata as any).source_proposal_id,
+              data.id
+            );
+          });
+        } catch (error) {
+          console.error('Error tracking proposal completion:', error);
+        }
+      }
       
       // Set saving state to false
       dispatch({ type: 'SET_IS_SAVING', payload: false });

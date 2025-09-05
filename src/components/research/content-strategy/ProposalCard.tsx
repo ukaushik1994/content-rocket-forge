@@ -169,7 +169,10 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              onSendToBuilder(proposal);
+              onSendToBuilder({ 
+                ...proposal, 
+                source_proposal_id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-')
+              });
             }}
             size="sm"
             className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"

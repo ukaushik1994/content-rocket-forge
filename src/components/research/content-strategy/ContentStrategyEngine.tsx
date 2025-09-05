@@ -414,25 +414,21 @@ const loadMoreProposals = async () => {
       goals: goals
     });
     
-    // Extract keywords from existing proposals to exclude them
-    const existingKeywords = proposals.flatMap(proposal => {
-      const keywords = [proposal.primary_keyword];
-      if (proposal.related_keywords && Array.isArray(proposal.related_keywords)) {
-        keywords.push(...proposal.related_keywords);
-      }
-      return keywords.filter(Boolean);
-    });
+    // Get comprehensive keyword exclusion list from deduplication service
+    const { keywordDeduplicationService } = await import('@/services/keywordDeduplicationService');
+    const excludeKeywords = await keywordDeduplicationService.getKeywordsToExclude();
     
-    console.log('🔍 Excluding existing keywords:', existingKeywords.length);
+    console.log('🔍 Excluding used keywords from history:', excludeKeywords.length);
     
-    // Use the same comprehensive workflow as main generation
+    // Use the same comprehensive workflow as main generation with keyword exclusion
     console.log('🤖 Calling contentStrategyService.generateAIStrategy...');
     const result = await contentStrategyService.generateAIStrategy({
       goals: {
         monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
         contentPieces: 6, // Fixed batch size for Load More
         timeline: goals.timeline || '3 months',
-        mainKeyword: goals.mainKeyword || ''
+        mainKeyword: goals.mainKeyword || '',
+        excludeKeywords: excludeKeywords // Pass exclusion list to prevent duplicates
       },
       location: 'United States'
     });
@@ -443,13 +439,16 @@ const loadMoreProposals = async () => {
     });
     
     if (result.proposals && result.proposals.length > 0) {
-      // Filter out any proposals that might duplicate existing ones
-      const newProposals = result.proposals.filter(newProposal => {
-        const newKeyword = newProposal.primary_keyword?.toLowerCase();
-        return !existingKeywords.some(existing => 
-          existing.toLowerCase() === newKeyword
-        );
-      });
+      // Filter out any proposals using advanced deduplication
+      const newProposals = [];
+      for (const proposal of result.proposals) {
+        const isUsed = await keywordDeduplicationService.isKeywordAlreadyUsed(proposal.primary_keyword);
+        if (!isUsed) {
+          newProposals.push(proposal);
+        } else {
+          console.log('🔄 Filtered duplicate proposal:', proposal.primary_keyword);
+        }
+      }
       
       if (newProposals.length > 0) {
         // Auto-save keywords from new proposals
@@ -472,7 +471,8 @@ const loadMoreProposals = async () => {
           before: proposals.length,
           after: updatedProposals.length,
           new: newProposals.length,
-          filtered: result.proposals.length - newProposals.length
+          filtered: result.proposals.length - newProposals.length,
+          totalExcluded: excludeKeywords.length
         });
         
         setProposals(updatedProposals);

@@ -101,36 +101,112 @@ class ContentCompletionTrackingService {
     }
   }
 
-  // Get completed proposal IDs to filter them out from clusters view
+  // Get completed proposal IDs by checking both calendar status AND content repository
   async getCompletedProposalIds(): Promise<string[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data: calendarItems, error } = await supabase
+      const completedIds: string[] = [];
+
+      // Method 1: Check calendar items marked as completed
+      const { data: calendarItems, error: calendarError } = await supabase
         .from('content_calendar')
         .select('notes')
         .eq('user_id', user.id)
         .in('status', ['completed', 'published']);
 
-      if (error) throw error;
-
-      const completedIds: string[] = [];
-      (calendarItems || []).forEach(item => {
-        try {
-          const notes = item.notes ? JSON.parse(item.notes) : {};
-          if (notes.source_proposal_id && notes.tracking_status === 'completed') {
-            completedIds.push(notes.source_proposal_id);
+      if (!calendarError) {
+        (calendarItems || []).forEach(item => {
+          try {
+            const notes = item.notes ? JSON.parse(item.notes) : {};
+            if (notes.source_proposal_id && notes.tracking_status === 'completed') {
+              completedIds.push(notes.source_proposal_id);
+            }
+          } catch (e) {
+            // Skip invalid JSON
           }
-        } catch (e) {
-          // Skip invalid JSON
-        }
-      });
+        });
+      }
 
-      return completedIds;
+      // Method 2: Check content repository for content created from proposals
+      const { data: contentItems, error: contentError } = await supabase
+        .from('content_items')
+        .select('metadata')
+        .eq('user_id', user.id)
+        .in('status', ['draft', 'published']);
+
+      if (!contentError) {
+        (contentItems || []).forEach(item => {
+          try {
+            const metadata = item.metadata as any || {};
+            if (metadata.source_proposal_id) {
+              completedIds.push(metadata.source_proposal_id);
+            }
+          } catch (e) {
+            // Skip invalid metadata
+          }
+        });
+      }
+
+      // Remove duplicates and return
+      return [...new Set(completedIds)];
     } catch (error) {
       console.error('❌ Error fetching completed proposal IDs:', error);
       return [];
+    }
+  }
+
+  // Check if content exists in repository for a proposal (alternative completion check)
+  async checkContentExistsForProposal(proposalId: string, title?: string, keyword?: string): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      // Check by proposal ID in metadata
+      const { data: byProposalId } = await supabase
+        .from('content_items')
+        .select('id')
+        .eq('user_id', user.id)
+        .like('metadata', `%${proposalId}%`)
+        .limit(1);
+
+      if (byProposalId && byProposalId.length > 0) {
+        return true;
+      }
+
+      // Fallback: Check by similar title if provided
+      if (title) {
+        const { data: byTitle } = await supabase
+          .from('content_items')
+          .select('id')
+          .eq('user_id', user.id)
+          .ilike('title', `%${title.slice(0, 20)}%`) // Check first 20 chars of title
+          .limit(1);
+
+        if (byTitle && byTitle.length > 0) {
+          return true;
+        }
+      }
+
+      // Fallback: Check by main keyword if provided
+      if (keyword) {
+        const { data: byKeyword } = await supabase
+          .from('content_items')
+          .select('id')
+          .eq('user_id', user.id)
+          .like('metadata', `%${keyword}%`)
+          .limit(1);
+
+        if (byKeyword && byKeyword.length > 0) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('❌ Error checking content existence:', error);
+      return false;
     }
   }
 
