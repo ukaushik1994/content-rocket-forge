@@ -333,6 +333,12 @@ const generateBlueprint = async () => {
     setGenerating(true);
     startProgress();
     
+    // Get keywords to exclude from previous proposals
+    const { keywordDeduplicationService } = await import('@/services/keywordDeduplicationService');
+    const excludeKeywords = await keywordDeduplicationService.getKeywordsToExclude();
+    
+    console.log('🔄 Excluding', excludeKeywords.length, 'previously used keywords');
+    
     const result = await contentStrategyService.generateAIStrategy({ 
       goals: {
         monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
@@ -340,7 +346,8 @@ const generateBlueprint = async () => {
         timeline: goals.timeline || '3 months',
         mainKeyword: goals.mainKeyword || ''
       }, 
-      location: 'United States' 
+      location: 'United States',
+      excludeKeywords: excludeKeywords
     });
     
     // Take the generated proposals

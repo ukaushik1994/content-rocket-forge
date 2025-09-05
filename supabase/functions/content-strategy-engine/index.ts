@@ -411,7 +411,7 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 
 // New AI-first strategy generation (no clusters)
 async function generateAIStrategy(supabase: any, payload: any) {
-  const { user_id, goals = {}, location = 'United States', api_keys = {} } = payload;
+  const { user_id, goals = {}, location = 'United States', excludeKeywords = [], api_keys = {} } = payload;
 
   // 1) Fetch minimal user context
   const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
@@ -448,14 +448,14 @@ async function generateAIStrategy(supabase: any, payload: any) {
           },
           {
             role: 'user',
-            content: `Given this company context and solutions, propose 8 high-opportunity, relevant, untapped keywords for content strategy.
+            content: `Given this company context and solutions, propose 8 high-opportunity, relevant, untapped keywords for content strategy.${excludeKeywords.length > 0 ? `\n\nIMPORTANT: EXCLUDE these previously used keywords and their variations: ${excludeKeywords.join(', ')}` : ''}
 
 Company: ${JSON.stringify(companyInfo || {})}
 Solutions: ${JSON.stringify(solutions || [])}
 Recent Content Titles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}
 Goals: ${JSON.stringify(goals)}
 
-Return ONLY the JSON object.`
+Return ONLY the JSON object with diverse, unique keywords that don't overlap with excluded ones.`
           }
         ],
         max_completion_tokens: 1500

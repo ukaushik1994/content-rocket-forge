@@ -582,7 +582,7 @@ class ContentStrategyService {
   }
 
   // AI-first strategy proposals using the content-strategy-engine function
-  async generateAIStrategy(params?: { goals?: any; location?: string }): Promise<{ proposals: any[]; message: string }> {
+  async generateAIStrategy(params?: { goals?: any; location?: string; excludeKeywords?: string[] }): Promise<{ proposals: any[]; message: string }> {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('User not authenticated');
 
@@ -613,6 +613,7 @@ class ContentStrategyService {
         user_id: user.id,
         goals: params?.goals || {},
         location: params?.location || 'United States',
+        excludeKeywords: params?.excludeKeywords || [], // Pass keyword exclusion list
         api_keys: {
           openai: openaiKey,
           serp: serpKey
