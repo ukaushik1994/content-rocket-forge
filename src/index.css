@@ -168,7 +168,7 @@
   }
   
   .premium-card {
-    @apply rounded-2xl border border-white/10 bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-2xl shadow-premium hover:shadow-premium-glow transition-all duration-500 relative overflow-hidden group;
+    @apply rounded-2xl border border-white/10 bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-2xl shadow-premium hover:shadow-premium-glow transition-all duration-500 relative overflow-hidden;
   }
   
   .premium-card::before {
