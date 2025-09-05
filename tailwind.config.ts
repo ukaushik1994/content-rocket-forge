@@ -168,11 +168,18 @@ export default {
 			boxShadow: {
 				'neon': '0 0 20px hsl(262 73% 75% / 0.4)',
 				'neon-strong': '0 0 30px hsl(262 73% 75% / 0.6)',
-				'premium': '0 1px 3px 0 hsl(240 12% 16% / 0.1), 0 1px 2px -1px hsl(240 12% 16% / 0.1)',
-				'premium-lg': '0 4px 6px -1px hsl(240 12% 16% / 0.1), 0 2px 4px -2px hsl(240 12% 16% / 0.1)',
-				'premium-xl': '0 10px 15px -3px hsl(240 12% 16% / 0.1), 0 4px 6px -4px hsl(240 12% 16% / 0.1)',
+				'premium': '0 2px 8px -1px hsl(240 12% 8% / 0.2), 0 1px 3px -1px hsl(240 12% 8% / 0.1)',
+				'premium-lg': '0 4px 16px -2px hsl(240 12% 8% / 0.3), 0 2px 8px -2px hsl(240 12% 8% / 0.2)',
+				'premium-xl': '0 8px 32px -4px hsl(240 12% 8% / 0.4), 0 4px 16px -4px hsl(240 12% 8% / 0.3)',
+				'premium-glow': '0 8px 32px -4px hsl(262 73% 75% / 0.3), 0 4px 16px -2px hsl(240 12% 8% / 0.2), 0 0 0 1px hsl(262 73% 75% / 0.1)',
 				'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
 				'glass-lg': '0 16px 64px 0 rgba(31, 38, 135, 0.3)',
+				'glass-premium': '0 12px 40px -8px hsl(240 12% 8% / 0.4), 0 4px 16px -4px hsl(262 73% 75% / 0.2), inset 0 1px 0 hsl(255 255% 255% / 0.1)',
+			},
+			backdropBlur: {
+				'xs': '2px',
+				'2xl': '40px',
+				'3xl': '64px',
 			}
 		}
 	},
