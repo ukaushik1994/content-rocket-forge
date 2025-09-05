@@ -52,17 +52,63 @@
   }
   
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
-    background-image: 
-      radial-gradient(circle at 25% 25%, rgba(155, 135, 245, 0.1) 0%, transparent 70%),
-      radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.1) 0%, transparent 70%),
-      radial-gradient(circle at 50% 50%, rgba(217, 70, 239, 0.05) 0%, transparent 70%);
-    background-attachment: fixed;
+    @apply bg-background text-foreground antialiased font-sans;
+    background: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(262 73% 75% / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 80% at 80% 50%, hsl(196 89% 58% / 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 60% at 20% 80%, hsl(292 84% 61% / 0.06) 0%, transparent 50%);
+    font-feature-settings: "cv11", "ss01", "liga", "kern";
+    font-variation-settings: "opsz" 32;
+    letter-spacing: -0.01em;
   }
 
   html {
-    @apply scroll-smooth;
+    scroll-behavior: smooth;
+  }
+
+  /* Enhanced typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold tracking-tight;
+    text-wrap: balance;
+    font-variation-settings: "opsz" 32;
+  }
+
+  h1 { @apply text-4xl lg:text-5xl leading-tight; }
+  h2 { @apply text-3xl lg:text-4xl leading-tight; }
+  h3 { @apply text-2xl lg:text-3xl leading-snug; }
+
+  p, li {
+    text-wrap: pretty;
+    @apply leading-relaxed;
+  }
+
+  /* Enhanced selection styling */
+  ::selection {
+    @apply bg-neon-purple/30 text-white;
+  }
+
+  /* Premium scrollbar styling */
+  .premium-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(262 73% 75% / 0.3) transparent;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(262 73% 75% / 0.3);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(262 73% 75% / 0.5);
   }
 }
 

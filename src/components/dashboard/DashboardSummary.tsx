@@ -325,12 +325,12 @@ export const DashboardSummary = () => {
         </motion.div>
       )}
 
-      {/* Progress Overview */}
+      {/* Progress Overview - Enhanced */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.2 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
       >
         {[
           { 
@@ -340,7 +340,8 @@ export const DashboardSummary = () => {
             goal: data.progress.goal.blog,
             icon: FileText,
             gradient: 'from-neon-blue/20 to-cyan-400/20',
-            iconColor: 'text-neon-blue'
+            iconColor: 'text-neon-blue',
+            glowColor: 'from-neon-blue/30 to-cyan-400/30'
           },
           { 
             type: 'article', 
@@ -349,7 +350,8 @@ export const DashboardSummary = () => {
             goal: data.progress.goal.article,
             icon: FileText,
             gradient: 'from-neon-purple/20 to-purple-400/20',
-            iconColor: 'text-neon-purple'
+            iconColor: 'text-neon-purple',
+            glowColor: 'from-neon-purple/30 to-purple-400/30'
           },
           { 
             type: 'glossary', 
@@ -358,7 +360,8 @@ export const DashboardSummary = () => {
             goal: data.progress.goal.glossary,
             icon: Book,
             gradient: 'from-neon-pink/20 to-pink-400/20',
-            iconColor: 'text-neon-pink'
+            iconColor: 'text-neon-pink',
+            glowColor: 'from-neon-pink/30 to-pink-400/30'
           },
           { 
             type: 'overall', 
@@ -368,38 +371,45 @@ export const DashboardSummary = () => {
             icon: Target,
             gradient: 'from-emerald-400/20 to-green-400/20',
             iconColor: 'text-emerald-400',
+            glowColor: 'from-emerald-400/30 to-green-400/30',
             isPercentage: true
           }
         ].map((item, index) => (
           <motion.div
             key={item.type}
-            whileHover={{ scale: 1.02, y: -2 }}
+            whileHover={{ scale: 1.025, y: -4 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            <Card className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 group overflow-hidden relative">
-              {/* Gradient overlay */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+            <Card className="glass-panel border-white/10 bg-white/[0.02] backdrop-blur-xl hover:bg-white/[0.08] transition-all duration-500 group overflow-hidden relative shadow-glass hover:shadow-glass-lg">
+              {/* Enhanced gradient overlay */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
               
-              <CardContent className="p-6 relative z-10">
-                <div className="flex items-center justify-between mb-4">
+              {/* Glowing border effect */}
+              <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                <div className={`absolute inset-0 bg-gradient-to-r ${item.glowColor} opacity-10 blur-xl`} />
+                <div className="absolute inset-[1px] rounded-xl bg-gradient-to-b from-white/[0.08] to-transparent" />
+              </div>
+              
+              <CardContent className="p-8 relative z-10">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="text-sm font-medium text-white/70 mb-1">{item.label}</p>
-                    <p className="text-3xl font-bold text-white">
+                    <p className="text-sm font-medium text-white/70 mb-2 tracking-wide uppercase">{item.label}</p>
+                    <p className="text-3xl font-display font-bold text-white tracking-tight">
                       {item.isPercentage ? `${item.current}%` : `${item.current}/${item.goal}`}
                     </p>
                   </div>
-                  <div className={`w-12 h-12 rounded-full bg-white/10 flex items-center justify-center border border-white/20 ${item.iconColor} group-hover:scale-110 transition-transform duration-300`}>
-                    <item.icon className="w-6 h-6" />
+                  <div className={`w-14 h-14 rounded-xl bg-white/[0.08] flex items-center justify-center border border-white/20 ${item.iconColor} group-hover:scale-110 group-hover:border-white/40 transition-all duration-500 shadow-premium`}>
+                    <item.icon className="w-7 h-7" />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Progress 
                     value={item.isPercentage ? item.current : (item.current / Math.max(item.goal, 1)) * 100}
-                    className="h-2 bg-white/20"
+                    className="h-2 bg-white/10 rounded-full overflow-hidden"
                   />
-                  <div className="flex justify-between text-xs text-white/60">
+                  <div className="flex justify-between text-xs text-white/60 font-medium">
                     <span>{item.isPercentage ? 'Complete' : 'Progress'}</span>
-                    <span>{item.isPercentage ? item.current : Math.round((item.current / Math.max(item.goal, 1)) * 100)}%</span>
+                    <span className="text-white/80">{item.isPercentage ? item.current : Math.round((item.current / Math.max(item.goal, 1)) * 100)}%</span>
                   </div>
                 </div>
               </CardContent>
