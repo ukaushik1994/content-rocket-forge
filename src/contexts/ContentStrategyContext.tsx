@@ -288,7 +288,8 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     if (!user) return;
     
     try {
-      const targetCount = parseInt(goals.contentPieces) || 5;
+      // Always use batch size of 6, regardless of contentPieces goal
+      const targetCount = 6;
       const result = await contentStrategyService.generateAIStrategy({ 
         goals: {
           monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
@@ -299,11 +300,11 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
         location: 'United States' 
       });
       
-      // Take exactly the number of proposals matching the goal
-      const limitedProposals = result.proposals?.slice(0, targetCount) || [];
-      setAiProposals(limitedProposals);
+      // Use all generated proposals (not limited by content pieces goal)
+      const generatedProposals = result.proposals || [];
+      setAiProposals(generatedProposals);
       
-      toast.success(`Generated ${limitedProposals.length} proposals matching your ${targetCount} content pieces goal`);
+      toast.success(`Generated ${generatedProposals.length} AI proposals based on your traffic goal`);
     } catch (error) {
       console.error('Error generating goal-based proposals:', error);
       toast.error('Failed to generate proposals');

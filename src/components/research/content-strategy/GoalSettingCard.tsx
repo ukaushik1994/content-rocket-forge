@@ -167,7 +167,7 @@ export const GoalSettingCard = React.memo(() => {
           {serpMetrics && <SerpMetricsDisplay metrics={serpMetrics} />}
 
           {/* Goal Progress Indicator */}
-          {currentStrategy && goals.contentPieces && <GoalProgressIndicator goals={goals} />}
+          {currentStrategy && <GoalProgressIndicator goals={goals} />}
 
           {/* Goals Section */}
           <div className="space-y-4">

@@ -18,13 +18,25 @@ interface GoalProgressIndicatorProps {
 export const GoalProgressIndicator = ({ goals }: GoalProgressIndicatorProps) => {
   const { aiProposals, selectedProposals, calendarItems, pipelineItems, currentStrategy } = useContentStrategy();
   
-  if (!currentStrategy || !goals.contentPieces) return null;
+  if (!currentStrategy) return null;
   
-  const targetContentPieces = parseInt(goals.contentPieces) || 0;
+  const monthlyTrafficGoal = parseInt(goals.monthlyTraffic) || 0;
   const proposalsGenerated = aiProposals.length;
   const selectedCount = Object.values(selectedProposals).filter(Boolean).length;
   const inPipeline = pipelineItems.length;
   const published = calendarItems.filter(item => item.status === 'published').length;
+  
+  // Calculate estimated traffic from selected proposals
+  const estimatedTraffic = aiProposals
+    .filter((_, index) => Object.values(selectedProposals)[index])
+    .reduce((sum, proposal) => {
+      const primaryKw = proposal.primary_keyword;
+      const metrics = proposal.serp_data?.[primaryKw] || {};
+      const est = proposal.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+      return sum + est;
+    }, 0);
+  
+  const trafficProgress = monthlyTrafficGoal > 0 ? Math.min((estimatedTraffic / monthlyTrafficGoal) * 100, 100) : 0;
   
   const steps = [
     {
@@ -36,23 +48,23 @@ export const GoalProgressIndicator = ({ goals }: GoalProgressIndicatorProps) => 
     },
     {
       label: 'AI Proposals',
-      completed: proposalsGenerated >= targetContentPieces,
-      current: proposalsGenerated > 0 && proposalsGenerated < targetContentPieces,
-      progress: targetContentPieces > 0 ? (proposalsGenerated / targetContentPieces) * 100 : 0,
+      completed: proposalsGenerated >= 6,
+      current: proposalsGenerated > 0 && proposalsGenerated < 6,
+      progress: Math.min((proposalsGenerated / 6) * 100, 100),
       icon: FileText,
-      color: proposalsGenerated >= targetContentPieces ? 'text-green-400' : 'text-blue-400',
-      bgColor: proposalsGenerated >= targetContentPieces ? 'bg-green-400/10' : 'bg-blue-400/10',
-      description: `${proposalsGenerated}/${targetContentPieces} proposals generated`
+      color: proposalsGenerated >= 6 ? 'text-green-400' : 'text-blue-400',
+      bgColor: proposalsGenerated >= 6 ? 'bg-green-400/10' : 'bg-blue-400/10',
+      description: `${proposalsGenerated} proposals generated`
     },
     {
       label: 'Selection',
-      completed: selectedCount > 0,
+      completed: selectedCount > 0 && trafficProgress >= 20,
       current: proposalsGenerated > 0 && selectedCount === 0,
       progress: proposalsGenerated > 0 ? (selectedCount / proposalsGenerated) * 100 : 0,
       icon: CheckCircle2,
-      color: selectedCount > 0 ? 'text-green-400' : 'text-orange-400',
-      bgColor: selectedCount > 0 ? 'bg-green-400/10' : 'bg-orange-400/10',
-      description: `${selectedCount} proposals selected`
+      color: selectedCount > 0 && trafficProgress >= 20 ? 'text-green-400' : 'text-orange-400',
+      bgColor: selectedCount > 0 && trafficProgress >= 20 ? 'bg-green-400/10' : 'bg-orange-400/10',
+      description: `${selectedCount} proposals selected (${Math.round(trafficProgress)}% of traffic goal)`
     },
     {
       label: 'Production',
@@ -65,18 +77,18 @@ export const GoalProgressIndicator = ({ goals }: GoalProgressIndicatorProps) => 
       description: `${inPipeline} pieces in pipeline`
     },
     {
-      label: 'Published',
-      completed: published > 0,
-      current: inPipeline > 0 && published === 0,
-      progress: targetContentPieces > 0 ? (published / targetContentPieces) * 100 : 0,
+      label: 'Traffic Goal',
+      completed: trafficProgress >= 80,
+      current: selectedCount > 0 && trafficProgress < 80,
+      progress: trafficProgress,
       icon: TrendingUp,
-      color: published > 0 ? 'text-green-400' : 'text-gray-400',
-      bgColor: published > 0 ? 'bg-green-400/10' : 'bg-gray-400/10',
-      description: `${published}/${targetContentPieces} pieces published`
+      color: trafficProgress >= 80 ? 'text-green-400' : 'text-gray-400',
+      bgColor: trafficProgress >= 80 ? 'bg-green-400/10' : 'bg-gray-400/10',
+      description: `${estimatedTraffic.toLocaleString()} / ${monthlyTrafficGoal.toLocaleString()} estimated traffic`
     }
   ];
 
-  const overallProgress = steps.reduce((sum, step) => sum + (step.completed ? 20 : 0), 0);
+  const overallProgress = steps.reduce((sum, step) => sum + (step.completed ? 20 : step.progress * 0.2), 0);
   
   const nextStep = steps.find(step => !step.completed && !step.current);
   const currentStep = steps.find(step => step.current);
