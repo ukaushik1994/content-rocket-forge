@@ -120,7 +120,8 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
         onDataUpdate?.(result);
         
         // Add all available selections to context using the transformer
-        import('@/services/serpDataTransformer').then(({ transformSerpData, extractAllSelections }) => {
+        try {
+          const { transformSerpData, extractAllSelections } = await import('@/services/serpDataTransformer');
           const normalizedData = transformSerpData(result);
           const allSelections = extractAllSelections(normalizedData);
           
@@ -131,15 +132,41 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
               payload: selection
             });
           });
-        });
+        } catch (transformError) {
+          console.warn('Failed to transform SERP data, adding basic selections:', transformError);
+          // Fallback: add basic keywords and questions manually
+          if (result.keywords) {
+            result.keywords.forEach(keyword => {
+              dispatch({
+                type: 'ADD_SERP_SELECTION',
+                payload: {
+                  type: 'keyword',
+                  content: keyword,
+                  selected: false,
+                  source: 'enhanced_serp'
+                }
+              });
+            });
+          }
+        }
         
         toast.success('SERP analysis completed successfully');
-      } else {
-        toast.error('Failed to analyze keyword. Please check your API keys.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching SERP data:', error);
-      toast.error('Error analyzing keyword');
+      
+      // Handle specific error messages
+      if (error.message?.includes('API key not configured')) {
+        toast.error('SERP API key not configured. Please add your SerpAPI key in the settings.');
+      } else if (error.message?.includes('Invalid API key')) {
+        toast.error('Invalid SERP API key. Please check your API key configuration.');
+      } else if (error.message?.includes('quota')) {
+        toast.error('SERP API quota exceeded. Please check your API usage or upgrade your plan.');
+      } else if (error.message?.includes('SERP API error')) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to analyze keyword. Please try again or check your API configuration.');
+      }
     } finally {
       setIsLoading(false);
     }

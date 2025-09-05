@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { getApiKey } from '@/services/apiKeyService';
 
 export interface EnhancedSerpResult {
   keyword: string;
@@ -153,27 +154,48 @@ export async function analyzeKeywordEnhanced(
       }
     }
     
+    // Get API key for SERP analysis
+    console.log('🔑 Retrieving SERP API key...');
+    const apiKey = await getApiKey('serp');
+    
+    if (!apiKey) {
+      console.error('❌ No SERP API key configured');
+      throw new Error('SERP API key not configured. Please add your SerpAPI key in the settings.');
+    }
+    
+    console.log('✅ SERP API key retrieved successfully');
+    
     // Make API call to enhanced SERP function
     const { data, error } = await supabase.functions.invoke('serp-api', {
-      body: JSON.stringify({
+      body: {
         endpoint: 'analyze',
+        apiKey: apiKey,
         params: {
-          keyword,
-          location,
+          q: keyword, // SerpAPI expects 'q' parameter
+          location: location,
           num: 10,
-          device: 'desktop'
+          device: 'desktop',
+          engine: 'google'
         }
-      })
+      }
     });
     
     if (error) {
       console.error('Enhanced SERP API error:', error);
-      return null;
+      
+      // Handle specific error cases
+      if (error.message?.includes('Invalid API key')) {
+        throw new Error('Invalid SERP API key. Please check your API key configuration.');
+      } else if (error.message?.includes('quota') || error.message?.includes('limit')) {
+        throw new Error('SERP API quota exceeded. Please check your API usage.');
+      } else {
+        throw new Error(`SERP API error: ${error.message || 'Unknown error'}`);
+      }
     }
     
     if (!data) {
       console.warn('No data received from enhanced SERP API');
-      return null;
+      throw new Error('No data received from SERP API. Please try again.');
     }
     
     // Cache the result
@@ -191,9 +213,16 @@ export async function analyzeKeywordEnhanced(
     console.log('✅ Enhanced SERP analysis complete');
     return data as EnhancedSerpResult;
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in enhanced SERP analysis:', error);
-    return null;
+    
+    // Re-throw meaningful errors for user feedback
+    if (error.message?.includes('API key') || error.message?.includes('quota') || error.message?.includes('SERP')) {
+      throw error;
+    }
+    
+    // Generic fallback error
+    throw new Error('Failed to analyze keyword. Please try again or check your API configuration.');
   }
 }
 
