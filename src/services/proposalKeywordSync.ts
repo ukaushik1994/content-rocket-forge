@@ -103,34 +103,39 @@ class ProposalKeywordSyncService {
 
       console.log('💾 Saving proposals to history:', proposals.length);
 
-      for (const proposal of proposals) {
-        const { error } = await supabase
-          .from('ai_strategy_proposals')
-          .upsert({
-            user_id: user.id,
-            title: proposal.title,
-            description: proposal.description,
-            primary_keyword: proposal.primary_keyword,
-            related_keywords: proposal.related_keywords || [],
-            content_suggestions: proposal.content_suggestions || [],
-            estimated_impressions: proposal.estimated_impressions || 0,
-            priority_tag: proposal.priority_tag || 'evergreen',
-            content_type: proposal.content_type || 'blog',
-            serp_data: proposal.serp_data || {},
-            proposal_data: JSON.parse(JSON.stringify(proposal)),
-            strategy_session_id: strategySessionId
-          });
+      const proposalsToInsert = proposals.map(proposal => ({
+        user_id: user.id,
+        title: proposal.title,
+        description: proposal.description,
+        primary_keyword: proposal.primary_keyword,
+        related_keywords: proposal.related_keywords || [],
+        content_suggestions: proposal.content_suggestions || [],
+        estimated_impressions: proposal.estimated_impressions || 0,
+        priority_tag: proposal.priority_tag || 'evergreen',
+        content_type: proposal.content_type || 'blog',
+        serp_data: proposal.serp_data || {},
+        proposal_data: JSON.parse(JSON.stringify(proposal)),
+        strategy_session_id: strategySessionId
+      }));
 
-        if (error) {
-          console.error('Error saving proposal:', error);
-          // Continue with other proposals even if one fails
-        }
+      // Use insert instead of upsert since these are always new proposals
+      const { data, error } = await supabase
+        .from('ai_strategy_proposals')
+        .insert(proposalsToInsert)
+        .select();
+
+      if (error) {
+        console.error('❌ Database error saving proposals:', error);
+        toast.error('Failed to save strategy proposals to history');
+        throw error; // Don't silently fail - this is important for tracking
       }
 
-      console.log('✅ Proposals saved to history successfully');
+      console.log('✅ Proposals saved to history successfully:', data?.length || 0);
+      toast.success(`Saved ${proposals.length} strategy proposals to history`);
     } catch (error) {
       console.error('❌ Error saving proposals to history:', error);
-      // Don't throw - this is background functionality
+      toast.error('Failed to save strategy proposals');
+      throw error; // Let calling code handle the error
     }
   }
 

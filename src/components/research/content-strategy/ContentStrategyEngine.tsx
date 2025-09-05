@@ -365,9 +365,11 @@ const generateBlueprint = async () => {
       
       // Save proposals to history for future reference
       try {
+        console.log('📝 About to save proposals to history:', generatedProposals.length, 'proposals');
         await proposalKeywordSync.saveProposalsToHistory(generatedProposals);
+        console.log('✅ Successfully saved proposals to history');
       } catch (error) {
-        console.error('⚠️ Error saving proposals to history:', error);
+        console.error('❌ Error saving proposals to history:', error);
         // Don't block the main flow for history saving errors
       }
     }
