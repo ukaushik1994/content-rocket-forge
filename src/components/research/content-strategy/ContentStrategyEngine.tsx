@@ -239,17 +239,16 @@ const loadMoreProposals = async () => {
     
     console.log('🔍 Excluding existing keywords:', existingKeywords.length);
     
-    // Generate 6 new proposals per load more batch
-    console.log('🤖 Calling aiStrategyService.generateNewStrategy...');
-    const result = await aiStrategyService.generateNewStrategy({
+    // Use the same comprehensive workflow as main generation
+    console.log('🤖 Calling contentStrategyService.generateAIStrategy...');
+    const result = await contentStrategyService.generateAIStrategy({
       goals: {
         monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
-        contentPieces: 6, // Fixed batch size
+        contentPieces: 6, // Fixed batch size for Load More
         timeline: goals.timeline || '3 months',
         mainKeyword: goals.mainKeyword || ''
       },
-      location: 'United States',
-      excludeKeywords: existingKeywords
+      location: 'United States'
     });
     
     console.log('✅ Generated new strategy result:', {
@@ -258,26 +257,44 @@ const loadMoreProposals = async () => {
     });
     
     if (result.proposals && result.proposals.length > 0) {
-      // Append new proposals to existing ones
-      const updatedProposals = [...proposals, ...result.proposals];
-      console.log('📈 Updating proposals:', {
-        before: proposals.length,
-        after: updatedProposals.length,
-        new: result.proposals.length
+      // Filter out any proposals that might duplicate existing ones
+      const newProposals = result.proposals.filter(newProposal => {
+        const newKeyword = newProposal.primary_keyword?.toLowerCase();
+        return !existingKeywords.some(existing => 
+          existing.toLowerCase() === newKeyword
+        );
       });
       
-      setProposals(updatedProposals);
-      setAiProposals(updatedProposals);
-      
-      toast({
-        title: 'New Proposals Generated',
-        description: `Found ${result.proposals.length} additional strategy proposals`
-      });
+      if (newProposals.length > 0) {
+        // Append new proposals to existing ones
+        const updatedProposals = [...proposals, ...newProposals];
+        console.log('📈 Updating proposals:', {
+          before: proposals.length,
+          after: updatedProposals.length,
+          new: newProposals.length,
+          filtered: result.proposals.length - newProposals.length
+        });
+        
+        setProposals(updatedProposals);
+        setAiProposals(updatedProposals);
+        
+        toast({
+          title: 'New Proposals Generated',
+          description: `Found ${newProposals.length} additional strategy proposals using comprehensive analysis`
+        });
+      } else {
+        console.warn('⚠️ All proposals were duplicates after filtering');
+        toast({
+          title: 'No New Unique Proposals',
+          description: 'All generated proposals were similar to existing ones. Try adjusting your goals or main keyword.',
+          variant: 'default'
+        });
+      }
     } else {
-      console.warn('⚠️ No proposals returned from generateNewStrategy');
+      console.warn('⚠️ No proposals returned from generateAIStrategy');
       toast({
         title: 'No New Proposals',
-        description: 'No additional unique proposals could be generated at this time. Try adjusting your goals or clearing strategy history.',
+        description: 'No additional unique proposals could be generated at this time. Try adjusting your goals or main keyword.',
         variant: 'default'
       });
     }
@@ -297,7 +314,7 @@ const loadMoreProposals = async () => {
       userFriendlyMessage = 'API rate limit reached. Please try again in a few minutes.';
       title = 'Rate Limit Reached';
     } else if (errorMessage.includes('All generated keywords have been used')) {
-      userFriendlyMessage = 'All keywords have been used. Try different goals or clear your strategy history to generate fresh proposals.';
+      userFriendlyMessage = 'All keywords have been used. Try different goals or main keyword to generate fresh proposals.';
       title = 'No New Keywords Available';
     } else if (errorMessage.includes('Failed to generate final strategy')) {
       userFriendlyMessage = 'Strategy generation failed. Please check your API keys and try again.';
