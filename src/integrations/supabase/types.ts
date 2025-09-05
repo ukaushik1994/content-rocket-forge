@@ -268,6 +268,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_strategy_proposals: {
+        Row: {
+          content_suggestions: string[] | null
+          content_type: string | null
+          created_at: string
+          description: string | null
+          estimated_impressions: number | null
+          id: string
+          primary_keyword: string
+          priority_tag: string | null
+          proposal_data: Json | null
+          related_keywords: string[] | null
+          serp_data: Json | null
+          strategy_session_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_suggestions?: string[] | null
+          content_type?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_impressions?: number | null
+          id?: string
+          primary_keyword: string
+          priority_tag?: string | null
+          proposal_data?: Json | null
+          related_keywords?: string[] | null
+          serp_data?: Json | null
+          strategy_session_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_suggestions?: string[] | null
+          content_type?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_impressions?: number | null
+          id?: string
+          primary_keyword?: string
+          priority_tag?: string | null
+          proposal_data?: Json | null
+          related_keywords?: string[] | null
+          serp_data?: Json | null
+          strategy_session_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_workflow_states: {
         Row: {
           conversation_id: string | null

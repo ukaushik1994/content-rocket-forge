@@ -28,6 +28,8 @@ import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationMod
 import { StrategySessionManager } from './StrategySessionManager';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
+import { proposalKeywordSync } from '@/services/proposalKeywordSync';
+import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
 import { ProposalSelectionTracker } from './ProposalSelectionTracker';
 import { SelectedProposalsSidebar } from './SelectedProposalsSidebar';
 
@@ -266,6 +268,20 @@ const loadMoreProposals = async () => {
       });
       
       if (newProposals.length > 0) {
+        // Auto-save keywords from new proposals
+        try {
+          await proposalKeywordSync.autoSaveKeywordsFromProposals(newProposals);
+        } catch (error) {
+          console.error('⚠️ Error auto-saving keywords from load more:', error);
+        }
+        
+        // Save new proposals to history
+        try {
+          await proposalKeywordSync.saveProposalsToHistory(newProposals);
+        } catch (error) {
+          console.error('⚠️ Error saving new proposals to history:', error);
+        }
+        
         // Append new proposals to existing ones
         const updatedProposals = [...proposals, ...newProposals];
         console.log('📈 Updating proposals:', {
