@@ -271,6 +271,9 @@ export function MinimalAPISettings() {
         <p className="text-muted-foreground mt-2">Manage your API integrations</p>
       </div>
 
+      {/* Usage Analytics Section - Top Priority */}
+      <UsageSection />
+
       {/* AI Service Toggle */}
       <AIServiceToggle />
 
@@ -371,9 +374,6 @@ export function MinimalAPISettings() {
 
       {/* Provider Management Section */}
       <ProviderManagement />
-
-      {/* Usage Analytics Section */}
-      <UsageSection />
 
       {/* Configuration Modal */}
       <ConfigurationModal

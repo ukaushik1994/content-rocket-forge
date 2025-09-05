@@ -71,13 +71,9 @@ export class UsageTrackingService {
       // Calculate stats for each provider
       return Object.entries(grouped).map(([provider, logs]) => {
         const totalRequests = logs.length;
-        const successfulRequests = logs.filter(log => 
-          log.response_status?.includes('success') || 
-          log.status === 'success' ||
-          !log.error_message
-        ).length;
+        const successfulRequests = logs.filter(log => log.success === true).length;
         const totalTokens = logs.reduce((sum, log) => sum + (log.total_tokens || 0), 0);
-        const totalCost = logs.reduce((sum, log) => sum + (log.cost || 0), 0);
+        const totalCost = logs.reduce((sum, log) => sum + (Number(log.cost_estimate) || 0), 0);
         const lastUsed = logs[0]?.created_at;
 
         return {
@@ -95,25 +91,45 @@ export class UsageTrackingService {
     }
   }
 
-  // Get SERP usage statistics by provider - simplified implementation
+  // Get SERP usage statistics by provider
   static async getSerpUsageStats(period: string): Promise<UsageStats[]> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return [];
 
-      // Return mock data showing configured providers
-      // This will show real usage when proper logging is implemented
-      return [{
-        provider: 'serpstack',
-        requestCount: 0,
-        successRate: 100,
-        lastUsed: undefined
-      }, {
-        provider: 'serpapi',
-        requestCount: 0,
-        successRate: 100,
-        lastUsed: undefined
-      }];
+      const periodHours = USAGE_PERIODS.find(p => p.value === period)?.hours || 24;
+      const startDate = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
+
+      const { data, error } = await supabase
+        .from('serp_usage_logs')
+        .select('*')
+        .eq('user_id', userData.user.id)
+        .gte('created_at', startDate)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Group by provider
+      const grouped = (data || []).reduce((acc: Record<string, any[]>, log) => {
+        const provider = log.provider || 'unknown';
+        if (!acc[provider]) acc[provider] = [];
+        acc[provider].push(log);
+        return acc;
+      }, {});
+
+      // Calculate stats for each provider
+      return Object.entries(grouped).map(([provider, logs]) => {
+        const totalRequests = logs.length;
+        const successfulRequests = logs.filter(log => log.success === true).length;
+        const lastUsed = logs[0]?.created_at;
+
+        return {
+          provider,
+          requestCount: totalRequests,
+          successRate: totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0,
+          lastUsed
+        };
+      });
     } catch (error) {
       console.error('Failed to get SERP usage stats:', error);
       return [];
