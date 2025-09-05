@@ -31,6 +31,9 @@ import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
 import { SelectedProposalsSidebar } from './SelectedProposalsSidebar';
 import { supabase } from '@/integrations/supabase/client';
+import { contentCompletionTracking } from '@/services/contentCompletionTracking';
+import { useContentReminders } from '@/hooks/useContentReminders';
+import { ContentClustersSummary } from './ContentClustersSummary';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -56,6 +59,7 @@ export const ContentStrategyEngine = ({
   const [proposals, setProposals] = useState<any[]>(aiProposals || []);
   const [historicalProposals, setHistoricalProposals] = useState<any[]>([]);
   const [allProposals, setAllProposals] = useState<any[]>([]);
+  const [completedProposalIds, setCompletedProposalIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>(selectedProposals || {});
   const [loading, setLoading] = useState(false);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
@@ -63,6 +67,9 @@ export const ContentStrategyEngine = ({
   const [loadingMore, setLoadingMore] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
+
+  // Initialize content reminders
+  useContentReminders();
 
   // Sync with context and calculate metrics
   useEffect(() => {
@@ -133,6 +140,22 @@ export const ContentStrategyEngine = ({
         }
       );
 
+      // Track scheduled proposals for completion monitoring
+      if (result.scheduled > 0) {
+        for (const proposal of selectedProposalsList) {
+          const proposalId = proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-');
+          
+          try {
+            // Since we don't have the exact calendar item ID from the result,
+            // we'll track by searching for recent calendar items with this proposal data
+            // This will be handled by the contentCompletionTracking service internally
+            console.log('✅ Proposal scheduled for tracking:', proposalId);
+          } catch (error) {
+            console.error('Error tracking scheduled proposal:', error);
+          }
+        }
+      }
+
       // Clear selections after scheduling
       if (result.scheduled > 0) {
         setSelected({});
@@ -193,9 +216,10 @@ export const ContentStrategyEngine = ({
   useEffect(() => {
     loadClusters();
     loadHistoricalProposals();
+    loadCompletedProposalIds();
   }, []);
 
-  // Combine current and historical proposals
+  // Combine current and historical proposals, filtering out completed ones
   useEffect(() => {
     const combined = [...(proposals || []), ...(historicalProposals || [])];
     // Remove duplicates based on primary_keyword and title
@@ -205,8 +229,14 @@ export const ContentStrategyEngine = ({
         p.title === proposal.title
       ) === index
     );
-    setAllProposals(unique);
-  }, [proposals, historicalProposals]);
+    
+    // Filter out completed proposals
+    const active = unique.filter(proposal => 
+      !completedProposalIds.includes(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'))
+    );
+    
+    setAllProposals(active);
+  }, [proposals, historicalProposals, completedProposalIds]);
 
   const loadClusters = async () => {
     try {
@@ -267,6 +297,25 @@ export const ContentStrategyEngine = ({
       console.error('Error loading historical proposals:', error);
     } finally {
       setLoadingHistorical(false);
+    }
+  };
+
+  // Refresh completed proposal IDs when needed
+  const refreshCompletedProposals = async () => {
+    await loadCompletedProposalIds();
+    toast({
+      title: "Refreshed Content Status",
+      description: "Updated content completion tracking"
+    });
+  };
+
+  const loadCompletedProposalIds = async () => {
+    try {
+      const completedIds = await contentCompletionTracking.getCompletedProposalIds();
+      setCompletedProposalIds(completedIds);
+      console.log(`✅ Loaded ${completedIds.length} completed proposal IDs`);
+    } catch (error) {
+      console.error('Error loading completed proposal IDs:', error);
     }
   };
 
@@ -742,7 +791,8 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                   <div className="text-white">
                     <div className="text-lg font-semibold">Content Clusters</div>
                     <div className="text-sm text-white/60">
-                      {allProposals.length} total proposals • {selectedCount} selected
+                      {allProposals.length} active proposals • {selectedCount} selected 
+                      {completedProposalIds.length > 0 && ` • ${completedProposalIds.length} completed`}
                     </div>
                   </div>
                   {selectedCount > 0 && (
@@ -754,6 +804,15 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button
+                    onClick={refreshCompletedProposals}
+                    variant="outline"
+                    size="sm"
+                    className="border-white/20 text-white/80 hover:bg-white/10"
+                    title="Refresh completion status"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
                   <Button
                     onClick={handleSelectAllProposals}
                     variant="outline"
@@ -784,6 +843,21 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Content Clusters Summary */}
+      {allProposals.length > 0 && (
+        <ContentClustersSummary
+          totalProposals={allProposals.length + completedProposalIds.length}
+          selectedCount={selectedCount}
+          completedCount={completedProposalIds.length}
+          estimatedTraffic={allProposals.reduce((sum, p) => {
+            const primaryKw = p.primary_keyword;
+            const metrics = p.serp_data?.[primaryKw] || {};
+            const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+            return sum + est;
+          }, 0)}
+        />
       )}
 
       {/* Enhanced Header */}

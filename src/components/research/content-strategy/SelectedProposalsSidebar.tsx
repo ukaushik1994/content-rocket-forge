@@ -242,17 +242,17 @@ export const SelectedProposalsSidebar = ({
 
                               {/* Actions */}
                               <div className="flex gap-2 pt-2 border-t border-white/20">
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onSendToBuilder(proposal);
-                                  }}
-                                  size="sm"
-                                  className="flex-1 gap-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 text-xs"
-                                >
-                                  <Send className="h-3 w-3" />
-                                  Build
-                                </Button>
+                                 <Button
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     onSendToBuilder(proposal);
+                                   }}
+                                   size="sm"
+                                   className="flex-1 gap-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 text-xs"
+                                 >
+                                   <Send className="h-3 w-3" />
+                                   Create Content
+                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"

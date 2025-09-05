@@ -175,7 +175,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
           >
             <Send className="h-4 w-4" />
-            Send to Builder
+            Create Content
           </Button>
         </div>
       </CardContent>
