@@ -80,37 +80,44 @@ export const GoalSettingCard = React.memo(() => {
       toast.error("Please log in to save your strategy");
       return;
     }
-    if (!goals.monthlyTraffic || !goals.contentPieces) {
-      toast.error("Please fill in your traffic and content goals");
+    
+    if (!goals.monthlyTraffic) {
+      toast.error("Please set your monthly traffic goal");
       return;
     }
+    
     setIsGenerating(true);
     try {
       const strategyData = {
         name: `Content Strategy - ${goals.mainKeyword || 'General'}`,
         monthly_traffic_goal: parseInt(goals.monthlyTraffic) || null,
-        content_pieces_per_month: parseInt(goals.contentPieces) || null,
+        content_pieces_per_month: goals.contentPieces ? parseInt(goals.contentPieces) : null,
         timeline: goals.timeline,
         main_keyword: goals.mainKeyword || null
       };
+      
       if (currentStrategy) {
         await updateStrategy(currentStrategy.id, strategyData);
       } else {
         await createStrategy(strategyData);
       }
 
-      // Auto-generate AI proposals based on goals after saving strategy
-      const {
-        generateGoalBasedProposals
-      } = ctx || {};
-      if (generateGoalBasedProposals && goals.contentPieces) {
-        toast.success('Strategy saved! Generating AI proposals to match your goals...');
+      // Always generate AI proposals based on traffic goal
+      const { generateGoalBasedProposals } = ctx || {};
+      if (generateGoalBasedProposals) {
+        toast.success('Strategy saved! Generating AI proposals based on your traffic goal...');
         setTimeout(() => {
-          generateGoalBasedProposals(goals);
+          generateGoalBasedProposals({
+            monthlyTraffic: parseInt(goals.monthlyTraffic),
+            contentPieces: 6, // Default batch size
+            timeline: goals.timeline,
+            mainKeyword: goals.mainKeyword
+          });
         }, 500);
       }
     } catch (error) {
       console.error('Strategy save error:', error);
+      toast.error('Failed to save strategy');
     } finally {
       setIsGenerating(false);
     }
@@ -187,11 +194,12 @@ export const GoalSettingCard = React.memo(() => {
             }} transition={{
               duration: 0.2
             }}>
-                <Label htmlFor="content" className="text-base font-medium">Content Pieces per Month</Label>
-                <Input id="content" placeholder="e.g., 8" value={goals.contentPieces} onChange={e => setGoals({
+                <Label htmlFor="content" className="text-base font-medium">Content Pieces per Month (Optional)</Label>
+                <Input id="content" placeholder="Let AI suggest optimal amount" value={goals.contentPieces} onChange={e => setGoals({
                 ...goals,
                 contentPieces: e.target.value
               })} className="bg-glass border-white/10 h-12 text-base focus:border-purple-400 transition-all" />
+                <p className="text-xs text-white/50">Leave empty to let AI suggest based on traffic goal</p>
               </motion.div>
               
               <motion.div className="space-y-3" whileHover={{
@@ -218,28 +226,28 @@ export const GoalSettingCard = React.memo(() => {
         }} whileTap={{
           scale: 0.98
         }}>
-            <Button onClick={handleSaveStrategy} disabled={isGenerating} className="w-full h-14 px-8 text-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg">
+            <Button onClick={handleSaveStrategy} disabled={isGenerating || !goals.monthlyTraffic} className="w-full h-14 px-8 text-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg">
               {isGenerating ? <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Saving Strategy...
+                  Generating AI Proposals...
                 </> : <>
                   <Target className="h-5 w-5 mr-2" />
-                  {currentStrategy ? 'Update Strategy' : 'Save Strategy & Generate AI Proposals'}
+                  {currentStrategy ? 'Update Strategy' : 'Save Goals & Generate Proposals'}
                 </>}
             </Button>
             
             {/* Strategy Action Status */}
-            {!isGenerating && goals.contentPieces && <motion.div initial={{
+            {!isGenerating && <motion.div initial={{
             opacity: 0
           }} animate={{
             opacity: 1
           }} className="text-center">
                 {!currentStrategy ? <div className="flex items-center justify-center gap-2 text-white/60 text-sm">
                     <AlertCircle className="h-4 w-4" />
-                    <span>Save your goals to unlock AI proposal generation</span>
+                    <span>Set your monthly traffic goal to get started with AI proposals</span>
                   </div> : <div className="flex items-center justify-center gap-2 text-green-400 text-sm">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Strategy saved! AI proposals will generate automatically</span>
+                    <span>Strategy saved! Generate more proposals in Strategies tab</span>
                     <ArrowRight className="h-4 w-4" />
                   </div>}
               </motion.div>}

@@ -20,6 +20,7 @@ import { motion } from 'framer-motion';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
 import { StrategyOptimization } from '../StrategyOptimization';
+import { TrafficProgressTracker } from '../TrafficProgressTracker';
 
 interface StrategyDashboardProps {
   serpMetrics?: any;
@@ -67,14 +68,11 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
   }).length;
 
   const monthlyTrafficGoal = parseInt(goals.monthlyTraffic) || 0;
-  const contentPiecesGoal = parseInt(goals.contentPieces) || 0;
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
 
   // AI Proposals metrics
   const proposalsGenerated = aiProposals.length;
   const selectedCount = Object.values(selectedProposals).filter(Boolean).length;
-  const proposalProgress = contentPiecesGoal > 0 ? Math.min((proposalsGenerated / contentPiecesGoal) * 100, 100) : 0;
-  const selectionProgress = proposalsGenerated > 0 ? (selectedCount / proposalsGenerated) * 100 : 0;
 
   // Estimate traffic based on selected AI proposals
   const estimatedTraffic = aiProposals
@@ -85,16 +83,41 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
       const est = proposal.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
       return sum + est;
     }, 0);
+  
   const trafficProgress = monthlyTrafficGoal > 0 ? Math.min((estimatedTraffic / monthlyTrafficGoal) * 100, 100) : 0;
+
+  // Only show detailed dashboard when traffic goal is substantially approached (80%+) or goals are missing
+  const showDetailedDashboard = trafficProgress >= 80 || !monthlyTrafficGoal;
 
   // Get recent insights
   const recentInsights = insights.slice(0, 3);
+
+  // If we have a traffic goal but haven't selected enough content to approach it, show the traffic tracker
+  if (monthlyTrafficGoal && trafficProgress < 80) {
+    return (
+      <div className="space-y-6">
+        <TrafficProgressTracker
+          monthlyTrafficGoal={monthlyTrafficGoal}
+          estimatedTraffic={estimatedTraffic}
+          selectedCount={selectedCount}
+          totalProposals={proposalsGenerated}
+          aiProposals={aiProposals}
+          selectedProposals={selectedProposals}
+        />
+      </div>
+    );
+  }
 
   // Progress tracking calculations (from StrategyProgressTracker)
   const targetContentPieces = parseInt(goals.contentPieces) || 0;
   const targetTraffic = parseInt(goals.monthlyTraffic) || 0;
   const inPipeline = pipelineItems.length;
   const published = calendarItems.filter(item => item.status === 'published').length;
+
+  // Calculate missing variables for the full dashboard
+  const contentPiecesGoal = parseInt(goals.contentPieces) || 0;
+  const proposalProgress = targetContentPieces > 0 ? Math.min((proposalsGenerated / targetContentPieces) * 100, 100) : 0;
+  const selectionProgress = proposalsGenerated > 0 ? (selectedCount / proposalsGenerated) * 100 : 0;
 
   // Timeline progress (assuming 3 months default)
   const startDate = strategy ? new Date(strategy.created_at) : new Date();

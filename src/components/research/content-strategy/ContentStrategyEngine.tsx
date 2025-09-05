@@ -143,10 +143,10 @@ export const ContentStrategyEngine = ({ serpMetrics, goals }: ContentStrategyEng
   };
 
 const generateBlueprint = async () => {
-  if (!goals?.contentPieces) {
+  if (!goals?.monthlyTraffic) {
     toast({
-      title: "Set Your Goals First",
-      description: "Please set your content goals in the Goal Setting section before generating proposals.",
+      title: "Set Your Traffic Goal First",
+      description: "Please set your monthly traffic goal before generating proposals.",
       variant: "destructive"
     });
     return;
@@ -156,25 +156,24 @@ const generateBlueprint = async () => {
     setGenerating(true);
     startProgress();
     
-    const targetCount = parseInt(goals.contentPieces) || 5;
     const result = await contentStrategyService.generateAIStrategy({ 
       goals: {
         monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
-        contentPieces: targetCount,
+        contentPieces: 6, // Default batch size
         timeline: goals.timeline || '3 months',
         mainKeyword: goals.mainKeyword || ''
       }, 
       location: 'United States' 
     });
     
-    // Take exactly the number of proposals matching the goal
-    const limitedProposals = result.proposals?.slice(0, targetCount) || [];
-    setProposals(limitedProposals);
-    setAiProposals(limitedProposals);
+    // Take the generated proposals
+    const generatedProposals = result.proposals || [];
+    setProposals(generatedProposals);
+    setAiProposals(generatedProposals);
     
     toast({ 
-      title: `${limitedProposals.length} Strategy Proposals Ready`, 
-      description: `Generated ${limitedProposals.length} proposals to match your ${targetCount} content pieces goal.` 
+      title: `${generatedProposals.length} Strategy Proposals Ready`, 
+      description: `Generated ${generatedProposals.length} proposals based on your traffic goal.` 
     });
     
     finishProgress();
@@ -200,11 +199,11 @@ const generateBlueprint = async () => {
 const loadMoreProposals = async () => {
   console.log('🔄 Starting loadMoreProposals');
   
-  if (!goals?.contentPieces) {
-    console.warn('❌ No goals.contentPieces found');
+  if (!goals?.monthlyTraffic) {
+    console.warn('❌ No monthly traffic goal found');
     toast({
-      title: "Goals Required",
-      description: "Please set your content goals first to load more targeted proposals.",
+      title: "Traffic Goal Required",
+      description: "Please set your monthly traffic goal first to generate targeted proposals.",
       variant: "destructive"
     });
     return;
@@ -214,21 +213,9 @@ const loadMoreProposals = async () => {
     setLoadingMore(true);
     console.log('📊 Current state:', {
       currentProposalsCount: proposals.length,
-      targetContentPieces: goals.contentPieces,
+      monthlyTrafficGoal: goals.monthlyTraffic,
       goals: goals
     });
-    
-    const targetCount = parseInt(goals.contentPieces);
-    const remainingNeeded = targetCount - proposals.length;
-    
-    if (remainingNeeded <= 0) {
-      console.log('🎯 Goal already reached, generating extra proposals');
-      toast({
-        title: "Goal Reached!",
-        description: `You already have ${proposals.length} proposals matching your ${targetCount} content pieces goal. Generate extra proposals?`,
-      });
-      // Still allow generating extra proposals beyond the goal
-    }
     
     // Extract keywords from existing proposals to exclude them
     const existingKeywords = proposals.flatMap(proposal => {
@@ -241,12 +228,12 @@ const loadMoreProposals = async () => {
     
     console.log('🔍 Excluding existing keywords:', existingKeywords.length);
     
-    // Generate new proposals excluding existing keywords
+    // Generate 6 new proposals per load more batch
     console.log('🤖 Calling aiStrategyService.generateNewStrategy...');
     const result = await aiStrategyService.generateNewStrategy({
       goals: {
         monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
-        contentPieces: Math.max(remainingNeeded, 3), // Generate at least 3 more
+        contentPieces: 6, // Fixed batch size
         timeline: goals.timeline || '3 months',
         mainKeyword: goals.mainKeyword || ''
       },
