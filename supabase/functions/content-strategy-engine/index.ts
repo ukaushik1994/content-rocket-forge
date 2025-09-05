@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { retryWithBackoff } from './retry-utils.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -587,16 +588,34 @@ Return ONLY the JSON object.`
   }));
 
   console.log('🎯 Generating content strategy from enriched data...');
-  const stratProxy = await supabase.functions.invoke('api-proxy', {
-    body: {
-      service: 'openai',
-      endpoint: 'chat',
-      apiKey: openaiApiKey,
-      params: {
-        model: 'gpt-4.1-mini-2025-04-14', // More efficient model
-        max_completion_tokens: 2000, // Limit output tokens
+  const stratProxy = await retryWithBackoff(async () => {
+    return await supabase.functions.invoke('api-proxy', {
+      body: {
+        service: 'openai',
+        endpoint: 'chat',
+        apiKey: openaiApiKey,
+        params: {
+          model: 'gpt-4.1-mini-2025-04-14', // More efficient model
+          max_completion_tokens: 2000, // Limit output tokens
+          messages: [
+            {
+              role: 'system',
+              content: `You are a content strategist. Generate 5-8 strategic content proposals based on keyword research and SERP data. Return ONLY a JSON object with this structure: {"proposals": [{"title": "proposal title", "description": "brief description", "keywords": ["keyword1", "keyword2"], "content_type": "blog|article|guide|case_study", "priority": "high|medium|low", "estimated_effort": "1-2 weeks|2-4 weeks|1+ months"}]}`
+            },
+            {
+              role: 'user',
+              content: `Based on this keyword research with SERP metrics, create strategic content proposals:
+
+Company Context: ${JSON.stringify(companyInfo || {})}
+Solutions: ${JSON.stringify((solutions || []).map(s => s.title || s.name).slice(0, 10))}
+Keyword Data: ${JSON.stringify(enriched.slice(0, 8))}
+
+Create 5-8 strategic content proposals that leverage these keywords and align with the company's solutions. Return ONLY the JSON object.`
+            }
+          ]
+        }
       }
-    }
+    });
   });
 
   console.log('🔍 OpenAI strategy response received:', {
