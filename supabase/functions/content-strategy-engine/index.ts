@@ -421,10 +421,22 @@ async function generateAIStrategy(supabase: any, payload: any) {
 
   // 2) Ask AI (via unified proxy) to propose untapped keywords
   console.log('🤖 Calling OpenAI to generate keywords...');
+  
+  // Extract API key from payload
+  const openaiApiKey = api_keys?.openai;
+  if (!openaiApiKey) {
+    console.error('❌ No OpenAI API key provided in payload');
+    return new Response(
+      JSON.stringify({ error: 'OpenAI API key is required. Please configure your API key in Settings.' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
   const kwProxy = await supabase.functions.invoke('api-proxy', {
     body: {
       service: 'openai',
       endpoint: 'chat',
+      apiKey: openaiApiKey,
       params: {
         messages: [
           {
@@ -514,6 +526,7 @@ Return ONLY the JSON object.`
           body: {
             service: 'serp',
             endpoint: 'analyze',
+            apiKey: api_keys?.serp,
             params: {
               keyword: k.keyword,
               location,
@@ -563,6 +576,7 @@ Return ONLY the JSON object.`
     body: {
       service: 'openai',
       endpoint: 'chat',
+      apiKey: openaiApiKey,
       params: {
         messages: [
           {

@@ -592,13 +592,19 @@ class ContentStrategyService {
     const openaiKey = await getApiKey('openai');
     const serpKey = await getApiKey('serp');
 
-    // Check for required API keys
+    // Check for required API keys with detailed error messages
+    const missingKeys = [];
     if (!openaiKey) {
-      throw new Error('OpenAI API key not configured. Please add your OpenAI API key in Settings > API Settings.');
+      missingKeys.push('OpenAI API key');
+    }
+    if (!serpKey) {
+      missingKeys.push('SERP API key');
     }
 
-    if (!serpKey) {
-      throw new Error('SERP API key not configured. Please add your SERP API key in Settings > API Settings.');
+    if (missingKeys.length > 0) {
+      const errorMessage = `Missing required API keys: ${missingKeys.join(', ')}. Please configure your API keys in Settings > API Settings to enable AI strategy generation.`;
+      console.error('❌ Missing API keys:', missingKeys);
+      throw new Error(errorMessage);
     }
 
     const { data, error } = await supabase.functions.invoke('content-strategy-engine', {
@@ -616,11 +622,24 @@ class ContentStrategyService {
 
     if (error) {
       console.error('❌ Strategy generation error:', error);
-      throw new Error(`Strategy generation failed: ${error.message || 'Unknown error'}`);
+      
+      // Provide more specific error messages based on the error content
+      let errorMessage = error.message || 'Unknown error';
+      if (errorMessage.includes('API key')) {
+        errorMessage = 'API key configuration issue. Please check your OpenAI and SERP API keys in Settings > API Settings.';
+      } else if (errorMessage.includes('quota') || errorMessage.includes('rate limit')) {
+        errorMessage = 'API quota exceeded or rate limited. Please try again later or check your API plan limits.';
+      } else if (errorMessage.includes('timeout')) {
+        errorMessage = 'Request timeout. Please try again - the AI services may be experiencing high load.';
+      }
+      
+      throw new Error(`Strategy generation failed: ${errorMessage}`);
     }
 
-    if (!data.success) {
-      throw new Error(data.error || 'Strategy generation failed');
+    if (!data || !data.success) {
+      const errorMsg = data?.error || 'Strategy generation failed without specific error';
+      console.error('❌ Strategy generation failed:', errorMsg);
+      throw new Error(errorMsg);
     }
 
     console.log('✅ Strategy generation completed:', data);
