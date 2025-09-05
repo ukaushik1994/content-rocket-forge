@@ -34,9 +34,20 @@ import { SelectedProposalsSidebar } from './SelectedProposalsSidebar';
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
   goals?: any;
+  workflowMode?: 'estimated' | 'real';
+  realAnalytics?: {
+    metrics: any;
+    contentAnalytics: any[];
+    loading: boolean;
+  };
 }
 
-export const ContentStrategyEngine = ({ serpMetrics, goals }: ContentStrategyEngineProps) => {
+export const ContentStrategyEngine = ({ 
+  serpMetrics, 
+  goals, 
+  workflowMode = 'estimated',
+  realAnalytics 
+}: ContentStrategyEngineProps) => {
   const ctx = useContentStrategy();
   const { aiProposals, setAiProposals, selectedProposals, setSelectedProposals } = ctx;
   

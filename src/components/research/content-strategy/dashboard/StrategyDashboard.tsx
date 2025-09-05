@@ -21,6 +21,7 @@ import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
 import { StrategyOptimization } from '../StrategyOptimization';
 import { TrafficProgressTracker } from '../TrafficProgressTracker';
+import { RealAnalyticsDashboard } from './RealAnalyticsDashboard';
 
 interface StrategyDashboardProps {
   serpMetrics?: any;
@@ -31,9 +32,34 @@ interface StrategyDashboardProps {
     timeline: string;
     mainKeyword: string;
   };
+  workflowMode?: 'estimated' | 'real';
+  realAnalytics?: {
+    metrics: any;
+    contentAnalytics: any[];
+    loading: boolean;
+  };
 }
 
-export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetrics, goals, strategy }) => {
+export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ 
+  serpMetrics, 
+  goals, 
+  strategy, 
+  workflowMode = 'estimated',
+  realAnalytics 
+}) => {
+  // If in real analytics mode and we have real data, show the real analytics dashboard
+  if (workflowMode === 'real' && realAnalytics && !realAnalytics.loading) {
+    return (
+      <RealAnalyticsDashboard
+        metrics={realAnalytics.metrics}
+        contentAnalytics={realAnalytics.contentAnalytics}
+        goals={goals}
+        loading={realAnalytics.loading}
+      />
+    );
+  }
+
+  // Default to estimated/AI-based dashboard
   const { 
     currentStrategy, 
     calendarItems, 

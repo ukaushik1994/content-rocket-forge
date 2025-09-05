@@ -3,17 +3,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategySuggestions } from './tabs/StrategySuggestions';
 import { StrategyDashboard } from './dashboard/StrategyDashboard';
 import { GlassCard } from '@/components/ui/GlassCard';
-
 import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 import { Lightbulb, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAnalyticsConnection } from '@/hooks/useAnalyticsConnection';
+import { useRealAnalytics } from '@/hooks/useRealAnalytics';
 
 export const StrategyTabs = React.memo(() => {
   const ctx = useContentStrategyOptional();
+  const navigate = useNavigate();
+  const analyticsConnection = useAnalyticsConnection();
+  const { metrics, contentAnalytics, loading: analyticsLoading } = useRealAnalytics('30days');
+  
   if (!ctx) {
     return null;
   }
   const { currentStrategy, insights, calendarItems, pipelineItems } = ctx;
+  
+  const [workflowMode, setWorkflowMode] = React.useState<'estimated' | 'real'>('estimated');
+  const canUseRealData = analyticsConnection.hasAnyAnalytics && analyticsConnection.hasPublishedContent;
   
   // Memoize expensive calculations
   const serpMetrics = React.useMemo(() => 
@@ -46,7 +54,6 @@ export const StrategyTabs = React.memo(() => {
   };
 
   const [activeTab, setActiveTab] = React.useState<string>(getInitialTab);
-  const navigate = useNavigate();
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -113,7 +120,16 @@ export const StrategyTabs = React.memo(() => {
 
             <TabsContent value="dashboard" className="animate-fade-in">
               <div className="space-y-6">
-                <StrategyDashboard goals={goals} strategy={currentStrategy} />
+                <StrategyDashboard 
+                  goals={goals} 
+                  strategy={currentStrategy}
+                  workflowMode={workflowMode}
+                  realAnalytics={workflowMode === 'real' && canUseRealData ? {
+                    metrics,
+                    contentAnalytics,
+                    loading: analyticsLoading
+                  } : undefined}
+                />
               </div>
             </TabsContent>
           </div>
