@@ -32,7 +32,7 @@ const NavItem: React.FC<NavItemProps> = React.memo(({
       {label}
       {active && (
         <motion.span 
-          layoutId={`nav-highlight-${to}`} // Unique layoutId per item
+          layoutId={`nav-highlight-${to === '/' ? 'home' : to}`} // Use "home" for root path
           transition={{
             type: "spring",
             duration: 0.3,
