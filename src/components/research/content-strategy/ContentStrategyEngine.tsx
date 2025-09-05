@@ -1116,7 +1116,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                   </motion.div>
                 ))}
               </div>
-            ) : proposals.length > 0 ? (
+            ) : allProposals.length > 0 ? (
               <>
                 <motion.div 
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -1124,7 +1124,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                   animate={{ opacity: 1 }}
                   transition={{ staggerChildren: 0.1 }}
                 >
-                  {proposals.map((proposal, idx) => (
+                  {allProposals.map((proposal, idx) => (
                     <motion.div
                       key={proposal.primary_keyword || idx}
                       initial={{ opacity: 0, y: 20 }}
@@ -1204,15 +1204,15 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
           {['quick_win', 'high_return', 'evergreen'].map((tag) => (
             <TabsContent key={tag} value={tag} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {proposals.length > 0 ? (
-                  proposals
+                {allProposals.length > 0 ? (
+                  allProposals
                     .filter((proposal) => (proposal.priority_tag || 'evergreen') === tag)
                     .map((proposal, idx) => (
                        <ProposalCard 
                          key={proposal.primary_keyword || idx}
                          proposal={proposal}
-                         index={proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)}
-                         isSelected={selected[proposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false}
+                         index={allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)}
+                         isSelected={selected[allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false}
                           onSelectionChange={(index, isSelected) => {
                             const newSelected = { ...selected, [index]: isSelected };
                             setSelected(newSelected);
@@ -1220,7 +1220,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                             setTimeout(() => setSelectedProposals(newSelected), 50);
                           }}
                          onSendToBuilder={sendProposalToContentBuilder}
-                       />
+                        />
                     ))
                 ) : (
                   clusters
@@ -1230,13 +1230,13 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                     ))
                 )}
               </div>
-              {(proposals.length > 0 
-                ? proposals.filter((proposal) => (proposal.priority_tag || 'evergreen') === tag).length === 0
+              {(allProposals.length > 0 
+                ? allProposals.filter((proposal) => (proposal.priority_tag || 'evergreen') === tag).length === 0
                 : clusters.filter((cluster) => cluster.priority_tag === tag).length === 0
               ) && (
                 <Card className="p-8 text-center">
                   <p className="text-muted-foreground">
-                    No {tag.replace('_', ' ')} {proposals.length > 0 ? 'proposals' : 'clusters'} found
+                    No {tag.replace('_', ' ')} {allProposals.length > 0 ? 'proposals' : 'clusters'} found
                   </p>
                 </Card>
               )}
