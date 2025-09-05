@@ -145,10 +145,10 @@ const Index = () => {
         
         <Navbar />
         
-        <main className="flex-1 py-12 relative z-0">
-          <Container className="max-w-7xl">
+        <main className="flex-1 py-8 relative z-0">
+          <Container>
             <motion.div 
-              className="space-y-20" 
+              className="space-y-16" 
               initial="hidden"
               animate={isLoaded ? "visible" : "hidden"}
               variants={containerVariants}
@@ -168,12 +168,12 @@ const Index = () => {
               
               {/* Strategic Momentum Panel */}
               <motion.section variants={sectionVariants}>
-                <div className="space-y-8">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 flex items-center justify-center backdrop-blur-xl border border-white/10 shadow-glass">
-                      <div className="h-4 w-4 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue shadow-neon" />
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-neon-purple/30 to-neon-blue/30 flex items-center justify-center backdrop-blur-xl border border-white/10">
+                      <div className="h-3 w-3 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue" />
                     </div>
-                    <h2 className="text-3xl font-display font-semibold bg-gradient-to-r from-white via-white/95 to-white/85 bg-clip-text text-transparent tracking-tight">
+                    <h2 className="text-2xl font-semibold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
                       Strategic Momentum
                     </h2>
                   </div>
