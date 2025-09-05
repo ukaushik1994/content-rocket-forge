@@ -11,9 +11,10 @@ interface ProposalCardProps {
   isSelected: boolean;
   onSelectionChange: (index: number, selected: boolean) => void;
   onSendToBuilder: (proposal: any) => void;
+  showHistoricalBadge?: boolean;
 }
 
-export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, onSendToBuilder }: ProposalCardProps) => {
+export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, onSendToBuilder, showHistoricalBadge }: ProposalCardProps) => {
   const primaryKw = proposal.primary_keyword;
   const primaryMetrics = proposal.serp_data?.[primaryKw] || {};
   const estImpressions = proposal.estimated_impressions ?? Math.round((primaryMetrics.searchVolume || 0) * 0.05);
@@ -70,12 +71,24 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             </CardDescription>
           </div>
         </div>
-        <Badge 
-          variant="outline" 
-          className={`text-xs w-fit ${getPriorityColor(proposal.priority_tag || 'evergreen')}`}
-        >
-          {getPriorityLabel(proposal.priority_tag || 'evergreen')}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge 
+            variant="outline" 
+            className={`text-xs w-fit ${getPriorityColor(proposal.priority_tag || 'evergreen')}`}
+          >
+            {getPriorityLabel(proposal.priority_tag || 'evergreen')}
+          </Badge>
+          {showHistoricalBadge && (
+            <Badge variant="outline" className="text-xs text-orange-400 bg-orange-500/10 border-orange-400/30">
+              Historical
+            </Badge>
+          )}
+          {proposal.created_at && (
+            <span className="text-xs text-white/40">
+              {new Date(proposal.created_at).toLocaleDateString()}
+            </span>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-4">

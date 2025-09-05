@@ -25,15 +25,12 @@ import { aiStrategyService } from '@/services/aiStrategyService';
 import { useToast } from '@/hooks/use-toast';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
-import { StrategySessionManager } from './StrategySessionManager';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
-import { HistoricalProposalsSection } from './HistoricalProposalsSection';
-import { KeywordLibraryStats } from './KeywordLibraryStats';
-import { ProposalSelectionTracker } from './ProposalSelectionTracker';
 import { SelectedProposalsSidebar } from './SelectedProposalsSidebar';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -57,8 +54,11 @@ export const ContentStrategyEngine = ({
   
   const [clusters, setClusters] = useState<ContentCluster[]>([]);
   const [proposals, setProposals] = useState<any[]>(aiProposals || []);
+  const [historicalProposals, setHistoricalProposals] = useState<any[]>([]);
+  const [allProposals, setAllProposals] = useState<any[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>(selectedProposals || {});
   const [loading, setLoading] = useState(false);
+  const [loadingHistorical, setLoadingHistorical] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -78,11 +78,11 @@ export const ContentStrategyEngine = ({
     }
   }, [selectedProposals]);
 
-  // Calculate selection metrics
+  // Calculate selection metrics using allProposals
   const targetCount = parseInt(goals?.contentPieces) || 0;
   const selectedCount = Object.values(selected).filter(Boolean).length;
   const targetTraffic = parseInt(goals?.monthlyTraffic) || 0;
-  const estimatedTraffic = proposals
+  const estimatedTraffic = allProposals
     .filter((_, index) => selected[index])
     .reduce((sum, proposal) => {
       const primaryKw = proposal.primary_keyword;
@@ -92,7 +92,7 @@ export const ContentStrategyEngine = ({
     }, 0);
 
   const handleSelectAllProposals = () => {
-    const newSelected = proposals.reduce((acc, _, index) => {
+    const newSelected = allProposals.reduce((acc, _, index) => {
       acc[index] = true;
       return acc;
     }, {} as Record<string, boolean>);
@@ -101,9 +101,9 @@ export const ContentStrategyEngine = ({
   };
 
   const handleScheduleSelected = async () => {
-    const selectedProposals = proposals.filter((_, index) => selected[index]);
+    const selectedProposalsList = allProposals.filter((_, index) => selected[index]);
     
-    if (selectedProposals.length === 0) {
+    if (selectedProposalsList.length === 0) {
       toast({
         title: "No Proposals Selected",
         description: "Please select at least one proposal to schedule.",
@@ -114,7 +114,7 @@ export const ContentStrategyEngine = ({
 
     try {
       const result = await smartCalendarScheduling.autoScheduleProposals(
-        selectedProposals.map(proposal => ({
+        selectedProposalsList.map(proposal => ({
           id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
           title: proposal.title,
           description: proposal.description,
@@ -132,6 +132,12 @@ export const ContentStrategyEngine = ({
           priorityFirst: true
         }
       );
+
+      // Clear selections after scheduling
+      if (result.scheduled > 0) {
+        setSelected({});
+        setSelectedProposals({});
+      }
 
       toast({
         title: "Calendar Scheduling Complete",
@@ -186,7 +192,21 @@ export const ContentStrategyEngine = ({
 
   useEffect(() => {
     loadClusters();
+    loadHistoricalProposals();
   }, []);
+
+  // Combine current and historical proposals
+  useEffect(() => {
+    const combined = [...(proposals || []), ...(historicalProposals || [])];
+    // Remove duplicates based on primary_keyword and title
+    const unique = combined.filter((proposal, index, arr) => 
+      arr.findIndex(p => 
+        p.primary_keyword === proposal.primary_keyword && 
+        p.title === proposal.title
+      ) === index
+    );
+    setAllProposals(unique);
+  }, [proposals, historicalProposals]);
 
   const loadClusters = async () => {
     try {
@@ -202,6 +222,51 @@ export const ContentStrategyEngine = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadHistoricalProposals = async () => {
+    try {
+      setLoadingHistorical(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get all historical proposals from ai_strategy_proposals table
+      const { data: proposalsData, error } = await supabase
+        .from('ai_strategy_proposals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading historical proposals:', error);
+        return;
+      }
+
+      // Format proposals data for display
+      const formattedProposals = (proposalsData || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        primary_keyword: item.primary_keyword,
+        related_keywords: item.related_keywords || [],
+        keywords: item.related_keywords || [], // Use related_keywords as keywords fallback
+        priority_tag: item.priority_tag,
+        content_type: item.content_type,
+        estimated_impressions: item.estimated_impressions,
+        serp_data: item.serp_data || {},
+        suggested_outline: item.content_suggestions || [], // Use content_suggestions as outline fallback
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        is_historical: true
+      }));
+
+      setHistoricalProposals(formattedProposals);
+      console.log(`✅ Loaded ${formattedProposals.length} historical proposals`);
+    } catch (error) {
+      console.error('Error loading historical proposals:', error);
+    } finally {
+      setLoadingHistorical(false);
     }
   };
 
@@ -667,20 +732,58 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         </motion.div>
       )}
 
-      {/* Proposal Selection Tracker */}
-      {proposals.length > 0 && targetCount > 0 && (
-        <ProposalSelectionTracker
-          totalProposals={proposals.length}
-          selectedCount={selectedCount}
-          targetCount={targetCount}
-          estimatedTraffic={estimatedTraffic}
-          targetTraffic={targetTraffic}
-          onSelectAll={handleSelectAllProposals}
-          onClearSelection={handleClearSelection}
-          onLoadMore={loadMoreProposals}
-          loadingMore={loadingMore}
-          onScheduleSelected={handleScheduleSelected}
-        />
+      {/* Selection Summary & Actions */}
+      {allProposals.length > 0 && (
+        <div className="mb-6">
+          <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="text-white">
+                    <div className="text-lg font-semibold">Content Clusters</div>
+                    <div className="text-sm text-white/60">
+                      {allProposals.length} total proposals • {selectedCount} selected
+                    </div>
+                  </div>
+                  {selectedCount > 0 && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Badge className="bg-green-500/20 text-green-400 border-green-400/30">
+                        Est. Traffic: {estimatedTraffic.toLocaleString()}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleSelectAllProposals}
+                    variant="outline"
+                    size="sm"
+                    className="border-white/20 text-white/80 hover:bg-white/10"
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    onClick={handleClearSelection}
+                    variant="outline"
+                    size="sm"
+                    className="border-white/20 text-white/80 hover:bg-white/10"
+                  >
+                    Clear
+                  </Button>
+                  {selectedCount > 0 && (
+                    <Button
+                      onClick={handleScheduleSelected}
+                      className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Add to Calendar ({selectedCount})
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Enhanced Header */}
@@ -714,11 +817,46 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         </div>
       </div>
 
-      {/* Strategy Session Manager */}
-      <StrategySessionManager 
-        onStrategyGenerated={setProposals} 
-        goals={goals}
-      />
+      {/* Content Clusters Grid - Show ALL proposals as tiles */}
+      {allProposals.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-white">All Content Clusters</h3>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-white/80 border-white/20">
+                {allProposals.length} proposals
+              </Badge>
+              {loadingHistorical && (
+                <RefreshCw className="h-4 w-4 text-white/60 animate-spin" />
+              )}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allProposals.map((proposal, index) => (
+              <motion.div
+                key={`${proposal.id || proposal.primary_keyword}-${index}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <ProposalCard
+                  proposal={proposal}
+                  index={index}
+                  isSelected={selected[index] || false}
+                  onSelectionChange={(idx, checked) => {
+                    const newSelected = { ...selected, [idx]: checked };
+                    setSelected(newSelected);
+                    setSelectedProposals(newSelected);
+                  }}
+                  onSendToBuilder={() => sendProposalToContentBuilder(proposal)}
+                  showHistoricalBadge={proposal.is_historical}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Strategy Proposals or Clusters Display */}
       {/* Strategy Overview */}
@@ -737,12 +875,12 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-white">
-                  {proposals.length > 0 ? proposals.length : clusters.length}
-                </div>
-                <p className="text-xs text-white/60 mt-1">
-                  Available options
-                </p>
+                 <div className="text-2xl font-bold text-white">
+                   {allProposals.length > 0 ? allProposals.length : clusters.length}
+                 </div>
+                 <p className="text-xs text-white/60 mt-1">
+                   Available content clusters
+                 </p>
               </CardContent>
             </Card>
           </motion.div>
@@ -760,17 +898,17 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-white">
-                  {proposals.length > 0 
-                    ? proposals.reduce((sum, p) => {
-                        const primaryKw = p.primary_keyword;
-                        const metrics = p.serp_data?.[primaryKw] || {};
-                        const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
-                        return sum + est;
-                      }, 0).toLocaleString()
-                    : clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()
-                  }
-                </div>
+                 <div className="text-2xl font-bold text-white">
+                   {allProposals.length > 0 
+                     ? allProposals.reduce((sum, p) => {
+                         const primaryKw = p.primary_keyword;
+                         const metrics = p.serp_data?.[primaryKw] || {};
+                         const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+                         return sum + est;
+                       }, 0).toLocaleString()
+                     : clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()
+                   }
+                 </div>
                 <p className="text-xs text-white/60 mt-1">
                   Potential reach
                 </p>
@@ -1033,7 +1171,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
 
       {/* Selected Proposals Sidebar */}
       <SelectedProposalsSidebar
-        proposals={proposals}
+        proposals={allProposals}
         selected={selected}
         onSelectionChange={(index, isSelected) => {
           const newSelected = { ...selected, [index]: isSelected };
@@ -1044,31 +1182,6 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
-
-      {/* Historical Proposals Section */}
-      <div className="mt-12">
-        <HistoricalProposalsSection 
-          onReuse={(proposal) => {
-            // Add proposal back to current proposals for reuse
-            const reuseProposal = {
-              ...proposal,
-              id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-')
-            };
-            setProposals(prev => [...prev, reuseProposal]);
-            setAiProposals(prev => [...prev, reuseProposal]);
-            
-            toast({
-              title: "Proposal Added",
-              description: `"${proposal.title}" has been added to current proposals`,
-            });
-          }}
-        />
-      </div>
-
-      {/* Keyword Library Integration Stats */}
-      <div className="mt-8">
-        <KeywordLibraryStats />
-      </div>
     </div>
   );
 }
