@@ -438,6 +438,8 @@ async function generateAIStrategy(supabase: any, payload: any) {
       endpoint: 'chat',
       apiKey: openaiApiKey,
       params: {
+        model: 'gpt-4.1-mini-2025-04-14', // More efficient model
+        max_completion_tokens: 1000, // Reduce token usage
         messages: [
           {
             role: 'system',
@@ -445,7 +447,7 @@ async function generateAIStrategy(supabase: any, payload: any) {
           },
           {
             role: 'user',
-            content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords for content strategy.
+            content: `Given this company context and solutions, propose 8 high-opportunity, relevant, untapped keywords for content strategy.
 
 Company: ${JSON.stringify(companyInfo || {})}
 Solutions: ${JSON.stringify(solutions || [])}
@@ -506,7 +508,7 @@ Return ONLY the JSON object.`
     kwList = [];
   }
   
-  kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 20);
+  kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 8); // Reduced from 20 to 8
   
   if (kwList.length === 0) {
     console.error('❌ No valid keywords generated');
@@ -518,9 +520,16 @@ Return ONLY the JSON object.`
   const serpMap: Record<string, any> = {};
   console.log('🔍 Fetching SERP data for keywords...');
   
-  for (const group of chunk(kwList, 5)) {
-    const results = await Promise.all(group.map(async (k) => {
-      try {
+  for (const group of chunk(kwList, 3)) { // Reduced batch size from 5 to 3
+    console.log(`🔄 Processing batch of ${group.length} keywords with rate limiting...`);
+    
+    const results = await Promise.all(group.map(async (k, index) => {
+      // Add small delay between requests within batch
+      if (index > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      return await retryWithBackoff(async () => {
         console.log(`🔍 Fetching SERP for: ${k.keyword}`);
         const resp = await supabase.functions.invoke('api-proxy', {
           body: {
@@ -542,14 +551,20 @@ Return ONLY the JSON object.`
         
         console.log(`✅ SERP data received for "${k.keyword}"`);
         return { keyword: k.keyword, data: resp.data };
-      } catch (error) {
-        console.error(`❌ Error fetching SERP for "${k.keyword}":`, error);
-        return { keyword: k.keyword, data: null };
-      }
+      });
     }));
     
-    for (const r of results) { 
-      serpMap[r.keyword] = r.data;
+    // Process results
+    results.forEach(result => {
+      if (result?.data) {
+        serpMap[result.keyword] = result.data;
+      }
+    });
+    
+    // Add delay between batches to respect rate limits
+    if (kwList.indexOf(group[group.length - 1]) < kwList.length - 1) {
+      console.log('⏳ Waiting 2s before next batch to respect rate limits...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 
@@ -578,20 +593,8 @@ Return ONLY the JSON object.`
       endpoint: 'chat',
       apiKey: openaiApiKey,
       params: {
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert content strategist. Return ONLY a JSON object with the specified structure.'
-          },
-          {
-            role: 'user',
-            content: `Create a comprehensive content strategy from these keywords with metrics. Group into 5-8 strategic proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.
-
-Goals: ${JSON.stringify(goals)}
-Data: ${JSON.stringify(enriched).slice(0, 12000)}`
-          }
-        ],
-        max_completion_tokens: 3000
+        model: 'gpt-4.1-mini-2025-04-14', // More efficient model
+        max_completion_tokens: 2000, // Limit output tokens
       }
     }
   });

@@ -623,17 +623,22 @@ class ContentStrategyService {
     if (error) {
       console.error('❌ Strategy generation error:', error);
       
-      // Provide more specific error messages based on the error content
+      // Enhanced error handling for different error types
       let errorMessage = error.message || 'Unknown error';
-      if (errorMessage.includes('API key')) {
+      let shouldRetry = false;
+      
+      if (errorMessage.includes('429') || errorMessage.includes('rate limit') || errorMessage.includes('Rate limit')) {
+        errorMessage = 'AI service rate limit reached. The system has automatically reduced request size and added delays. Please try again in a moment.';
+        shouldRetry = true;
+      } else if (errorMessage.includes('API key')) {
         errorMessage = 'API key configuration issue. Please check your OpenAI and SERP API keys in Settings > API Settings.';
-      } else if (errorMessage.includes('quota') || errorMessage.includes('rate limit')) {
-        errorMessage = 'API quota exceeded or rate limited. Please try again later or check your API plan limits.';
+      } else if (errorMessage.includes('quota') || errorMessage.includes('exceeded')) {
+        errorMessage = 'API quota exceeded. Please check your API plan limits or try again later.';
       } else if (errorMessage.includes('timeout')) {
-        errorMessage = 'Request timeout. Please try again - the AI services may be experiencing high load.';
+        errorMessage = 'Request timeout due to high AI service load. Please try again.';
       }
       
-      throw new Error(`Strategy generation failed: ${errorMessage}`);
+      throw new Error(`${errorMessage}${shouldRetry ? ' (Retry recommended)' : ''}`);
     }
 
     if (!data || !data.success) {

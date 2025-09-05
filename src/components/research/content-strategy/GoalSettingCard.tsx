@@ -11,6 +11,7 @@ import { SerpMetricsDisplay } from './SerpMetricsDisplay';
 import { GoalProgressIndicator } from './GoalProgressIndicator';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { StrategyGenerationProgress } from './StrategyGenerationProgress';
 export const GoalSettingCard = React.memo(() => {
   const {
     user
@@ -161,7 +162,56 @@ export const GoalSettingCard = React.memo(() => {
         
         <CardContent className="relative z-10 space-y-8">
           {/* Keyword Analysis Section */}
-          
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Search className="h-5 w-5 text-primary" />
+              <Label className="text-base font-medium">SERP Analysis</Label>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="mainKeyword" className="text-sm font-medium">Main Keyword</Label>
+                <Input
+                  id="mainKeyword"
+                  placeholder="e.g., content marketing strategy"
+                  value={goals.mainKeyword}
+                  onChange={(e) => setGoals({ ...goals, mainKeyword: e.target.value })}
+                  className="bg-glass border-white/10 h-12 text-base focus:border-primary transition-all"
+                />
+              </div>
+              
+              <Button
+                onClick={handleAnalyzeKeyword}
+                disabled={isGenerating || !goals.mainKeyword.trim()}
+                className="h-12 bg-gradient-to-r from-primary/80 to-blue-500/80 hover:from-primary hover:to-blue-500 transition-all duration-300"
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Analyze SERP
+                  </>
+                )}
+              </Button>
+              
+              <div className="text-xs text-white/60">
+                Get search volume, competition & opportunity scores
+              </div>
+            </div>
+          </div>
+
+          {/* Strategy Generation Progress */}
+          {isGenerating && (
+            <StrategyGenerationProgress 
+              isGenerating={isGenerating} 
+              currentStep="keywords"
+              progress={25}
+            />
+          )}
 
           {/* SERP Metrics Display */}
           {serpMetrics && <SerpMetricsDisplay metrics={serpMetrics} />}
