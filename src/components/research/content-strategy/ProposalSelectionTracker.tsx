@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Circle, Target, TrendingUp, Plus, ArrowDown } from 'lucide-react';
+import { CheckCircle2, Circle, Target, TrendingUp, Plus, ArrowDown, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ProposalSelectionTrackerProps {
@@ -16,6 +16,7 @@ interface ProposalSelectionTrackerProps {
   onClearSelection: () => void;
   onLoadMore: () => void;
   loadingMore: boolean;
+  onScheduleSelected?: () => void;
 }
 
 export const ProposalSelectionTracker = ({
@@ -27,7 +28,8 @@ export const ProposalSelectionTracker = ({
   onSelectAll,
   onClearSelection,
   onLoadMore,
-  loadingMore
+  loadingMore,
+  onScheduleSelected
 }: ProposalSelectionTrackerProps) => {
   const selectionProgress = totalProposals > 0 ? (selectedCount / totalProposals) * 100 : 0;
   const goalProgress = targetCount > 0 ? (selectedCount / targetCount) * 100 : 0;
@@ -164,14 +166,46 @@ export const ProposalSelectionTracker = ({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="p-3 bg-green-500/10 rounded-lg border border-green-500/20"
+              className="space-y-3"
             >
-              <div className="flex items-center gap-2 text-green-400 text-sm">
-                <ArrowDown className="h-4 w-4" />
-                <span>
-                  {selectedCount} proposal{selectedCount !== 1 ? 's' : ''} selected. 
-                  Go to Dashboard to track progress or Pipeline to start content creation.
-                </span>
+              <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                <div className="flex items-center gap-2 text-green-400 text-sm mb-3">
+                  <ArrowDown className="h-4 w-4" />
+                  <span>
+                    {selectedCount} proposal{selectedCount !== 1 ? 's' : ''} selected.
+                  </span>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {onScheduleSelected && (
+                    <Button
+                      onClick={onScheduleSelected}
+                      size="sm"
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0"
+                    >
+                      <Calendar className="h-3 w-3 mr-1" />
+                      Schedule to Calendar
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
+                    onClick={() => {
+                      // Navigate to pipeline - this would be handled by parent
+                      console.log('Navigate to pipeline');
+                    }}
+                  >
+                    <Target className="h-3 w-3 mr-1" />
+                    View Pipeline
+                  </Button>
+                </div>
+                
+                <p className="text-xs text-green-300/80 mt-2">
+                  Selected proposals will be automatically added to your pipeline and can be scheduled to your calendar.
+                </p>
               </div>
             </motion.div>
           )}

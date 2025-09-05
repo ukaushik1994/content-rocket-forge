@@ -30,6 +30,8 @@ import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
+import { HistoricalProposalsSection } from './HistoricalProposalsSection';
+import { KeywordLibraryStats } from './KeywordLibraryStats';
 import { ProposalSelectionTracker } from './ProposalSelectionTracker';
 import { SelectedProposalsSidebar } from './SelectedProposalsSidebar';
 
@@ -96,6 +98,54 @@ export const ContentStrategyEngine = ({
     }, {} as Record<string, boolean>);
     setSelected(newSelected);
     setSelectedProposals(newSelected);
+  };
+
+  const handleScheduleSelected = async () => {
+    const selectedProposals = proposals.filter((_, index) => selected[index]);
+    
+    if (selectedProposals.length === 0) {
+      toast({
+        title: "No Proposals Selected",
+        description: "Please select at least one proposal to schedule.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const result = await smartCalendarScheduling.autoScheduleProposals(
+        selectedProposals.map(proposal => ({
+          id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
+          title: proposal.title,
+          description: proposal.description,
+          primary_keyword: proposal.primary_keyword,
+          priority_tag: proposal.priority_tag,
+          content_type: proposal.content_type,
+          estimated_impressions: proposal.estimated_impressions
+        })),
+        {
+          startDate: new Date(),
+          timelineWeeks: 12,
+          contentPiecesPerWeek: 2,
+          avoidWeekends: true,
+          spreadEvenly: true,
+          priorityFirst: true
+        }
+      );
+
+      toast({
+        title: "Calendar Scheduling Complete",
+        description: `Successfully scheduled ${result.scheduled} content pieces. ${result.errors > 0 ? `${result.errors} failed to schedule.` : ''}`,
+        variant: result.scheduled > 0 ? "default" : "destructive"
+      });
+    } catch (error) {
+      console.error('Error scheduling to calendar:', error);
+      toast({
+        title: "Scheduling Failed",
+        description: "Failed to schedule proposals to calendar. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleClearSelection = () => {
@@ -181,12 +231,32 @@ const generateBlueprint = async () => {
     
     // Take the generated proposals
     const generatedProposals = result.proposals || [];
+    
+    // Auto-save all keywords from proposals to library
+    if (generatedProposals.length > 0) {
+      try {
+        console.log('🔄 Auto-saving keywords from proposals...');
+        await proposalKeywordSync.autoSaveKeywordsFromProposals(generatedProposals);
+      } catch (error) {
+        console.error('⚠️ Error auto-saving keywords:', error);
+        // Don't block the main flow for keyword saving errors
+      }
+      
+      // Save proposals to history for future reference
+      try {
+        await proposalKeywordSync.saveProposalsToHistory(generatedProposals);
+      } catch (error) {
+        console.error('⚠️ Error saving proposals to history:', error);
+        // Don't block the main flow for history saving errors
+      }
+    }
+    
     setProposals(generatedProposals);
     setAiProposals(generatedProposals);
     
     toast({ 
       title: `${generatedProposals.length} Strategy Proposals Ready`, 
-      description: `Generated ${generatedProposals.length} proposals based on your traffic goal.` 
+      description: `Generated ${generatedProposals.length} proposals with auto-saved keywords to library` 
     });
     
     finishProgress();
@@ -284,6 +354,20 @@ const loadMoreProposals = async () => {
         
         // Append new proposals to existing ones
         const updatedProposals = [...proposals, ...newProposals];
+        console.log('📈 Updating proposals:', {
+          before: proposals.length,
+          after: updatedProposals.length,
+          new: newProposals.length,
+          filtered: result.proposals.length - newProposals.length
+        });
+        
+        setProposals(updatedProposals);
+        setAiProposals(updatedProposals);
+        
+        toast({
+          title: 'New Proposals Generated',
+          description: `Found ${newProposals.length} additional strategy proposals with auto-saved keywords`
+        });
         console.log('📈 Updating proposals:', {
           before: proposals.length,
           after: updatedProposals.length,
@@ -595,6 +679,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
           onClearSelection={handleClearSelection}
           onLoadMore={loadMoreProposals}
           loadingMore={loadingMore}
+          onScheduleSelected={handleScheduleSelected}
         />
       )}
 
@@ -959,6 +1044,31 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
+
+      {/* Historical Proposals Section */}
+      <div className="mt-12">
+        <HistoricalProposalsSection 
+          onReuse={(proposal) => {
+            // Add proposal back to current proposals for reuse
+            const reuseProposal = {
+              ...proposal,
+              id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-')
+            };
+            setProposals(prev => [...prev, reuseProposal]);
+            setAiProposals(prev => [...prev, reuseProposal]);
+            
+            toast({
+              title: "Proposal Added",
+              description: `"${proposal.title}" has been added to current proposals`,
+            });
+          }}
+        />
+      </div>
+
+      {/* Keyword Library Integration Stats */}
+      <div className="mt-8">
+        <KeywordLibraryStats />
+      </div>
     </div>
   );
 }
