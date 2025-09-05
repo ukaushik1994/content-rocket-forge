@@ -103,8 +103,6 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
         setInitializationError('Strategy proposal is missing primary keyword');
         return;
       }
-      
-      
     }
   }, [open, proposal]);
 
@@ -113,99 +111,46 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     return <>{children}</>;
   };
 
-  // Context-aware navigation with enhanced validation
-  const NavigationController = () => {
-    const { state } = useContentBuilder();
+  // Navigation validation logic
+  const canProceedToStep = (step: number, state: any): boolean => {
+    console.log('Checking step', step, 'with state:', {
+      selectedSolution: !!state.selectedSolution,
+      mainKeyword: !!state.mainKeyword,
+      outlineLength: state.outline.length,
+      serpSelectionsLength: state.serpSelections.length,
+      hasContent: !!state.content
+    });
     
-    const canProceedToStep = (step: number): boolean => {
-      console.log('Checking step', step, 'with state:', {
-        selectedSolution: !!state.selectedSolution,
-        mainKeyword: !!state.mainKeyword,
-        outlineLength: state.outline.length,
-        serpSelectionsLength: state.serpSelections.length,
-        hasContent: !!state.content
-      });
-      
-      switch (step) {
-        case 0: return true; // Always can access solution selection
-        case 1: return !!state.selectedSolution || !!proposal; // Need solution selected OR have proposal for SERP analysis  
-        case 2: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword); // Need solution/proposal and keyword for outline generation
-        case 3: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (state.outline.length > 0 || state.serpSelections.length > 0); // Need solution/proposal, keyword and some content structure
-        case 4: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (!!state.content || state.outline.length > 0); // Need solution/proposal, keyword and generated content or outline
-        default: return false;
-      }
-    };
+    switch (step) {
+      case 0: return true; // Always can access solution selection
+      case 1: return !!state.selectedSolution || !!proposal; // Need solution selected OR have proposal for SERP analysis  
+      case 2: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword); // Need solution/proposal and keyword for outline generation
+      case 3: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (state.outline.length > 0 || state.serpSelections.length > 0); // Need solution/proposal, keyword and some content structure
+      case 4: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (!!state.content || state.outline.length > 0); // Need solution/proposal, keyword and generated content or outline
+      default: return false;
+    }
+  };
 
-    const getStepRequirement = (step: number): string => {
-      const hasSolution = !!state.selectedSolution || !!proposal;
-      const hasKeyword = !!state.mainKeyword || !!proposal?.primary_keyword;
-      
-      switch (step) {
-        case 1: return hasSolution ? 'Ready for SERP analysis' : 'Please select a solution first';
-        case 2: return hasKeyword ? 'Ready to generate outline' : hasSolution ? 'Primary keyword will be set automatically' : 'Select a solution first';
-        case 3: return (state.outline.length > 0 || state.serpSelections.length > 0) ? 'Ready to generate content' : 'Complete outline generation first';
-        case 4: return (state.content || state.outline.length > 0) ? 'Ready to save content' : 'Generate content first';
-        default: return 'Step available';
-      }
-    };
-
-    return { canProceedToStep, getStepRequirement };
+  const getStepRequirement = (step: number, state: any): string => {
+    const hasSolution = !!state.selectedSolution || !!proposal;
+    const hasKeyword = !!state.mainKeyword || !!proposal?.primary_keyword;
+    
+    switch (step) {
+      case 1: return hasSolution ? 'Ready for SERP analysis' : 'Please select a solution first';
+      case 2: return hasKeyword ? 'Ready to generate outline' : hasSolution ? 'Primary keyword will be set automatically' : 'Select a solution first';
+      case 3: return (state.outline.length > 0 || state.serpSelections.length > 0) ? 'Ready to generate content' : 'Complete outline generation first';
+      case 4: return (state.content || state.outline.length > 0) ? 'Ready to save content' : 'Generate content first';
+      default: return 'Step available';
+    }
   };
 
   const handleNext = () => {
-    const { state } = useContentBuilder();
-    const { canProceedToStep, getStepRequirement } = NavigationController();
-    
-    console.log('Next clicked, current step:', currentStep, 'selected solution:', state.selectedSolution);
-    
     if (currentStep < STEPS.length - 1) {
       const nextStep = currentStep + 1;
-      
-      // Special handling for solution selection step (0 -> 1)
-      // Use a timeout to allow React state to update after solution selection
-      if (currentStep === 0) {
-        setTimeout(() => {
-          const canProceed = canProceedToStep(nextStep);
-          const requirement = getStepRequirement(nextStep);
-          
-          console.log('After timeout - Can proceed to step', nextStep, ':', canProceed, 'Selected solution:', state.selectedSolution);
-          
-          if (canProceed) {
-            setCurrentStep(nextStep);
-            toast(`Moved to ${STEPS[nextStep]?.title || `Step ${nextStep + 1}`}`, { 
-              description: 'Step completed successfully' 
-            });
-          } else {
-            toast(`Cannot proceed to ${STEPS[nextStep]?.title}`, { 
-              description: requirement,
-              action: {
-                label: 'Got it',
-                onClick: () => {}
-              }
-            });
-          }
-        }, 100);
-      } else {
-        const canProceed = canProceedToStep(nextStep);
-        const requirement = getStepRequirement(nextStep);
-        
-        console.log('Can proceed to step', nextStep, ':', canProceed, 'Requirement:', requirement);
-        
-        if (canProceed) {
-          setCurrentStep(nextStep);
-          toast(`Moved to ${STEPS[nextStep]?.title || `Step ${nextStep + 1}`}`, { 
-            description: 'Step completed successfully' 
-          });
-        } else {
-          toast(`Cannot proceed to ${STEPS[nextStep]?.title}`, { 
-            description: requirement,
-            action: {
-              label: 'Got it',
-              onClick: () => {}
-            }
-          });
-        }
-      }
+      setCurrentStep(nextStep);
+      toast(`Moved to ${STEPS[nextStep]?.title || `Step ${nextStep + 1}`}`, { 
+        description: 'Step completed successfully' 
+      });
     }
   };
 
