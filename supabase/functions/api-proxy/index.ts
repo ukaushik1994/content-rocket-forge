@@ -1988,7 +1988,35 @@ async function chatWithOpenAI(apiKey: string, params: any) {
   try {
     console.log('💬 Chat request with OpenAI');
     
-    const { model = 'gpt-4.1-2025-04-14', messages, temperature = 0.7, maxTokens = 2000 } = params;
+    const { 
+      model = 'gpt-4.1-2025-04-14', 
+      messages, 
+      temperature, 
+      maxTokens = 2000, 
+      max_tokens, 
+      max_completion_tokens 
+    } = params;
+
+    // Handle newer model parameter requirements
+    const isNewerModel = model.includes('gpt-5') || model.includes('gpt-4.1') || model.includes('o3') || model.includes('o4');
+    
+    const requestBody: any = {
+      model,
+      messages
+    };
+
+    // For newer models, use max_completion_tokens and no temperature
+    if (isNewerModel) {
+      requestBody.max_completion_tokens = max_completion_tokens || maxTokens || max_tokens || 2000;
+      console.log(`📝 Using newer model ${model} with max_completion_tokens: ${requestBody.max_completion_tokens}`);
+    } else {
+      // For older models, use max_tokens and temperature
+      requestBody.max_tokens = max_tokens || maxTokens || 2000;
+      if (temperature !== undefined) {
+        requestBody.temperature = temperature;
+      }
+      console.log(`📝 Using legacy model ${model} with max_tokens: ${requestBody.max_tokens}, temperature: ${requestBody.temperature}`);
+    }
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -1996,22 +2024,28 @@ async function chatWithOpenAI(apiKey: string, params: any) {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_tokens: maxTokens,
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error(`❌ OpenAI chat error: ${errorData.error?.message || response.statusText}`);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+      console.error(`❌ OpenAI chat error (${response.status}):`, errorData);
+      
+      // Provide specific error messages for common OpenAI API issues
+      let errorMessage = errorData.error?.message || response.statusText;
+      if (errorData.error?.type === 'invalid_request_error') {
+        if (errorMessage.includes('temperature')) {
+          errorMessage = `Model ${requestBody.model} does not support temperature parameter. Please use a compatible model.`;
+        } else if (errorMessage.includes('max_tokens')) {
+          errorMessage = `Model ${requestBody.model} requires max_completion_tokens instead of max_tokens parameter.`;
+        }
+      }
+      
+      throw new Error(`OpenAI API error: ${errorMessage}`);
     }
 
     const data = await response.json();
-    console.log(`📥 OpenAI chat response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
+    console.log(`📥 OpenAI response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
     
     return new Response(
       JSON.stringify({ 

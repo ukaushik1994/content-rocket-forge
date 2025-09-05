@@ -423,16 +423,17 @@ async function generateAIStrategy(supabase: any, payload: any) {
   console.log('🤖 Calling OpenAI to generate keywords...');
   const kwProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      provider: 'openai',
-      operation: 'chat',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a content strategist specializing in SEO keyword research. Generate strategic keywords based on the user's goals and company context. Return ONLY a JSON object with this structure: {"keywords": [{"keyword": "example keyword", "intent": "informational|commercial|transactional|navigational"}]}`
-        },
-        {
-          role: 'user',
-          content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords for content strategy.
+      service: 'openai',
+      endpoint: 'chat',
+      params: {
+        messages: [
+          {
+            role: 'system',
+            content: `You are a content strategist specializing in SEO keyword research. Generate strategic keywords based on the user's goals and company context. Return ONLY a JSON object with this structure: {"keywords": [{"keyword": "example keyword", "intent": "informational|commercial|transactional|navigational"}]}`
+          },
+          {
+            role: 'user',
+            content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords for content strategy.
 
 Company: ${JSON.stringify(companyInfo || {})}
 Solutions: ${JSON.stringify(solutions || [])}
@@ -440,10 +441,10 @@ Recent Content Titles: ${(recentContent || []).map((c: any) => c.title).slice(0,
 Goals: ${JSON.stringify(goals)}
 
 Return ONLY the JSON object.`
-        }
-      ],
-      temperature: 0.3,
-      maxTokens: 1500
+          }
+        ],
+        max_completion_tokens: 1500
+      }
     }
   });
 
@@ -511,11 +512,13 @@ Return ONLY the JSON object.`
         console.log(`🔍 Fetching SERP for: ${k.keyword}`);
         const resp = await supabase.functions.invoke('api-proxy', {
           body: {
-            provider: 'serp',
-            operation: 'analyze',
-            keyword: k.keyword,
-            location,
-            language: 'en'
+            service: 'serp',
+            endpoint: 'analyze',
+            params: {
+              keyword: k.keyword,
+              location,
+              language: 'en'
+            }
           }
         });
         
@@ -558,23 +561,24 @@ Return ONLY the JSON object.`
   console.log('🎯 Generating content strategy from enriched data...');
   const stratProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      provider: 'openai',
-      operation: 'chat',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert content strategist. Return ONLY a JSON object with the specified structure.'
-        },
-        {
-          role: 'user',
-          content: `Create a comprehensive content strategy from these keywords with metrics. Group into 5-8 strategic proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.
+      service: 'openai',
+      endpoint: 'chat',
+      params: {
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert content strategist. Return ONLY a JSON object with the specified structure.'
+          },
+          {
+            role: 'user',
+            content: `Create a comprehensive content strategy from these keywords with metrics. Group into 5-8 strategic proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.
 
 Goals: ${JSON.stringify(goals)}
 Data: ${JSON.stringify(enriched).slice(0, 12000)}`
-        }
-      ],
-      temperature: 0.2,
-      maxTokens: 3000
+          }
+        ],
+        max_completion_tokens: 3000
+      }
     }
   });
 
