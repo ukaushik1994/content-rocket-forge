@@ -667,11 +667,41 @@ Create 5-8 strategic content proposals that leverage these keywords and align wi
   const withSerp = proposals.map((p) => {
     const kws = (p.keywords || []).map((k: any) => (typeof k === 'string' ? { keyword: k } : k));
     const estImpr = kws.reduce((sum: number, k: any) => sum + ((serpMap[k.keyword]?.searchVolume || 0) * 0.05), 0);
+    
+    // Calculate metrics for priority classification
+    const totalVolume = kws.reduce((sum: number, k: any) => sum + (serpMap[k.keyword]?.searchVolume || 0), 0);
+    const avgDifficulty = kws.length > 0 
+      ? kws.reduce((sum: number, k: any) => sum + (serpMap[k.keyword]?.keywordDifficulty || 0), 0) / kws.length 
+      : 0;
+    
+    // Apply expert classification rules
+    let priorityTag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority' = 'evergreen';
+    
+    // Quick Wins: Low difficulty + decent volume (easy to rank, good traffic potential)
+    if (avgDifficulty <= 35 && totalVolume >= 100 && totalVolume <= 5000) {
+      priorityTag = 'quick_win';
+    } 
+    // High Return: High volume regardless of difficulty (big bets for major impact)
+    else if (totalVolume >= 1000) {
+      priorityTag = 'high_return';
+    } 
+    // Low Priority: Very low volume or very high difficulty with low volume
+    else if (totalVolume < 100 || (avgDifficulty > 70 && totalVolume < 500)) {
+      priorityTag = 'low_priority';
+    }
+    // Evergreen: Everything else (steady, consistent opportunities)
+    
     return { 
       ...p, 
       keywords: kws, 
       serp_data: serpMap, 
       estimated_impressions: Math.round(estImpr),
+      priority_tag: priorityTag,
+      metrics: {
+        total_volume: totalVolume,
+        avg_difficulty: Math.round(avgDifficulty),
+        opportunity_score: totalVolume > 0 ? Math.round((totalVolume / Math.max(avgDifficulty, 1)) * 10) / 10 : 0
+      },
       id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       generated_at: new Date().toISOString()
     };
