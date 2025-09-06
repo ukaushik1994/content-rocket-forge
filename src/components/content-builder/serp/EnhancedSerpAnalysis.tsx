@@ -24,11 +24,13 @@ import { toast } from 'sonner';
 interface EnhancedSerpAnalysisProps {
   keyword: string;
   onDataUpdate?: (data: EnhancedSerpResult) => void;
+  proposalData?: any;
 }
 
 export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
   keyword,
-  onDataUpdate
+  onDataUpdate,
+  proposalData
 }) => {
   const { state, dispatch } = useContentBuilder();
   const [data, setData] = useState<EnhancedSerpResult | null>(null);
@@ -37,6 +39,12 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
 
   // Get selected count from context
   const selectedCount = state.serpSelections.filter(item => item.selected).length;
+
+  console.log('🔍 EnhancedSerpAnalysis init:', {
+    keyword,
+    hasProposalData: !!proposalData,
+    proposalDataKeys: proposalData ? Object.keys(proposalData) : 'none'
+  });
 
   const sectionConfigs = [
     {
@@ -106,9 +114,151 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
 
   useEffect(() => {
     if (keyword) {
-      fetchData();
+      // Check if we have proposal data first
+      if (proposalData && !data) {
+        console.log('📥 Using proposal data instead of API call...');
+        loadProposalData();
+      } else {
+        fetchData();
+      }
     }
-  }, [keyword]);
+  }, [keyword, proposalData]);
+
+  const loadProposalData = () => {
+    try {
+      const targetKeyword = keyword;
+      let serpDataEntry = proposalData[targetKeyword] || Object.values(proposalData)[0];
+      
+      if (serpDataEntry) {
+        console.log('🔄 Converting proposal SERP data for display...');
+        // Convert to EnhancedSerpResult format
+        const convertedData: EnhancedSerpResult = {
+          keyword: serpDataEntry.keyword || targetKeyword,
+          searchVolume: serpDataEntry.searchVolume || 1000,
+          keywordDifficulty: serpDataEntry.keywordDifficulty || 50,
+          competitionScore: serpDataEntry.competitionScore || 0.5,
+          keywords: serpDataEntry.keywords || [],
+          contentGaps: serpDataEntry.contentGaps || [],
+          questions: (serpDataEntry.peopleAlsoAsk || []).map(q => ({
+            question: typeof q === 'string' ? q : q.question,
+            source: typeof q === 'object' ? q.source || 'proposal' : 'proposal',
+            answer: typeof q === 'object' ? q.answer : undefined
+          })),
+          featuredSnippets: serpDataEntry.featuredSnippets || [],
+          topStories: serpDataEntry.topStories || [],
+          multimedia: serpDataEntry.multimedia || { images: [], videos: [] },
+          entities: serpDataEntry.entities || [],
+          headings: (serpDataEntry.headings || []).map(h => ({
+            text: typeof h === 'string' ? h : h.text,
+            level: (typeof h === 'object' ? h.level : 'h2') as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
+            source: 'proposal',
+            subtext: typeof h === 'object' ? h.subtext : ''
+          })),
+          knowledgeGraph: serpDataEntry.knowledgeGraph || { 
+            title: '', 
+            type: '', 
+            description: '', 
+            attributes: {}, 
+            relatedEntities: [] 
+          },
+          metrics: {
+            search_volume: serpDataEntry.searchVolume || 1000,
+            seo_difficulty: serpDataEntry.keywordDifficulty || 50,
+            opportunity_score: 75,
+            competition_pct: serpDataEntry.competitionScore || 0.5,
+            result_count: serpDataEntry.totalResults || 100000
+          },
+          serp_blocks: {
+            organic: (serpDataEntry.topResults || []).map((result, index) => ({
+              title: result.title || '',
+              link: result.link || '',
+              snippet: result.snippet || ''
+            })),
+            ads: [],
+            people_also_ask: (serpDataEntry.peopleAlsoAsk || []).map(q => ({
+              question: typeof q === 'string' ? q : q.question,
+              answer: typeof q === 'object' ? q.answer : undefined
+            })),
+            images: [],
+            videos: []
+          },
+          insights: serpDataEntry.insights || [`High-value content opportunities identified for "${targetKeyword}"`],
+          data_sources: {
+            is_cached: true,
+            volume_api: false,
+            serp_api: false
+          },
+          related_keywords: (serpDataEntry.keywords || []).map((kw, index) => ({
+            title: typeof kw === 'string' ? kw : kw.keyword || kw.title,
+            volume: typeof kw === 'object' ? kw.volume : undefined
+          })),
+          dataQuality: 'proposal',
+          recommendations: serpDataEntry.recommendations || [`Leverage the identified entities and topics for comprehensive coverage of "${targetKeyword}"`],
+          isMockData: serpDataEntry.isMockData !== false
+        };
+
+        console.log('✅ Proposal data converted successfully');
+        setData(convertedData);
+        onDataUpdate?.(convertedData);
+
+        // Add selections to context
+        addSelectionsFromData(convertedData);
+        
+        toast.success('SERP data loaded from proposal');
+      }
+    } catch (error) {
+      console.error('❌ Error loading proposal data:', error);
+      toast.error('Failed to load proposal SERP data');
+    }
+  };
+
+  const addSelectionsFromData = (serpData: EnhancedSerpResult) => {
+    try {
+      // Add keywords
+      serpData.keywords.forEach(keyword => {
+        dispatch({
+          type: 'ADD_SERP_SELECTION',
+          payload: {
+            type: 'keyword',
+            content: keyword,
+            selected: false,
+            source: 'proposal_data'
+          }
+        });
+      });
+
+      // Add entities
+      serpData.entities.forEach(entity => {
+        dispatch({
+          type: 'ADD_SERP_SELECTION',
+          payload: {
+            type: 'entity',
+            content: entity.name,
+            selected: false,
+            source: 'proposal_data',
+            metadata: entity
+          }
+        });
+      });
+
+      // Add questions
+      serpData.questions.forEach(q => {
+        dispatch({
+          type: 'ADD_SERP_SELECTION',
+          payload: {
+            type: 'question',
+            content: q.question,
+            selected: false,
+            source: 'proposal_data'
+          }
+        });
+      });
+
+      console.log('📋 Added selections from proposal data');
+    } catch (error) {
+      console.error('❌ Error adding selections from proposal data:', error);
+    }
+  };
 
   const fetchData = async (forceRefresh = false) => {
     setIsLoading(true);

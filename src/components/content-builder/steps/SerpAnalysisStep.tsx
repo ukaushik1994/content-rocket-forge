@@ -37,28 +37,101 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
       try {
         setIsCheckingKeys(true);
         console.log('🔑 Checking and testing SERP API keys...');
+        console.log('📊 Proposal debug info:', {
+          hasProposal: !!proposal,
+          proposalKeyword: proposal?.primary_keyword,
+          hasSerpData: !!proposal?.serp_data,
+          serpDataKeys: proposal?.serp_data ? Object.keys(proposal.serp_data) : 'none',
+          currentMainKeyword: mainKeyword
+        });
 
         // Check both API keys
         const serpApiKey = await getApiKey('serp');
         const serpstackKey = await getApiKey('serpstack');
 
         const newStatus = {
-          serpApi: { configured: !!serpApiKey, working: false },
-          serpstack: { configured: !!serpstackKey, working: false }
+          serpApi: { configured: !!serpApiKey, working: !!serpApiKey },
+          serpstack: { configured: !!serpstackKey, working: !!serpstackKey }
         };
 
         setApiKeysStatus(newStatus);
+        console.log('✅ API keys status:', newStatus);
 
-        // Enable enhanced mode if we have at least one API key configured
-        if ((serpApiKey || serpstackKey) && (mainKeyword || proposal?.primary_keyword)) {
+        // Enable enhanced mode if we have API keys OR proposal data
+        const hasApiKeys = serpApiKey || serpstackKey;
+        const hasProposalData = proposal?.serp_data && Object.keys(proposal.serp_data).length > 0;
+        const targetKeyword = mainKeyword || proposal?.primary_keyword;
+        
+        if ((hasApiKeys || hasProposalData) && targetKeyword) {
+          console.log('🚀 Enabling enhanced mode:', { hasApiKeys, hasProposalData, targetKeyword });
           setUseEnhancedMode(true);
         }
 
-        console.log('✅ API keys status checked:', newStatus);
+        // If we have proposal SERP data, convert and inject it into the context
+        if (hasProposalData && !serpData) {
+          console.log('📥 Converting proposal SERP data to context...');
+          injectProposalSerpData();
+        }
+
       } catch (error) {
-        console.error('Error checking API keys:', error);
+        console.error('❌ Error checking API keys:', error);
       } finally {
         setIsCheckingKeys(false);
+      }
+    };
+
+    const injectProposalSerpData = () => {
+      if (!proposal?.serp_data) return;
+
+      try {
+        // Use the first available SERP data entry or the main keyword data
+        const targetKeyword = mainKeyword || proposal.primary_keyword;
+        let serpDataEntry = proposal.serp_data[targetKeyword] || Object.values(proposal.serp_data)[0];
+        
+        console.log('🔄 Converting proposal SERP data:', {
+          targetKeyword,
+          availableKeys: Object.keys(proposal.serp_data),
+          hasEntry: !!serpDataEntry
+        });
+
+        if (serpDataEntry) {
+          // Convert to expected format
+          const convertedData = {
+            keyword: serpDataEntry.keyword || targetKeyword,
+            searchVolume: serpDataEntry.searchVolume || 1000,
+            keywordDifficulty: serpDataEntry.keywordDifficulty || 50,
+            competitionScore: serpDataEntry.competitionScore || 0.5,
+            entities: serpDataEntry.entities || [],
+            peopleAlsoAsk: (serpDataEntry.peopleAlsoAsk || []).map(q => ({
+              question: q.question || q,
+              source: q.source || 'proposal'
+            })),
+            headings: (serpDataEntry.headings || []).map(h => ({
+              text: h.text || h,
+              level: h.level || 'h2',
+              subtext: h.subtext || ''
+            })),
+            contentGaps: serpDataEntry.contentGaps || [],
+            topResults: (serpDataEntry.topResults || []).map((result, index) => ({
+              title: result.title || '',
+              link: result.link || '',
+              snippet: result.snippet || '',
+              position: result.position || index + 1
+            })),
+            relatedSearches: (serpDataEntry.relatedSearches || serpDataEntry.keywords || []).map(kw => ({
+              query: typeof kw === 'string' ? kw : kw.query || kw.keyword,
+              volume: typeof kw === 'object' ? kw.volume : undefined
+            })),
+            keywords: serpDataEntry.keywords || [],
+            recommendations: serpDataEntry.recommendations || [],
+            isMockData: serpDataEntry.isMockData !== false // Assume mock unless explicitly false
+          };
+          
+          console.log('✅ Converted proposal SERP data successfully');
+          dispatch({ type: 'SET_SERP_DATA', payload: convertedData });
+        }
+      } catch (error) {
+        console.error('❌ Error converting proposal SERP data:', error);
       }
     };
 
@@ -70,12 +143,12 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
 
     // Auto-set proposal keyword if available and no main keyword is set
     if (proposal?.primary_keyword && !mainKeyword) {
-      console.log('Auto-setting keyword from proposal:', proposal.primary_keyword);
+      console.log('🎯 Auto-setting keyword from proposal:', proposal.primary_keyword);
       setMainKeyword(proposal.primary_keyword);
     }
 
     checkApiKeys();
-  }, [mainKeyword, proposal?.primary_keyword, setMainKeyword]);
+  }, [mainKeyword, proposal?.primary_keyword, proposal?.serp_data, serpData, setMainKeyword, dispatch]);
 
   const handleStatusChange = (status: any) => {
     setApiKeysStatus(status);
@@ -221,6 +294,18 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
 
   const hasWorkingApis = apiKeysStatus.serpApi.working || apiKeysStatus.serpstack.working;
   const hasConfiguredApis = apiKeysStatus.serpApi.configured || apiKeysStatus.serpstack.configured;
+  const hasProposalData = proposal?.serp_data && Object.keys(proposal.serp_data).length > 0;
+  const hasAnySerpData = serpData || hasProposalData;
+
+  console.log('🎯 Debug render state:', {
+    hasWorkingApis,
+    hasConfiguredApis,
+    hasProposalData,
+    hasAnySerpData,
+    useEnhancedMode,
+    serpDataAvailable: !!serpData,
+    isAnalyzing
+  });
 
   const overallStatus = getOverallApiStatus();
   const StatusIcon = overallStatus.icon;
@@ -280,18 +365,19 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
         </CardContent>
       </Card>
 
-      {/* Show enhanced analysis if API is available */}
-      {hasWorkingApis && mainKeyword ? (
+      {/* Show enhanced analysis if API is available OR we have proposal data */}
+      {(hasWorkingApis || hasProposalData) && mainKeyword ? (
         <div className="w-full">
           <EnhancedSerpAnalysis 
             keyword={mainKeyword}
             onDataUpdate={handleSerpDataChange}
+            proposalData={hasProposalData ? proposal?.serp_data : null}
           />
         </div>
       ) : (
         <>
           {/* Show API setup or legacy analysis */}
-          {(showApiSetup || (!hasConfiguredApis && !serpData)) && !isAnalyzing ? (
+          {(showApiSetup || (!hasConfiguredApis && !hasAnySerpData)) && !isAnalyzing ? (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-xl font-semibold mb-2">Set Up Enhanced SERP Analysis</h2>
