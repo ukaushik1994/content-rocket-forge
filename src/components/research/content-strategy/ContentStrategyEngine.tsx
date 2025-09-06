@@ -22,6 +22,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { contentCompletionTracking } from '@/services/contentCompletionTracking';
 import { useContentReminders } from '@/hooks/useContentReminders';
 import { ContentClustersSummary } from './ContentClustersSummary';
+
+// Force rebuild to clear SelectedProposalsSidebar cache issue
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
   goals?: any;
