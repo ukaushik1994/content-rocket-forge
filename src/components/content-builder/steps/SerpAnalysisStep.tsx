@@ -5,7 +5,8 @@ import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysi
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
 import { SerpApiDiagnostics } from './serp-analysis/SerpApiDiagnostics';
-import { EnhancedSerpIntegration } from './serp-analysis/EnhancedSerpIntegration';
+import { SerpDataManager } from '../serp/SerpDataManager';
+import { DataValidationProvider } from '../serp/DataValidationProvider';
 import { EnhancedSerpStatus } from '../serp/EnhancedSerpStatus';
 import { EnhancedSerpAnalysis } from '../serp/EnhancedSerpAnalysis';
 import { SerpAnalysisResult } from '@/types/serp';
@@ -311,134 +312,139 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
   const StatusIcon = overallStatus.icon;
 
   return (
-    <div className="space-y-6">
-      {/* Always show enhanced status at the top of the analysis step */}
-      <Card className="border-neon-purple/20">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center">
-              <StatusIcon className="h-5 w-5 mr-2 text-neon-purple" />
-              Enhanced SERP Analysis
-            </div>
-            <Badge className={`${overallStatus.color} hover:${overallStatus.color}/80`}>
-              {overallStatus.label}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-2 rounded bg-white/5">
-              <span className="text-sm">SerpAPI (Enhanced)</span>
-              <div className="flex items-center">
-                {apiKeysStatus.serpApi.working ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : apiKeysStatus.serpApi.configured ? (
-                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                ) : (
-                  <Settings className="h-4 w-4 text-red-500" />
-                )}
+    <DataValidationProvider>
+      <SerpDataManager proposal={proposal} autoLoad={true}>
+        <div className="space-y-6">
+          {/* Always show enhanced status at the top of the analysis step */}
+          <Card className="border-neon-purple/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <StatusIcon className="h-5 w-5 mr-2 text-neon-purple" />
+                  Enhanced SERP Analysis
+                </div>
+                <Badge className={`${overallStatus.color} hover:${overallStatus.color}/80`}>
+                  {overallStatus.label}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-2 rounded bg-white/5">
+                  <span className="text-sm">SerpAPI (Enhanced)</span>
+                  <div className="flex items-center">
+                    {apiKeysStatus.serpApi.working ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : apiKeysStatus.serpApi.configured ? (
+                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    ) : (
+                      <Settings className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded bg-white/5">
+                  <span className="text-sm">Serpstack (Fallback)</span>
+                  <div className="flex items-center">
+                    {apiKeysStatus.serpstack.working ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : apiKeysStatus.serpstack.configured ? (
+                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    ) : (
+                      <Settings className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded bg-white/5">
-              <span className="text-sm">Serpstack (Fallback)</span>
-              <div className="flex items-center">
-                {apiKeysStatus.serpstack.working ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : apiKeysStatus.serpstack.configured ? (
-                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                ) : (
-                  <Settings className="h-4 w-4 text-red-500" />
-                )}
-              </div>
-            </div>
-          </div>
-          {!hasWorkingApis && (
-            <div className="mt-3 text-center">
-              <button
-                onClick={() => setShowApiSetup(true)}
-                className="text-sm text-neon-purple hover:text-neon-blue underline"
-              >
-                Configure API Keys for Full Analysis
-              </button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              {!hasWorkingApis && !hasProposalData && (
+                <div className="mt-3 text-center">
+                  <button
+                    onClick={() => setShowApiSetup(true)}
+                    className="text-sm text-neon-purple hover:text-neon-blue underline"
+                  >
+                    Configure API Keys for Full Analysis
+                  </button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-      {/* Show enhanced analysis if API is available OR we have proposal data */}
-      {(hasWorkingApis || hasProposalData) && mainKeyword ? (
-        <div className="w-full">
-          <EnhancedSerpAnalysis 
-            keyword={mainKeyword}
-            onDataUpdate={handleSerpDataChange}
-            proposalData={hasProposalData ? proposal?.serp_data : null}
-          />
-        </div>
-      ) : (
-        <>
-          {/* Show API setup or legacy analysis */}
-          {(showApiSetup || (!hasConfiguredApis && !hasAnySerpData)) && !isAnalyzing ? (
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-semibold mb-2">Set Up Enhanced SERP Analysis</h2>
-                <p className="text-muted-foreground">
-                  Configure your SERP API keys for comprehensive search data analysis with all 9 sections
-                </p>
-              </div>
-
-              <EnhancedSerpStatus onStatusChange={handleStatusChange} />
-
-              <Tabs defaultValue="setup" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="setup">API Key Setup</TabsTrigger>
-                  <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="setup">
-                  <SerpApiKeySetup />
-                </TabsContent>
-
-                <TabsContent value="diagnostics">
-                  <SerpApiDiagnostics />
-                </TabsContent>
-              </Tabs>
-
-              <div className="text-center mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Don&apos;t want to add API keys now?
-                </p>
-                <button 
-                  onClick={handleReanalyze}
-                  className="text-sm text-neon-purple hover:text-neon-blue underline mt-1"
-                >
-                  Continue with basic analysis
-                </button>
-              </div>
+          {/* Show enhanced analysis if API is available OR we have proposal data */}
+          {(hasWorkingApis || hasProposalData) && mainKeyword ? (
+            <div className="w-full">
+              <EnhancedSerpAnalysis 
+                keyword={mainKeyword}
+                onDataUpdate={handleSerpDataChange}
+                proposalData={hasProposalData ? proposal?.serp_data : null}
+              />
             </div>
           ) : (
             <>
-              <SerpAnalysisHeader
-                mainKeyword={mainKeyword}
-                isAnalyzing={isAnalyzing}
-                totalSelected={totalSelected}
-                handleReanalyze={handleReanalyze}
-                handleContinueWithSelections={handleContinueWithSelections}
-              />
+              {/* Show API setup or legacy analysis */}
+              {(showApiSetup || (!hasConfiguredApis && !hasAnySerpData)) && !isAnalyzing ? (
+                <div className="space-y-6">
+                  <div className="text-center mb-6">
+                    <h2 className="text-xl font-semibold mb-2">Set Up Enhanced SERP Analysis</h2>
+                    <p className="text-muted-foreground">
+                      Configure your SERP API keys for comprehensive search data analysis with all 9 sections
+                    </p>
+                  </div>
 
-              <div className="w-full">
-                <SerpAnalysisPanel 
-                  serpData={serpData}
-                  isLoading={isAnalyzing}
-                  mainKeyword={mainKeyword}
-                  onAddToContent={handleAddToContent}
-                  onRetry={handleReanalyze}
-                  onSerpDataChange={handleRegularSerpDataChange}
-                />
-              </div>
+                  <EnhancedSerpStatus onStatusChange={handleStatusChange} />
+
+                  <Tabs defaultValue="setup" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <TabsTrigger value="setup">API Key Setup</TabsTrigger>
+                      <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="setup">
+                      <SerpApiKeySetup />
+                    </TabsContent>
+
+                    <TabsContent value="diagnostics">
+                      <SerpApiDiagnostics />
+                    </TabsContent>
+                  </Tabs>
+
+                  <div className="text-center mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Don&apos;t want to add API keys now?
+                    </p>
+                    <button 
+                      onClick={handleReanalyze}
+                      className="text-sm text-neon-purple hover:text-neon-blue underline mt-1"
+                    >
+                      Continue with basic analysis
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <SerpAnalysisHeader
+                    mainKeyword={mainKeyword}
+                    isAnalyzing={isAnalyzing}
+                    totalSelected={totalSelected}
+                    handleReanalyze={handleReanalyze}
+                    handleContinueWithSelections={handleContinueWithSelections}
+                  />
+
+                  <div className="w-full">
+                    <SerpAnalysisPanel 
+                      serpData={serpData}
+                      isLoading={isAnalyzing}
+                      mainKeyword={mainKeyword}
+                      onAddToContent={handleAddToContent}
+                      onRetry={handleReanalyze}
+                      onSerpDataChange={handleRegularSerpDataChange}
+                      proposalData={hasProposalData ? proposal?.serp_data : null}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
-        </>
-      )}
-    </div>
+        </div>
+      </SerpDataManager>
+    </DataValidationProvider>
   );
 };
