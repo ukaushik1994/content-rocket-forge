@@ -7,6 +7,112 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Classification configuration constants
+const CLASSIFICATION_THRESHOLDS = {
+  QUICK_WIN: {
+    MIN_VOLUME: 100,
+    MAX_VOLUME: 5000,
+    MAX_DIFFICULTY: 35,
+    MIN_OPPORTUNITY_SCORE: 3
+  },
+  HIGH_RETURN: {
+    MIN_VOLUME: 1000,
+    MIN_OPPORTUNITY_SCORE: 10
+  },
+  LOW_PRIORITY: {
+    MAX_VOLUME: 100,
+    HIGH_DIFFICULTY_THRESHOLD: 70,
+    LOW_VOLUME_HIGH_DIFFICULTY: 500
+  },
+  EVERGREEN: {
+    MIN_VOLUME: 100,
+    STEADY_VOLUME_THRESHOLD: 50 // For consistent demand detection
+}
+
+// Helper functions for priority classification
+function calculateOpportunityScore(volume: number, difficulty: number): number {
+  if (difficulty === 0) return 0;
+  return Math.round((volume / difficulty) * 10) / 10;
+}
+
+function calculateWeightedScore(volume: number, difficulty: number, intent: string = 'informational'): number {
+  // Intent scoring: transactional > commercial > navigational > informational
+  const intentWeights = {
+    'transactional': 1.0,
+    'commercial': 0.8,
+    'navigational': 0.6,
+    'informational': 0.4
+  };
+  
+  const intentWeight = intentWeights[intent as keyof typeof intentWeights] || 0.4;
+  
+  // Weighted formula: 40% Volume + 40% Inverse Difficulty + 20% Intent
+  const volumeScore = Math.min(volume / 1000, 10); // Normalize volume (max score 10)
+  const difficultyScore = Math.max(0, 10 - (difficulty / 10)); // Inverse difficulty (max score 10)
+  const intentScore = intentWeight * 10; // Intent score (max score 10)
+  
+  return Math.round((volumeScore * 0.4 + difficultyScore * 0.4 + intentScore * 0.2) * 100) / 100;
+}
+
+function classifyProposal(keywords: any[], serpData: Record<string, any>): {
+  priority_tag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority';
+  metrics: {
+    total_volume: number;
+    avg_difficulty: number;
+    opportunity_score: number;
+    weighted_score: number;
+  };
+} {
+  // Calculate aggregate metrics
+  const totalVolume = keywords.reduce((sum, k) => sum + (serpData[k.keyword]?.searchVolume || 0), 0);
+  const avgDifficulty = keywords.length > 0 
+    ? keywords.reduce((sum, k) => sum + (serpData[k.keyword]?.keywordDifficulty || 0), 0) / keywords.length 
+    : 0;
+  
+  // Get primary intent (most common among keywords)
+  const intents = keywords.map(k => k.intent || 'informational');
+  const primaryIntent = intents.sort((a, b) => 
+    intents.filter(v => v === a).length - intents.filter(v => v === b).length
+  ).pop() || 'informational';
+  
+  const opportunityScore = calculateOpportunityScore(totalVolume, avgDifficulty);
+  const weightedScore = calculateWeightedScore(totalVolume, avgDifficulty, primaryIntent);
+  
+  // Apply classification rules with thresholds
+  let priorityTag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority' = 'evergreen';
+  
+  // Quick Wins: Low difficulty + decent volume + good opportunity score
+  if (avgDifficulty <= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MAX_DIFFICULTY && 
+      totalVolume >= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MIN_VOLUME && 
+      totalVolume <= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MAX_VOLUME &&
+      opportunityScore >= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MIN_OPPORTUNITY_SCORE) {
+    priorityTag = 'quick_win';
+  } 
+  // High Return: High volume with good opportunity score
+  else if (totalVolume >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_VOLUME &&
+           opportunityScore >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_OPPORTUNITY_SCORE) {
+    priorityTag = 'high_return';
+  } 
+  // Low Priority: Very low volume or very high difficulty with poor opportunity
+  else if (totalVolume < CLASSIFICATION_THRESHOLDS.LOW_PRIORITY.MAX_VOLUME || 
+           (avgDifficulty > CLASSIFICATION_THRESHOLDS.LOW_PRIORITY.HIGH_DIFFICULTY_THRESHOLD && 
+            totalVolume < CLASSIFICATION_THRESHOLDS.LOW_PRIORITY.LOW_VOLUME_HIGH_DIFFICULTY)) {
+    priorityTag = 'low_priority';
+  }
+  // Evergreen: Steady opportunities (everything else with decent metrics)
+  
+  return {
+    priority_tag: priorityTag,
+    metrics: {
+      total_volume: totalVolume,
+      avg_difficulty: Math.round(avgDifficulty),
+      opportunity_score: opportunityScore,
+      weighted_score: weightedScore
+    }
+  };
+}
+}
+
 interface ContentCluster {
   id?: string;
   name: string;
@@ -668,40 +774,16 @@ Create 5-8 strategic content proposals that leverage these keywords and align wi
     const kws = (p.keywords || []).map((k: any) => (typeof k === 'string' ? { keyword: k } : k));
     const estImpr = kws.reduce((sum: number, k: any) => sum + ((serpMap[k.keyword]?.searchVolume || 0) * 0.05), 0);
     
-    // Calculate metrics for priority classification
-    const totalVolume = kws.reduce((sum: number, k: any) => sum + (serpMap[k.keyword]?.searchVolume || 0), 0);
-    const avgDifficulty = kws.length > 0 
-      ? kws.reduce((sum: number, k: any) => sum + (serpMap[k.keyword]?.keywordDifficulty || 0), 0) / kws.length 
-      : 0;
-    
-    // Apply expert classification rules
-    let priorityTag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority' = 'evergreen';
-    
-    // Quick Wins: Low difficulty + decent volume (easy to rank, good traffic potential)
-    if (avgDifficulty <= 35 && totalVolume >= 100 && totalVolume <= 5000) {
-      priorityTag = 'quick_win';
-    } 
-    // High Return: High volume regardless of difficulty (big bets for major impact)
-    else if (totalVolume >= 1000) {
-      priorityTag = 'high_return';
-    } 
-    // Low Priority: Very low volume or very high difficulty with low volume
-    else if (totalVolume < 100 || (avgDifficulty > 70 && totalVolume < 500)) {
-      priorityTag = 'low_priority';
-    }
-    // Evergreen: Everything else (steady, consistent opportunities)
+    // Use the new classification helper function
+    const classification = classifyProposal(kws, serpMap);
     
     return { 
       ...p, 
       keywords: kws, 
       serp_data: serpMap, 
       estimated_impressions: Math.round(estImpr),
-      priority_tag: priorityTag,
-      metrics: {
-        total_volume: totalVolume,
-        avg_difficulty: Math.round(avgDifficulty),
-        opportunity_score: totalVolume > 0 ? Math.round((totalVolume / Math.max(avgDifficulty, 1)) * 10) / 10 : 0
-      },
+      priority_tag: classification.priority_tag,
+      metrics: classification.metrics,
       id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       generated_at: new Date().toISOString()
     };
