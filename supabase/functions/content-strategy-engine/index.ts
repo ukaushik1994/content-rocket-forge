@@ -55,13 +55,157 @@ function calculateWeightedScore(volume: number, difficulty: number, intent: stri
   return Math.round((volumeScore * 0.4 + difficultyScore * 0.4 + intentScore * 0.2) * 100) / 100;
 }
 
-function classifyProposal(keywords: any[], serpData: Record<string, any>): {
+// Advanced business logic validation functions
+function analyzeConversionPotential(keywords: any[], serpData: Record<string, any>): {
+  hasCommercialIntent: boolean;
+  hasTransactionalIntent: boolean;
+  conversionScore: number;
+  commercialKeywords: string[];
+} {
+  const commercialIndicators = ['buy', 'purchase', 'price', 'cost', 'discount', 'deal', 'sale', 'shop', 'order', 'pricing'];
+  const transactionalIndicators = ['download', 'signup', 'register', 'trial', 'demo', 'quote', 'contact', 'book', 'schedule'];
+  
+  let commercialCount = 0;
+  let transactionalCount = 0;
+  const commercialKeywords: string[] = [];
+  
+  keywords.forEach(k => {
+    const keyword = k.keyword.toLowerCase();
+    const hasCommercial = commercialIndicators.some(indicator => keyword.includes(indicator));
+    const hasTransactional = transactionalIndicators.some(indicator => keyword.includes(indicator));
+    
+    if (hasCommercial) {
+      commercialCount++;
+      commercialKeywords.push(k.keyword);
+    }
+    if (hasTransactional) {
+      transactionalCount++;
+    }
+  });
+  
+  const totalKeywords = keywords.length;
+  const conversionScore = Math.round(((commercialCount + transactionalCount * 1.2) / totalKeywords) * 100) / 100;
+  
+  return {
+    hasCommercialIntent: commercialCount > 0,
+    hasTransactionalIntent: transactionalCount > 0,
+    conversionScore,
+    commercialKeywords
+  };
+}
+
+function analyzeSerpFeatures(keywords: any[], serpData: Record<string, any>): {
+  hasRichSnippets: boolean;
+  hasFeaturedSnippets: boolean;
+  hasLocalPack: boolean;
+  competitiveComplexity: 'low' | 'medium' | 'high';
+  serpFeatureCount: number;
+} {
+  let featuredSnippetCount = 0;
+  let richSnippetCount = 0;
+  let localPackCount = 0;
+  let totalFeatures = 0;
+  
+  keywords.forEach(k => {
+    const data = serpData[k.keyword];
+    if (data) {
+      // Analyze SERP features (these would come from real SERP data)
+      const features = data.serpFeatures || [];
+      totalFeatures += features.length;
+      
+      if (features.includes('featured_snippet')) featuredSnippetCount++;
+      if (features.includes('rich_snippets')) richSnippetCount++;
+      if (features.includes('local_pack')) localPackCount++;
+    }
+  });
+  
+  const avgFeatures = totalFeatures / keywords.length;
+  const competitiveComplexity: 'low' | 'medium' | 'high' = 
+    avgFeatures > 3 ? 'high' : avgFeatures > 1.5 ? 'medium' : 'low';
+  
+  return {
+    hasRichSnippets: richSnippetCount > 0,
+    hasFeaturedSnippets: featuredSnippetCount > 0,
+    hasLocalPack: localPackCount > 0,
+    competitiveComplexity,
+    serpFeatureCount: totalFeatures
+  };
+}
+
+function validateBusinessContext(proposal: any, companyInfo: any, solutions: any[]): {
+  alignmentScore: number;
+  relevanceFlags: string[];
+  strategicValue: 'high' | 'medium' | 'low';
+} {
+  const relevanceFlags: string[] = [];
+  let alignmentScore = 0;
+  
+  // Check keyword alignment with company solutions
+  if (solutions && solutions.length > 0) {
+    const solutionTerms = solutions.flatMap(s => [
+      ...(s.name || '').toLowerCase().split(' '),
+      ...(s.title || '').toLowerCase().split(' '),
+      ...(s.category || '').toLowerCase().split(' ')
+    ]).filter(term => term.length > 2);
+    
+    const proposalText = `${proposal.title} ${proposal.description} ${proposal.keywords?.map(k => k.keyword).join(' ')}`.toLowerCase();
+    
+    const matches = solutionTerms.filter(term => proposalText.includes(term));
+    if (matches.length > 0) {
+      alignmentScore += 0.4;
+      relevanceFlags.push('solution_aligned');
+    }
+  }
+  
+  // Check company industry alignment
+  if (companyInfo?.industry || companyInfo?.description) {
+    const companyText = `${companyInfo.industry || ''} ${companyInfo.description || ''}`.toLowerCase();
+    const proposalText = `${proposal.title} ${proposal.description}`.toLowerCase();
+    
+    // Simple relevance check (in production, this would use NLP/embeddings)
+    const commonWords = companyText.split(' ').filter(word => 
+      word.length > 3 && proposalText.includes(word)
+    );
+    
+    if (commonWords.length > 0) {
+      alignmentScore += 0.3;
+      relevanceFlags.push('industry_relevant');
+    }
+  }
+  
+  // Check target audience alignment
+  if (proposal.intent === 'commercial' || proposal.intent === 'transactional') {
+    alignmentScore += 0.3;
+    relevanceFlags.push('conversion_oriented');
+  }
+  
+  const strategicValue: 'high' | 'medium' | 'low' = 
+    alignmentScore > 0.7 ? 'high' : alignmentScore > 0.4 ? 'medium' : 'low';
+  
+  return {
+    alignmentScore: Math.round(alignmentScore * 100) / 100,
+    relevanceFlags,
+    strategicValue
+  };
+}
+
+function classifyProposal(
+  keywords: any[], 
+  serpData: Record<string, any>,
+  companyInfo?: any,
+  solutions?: any[]
+): {
   priority_tag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority';
   metrics: {
     total_volume: number;
     avg_difficulty: number;
     opportunity_score: number;
     weighted_score: number;
+  };
+  business_context: {
+    conversion_potential: any;
+    serp_analysis: any;
+    business_validation: any;
   };
 } {
   // Calculate aggregate metrics
@@ -79,28 +223,40 @@ function classifyProposal(keywords: any[], serpData: Record<string, any>): {
   const opportunityScore = calculateOpportunityScore(totalVolume, avgDifficulty);
   const weightedScore = calculateWeightedScore(totalVolume, avgDifficulty, primaryIntent);
   
-  // Apply classification rules with thresholds
+  // Enhanced business context analysis
+  const conversionPotential = analyzeConversionPotential(keywords, serpData);
+  const serpAnalysis = analyzeSerpFeatures(keywords, serpData);
+  const businessValidation = validateBusinessContext(
+    { keywords, intent: primaryIntent }, 
+    companyInfo, 
+    solutions
+  );
+  
+  // Enhanced classification rules with business context
   let priorityTag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority' = 'evergreen';
   
-  // Quick Wins: Low difficulty + decent volume + good opportunity score
+  // Quick Wins: Low difficulty + decent volume + good opportunity score + business alignment
   if (avgDifficulty <= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MAX_DIFFICULTY && 
       totalVolume >= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MIN_VOLUME && 
       totalVolume <= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MAX_VOLUME &&
-      opportunityScore >= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MIN_OPPORTUNITY_SCORE) {
+      opportunityScore >= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MIN_OPPORTUNITY_SCORE &&
+      serpAnalysis.competitiveComplexity !== 'high') {
     priorityTag = 'quick_win';
   } 
-  // High Return: High volume with good opportunity score
-  else if (totalVolume >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_VOLUME &&
-           opportunityScore >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_OPPORTUNITY_SCORE) {
+  // High Return: High volume with good opportunity score OR strong conversion potential
+  else if ((totalVolume >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_VOLUME &&
+            opportunityScore >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_OPPORTUNITY_SCORE) ||
+           (conversionPotential.conversionScore > 0.5 && businessValidation.strategicValue === 'high')) {
     priorityTag = 'high_return';
   } 
-  // Low Priority: Very low volume or very high difficulty with poor opportunity
+  // Low Priority: Very low volume, high difficulty, or poor business alignment
   else if (totalVolume < CLASSIFICATION_THRESHOLDS.LOW_PRIORITY.MAX_VOLUME || 
            (avgDifficulty > CLASSIFICATION_THRESHOLDS.LOW_PRIORITY.HIGH_DIFFICULTY_THRESHOLD && 
-            totalVolume < CLASSIFICATION_THRESHOLDS.LOW_PRIORITY.LOW_VOLUME_HIGH_DIFFICULTY)) {
+            totalVolume < CLASSIFICATION_THRESHOLDS.LOW_PRIORITY.LOW_VOLUME_HIGH_DIFFICULTY) ||
+           businessValidation.strategicValue === 'low') {
     priorityTag = 'low_priority';
   }
-  // Evergreen: Steady opportunities (everything else with decent metrics)
+  // Evergreen: Steady opportunities with decent business alignment
   
   return {
     priority_tag: priorityTag,
@@ -109,6 +265,11 @@ function classifyProposal(keywords: any[], serpData: Record<string, any>): {
       avg_difficulty: Math.round(avgDifficulty),
       opportunity_score: opportunityScore,
       weighted_score: weightedScore
+    },
+    business_context: {
+      conversion_potential: conversionPotential,
+      serp_analysis: serpAnalysis,
+      business_validation: businessValidation
     }
   };
 }
@@ -774,8 +935,8 @@ Create 5-8 strategic content proposals that leverage these keywords and align wi
     const kws = (p.keywords || []).map((k: any) => (typeof k === 'string' ? { keyword: k } : k));
     const estImpr = kws.reduce((sum: number, k: any) => sum + ((serpMap[k.keyword]?.searchVolume || 0) * 0.05), 0);
     
-    // Use the new classification helper function
-    const classification = classifyProposal(kws, serpMap);
+    // Use the enhanced classification helper function with business context
+    const classification = classifyProposal(kws, serpMap, companyInfo, solutions);
     
     return { 
       ...p, 
@@ -784,6 +945,7 @@ Create 5-8 strategic content proposals that leverage these keywords and align wi
       estimated_impressions: Math.round(estImpr),
       priority_tag: classification.priority_tag,
       metrics: classification.metrics,
+      business_context: classification.business_context,
       id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       generated_at: new Date().toISOString()
     };
