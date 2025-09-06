@@ -912,13 +912,13 @@ export const ContentStrategyEngine = ({
                 Selected ({Object.values(selected).filter(Boolean).length})
               </TabsTrigger>
               <TabsTrigger value="quick_win" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70">
-                Quick Wins
+                Quick Wins ({getFilteredProposals('quick_win').length})
               </TabsTrigger>
               <TabsTrigger value="high_return" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70">
-                High Return
+                High Return ({getFilteredProposals('high_return').length})
               </TabsTrigger>
               <TabsTrigger value="evergreen" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70">
-                Evergreen
+                Evergreen ({getFilteredProposals('evergreen').length})
               </TabsTrigger>
             </TabsList>
 
@@ -1125,10 +1125,34 @@ export const ContentStrategyEngine = ({
                 )}
                 
                 {getFilteredProposals(tag).length === 0 && (
-                  <Card className="p-8 text-center">
-                    <p className="text-muted-foreground">
-                      No {tag.replace('_', ' ')} proposals found
-                    </p>
+                  <Card className="p-8 text-center bg-white/5 border-white/20">
+                    <div className="space-y-4">
+                      <div className="flex justify-center">
+                        {tag === 'quick_win' && <Target className="h-12 w-12 text-green-400/40" />}
+                        {tag === 'high_return' && <TrendingUp className="h-12 w-12 text-blue-400/40" />}
+                        {tag === 'evergreen' && <BarChart3 className="h-12 w-12 text-purple-400/40" />}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white mb-2">
+                          {tag === 'quick_win' && 'No Quick Wins Found'}
+                          {tag === 'high_return' && 'No High Return Opportunities'}
+                          {tag === 'evergreen' && 'No Evergreen Content'}
+                        </h3>
+                        <p className="text-white/60 text-sm max-w-md mx-auto">
+                          {tag === 'quick_win' && 'No low-competition, high-opportunity keywords found. Try generating more proposals or adjusting your strategy.'}
+                          {tag === 'high_return' && 'No high-volume opportunities identified. Consider broadening your keyword targets or generating more proposals.'}
+                          {tag === 'evergreen' && 'No steady, long-term content opportunities found. Generate more proposals to find consistent performers.'}
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={generateBlueprint} 
+                        disabled={generating}
+                        variant="outline" 
+                        className="mt-4 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                      >
+                        {generating ? 'Generating...' : 'Generate More Proposals'}
+                      </Button>
+                    </div>
                   </Card>
                 )}
               </>
