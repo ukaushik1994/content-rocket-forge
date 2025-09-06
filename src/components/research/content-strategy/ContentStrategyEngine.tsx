@@ -1071,6 +1071,12 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                 {proposals.length > 0 ? 'All Proposals' : 'All Clusters'}
               </TabsTrigger>
               <TabsTrigger 
+                value="selected"
+                className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-300 text-white/70"
+              >
+                Selected ({Object.values(selected).filter(Boolean).length})
+              </TabsTrigger>
+              <TabsTrigger 
                 value="quick_win"
                 className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70"
               >
@@ -1198,6 +1204,38 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                   </motion.div>
                 ))}
               </motion.div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="selected" className="space-y-4">
+            {Object.values(selected).filter(Boolean).length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {allProposals
+                  .filter((_, idx) => selected[idx])
+                  .map((proposal, filteredIdx) => {
+                    const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
+                    return (
+                      <ProposalCard 
+                        key={proposal.primary_keyword || filteredIdx}
+                        proposal={proposal}
+                        index={originalIndex}
+                        isSelected={true}
+                        onSelectionChange={(index, isSelected) => {
+                          const newSelected = { ...selected, [index]: isSelected };
+                          setSelected(newSelected);
+                          setTimeout(() => setSelectedProposals(newSelected), 50);
+                        }}
+                        onSendToBuilder={sendProposalToContentBuilder}
+                      />
+                    );
+                  })}
+              </div>
+            ) : (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  No proposals selected yet. Go to other tabs to select proposals.
+                </p>
+              </Card>
             )}
           </TabsContent>
 
