@@ -6,19 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  RefreshCw, 
-  Send, 
-  TrendingUp, 
-  Calendar, 
-  Target,
-  BarChart3,
-  Lightbulb,
-  Trash2,
-  Eye,
-  FileText,
-  AlertCircle
-} from 'lucide-react';
+import { RefreshCw, Send, TrendingUp, Calendar, Target, BarChart3, Lightbulb, Trash2, Eye, FileText, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { aiStrategyService } from '@/services/aiStrategyService';
@@ -34,7 +22,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { contentCompletionTracking } from '@/services/contentCompletionTracking';
 import { useContentReminders } from '@/hooks/useContentReminders';
 import { ContentClustersSummary } from './ContentClustersSummary';
-
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
   goals?: any;
@@ -45,16 +32,19 @@ interface ContentStrategyEngineProps {
     loading: boolean;
   };
 }
-
-export const ContentStrategyEngine = ({ 
-  serpMetrics, 
-  goals, 
+export const ContentStrategyEngine = ({
+  serpMetrics,
+  goals,
   workflowMode = 'estimated',
-  realAnalytics 
+  realAnalytics
 }: ContentStrategyEngineProps) => {
   const ctx = useContentStrategy();
-  const { aiProposals, setAiProposals, selectedProposals, setSelectedProposals } = ctx;
-  
+  const {
+    aiProposals,
+    setAiProposals,
+    selectedProposals,
+    setSelectedProposals
+  } = ctx;
   const [clusters, setClusters] = useState<ContentCluster[]>([]);
   const [proposals, setProposals] = useState<any[]>(aiProposals || []);
   const [historicalProposals, setHistoricalProposals] = useState<any[]>([]);
@@ -66,7 +56,9 @@ export const ContentStrategyEngine = ({
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
 
   // Initialize content reminders
   useContentReminders();
@@ -89,15 +81,12 @@ export const ContentStrategyEngine = ({
   const targetCount = parseInt(goals?.contentPieces) || 0;
   const selectedCount = Object.values(selected).filter(Boolean).length;
   const targetTraffic = parseInt(goals?.monthlyTraffic) || 0;
-  const estimatedTraffic = allProposals
-    .filter((_, index) => selected[index])
-    .reduce((sum, proposal) => {
-      const primaryKw = proposal.primary_keyword;
-      const metrics = proposal.serp_data?.[primaryKw] || {};
-      const est = proposal.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
-      return sum + est;
-    }, 0);
-
+  const estimatedTraffic = allProposals.filter((_, index) => selected[index]).reduce((sum, proposal) => {
+    const primaryKw = proposal.primary_keyword;
+    const metrics = proposal.serp_data?.[primaryKw] || {};
+    const est = proposal.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+    return sum + est;
+  }, 0);
   const handleSelectAllProposals = () => {
     const newSelected = allProposals.reduce((acc, _, index) => {
       acc[index] = true;
@@ -106,10 +95,8 @@ export const ContentStrategyEngine = ({
     setSelected(newSelected);
     setSelectedProposals(newSelected);
   };
-
   const handleScheduleSelected = async () => {
     const selectedProposalsList = allProposals.filter((_, index) => selected[index]);
-    
     if (selectedProposalsList.length === 0) {
       toast({
         title: "No Proposals Selected",
@@ -118,33 +105,28 @@ export const ContentStrategyEngine = ({
       });
       return;
     }
-
     try {
-      const result = await smartCalendarScheduling.autoScheduleProposals(
-        selectedProposalsList.map(proposal => ({
-          id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
-          title: proposal.title,
-          description: proposal.description,
-          primary_keyword: proposal.primary_keyword,
-          priority_tag: proposal.priority_tag,
-          content_type: proposal.content_type,
-          estimated_impressions: proposal.estimated_impressions
-        })),
-        {
-          startDate: new Date(),
-          timelineWeeks: 12,
-          contentPiecesPerWeek: 2,
-          avoidWeekends: true,
-          spreadEvenly: true,
-          priorityFirst: true
-        }
-      );
+      const result = await smartCalendarScheduling.autoScheduleProposals(selectedProposalsList.map(proposal => ({
+        id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
+        title: proposal.title,
+        description: proposal.description,
+        primary_keyword: proposal.primary_keyword,
+        priority_tag: proposal.priority_tag,
+        content_type: proposal.content_type,
+        estimated_impressions: proposal.estimated_impressions
+      })), {
+        startDate: new Date(),
+        timelineWeeks: 12,
+        contentPiecesPerWeek: 2,
+        avoidWeekends: true,
+        spreadEvenly: true,
+        priorityFirst: true
+      });
 
       // Track scheduled proposals for completion monitoring
       if (result.scheduled > 0) {
         for (const proposal of selectedProposalsList) {
           const proposalId = proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-');
-          
           try {
             // Since we don't have the exact calendar item ID from the result,
             // we'll track by searching for recent calendar items with this proposal data
@@ -161,7 +143,6 @@ export const ContentStrategyEngine = ({
         setSelected({});
         setSelectedProposals({});
       }
-
       toast({
         title: "Calendar Scheduling Complete",
         description: `Successfully scheduled ${result.scheduled} content pieces. ${result.errors > 0 ? `${result.errors} failed to schedule.` : ''}`,
@@ -176,7 +157,6 @@ export const ContentStrategyEngine = ({
       });
     }
   };
-
   const handleClearSelection = () => {
     setSelected({});
     setSelectedProposals({});
@@ -184,35 +164,55 @@ export const ContentStrategyEngine = ({
 
   // Generation modal state
   const [showGenModal, setShowGenModal] = useState(false);
-  const [genSteps, setGenSteps] = useState<GenerationStep[]>([
-    { label: 'Preparing company and market context', status: 'pending' },
-    { label: 'Generating candidate keywords (AI)', status: 'pending' },
-    { label: 'Fetching SERP metrics', status: 'pending' },
-    { label: 'Assembling strategy proposals (AI)', status: 'pending' },
-    { label: 'Finalizing', status: 'pending' },
-  ]);
+  const [genSteps, setGenSteps] = useState<GenerationStep[]>([{
+    label: 'Preparing company and market context',
+    status: 'pending'
+  }, {
+    label: 'Generating candidate keywords (AI)',
+    status: 'pending'
+  }, {
+    label: 'Fetching SERP metrics',
+    status: 'pending'
+  }, {
+    label: 'Assembling strategy proposals (AI)',
+    status: 'pending'
+  }, {
+    label: 'Finalizing',
+    status: 'pending'
+  }]);
   const timersRef = useRef<number[]>([] as unknown as number[]);
-
   const startProgress = () => {
     setShowGenModal(true);
-    setGenSteps((prev) => prev.map((s, i) => ({ ...s, status: i === 0 ? 'active' : 'pending' })));
-    const t1 = window.setTimeout(() => setGenSteps((prev) => prev.map((s, i) => ({ ...s, status: i < 1 ? 'done' : i === 1 ? 'active' : 'pending' }))), 600);
-    const t2 = window.setTimeout(() => setGenSteps((prev) => prev.map((s, i) => ({ ...s, status: i < 2 ? 'done' : i === 2 ? 'active' : 'pending' }))), 1300);
-    const t3 = window.setTimeout(() => setGenSteps((prev) => prev.map((s, i) => ({ ...s, status: i < 3 ? 'done' : i === 3 ? 'active' : 'pending' }))), 2000);
+    setGenSteps(prev => prev.map((s, i) => ({
+      ...s,
+      status: i === 0 ? 'active' : 'pending'
+    })));
+    const t1 = window.setTimeout(() => setGenSteps(prev => prev.map((s, i) => ({
+      ...s,
+      status: i < 1 ? 'done' : i === 1 ? 'active' : 'pending'
+    }))), 600);
+    const t2 = window.setTimeout(() => setGenSteps(prev => prev.map((s, i) => ({
+      ...s,
+      status: i < 2 ? 'done' : i === 2 ? 'active' : 'pending'
+    }))), 1300);
+    const t3 = window.setTimeout(() => setGenSteps(prev => prev.map((s, i) => ({
+      ...s,
+      status: i < 3 ? 'done' : i === 3 ? 'active' : 'pending'
+    }))), 2000);
     timersRef.current = [t1, t2, t3];
   };
-
   const clearTimers = () => {
-    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current.forEach(id => window.clearTimeout(id));
     timersRef.current = [] as unknown as number[];
   };
-
   const finishProgress = () => {
     clearTimers();
-    setGenSteps((prev) => prev.map((s) => ({ ...s, status: 'done' })));
+    setGenSteps(prev => prev.map(s => ({
+      ...s,
+      status: 'done'
+    })));
     window.setTimeout(() => setShowGenModal(false), 700);
   };
-
   useEffect(() => {
     loadClusters();
     loadHistoricalProposals();
@@ -223,21 +223,12 @@ export const ContentStrategyEngine = ({
   useEffect(() => {
     const combined = [...(proposals || []), ...(historicalProposals || [])];
     // Remove duplicates based on primary_keyword and title
-    const unique = combined.filter((proposal, index, arr) => 
-      arr.findIndex(p => 
-        p.primary_keyword === proposal.primary_keyword && 
-        p.title === proposal.title
-      ) === index
-    );
-    
+    const unique = combined.filter((proposal, index, arr) => arr.findIndex(p => p.primary_keyword === proposal.primary_keyword && p.title === proposal.title) === index);
+
     // Filter out completed proposals
-    const active = unique.filter(proposal => 
-      !completedProposalIds.includes(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'))
-    );
-    
+    const active = unique.filter(proposal => !completedProposalIds.includes(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-')));
     setAllProposals(active);
   }, [proposals, historicalProposals, completedProposalIds]);
-
   const loadClusters = async () => {
     try {
       setLoading(true);
@@ -254,20 +245,23 @@ export const ContentStrategyEngine = ({
       setLoading(false);
     }
   };
-
   const loadHistoricalProposals = async () => {
     try {
       setLoadingHistorical(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Get all historical proposals from ai_strategy_proposals table
-      const { data: proposalsData, error } = await supabase
-        .from('ai_strategy_proposals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
+      const {
+        data: proposalsData,
+        error
+      } = await supabase.from('ai_strategy_proposals').select('*').eq('user_id', user.id).order('created_at', {
+        ascending: false
+      });
       if (error) {
         console.error('Error loading historical proposals:', error);
         return;
@@ -280,17 +274,18 @@ export const ContentStrategyEngine = ({
         description: item.description,
         primary_keyword: item.primary_keyword,
         related_keywords: item.related_keywords || [],
-        keywords: item.related_keywords || [], // Use related_keywords as keywords fallback
+        keywords: item.related_keywords || [],
+        // Use related_keywords as keywords fallback
         priority_tag: item.priority_tag,
         content_type: item.content_type,
         estimated_impressions: item.estimated_impressions,
         serp_data: item.serp_data || {},
-        suggested_outline: item.content_suggestions || [], // Use content_suggestions as outline fallback
+        suggested_outline: item.content_suggestions || [],
+        // Use content_suggestions as outline fallback
         created_at: item.created_at,
         updated_at: item.updated_at,
         is_historical: true
       }));
-
       setHistoricalProposals(formattedProposals);
       console.log(`✅ Loaded ${formattedProposals.length} historical proposals`);
     } catch (error) {
@@ -308,7 +303,6 @@ export const ContentStrategyEngine = ({
       description: "Updated content completion tracking"
     });
   };
-
   const loadCompletedProposalIds = async () => {
     try {
       const completedIds = await contentCompletionTracking.getCompletedProposalIds();
@@ -318,243 +312,223 @@ export const ContentStrategyEngine = ({
       console.error('Error loading completed proposal IDs:', error);
     }
   };
-
-const generateBlueprint = async () => {
-  if (!goals?.monthlyTraffic) {
-    toast({
-      title: "Set Your Traffic Goal First",
-      description: "Please set your monthly traffic goal before generating proposals.",
-      variant: "destructive"
-    });
-    return;
-  }
-
-  try {
-    setGenerating(true);
-    startProgress();
-    
-    // Get keywords to exclude from previous proposals
-    const { keywordDeduplicationService } = await import('@/services/keywordDeduplicationService');
-    const excludeKeywords = await keywordDeduplicationService.getKeywordsToExclude();
-    
-    console.log('🔄 Excluding', excludeKeywords.length, 'previously used keywords');
-    
-    const result = await contentStrategyService.generateAIStrategy({ 
-      goals: {
-        monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
-        contentPieces: 6, // Default batch size
-        timeline: goals.timeline || '3 months',
-        mainKeyword: goals.mainKeyword || ''
-      }, 
-      location: 'United States',
-      excludeKeywords: excludeKeywords
-    });
-    
-    // Take the generated proposals
-    const generatedProposals = result.proposals || [];
-    
-    // Auto-save all keywords from proposals to library
-    if (generatedProposals.length > 0) {
-      try {
-        console.log('🔄 Auto-saving keywords from proposals...');
-        await proposalKeywordSync.autoSaveKeywordsFromProposals(generatedProposals);
-      } catch (error) {
-        console.error('⚠️ Error auto-saving keywords:', error);
-        // Don't block the main flow for keyword saving errors
-      }
-      
-      // Save proposals to history for future reference
-      try {
-        console.log('📝 About to save proposals to history:', generatedProposals.length, 'proposals');
-        await proposalKeywordSync.saveProposalsToHistory(generatedProposals);
-        console.log('✅ Successfully saved proposals to history');
-      } catch (error) {
-        console.error('❌ Error saving proposals to history:', error);
-        // Don't block the main flow for history saving errors
-      }
+  const generateBlueprint = async () => {
+    if (!goals?.monthlyTraffic) {
+      toast({
+        title: "Set Your Traffic Goal First",
+        description: "Please set your monthly traffic goal before generating proposals.",
+        variant: "destructive"
+      });
+      return;
     }
-    
-    setProposals(generatedProposals);
-    setAiProposals(generatedProposals);
-    
-    toast({ 
-      title: `${generatedProposals.length} Strategy Proposals Ready`, 
-      description: `Generated ${generatedProposals.length} proposals with auto-saved keywords to library` 
-    });
-    
-    finishProgress();
-  } catch (error) {
-    console.error('❌ Error generating AI strategy:', error);
-    clearTimers();
-    setShowGenModal(false);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Failed to generate AI strategy';
-    
-    toast({ 
-      title: 'Strategy Generation Failed', 
-      description: errorMessage.includes('API key') 
-        ? 'Please configure your OpenAI and SERP API keys in Settings'
-        : errorMessage,
-      variant: 'destructive' 
-    });
-  } finally {
-    setGenerating(false);
-  }
-};
+    try {
+      setGenerating(true);
+      startProgress();
 
-const loadMoreProposals = async () => {
-  console.log('🔄 Starting loadMoreProposals');
-  
-  if (!goals?.monthlyTraffic) {
-    console.warn('❌ No monthly traffic goal found');
-    toast({
-      title: "Traffic Goal Required",
-      description: "Please set your monthly traffic goal first to generate targeted proposals.",
-      variant: "destructive"
-    });
-    return;
-  }
+      // Get keywords to exclude from previous proposals
+      const {
+        keywordDeduplicationService
+      } = await import('@/services/keywordDeduplicationService');
+      const excludeKeywords = await keywordDeduplicationService.getKeywordsToExclude();
+      console.log('🔄 Excluding', excludeKeywords.length, 'previously used keywords');
+      const result = await contentStrategyService.generateAIStrategy({
+        goals: {
+          monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
+          contentPieces: 6,
+          // Default batch size
+          timeline: goals.timeline || '3 months',
+          mainKeyword: goals.mainKeyword || ''
+        },
+        location: 'United States',
+        excludeKeywords: excludeKeywords
+      });
 
-  try {
-    setLoadingMore(true);
-    console.log('📊 Current state:', {
-      currentProposalsCount: proposals.length,
-      monthlyTrafficGoal: goals.monthlyTraffic,
-      goals: goals
-    });
-    
-    // Get comprehensive keyword exclusion list from deduplication service
-    const { keywordDeduplicationService } = await import('@/services/keywordDeduplicationService');
-    const excludeKeywords = await keywordDeduplicationService.getKeywordsToExclude();
-    
-    console.log('🔍 Excluding used keywords from history:', excludeKeywords.length);
-    
-    // Use the same comprehensive workflow as main generation with keyword exclusion
-    console.log('🤖 Calling contentStrategyService.generateAIStrategy...');
-    const result = await contentStrategyService.generateAIStrategy({
-      goals: {
-        monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
-        contentPieces: 6, // Fixed batch size for Load More
-        timeline: goals.timeline || '3 months',
-        mainKeyword: goals.mainKeyword || '',
-        excludeKeywords: excludeKeywords // Pass exclusion list to prevent duplicates
-      },
-      location: 'United States'
-    });
-    
-    console.log('✅ Generated new strategy result:', {
-      proposalCount: result.proposals?.length || 0,
-      message: result.message
-    });
-    
-    if (result.proposals && result.proposals.length > 0) {
-      // Filter out any proposals using advanced deduplication
-      const newProposals = [];
-      for (const proposal of result.proposals) {
-        const isUsed = await keywordDeduplicationService.isKeywordAlreadyUsed(proposal.primary_keyword);
-        if (!isUsed) {
-          newProposals.push(proposal);
-        } else {
-          console.log('🔄 Filtered duplicate proposal:', proposal.primary_keyword);
+      // Take the generated proposals
+      const generatedProposals = result.proposals || [];
+
+      // Auto-save all keywords from proposals to library
+      if (generatedProposals.length > 0) {
+        try {
+          console.log('🔄 Auto-saving keywords from proposals...');
+          await proposalKeywordSync.autoSaveKeywordsFromProposals(generatedProposals);
+        } catch (error) {
+          console.error('⚠️ Error auto-saving keywords:', error);
+          // Don't block the main flow for keyword saving errors
+        }
+
+        // Save proposals to history for future reference
+        try {
+          console.log('📝 About to save proposals to history:', generatedProposals.length, 'proposals');
+          await proposalKeywordSync.saveProposalsToHistory(generatedProposals);
+          console.log('✅ Successfully saved proposals to history');
+        } catch (error) {
+          console.error('❌ Error saving proposals to history:', error);
+          // Don't block the main flow for history saving errors
         }
       }
-      
-      if (newProposals.length > 0) {
-        // Auto-save keywords from new proposals
-        try {
-          await proposalKeywordSync.autoSaveKeywordsFromProposals(newProposals);
-        } catch (error) {
-          console.error('⚠️ Error auto-saving keywords from load more:', error);
+      setProposals(generatedProposals);
+      setAiProposals(generatedProposals);
+      toast({
+        title: `${generatedProposals.length} Strategy Proposals Ready`,
+        description: `Generated ${generatedProposals.length} proposals with auto-saved keywords to library`
+      });
+      finishProgress();
+    } catch (error) {
+      console.error('❌ Error generating AI strategy:', error);
+      clearTimers();
+      setShowGenModal(false);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate AI strategy';
+      toast({
+        title: 'Strategy Generation Failed',
+        description: errorMessage.includes('API key') ? 'Please configure your OpenAI and SERP API keys in Settings' : errorMessage,
+        variant: 'destructive'
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+  const loadMoreProposals = async () => {
+    console.log('🔄 Starting loadMoreProposals');
+    if (!goals?.monthlyTraffic) {
+      console.warn('❌ No monthly traffic goal found');
+      toast({
+        title: "Traffic Goal Required",
+        description: "Please set your monthly traffic goal first to generate targeted proposals.",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setLoadingMore(true);
+      console.log('📊 Current state:', {
+        currentProposalsCount: proposals.length,
+        monthlyTrafficGoal: goals.monthlyTraffic,
+        goals: goals
+      });
+
+      // Get comprehensive keyword exclusion list from deduplication service
+      const {
+        keywordDeduplicationService
+      } = await import('@/services/keywordDeduplicationService');
+      const excludeKeywords = await keywordDeduplicationService.getKeywordsToExclude();
+      console.log('🔍 Excluding used keywords from history:', excludeKeywords.length);
+
+      // Use the same comprehensive workflow as main generation with keyword exclusion
+      console.log('🤖 Calling contentStrategyService.generateAIStrategy...');
+      const result = await contentStrategyService.generateAIStrategy({
+        goals: {
+          monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
+          contentPieces: 6,
+          // Fixed batch size for Load More
+          timeline: goals.timeline || '3 months',
+          mainKeyword: goals.mainKeyword || '',
+          excludeKeywords: excludeKeywords // Pass exclusion list to prevent duplicates
+        },
+        location: 'United States'
+      });
+      console.log('✅ Generated new strategy result:', {
+        proposalCount: result.proposals?.length || 0,
+        message: result.message
+      });
+      if (result.proposals && result.proposals.length > 0) {
+        // Filter out any proposals using advanced deduplication
+        const newProposals = [];
+        for (const proposal of result.proposals) {
+          const isUsed = await keywordDeduplicationService.isKeywordAlreadyUsed(proposal.primary_keyword);
+          if (!isUsed) {
+            newProposals.push(proposal);
+          } else {
+            console.log('🔄 Filtered duplicate proposal:', proposal.primary_keyword);
+          }
         }
-        
-        // Save new proposals to history
-        try {
-          await proposalKeywordSync.saveProposalsToHistory(newProposals);
-        } catch (error) {
-          console.error('⚠️ Error saving new proposals to history:', error);
+        if (newProposals.length > 0) {
+          // Auto-save keywords from new proposals
+          try {
+            await proposalKeywordSync.autoSaveKeywordsFromProposals(newProposals);
+          } catch (error) {
+            console.error('⚠️ Error auto-saving keywords from load more:', error);
+          }
+
+          // Save new proposals to history
+          try {
+            await proposalKeywordSync.saveProposalsToHistory(newProposals);
+          } catch (error) {
+            console.error('⚠️ Error saving new proposals to history:', error);
+          }
+
+          // Append new proposals to existing ones
+          const updatedProposals = [...proposals, ...newProposals];
+          console.log('📈 Updating proposals:', {
+            before: proposals.length,
+            after: updatedProposals.length,
+            new: newProposals.length,
+            filtered: result.proposals.length - newProposals.length,
+            totalExcluded: excludeKeywords.length
+          });
+          setProposals(updatedProposals);
+          setAiProposals(updatedProposals);
+          toast({
+            title: 'New Proposals Generated',
+            description: `Found ${newProposals.length} additional strategy proposals with auto-saved keywords`
+          });
+          console.log('📈 Updating proposals:', {
+            before: proposals.length,
+            after: updatedProposals.length,
+            new: newProposals.length,
+            filtered: result.proposals.length - newProposals.length
+          });
+          setProposals(updatedProposals);
+          setAiProposals(updatedProposals);
+          toast({
+            title: 'New Proposals Generated',
+            description: `Found ${newProposals.length} additional strategy proposals using comprehensive analysis`
+          });
+        } else {
+          console.warn('⚠️ All proposals were duplicates after filtering');
+          toast({
+            title: 'No New Unique Proposals',
+            description: 'All generated proposals were similar to existing ones. Try adjusting your goals or main keyword.',
+            variant: 'default'
+          });
         }
-        
-        // Append new proposals to existing ones
-        const updatedProposals = [...proposals, ...newProposals];
-        console.log('📈 Updating proposals:', {
-          before: proposals.length,
-          after: updatedProposals.length,
-          new: newProposals.length,
-          filtered: result.proposals.length - newProposals.length,
-          totalExcluded: excludeKeywords.length
-        });
-        
-        setProposals(updatedProposals);
-        setAiProposals(updatedProposals);
-        
-        toast({
-          title: 'New Proposals Generated',
-          description: `Found ${newProposals.length} additional strategy proposals with auto-saved keywords`
-        });
-        console.log('📈 Updating proposals:', {
-          before: proposals.length,
-          after: updatedProposals.length,
-          new: newProposals.length,
-          filtered: result.proposals.length - newProposals.length
-        });
-        
-        setProposals(updatedProposals);
-        setAiProposals(updatedProposals);
-        
-        toast({
-          title: 'New Proposals Generated',
-          description: `Found ${newProposals.length} additional strategy proposals using comprehensive analysis`
-        });
       } else {
-        console.warn('⚠️ All proposals were duplicates after filtering');
+        console.warn('⚠️ No proposals returned from generateAIStrategy');
         toast({
-          title: 'No New Unique Proposals',
-          description: 'All generated proposals were similar to existing ones. Try adjusting your goals or main keyword.',
+          title: 'No New Proposals',
+          description: 'No additional unique proposals could be generated at this time. Try adjusting your goals or main keyword.',
           variant: 'default'
         });
       }
-    } else {
-      console.warn('⚠️ No proposals returned from generateAIStrategy');
-      toast({
-        title: 'No New Proposals',
-        description: 'No additional unique proposals could be generated at this time. Try adjusting your goals or main keyword.',
-        variant: 'default'
-      });
-    }
-  } catch (error) {
-    console.error('❌ Error in loadMoreProposals:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Failed to load more proposals';
-    
-    // Enhanced error messaging
-    let userFriendlyMessage = errorMessage;
-    let title = 'Load More Failed';
-    
-    if (errorMessage.includes('API key')) {
-      userFriendlyMessage = 'Please configure your OpenAI and SERP API keys in Settings';
-      title = 'API Configuration Required';
-    } else if (errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
-      userFriendlyMessage = 'API rate limit reached. Please try again in a few minutes.';
-      title = 'Rate Limit Reached';
-    } else if (errorMessage.includes('All generated keywords have been used')) {
-      userFriendlyMessage = 'All keywords have been used. Try different goals or main keyword to generate fresh proposals.';
-      title = 'No New Keywords Available';
-    } else if (errorMessage.includes('Failed to generate final strategy')) {
-      userFriendlyMessage = 'Strategy generation failed. Please check your API keys and try again.';
-      title = 'Generation Failed';
-    }
-    
-    toast({
-      title,
-      description: userFriendlyMessage,
-      variant: 'destructive'
-    });
-  } finally {
-    setLoadingMore(false);
-    console.log('🏁 loadMoreProposals completed');
-  }
-};
+    } catch (error) {
+      console.error('❌ Error in loadMoreProposals:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load more proposals';
 
+      // Enhanced error messaging
+      let userFriendlyMessage = errorMessage;
+      let title = 'Load More Failed';
+      if (errorMessage.includes('API key')) {
+        userFriendlyMessage = 'Please configure your OpenAI and SERP API keys in Settings';
+        title = 'API Configuration Required';
+      } else if (errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
+        userFriendlyMessage = 'API rate limit reached. Please try again in a few minutes.';
+        title = 'Rate Limit Reached';
+      } else if (errorMessage.includes('All generated keywords have been used')) {
+        userFriendlyMessage = 'All keywords have been used. Try different goals or main keyword to generate fresh proposals.';
+        title = 'No New Keywords Available';
+      } else if (errorMessage.includes('Failed to generate final strategy')) {
+        userFriendlyMessage = 'Strategy generation failed. Please check your API keys and try again.';
+        title = 'Generation Failed';
+      }
+      toast({
+        title,
+        description: userFriendlyMessage,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingMore(false);
+      console.log('🏁 loadMoreProposals completed');
+    }
+  };
   const refreshClusters = async () => {
     try {
       setLoading(true);
@@ -574,38 +548,42 @@ const loadMoreProposals = async () => {
     } finally {
       setLoading(false);
     }
-};
+  };
 
-// Strategy Builder Dialog state
-const [showStrategyBuilder, setShowStrategyBuilder] = useState(false);
-const [selectedProposal, setSelectedProposal] = useState<any>(null);
+  // Strategy Builder Dialog state
+  const [showStrategyBuilder, setShowStrategyBuilder] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<any>(null);
 
-// Direct handoff to Strategy Builder Dialog for a proposal
-const sendProposalToContentBuilder = async (proposal: any) => {
-  setSelectedProposal(proposal);
-  setShowStrategyBuilder(true);
-};
-
-const sendToContentBuilder = async (cluster: ContentCluster) => {
-  try {
-    const result = await contentStrategyService.sendToContentBuilder(cluster.id);
-    sessionStorage.setItem('contentBuilderPayload', JSON.stringify(result.payload));
-    toast({ title: 'Sent to Content Builder', description: `${cluster.name} has been routed to Content Builder` });
-    window.location.href = result.redirect_url;
-  } catch (error) {
-    console.error('Error sending to content builder:', error);
-    toast({ title: 'Error', description: 'Failed to send to Content Builder', variant: 'destructive' });
-  }
-};
-
+  // Direct handoff to Strategy Builder Dialog for a proposal
+  const sendProposalToContentBuilder = async (proposal: any) => {
+    setSelectedProposal(proposal);
+    setShowStrategyBuilder(true);
+  };
+  const sendToContentBuilder = async (cluster: ContentCluster) => {
+    try {
+      const result = await contentStrategyService.sendToContentBuilder(cluster.id);
+      sessionStorage.setItem('contentBuilderPayload', JSON.stringify(result.payload));
+      toast({
+        title: 'Sent to Content Builder',
+        description: `${cluster.name} has been routed to Content Builder`
+      });
+      window.location.href = result.redirect_url;
+    } catch (error) {
+      console.error('Error sending to content builder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send to Content Builder',
+        variant: 'destructive'
+      });
+    }
+  };
   const updateStatus = async (clusterId: string, status: string) => {
     try {
       await contentStrategyService.updateClusterStatus(clusterId, status);
-      setClusters(prev => 
-        prev.map(cluster => 
-          cluster.id === clusterId ? { ...cluster, status: status as any } : cluster
-        )
-      );
+      setClusters(prev => prev.map(cluster => cluster.id === clusterId ? {
+        ...cluster,
+        status: status as any
+      } : cluster));
       toast({
         title: "Status Updated",
         description: "Cluster status has been updated"
@@ -619,7 +597,6 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
       });
     }
   };
-
   const deleteCluster = async (clusterId: string) => {
     try {
       await contentStrategyService.deleteCluster(clusterId);
@@ -637,9 +614,11 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
       });
     }
   };
-
-  const ClusterCard = ({ cluster }: { cluster: ContentCluster }) => (
-    <Card className="relative overflow-hidden bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300">
+  const ClusterCard = ({
+    cluster
+  }: {
+    cluster: ContentCluster;
+  }) => <Card className="relative overflow-hidden bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -649,21 +628,10 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <Badge 
-              variant="outline" 
-              className={`text-xs border-white/20 ${
-                cluster.priority_tag === 'quick_win' ? 'text-green-400 bg-green-500/10' :
-                cluster.priority_tag === 'high_return' ? 'text-blue-400 bg-blue-500/10' :
-                cluster.priority_tag === 'evergreen' ? 'text-purple-400 bg-purple-500/10' :
-                'text-white/80 bg-white/10'
-              }`}
-            >
+            <Badge variant="outline" className={`text-xs border-white/20 ${cluster.priority_tag === 'quick_win' ? 'text-green-400 bg-green-500/10' : cluster.priority_tag === 'high_return' ? 'text-blue-400 bg-blue-500/10' : cluster.priority_tag === 'evergreen' ? 'text-purple-400 bg-purple-500/10' : 'text-white/80 bg-white/10'}`}>
               {contentStrategyService.getPriorityTagLabel(cluster.priority_tag)}
             </Badge>
-            <Badge 
-              variant="outline"
-              className="text-xs text-white/80 border-white/20 bg-white/10"
-            >
+            <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
               {cluster.status.replace('_', ' ')}
             </Badge>
           </div>
@@ -689,12 +657,10 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             Recommended Content Assets
           </div>
           <div className="grid grid-cols-2 gap-2">
-              {Object.entries(cluster.suggested_assets).map(([type, count]) => (
-                <div key={type} className="flex justify-between text-xs p-2 bg-white/10 rounded border border-white/20">
+              {Object.entries(cluster.suggested_assets).map(([type, count]) => <div key={type} className="flex justify-between text-xs p-2 bg-white/10 rounded border border-white/20">
                   <span className="capitalize text-white/80">{type}:</span>
                   <span className="font-medium text-white">{count as number}</span>
-                </div>
-              ))}
+                </div>)}
           </div>
         </div>
 
@@ -705,75 +671,52 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         </div>
 
         {/* Solution Mapping */}
-        {cluster.solution_mapping.length > 0 && (
-          <div className="space-y-2">
+        {cluster.solution_mapping.length > 0 && <div className="space-y-2">
             <div className="text-sm font-medium flex items-center gap-2 text-white/80">
               <Target className="h-4 w-4 text-purple-400" />
               Mapped Solutions
             </div>
             <div className="flex flex-wrap gap-1">
-              {cluster.solution_mapping.slice(0, 3).map((solution, index) => (
-                <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
+              {cluster.solution_mapping.slice(0, 3).map((solution, index) => <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
                   {solution}
-                </Badge>
-              ))}
-              {cluster.solution_mapping.length > 3 && (
-                <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
+                </Badge>)}
+              {cluster.solution_mapping.length > 3 && <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
                   +{cluster.solution_mapping.length - 3} more
-                </Badge>
-              )}
+                </Badge>}
             </div>
-          </div>
-        )}
+          </div>}
 
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t border-white/20">
-          <Button
-            onClick={() => sendToContentBuilder(cluster)}
-            size="sm"
-            className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
-          >
+          <Button onClick={() => sendToContentBuilder(cluster)} size="sm" className="flex-1 gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0">
             <Send className="h-4 w-4" />
             Send to Builder
           </Button>
           
           <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const nextStatus = cluster.status === 'new' ? 'in_progress' : 
-                                 cluster.status === 'in_progress' ? 'published' : 'new';
-                updateStatus(cluster.id, nextStatus);
-              }}
-              className="border-white/20 text-white/80 hover:bg-white/10"
-            >
+            <Button variant="outline" size="sm" onClick={() => {
+            const nextStatus = cluster.status === 'new' ? 'in_progress' : cluster.status === 'in_progress' ? 'published' : 'new';
+            updateStatus(cluster.id, nextStatus);
+          }} className="border-white/20 text-white/80 hover:bg-white/10">
               <Eye className="h-4 w-4" />
             </Button>
             
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => deleteCluster(cluster.id)}
-                className="border-red-400/30 text-red-400 hover:bg-red-500/10"
-              >
+              <Button variant="outline" size="sm" onClick={() => deleteCluster(cluster.id)} className="border-red-400/30 text-red-400 hover:bg-red-500/10">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
-
-  return (
-    <div className="space-y-6">
+    </Card>;
+  return <div className="space-y-6">
       {/* No Goals Warning */}
-      {!goals?.contentPieces && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
-        >
+      {!goals?.contentPieces && <motion.div initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} className="mb-6">
           <Card className="bg-yellow-500/10 border-yellow-500/20">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -787,12 +730,10 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
-      )}
+        </motion.div>}
 
       {/* Selection Summary & Actions */}
-      {allProposals.length > 0 && (
-        <div className="mb-6">
+      {allProposals.length > 0 && <div className="mb-6">
           <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -804,70 +745,39 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                       {completedProposalIds.length > 0 && ` • ${completedProposalIds.length} completed`}
                     </div>
                   </div>
-                  {selectedCount > 0 && (
-                    <div className="flex items-center gap-2 text-sm">
+                  {selectedCount > 0 && <div className="flex items-center gap-2 text-sm">
                       <Badge className="bg-green-500/20 text-green-400 border-green-400/30">
                         Est. Traffic: {estimatedTraffic.toLocaleString()}
                       </Badge>
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    onClick={refreshCompletedProposals}
-                    variant="outline"
-                    size="sm"
-                    className="border-white/20 text-white/80 hover:bg-white/10"
-                    title="Refresh completion status"
-                  >
+                  <Button onClick={refreshCompletedProposals} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10" title="Refresh completion status">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
-                  <Button
-                    onClick={handleSelectAllProposals}
-                    variant="outline"
-                    size="sm"
-                    className="border-white/20 text-white/80 hover:bg-white/10"
-                  >
+                  <Button onClick={handleSelectAllProposals} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10">
                     Select All
                   </Button>
-                  <Button
-                    onClick={handleClearSelection}
-                    variant="outline"
-                    size="sm"
-                    className="border-white/20 text-white/80 hover:bg-white/10"
-                  >
+                  <Button onClick={handleClearSelection} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10">
                     Clear
                   </Button>
-                  {selectedCount > 0 && (
-                    <Button
-                      onClick={handleScheduleSelected}
-                      className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
-                    >
+                  {selectedCount > 0 && <Button onClick={handleScheduleSelected} className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0">
                       <Calendar className="h-4 w-4" />
                       Add to Calendar ({selectedCount})
-                    </Button>
-                  )}
+                    </Button>}
                 </div>
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+        </div>}
 
       {/* Content Clusters Summary */}
-      {allProposals.length > 0 && (
-        <ContentClustersSummary
-          totalProposals={allProposals.length + completedProposalIds.length}
-          selectedCount={selectedCount}
-          completedCount={completedProposalIds.length}
-          estimatedTraffic={allProposals.reduce((sum, p) => {
-            const primaryKw = p.primary_keyword;
-            const metrics = p.serp_data?.[primaryKw] || {};
-            const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
-            return sum + est;
-          }, 0)}
-        />
-      )}
+      {allProposals.length > 0 && <ContentClustersSummary totalProposals={allProposals.length + completedProposalIds.length} selectedCount={selectedCount} completedCount={completedProposalIds.length} estimatedTraffic={allProposals.reduce((sum, p) => {
+      const primaryKw = p.primary_keyword;
+      const metrics = p.serp_data?.[primaryKw] || {};
+      const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+      return sum + est;
+    }, 0)} />}
 
       {/* Enhanced Header */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-green-500/10 border border-white/10 p-6 mb-6">
@@ -882,17 +792,16 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             </p>
           </div>
           
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Button
-              onClick={generateBlueprint}
-              disabled={generating}
-              className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg px-6 py-3 text-base"
-              size="lg"
-            >
+          <motion.div initial={{
+          opacity: 0,
+          scale: 0.9
+        }} animate={{
+          opacity: 1,
+          scale: 1
+        }} transition={{
+          delay: 0.2
+        }}>
+            <Button onClick={generateBlueprint} disabled={generating} className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg px-6 py-3 text-base" size="lg">
               <Lightbulb className="h-5 w-5" />
               {generating ? 'Generating Strategy...' : 'Generate AI Strategy'}
             </Button>
@@ -901,55 +810,32 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
       </div>
 
       {/* Content Clusters Grid - Show ALL proposals as tiles */}
-      {allProposals.length > 0 && (
-        <div className="space-y-4">
+      {allProposals.length > 0 && <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold text-white">All Content Clusters</h3>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-white/80 border-white/20">
                 {allProposals.length} proposals
               </Badge>
-              {loadingHistorical && (
-                <RefreshCw className="h-4 w-4 text-white/60 animate-spin" />
-              )}
+              {loadingHistorical && <RefreshCw className="h-4 w-4 text-white/60 animate-spin" />}
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allProposals.map((proposal, index) => (
-              <motion.div
-                key={`${proposal.id || proposal.primary_keyword}-${index}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <ProposalCard
-                  proposal={proposal}
-                  index={index}
-                  isSelected={selected[index] || false}
-                  onSelectionChange={(idx, checked) => {
-                    const newSelected = { ...selected, [idx]: checked };
-                    setSelected(newSelected);
-                    setSelectedProposals(newSelected);
-                  }}
-                  onSendToBuilder={() => sendProposalToContentBuilder(proposal)}
-                  showHistoricalBadge={proposal.is_historical}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
+          
+        </div>}
 
       {/* Strategy Proposals or Clusters Display */}
       {/* Strategy Overview */}
-      {(clusters.length > 0 || proposals.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
+      {(clusters.length > 0 || proposals.length > 0) && <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.1
+      }}>
             <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-white/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
@@ -968,11 +854,15 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             </Card>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+          <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.2
+      }}>
             <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-white/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
@@ -982,15 +872,12 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
               </CardHeader>
               <CardContent>
                  <div className="text-2xl font-bold text-white">
-                   {allProposals.length > 0 
-                     ? allProposals.reduce((sum, p) => {
-                         const primaryKw = p.primary_keyword;
-                         const metrics = p.serp_data?.[primaryKw] || {};
-                         const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
-                         return sum + est;
-                       }, 0).toLocaleString()
-                     : clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()
-                   }
+                   {allProposals.length > 0 ? allProposals.reduce((sum, p) => {
+                const primaryKw = p.primary_keyword;
+                const metrics = p.serp_data?.[primaryKw] || {};
+                const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+                return sum + est;
+              }, 0).toLocaleString() : clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()}
                  </div>
                 <p className="text-xs text-white/60 mt-1">
                   Potential reach
@@ -999,11 +886,15 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             </Card>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.3
+      }}>
             <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-white/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
@@ -1013,10 +904,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white">
-                  {proposals.length > 0 
-                    ? proposals.reduce((sum, p) => sum + (p.related_keywords?.length || 0), 0)
-                    : clusters.reduce((sum, c) => sum + Object.values(c.suggested_assets).reduce((a: number, b: number) => a + b, 0), 0)
-                  }
+                  {proposals.length > 0 ? proposals.reduce((sum, p) => sum + (p.related_keywords?.length || 0), 0) : clusters.reduce((sum, c) => sum + Object.values(c.suggested_assets).reduce((a: number, b: number) => a + b, 0), 0)}
                 </div>
                 <p className="text-xs text-white/60 mt-1">
                   Total opportunities
@@ -1025,11 +913,15 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             </Card>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
+          <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.4
+      }}>
             <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-white/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
@@ -1039,10 +931,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-white">
-                  {proposals.length > 0 
-                    ? proposals.filter(p => p.priority_tag === 'quick_win').length
-                    : `${Math.round(clusters.reduce((sum, c) => sum + c.timeframe_weeks, 0) / Math.max(clusters.length, 1))}w`
-                  }
+                  {proposals.length > 0 ? proposals.filter(p => p.priority_tag === 'quick_win').length : `${Math.round(clusters.reduce((sum, c) => sum + c.timeframe_weeks, 0) / Math.max(clusters.length, 1))}w`}
                 </div>
                 <p className="text-xs text-white/60 mt-1">
                   {proposals.length > 0 ? 'High-impact options' : 'Average duration'}
@@ -1050,8 +939,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
               </CardContent>
             </Card>
           </motion.div>
-        </div>
-      )}
+        </div>}
 
       {/* Content Clusters or Proposals */}
       <Card className="bg-white/5 border-white/10">
@@ -1064,48 +952,34 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         <CardContent>
           <Tabs defaultValue="all" className="space-y-4">
             <TabsList className="bg-white/10 border-white/20">
-              <TabsTrigger 
-                value="all"
-                className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70"
-              >
+              <TabsTrigger value="all" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70">
                 {proposals.length > 0 ? 'All Proposals' : 'All Clusters'}
               </TabsTrigger>
-              <TabsTrigger 
-                value="selected"
-                className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-300 text-white/70"
-              >
+              <TabsTrigger value="selected" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-300 text-white/70">
                 Selected ({Object.values(selected).filter(Boolean).length})
               </TabsTrigger>
-              <TabsTrigger 
-                value="quick_win"
-                className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70"
-              >
+              <TabsTrigger value="quick_win" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70">
                 Quick Wins
               </TabsTrigger>
-              <TabsTrigger 
-                value="high_return"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70"
-              >
+              <TabsTrigger value="high_return" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70">
                 High Return
               </TabsTrigger>
-              <TabsTrigger 
-                value="evergreen"
-                className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70"
-              >
+              <TabsTrigger value="evergreen" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70">
                 Evergreen
               </TabsTrigger>
             </TabsList>
 
           <TabsContent value="all" className="space-y-4">
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                  >
+            {loading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => <motion.div key={i} initial={{
+                opacity: 0,
+                y: 20
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} transition={{
+                delay: i * 0.1
+              }}>
                     <Card className="h-96 bg-white/5 border-white/10">
                       <CardContent className="p-6">
                         <div className="space-y-4 animate-pulse">
@@ -1119,60 +993,52 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                         </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
-                ))}
-              </div>
-            ) : allProposals.length > 0 ? (
-              <>
-                <motion.div 
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ staggerChildren: 0.1 }}
-                >
-                  {allProposals.map((proposal, idx) => (
-                    <motion.div
-                      key={proposal.primary_keyword || idx}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                    >
-                       <ProposalCard 
-                         proposal={proposal}
-                         index={idx}
-                         isSelected={selected[idx] || false}
-                          onSelectionChange={(index, isSelected) => {
-                            const newSelected = { ...selected, [index]: isSelected };
-                            setSelected(newSelected);
-                            // Debounce context update to prevent race conditions
-                            setTimeout(() => setSelectedProposals(newSelected), 50);
-                          }}
-                         onSendToBuilder={sendProposalToContentBuilder}
-                       />
-                    </motion.div>
-                  ))}
+                  </motion.div>)}
+              </div> : allProposals.length > 0 ? <>
+                <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" initial={{
+                opacity: 0
+              }} animate={{
+                opacity: 1
+              }} transition={{
+                staggerChildren: 0.1
+              }}>
+                  {allProposals.map((proposal, idx) => <motion.div key={proposal.primary_keyword || idx} initial={{
+                  opacity: 0,
+                  y: 20
+                }} animate={{
+                  opacity: 1,
+                  y: 0
+                }} transition={{
+                  delay: idx * 0.1
+                }}>
+                       <ProposalCard proposal={proposal} index={idx} isSelected={selected[idx] || false} onSelectionChange={(index, isSelected) => {
+                    const newSelected = {
+                      ...selected,
+                      [index]: isSelected
+                    };
+                    setSelected(newSelected);
+                    // Debounce context update to prevent race conditions
+                    setTimeout(() => setSelectedProposals(newSelected), 50);
+                  }} onSendToBuilder={sendProposalToContentBuilder} />
+                    </motion.div>)}
                 </motion.div>
                 
                 {/* Load More Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex justify-center mt-8"
-                >
-                  <Button
-                    onClick={loadMoreProposals}
-                    disabled={loadingMore}
-                    variant="outline"
-                    className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
-                  >
+                <motion.div initial={{
+                opacity: 0,
+                y: 10
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} transition={{
+                delay: 0.3
+              }} className="flex justify-center mt-8">
+                  <Button onClick={loadMoreProposals} disabled={loadingMore} variant="outline" className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3">
                     <RefreshCw className={`h-4 w-4 ${loadingMore ? 'animate-spin' : ''}`} />
                     {loadingMore ? 'Finding New Proposals...' : 'Load More Proposals'}
                   </Button>
                 </motion.div>
-              </>
-            ) : clusters.length === 0 ? (
-              <div className="p-12 text-center">
+              </> : clusters.length === 0 ? <div className="p-12 text-center">
                 <div className="space-y-4">
                   <Lightbulb className="h-12 w-12 text-white/40 mx-auto" />
                   <div>
@@ -1185,124 +1051,81 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                     {generating ? 'Generating...' : 'Generate AI Strategy'}
                   </Button>
                 </div>
-              </div>
-            ) : (
-              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ staggerChildren: 0.1 }}
-              >
-                {clusters.map((cluster, idx) => (
-                  <motion.div
-                    key={cluster.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                  >
+              </div> : <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" initial={{
+              opacity: 0
+            }} animate={{
+              opacity: 1
+            }} transition={{
+              staggerChildren: 0.1
+            }}>
+                {clusters.map((cluster, idx) => <motion.div key={cluster.id} initial={{
+                opacity: 0,
+                y: 20
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} transition={{
+                delay: idx * 0.1
+              }}>
                     <ClusterCard cluster={cluster} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
+                  </motion.div>)}
+              </motion.div>}
           </TabsContent>
 
           <TabsContent value="selected" className="space-y-4">
-            {Object.values(selected).filter(Boolean).length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allProposals
-                  .filter((_, idx) => selected[idx])
-                  .map((proposal, filteredIdx) => {
-                    const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
-                    return (
-                      <ProposalCard 
-                        key={proposal.primary_keyword || filteredIdx}
-                        proposal={proposal}
-                        index={originalIndex}
-                        isSelected={true}
-                        onSelectionChange={(index, isSelected) => {
-                          const newSelected = { ...selected, [index]: isSelected };
-                          setSelected(newSelected);
-                          setTimeout(() => setSelectedProposals(newSelected), 50);
-                        }}
-                        onSendToBuilder={sendProposalToContentBuilder}
-                      />
-                    );
-                  })}
-              </div>
-            ) : (
-              <Card className="p-8 text-center">
+            {Object.values(selected).filter(Boolean).length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {allProposals.filter((_, idx) => selected[idx]).map((proposal, filteredIdx) => {
+                const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
+                return <ProposalCard key={proposal.primary_keyword || filteredIdx} proposal={proposal} index={originalIndex} isSelected={true} onSelectionChange={(index, isSelected) => {
+                  const newSelected = {
+                    ...selected,
+                    [index]: isSelected
+                  };
+                  setSelected(newSelected);
+                  setTimeout(() => setSelectedProposals(newSelected), 50);
+                }} onSendToBuilder={sendProposalToContentBuilder} />;
+              })}
+              </div> : <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
                   No proposals selected yet. Go to other tabs to select proposals.
                 </p>
-              </Card>
-            )}
+              </Card>}
           </TabsContent>
 
-          {['quick_win', 'high_return', 'evergreen'].map((tag) => (
-            <TabsContent key={tag} value={tag} className="space-y-4">
+          {['quick_win', 'high_return', 'evergreen'].map(tag => <TabsContent key={tag} value={tag} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allProposals.length > 0 ? (
-                  allProposals
-                    .filter((proposal) => (proposal.priority_tag || 'evergreen') === tag)
-                    .map((proposal, idx) => (
-                       <ProposalCard 
-                         key={proposal.primary_keyword || idx}
-                         proposal={proposal}
-                         index={allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)}
-                         isSelected={selected[allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false}
-                          onSelectionChange={(index, isSelected) => {
-                            const newSelected = { ...selected, [index]: isSelected };
-                            setSelected(newSelected);
-                            // Debounce context update to prevent race conditions
-                            setTimeout(() => setSelectedProposals(newSelected), 50);
-                          }}
-                         onSendToBuilder={sendProposalToContentBuilder}
-                        />
-                    ))
-                ) : (
-                  clusters
-                    .filter((cluster) => cluster.priority_tag === tag)
-                    .map((cluster) => (
-                      <ClusterCard key={cluster.id} cluster={cluster} />
-                    ))
-                )}
+                {allProposals.length > 0 ? allProposals.filter(proposal => (proposal.priority_tag || 'evergreen') === tag).map((proposal, idx) => <ProposalCard key={proposal.primary_keyword || idx} proposal={proposal} index={allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)} isSelected={selected[allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false} onSelectionChange={(index, isSelected) => {
+                const newSelected = {
+                  ...selected,
+                  [index]: isSelected
+                };
+                setSelected(newSelected);
+                // Debounce context update to prevent race conditions
+                setTimeout(() => setSelectedProposals(newSelected), 50);
+              }} onSendToBuilder={sendProposalToContentBuilder} />) : clusters.filter(cluster => cluster.priority_tag === tag).map(cluster => <ClusterCard key={cluster.id} cluster={cluster} />)}
               </div>
-              {(allProposals.length > 0 
-                ? allProposals.filter((proposal) => (proposal.priority_tag || 'evergreen') === tag).length === 0
-                : clusters.filter((cluster) => cluster.priority_tag === tag).length === 0
-              ) && (
-                <Card className="p-8 text-center">
+              {(allProposals.length > 0 ? allProposals.filter(proposal => (proposal.priority_tag || 'evergreen') === tag).length === 0 : clusters.filter(cluster => cluster.priority_tag === tag).length === 0) && <Card className="p-8 text-center">
                   <p className="text-muted-foreground">
                     No {tag.replace('_', ' ')} {allProposals.length > 0 ? 'proposals' : 'clusters'} found
                   </p>
-                </Card>
-              )}
-            </TabsContent>
-          ))}
+                </Card>}
+            </TabsContent>)}
         </Tabs>
         </CardContent>
       </Card>
-      <StrategyGenerationModal open={showGenModal} steps={genSteps} onCancel={() => { if (!generating) setShowGenModal(false); }} />
-      <StrategyBuilderDialog 
-        open={showStrategyBuilder} 
-        onOpenChange={setShowStrategyBuilder}
-        proposal={selectedProposal}
-      />
+      <StrategyGenerationModal open={showGenModal} steps={genSteps} onCancel={() => {
+      if (!generating) setShowGenModal(false);
+    }} />
+      <StrategyBuilderDialog open={showStrategyBuilder} onOpenChange={setShowStrategyBuilder} proposal={selectedProposal} />
 
       {/* Selected Proposals Sidebar */}
-      <SelectedProposalsSidebar
-        proposals={allProposals}
-        selected={selected}
-        onSelectionChange={(index, isSelected) => {
-          const newSelected = { ...selected, [index]: isSelected };
-          setSelected(newSelected);
-          setTimeout(() => setSelectedProposals(newSelected), 50);
-        }}
-        onSendToBuilder={sendProposalToContentBuilder}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-    </div>
-  );
-}
+      <SelectedProposalsSidebar proposals={allProposals} selected={selected} onSelectionChange={(index, isSelected) => {
+      const newSelected = {
+        ...selected,
+        [index]: isSelected
+      };
+      setSelected(newSelected);
+      setTimeout(() => setSelectedProposals(newSelected), 50);
+    }} onSendToBuilder={sendProposalToContentBuilder} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+    </div>;
+};
