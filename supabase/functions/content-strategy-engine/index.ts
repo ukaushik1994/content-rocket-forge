@@ -27,6 +27,7 @@ const CLASSIFICATION_THRESHOLDS = {
   EVERGREEN: {
     MIN_VOLUME: 100,
     STEADY_VOLUME_THRESHOLD: 50 // For consistent demand detection
+  }
 }
 
 // Helper functions for priority classification
