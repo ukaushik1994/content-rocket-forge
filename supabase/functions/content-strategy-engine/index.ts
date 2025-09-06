@@ -938,6 +938,16 @@ Create 5-8 strategic content proposals that leverage these keywords and align wi
     // Use the enhanced classification helper function with business context
     const classification = classifyProposal(kws, serpMap, companyInfo, solutions);
     
+    // Add classification debugging info
+    console.log(`🎯 Proposal "${p.title}" classified as ${classification.priority_tag}:`, {
+      metrics: classification.metrics,
+      business_context: {
+        conversion_score: classification.business_context.conversion_potential.conversionScore,
+        strategic_value: classification.business_context.business_validation.strategicValue,
+        competitive_complexity: classification.business_context.serp_analysis.competitiveComplexity
+      }
+    });
+    
     return { 
       ...p, 
       keywords: kws, 
@@ -946,19 +956,168 @@ Create 5-8 strategic content proposals that leverage these keywords and align wi
       priority_tag: classification.priority_tag,
       metrics: classification.metrics,
       business_context: classification.business_context,
+      // Add classification reasoning for debugging
+      classification_reasoning: generateClassificationReasoning(classification, kws),
       id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       generated_at: new Date().toISOString()
     };
   });
 
+  // Add classification quality monitoring
+  logClassificationMetrics(withSerp);
+  
+  // Validate and log classification distribution
+  const qualityReport = validateClassificationThresholds(withSerp);
+  console.log('🎯 Final Classification Summary:', {
+    proposals_generated: withSerp.length,
+    quality_score: qualityReport.quality_score,
+    distribution_percentages: Object.entries(qualityReport.distribution).reduce((acc, [key, value]) => {
+      acc[key] = `${Math.round((value / withSerp.length) * 100)}%`;
+      return acc;
+    }, {} as Record<string, string>),
+    optimization_recommendations: qualityReport.recommendations
+  });
+
   console.log('✅ Strategy generation completed:', {
     proposalsGenerated: withSerp.length,
     totalKeywords: kwList.length,
-    avgEstimatedImpressions: withSerp.reduce((sum, p) => sum + p.estimated_impressions, 0) / withSerp.length
+    avgEstimatedImpressions: withSerp.reduce((sum, p) => sum + p.estimated_impressions, 0) / withSerp.length,
+    classificationQuality: qualityReport.quality_score
   });
 
   return new Response(
-    JSON.stringify({ success: true, proposals: withSerp, message: `Generated ${withSerp.length} proposals` }),
+    JSON.stringify({ 
+      success: true, 
+      proposals: withSerp, 
+      message: `Generated ${withSerp.length} proposals`,
+      quality_metrics: qualityReport
+    }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
+}
+
+// Classification reasoning and debugging functions
+function generateClassificationReasoning(classification: any, keywords: any[]): string {
+  const { priority_tag, metrics, business_context } = classification;
+  const { total_volume, avg_difficulty, opportunity_score } = metrics;
+  const { conversion_potential, business_validation, serp_analysis } = business_context;
+  
+  let reasoning = '';
+  
+  switch (priority_tag) {
+    case 'quick_win':
+      reasoning = `Quick Win: Low difficulty (${avg_difficulty}≤35), decent volume (${total_volume} in 100-5K range), good opportunity score (${opportunity_score}≥3), and manageable competition (${serp_analysis.competitiveComplexity}).`;
+      break;
+    case 'high_return':
+      if (total_volume >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_VOLUME) {
+        reasoning = `High Return: High search volume (${total_volume}≥1K) with good opportunity score (${opportunity_score}≥10).`;
+      } else {
+        reasoning = `High Return: Strong conversion potential (${conversion_potential.conversionScore}≥0.5) and high strategic value (${business_validation.strategicValue}).`;
+      }
+      break;
+    case 'low_priority':
+      if (total_volume < CLASSIFICATION_THRESHOLDS.LOW_PRIORITY.MAX_VOLUME) {
+        reasoning = `Low Priority: Very low search volume (${total_volume}<100).`;
+      } else if (business_validation.strategicValue === 'low') {
+        reasoning = `Low Priority: Poor business alignment (strategic value: ${business_validation.strategicValue}).`;
+      } else {
+        reasoning = `Low Priority: High difficulty (${avg_difficulty}>70) with low volume (${total_volume}<500).`;
+      }
+      break;
+    case 'evergreen':
+    default:
+      reasoning = `Evergreen: Steady opportunity with volume ${total_volume}, difficulty ${avg_difficulty}, and ${business_validation.strategicValue} strategic value.`;
+      break;
+  }
+  
+  // Add business context insights
+  if (conversion_potential.hasCommercialIntent) {
+    reasoning += ` Has commercial intent keywords.`;
+  }
+  if (business_validation.relevanceFlags.length > 0) {
+    reasoning += ` Business flags: ${business_validation.relevanceFlags.join(', ')}.`;
+  }
+  
+  return reasoning;
+}
+
+// Threshold validation and optimization functions
+function validateClassificationThresholds(proposals: any[]): {
+  distribution: Record<string, number>;
+  recommendations: string[];
+  quality_score: number;
+} {
+  const distribution = proposals.reduce((acc, p) => {
+    acc[p.priority_tag] = (acc[p.priority_tag] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const total = proposals.length;
+  const recommendations: string[] = [];
+  let quality_score = 100;
+  
+  // Check for healthy distribution (should have some of each category)
+  const quickWinPercent = (distribution.quick_win || 0) / total * 100;
+  const highReturnPercent = (distribution.high_return || 0) / total * 100;
+  const evergreenPercent = (distribution.evergreen || 0) / total * 100;
+  const lowPriorityPercent = (distribution.low_priority || 0) / total * 100;
+  
+  // Ideal distribution: 20-30% quick wins, 15-25% high return, 40-60% evergreen, <20% low priority
+  if (quickWinPercent < 10) {
+    recommendations.push('Consider lowering difficulty thresholds to identify more Quick Win opportunities');
+    quality_score -= 15;
+  } else if (quickWinPercent > 40) {
+    recommendations.push('Too many Quick Wins - consider raising difficulty or volume thresholds');
+    quality_score -= 10;
+  }
+  
+  if (highReturnPercent < 5) {
+    recommendations.push('Consider lowering volume thresholds or enhancing conversion detection for High Return opportunities');
+    quality_score -= 10;
+  } else if (highReturnPercent > 35) {
+    recommendations.push('Too many High Return proposals - consider raising volume thresholds');
+    quality_score -= 5;
+  }
+  
+  if (lowPriorityPercent > 30) {
+    recommendations.push('High percentage of Low Priority content - review keyword generation or business alignment');
+    quality_score -= 20;
+  }
+  
+  if (evergreenPercent < 30) {
+    recommendations.push('Consider broadening Evergreen criteria for more consistent content opportunities');
+    quality_score -= 5;
+  }
+  
+  return {
+    distribution,
+    recommendations,
+    quality_score: Math.max(0, quality_score)
+  };
+}
+
+// Performance monitoring for classification
+function logClassificationMetrics(proposals: any[]): void {
+  const metrics = validateClassificationThresholds(proposals);
+  
+  console.log('📊 Classification Quality Report:', {
+    total_proposals: proposals.length,
+    distribution: metrics.distribution,
+    quality_score: metrics.quality_score,
+    recommendations: metrics.recommendations
+  });
+  
+  // Log detailed metrics for each category
+  Object.entries(metrics.distribution).forEach(([category, count]) => {
+    const categoryProposals = proposals.filter(p => p.priority_tag === category);
+    const avgVolume = categoryProposals.reduce((sum, p) => sum + (p.metrics?.total_volume || 0), 0) / count;
+    const avgDifficulty = categoryProposals.reduce((sum, p) => sum + (p.metrics?.avg_difficulty || 0), 0) / count;
+    const avgOpportunityScore = categoryProposals.reduce((sum, p) => sum + (p.metrics?.opportunity_score || 0), 0) / count;
+    
+    console.log(`📈 ${category.toUpperCase()} Category (${count} proposals):`, {
+      avg_volume: Math.round(avgVolume),
+      avg_difficulty: Math.round(avgDifficulty),
+      avg_opportunity_score: Math.round(avgOpportunityScore * 100) / 100
+    });
+  });
 }
