@@ -17,7 +17,7 @@ import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
-import { SelectedProposalsSidebar } from './SelectedProposalsSidebar';
+
 import { supabase } from '@/integrations/supabase/client';
 import { contentCompletionTracking } from '@/services/contentCompletionTracking';
 import { useContentReminders } from '@/hooks/useContentReminders';
@@ -55,7 +55,19 @@ export const ContentStrategyEngine = ({
   const [loadingHistorical, setLoadingHistorical] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Pagination states for each tab
+  const [displayCounts, setDisplayCounts] = useState({
+    all: 9,
+    selected: 9,
+    quick_win: 9,
+    high_return: 9,
+    evergreen: 9
+  });
+  const ITEMS_PER_PAGE = 9;
+
+  // Track newly generated proposals with timestamps
+  const [newProposalIds, setNewProposalIds] = useState<Set<string>>(new Set());
+  const [newProposalTimestamps, setNewProposalTimestamps] = useState<Record<string, number>>({});
   const {
     toast
   } = useToast();
@@ -229,6 +241,12 @@ export const ContentStrategyEngine = ({
     const active = unique.filter(proposal => !completedProposalIds.includes(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-')));
     setAllProposals(active);
   }, [proposals, historicalProposals, completedProposalIds]);
+
+  // Cleanup old "new" flags periodically
+  useEffect(() => {
+    const interval = setInterval(cleanupOldNewFlags, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [newProposalIds, newProposalTimestamps]);
   const loadClusters = async () => {
     try {
       setLoading(true);
@@ -368,6 +386,7 @@ export const ContentStrategyEngine = ({
       }
       setProposals(generatedProposals);
       setAiProposals(generatedProposals);
+      markProposalsAsNew(generatedProposals);
       toast({
         title: `${generatedProposals.length} Strategy Proposals Ready`,
         description: `Generated ${generatedProposals.length} proposals with auto-saved keywords to library`
@@ -387,147 +406,79 @@ export const ContentStrategyEngine = ({
       setGenerating(false);
     }
   };
-  const loadMoreProposals = async () => {
-    console.log('🔄 Starting loadMoreProposals');
-    if (!goals?.monthlyTraffic) {
-      console.warn('❌ No monthly traffic goal found');
-      toast({
-        title: "Traffic Goal Required",
-        description: "Please set your monthly traffic goal first to generate targeted proposals.",
-        variant: "destructive"
-      });
-      return;
-    }
-    try {
-      setLoadingMore(true);
-      console.log('📊 Current state:', {
-        currentProposalsCount: proposals.length,
-        monthlyTrafficGoal: goals.monthlyTraffic,
-        goals: goals
-      });
 
-      // Get comprehensive keyword exclusion list from deduplication service
-      const {
-        keywordDeduplicationService
-      } = await import('@/services/keywordDeduplicationService');
-      const excludeKeywords = await keywordDeduplicationService.getKeywordsToExclude();
-      console.log('🔍 Excluding used keywords from history:', excludeKeywords.length);
+  // Mark proposals as new when generated
+  const markProposalsAsNew = (proposals: any[]) => {
+    const timestamp = Date.now();
+    const newIds = new Set(newProposalIds);
+    const newTimestamps = { ...newProposalTimestamps };
+    
+    proposals.forEach(proposal => {
+      const id = proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-');
+      newIds.add(id);
+      newTimestamps[id] = timestamp;
+    });
+    
+    setNewProposalIds(newIds);
+    setNewProposalTimestamps(newTimestamps);
+  };
 
-      // Use the same comprehensive workflow as main generation with keyword exclusion
-      console.log('🤖 Calling contentStrategyService.generateAIStrategy...');
-      const result = await contentStrategyService.generateAIStrategy({
-        goals: {
-          monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
-          contentPieces: 6,
-          // Fixed batch size for Load More
-          timeline: goals.timeline || '3 months',
-          mainKeyword: goals.mainKeyword || '',
-          excludeKeywords: excludeKeywords // Pass exclusion list to prevent duplicates
-        },
-        location: 'United States'
-      });
-      console.log('✅ Generated new strategy result:', {
-        proposalCount: result.proposals?.length || 0,
-        message: result.message
-      });
-      if (result.proposals && result.proposals.length > 0) {
-        // Filter out any proposals using advanced deduplication
-        const newProposals = [];
-        for (const proposal of result.proposals) {
-          const isUsed = await keywordDeduplicationService.isKeywordAlreadyUsed(proposal.primary_keyword);
-          if (!isUsed) {
-            newProposals.push(proposal);
-          } else {
-            console.log('🔄 Filtered duplicate proposal:', proposal.primary_keyword);
-          }
-        }
-        if (newProposals.length > 0) {
-          // Auto-save keywords from new proposals
-          try {
-            await proposalKeywordSync.autoSaveKeywordsFromProposals(newProposals);
-          } catch (error) {
-            console.error('⚠️ Error auto-saving keywords from load more:', error);
-          }
-
-          // Save new proposals to history
-          try {
-            await proposalKeywordSync.saveProposalsToHistory(newProposals);
-          } catch (error) {
-            console.error('⚠️ Error saving new proposals to history:', error);
-          }
-
-          // Append new proposals to existing ones
-          const updatedProposals = [...proposals, ...newProposals];
-          console.log('📈 Updating proposals:', {
-            before: proposals.length,
-            after: updatedProposals.length,
-            new: newProposals.length,
-            filtered: result.proposals.length - newProposals.length,
-            totalExcluded: excludeKeywords.length
-          });
-          setProposals(updatedProposals);
-          setAiProposals(updatedProposals);
-          toast({
-            title: 'New Proposals Generated',
-            description: `Found ${newProposals.length} additional strategy proposals with auto-saved keywords`
-          });
-          console.log('📈 Updating proposals:', {
-            before: proposals.length,
-            after: updatedProposals.length,
-            new: newProposals.length,
-            filtered: result.proposals.length - newProposals.length
-          });
-          setProposals(updatedProposals);
-          setAiProposals(updatedProposals);
-          toast({
-            title: 'New Proposals Generated',
-            description: `Found ${newProposals.length} additional strategy proposals using comprehensive analysis`
-          });
-        } else {
-          console.warn('⚠️ All proposals were duplicates after filtering');
-          toast({
-            title: 'No New Unique Proposals',
-            description: 'All generated proposals were similar to existing ones. Try adjusting your goals or main keyword.',
-            variant: 'default'
-          });
-        }
-      } else {
-        console.warn('⚠️ No proposals returned from generateAIStrategy');
-        toast({
-          title: 'No New Proposals',
-          description: 'No additional unique proposals could be generated at this time. Try adjusting your goals or main keyword.',
-          variant: 'default'
-        });
+  // Remove "new" status after 24 hours
+  const cleanupOldNewFlags = () => {
+    const now = Date.now();
+    const dayInMs = 24 * 60 * 60 * 1000;
+    const newIds = new Set(newProposalIds);
+    const newTimestamps = { ...newProposalTimestamps };
+    
+    Object.entries(newTimestamps).forEach(([id, timestamp]) => {
+      if (now - timestamp > dayInMs) {
+        newIds.delete(id);
+        delete newTimestamps[id];
       }
-    } catch (error) {
-      console.error('❌ Error in loadMoreProposals:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load more proposals';
+    });
+    
+    setNewProposalIds(newIds);
+    setNewProposalTimestamps(newTimestamps);
+  };
 
-      // Enhanced error messaging
-      let userFriendlyMessage = errorMessage;
-      let title = 'Load More Failed';
-      if (errorMessage.includes('API key')) {
-        userFriendlyMessage = 'Please configure your OpenAI and SERP API keys in Settings';
-        title = 'API Configuration Required';
-      } else if (errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
-        userFriendlyMessage = 'API rate limit reached. Please try again in a few minutes.';
-        title = 'Rate Limit Reached';
-      } else if (errorMessage.includes('All generated keywords have been used')) {
-        userFriendlyMessage = 'All keywords have been used. Try different goals or main keyword to generate fresh proposals.';
-        title = 'No New Keywords Available';
-      } else if (errorMessage.includes('Failed to generate final strategy')) {
-        userFriendlyMessage = 'Strategy generation failed. Please check your API keys and try again.';
-        title = 'Generation Failed';
-      }
-      toast({
-        title,
-        description: userFriendlyMessage,
-        variant: 'destructive'
-      });
-    } finally {
-      setLoadingMore(false);
-      console.log('🏁 loadMoreProposals completed');
+  // Check if proposal is new
+  const isProposalNew = (proposal: any) => {
+    const id = proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-');
+    return newProposalIds.has(id);
+  };
+  const showMoreProposals = (tabType: string) => {
+    setDisplayCounts(prev => ({
+      ...prev,
+      [tabType]: prev[tabType] + ITEMS_PER_PAGE
+    }));
+  };
+
+  // Get filtered proposals for each tab
+  const getFilteredProposals = (tabType: string) => {
+    switch (tabType) {
+      case 'selected':
+        return allProposals.filter((_, idx) => selected[idx]);
+      case 'quick_win':
+        return allProposals.filter(proposal => (proposal.priority_tag || 'evergreen') === 'quick_win');
+      case 'high_return':
+        return allProposals.filter(proposal => (proposal.priority_tag || 'evergreen') === 'high_return');
+      case 'evergreen':
+        return allProposals.filter(proposal => (proposal.priority_tag || 'evergreen') === 'evergreen');
+      default:
+        return allProposals;
     }
+  };
+
+  // Get paginated proposals for display
+  const getPaginatedProposals = (tabType: string) => {
+    const filtered = getFilteredProposals(tabType);
+    return filtered.slice(0, displayCounts[tabType]);
+  };
+
+  // Check if "Show More" button should be displayed
+  const hasMoreProposals = (tabType: string) => {
+    const filtered = getFilteredProposals(tabType);
+    return filtered.length > displayCounts[tabType];
   };
   const refreshClusters = async () => {
     try {
@@ -1002,42 +953,56 @@ export const ContentStrategyEngine = ({
               }} transition={{
                 staggerChildren: 0.1
               }}>
-                  {allProposals.map((proposal, idx) => <motion.div key={proposal.primary_keyword || idx} initial={{
-                  opacity: 0,
-                  y: 20
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  delay: idx * 0.1
-                }}>
-                       <ProposalCard proposal={proposal} index={idx} isSelected={selected[idx] || false} onSelectionChange={(index, isSelected) => {
-                    const newSelected = {
-                      ...selected,
-                      [index]: isSelected
-                    };
-                    setSelected(newSelected);
-                    // Debounce context update to prevent race conditions
-                    setTimeout(() => setSelectedProposals(newSelected), 50);
-                  }} onSendToBuilder={sendProposalToContentBuilder} />
-                    </motion.div>)}
+                  {getPaginatedProposals('all').map((proposal, idx) => {
+                    const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
+                    return (
+                      <motion.div key={proposal.primary_keyword || idx} initial={{
+                        opacity: 0,
+                        y: 20
+                      }} animate={{
+                        opacity: 1,
+                        y: 0
+                      }} transition={{
+                        delay: idx * 0.1
+                      }}>
+                        <ProposalCard 
+                          proposal={proposal} 
+                          index={originalIndex} 
+                          isSelected={selected[originalIndex] || false} 
+                          onSelectionChange={(index, isSelected) => {
+                            const newSelected = { ...selected, [index]: isSelected };
+                            setSelected(newSelected);
+                            setTimeout(() => setSelectedProposals(newSelected), 50);
+                          }} 
+                          onSendToBuilder={sendProposalToContentBuilder}
+                          isNew={isProposalNew(proposal)}
+                        />
+                      </motion.div>
+                    );
+                  })}
                 </motion.div>
                 
-                {/* Load More Button */}
-                <motion.div initial={{
-                opacity: 0,
-                y: 10
-              }} animate={{
-                opacity: 1,
-                y: 0
-              }} transition={{
-                delay: 0.3
-              }} className="flex justify-center mt-8">
-                  <Button onClick={loadMoreProposals} disabled={loadingMore} variant="outline" className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3">
-                    <RefreshCw className={`h-4 w-4 ${loadingMore ? 'animate-spin' : ''}`} />
-                    {loadingMore ? 'Finding New Proposals...' : 'Load More Proposals'}
-                  </Button>
-                </motion.div>
+                {/* Show More Button */}
+                {hasMoreProposals('all') && (
+                  <motion.div initial={{
+                    opacity: 0,
+                    y: 10
+                  }} animate={{
+                    opacity: 1,
+                    y: 0
+                  }} transition={{
+                    delay: 0.3
+                  }} className="flex justify-center mt-8">
+                    <Button 
+                      onClick={() => showMoreProposals('all')} 
+                      variant="outline" 
+                      className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Show More ({getFilteredProposals('all').length - displayCounts.all} remaining)
+                    </Button>
+                  </motion.div>
+                )}
               </> : clusters.length === 0 ? <div className="p-12 text-center">
                 <div className="space-y-4">
                   <Lightbulb className="h-12 w-12 text-white/40 mx-auto" />
@@ -1073,43 +1038,100 @@ export const ContentStrategyEngine = ({
           </TabsContent>
 
           <TabsContent value="selected" className="space-y-4">
-            {Object.values(selected).filter(Boolean).length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allProposals.filter((_, idx) => selected[idx]).map((proposal, filteredIdx) => {
-                const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
-                return <ProposalCard key={proposal.primary_keyword || filteredIdx} proposal={proposal} index={originalIndex} isSelected={true} onSelectionChange={(index, isSelected) => {
-                  const newSelected = {
-                    ...selected,
-                    [index]: isSelected
-                  };
-                  setSelected(newSelected);
-                  setTimeout(() => setSelectedProposals(newSelected), 50);
-                }} onSendToBuilder={sendProposalToContentBuilder} />;
-              })}
-              </div> : <Card className="p-8 text-center">
+            {Object.values(selected).filter(Boolean).length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {getPaginatedProposals('selected').map((proposal, filteredIdx) => {
+                    const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
+                    return (
+                      <ProposalCard 
+                        key={proposal.primary_keyword || filteredIdx} 
+                        proposal={proposal} 
+                        index={originalIndex} 
+                        isSelected={true} 
+                        onSelectionChange={(index, isSelected) => {
+                          const newSelected = { ...selected, [index]: isSelected };
+                          setSelected(newSelected);
+                          setTimeout(() => setSelectedProposals(newSelected), 50);
+                        }} 
+                        onSendToBuilder={sendProposalToContentBuilder}
+                        isNew={isProposalNew(proposal)}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {/* Show More Button for Selected */}
+                {hasMoreProposals('selected') && (
+                  <div className="flex justify-center mt-8">
+                    <Button 
+                      onClick={() => showMoreProposals('selected')} 
+                      variant="outline" 
+                      className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Show More ({getFilteredProposals('selected').length - displayCounts.selected} remaining)
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
                   No proposals selected yet. Go to other tabs to select proposals.
                 </p>
-              </Card>}
+              </Card>
+            )}
           </TabsContent>
 
-          {['quick_win', 'high_return', 'evergreen'].map(tag => <TabsContent key={tag} value={tag} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allProposals.length > 0 ? allProposals.filter(proposal => (proposal.priority_tag || 'evergreen') === tag).map((proposal, idx) => <ProposalCard key={proposal.primary_keyword || idx} proposal={proposal} index={allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)} isSelected={selected[allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword)] || false} onSelectionChange={(index, isSelected) => {
-                const newSelected = {
-                  ...selected,
-                  [index]: isSelected
-                };
-                setSelected(newSelected);
-                // Debounce context update to prevent race conditions
-                setTimeout(() => setSelectedProposals(newSelected), 50);
-              }} onSendToBuilder={sendProposalToContentBuilder} />) : clusters.filter(cluster => cluster.priority_tag === tag).map(cluster => <ClusterCard key={cluster.id} cluster={cluster} />)}
-              </div>
-              {(allProposals.length > 0 ? allProposals.filter(proposal => (proposal.priority_tag || 'evergreen') === tag).length === 0 : clusters.filter(cluster => cluster.priority_tag === tag).length === 0) && <Card className="p-8 text-center">
-                  <p className="text-muted-foreground">
-                    No {tag.replace('_', ' ')} {allProposals.length > 0 ? 'proposals' : 'clusters'} found
-                  </p>
-                </Card>}
-            </TabsContent>)}
+          {['quick_win', 'high_return', 'evergreen'].map(tag => (
+            <TabsContent key={tag} value={tag} className="space-y-4">
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {getPaginatedProposals(tag).map((proposal, idx) => {
+                    const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
+                    return (
+                      <ProposalCard 
+                        key={proposal.primary_keyword || idx} 
+                        proposal={proposal} 
+                        index={originalIndex} 
+                        isSelected={selected[originalIndex] || false} 
+                        onSelectionChange={(index, isSelected) => {
+                          const newSelected = { ...selected, [index]: isSelected };
+                          setSelected(newSelected);
+                          setTimeout(() => setSelectedProposals(newSelected), 50);
+                        }} 
+                        onSendToBuilder={sendProposalToContentBuilder}
+                        isNew={isProposalNew(proposal)}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {/* Show More Button for Priority Tabs */}
+                {hasMoreProposals(tag) && (
+                  <div className="flex justify-center mt-8">
+                    <Button 
+                      onClick={() => showMoreProposals(tag)} 
+                      variant="outline" 
+                      className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Show More ({getFilteredProposals(tag).length - displayCounts[tag]} remaining)
+                    </Button>
+                  </div>
+                )}
+                
+                {getFilteredProposals(tag).length === 0 && (
+                  <Card className="p-8 text-center">
+                    <p className="text-muted-foreground">
+                      No {tag.replace('_', ' ')} proposals found
+                    </p>
+                  </Card>
+                )}
+              </>
+            </TabsContent>
+          ))}
         </Tabs>
         </CardContent>
       </Card>
@@ -1118,14 +1140,5 @@ export const ContentStrategyEngine = ({
     }} />
       <StrategyBuilderDialog open={showStrategyBuilder} onOpenChange={setShowStrategyBuilder} proposal={selectedProposal} />
 
-      {/* Selected Proposals Sidebar */}
-      <SelectedProposalsSidebar proposals={allProposals} selected={selected} onSelectionChange={(index, isSelected) => {
-      const newSelected = {
-        ...selected,
-        [index]: isSelected
-      };
-      setSelected(newSelected);
-      setTimeout(() => setSelectedProposals(newSelected), 50);
-    }} onSendToBuilder={sendProposalToContentBuilder} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
     </div>;
 };

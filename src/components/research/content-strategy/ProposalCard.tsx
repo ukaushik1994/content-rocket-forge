@@ -12,9 +12,10 @@ interface ProposalCardProps {
   onSelectionChange: (index: number, selected: boolean) => void;
   onSendToBuilder: (proposal: any) => void;
   showHistoricalBadge?: boolean;
+  isNew?: boolean;
 }
 
-export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, onSendToBuilder, showHistoricalBadge }: ProposalCardProps) => {
+export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, onSendToBuilder, showHistoricalBadge, isNew = false }: ProposalCardProps) => {
   const primaryKw = proposal.primary_keyword;
   const primaryMetrics = proposal.serp_data?.[primaryKw] || {};
   const estImpressions = proposal.estimated_impressions ?? Math.round((primaryMetrics.searchVolume || 0) * 0.05);
@@ -58,6 +59,13 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
           />
         </div>
       </div>
+
+      {/* New Proposal Indicator */}
+      {isNew && (
+        <div className="absolute top-2 left-2 z-10">
+          <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50" />
+        </div>
+      )}
 
       <CardHeader className="pb-3 pr-12">
         <div className="flex items-start justify-between">
