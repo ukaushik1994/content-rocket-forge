@@ -725,12 +725,7 @@ export const ContentStrategyEngine = ({
         </div>}
 
       {/* Content Clusters Summary */}
-      {allProposals.length > 0 && <ContentClustersSummary totalProposals={allProposals.length + completedProposalIds.length} selectedCount={selectedCount} completedCount={completedProposalIds.length} estimatedTraffic={allProposals.reduce((sum, p) => {
-      const primaryKw = p.primary_keyword;
-      const metrics = p.serp_data?.[primaryKw] || {};
-      const est = p.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
-      return sum + est;
-    }, 0)} />}
+      {allProposals.length > 0 && <ContentClustersSummary totalProposals={allProposals.length + completedProposalIds.length} selectedCount={selectedCount} completedCount={completedProposalIds.length} estimatedTraffic={estimatedTraffic} />}
 
       {/* Enhanced Header */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-green-500/10 border border-white/10 p-6 mb-6">
