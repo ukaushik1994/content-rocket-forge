@@ -112,7 +112,6 @@ function classifyProposal(keywords: any[], serpData: Record<string, any>): {
     }
   };
 }
-}
 
 interface ContentCluster {
   id?: string;
