@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { Search, FileSearch, Users, BarChart3, Plus, Target } from 'lucide-react';
+import { Search, FileSearch, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
@@ -11,8 +11,6 @@ import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { KeywordIntelligenceTab } from '@/components/research/research-hub/KeywordIntelligenceTab';
 import { ContentGapsTab } from '@/components/research/content-strategy/tabs/ContentGapsTab';
 import { PeopleQuestionsTab } from '@/components/research/research-hub/PeopleQuestionsTab';
-import { ResearchInsightsTab } from '@/components/research/research-hub/ResearchInsightsTab';
-import { ContentPipelineTab } from '@/components/research/research-hub/ContentPipelineTab';
 
 const ResearchHub = () => {
   const canonicalUrl = typeof window !== 'undefined' 
@@ -23,7 +21,7 @@ const ResearchHub = () => {
   const getInitialTab = () => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
-      if (['keyword-intelligence', 'content-gaps', 'people-questions', 'research-insights', 'content-pipeline'].includes(hash)) {
+      if (['keyword-intelligence', 'content-gaps', 'people-questions'].includes(hash)) {
         return hash;
       }
       return localStorage.getItem('researchHubActiveTab') || 'keyword-intelligence';
@@ -64,95 +62,59 @@ const ResearchHub = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
           >
-            {/* Hero Section */}
+            {/* Hero Section - Matching Content Strategy */}
             <motion.div 
-              className="text-center space-y-6"
+              className="text-center space-y-4"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <motion.div
-                  className="p-3 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-xl backdrop-blur-sm border border-white/10"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Search className="h-8 w-8 text-primary" />
-                </motion.div>
-              </div>
-              <h1 className="text-5xl font-bold text-gradient bg-gradient-to-r from-primary via-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                 Research Hub
               </h1>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Your unified research command center. Discover keywords, analyze content gaps, understand audience questions, and create content—all in one place.
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Comprehensive research workspace with keyword intelligence, content gaps analysis, and audience question insights.
               </p>
             </motion.div>
 
-            {/* Main Tabs Interface */}
-            <GlassCard className="border-white/10 bg-background/40 backdrop-blur-xl">
-              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-5 bg-background/60 backdrop-blur-sm border border-border/50 rounded-lg p-1">
+            {/* Main Tabs Interface - Exact Content Strategy Layout */}
+            <GlassCard className="p-4 sm:p-6">
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col space-y-6">
+                <TabsList className="inline-flex min-w-max rounded-lg border border-border/50 bg-muted/50 p-1">
                   <TabsTrigger 
                     value="keyword-intelligence" 
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale"
                   >
                     <Search className="h-4 w-4" />
-                    <span className="hidden sm:inline">Keyword Intelligence</span>
-                    <span className="sm:hidden">Keywords</span>
+                    Keyword Intelligence
                   </TabsTrigger>
                   <TabsTrigger 
                     value="content-gaps" 
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale"
                   >
                     <FileSearch className="h-4 w-4" />
-                    <span className="hidden sm:inline">Content Gaps</span>
-                    <span className="sm:hidden">Gaps</span>
+                    Content Gaps
                   </TabsTrigger>
                   <TabsTrigger 
                     value="people-questions" 
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale"
                   >
                     <Users className="h-4 w-4" />
-                    <span className="hidden sm:inline">People Questions</span>
-                    <span className="sm:hidden">Questions</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="research-insights" 
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Research Insights</span>
-                    <span className="sm:hidden">Insights</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="content-pipeline" 
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Content Pipeline</span>
-                    <span className="sm:hidden">Pipeline</span>
+                    People Questions
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="mt-6">
-                  <TabsContent value="keyword-intelligence" className="space-y-6">
+                <div className="flex-1">
+                  <TabsContent value="keyword-intelligence" className="mt-0 animate-fade-in">
                     <KeywordIntelligenceTab />
                   </TabsContent>
 
-                  <TabsContent value="content-gaps" className="space-y-6">
+                  <TabsContent value="content-gaps" className="mt-0 animate-fade-in">
                     <ContentGapsTab goals={{ monthlyTraffic: '', contentPieces: '', timeline: '3 months', mainKeyword: '' }} />
                   </TabsContent>
 
-                  <TabsContent value="people-questions" className="space-y-6">
+                  <TabsContent value="people-questions" className="mt-0 animate-fade-in">
                     <PeopleQuestionsTab />
-                  </TabsContent>
-
-                  <TabsContent value="research-insights" className="space-y-6">
-                    <ResearchInsightsTab />
-                  </TabsContent>
-
-                  <TabsContent value="content-pipeline" className="space-y-6">
-                    <ContentPipelineTab />
                   </TabsContent>
                 </div>
               </Tabs>
