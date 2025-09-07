@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book } from 'lucide-react';
@@ -32,7 +31,7 @@ const NavItem: React.FC<NavItemProps> = React.memo(({
       {label}
       {active && (
         <motion.span 
-          layoutId={`nav-highlight-${to}`} // Unique layoutId per item
+          layoutId={`nav-highlight-${to}`}
           transition={{
             type: "spring",
             duration: 0.3,
@@ -48,7 +47,6 @@ const NavItem: React.FC<NavItemProps> = React.memo(({
 export default function NavItems() {
   const location = useLocation();
   
-  // Content-related routes
   const contentRoutes = [
     '/content-builder',
     '/content-repurposing', 
@@ -60,7 +58,8 @@ export default function NavItems() {
   
   const isContentActive = contentRoutes.includes(location.pathname);
   
-  return <div className="flex flex-row gap-1">
+  return (
+    <div className="flex flex-row gap-1">
       <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Dashboard" active={location.pathname === '/'} />
       
       {/* Content Dropdown */}
@@ -175,5 +174,6 @@ export default function NavItems() {
       <NavItem to="/ai-chat" icon={<MessageSquare className="h-4 w-4" />} label="AI Chat" active={location.pathname === '/ai-chat'} />
       <NavItem to="/aio-geo" icon={<Globe className="h-4 w-4" />} label="AIO/GEO" active={location.pathname === '/aio-geo'} />
       <NavItem to="/analytics" icon={<BarChart3 className="h-4 w-4" />} label="Analytics" active={location.pathname === '/analytics'} />
-    </div>;
+    </div>
+  );
 }
