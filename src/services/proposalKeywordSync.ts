@@ -126,8 +126,17 @@ class ProposalKeywordSyncService {
 
       if (error) {
         console.error('❌ Database error saving proposals:', error);
-        toast.error('Failed to save strategy proposals to history');
-        throw error; // Don't silently fail - this is important for tracking
+        console.error('❌ Detailed error info:', {
+          error: error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          proposalsCount: proposalsToInsert.length,
+          timestamp: new Date().toISOString()
+        });
+        toast.error(`Database save failed: ${error.message || 'Unknown error'}`);
+        throw new Error(`Failed to save proposals to database: ${error.message || error.code || 'Unknown error'}`);
       }
 
       console.log('✅ Proposals saved to history successfully:', data?.length || 0);
