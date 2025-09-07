@@ -48,7 +48,8 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
       writing: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
       review: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
       scheduled: 'bg-green-500/20 text-green-300 border-green-500/30',
-      published: 'bg-gray-500/20 text-gray-300 border-gray-500/30'
+      published: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
+      completed: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
     };
     return colors[status as keyof typeof colors] || colors.planning;
   };
@@ -292,7 +293,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                             </Badge>
                             {proposalData && (
                               <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
-                                Proposal
+                                From Proposal
                               </Badge>
                             )}
                           </div>
@@ -339,9 +340,14 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                           <div className="text-sm text-muted-foreground flex items-center gap-2">
                             {item.assigned_to && `Assigned to: ${item.assigned_to}`}
                             {proposalData && (
-                              <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
-                                From Proposal
-                              </Badge>
+                              <>
+                                <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
+                                  From Proposal
+                                </Badge>
+                                <span className="text-xs text-white/40">
+                                  Keywords: {proposalData.primary_keyword}
+                                </span>
+                              </>
                             )}
                           </div>
                         </div>
@@ -351,7 +357,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleGenerateContent(item)}
-                          className="gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/30 text-blue-400 hover:bg-blue-500/30"
+                          className="gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/30 text-blue-400 hover:bg-blue-500/30 transition-all duration-200"
                         >
                           <Send className="h-4 w-4" />
                           Generate Content
