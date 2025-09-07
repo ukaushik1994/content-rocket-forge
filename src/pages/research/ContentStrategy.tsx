@@ -3,25 +3,27 @@ import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { ContentStrategyHero } from '@/components/research/content-strategy/ContentStrategyHero';
-import { GoalSettingCard } from '@/components/research/content-strategy/GoalSettingCard';
-import { StrategyTabs } from '@/components/research/content-strategy/StrategyTabs';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
 import { StrategyCreationModal } from '@/components/research/content-strategy/StrategyCreationModal';
 import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/SimpleAIServiceIndicator';
 import { SimpleSerpServiceIndicator } from '@/components/content-builder/ai/SimpleSerpServiceIndicator';
+import { StrategyGoalsModal } from '@/components/research/content-strategy/simplified/StrategyGoalsModal';
+import { ContentStrategyTabs } from '@/components/research/content-strategy/simplified/ContentStrategyTabs';
 
 const ContentStrategy = () => {
   const canonicalUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/research/content-strategy` 
     : '/research/content-strategy';
   const [creatorOpen, setCreatorOpen] = useState(false);
+  const [goalsModalOpen, setGoalsModalOpen] = useState(false);
+  
   return (
     <ContentStrategyProvider>
       <div className="min-h-screen bg-background relative overflow-hidden">
         <Helmet>
-          <title>Content Strategy — Plan, Calendar, Pipeline</title>
-          <meta name="description" content="Content strategy workspace to plan, track, and optimize: strategies, dashboard, calendar, pipeline, opportunities, performance, gaps, progress." />
+          <title>Content Strategy — AI-Powered Content Planning & Production</title>
+          <meta name="description" content="Complete content strategy workspace with AI proposals, production pipeline, editorial calendar, and performance analytics. Plan, create, and optimize your content strategy." />
           <link rel="canonical" href={canonicalUrl} />
         </Helmet>
         
@@ -47,28 +49,22 @@ const ContentStrategy = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
           >
-            <ContentStrategyHero onCreate={() => setCreatorOpen(true)} />
+            <ContentStrategyHero onCreate={() => setGoalsModalOpen(true)} />
             
-            <ContentStrategyContent />
+            <ContentStrategyTabs onEditGoals={() => setGoalsModalOpen(true)} />
           </motion.div>
         </main>
         
-        {/* Strategy Creator Modal */}
+        {/* Strategy Creator Modal (Legacy) */}
         <StrategyCreationModal open={creatorOpen} onOpenChange={setCreatorOpen} />
+        
+        {/* Strategy Goals Modal (New Simplified) */}
+        <StrategyGoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
       </div>
     </ContentStrategyProvider>
   );
 };
 
-const ContentStrategyContent = React.memo(() => {
-  return (
-    <>
-      <GoalSettingCard />
-      <StrategyTabs />
-    </>
-  );
-});
-
-ContentStrategyContent.displayName = 'ContentStrategyContent';
+// Removed ContentStrategyContent - now using simplified tabs approach
 
 export default ContentStrategy;

@@ -220,6 +220,8 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             <CheckCircle2 className="h-4 w-4" />
             {isSelected ? 'Selected' : 'Select'}
           </Button>
+          
+          {/* Icon-based actions */}
           <Button
             onClick={(e) => {
               e.stopPropagation();
@@ -227,11 +229,12 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             }}
             size="sm"
             variant="outline"
-            className="gap-2 bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
+            className="bg-white/10 border-white/20 text-white/80 hover:bg-white/20 w-10 h-8 p-0"
+            title="Schedule to Calendar"
           >
             <CalendarPlus className="h-4 w-4" />
-            Schedule
           </Button>
+          
           <Button
             onClick={(e) => {
               e.stopPropagation();
