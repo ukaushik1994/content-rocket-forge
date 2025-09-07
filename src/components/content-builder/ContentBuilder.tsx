@@ -36,6 +36,12 @@ interface ContentBuilderProps {
   } | null;
   suggestedTitle?: string | null;
   suggestedOutline?: string[] | null;
+  additionalInstructions?: string | null;
+  sourceInfo?: {
+    type: 'proposal' | 'calendar';
+    id?: string;
+    data?: any;
+  } | null;
 }
 
 export const ContentBuilder: React.FC<ContentBuilderProps> = ({
@@ -47,7 +53,9 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
   strategyContext,
   metaSuggestions,
   suggestedTitle,
-  suggestedOutline
+  suggestedOutline,
+  additionalInstructions,
+  sourceInfo
 }) => {
   const { state, dispatch, navigateToStep, addSerpSelections } = useContentBuilder();
   const { activeStep, steps, content } = state;
@@ -126,8 +134,24 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
       if (strategyContext && initialKeyword) {
         dispatch({ type: 'MARK_STEP_COMPLETED', payload: 0 });
       }
+
+      // Pre-populate additional instructions from proposal/calendar data
+      if (additionalInstructions) {
+        dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: additionalInstructions });
+      }
+
+      // Show breadcrumb info for source navigation
+      if (sourceInfo?.type === 'proposal') {
+        toast.success('Content builder loaded with proposal data', {
+          description: 'Title, keywords, and instructions have been pre-populated from your proposal.'
+        });
+      } else if (sourceInfo?.type === 'calendar') {
+        toast.success('Content builder loaded with calendar item data', {
+          description: 'Basic information has been pre-populated from your calendar item.'
+        });
+      }
     }
-  }, [initialKeyword, selectedKeywords, location, serpData, initialStep, strategyContext, metaSuggestions, suggestedTitle, dispatch]);
+  }, [initialKeyword, selectedKeywords, location, serpData, initialStep, strategyContext, metaSuggestions, suggestedTitle, additionalInstructions, sourceInfo, dispatch]);
 
   // Calculate progress percentage
   const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step

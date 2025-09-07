@@ -21,20 +21,45 @@ const ContentBuilderPage = () => {
     }
   } catch {}
 
-  // Derive initial props from payload with safe fallbacks
-  const initialKeyword = payload?.primary_keyword || payload?.main_keyword || payload?.keyword || preloadData?.mainKeyword;
-  const selectedKeywords = Array.isArray(payload?.keywords)
-    ? payload.keywords.map((k: any) => (typeof k === 'string' ? k : k.kw || k.keyword)).filter(Boolean)
-    : preloadData?.selectedKeywords;
+  // Handle proposal data from calendar or strategy
+  let proposalData = null;
+  let calendarData = null;
+  let sourceInfo = null;
+
+  if (preloadData?.fromProposal && preloadData?.proposalData) {
+    proposalData = preloadData.proposalData;
+    sourceInfo = { type: 'proposal', id: proposalData.source_proposal_id };
+  } else if (preloadData?.fromCalendar && preloadData?.calendarData) {
+    calendarData = preloadData.calendarData;
+    sourceInfo = { type: 'calendar', data: calendarData };
+  }
+
+  // Derive initial props from payload, proposal, or calendar data with safe fallbacks
+  const initialKeyword = 
+    proposalData?.primary_keyword || 
+    payload?.primary_keyword || 
+    payload?.main_keyword || 
+    payload?.keyword || 
+    preloadData?.mainKeyword;
+
+  const selectedKeywords = 
+    proposalData?.related_keywords ||
+    (Array.isArray(payload?.keywords)
+      ? payload.keywords.map((k: any) => (typeof k === 'string' ? k : k.kw || k.keyword)).filter(Boolean)
+      : preloadData?.selectedKeywords);
+
   const locationPref = payload?.location || preloadData?.location;
-  const serpData = payload?.serp_data || null;
+  
+  const serpData = proposalData?.serp_data || payload?.serp_data || null;
+  
   const initialStep = typeof payload?.initial_step === 'number' ? payload.initial_step : preloadData?.step;
   
   // Enhanced strategy context handling
   const strategyContext = payload?.strategy_context || null;
   const metaSuggestions = payload?.meta_suggestions || null;
-  const suggestedTitle = payload?.title || null;
+  const suggestedTitle = proposalData?.title || payload?.title || calendarData?.title || null;
   const suggestedOutline = payload?.outline || null;
+  const additionalInstructions = proposalData?.description || calendarData?.notes || null;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -58,6 +83,8 @@ const ContentBuilderPage = () => {
             metaSuggestions={metaSuggestions}
             suggestedTitle={suggestedTitle}
             suggestedOutline={suggestedOutline}
+            additionalInstructions={additionalInstructions}
+            sourceInfo={sourceInfo}
           />
         </ContentBuilderProvider>
       </main>
