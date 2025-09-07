@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Globe, Book, CalendarDays, GitBranch, FileSearch, MoreHorizontal, Tag } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -58,24 +58,7 @@ export default function NavItems() {
     '/drafts'
   ];
   
-  // Research-related routes
-  const researchRoutes = [
-    '/research/content-strategy',
-    '/research/opportunities',
-    '/research/keyword-research',
-    '/research/answer-the-people',
-    '/research/topic-clusters'
-  ];
-  
-  // More-related routes  
-  const moreRoutes = [
-    '/research/calendar',
-    '/research/pipeline'
-  ];
-  
   const isContentActive = contentRoutes.includes(location.pathname);
-  const isResearchActive = researchRoutes.includes(location.pathname);
-  const isMoreActive = moreRoutes.includes(location.pathname);
   
   return <div className="flex flex-row gap-1">
       <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Dashboard" active={location.pathname === '/'} />
@@ -172,141 +155,21 @@ export default function NavItems() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Research Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className={cn(
-              'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
-              isResearchActive 
-                ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' 
-                : 'hover:bg-white/10 text-white/60 hover:text-white'
-            )}
-          >
-            <Search className="h-4 w-4" />
-            Research
-            <ChevronDown className="h-3 w-3" />
-            {isResearchActive && (
-              <motion.span 
-                layoutId="nav-highlight-research"
-                transition={{
-                  type: "spring",
-                  duration: 0.3,
-                  bounce: 0.2
-                }} 
-                className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
-              />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48 bg-card border border-white/10">
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/research/content-strategy" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/content-strategy' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <Target className="h-4 w-4" />
-              Content Strategy
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/research/research-hub" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/research-hub' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <Search className="h-4 w-4" />
-              Research Hub
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/research/opportunities" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/opportunities' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <Target className="h-4 w-4" />
-              Opportunities
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/research/topic-clusters" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/topic-clusters' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <Network className="h-4 w-4" />
-              Topic Clusters
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Research Hub - Direct Navigation */}
+      <NavItem 
+        to="/research/research-hub" 
+        icon={<Search className="h-4 w-4" />} 
+        label="Research Hub" 
+        active={location.pathname === '/research/research-hub'} 
+      />
       
-      {/* More Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className={cn(
-              'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
-              isMoreActive 
-                ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' 
-                : 'hover:bg-white/10 text-white/60 hover:text-white'
-            )}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-            More
-            <ChevronDown className="h-3 w-3" />
-            {isMoreActive && (
-              <motion.span 
-                layoutId="nav-highlight-more"
-                transition={{
-                  type: "spring",
-                  duration: 0.3,
-                  bounce: 0.2
-                }} 
-                className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
-              />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52 bg-card border border-white/10 z-50">
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/research/calendar" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/calendar' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <CalendarDays className="h-4 w-4" />
-              Calendar
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/research/pipeline" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/pipeline' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <GitBranch className="h-4 w-4" />
-              Pipeline
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Content Strategy - Direct Navigation */}
+      <NavItem 
+        to="/research/content-strategy" 
+        icon={<Target className="h-4 w-4" />} 
+        label="Content Strategy" 
+        active={location.pathname === '/research/content-strategy'} 
+      />
       
       <NavItem to="/solutions" icon={<Puzzle className="h-4 w-4" />} label="Solutions" active={location.pathname === '/solutions'} />
       <NavItem to="/ai-chat" icon={<MessageSquare className="h-4 w-4" />} label="AI Chat" active={location.pathname === '/ai-chat'} />
