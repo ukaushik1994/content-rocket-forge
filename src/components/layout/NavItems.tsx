@@ -172,7 +172,7 @@ export default function NavItems() {
       
       <NavItem to="/solutions" icon={<Puzzle className="h-4 w-4" />} label="Solutions" active={location.pathname === '/solutions'} />
       <NavItem to="/ai-chat" icon={<MessageSquare className="h-4 w-4" />} label="AI Chat" active={location.pathname === '/ai-chat'} />
-      <NavItem to="/aio-geo" icon={<Globe className="h-4 w-4" />} label="AIO/GEO" active={location.pathname === '/aio-geo'} />
+      
       <NavItem to="/analytics" icon={<BarChart3 className="h-4 w-4" />} label="Analytics" active={location.pathname === '/analytics'} />
     </div>
   );
