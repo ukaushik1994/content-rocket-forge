@@ -230,7 +230,7 @@ export const PeopleQuestionsTab: React.FC = () => {
 
           {/* Questions Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-background/60 backdrop-blur-sm border border-border/50">
+            <TabsList className="grid w-full grid-cols-4 bg-muted/50 border border-border/50">
               <TabsTrigger value="questions" className="flex items-center gap-2">
                 <HelpCircle className="h-4 w-4" />
                 Questions

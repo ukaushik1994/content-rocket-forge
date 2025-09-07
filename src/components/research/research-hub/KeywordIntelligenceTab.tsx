@@ -220,7 +220,7 @@ export const KeywordIntelligenceTab: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5 bg-background/60 backdrop-blur-sm border border-border/50">
+              <TabsList className="grid w-full grid-cols-5 bg-muted/50 border border-border/50">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <Target className="h-4 w-4" />
                   Overview
