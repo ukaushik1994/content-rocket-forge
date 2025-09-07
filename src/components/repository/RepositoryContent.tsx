@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { RepositoryFilters } from './RepositoryFilters';
 import { RepositoryGrid } from './RepositoryGrid';
+import { RepositoryList } from './RepositoryList';
+import { RepositoryControls, ViewMode } from './RepositoryControls';
 import { EmptyState } from './EmptyState';
 import { LoadingState } from './LoadingState';
 import { useContent } from '@/contexts/content';
@@ -19,6 +21,8 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
   const [selectedContentType, setSelectedContentType] = useState<ContentType | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [advancedFilters, setAdvancedFilters] = useState<any>({});
 
   // Filter content based on selected filters
   useEffect(() => {
@@ -45,11 +49,42 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
       );
     }
 
+    // Apply advanced filters
+    if (advancedFilters.dateRange?.from || advancedFilters.dateRange?.to) {
+      filtered = filtered.filter(item => {
+        const itemDate = new Date(item.updated_at);
+        const fromDate = advancedFilters.dateRange?.from ? new Date(advancedFilters.dateRange.from) : null;
+        const toDate = advancedFilters.dateRange?.to ? new Date(advancedFilters.dateRange.to) : null;
+        
+        if (fromDate && itemDate < fromDate) return false;
+        if (toDate && itemDate > toDate) return false;
+        return true;
+      });
+    }
+
+    if (advancedFilters.keywords) {
+      const keywords = advancedFilters.keywords.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.content.toLowerCase().includes(keywords) ||
+        item.metadata?.tags?.some(tag => tag.toLowerCase().includes(keywords))
+      );
+    }
+
+    if (advancedFilters.tags?.length > 0) {
+      filtered = filtered.filter(item => 
+        advancedFilters.tags.some(filterTag => 
+          item.metadata?.tags?.some(itemTag => 
+            itemTag.toLowerCase().includes(filterTag.toLowerCase())
+          )
+        )
+      );
+    }
+
     // Sort by updated_at descending
     filtered.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
     setFilteredItems(filtered);
-  }, [contentItems, selectedContentType, selectedStatus, searchQuery]);
+  }, [contentItems, selectedContentType, selectedStatus, searchQuery, advancedFilters]);
 
   // Calculate content statistics
   const contentStats = {
@@ -76,6 +111,12 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
+      <RepositoryControls
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onFiltersApply={setAdvancedFilters}
+      />
+
       <RepositoryFilters
         contentStats={contentStats}
         selectedContentType={selectedContentType}
@@ -92,8 +133,13 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
           status={selectedStatus}
           searchQuery={searchQuery}
         />
-      ) : (
+      ) : viewMode === 'grid' ? (
         <RepositoryGrid 
+          items={filteredItems}
+          onOpenDetailView={onOpenDetailView}
+        />
+      ) : (
+        <RepositoryList 
           items={filteredItems}
           onOpenDetailView={onOpenDetailView}
         />
