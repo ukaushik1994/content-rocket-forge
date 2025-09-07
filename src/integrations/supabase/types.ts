@@ -2888,6 +2888,45 @@ export type Database = {
           },
         ]
       }
+      strategy_generation_progress: {
+        Row: {
+          created_at: string
+          id: string
+          progress_percentage: number
+          session_id: string
+          status: string
+          step: number
+          step_data: Json | null
+          step_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          progress_percentage?: number
+          session_id: string
+          status?: string
+          step?: number
+          step_data?: Json | null
+          step_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          progress_percentage?: number
+          session_id?: string
+          status?: string
+          step?: number
+          step_data?: Json | null
+          step_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       strategy_insights: {
         Row: {
           competition_score: number | null
