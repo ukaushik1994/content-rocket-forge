@@ -44,14 +44,16 @@ export const ContentRepurposingModal: React.FC<ContentRepurposingModalProps> = (
     handleSaveAllContent,
     handleDeleteActiveFormat,
     refreshRepurposedData,
+    handleContentSelection,
   } = useContentRepurposing();
 
   // Load content when modal opens
   useEffect(() => {
     if (open && content) {
-      // The hook will automatically load the content
+      console.log('[ContentRepurposingModal] Loading content:', content);
+      handleContentSelection(content);
     }
-  }, [open, content]);
+  }, [open, content, handleContentSelection]);
 
   // Refresh parent when content is generated
   useEffect(() => {

@@ -110,26 +110,37 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   // Load available personas when content changes  
   useEffect(() => {
     const loadPersonas = async () => {
-      if (!content?.metadata?.selectedSolution || !user) {
+      if (!user) {
         setAvailablePersonas([]);
         setSelectedPersonas([]);
         return;
       }
 
       try {
-        const solutionId = typeof content.metadata.selectedSolution === 'string' 
-          ? content.metadata.selectedSolution 
-          : content.metadata.selectedSolution?.id;
-        
-        if (!solutionId) {
-          setAvailablePersonas([]);
-          setSelectedPersonas([]);
-          return;
+        // First try to load personas for the specific solution
+        if (content?.metadata?.selectedSolution) {
+          const solutionId = typeof content.metadata.selectedSolution === 'string' 
+            ? content.metadata.selectedSolution 
+            : content.metadata.selectedSolution?.id;
+          
+          if (solutionId) {
+            const personas = await solutionPersonaService.getPersonasBySolution(solutionId);
+            setAvailablePersonas(personas);
+            console.log('[useContentGeneration] Loaded personas for solution:', personas.length);
+            return;
+          }
         }
         
-        const personas = await solutionPersonaService.getPersonasBySolution(solutionId);
-        setAvailablePersonas(personas);
-        console.log('[useContentGeneration] Loaded personas:', personas.length);
+        // Fallback: Load all available personas for the user
+        console.log('[useContentGeneration] No solution found, loading all user personas');
+        try {
+          const allPersonas = await solutionPersonaService.getAllPersonasForUser(user.id);
+          setAvailablePersonas(allPersonas);
+          console.log('[useContentGeneration] Loaded all user personas:', allPersonas.length);
+        } catch (fallbackError) {
+          console.log('[useContentGeneration] No personas available for user');
+          setAvailablePersonas([]);
+        }
       } catch (error) {
         console.error('Error loading personas:', error);
         setAvailablePersonas([]);
@@ -137,7 +148,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     };
 
     loadPersonas();
-  }, [content?.metadata?.selectedSolution, user]);
+  }, [content?.metadata?.selectedSolution, content?.id, user]);
 
   const handleGenerateContent = useCallback(async (formats: string[]) => {
     if (!content || formats.length === 0) {
