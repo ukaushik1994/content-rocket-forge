@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingUp, Send, Target, BarChart3, Calendar, CheckCircle2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TrendingUp, Send, Target, BarChart3, Calendar, CheckCircle2, CalendarPlus } from 'lucide-react';
+import { proposalManagement } from '@/services/proposalManagement';
+import { toast } from 'sonner';
 
 interface ProposalCardProps {
   proposal: any;
@@ -16,6 +22,11 @@ interface ProposalCardProps {
 }
 
 export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, onSendToBuilder, showHistoricalBadge, isNew = false }: ProposalCardProps) => {
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [schedulePriority, setSchedulePriority] = useState('medium');
+  const [scheduleHours, setScheduleHours] = useState(2);
+  
   const primaryKw = proposal.primary_keyword;
   const primaryMetrics = proposal.serp_data?.[primaryKw] || {};
   const estImpressions = proposal.estimated_impressions ?? Math.round((primaryMetrics.searchVolume || 0) * 0.05);
@@ -35,6 +46,41 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
       case 'high_return': return 'High Return';
       case 'evergreen': return 'Evergreen';
       default: return 'Standard';
+    }
+  };
+
+  const handleScheduleToCalendar = async () => {
+    if (!scheduleDate) {
+      toast.error('Please select a date');
+      return;
+    }
+
+    try {
+      const proposalData = {
+        proposal_id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
+        title: proposal.title,
+        description: proposal.description,
+        primary_keyword: proposal.primary_keyword,
+        related_keywords: proposal.related_keywords,
+        content_suggestions: proposal.content_suggestions,
+        priority_tag: proposal.priority_tag,
+        estimated_impressions: estImpressions,
+        serp_data: proposal.serp_data
+      };
+
+      await proposalManagement.scheduleProposalToCalendar(
+        proposalData,
+        scheduleDate,
+        schedulePriority,
+        scheduleHours
+      );
+
+      toast.success('Proposal scheduled to calendar successfully');
+      setScheduleDialogOpen(false);
+      setScheduleDate('');
+    } catch (error) {
+      console.error('Error scheduling proposal:', error);
+      toast.error('Failed to schedule proposal to calendar');
     }
   };
 
@@ -177,6 +223,18 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
           <Button
             onClick={(e) => {
               e.stopPropagation();
+              setScheduleDialogOpen(true);
+            }}
+            size="sm"
+            variant="outline"
+            className="gap-2 bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
+          >
+            <CalendarPlus className="h-4 w-4" />
+            Schedule
+          </Button>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
               onSendToBuilder({ 
                 ...proposal, 
                 source_proposal_id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-')
@@ -189,6 +247,66 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             Create Content
           </Button>
         </div>
+
+        {/* Schedule Dialog */}
+        <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+          <DialogContent className="bg-gray-900 border-white/20 text-white max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white">Schedule to Calendar</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="schedule_date" className="text-white">Scheduled Date</Label>
+                <Input
+                  id="schedule_date"
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="bg-white/10 border-white/20 text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="priority" className="text-white">Priority</Label>
+                  <Select value={schedulePriority} onValueChange={setSchedulePriority}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-white/20">
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="hours" className="text-white">Est. Hours</Label>
+                  <Input
+                    id="hours"
+                    type="number"
+                    min="1"
+                    max="40"
+                    value={scheduleHours}
+                    onChange={(e) => setScheduleHours(parseInt(e.target.value) || 2)}
+                    className="bg-white/10 border-white/20 text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleScheduleToCalendar} className="bg-primary/20 hover:bg-primary/30">
+                Schedule
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

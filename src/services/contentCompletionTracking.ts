@@ -262,10 +262,38 @@ class ContentCompletionTrackingService {
         action: {
           label: "View Calendar",
           onClick: () => {
-            window.location.href = '/calendar';
+            window.location.href = '/research/calendar';
           }
         }
       });
+    }
+  }
+
+  // Track proposal removal from clusters when sent to calendar
+  async markProposalRemovedFromCluster(proposalId: string, calendarItemId: string): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Update calendar item with removal tracking
+      const { error } = await supabase
+        .from('content_calendar')
+        .update({
+          notes: JSON.stringify({ 
+            source_proposal_id: proposalId, 
+            tracking_status: 'scheduled',
+            removed_from_cluster_at: new Date().toISOString(),
+            calendar_item_id: calendarItemId
+          })
+        })
+        .eq('id', calendarItemId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      console.log('✅ Proposal removal from cluster tracked:', proposalId);
+    } catch (error) {
+      console.error('❌ Error tracking proposal removal:', error);
+      throw error;
     }
   }
 }

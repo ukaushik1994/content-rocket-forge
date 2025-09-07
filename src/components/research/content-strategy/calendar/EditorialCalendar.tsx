@@ -1,25 +1,42 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, ChevronLeft, ChevronRight, Plus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, MoreHorizontal, Edit, Trash2, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { CalendarItemDialog } from './CalendarItemDialog';
 import { toast } from 'sonner';
+import { proposalManagement } from '@/services/proposalManagement';
+import { useNavigate } from 'react-router-dom';
 
 interface EditorialCalendarProps {
   goals: any;
 }
 
 export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
-  const { calendarItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading } = useContentStrategy();
+  const { calendarItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading, refreshData } = useContentStrategy();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const navigate = useNavigate();
+
+  // Check for overdue proposals on mount
+  useEffect(() => {
+    const checkOverdue = async () => {
+      try {
+        await proposalManagement.checkAndRestoreOverdueProposals();
+        await refreshData(); // Refresh calendar data after restoration
+      } catch (error) {
+        console.error('Error checking overdue proposals:', error);
+      }
+    };
+
+    checkOverdue();
+  }, [refreshData]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -91,6 +108,51 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
       setEditingItem(null);
     } catch (error) {
       toast.error('Failed to save calendar item');
+    }
+  };
+
+  const handleGenerateContent = (item: any) => {
+    try {
+      const notes = item.notes ? JSON.parse(item.notes) : {};
+      const proposalData = notes.proposal_data;
+
+      if (proposalData) {
+        // Navigate to content builder with proposal data
+        navigate('/content-builder', {
+          state: {
+            fromProposal: true,
+            proposalData: {
+              ...proposalData,
+              source_proposal_id: notes.source_proposal_id
+            }
+          }
+        });
+      } else {
+        // Navigate to content builder with basic calendar item data
+        navigate('/content-builder', {
+          state: {
+            fromCalendar: true,
+            calendarData: {
+              title: item.title,
+              content_type: item.content_type,
+              tags: item.tags,
+              notes: item.notes
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast.error('Failed to generate content');
+    }
+  };
+
+  const getProposalData = (item: any) => {
+    try {
+      const notes = item.notes ? JSON.parse(item.notes) : {};
+      return notes.proposal_data || null;
+    } catch (e) {
+      return null;
     }
   };
 
@@ -182,40 +244,61 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                   </div>
                   
                   <div className="space-y-1">
-                    {dayContent.slice(0, 2).map(item => (
-                      <div 
-                        key={item.id}
-                        className="text-xs p-1 rounded bg-white/10 border border-white/20 truncate group"
-                      >
-                        <div className="flex items-center gap-1">
-                          <span>{getTypeIcon(item.content_type)}</span>
-                          <span className="text-white/80 truncate flex-1">{item.title}</span>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditItem(item);
-                              }}
-                              className="hover:text-blue-400"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteItem(item.id);
-                              }}
-                              className="hover:text-red-400"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
+                    {dayContent.slice(0, 2).map(item => {
+                      const proposalData = getProposalData(item);
+                      
+                      return (
+                        <div 
+                          key={item.id}
+                          className="text-xs p-1 rounded bg-white/10 border border-white/20 truncate group"
+                        >
+                          <div className="flex items-center gap-1">
+                            <span>{getTypeIcon(item.content_type)}</span>
+                            <span className="text-white/80 truncate flex-1">{item.title}</span>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleGenerateContent(item);
+                                }}
+                                className="hover:text-green-400"
+                                title="Generate Content"
+                              >
+                                <Send className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditItem(item);
+                                }}
+                                className="hover:text-blue-400"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteItem(item.id);
+                                }}
+                                className="hover:text-red-400"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Badge variant="outline" className={`${getStatusColor(item.status)} text-xs`}>
+                              {item.status}
+                            </Badge>
+                            {proposalData && (
+                              <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
+                                Proposal
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                        <Badge variant="outline" className={`${getStatusColor(item.status)} text-xs mt-1`}>
-                          {item.status}
-                        </Badge>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {dayContent.length > 2 && (
                       <div className="text-xs text-muted-foreground text-center py-1">
                         +{dayContent.length - 2} more
@@ -244,27 +327,45 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                 </Button>
               </div>
               <div className="space-y-2">
-                {getContentForDate(selectedDate).map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{getTypeIcon(item.content_type)}</span>
-                      <div>
-                        <div className="font-medium text-white">{item.title}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {item.assigned_to && `Assigned to: ${item.assigned_to}`}
+                {getContentForDate(selectedDate).map(item => {
+                  const proposalData = getProposalData(item);
+                  
+                  return (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{getTypeIcon(item.content_type)}</span>
+                        <div>
+                          <div className="font-medium text-white">{item.title}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            {item.assigned_to && `Assigned to: ${item.assigned_to}`}
+                            {proposalData && (
+                              <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
+                                From Proposal
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleGenerateContent(item)}
+                          className="gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/30 text-blue-400 hover:bg-blue-500/30"
+                        >
+                          <Send className="h-4 w-4" />
+                          Generate Content
+                        </Button>
+                        <Badge variant="outline" className={getStatusColor(item.status)}>
+                          {item.status}
+                        </Badge>
+                        <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={getStatusColor(item.status)}>
-                        {item.status}
-                      </Badge>
-                      <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {getContentForDate(selectedDate).length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />

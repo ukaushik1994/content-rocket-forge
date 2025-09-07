@@ -5,9 +5,13 @@ import { motion } from 'framer-motion';
 import { Sparkles, CalendarDays, Plus, BarChart3, Zap } from 'lucide-react';
 import { ContentStrategyProvider, useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { EditorialCalendar } from '@/components/research/content-strategy/calendar/EditorialCalendar';
+import { useProposalRestoration } from '@/hooks/useProposalRestoration';
 
 const CalendarInner: React.FC = () => {
   const { currentStrategy } = useContentStrategy();
+  
+  // Enable automatic proposal restoration
+  useProposalRestoration();
 
   const goals = React.useMemo(() => ({
     monthlyTraffic: currentStrategy?.monthly_traffic_goal?.toString() || '',
