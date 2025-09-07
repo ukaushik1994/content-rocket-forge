@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { User, Target, Hash } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { SolutionPersona, PersonaType } from '@/contexts/content-builder/types/solution-types';
 
 interface PersonaSelectorProps {
@@ -32,12 +33,23 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
 }) => {
   if (personas.length === 0) {
     return (
-      <Card className={`glass-panel ${className}`}>
-        <CardContent className="py-8 text-center">
-          <p className="text-muted-foreground">No personas available for this solution.</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Add personas to the solution to generate persona-specific content.
+      <Card className={`bg-gradient-to-br from-background via-muted/5 to-background border border-border backdrop-blur-sm rounded-xl shadow-lg ${className}`}>
+        <CardHeader className="pb-3 bg-card/50">
+          <CardTitle className="text-lg text-foreground">Target Personas</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            No personas available for targeted content generation
           </p>
+        </CardHeader>
+        <CardContent className="py-6 text-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-3 rounded-full bg-muted/20">
+              <User className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground">No personas found</p>
+            <p className="text-xs text-muted-foreground">
+              Content will be generated with general targeting
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -60,12 +72,12 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
   };
 
   return (
-    <Card className={`glass-panel ${className}`}>
-      <CardHeader>
+    <Card className={`bg-gradient-to-br from-background via-muted/5 to-background border border-border backdrop-blur-sm rounded-xl shadow-lg ${className}`}>
+      <CardHeader className="pb-3 bg-card/50">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Target Personas</CardTitle>
+          <CardTitle className="text-lg text-foreground">Target Personas</CardTitle>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">
+            <Badge variant="outline" className="border-border/60 bg-card/80">
               {selectedPersonas.length} of {personas.length} selected
             </Badge>
             <Checkbox
@@ -83,9 +95,11 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
       
       <CardContent className="space-y-3">
         {personas.map((persona) => (
-          <div
+          <motion.div
             key={persona.id}
-            className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-accent/30 transition-colors cursor-pointer"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-accent/30 transition-all duration-200 cursor-pointer hover:border-primary/30"
             onClick={() => handlePersonaToggle(persona.id, !selectedPersonas.includes(persona.id))}
           >
             <Checkbox
@@ -97,8 +111,8 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
                 {personaTypeIcons[persona.personaType]}
-                <span className="font-medium">{persona.personaName}</span>
-                <Badge variant="secondary" className="text-xs">
+                <span className="font-medium text-foreground">{persona.personaName}</span>
+                <Badge variant="secondary" className="text-xs border-border/50 bg-muted/50">
                   {personaTypeLabels[persona.personaType]}
                 </Badge>
               </div>
@@ -118,19 +132,23 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
         
         {selectedPersonas.length > 0 && (
-          <div className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
-            <p className="text-sm">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/20"
+          >
+            <p className="text-sm text-foreground">
               <span className="font-medium">Content Strategy:</span>{' '}
               {selectedPersonas.length === 1 
                 ? 'Generate focused content for the selected persona.'
                 : `Generate ${selectedPersonas.length} separate versions, each tailored to the selected personas.`
               }
             </p>
-          </div>
+          </motion.div>
         )}
       </CardContent>
     </Card>
