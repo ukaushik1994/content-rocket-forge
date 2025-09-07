@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { TrendingUp, Target, BarChart3, Calendar, Send, CalendarPlus, Eye, FileText, Users, Award, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -66,14 +67,15 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-foreground pr-8">
             {proposal.title || 'Untitled Opportunity'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ScrollArea className="max-h-[75vh]" hideScrollbar>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pr-4">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Description */}
@@ -272,6 +274,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
             )}
           </div>
         </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
