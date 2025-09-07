@@ -318,7 +318,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
   const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 4;
   
   return (
-    <div className="flex min-h-[calc(100vh-theme(spacing.20))] bg-gradient-to-br from-background via-background/95 to-background/90">
+    <div className="flex min-h-[calc(100vh-theme(spacing.20))] bg-gradient-to-br from-background via-background/95 to-background/90">{/* Background now covers entire area including sidebar */}
       {/* Content Builder Sidebar */}
       <ContentBuilderSidebar 
         steps={steps} 
