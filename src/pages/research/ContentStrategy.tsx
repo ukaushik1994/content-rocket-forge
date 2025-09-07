@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import { ContentStrategyHero } from '@/components/research/content-strategy/ContentStrategyHero';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { StrategyCreationModal } from '@/components/research/content-strategy/StrategyCreationModal';
 import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/SimpleAIServiceIndicator';
 import { SimpleSerpServiceIndicator } from '@/components/content-builder/ai/SimpleSerpServiceIndicator';
@@ -37,11 +38,8 @@ const ContentStrategy = () => {
           </div>
         </div>
         
-        {/* Optimized Background */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl opacity-30 will-change-transform transform-gpu animate-float" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full filter blur-3xl opacity-20 will-change-transform transform-gpu animate-float" style={{ animationDelay: '2s' }} />
-        </div>
+        {/* Animated Background - matching Repository design */}
+        <AnimatedBackground intensity="medium" />
         
         <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
           <motion.div 
