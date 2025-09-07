@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   FileText, 
   BookOpen, 
@@ -24,7 +25,9 @@ import {
   Target,
   CheckCircle,
   AlertCircle,
-  X
+  X,
+  Loader2,
+  Info
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -34,6 +37,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { CustomBadge } from '@/components/ui/custom-badge';
 import { SolutionIntegrationBadge } from './SolutionIntegrationBadge';
 import { OptimizationBadges } from './OptimizationBadges';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 interface ContentDetailModalProps {
@@ -50,6 +54,24 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const { deleteContentItem } = useContent();
   const navigate = useNavigate();
   const [isContentExpanded, setIsContentExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && open) {
+        onClose();
+      }
+      if (e.key === 'Enter' && open && content?.content && content.content.length > 300) {
+        setIsContentExpanded(!isContentExpanded);
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [open, onClose, isContentExpanded, content]);
 
   if (!content) return null;
 
@@ -101,11 +123,14 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
   const handleDelete = async () => {
     try {
+      setIsLoading(true);
       await deleteContentItem(content.id);
       toast.success('Content deleted successfully');
       onClose();
     } catch (error) {
       toast.error('Failed to delete content');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -116,16 +141,20 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const solution = (content as any).metadata?.solution || (content as any).metadata?.selectedSolution;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-2xl font-bold text-foreground pr-8">
-            {content.title}
-          </DialogTitle>
-          <div className="text-sm text-muted-foreground capitalize">
-            {content.content_type.replace('_', ' ')} • {content.status}
-          </div>
-        </DialogHeader>
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-2xl font-bold text-foreground pr-8">
+              {content.title}
+            </DialogTitle>
+            <div className="text-sm text-muted-foreground capitalize">
+              {content.content_type.replace('_', ' ')} • {content.status}
+              <span className="text-xs text-muted-foreground/60 ml-2">
+                Press Esc to close • Enter to expand content
+              </span>
+            </div>
+          </DialogHeader>
 
         <ScrollArea className="h-[calc(90vh-8rem)] flex-1 min-h-0" hideScrollbar>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pr-4">
@@ -172,43 +201,58 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </div>
                   ) : (
                     <div className="prose prose-sm max-w-none">
-                      {isContentExpanded ? (
-                        <div className="space-y-3">
-                          <ScrollArea className="h-64 w-full border border-border rounded-lg bg-muted/5">
-                            <div className="p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                              {content.content || 'No content available'}
-                            </div>
-                          </ScrollArea>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-primary hover:text-primary/80"
-                            onClick={() => setIsContentExpanded(false)}
+                      <AnimatePresence mode="wait">
+                        {isContentExpanded ? (
+                          <motion.div 
+                            key="expanded"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-3"
                           >
-                            Show Less
-                          </Button>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
-                            {content.content ? (
-                              content.content.length > 300 
-                                ? content.content.substring(0, 300) + '...'
-                                : content.content
-                            ) : 'No content available'}
-                          </div>
-                          {content.content && content.content.length > 300 && (
+                            <ScrollArea className="h-64 w-full border border-border rounded-lg bg-muted/5">
+                              <div className="p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                                {content.content || 'No content available'}
+                              </div>
+                            </ScrollArea>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="mt-2 text-primary hover:text-primary/80"
-                              onClick={() => setIsContentExpanded(true)}
+                              className="text-primary hover:text-primary/80"
+                              onClick={() => setIsContentExpanded(false)}
                             >
-                              Show More
+                              Show Less
                             </Button>
-                          )}
-                        </div>
-                      )}
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="collapsed"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
+                              {content.content ? (
+                                content.content.length > 300 
+                                  ? content.content.substring(0, 300) + '...'
+                                  : content.content
+                              ) : 'No content available'}
+                            </div>
+                            {content.content && content.content.length > 300 && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="mt-2 text-primary hover:text-primary/80"
+                                onClick={() => setIsContentExpanded(true)}
+                              >
+                                Show More
+                              </Button>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
                 </CardContent>
@@ -293,8 +337,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                         Duplicate
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
+                      <DropdownMenuItem onClick={handleDelete} className="text-destructive" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -309,28 +353,51 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border">
-                      <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />
-                      <div className="font-semibold text-foreground">{wordCount.toLocaleString()}</div>
-                      <div className="text-xs text-muted-foreground">Words</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border">
-                      <Clock className="h-5 w-5 mx-auto mb-1 text-primary" />
-                      <div className="font-semibold text-foreground">{readingTime} min</div>
-                      <div className="text-xs text-muted-foreground">Read Time</div>
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-center p-3 bg-muted/10 rounded-lg border border-border cursor-help">
+                          <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <div className="font-semibold text-foreground">{wordCount.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground">Words</div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Total word count in the content</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-center p-3 bg-muted/10 rounded-lg border border-border cursor-help">
+                          <Clock className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <div className="font-semibold text-foreground">{readingTime} min</div>
+                          <div className="text-xs text-muted-foreground">Read Time</div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Estimated reading time (200 words/min)</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                   
                   {/* SEO Score */}
-                  <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Star className="h-4 w-4 text-primary" />
-                      <span className="text-xs text-muted-foreground">SEO Score</span>
-                    </div>
-                    <div className="text-xl font-bold text-foreground">
-                      {content.seo_score || content.metadata?.seoScore || 'N/A'}
-                    </div>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border cursor-help">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Star className="h-4 w-4 text-primary" />
+                          <span className="text-xs text-muted-foreground">SEO Score</span>
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <div className="text-xl font-bold text-foreground">
+                          {content.seo_score || content.metadata?.seoScore || 'N/A'}
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>SEO optimization score based on keywords, structure, and readability</p>
+                    </TooltipContent>
+                  </Tooltip>
 
                   {/* Additional Metrics */}
                   <div className="grid grid-cols-2 gap-3">
@@ -469,5 +536,6 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         </ScrollArea>
       </DialogContent>
     </Dialog>
+  </TooltipProvider>
   );
 };
