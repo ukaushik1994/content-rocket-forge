@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
-import { RepositoryHeader } from '@/components/repository/RepositoryHeader';
-import { RepositoryContent } from '@/components/repository/RepositoryContent';
-import { RepositoryDetailView } from '@/components/repository/RepositoryDetailView';
-import { useContent } from '@/contexts/content';
 import { Helmet } from 'react-helmet-async';
-import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { useContent } from '@/contexts/content';
 import { ContentItemType } from '@/contexts/content/types';
+import { RepositoryHero } from '@/components/repository/RepositoryHero';
+import { RepositoryTabs } from '@/components/repository/RepositoryTabs';
+import { RepositoryDetailView } from '@/components/repository/RepositoryDetailView';
+import { toast } from 'sonner';
 
 const Repository = () => {
+  const canonicalUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/repository` 
+    : '/repository';
   const {
     contentItems,
     refreshContent,
@@ -73,7 +76,9 @@ const Repository = () => {
       transition={{ duration: 0.8 }}
     >
       <Helmet>
-        <title>Content Repository | Content Platform</title>
+        <title>Content Repository — Manage & Analyze Your Content</title>
+        <meta name="description" content="Centralized content repository with advanced filtering, AI analysis, and performance tracking. Manage all your content in one powerful workspace." />
+        <link rel="canonical" href={canonicalUrl} />
       </Helmet>
       
       <Navbar />
@@ -125,38 +130,24 @@ const Repository = () => {
           />
         ))}
       </div>
-      
-      <main className="flex-1 w-full py-8 z-10 relative">
-        <div className="w-full px-6">
-          <motion.div 
-            className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden shadow-2xl"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            <div className="relative p-8">
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-primary/5 to-blue-500/5"
-                animate={{ opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              />
-              
-              <div className="relative z-10">
-                <RepositoryHeader />
-                <RepositoryContent 
-                  onOpenDetailView={handleOpenDetailView}
-                />
-              </div>
-            </div>
-          </motion.div>
-        </div>
-        
-        <RepositoryDetailView 
-          open={detailViewOpen} 
-          onClose={() => setDetailViewOpen(false)} 
-          content={selectedContent} 
-        />
-      </main>
+
+      <div className="relative z-10 w-full px-6 pt-24 pb-12">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="max-w-7xl mx-auto space-y-8"
+        >
+          <RepositoryHero />
+          <RepositoryTabs onOpenDetailView={handleOpenDetailView} />
+        </motion.div>
+      </div>
+
+      <RepositoryDetailView 
+        content={selectedContent} 
+        open={detailViewOpen} 
+        onClose={() => setDetailViewOpen(false)} 
+      />
     </motion.div>
   );
 };
