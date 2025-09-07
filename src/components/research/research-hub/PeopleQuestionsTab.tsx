@@ -74,8 +74,8 @@ export const PeopleQuestionsTab: React.FC = () => {
     });
   };
 
-  const handleSelectAll = (questions: QuestionData[]) => {
-    const allQuestions = questions.map(q => q.question || q.preposition || q.comparison || q.text);
+  const handleSelectAll = (questions: any[]) => {
+    const allQuestions = questions.map(q => q.question || q.preposition || q.comparison);
     setSelectedQuestions(prev => {
       if (prev.length === allQuestions.length) {
         return [];
@@ -121,16 +121,16 @@ export const PeopleQuestionsTab: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
               className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
-                selectedQuestions.includes(question.text)
+                selectedQuestions.includes(question.question || question.preposition || question.comparison)
                   ? 'border-primary bg-primary/10'
                   : 'border-border/50 bg-background/40'
               }`}
-              onClick={() => handleQuestionSelect(question.question || question.preposition || question.comparison || question.text)}
+              onClick={() => handleQuestionSelect(question.question || question.preposition || question.comparison)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">
-                    {question.question || question.preposition || question.comparison || question.text}
+                    {question.question || question.preposition || question.comparison}
                   </p>
                   {question.searchVolume && (
                     <div className="flex items-center gap-2 mt-2">
@@ -142,7 +142,7 @@ export const PeopleQuestionsTab: React.FC = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {selectedQuestions.includes(question.question || question.preposition || question.comparison || question.text) && (
+                  {selectedQuestions.includes(question.question || question.preposition || question.comparison) && (
                     <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                       <span className="text-xs text-white">✓</span>
                     </div>
