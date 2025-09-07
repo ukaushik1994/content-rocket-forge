@@ -3,7 +3,7 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { DashboardAlert, fetchAlerts, subscribeToAlerts } from '@/services/notificationsService';
-import { NotificationsCenter } from './NotificationsCenter';
+import { EnhancedNotificationsCenter } from './EnhancedNotificationsCenter';
 
 export const NotificationBell: React.FC = () => {
   const { user } = useAuth();
@@ -49,7 +49,7 @@ export const NotificationBell: React.FC = () => {
           </span>
         )}
       </Button>
-      <NotificationsCenter open={open} onClose={() => setOpen(false)} />
+      <EnhancedNotificationsCenter open={open} onClose={() => setOpen(false)} />
     </div>
   );
 };
