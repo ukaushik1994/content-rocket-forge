@@ -89,9 +89,9 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-background/60 backdrop-blur-sm border-border/50">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2">
             <Search className="h-5 w-5" />
             Content Gap Analysis
           </CardTitle>
@@ -102,13 +102,13 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
               placeholder="Enter keyword to analyze gaps..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+              className="flex-1 bg-background/80 border-border/50"
               onKeyPress={(e) => e.key === 'Enter' && handleAnalyzeGaps()}
             />
             <Button
               onClick={handleAnalyzeGaps}
               disabled={isAnalyzing}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              className="bg-primary hover:bg-primary/90"
             >
               {isAnalyzing ? 'Analyzing...' : 'Analyze'}
             </Button>
@@ -117,7 +117,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
           {gapAnalysis && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold">
                   Content Opportunities for "{gapAnalysis.keyword}"
                 </h3>
                 <Badge variant="secondary" className="bg-green-500/20 text-green-400">
@@ -129,7 +129,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                 {gapAnalysis.gaps.map((gap: string, index: number) => (
                   <Card 
                     key={index} 
-                    className="bg-white/5 border-white/10 cursor-pointer transition-colors hover:bg-white/10"
+                    className="bg-background/40 border-border/50 cursor-pointer transition-colors hover:border-primary/50"
                     onClick={() => toggleGapSelection(gap)}
                   >
                     <CardContent className="p-4">
@@ -142,7 +142,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <Lightbulb className="h-4 w-4 text-yellow-400" />
-                            <span className="text-white font-medium">{gap}</span>
+                            <span className="font-medium">{gap}</span>
                           </div>
                           <div className="flex items-center gap-4 mt-2">
                           </div>
@@ -158,7 +158,6 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                   onClick={() => setSelectedGaps(gapAnalysis.gaps)}
                   variant="outline"
                   size="sm"
-                  className="border-white/20 text-white hover:bg-white/10"
                 >
                   Select All
                 </Button>
@@ -166,7 +165,6 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                   onClick={() => setSelectedGaps([])}
                   variant="outline" 
                   size="sm"
-                  className="border-white/20 text-white hover:bg-white/10"
                 >
                   Clear Selection
                 </Button>
