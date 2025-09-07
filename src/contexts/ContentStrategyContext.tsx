@@ -288,9 +288,6 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     if (!user) return;
     
     try {
-      // Generate unique session ID for progress tracking
-      const sessionId = `strategy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
       // Always use batch size of 6, regardless of contentPieces goal
       const targetCount = 6;
       const result = await contentStrategyService.generateAIStrategy({ 
@@ -300,8 +297,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
           timeline: goals.timeline || '3 months',
           mainKeyword: goals.mainKeyword || ''
         }, 
-        location: 'United States',
-        sessionId 
+        location: 'United States' 
       });
       
       // Use all generated proposals (not limited by content pieces goal)

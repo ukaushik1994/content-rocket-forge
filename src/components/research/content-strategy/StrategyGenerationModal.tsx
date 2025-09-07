@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
-import { EnhancedStrategyGenerationModal } from './EnhancedStrategyGenerationModal';
 
 export type GenerationStep = {
   label: string;
@@ -12,34 +11,10 @@ export type GenerationStep = {
 interface StrategyGenerationModalProps {
   open: boolean;
   steps: GenerationStep[];
-  sessionId?: string;
-  onComplete?: (data?: any) => void;
   onCancel?: () => void;
-  onError?: (error: string) => void;
 }
 
-export function StrategyGenerationModal({ 
-  open, 
-  steps, 
-  sessionId, 
-  onComplete, 
-  onCancel, 
-  onError 
-}: StrategyGenerationModalProps) {
-  // If sessionId is provided, use the enhanced modal with real-time progress
-  if (sessionId) {
-    return (
-      <EnhancedStrategyGenerationModal
-        open={open}
-        sessionId={sessionId}
-        onComplete={onComplete}
-        onCancel={onCancel}
-        onError={onError}
-      />
-    );
-  }
-
-  // Fallback to original modal for backward compatibility
+export function StrategyGenerationModal({ open, steps, onCancel }: StrategyGenerationModalProps) {
   return (
     <AnimatePresence>
       {open && (
