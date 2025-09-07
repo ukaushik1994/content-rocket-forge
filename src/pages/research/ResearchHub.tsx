@@ -6,6 +6,9 @@ import { Search, FileSearch, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
+import { ResearchHubHero } from '@/components/research/research-hub/ResearchHubHero';
+import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/SimpleAIServiceIndicator';
+import { SimpleSerpServiceIndicator } from '@/components/content-builder/ai/SimpleSerpServiceIndicator';
 
 // Import existing tab components
 import { KeywordIntelligenceTab } from '@/components/research/research-hub/KeywordIntelligenceTab';
@@ -50,6 +53,14 @@ const ResearchHub = () => {
         
         <Navbar />
         
+        {/* Service Status Indicators */}
+        <div className="relative z-20 flex justify-center pt-4 pb-2">
+          <div className="flex items-center gap-4 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2 shadow-sm">
+            <SimpleAIServiceIndicator size="sm" />
+            <SimpleSerpServiceIndicator size="sm" />
+          </div>
+        </div>
+        
         {/* Optimized Background */}
         <div className="absolute inset-0 z-0">
           <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl opacity-30 will-change-transform transform-gpu animate-float" />
@@ -62,20 +73,7 @@ const ResearchHub = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
           >
-            {/* Hero Section - Matching Content Strategy */}
-            <motion.div 
-              className="text-center space-y-4"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Research Hub
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Comprehensive research workspace with keyword intelligence, content gaps analysis, and audience question insights.
-              </p>
-            </motion.div>
+            <ResearchHubHero />
 
             {/* Main Tabs Interface - Exact Content Strategy Layout */}
             <GlassCard className="p-4 sm:p-6">
