@@ -71,24 +71,16 @@ export const ResearchInsightsTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Premium Header Card */}
-      <Card className="bg-gradient-to-br from-orange-900/20 to-red-900/10 border border-white/10 backdrop-blur-sm">
-        <CardContent className="p-8">
-          <div className="text-center space-y-6">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl backdrop-blur-sm border border-white/10">
-                <BarChart3 className="h-8 w-8 text-orange-400" />
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 bg-clip-text text-transparent">
-              Research Insights Dashboard
-            </h2>
-            <p className="text-white/80 max-w-2xl mx-auto text-lg leading-relaxed">
-              Unified view of all your research activities. Track performance, identify patterns, and discover high-impact opportunities across all your research sessions.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Enhanced Description */}
+      <div className="text-center space-y-4">
+        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-2">
+          <BarChart3 className="h-6 w-6 text-primary" />
+          Research Insights Dashboard
+        </h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Unified view of all your research activities. Track performance, identify patterns, and discover high-impact opportunities across all your research sessions.
+        </p>
+      </div>
 
       {/* Key Metrics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

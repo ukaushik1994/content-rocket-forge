@@ -158,28 +158,20 @@ export const PeopleQuestionsTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Premium Header Card */}
-      <Card className="bg-gradient-to-br from-purple-900/20 to-pink-900/10 border border-white/10 backdrop-blur-sm">
-        <CardContent className="p-8">
-          <div className="text-center space-y-6">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl backdrop-blur-sm border border-white/10">
-                <Users className="h-8 w-8 text-purple-400" />
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent">
-              People Questions Analysis
-            </h2>
-            <p className="text-white/80 max-w-2xl mx-auto text-lg leading-relaxed">
-              Discover what your audience is asking about any topic. Analyze real questions from search engines and create content that answers their needs.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Enhanced Description */}
+      <div className="text-center space-y-4">
+        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-2">
+          <Users className="h-6 w-6 text-primary" />
+          People Questions Analysis
+        </h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Discover what your audience is asking about any topic. Analyze real questions from search engines and create content that answers their needs.
+        </p>
+      </div>
 
-      {/* Enhanced Search Interface */}
-      <Card className="bg-gradient-to-br from-white/10 via-white/5 to-white/5 border border-white/10 backdrop-blur-xl">
-        <CardContent className="p-8">
+      {/* Search Interface */}
+      <Card className="bg-background/60 backdrop-blur-sm border-border/50">
+        <CardContent className="p-6">
           <div className="flex gap-4">
             <div className="flex-1">
               <Input
@@ -187,13 +179,13 @@ export const PeopleQuestionsTab: React.FC = () => {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAnalyze()}
-                className="bg-black/20 border-white/20 text-white placeholder:text-white/60 h-12 text-lg backdrop-blur-sm"
+                className="bg-background/80 border-border/50"
               />
             </div>
             <Button 
               onClick={handleAnalyze} 
               disabled={loading || !keyword.trim()}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12 px-8 shadow-lg"
+              className="bg-primary hover:bg-primary/90"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -236,22 +228,22 @@ export const PeopleQuestionsTab: React.FC = () => {
             </Card>
           )}
 
-          {/* Enhanced Questions Tabs */}
+          {/* Questions Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-black/20 via-black/10 to-black/20 backdrop-blur-xl border border-white/10 rounded-xl p-2">
-              <TabsTrigger value="questions" className="flex items-center gap-2 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg">
+            <TabsList className="grid w-full grid-cols-4 bg-background/60 backdrop-blur-sm border border-border/50">
+              <TabsTrigger value="questions" className="flex items-center gap-2">
                 <HelpCircle className="h-4 w-4" />
                 Questions
               </TabsTrigger>
-              <TabsTrigger value="prepositions" className="flex items-center gap-2 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg">
+              <TabsTrigger value="prepositions" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
                 Prepositions
               </TabsTrigger>
-              <TabsTrigger value="comparisons" className="flex items-center gap-2 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg">
+              <TabsTrigger value="comparisons" className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
                 Comparisons
               </TabsTrigger>
-              <TabsTrigger value="related" className="flex items-center gap-2 rounded-lg transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg">
+              <TabsTrigger value="related" className="flex items-center gap-2">
                 <Search className="h-4 w-4" />
                 Related
               </TabsTrigger>
