@@ -164,7 +164,7 @@ const NotificationSettings: React.FC = () => {
       transition={{ duration: 0.5 }}
     >
       <Helmet>
-        <title>Notification Settings | ContentRocketForge</title>
+        <title>Notification Settings | Cr3ate</title>
         <meta name="description" content="Manage your notification preferences and settings" />
       </Helmet>
       

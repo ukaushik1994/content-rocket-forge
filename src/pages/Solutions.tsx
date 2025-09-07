@@ -351,7 +351,7 @@ const Solutions = () => {
   
   return <motion.div className="min-h-screen flex flex-col bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
       <Helmet>
-        <title>Business Solutions | ContentRocketForge</title>
+        <title>Business Solutions | Cr3ate</title>
         <meta name="description" content="Manage your business solutions for content creation" />
       </Helmet>
       

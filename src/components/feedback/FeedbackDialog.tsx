@@ -63,7 +63,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         <DialogHeader>
           <DialogTitle className="text-gradient">Share Your Feedback</DialogTitle>
           <DialogDescription>
-            Help us improve ContentRocketForge. Your insights make a difference!
+            Help us improve Cr3ate. Your insights make a difference!
           </DialogDescription>
         </DialogHeader>
         

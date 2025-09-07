@@ -92,7 +92,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert content writer for Content Rocket Forge. Create high-quality, engaging content that follows SEO best practices and aligns with the user\'s brand voice.'
+            content: 'You are an expert content writer for Cr3ate. Create high-quality, engaging content that follows SEO best practices and aligns with the user\'s brand voice.'
           },
           {
             role: 'user',

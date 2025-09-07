@@ -132,7 +132,7 @@ export const DashboardFooter: React.FC = () => {
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-neon-purple to-neon-blue flex items-center justify-center">
                   <Globe className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Content Rocket Forge</h3>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Cr3ate</h3>
               </div>
             </motion.div>
             
