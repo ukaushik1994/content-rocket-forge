@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContentRepurposing } from '@/components/content-repurposing/hooks';
@@ -96,12 +97,24 @@ export const ContentRepurposingModal: React.FC<ContentRepurposingModalProps> = (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl h-[95vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-4 pb-2 border-b">
-          <DialogTitle className="text-xl text-foreground">
-            Repurpose Content: {content.title}
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Transform your content into multiple formats for different platforms and audiences
-          </p>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClose}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              ← Back to Content Details
+            </Button>
+            <div className="flex-1">
+              <DialogTitle className="text-xl text-foreground">
+                Repurpose Content: {content.title}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Transform your content into multiple formats for different platforms and audiences
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="flex-1 p-6">

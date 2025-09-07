@@ -19,7 +19,7 @@ export const RepurposeButton: React.FC<RepurposeButtonProps> = ({
   
   const handleRepurpose = () => {
     if (disabled) return;
-    navigate(`/content-repurposing?id=${contentId}`);
+    navigate('/repository');
   };
   
   return (

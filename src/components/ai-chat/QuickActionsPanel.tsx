@@ -66,7 +66,7 @@ export const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
       title: 'Content Repurposing',
       description: 'Transform content across different formats',
       icon: Zap,
-      action: 'navigate:/content-repurposing',
+      action: 'navigate:/repository',
       color: 'from-yellow-500/20 to-yellow-600/20',
       borderColor: 'border-yellow-500/30'
     },

@@ -69,7 +69,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       title: "Content Repurposing",
       description: "Transform existing content into various formats for different platforms.",
       icon: <Repeat className="h-5 w-5 text-indigo-400" />,
-      action: () => navigate('/content-repurposing'),
+      action: () => navigate('/repository'),
       buttonText: "Repurpose Content",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-indigo-400/30 to-violet-500/20",

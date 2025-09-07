@@ -100,10 +100,10 @@ export const modules: ModuleData[] = [
     description: 'Transform your content into multiple formats - from blog posts to social media, videos to infographics.',
     features: ['Format Conversion', 'Social Media Posts', 'Video Scripts', 'Email Campaigns'],
     icon: Repeat,
-    route: '/content-repurposing',
+    route: '/repository',
     cta: 'Repurpose Content',
     secondaryCta: 'View Formats',
-    secondaryRoute: '/content-repurposing/formats',
+    secondaryRoute: '/repository',
     theme: {
       gradient: 'from-amber-400 via-orange-500 to-red-500',
       glowColor: 'from-amber-400/30 via-orange-500/20 to-red-500/30',

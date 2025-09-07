@@ -49,7 +49,6 @@ export default function NavItems() {
   
   const contentRoutes = [
     '/content-builder',
-    '/content-repurposing', 
     '/content-approval',
     '/glossary-builder',
     '/repository',
@@ -101,18 +100,6 @@ export default function NavItems() {
             >
               <Puzzle className="h-4 w-4" />
               Builder
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/content-repurposing" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/content-repurposing' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <Repeat className="h-4 w-4" />
-              Repurpose
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

@@ -54,7 +54,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ navi
       title: "Content Repurposing",
       description: "Transform existing content into various formats for different platforms.",
       icon: <Repeat className="h-6 w-6" />,
-      action: () => navigate('/content-repurposing'),
+      action: () => navigate('/repository'),
       buttonText: "Repurpose Content",
       gradient: "from-indigo-400/20 to-violet-500/15",
       iconBg: "from-indigo-400/30 to-violet-500/20",
