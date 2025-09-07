@@ -366,76 +366,24 @@ export const ContentStrategyEngine = ({
       // Take the generated proposals
       const generatedProposals = result.proposals || [];
 
-      // Auto-save all keywords from proposals to library  
+      // Auto-save all keywords from proposals to library
       if (generatedProposals.length > 0) {
-        // Simple validation for proposals
-        const validProposals = generatedProposals.filter(p => p.primary_keyword && p.primary_keyword.trim());
-        if (validProposals.length !== generatedProposals.length) {
-          console.warn(`⚠️ ${generatedProposals.length - validProposals.length} proposals missing primary keywords`);
-          toast({
-            title: "Data Quality Warning", 
-            description: `${generatedProposals.length - validProposals.length} proposals missing primary keywords`,
-            variant: "destructive"
-          });
-        }
-
-        // Save keywords with proper error handling and user feedback
         try {
           console.log('🔄 Auto-saving keywords from proposals...');
-          const keywordResult = await proposalKeywordSync.autoSaveKeywordsFromProposals(validProposals);
-          console.log('✅ Keyword auto-save result:', keywordResult);
+          await proposalKeywordSync.autoSaveKeywordsFromProposals(generatedProposals);
         } catch (error) {
-          console.error('❌ CRITICAL: Failed to auto-save keywords:', error);
-          toast({
-            title: "Keyword Save Failed",
-            description: "Failed to save keywords to library. Proposals may not be fully integrated.",
-            variant: "destructive"
-          });
+          console.error('⚠️ Error auto-saving keywords:', error);
+          // Don't block the main flow for keyword saving errors
         }
 
-        // Save proposals to history with retry mechanism and proper error handling
-        let saveAttempts = 0;
-        const maxRetries = 3;
-        let saveSuccess = false;
-        
-        while (saveAttempts < maxRetries && !saveSuccess) {
-          try {
-            saveAttempts++;
-            console.log(`📝 Saving proposals to history (attempt ${saveAttempts}/${maxRetries}):`, validProposals.length, 'proposals');
-            await proposalKeywordSync.saveProposalsToHistory(validProposals);
-            console.log('✅ Successfully saved proposals to history');
-            saveSuccess = true;
-            
-            // Refresh historical proposals to show the new ones
-            await loadHistoricalProposals();
-            
-            toast({
-              title: "Proposals Saved Successfully",
-              description: `${validProposals.length} proposals saved to history and available across sessions`
-            });
-          } catch (error) {
-            console.error(`❌ Error saving proposals to history (attempt ${saveAttempts}):`, error);
-            
-            if (saveAttempts >= maxRetries) {
-              // Critical failure - this affects content opportunities count
-              toast({
-                title: "CRITICAL: Proposal Save Failed",
-                description: "Failed to save proposals after multiple attempts. New proposals won't appear in dashboard opportunities.",
-                variant: "destructive"
-              });
-              
-              // Log detailed error for debugging
-              console.error('❌ CRITICAL SAVE FAILURE:', {
-                error: error,
-                proposals: validProposals.map(p => ({ title: p.title, primary_keyword: p.primary_keyword })),
-                userAgent: navigator.userAgent,
-                timestamp: new Date().toISOString()
-              });
-            } else {
-              // Wait before retry
-              await new Promise(resolve => setTimeout(resolve, 1000 * saveAttempts));
-            }
-          }
+        // Save proposals to history for future reference
+        try {
+          console.log('📝 About to save proposals to history:', generatedProposals.length, 'proposals');
+          await proposalKeywordSync.saveProposalsToHistory(generatedProposals);
+          console.log('✅ Successfully saved proposals to history');
+        } catch (error) {
+          console.error('❌ Error saving proposals to history:', error);
+          // Don't block the main flow for history saving errors
         }
       }
       setProposals(generatedProposals);
@@ -1014,19 +962,18 @@ export const ContentStrategyEngine = ({
                       }} transition={{
                         delay: idx * 0.1
                       }}>
-          <ProposalCard 
-            proposal={proposal} 
-            index={originalIndex} 
-            isSelected={selected[originalIndex] || false} 
-            onSelectionChange={(index, isSelected) => {
-              const newSelected = { ...selected, [index]: isSelected };
-              setSelected(newSelected);
-              setTimeout(() => setSelectedProposals(newSelected), 50);
-            }} 
-            onSendToBuilder={sendProposalToContentBuilder}
-            showHistoricalBadge={proposal.is_historical}
-            isNew={isProposalNew(proposal)}
-          />
+                        <ProposalCard 
+                          proposal={proposal} 
+                          index={originalIndex} 
+                          isSelected={selected[originalIndex] || false} 
+                          onSelectionChange={(index, isSelected) => {
+                            const newSelected = { ...selected, [index]: isSelected };
+                            setSelected(newSelected);
+                            setTimeout(() => setSelectedProposals(newSelected), 50);
+                          }} 
+                          onSendToBuilder={sendProposalToContentBuilder}
+                          isNew={isProposalNew(proposal)}
+                        />
                       </motion.div>
                     );
                   })}
@@ -1094,20 +1041,19 @@ export const ContentStrategyEngine = ({
                   {getPaginatedProposals('selected').map((proposal, filteredIdx) => {
                     const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
                     return (
-        <ProposalCard 
-          key={proposal.primary_keyword || filteredIdx} 
-          proposal={proposal} 
-          index={originalIndex} 
-          isSelected={true} 
-          onSelectionChange={(index, isSelected) => {
-            const newSelected = { ...selected, [index]: isSelected };
-            setSelected(newSelected);
-            setTimeout(() => setSelectedProposals(newSelected), 50);
-          }} 
-          onSendToBuilder={sendProposalToContentBuilder}
-          showHistoricalBadge={proposal.is_historical}
-          isNew={isProposalNew(proposal)}
-        />
+                      <ProposalCard 
+                        key={proposal.primary_keyword || filteredIdx} 
+                        proposal={proposal} 
+                        index={originalIndex} 
+                        isSelected={true} 
+                        onSelectionChange={(index, isSelected) => {
+                          const newSelected = { ...selected, [index]: isSelected };
+                          setSelected(newSelected);
+                          setTimeout(() => setSelectedProposals(newSelected), 50);
+                        }} 
+                        onSendToBuilder={sendProposalToContentBuilder}
+                        isNew={isProposalNew(proposal)}
+                      />
                     );
                   })}
                 </div>
@@ -1142,20 +1088,19 @@ export const ContentStrategyEngine = ({
                   {getPaginatedProposals(tag).map((proposal, idx) => {
                     const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
                     return (
-        <ProposalCard 
-          key={proposal.primary_keyword || idx} 
-          proposal={proposal} 
-          index={originalIndex} 
-          isSelected={selected[originalIndex] || false} 
-          onSelectionChange={(index, isSelected) => {
-            const newSelected = { ...selected, [index]: isSelected };
-            setSelected(newSelected);
-            setTimeout(() => setSelectedProposals(newSelected), 50);
-          }} 
-          onSendToBuilder={sendProposalToContentBuilder}
-          showHistoricalBadge={proposal.is_historical}
-          isNew={isProposalNew(proposal)}
-        />
+                      <ProposalCard 
+                        key={proposal.primary_keyword || idx} 
+                        proposal={proposal} 
+                        index={originalIndex} 
+                        isSelected={selected[originalIndex] || false} 
+                        onSelectionChange={(index, isSelected) => {
+                          const newSelected = { ...selected, [index]: isSelected };
+                          setSelected(newSelected);
+                          setTimeout(() => setSelectedProposals(newSelected), 50);
+                        }} 
+                        onSendToBuilder={sendProposalToContentBuilder}
+                        isNew={isProposalNew(proposal)}
+                      />
                     );
                   })}
                 </div>

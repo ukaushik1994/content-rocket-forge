@@ -150,20 +150,9 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-purple-400" />
           <span className="text-sm font-medium text-white/80">Primary Keyword:</span>
-          {primaryKw ? (
-            <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
-              {primaryKw}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-xs text-red-400 border-red-400/30 bg-red-500/10">
-              Missing Keyword
-            </Badge>
-          )}
-          {process.env.NODE_ENV === 'development' && !primaryKw && (
-            <span className="text-xs text-red-400 font-mono">
-              Debug: primary_keyword is {typeof proposal.primary_keyword} - "{proposal.primary_keyword}"
-            </span>
-          )}
+          <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
+            {primaryKw}
+          </Badge>
         </div>
 
         {/* Traffic Estimation */}

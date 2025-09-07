@@ -25,9 +25,6 @@ import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 import { useNavigate } from 'react-router-dom';
 import { opportunityHunterService } from '@/services/opportunityHunterService';
 import { aiStrategyService } from '@/services/aiStrategyService';
-import { ContentOpportunitiesIndicator } from './ContentOpportunitiesIndicator';
-import { NextBestMoveIndicator } from './NextBestMoveIndicator';
-import { EnhancedOpportunitiesDisplay } from './EnhancedOpportunitiesDisplay';
 
 interface DashboardSummaryData {
   content_created: {
@@ -411,20 +408,6 @@ export const DashboardSummary = () => {
         ))}
       </motion.div>
 
-      {/* Content Opportunities Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.35 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        {/* Content Opportunities Indicator */}
-        <ContentOpportunitiesIndicator />
-        
-        {/* Next Best Move Indicator */}
-        <NextBestMoveIndicator />
-      </motion.div>
-
       {/* Top Performer */}
       {data.top_performer && (
         <motion.div
@@ -496,19 +479,180 @@ export const DashboardSummary = () => {
         </motion.div>
       )}
 
-      {/* Next Best Moves - Enhanced Opportunities Display */}
+      {/* Next Best Moves - Full Width Carousel */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.6 }}
         className="w-full"
       >
-        <EnhancedOpportunitiesDisplay
-          opportunities={combinedOpportunities}
-          totalCount={combinedOpportunities.length}
-          loading={loading}
-          onRefresh={fetchDashboardSummary}
-        />
+        <Card className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 group overflow-hidden relative">
+          {/* Animated background gradient */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-br from-neon-pink/10 via-neon-purple/10 to-neon-blue/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            animate={{
+              background: [
+                "linear-gradient(135deg, rgba(255,20,147,0.1), rgba(138,43,226,0.1), rgba(30,144,255,0.1))",
+                "linear-gradient(135deg, rgba(30,144,255,0.1), rgba(255,20,147,0.1), rgba(138,43,226,0.1))",
+                "linear-gradient(135deg, rgba(138,43,226,0.1), rgba(30,144,255,0.1), rgba(255,20,147,0.1))",
+              ]
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          
+          <CardHeader className="relative z-10">
+            <CardTitle className="flex items-center gap-3 text-white">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-neon-pink/30 to-neon-blue/30 flex items-center justify-center backdrop-blur-xl border border-white/20">
+                <Lightbulb className="w-5 h-5 text-neon-pink" />
+              </div>
+              <span className="bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+                Next Best Moves
+              </span>
+            </CardTitle>
+            <CardDescription className="text-white/60 ml-13">
+              {combinedOpportunities.length > 0 
+                ? `${combinedOpportunities.length} content opportunities available` 
+                : "No opportunities available"}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="relative z-10 p-0">
+            {combinedOpportunities.length > 0 ? (
+              <div className="relative overflow-hidden">
+                {/* Carousel Container */}
+                <motion.div
+                  className="flex gap-6 px-6 pb-6"
+                  animate={{
+                    x: [0, -50, 0],
+                  }}
+                  transition={{
+                    duration: 20,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                  style={{
+                    width: `${Math.max(combinedOpportunities.length * 320, typeof window !== 'undefined' ? window.innerWidth : 1200)}px`
+                  }}
+                >
+                  {combinedOpportunities.map((item, index) => (
+                    <motion.div
+                      key={`${item.type}-${index}`}
+                      className="flex-shrink-0 w-80 p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group/tile"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      onClick={() => handleOpportunityClick(item, item.type)}
+                    >
+                      {/* Opportunity Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                            item.type === 'opportunity' ? 'bg-neon-blue/20 text-neon-blue' :
+                            item.type === 'ai-strategy' ? 'bg-neon-purple/20 text-neon-purple' :
+                            'bg-neon-pink/20 text-neon-pink'
+                          }`}>
+                            {getOpportunityTypeIcon(item.type)}
+                          </div>
+                          <Badge variant="outline" className="text-xs border-white/20 text-white/70">
+                            {item.type === 'opportunity' ? 'Opportunity' : 
+                             item.type === 'ai-strategy' ? 'AI Strategy' : 'Dashboard'}
+                          </Badge>
+                        </div>
+                        {item.priority && (
+                          <Badge className={`text-xs ${getPriorityColor(item.priority)} bg-white/10 border-white/20`}>
+                            {item.priority}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="font-semibold text-white/90 mb-2 line-clamp-2 leading-tight">
+                        {item.title || item.cluster}
+                      </h3>
+
+                      {/* Description */}
+                      {item.description && (
+                        <p className="text-sm text-white/60 mb-3 line-clamp-3 leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+
+                      {/* Keywords */}
+                      {item.keywords?.length > 0 && (
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-1">
+                            {item.keywords.slice(0, 3).map((keyword: string, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs border-white/10 text-white/50 bg-white/5">
+                                {keyword}
+                              </Badge>
+                            ))}
+                            {item.keywords.length > 3 && (
+                              <Badge variant="outline" className="text-xs border-white/10 text-white/40 bg-white/5">
+                                +{item.keywords.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Metrics Row */}
+                      <div className="flex items-center justify-between text-xs text-white/50 mb-4">
+                        <div className="flex items-center gap-3">
+                          {item.volume && (
+                            <span className="flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />
+                              {item.volume > 1000 ? `${(item.volume / 1000).toFixed(1)}k` : item.volume}
+                            </span>
+                          )}
+                          {item.difficulty !== undefined && (
+                            <span className="flex items-center gap-1">
+                              <Target className="w-3 h-3" />
+                              {item.difficulty}/100
+                            </span>
+                          )}
+                          {item.content_format && (
+                            <span className="capitalize">{item.content_format}</span>
+                          )}
+                        </div>
+                        <span className="text-white/40">
+                          {item.createdAt ? new Intl.DateTimeFormat('en-US', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                          }).format(new Date(item.createdAt)) : 'Recent'}
+                        </span>
+                      </div>
+
+                      {/* Action Button */}
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20 group-hover/tile:bg-neon-blue/20 group-hover/tile:border-neon-blue/30 transition-all duration-300"
+                      >
+                        <span className="flex items-center gap-2">
+                          {item.cta || 'View Details'}
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </Button>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                {/* Enhanced fade edges for full-width carousel */}
+                <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background/90 via-background/60 to-transparent pointer-events-none z-10" />
+                <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background/90 via-background/60 to-transparent pointer-events-none z-10" />
+              </div>
+            ) : (
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                  <Lightbulb className="w-8 h-8 text-white/40" />
+                </div>
+                <p className="text-white/60 mb-2">No content opportunities found</p>
+                <p className="text-sm text-white/40">Check back later for new opportunities</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Encouragement Section */}
