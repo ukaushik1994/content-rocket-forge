@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 }) => {
   const { deleteContentItem } = useContent();
   const navigate = useNavigate();
+  const [isContentExpanded, setIsContentExpanded] = useState(false);
 
   if (!content) return null;
 
@@ -171,22 +172,42 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </div>
                   ) : (
                     <div className="prose prose-sm max-w-none">
-                      <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
-                        {content.content ? (
-                          content.content.length > 300 
-                            ? content.content.substring(0, 300) + '...'
-                            : content.content
-                        ) : 'No content available'}
-                      </div>
-                      {content.content && content.content.length > 300 && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="mt-2 text-primary hover:text-primary/80"
-                          onClick={() => toast.info('Full content view coming soon')}
-                        >
-                          Show More
-                        </Button>
+                      {isContentExpanded ? (
+                        <div className="space-y-3">
+                          <ScrollArea className="h-64 w-full border border-border rounded-lg bg-muted/5">
+                            <div className="p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                              {content.content || 'No content available'}
+                            </div>
+                          </ScrollArea>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-primary hover:text-primary/80"
+                            onClick={() => setIsContentExpanded(false)}
+                          >
+                            Show Less
+                          </Button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
+                            {content.content ? (
+                              content.content.length > 300 
+                                ? content.content.substring(0, 300) + '...'
+                                : content.content
+                            ) : 'No content available'}
+                          </div>
+                          {content.content && content.content.length > 300 && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="mt-2 text-primary hover:text-primary/80"
+                              onClick={() => setIsContentExpanded(true)}
+                            >
+                              Show More
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -300,14 +321,44 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </div>
                   </div>
                   
-                  {content.seo_score && (
-                    <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Star className="h-4 w-4 text-primary" />
-                        <span className="text-xs text-muted-foreground">SEO Score</span>
+                  {/* SEO Score */}
+                  <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Star className="h-4 w-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">SEO Score</span>
+                    </div>
+                    <div className="text-xl font-bold text-foreground">
+                      {content.seo_score || content.metadata?.seoScore || 'N/A'}
+                    </div>
+                  </div>
+
+                  {/* Additional Metrics */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {(content.metadata as any)?.keywordDensity && (
+                      <div className="text-center p-2 bg-muted/10 rounded-lg border border-border">
+                        <Target className="h-4 w-4 mx-auto mb-1 text-primary" />
+                        <div className="font-semibold text-foreground text-sm">{(content.metadata as any).keywordDensity}%</div>
+                        <div className="text-xs text-muted-foreground">Keyword Density</div>
                       </div>
-                      <div className="text-xl font-bold text-foreground">
-                        {content.seo_score}
+                    )}
+                    {content.metadata?.readabilityScore && (
+                      <div className="text-center p-2 bg-muted/10 rounded-lg border border-border">
+                        <BarChart3 className="h-4 w-4 mx-auto mb-1 text-primary" />
+                        <div className="font-semibold text-foreground text-sm">{content.metadata.readabilityScore}</div>
+                        <div className="text-xs text-muted-foreground">Readability</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Engagement Metrics */}
+                  {((content.metadata as any)?.engagementScore || (content.metadata as any)?.optimizationScore) && (
+                    <div className="p-3 bg-muted/10 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="h-4 w-4 text-primary" />
+                        <span className="text-xs text-muted-foreground">Optimization</span>
+                      </div>
+                      <div className="text-lg font-bold text-foreground">
+                        {(content.metadata as any)?.optimizationScore || (content.metadata as any)?.engagementScore || 'N/A'}
                       </div>
                     </div>
                   )}
@@ -324,24 +375,48 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-3">
-                      {solution.logoUrl ? (
-                        <img
-                          src={solution.logoUrl}
-                          alt={solution.name}
-                          className="h-8 w-8 rounded object-contain bg-background/80 border border-border p-1"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded bg-muted grid place-items-center text-sm font-semibold">
-                          {solution.name?.charAt(0).toUpperCase()}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        {solution.logoUrl || solution.logo ? (
+                          <img
+                            src={solution.logoUrl || solution.logo}
+                            alt={solution.name}
+                            className="h-10 w-10 rounded object-contain bg-background/80 border border-border p-1"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-primary/20 grid place-items-center text-sm font-semibold text-primary">
+                            {solution.name?.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">{solution.name}</p>
+                          {solution.category && (
+                            <p className="text-xs text-muted-foreground">{solution.category}</p>
+                          )}
+                          {solution.description && (
+                            <p className="text-xs text-muted-foreground mt-1">{solution.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Integration Metrics */}
+                      {(content.metadata as any)?.integrationScore && (
+                        <div className="p-2 bg-muted/10 rounded-lg border border-border">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Integration Score</span>
+                            <span className="font-semibold text-foreground">{(content.metadata as any).integrationScore}%</span>
+                          </div>
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium text-foreground">{solution.name}</p>
-                        {solution.description && (
-                          <p className="text-xs text-muted-foreground">{solution.description}</p>
-                        )}
-                      </div>
+                      
+                      {(content.metadata as any)?.featuresCovered && (
+                        <div className="p-2 bg-muted/10 rounded-lg border border-border">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Features Covered</span>
+                            <span className="font-semibold text-foreground">{(content.metadata as any).featuresCovered}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
