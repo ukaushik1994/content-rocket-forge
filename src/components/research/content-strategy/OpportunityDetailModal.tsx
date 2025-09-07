@@ -67,14 +67,14 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl font-bold text-foreground pr-8">
             {proposal.title || 'Untitled Opportunity'}
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[75vh]" hideScrollbar>
+        <ScrollArea className="h-[calc(90vh-8rem)] flex-1 min-h-0" hideScrollbar>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pr-4">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
