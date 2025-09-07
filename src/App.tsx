@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Repository from "./pages/Repository";
 import ContentBuilderPage from "./pages/ContentBuilder";
+import ContentTypeSelection from "./pages/ContentTypeSelection";
 
 import ContentApproval from "./pages/ContentApproval";
 import GlossaryBuilder from "./pages/GlossaryBuilder";
@@ -55,6 +56,7 @@ const App = () => (
                   <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
+                  <Route path="/content-type-selection" element={<ProtectedRoute><ContentTypeSelection /></ProtectedRoute>} />
                   
                   <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                   <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
