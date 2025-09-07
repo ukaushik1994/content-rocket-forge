@@ -23,7 +23,8 @@ import {
   Hash,
   Target,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -115,17 +116,34 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-2xl font-bold text-foreground pr-8">
-            {content.title}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none p-0 border-none overflow-hidden">
+        <div className="h-full bg-background flex flex-col">
+          {/* Header */}
+          <div className="flex-shrink-0 border-b border-border bg-card/50 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">{content.title}</h2>
+                <p className="text-muted-foreground text-sm capitalize mt-1">
+                  {content.content_type.replace('_', ' ')} • {content.status}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-        <ScrollArea className="h-[calc(90vh-8rem)] flex-1 min-h-0" hideScrollbar>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pr-4">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+          {/* Content */}
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full" hideScrollbar>
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 p-6">
+                {/* Main Content */}
+                <div className="xl:col-span-3 space-y-6">
               {/* Description */}
               {content.metadata?.description && (
                 <Card className="bg-muted/5 border-border">
@@ -214,12 +232,12 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 </Card>
               )}
 
-              {/* Optimization Badges */}
-              <OptimizationBadges metadata={content.metadata} />
-            </div>
+                  {/* Optimization Badges */}
+                  <OptimizationBadges metadata={content.metadata} />
+                </div>
 
-            {/* Sidebar */}
-            <div className="space-y-4">
+                {/* Sidebar */}
+                <div className="xl:col-span-2 space-y-4">
               {/* Header with Icon, Status & Actions */}
               <Card className="bg-muted/5 border-border">
                 <CardContent className="p-4">
@@ -379,10 +397,12 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     Close
                   </Button>
                 </CardContent>
-              </Card>
-            </div>
+                  </Card>
+                </div>
+              </div>
+            </ScrollArea>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
