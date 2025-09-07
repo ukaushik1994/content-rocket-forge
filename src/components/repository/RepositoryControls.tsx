@@ -10,12 +10,14 @@ interface RepositoryControlsProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   onFiltersApply: (filters: any) => void;
+  contentStats: any;
 }
 
 export const RepositoryControls: React.FC<RepositoryControlsProps> = ({
   viewMode,
   onViewModeChange,
-  onFiltersApply
+  onFiltersApply,
+  contentStats
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
@@ -71,6 +73,7 @@ export const RepositoryControls: React.FC<RepositoryControlsProps> = ({
         open={showAdvancedFilters}
         onOpenChange={setShowAdvancedFilters}
         onFiltersApply={onFiltersApply}
+        contentStats={contentStats}
       />
     </>
   );

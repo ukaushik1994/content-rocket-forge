@@ -18,7 +18,6 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
 }) => {
   const { contentItems, loading } = useContent();
   const [filteredItems, setFilteredItems] = useState<ContentItemType[]>([]);
-  const [selectedContentType, setSelectedContentType] = useState<ContentType | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -28,9 +27,9 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
   useEffect(() => {
     let filtered = [...contentItems];
 
-    // Filter by content type
-    if (selectedContentType !== 'all') {
-      filtered = filtered.filter(item => item.content_type === selectedContentType);
+    // Filter by content type (now from advanced filters)
+    if (advancedFilters.contentType && advancedFilters.contentType !== 'all') {
+      filtered = filtered.filter(item => item.content_type === advancedFilters.contentType);
     }
 
     // Filter by status
@@ -84,7 +83,7 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
     filtered.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
     setFilteredItems(filtered);
-  }, [contentItems, selectedContentType, selectedStatus, searchQuery, advancedFilters]);
+  }, [contentItems, selectedStatus, searchQuery, advancedFilters]);
 
   // Calculate content statistics
   const contentStats = {
@@ -115,21 +114,20 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onFiltersApply={setAdvancedFilters}
+        contentStats={contentStats}
       />
 
       <RepositoryFilters
         contentStats={contentStats}
-        selectedContentType={selectedContentType}
         selectedStatus={selectedStatus}
         searchQuery={searchQuery}
-        onContentTypeChange={setSelectedContentType}
         onStatusChange={setSelectedStatus}
         onSearchChange={setSearchQuery}
       />
 
       {filteredItems.length === 0 && !loading ? (
         <EmptyState 
-          contentType={selectedContentType}
+          contentType={'all'}
           status={selectedStatus}
           searchQuery={searchQuery}
         />

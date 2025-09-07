@@ -6,10 +6,26 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, X } from 'lucide-react';
+import { CustomBadge } from '@/components/ui/custom-badge';
+import { Calendar, X, FileText, BookOpen, Mail, Globe, MessageSquare, Edit } from 'lucide-react';
+import { ContentType } from '@/contexts/content/types';
 import { motion } from 'framer-motion';
 
+interface ContentStats {
+  total: number;
+  articles: number;
+  blogs: number;
+  glossaries: number;
+  socialPosts: number;
+  emails: number;
+  landingPages: number;
+  drafts: number;
+  published: number;
+  archived: number;
+}
+
 interface AdvancedFilters {
+  contentType?: ContentType | 'all';
   dateRange?: {
     from: string;
     to: string;
@@ -24,12 +40,14 @@ interface AdvancedFiltersModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onFiltersApply: (filters: AdvancedFilters) => void;
+  contentStats: ContentStats;
 }
 
 export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
   open,
   onOpenChange,
-  onFiltersApply
+  onFiltersApply,
+  contentStats
 }) => {
   const [filters, setFilters] = useState<AdvancedFilters>({});
   const [currentTag, setCurrentTag] = useState('');
@@ -61,6 +79,16 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
     onFiltersApply({});
   };
 
+  const contentTypeFilters = [
+    { value: 'all', label: 'All Content', icon: FileText, count: contentStats.total, color: 'text-foreground' },
+    { value: 'article', label: 'Articles', icon: FileText, count: contentStats.articles, color: 'text-blue-500' },
+    { value: 'blog', label: 'Blog Posts', icon: Edit, count: contentStats.blogs, color: 'text-green-500' },
+    { value: 'glossary', label: 'Glossaries', icon: BookOpen, count: contentStats.glossaries, color: 'text-purple-500' },
+    { value: 'email', label: 'Emails', icon: Mail, count: contentStats.emails, color: 'text-orange-500' },
+    { value: 'landing_page', label: 'Landing Pages', icon: Globe, count: contentStats.landingPages, color: 'text-cyan-500' },
+    { value: 'social_post', label: 'Social Posts', icon: MessageSquare, count: contentStats.socialPosts, color: 'text-pink-500' }
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] glass-panel bg-background/95 backdrop-blur-lg border-white/10">
@@ -74,6 +102,43 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
+          {/* Content Type Filter */}
+          <div className="space-y-2">
+            <Label>Content Type</Label>
+            <div className="flex flex-wrap gap-2">
+              {contentTypeFilters.map((filter, index) => (
+                <motion.div
+                  key={filter.value}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                >
+                  <Button
+                    variant={filters.contentType === filter.value ? "default" : "outline"}
+                    onClick={() => setFilters(prev => ({ ...prev, contentType: filter.value as ContentType | 'all' }))}
+                    className={`glass-button transition-all duration-300 ${
+                      filters.contentType === filter.value 
+                        ? 'bg-gradient-to-r from-primary to-neon-blue text-white border-white/20 shadow-lg' 
+                        : 'bg-background/40 backdrop-blur-sm border-white/10 hover:border-white/20'
+                    }`}
+                    size="sm"
+                  >
+                    <filter.icon className={`mr-2 h-4 w-4 ${filter.color}`} />
+                    {filter.label}
+                    <CustomBadge 
+                      className={`ml-2 text-xs ${
+                        filters.contentType === filter.value
+                          ? 'bg-white/20 text-white'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {filter.count}
+                    </CustomBadge>
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
           {/* Date Range */}
           <div className="space-y-2">
             <Label>Date Range</Label>
