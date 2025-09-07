@@ -5,16 +5,19 @@ import Navbar from '@/components/layout/Navbar';
 import { ContentApprovalView } from '@/components/approval/ContentApprovalView';
 import { ContentProvider } from '@/contexts/content';
 import { motion } from 'framer-motion';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { useContent } from '@/contexts/content'; // Added: import the hook that's being used
 
 const ContentApproval = () => {
   return (
     <motion.div 
-      className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden"
+      className="min-h-screen flex flex-col relative overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <AnimatedBackground />
+      
       <Helmet>
         <title>Content Approval | ContentRocketForge</title>
         <meta name="description" content="Review and approve content submissions with advanced workflow management" />
@@ -22,17 +25,11 @@ const ContentApproval = () => {
       
       <Navbar />
       
-      <main className="flex-1 container px-6 pt-10 pb-12">
+      <main className="flex-1 container px-6 pt-10 pb-12 relative z-10">
         <ContentProvider>
           <ContentApprovalView />
         </ContentProvider>
       </main>
-      
-      {/* Subtle Background Orbs */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-muted/20 rounded-full blur-3xl animate-pulse" />
-      </div>
     </motion.div>
   );
 };
