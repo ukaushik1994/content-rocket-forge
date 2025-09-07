@@ -62,17 +62,6 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Settings button as icon */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-full overflow-hidden border border-border"
-            onClick={() => navigate('/settings')}
-            title="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-
           {/* Notifications bell replaces Feedback icon */}
           <NotificationBell />
 
@@ -89,9 +78,13 @@ const Navbar = () => {
                 <span className="text-xs text-muted-foreground">{userEmail}</span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -127,17 +120,6 @@ const Navbar = () => {
               
               {/* Mobile menu buttons - keep text versions for better usability on mobile */}
               <div className="flex gap-2 pt-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 items-center justify-center gap-2" 
-                  onClick={() => {
-                    navigate('/settings');
-                    setShowMobileMenu(false);
-                  }}
-                >
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </Button>
                 <Button 
                   variant="outline" 
                   className="flex-1 items-center justify-center gap-2"
