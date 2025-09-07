@@ -60,7 +60,7 @@ export default function NavItems() {
   
   return (
     <div className="flex flex-row gap-1">
-      <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Dashboard" active={location.pathname === '/'} />
+      <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Home" active={location.pathname === '/'} />
       
       {/* Content Dropdown */}
       <DropdownMenu>
