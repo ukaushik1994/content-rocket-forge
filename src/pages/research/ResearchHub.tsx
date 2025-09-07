@@ -77,44 +77,48 @@ const ResearchHub = () => {
 
             {/* Main Tabs Interface - Exact Content Strategy Layout */}
             <GlassCard className="p-4 sm:p-6">
-              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col space-y-6">
-                <TabsList className="inline-flex min-w-max rounded-lg border border-border/50 bg-muted/50 p-1">
-                  <TabsTrigger 
-                    value="keyword-intelligence" 
-                    className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale"
-                  >
-                    <Search className="h-4 w-4" />
-                    Keyword Intelligence
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="content-gaps" 
-                    className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale"
-                  >
-                    <FileSearch className="h-4 w-4" />
-                    Content Gaps
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="people-questions" 
-                    className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale"
-                  >
-                    <Users className="h-4 w-4" />
-                    People Questions
-                  </TabsTrigger>
-                </TabsList>
+              <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <div className="flex flex-col gap-6">
+                  <div className="w-full overflow-x-auto">
+                    <TabsList className="inline-flex min-w-max rounded-lg border border-border/50 bg-muted/50 p-1">
+                      <TabsTrigger 
+                        value="keyword-intelligence" 
+                        className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                      >
+                        <Search className="h-4 w-4" />
+                        Keyword Intelligence
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="content-gaps" 
+                        className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                      >
+                        <FileSearch className="h-4 w-4" />
+                        Content Gaps
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="people-questions" 
+                        className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                      >
+                        <Users className="h-4 w-4" />
+                        People Questions
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
 
-                <div className="flex-1">
-                  <TabsContent value="keyword-intelligence" className="mt-0 animate-fade-in">
-                    <KeywordIntelligenceTab />
-                  </TabsContent>
+                   <div className="flex-1">
+                     <TabsContent value="keyword-intelligence" className="mt-0 animate-fade-in">
+                       <KeywordIntelligenceTab />
+                     </TabsContent>
 
-                  <TabsContent value="content-gaps" className="mt-0 animate-fade-in">
-                    <ContentGapsTab goals={{ monthlyTraffic: '', contentPieces: '', timeline: '3 months', mainKeyword: '' }} />
-                  </TabsContent>
+                     <TabsContent value="content-gaps" className="mt-0 animate-fade-in">
+                       <ContentGapsTab goals={{ monthlyTraffic: '', contentPieces: '', timeline: '3 months', mainKeyword: '' }} />
+                     </TabsContent>
 
-                  <TabsContent value="people-questions" className="mt-0 animate-fade-in">
-                    <PeopleQuestionsTab />
-                  </TabsContent>
-                </div>
+                     <TabsContent value="people-questions" className="mt-0 animate-fade-in">
+                       <PeopleQuestionsTab />
+                     </TabsContent>
+                   </div>
+                 </div>
               </Tabs>
             </GlassCard>
           </motion.div>
