@@ -89,7 +89,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
   return (
     <>
       <Card 
-        className={`relative overflow-hidden border transition-all duration-300 cursor-pointer ${
+        className={`relative overflow-hidden border transition-all duration-300 cursor-pointer h-[480px] flex flex-col ${
           isSelected 
             ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/50 shadow-lg shadow-blue-500/20'
             : 'bg-white/5 border-white/10 hover:bg-white/10'
@@ -157,7 +157,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="flex-1 flex flex-col space-y-4">
         {/* Primary Keyword */}
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-purple-400" />
@@ -184,43 +184,51 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
         </div>
 
         {/* Related Keywords */}
-        {proposal.related_keywords && proposal.related_keywords.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-sm font-medium flex items-center gap-2 text-white/80">
-              <BarChart3 className="h-4 w-4 text-blue-400" />
-              Related Keywords
+        <div className="min-h-[60px]">
+          {proposal.related_keywords && proposal.related_keywords.length > 0 ? (
+            <div className="space-y-2">
+              <div className="text-sm font-medium flex items-center gap-2 text-white/80">
+                <BarChart3 className="h-4 w-4 text-blue-400" />
+                Related Keywords
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {proposal.related_keywords.slice(0, 3).map((keyword: string, index: number) => (
+                  <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
+                    {keyword}
+                  </Badge>
+                ))}
+                {proposal.related_keywords.length > 3 && (
+                  <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
+                    +{proposal.related_keywords.length - 3} more
+                  </Badge>
+                )}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {proposal.related_keywords.slice(0, 3).map((keyword: string, index: number) => (
-                <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
-                  {keyword}
-                </Badge>
-              ))}
-              {proposal.related_keywords.length > 3 && (
-                <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
-                  +{proposal.related_keywords.length - 3} more
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-sm text-white/40 italic">No related keywords</div>
+          )}
+        </div>
 
         {/* Content Suggestions */}
-        {proposal.content_suggestions && proposal.content_suggestions.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-sm font-medium flex items-center gap-2 text-white/80">
-              <Calendar className="h-4 w-4 text-orange-400" />
-              Content Ideas
+        <div className="min-h-[60px] flex-1">
+          {proposal.content_suggestions && proposal.content_suggestions.length > 0 ? (
+            <div className="space-y-2">
+              <div className="text-sm font-medium flex items-center gap-2 text-white/80">
+                <Calendar className="h-4 w-4 text-orange-400" />
+                Content Ideas
+              </div>
+              <div className="text-sm text-white/60 line-clamp-3">
+                {proposal.content_suggestions.slice(0, 2).join(', ')}
+                {proposal.content_suggestions.length > 2 && '...'}
+              </div>
             </div>
-            <div className="text-sm text-white/60">
-              {proposal.content_suggestions.slice(0, 2).join(', ')}
-              {proposal.content_suggestions.length > 2 && '...'}
-            </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-sm text-white/40 italic">No content suggestions</div>
+          )}
+        </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2 border-t border-white/20">
+        <div className="flex gap-2 pt-2 border-t border-white/20 mt-auto">
           <Button
             onClick={(e) => {
               e.stopPropagation();
