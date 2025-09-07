@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import NavItems from './NavItems';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useFeedback } from '@/contexts/FeedbackContext';
 
 const Navbar = () => {
   const location = useLocation();
@@ -17,6 +18,7 @@ const Navbar = () => {
     user,
     signOut
   } = useAuth();
+  const { openFeedback } = useFeedback();
   
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -101,6 +103,10 @@ const Navbar = () => {
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={openFeedback}>
+                <MessageSquarePlus className="mr-2 h-4 w-4" />
+                <span>Feedback</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sign Out</span>
@@ -139,7 +145,7 @@ const Navbar = () => {
                   variant="outline" 
                   className="flex-1 items-center justify-center gap-2"
                   onClick={() => {
-                    document.dispatchEvent(new CustomEvent('open-feedback'));
+                    openFeedback();
                     setShowMobileMenu(false);
                   }}
                 >

@@ -32,7 +32,6 @@ import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
 import { TourProvider } from "@/contexts/TourContext";
-import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -86,7 +85,6 @@ const App = () => (
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                <FloatingFeedbackButton />
               </BrowserRouter>
             </TourProvider>
           </FeedbackProvider>
