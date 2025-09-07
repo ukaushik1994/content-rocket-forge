@@ -6,11 +6,17 @@ export const useProposalRestoration = () => {
   const { refreshData } = useContentStrategy();
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Check for overdue proposals every hour
     const checkOverdue = async () => {
+      if (!isMounted) return;
+      
       try {
         await proposalManagement.checkAndRestoreOverdueProposals();
-        await refreshData();
+        if (isMounted) {
+          await refreshData();
+        }
       } catch (error) {
         console.error('Error in automatic proposal restoration:', error);
       }
@@ -22,8 +28,11 @@ export const useProposalRestoration = () => {
     // Set up interval to check every hour (3600000 ms)
     const interval = setInterval(checkOverdue, 3600000);
 
-    return () => clearInterval(interval);
-  }, [refreshData]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []); // Remove refreshData dependency to prevent infinite loop
 
   // Manual trigger for checking overdue proposals
   const checkOverdueProposals = async () => {

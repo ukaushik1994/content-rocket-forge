@@ -24,19 +24,29 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const navigate = useNavigate();
 
-  // Check for overdue proposals on mount
+  // Check for overdue proposals on mount only (prevent infinite loop)
   useEffect(() => {
+    let isMounted = true;
+    
     const checkOverdue = async () => {
+      if (!isMounted) return;
+      
       try {
         await proposalManagement.checkAndRestoreOverdueProposals();
-        await refreshData(); // Refresh calendar data after restoration
+        if (isMounted) {
+          await refreshData(); // Refresh calendar data after restoration
+        }
       } catch (error) {
         console.error('Error checking overdue proposals:', error);
       }
     };
 
     checkOverdue();
-  }, [refreshData]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array to run only once on mount
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);

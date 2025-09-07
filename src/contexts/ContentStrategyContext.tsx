@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import { 
@@ -74,7 +74,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   const [aiProposals, setAiProposals] = useState<any[]>([]);
   const [selectedProposals, setSelectedProposals] = useState<Record<string, boolean>>({});
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) {
       setCurrentStrategy(null);
       setStrategies([]);
@@ -122,7 +122,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       toast.error('Failed to load strategy data');
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // Auto-sync selected proposals to pipeline
   useEffect(() => {
@@ -311,9 +311,9 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     }
   };
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     await loadData();
-  };
+  }, [loadData]);
 
   return (
     <ContentStrategyContext.Provider
