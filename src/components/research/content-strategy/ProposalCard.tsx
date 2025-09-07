@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, Send, Target, BarChart3, Calendar, CheckCircle2, CalendarPlus } from 'lucide-react';
+import { TrendingUp, Send, Target, BarChart3, Calendar, CheckCircle2, CalendarPlus, Eye } from 'lucide-react';
 import { proposalManagement } from '@/services/proposalManagement';
 import { toast } from 'sonner';
+import { OpportunityDetailModal } from './OpportunityDetailModal';
 
 interface ProposalCardProps {
   proposal: any;
@@ -26,8 +27,9 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
   const [scheduleDate, setScheduleDate] = useState('');
   const [schedulePriority, setSchedulePriority] = useState('medium');
   const [scheduleHours, setScheduleHours] = useState(2);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   
-  const primaryKw = proposal.primary_keyword;
+  const primaryKw = proposal.primary_keyword || 'No keyword';
   const primaryMetrics = proposal.serp_data?.[primaryKw] || {};
   const estImpressions = proposal.estimated_impressions ?? Math.round((primaryMetrics.searchVolume || 0) * 0.05);
   
@@ -85,11 +87,21 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
   };
 
   return (
-    <Card className={`relative overflow-hidden border transition-all duration-300 ${
-      isSelected 
-        ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/50 shadow-lg shadow-blue-500/20'
-        : 'bg-white/5 border-white/10 hover:bg-white/10'
-    }`}>
+    <>
+      <Card 
+        className={`relative overflow-hidden border transition-all duration-300 cursor-pointer ${
+          isSelected 
+            ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/50 shadow-lg shadow-blue-500/20'
+            : 'bg-white/5 border-white/10 hover:bg-white/10'
+        }`}
+        onClick={(e) => {
+          // Don't open modal if clicking on buttons or checkboxes
+          const target = e.target as HTMLElement;
+          if (!target.closest('button') && !target.closest('[role="checkbox"]')) {
+            setDetailModalOpen(true);
+          }
+        }}
+      >
       {/* Selection Checkbox */}
       <div className="absolute top-3 right-3 z-10">
         <div 
@@ -150,9 +162,14 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-purple-400" />
           <span className="text-sm font-medium text-white/80">Primary Keyword:</span>
-          <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
+          <Badge variant="outline" className={`text-xs border-white/20 bg-white/10 ${
+            primaryKw === 'No keyword' ? 'text-red-400 border-red-400/30' : 'text-white/80'
+          }`}>
             {primaryKw}
           </Badge>
+          {primaryKw === 'No keyword' && (
+            <span className="text-xs text-red-400">Missing keyword data</span>
+          )}
         </div>
 
         {/* Traffic Estimation */}
@@ -222,6 +239,19 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
           </Button>
           
           {/* Icon-based actions */}
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDetailModalOpen(true);
+            }}
+            size="sm"
+            variant="outline"
+            className="bg-white/10 border-white/20 text-white/80 hover:bg-white/20 w-10 h-8 p-0"
+            title="View Details"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          
           <Button
             onClick={(e) => {
               e.stopPropagation();
@@ -311,7 +341,17 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Opportunity Detail Modal */}
+        <OpportunityDetailModal
+          isOpen={detailModalOpen}
+          onClose={() => setDetailModalOpen(false)}
+          proposal={proposal}
+          onSendToBuilder={onSendToBuilder}
+          onScheduleToCalendar={() => setScheduleDialogOpen(true)}
+        />
       </CardContent>
     </Card>
+    </>
   );
 };

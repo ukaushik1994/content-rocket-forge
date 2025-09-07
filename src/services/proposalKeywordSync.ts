@@ -99,14 +99,28 @@ class ProposalKeywordSyncService {
   async saveProposalsToHistory(proposals: StrategyProposal[], strategySessionId?: string): Promise<void> {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error('User not authenticated');
+      if (userError || !user) {
+        console.error('❌ User not authenticated for saving proposals');
+        toast.error('Please log in to save strategy proposals');
+        throw new Error('User not authenticated');
+      }
 
       console.log('💾 Saving proposals to history:', proposals.length);
 
-      const proposalsToInsert = proposals.map(proposal => ({
+      // Validate proposals have required fields
+      const validProposals = proposals.filter(proposal => 
+        proposal.title && proposal.primary_keyword
+      );
+
+      if (validProposals.length === 0) {
+        console.warn('⚠️ No valid proposals to save');
+        return;
+      }
+
+      const proposalsToInsert = validProposals.map(proposal => ({
         user_id: user.id,
         title: proposal.title,
-        description: proposal.description,
+        description: proposal.description || '',
         primary_keyword: proposal.primary_keyword,
         related_keywords: proposal.related_keywords || [],
         content_suggestions: proposal.content_suggestions || [],
@@ -118,7 +132,9 @@ class ProposalKeywordSyncService {
         strategy_session_id: strategySessionId
       }));
 
-      // Use insert instead of upsert since these are always new proposals
+      console.log('📤 Inserting proposals:', proposalsToInsert.length);
+      
+      // Use insert with error handling
       const { data, error } = await supabase
         .from('ai_strategy_proposals')
         .insert(proposalsToInsert)
@@ -126,16 +142,25 @@ class ProposalKeywordSyncService {
 
       if (error) {
         console.error('❌ Database error saving proposals:', error);
-        toast.error('Failed to save strategy proposals to history');
-        throw error; // Don't silently fail - this is important for tracking
+        if (error.code === '23505') {
+          toast.error('Some proposals already exist in history');
+        } else if (error.code === '42501') {
+          toast.error('Permission denied. Please check your access rights.');
+        } else {
+          toast.error(`Failed to save proposals: ${error.message}`);
+        }
+        throw error;
       }
 
       console.log('✅ Proposals saved to history successfully:', data?.length || 0);
-      toast.success(`Saved ${proposals.length} strategy proposals to history`);
+      toast.success(`Saved ${validProposals.length} strategy proposals to history`);
+      
     } catch (error) {
       console.error('❌ Error saving proposals to history:', error);
-      toast.error('Failed to save strategy proposals');
-      throw error; // Let calling code handle the error
+      if (!error.message?.includes('User not authenticated')) {
+        toast.error('Failed to save strategy proposals to database');
+      }
+      throw error;
     }
   }
 
