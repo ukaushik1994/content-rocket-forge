@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings, Puzzle } from 'lucide-react';
+import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings, Puzzle, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -64,6 +64,11 @@ const Navbar = () => {
         <div className="flex items-center gap-2">
           {/* Notifications bell replaces Feedback icon */}
           <NotificationBell />
+
+          {/* AI Chat icon */}
+          <Button variant="ghost" size="icon" onClick={() => navigate('/ai-chat')}>
+            <MessageSquare className="h-5 w-5" />
+          </Button>
 
           {/* User profile dropdown - keeping as is */}
           <DropdownMenu>
