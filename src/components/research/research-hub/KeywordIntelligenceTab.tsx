@@ -136,14 +136,29 @@ export const KeywordIntelligenceTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Description */}
-      <div className="text-center space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">
-          Real-Time SERP Research
-        </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+      {/* Enhanced Description with glassmorphism */}
+      <motion.div 
+        className="text-center space-y-6 bg-gradient-to-b from-white/5 to-transparent p-8 rounded-2xl border border-white/10 backdrop-blur-sm"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.h2 
+          className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-500 bg-clip-text text-transparent"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          Real-Time SERP Intelligence
+        </motion.h2>
+        <motion.p 
+          className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           Discover high-performing keywords with live Google SERP analysis, AI-powered content opportunities, and instant content creation
-        </p>
+        </motion.p>
         
         {/* Data Quality Indicator */}
         {serpData && (
@@ -165,7 +180,7 @@ export const KeywordIntelligenceTab: React.FC = () => {
             )}
           </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Progress Indicator */}
       {analysisStep > 0 && (
@@ -220,24 +235,24 @@ export const KeywordIntelligenceTab: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5 bg-background/60 backdrop-blur-sm border border-border/50">
-                <TabsTrigger value="overview" className="flex items-center gap-2">
+              <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-sm border border-white/20 rounded-xl p-1 shadow-lg">
+                <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white transition-all duration-300">
                   <Target className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="serp" className="flex items-center gap-2">
+                <TabsTrigger value="serp" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300">
                   <BarChart3 className="h-4 w-4" />
                   SERP Analysis
                 </TabsTrigger>
-                <TabsTrigger value="opportunities" className="flex items-center gap-2">
+                <TabsTrigger value="opportunities" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-green-600 data-[state=active]:text-white transition-all duration-300">
                   <Sparkles className="h-4 w-4" />
                   Opportunities
                 </TabsTrigger>
-                <TabsTrigger value="clusters" className="flex items-center gap-2">
+                <TabsTrigger value="clusters" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white transition-all duration-300">
                   <Zap className="h-4 w-4" />
                   Intent Clusters
                 </TabsTrigger>
-                <TabsTrigger value="create" className="flex items-center gap-2">
+                <TabsTrigger value="create" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300">
                   <Plus className="h-4 w-4" />
                   Create Content
                 </TabsTrigger>
@@ -275,7 +290,7 @@ export const KeywordIntelligenceTab: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="create">
-                <Card className="bg-background/60 backdrop-blur-sm border-border/50">
+                <Card className="bg-black/20 backdrop-blur-xl border-white/20 shadow-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Plus className="h-5 w-5 text-primary" />
