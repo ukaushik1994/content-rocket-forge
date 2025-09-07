@@ -32,7 +32,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
       case 'quick_win': return 'text-green-400 bg-green-500/10 border-green-400/30';
       case 'high_return': return 'text-blue-400 bg-blue-500/10 border-blue-400/30';
       case 'evergreen': return 'text-purple-400 bg-purple-500/10 border-purple-400/30';
-      default: return 'text-white/80 bg-white/10 border-white/20';
+      default: return 'text-muted-foreground bg-muted/10 border-border';
     }
   };
 
@@ -66,9 +66,9 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-white/20 text-white">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white pr-8">
+          <DialogTitle className="text-2xl font-bold text-foreground pr-8">
             {proposal.title || 'Untitled Opportunity'}
           </DialogTitle>
         </DialogHeader>
@@ -78,33 +78,33 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
           <div className="lg:col-span-2 space-y-6">
             {/* Description */}
             {proposal.description && (
-              <Card className="bg-white/5 border-white/10">
+              <Card className="bg-muted/5 border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg text-white flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-blue-400" />
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
                     Description
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-white/80 leading-relaxed">{proposal.description}</p>
+                  <p className="text-muted-foreground leading-relaxed">{proposal.description}</p>
                 </CardContent>
               </Card>
             )}
 
             {/* Content Suggestions */}
             {proposal.content_suggestions && proposal.content_suggestions.length > 0 && (
-              <Card className="bg-white/5 border-white/10">
+              <Card className="bg-muted/5 border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg text-white flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-orange-400" />
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-accent-foreground" />
                     Content Ideas & Suggestions
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
                     {proposal.content_suggestions.map((suggestion: string, index: number) => (
-                      <li key={index} className="flex items-start gap-2 text-white/80">
-                        <span className="text-orange-400 mt-1">•</span>
+                      <li key={index} className="flex items-start gap-2 text-muted-foreground">
+                        <span className="text-accent-foreground mt-1">•</span>
                         {suggestion}
                       </li>
                     ))}
@@ -115,19 +115,19 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
             {/* SERP Analysis */}
             {proposal.serp_data && Object.keys(proposal.serp_data).length > 0 && (
-              <Card className="bg-white/5 border-white/10">
+              <Card className="bg-muted/5 border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg text-white flex items-center gap-2">
-                    <Eye className="h-5 w-5 text-green-400" />
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-primary" />
                     SERP Analysis
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {Object.entries(proposal.serp_data).map(([keyword, data]: [string, any], index) => (
-                      <div key={index} className="p-4 bg-white/5 rounded-lg border border-white/10">
-                        <div className="text-sm font-medium text-white mb-2">{keyword}</div>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-white/60">
+                      <div key={index} className="p-4 bg-muted/5 rounded-lg border border-border">
+                        <div className="text-sm font-medium text-foreground mb-2">{keyword}</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                           {data.searchVolume && (
                             <div>Volume: {data.searchVolume.toLocaleString()}</div>
                           )}
@@ -152,14 +152,14 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
           {/* Sidebar */}
           <div className="space-y-4">
             {/* Key Metrics */}
-            <Card className="bg-white/5 border-white/10">
+            <Card className="bg-muted/5 border-border">
               <CardHeader>
-                <CardTitle className="text-lg text-white">Key Metrics</CardTitle>
+                <CardTitle className="text-lg text-foreground">Key Metrics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Priority */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/80">Priority:</span>
+                  <span className="text-sm text-muted-foreground">Priority:</span>
                   <Badge 
                     variant="outline" 
                     className={`text-xs ${getPriorityColor(proposal.priority_tag || 'evergreen')}`}
@@ -170,8 +170,8 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
                 {/* Content Type */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/80">Content Type:</span>
-                  <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
+                  <span className="text-sm text-muted-foreground">Content Type:</span>
+                  <Badge variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
                     {proposal.content_type || 'blog'}
                   </Badge>
                 </div>
@@ -179,23 +179,23 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                 {/* Primary Keyword */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-purple-400" />
-                    <span className="text-sm font-medium text-white/80">Primary Keyword</span>
+                    <Target className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-muted-foreground">Primary Keyword</span>
                   </div>
-                  <Badge variant="outline" className={`text-xs border-white/20 bg-white/10 w-full justify-center ${
-                    primaryKw === 'No keyword' ? 'text-red-400 border-red-400/30' : 'text-white/80'
+                  <Badge variant="outline" className={`text-xs border-border bg-muted/10 w-full justify-center ${
+                    primaryKw === 'No keyword' ? 'text-destructive border-destructive' : 'text-muted-foreground'
                   }`}>
                     {primaryKw}
                   </Badge>
                 </div>
 
                 {/* Traffic Estimation */}
-                <div className="p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-white/10">
+                <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
                   <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="h-4 w-4 text-green-400" />
-                    <span className="text-xs text-white/80">Est. Monthly Impressions</span>
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <span className="text-xs text-muted-foreground">Est. Monthly Impressions</span>
                   </div>
-                  <div className="text-xl font-bold text-white">
+                  <div className="text-xl font-bold text-foreground">
                     {estImpressions.toLocaleString()}
                   </div>
                 </div>
@@ -204,17 +204,17 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
             {/* Related Keywords */}
             {proposal.related_keywords && proposal.related_keywords.length > 0 && (
-              <Card className="bg-white/5 border-white/10">
+              <Card className="bg-muted/5 border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg text-white flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-blue-400" />
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
                     Related Keywords
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-1">
                     {proposal.related_keywords.map((keyword: string, index: number) => (
-                      <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
+                      <Badge key={index} variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
                         {keyword}
                       </Badge>
                     ))}
@@ -224,14 +224,14 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
             )}
 
             {/* Actions */}
-            <Card className="bg-white/5 border-white/10">
+            <Card className="bg-muted/5 border-border">
               <CardHeader>
-                <CardTitle className="text-lg text-white">Actions</CardTitle>
+                <CardTitle className="text-lg text-foreground">Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
                   onClick={handleSendToBuilder}
-                  className="w-full gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/30 text-blue-400 hover:bg-blue-500/30"
+                  className="w-full gap-2 bg-primary/20 border-primary/30 text-primary hover:bg-primary/30"
                   variant="outline"
                 >
                   <Send className="h-4 w-4" />
@@ -241,7 +241,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                 <Button
                   onClick={handleScheduleToCalendar}
                   variant="outline"
-                  className="w-full gap-2 bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
+                  className="w-full gap-2 bg-muted/10 border-border text-muted-foreground hover:bg-muted/20"
                 >
                   <CalendarPlus className="h-4 w-4" />
                   Schedule to Calendar
@@ -251,19 +251,19 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
             {/* Metadata */}
             {proposal.created_at && (
-              <Card className="bg-white/5 border-white/10">
+              <Card className="bg-muted/5 border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg text-white flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-gray-400" />
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-muted-foreground" />
                     Timeline
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-white/60">
+                  <div className="text-sm text-muted-foreground">
                     Created: {new Date(proposal.created_at).toLocaleDateString()}
                   </div>
                   {proposal.updated_at && (
-                    <div className="text-sm text-white/60 mt-1">
+                    <div className="text-sm text-muted-foreground mt-1">
                       Updated: {new Date(proposal.updated_at).toLocaleDateString()}
                     </div>
                   )}
