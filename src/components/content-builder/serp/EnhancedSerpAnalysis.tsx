@@ -20,6 +20,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { processSerpDataToSelections } from '@/services/serpSelectionProcessor';
 
 interface EnhancedSerpAnalysisProps {
   keyword: string;
@@ -129,8 +130,16 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
       const targetKeyword = keyword;
       let serpDataEntry = proposalData[targetKeyword] || Object.values(proposalData)[0];
       
+      console.log('🔄 Loading proposal data:', {
+        targetKeyword,
+        hasEntry: !!serpDataEntry,
+        entryKeys: serpDataEntry ? Object.keys(serpDataEntry) : [],
+        proposalKeys: Object.keys(proposalData)
+      });
+      
       if (serpDataEntry) {
-        console.log('🔄 Converting proposal SERP data for display...');
+        console.log('📊 Raw proposal SERP entry:', serpDataEntry);
+        
         // Convert to EnhancedSerpResult format
         const convertedData: EnhancedSerpResult = {
           keyword: serpDataEntry.keyword || targetKeyword,
@@ -197,12 +206,35 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
           isMockData: serpDataEntry.isMockData !== false
         };
 
-        console.log('✅ Proposal data converted successfully');
+        console.log('✅ Proposal data converted successfully:', {
+          keywords: convertedData.keywords?.length || 0,
+          questions: convertedData.questions?.length || 0,
+          entities: convertedData.entities?.length || 0,
+          headings: convertedData.headings?.length || 0,
+          contentGaps: convertedData.contentGaps?.length || 0
+        });
+        
         setData(convertedData);
         onDataUpdate?.(convertedData);
 
-        // Add selections to context
-        addSelectionsFromData(convertedData);
+        // Process the original proposal data for better selection extraction
+        console.log('🔄 Processing proposal data with enhanced processor...');
+        const { selections: processedSelections, stats } = processSerpDataToSelections(serpDataEntry, 'proposal');
+        
+        console.log('📊 Processed selections stats:', stats);
+        
+        // Add selections to context immediately
+        processedSelections.forEach(selection => {
+          dispatch({
+            type: 'ADD_SERP_SELECTION',
+            payload: selection
+          });
+        });
+
+        // Also add selections from converted data as fallback
+        setTimeout(() => {
+          addSelectionsFromData(convertedData);
+        }, 100);
         
         toast.success('SERP data loaded from proposal');
       }
@@ -213,48 +245,158 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
   };
 
   const addSelectionsFromData = (serpData: EnhancedSerpResult) => {
+    console.log('📋 Adding selections from SERP data:', {
+      keywords: serpData.keywords?.length || 0,
+      entities: serpData.entities?.length || 0,
+      questions: serpData.questions?.length || 0,
+      headings: serpData.headings?.length || 0,
+      contentGaps: serpData.contentGaps?.length || 0
+    });
+
     try {
+      let addedCount = 0;
+
       // Add keywords
-      serpData.keywords.forEach(keyword => {
-        dispatch({
-          type: 'ADD_SERP_SELECTION',
-          payload: {
-            type: 'keyword',
-            content: keyword,
-            selected: false,
-            source: 'proposal_data'
+      if (serpData.keywords && Array.isArray(serpData.keywords)) {
+        serpData.keywords.forEach((keyword: any) => {
+          const content = typeof keyword === 'string' ? keyword : 
+                          (keyword as any)?.keyword || 
+                          (keyword as any)?.title || 
+                          String(keyword);
+          if (content && content.trim()) {
+            dispatch({
+              type: 'ADD_SERP_SELECTION',
+              payload: {
+                type: 'keyword',
+                content: content.trim(),
+                selected: false,
+                source: 'proposal_data'
+              }
+            });
+            addedCount++;
           }
         });
-      });
+      }
 
       // Add entities
-      serpData.entities.forEach(entity => {
-        dispatch({
-          type: 'ADD_SERP_SELECTION',
-          payload: {
-            type: 'entity',
-            content: entity.name,
-            selected: false,
-            source: 'proposal_data',
-            metadata: entity
+      if (serpData.entities && Array.isArray(serpData.entities)) {
+        serpData.entities.forEach((entity: any) => {
+          const content = typeof entity === 'string' ? entity : 
+                          entity.name || 
+                          (entity as any)?.title || 
+                          String(entity);
+          if (content && content.trim()) {
+            dispatch({
+              type: 'ADD_SERP_SELECTION',
+              payload: {
+                type: 'entity',
+                content: content.trim(),
+                selected: false,
+                source: 'proposal_data',
+                metadata: typeof entity === 'object' ? entity : { name: content }
+              }
+            });
+            addedCount++;
           }
         });
-      });
+      }
 
       // Add questions
-      serpData.questions.forEach(q => {
-        dispatch({
-          type: 'ADD_SERP_SELECTION',
-          payload: {
-            type: 'question',
-            content: q.question,
-            selected: false,
-            source: 'proposal_data'
+      if (serpData.questions && Array.isArray(serpData.questions)) {
+        serpData.questions.forEach((q: any) => {
+          const content = typeof q === 'string' ? q : 
+                          q.question || 
+                          (q as any)?.title || 
+                          String(q);
+          if (content && content.trim()) {
+            dispatch({
+              type: 'ADD_SERP_SELECTION',
+              payload: {
+                type: 'question',
+                content: content.trim(),
+                selected: false,
+                source: 'proposal_data'
+              }
+            });
+            addedCount++;
           }
         });
-      });
+      }
 
-      console.log('📋 Added selections from proposal data');
+      // Add headings
+      if (serpData.headings && Array.isArray(serpData.headings)) {
+        serpData.headings.forEach((h: any) => {
+          const content = typeof h === 'string' ? h : 
+                          h.text || 
+                          (h as any)?.title || 
+                          String(h);
+          if (content && content.trim()) {
+            dispatch({
+              type: 'ADD_SERP_SELECTION',
+              payload: {
+                type: 'heading',
+                content: content.trim(),
+                selected: false,
+                source: 'proposal_data',
+                metadata: typeof h === 'object' ? h : { text: content, level: 'h2' }
+              }
+            });
+            addedCount++;
+          }
+        });
+      }
+
+      // Add content gaps
+      if (serpData.contentGaps && Array.isArray(serpData.contentGaps)) {
+        serpData.contentGaps.forEach((gap: any) => {
+          const content = typeof gap === 'string' ? gap : 
+                          gap.topic || 
+                          gap.description || 
+                          (gap as any)?.gap || 
+                          String(gap);
+          if (content && content.trim()) {
+            dispatch({
+              type: 'ADD_SERP_SELECTION',
+              payload: {
+                type: 'contentGap',
+                content: content.trim(),
+                selected: false,
+                source: 'proposal_data',
+                metadata: typeof gap === 'object' ? gap : { topic: content }
+              }
+            });
+            addedCount++;
+          }
+        });
+      }
+
+      // Add related keywords if available
+      if (serpData.related_keywords && Array.isArray(serpData.related_keywords)) {
+        serpData.related_keywords.slice(0, 10).forEach((kw: any) => { // Limit to prevent overload
+          const content = typeof kw === 'string' ? kw : 
+                          kw.title || 
+                          (kw as any)?.keyword || 
+                          String(kw);
+          if (content && content.trim()) {
+            dispatch({
+              type: 'ADD_SERP_SELECTION',
+              payload: {
+                type: 'keyword',
+                content: content.trim(),
+                selected: false,
+                source: 'proposal_data'
+              }
+            });
+            addedCount++;
+          }
+        });
+      }
+
+      console.log(`✅ Successfully added ${addedCount} selections from proposal data`);
+      
+      // Force a state update to ensure components re-render
+      dispatch({ type: 'MARK_STEP_ANALYZED', payload: 2 });
+      
     } catch (error) {
       console.error('❌ Error adding selections from proposal data:', error);
     }

@@ -9,6 +9,7 @@ import { SerpDataManager } from '../serp/SerpDataManager';
 import { DataValidationProvider } from '../serp/DataValidationProvider';
 import { EnhancedSerpStatus } from '../serp/EnhancedSerpStatus';
 import { EnhancedSerpAnalysis } from '../serp/EnhancedSerpAnalysis';
+import { SerpDebugPanel } from '../serp/debug/SerpDebugPanel';
 import { SerpAnalysisResult } from '@/types/serp';
 import { EnhancedSerpResult } from '@/services/enhancedSerpService';
 import { getApiKey } from '@/services/apiKeyService';
@@ -367,6 +368,11 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
               )}
             </CardContent>
           </Card>
+
+          {/* Debug panel in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <SerpDebugPanel />
+          )}
 
           {/* Show enhanced analysis if API is available OR we have proposal data */}
           {(hasWorkingApis || hasProposalData) && mainKeyword ? (
