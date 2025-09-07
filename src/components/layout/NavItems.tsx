@@ -52,7 +52,8 @@ export default function NavItems() {
     '/content-approval',
     '/glossary-builder',
     '/repository',
-    '/drafts'
+    '/drafts',
+    '/content-type-selection'
   ];
   
   const isContentActive = contentRoutes.includes(location.pathname);
@@ -92,10 +93,10 @@ export default function NavItems() {
         <DropdownMenuContent align="start" className="w-48 bg-card border border-white/10">
           <DropdownMenuItem asChild>
             <Link 
-              to="/content-builder" 
+              to="/content-type-selection" 
               className={cn(
                 'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/content-builder' && 'bg-accent text-accent-foreground'
+                location.pathname === '/content-type-selection' && 'bg-accent text-accent-foreground'
               )}
             >
               <Puzzle className="h-4 w-4" />
@@ -112,18 +113,6 @@ export default function NavItems() {
             >
               <CheckCircle className="h-4 w-4" />
               Approval
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/glossary-builder" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/glossary-builder' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <Book className="h-4 w-4" />
-              Glossary Builder
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
