@@ -1787,7 +1787,7 @@ async function testSerpstackApi(apiKey: string) {
     const response = await fetch(testUrl, {
       method: 'GET',
       headers: {
-        'User-Agent': 'Cr3ate-API-Test/1.0',
+        'User-Agent': 'ContentRocketForge-API-Test/1.0',
         'Accept': 'application/json'
       }
     });
