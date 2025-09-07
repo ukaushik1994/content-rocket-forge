@@ -27,7 +27,9 @@ import {
   AlertCircle,
   X,
   Loader2,
-  Info
+  Info,
+  Undo,
+  Layers
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -39,6 +41,11 @@ import { SolutionIntegrationBadge } from './SolutionIntegrationBadge';
 import { OptimizationBadges } from './OptimizationBadges';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { RepurposedContentIcons } from './RepurposedContentIcons';
+import { RepurposedContentViewer } from './RepurposedContentViewer';
+import { ContentRepurposingModal } from './ContentRepurposingModal';
+import { useRepurposedContentData } from '@/components/content-repurposing/hooks/repurposing/useRepurposedContentData';
+import { repurposedContentService } from '@/services/repurposedContentService';
 
 interface ContentDetailModalProps {
   content: ContentItemType | null;
@@ -55,6 +62,20 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const navigate = useNavigate();
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Repurposing states
+  const [repurposingModalOpen, setRepurposingModalOpen] = useState(false);
+  const [repurposedViewerOpen, setRepurposedViewerOpen] = useState(false);
+  const [selectedRepurposedContent, setSelectedRepurposedContent] = useState<any>(null);
+  const [isLoadingRepurposed, setIsLoadingRepurposed] = useState(false);
+
+  // Load repurposed content data
+  const { 
+    repurposedFormats, 
+    repurposedContentMap, 
+    isLoading: isLoadingRepurposedData,
+    refreshData 
+  } = useRepurposedContentData(content?.id || null);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -132,6 +153,81 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Repurposing handlers
+  const handleRepurpose = () => {
+    setRepurposingModalOpen(true);
+  };
+
+  const handleRepurposedFormatClick = async (formatId: string) => {
+    if (!content) return;
+    
+    setIsLoadingRepurposed(true);
+    try {
+      const repurposedContent = await repurposedContentService.getRepurposedContentByFormat(
+        content.id, 
+        formatId
+      );
+      
+      if (repurposedContent) {
+        setSelectedRepurposedContent(repurposedContent);
+        setRepurposedViewerOpen(true);
+      }
+    } catch (error) {
+      toast.error('Failed to load repurposed content');
+    } finally {
+      setIsLoadingRepurposed(false);
+    }
+  };
+
+  const handleRepurposedFormatChange = async (formatId: string) => {
+    if (!content) return;
+    
+    setIsLoadingRepurposed(true);
+    try {
+      const repurposedContent = await repurposedContentService.getRepurposedContentByFormat(
+        content.id, 
+        formatId
+      );
+      
+      if (repurposedContent) {
+        setSelectedRepurposedContent(repurposedContent);
+      }
+    } catch (error) {
+      toast.error('Failed to load format content');
+    } finally {
+      setIsLoadingRepurposed(false);
+    }
+  };
+
+  const handleCopyContent = (contentText: string) => {
+    navigator.clipboard.writeText(contentText);
+  };
+
+  const handleDownloadContent = (contentText: string, formatName: string) => {
+    const blob = new Blob([contentText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${content?.title || 'content'} - ${formatName}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteRepurposed = async (contentId: string, formatId: string) => {
+    const success = await repurposedContentService.deleteRepurposedContent(contentId, formatId);
+    if (success) {
+      refreshData();
+      toast.success('Repurposed content deleted successfully');
+    }
+    return success;
+  };
+
+  const handleContentGenerated = () => {
+    refreshData();
   };
 
   const IconComponent = getContentTypeIcon(content.content_type);
@@ -299,6 +395,24 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
                   {/* Optimization Badges */}
                   <OptimizationBadges metadata={content.metadata} />
+
+                  {/* Repurposed Content Section */}
+                  {repurposedFormats.length > 0 && (
+                    <Card className="bg-muted/5 border-border">
+                      <CardHeader>
+                        <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                          <Layers className="h-5 w-5 text-primary" />
+                          Repurposed Content
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <RepurposedContentIcons
+                          repurposedFormats={repurposedFormats}
+                          onFormatClick={handleRepurposedFormatClick}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
             {/* Sidebar */}
@@ -320,29 +434,40 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </div>
                   </div>
                   
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full gap-2">
-                        <MoreVertical className="h-4 w-4" />
-                        More Actions
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={handleEdit}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDuplicate}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleDelete} className="text-destructive" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="space-y-2">
+                    <Button 
+                      variant="default" 
+                      className="w-full gap-2 bg-primary hover:bg-primary/90"
+                      onClick={handleRepurpose}
+                    >
+                      <Undo className="h-4 w-4" />
+                      Repurpose Content
+                    </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full gap-2">
+                          <MoreVertical className="h-4 w-4" />
+                          More Actions
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={handleEdit}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleDuplicate}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleDelete} className="text-destructive" disabled={isLoading}>
+                          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -534,8 +659,29 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
             </div>
           </div>
         </ScrollArea>
-      </DialogContent>
-    </Dialog>
-  </TooltipProvider>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Repurposing Modal */}
+      <ContentRepurposingModal
+        open={repurposingModalOpen}
+        onClose={() => setRepurposingModalOpen(false)}
+        content={content}
+        onContentGenerated={handleContentGenerated}
+      />
+
+      {/* Repurposed Content Viewer */}
+      <RepurposedContentViewer
+        open={repurposedViewerOpen}
+        onClose={() => setRepurposedViewerOpen(false)}
+        content={selectedRepurposedContent}
+        availableFormats={repurposedFormats}
+        isLoading={isLoadingRepurposed}
+        onFormatChange={handleRepurposedFormatChange}
+        onCopy={handleCopyContent}
+        onDownload={handleDownloadContent}
+        onDelete={handleDeleteRepurposed}
+      />
+    </TooltipProvider>
   );
 };
