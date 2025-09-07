@@ -24,14 +24,18 @@ interface CrossTabActionsProps {
   proposalId: string;
   proposalContext?: ProposalContext;
   onNavigateToTab?: (tab: 'pipeline' | 'calendar') => void;
+  onAction?: (proposalId: string, action: string, data?: any) => Promise<void>;
   compact?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export const CrossTabActions: React.FC<CrossTabActionsProps> = ({
   proposalId,
   proposalContext,
   onNavigateToTab,
-  compact = false
+  onAction,
+  compact = false,
+  size = 'md'
 }) => {
   const { 
     getProposalActions, 

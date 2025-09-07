@@ -155,26 +155,17 @@ export const useProposalIntegration = (proposalIds: string[] = []) => {
   }, [refreshData, loadProposalContexts]);
 
   // Update proposal status
-  const updateProposalStatus = useCallback(async (
-    proposalId: string, 
-    status: ProposalLifecycleStatus, 
-    options?: {
-      pipelineStage?: string;
-      calendarStatus?: string;
-      progress?: number;
-      notes?: string;
-    }
-  ) => {
+  const updateProposalStatus = useCallback(async (update: {
+    proposalId: string;
+    status: ProposalLifecycleStatus;
+    pipelineStage?: string;
+    calendarStatus?: string;
+    progress?: number;
+    notes?: string;
+    updatedBy: string;
+  }) => {
     try {
-      await proposalLifecycleService.updateProposalStatus({
-        proposalId,
-        status,
-        pipelineStage: options?.pipelineStage,
-        calendarStatus: options?.calendarStatus,
-        progress: options?.progress,
-        notes: options?.notes,
-        updatedBy: 'user'
-      });
+      await proposalLifecycleService.updateProposalStatus(update);
 
       await refreshData();
       await loadProposalContexts();
@@ -186,6 +177,16 @@ export const useProposalIntegration = (proposalIds: string[] = []) => {
       toast.error('Failed to update proposal status');
     }
   }, [refreshData, loadProposalContexts]);
+
+  // Cross-tab sync function
+  const syncProposalAcrossTabs = useCallback(async (proposalId: string, action: string, data?: any) => {
+    return handleProposalAction(proposalId, action, data);
+  }, [handleProposalAction]);
+
+  // Get proposal context
+  const getProposalContext = useCallback(async (proposalId: string) => {
+    return proposalLifecycleService.getProposalContext(proposalId);
+  }, []);
 
   // Get proposal lifecycle status
   const getProposalStatus = useCallback((proposalId: string): ProposalLifecycleStatus | null => {
@@ -250,6 +251,10 @@ export const useProposalIntegration = (proposalIds: string[] = []) => {
     getCompletionPercentage,
     isInPipeline,
     isInCalendar,
+
+    // Cross-tab integration
+    syncProposalAcrossTabs,
+    getProposalContext,
 
     // Navigation
     navigateToProposalInTab

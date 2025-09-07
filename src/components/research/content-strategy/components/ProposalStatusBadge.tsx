@@ -14,7 +14,8 @@ import {
 import { ProposalLifecycleStatus } from '@/services/proposalLifecycleService';
 
 interface ProposalStatusBadgeProps {
-  status: ProposalLifecycleStatus;
+  proposalId?: string;
+  status?: ProposalLifecycleStatus;
   completionPercentage?: number;
   showProgress?: boolean;
   size?: 'sm' | 'md' | 'lg';
@@ -22,7 +23,8 @@ interface ProposalStatusBadgeProps {
 }
 
 export const ProposalStatusBadge: React.FC<ProposalStatusBadgeProps> = ({
-  status,
+  proposalId,
+  status = 'generated',
   completionPercentage = 0,
   showProgress = false,
   size = 'md',

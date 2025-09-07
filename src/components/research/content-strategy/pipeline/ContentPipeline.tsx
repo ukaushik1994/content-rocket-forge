@@ -8,6 +8,9 @@ import { ArrowRight, Clock, User, Target, Plus, Edit, Trash2 } from 'lucide-reac
 import { motion } from 'framer-motion';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { PipelineItemDialog } from './PipelineItemDialog';
+import { ProposalStatusBadge } from '../components/ProposalStatusBadge';
+import { CrossTabActions } from '../components/CrossTabActions';
+import { useProposalIntegration } from '@/hooks/useProposalIntegration';
 import { toast } from 'sonner';
 
 interface ContentPipelineProps {
@@ -18,6 +21,7 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
   const { pipelineItems, createPipelineItem, updatePipelineItem, deletePipelineItem, loading } = useContentStrategy();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const { syncProposalAcrossTabs, updateProposalStatus } = useProposalIntegration();
 
   const stages = [
     { id: 'ideation', label: 'Ideation', color: 'from-blue-500 to-cyan-500' },
@@ -96,6 +100,19 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
   const handleStageChange = async (item: any, newStage: string) => {
     try {
       await updatePipelineItem(item.id, { stage: newStage });
+      
+      // Update proposal status if it's linked to a proposal
+      if (item.source_proposal_id) {
+        await updateProposalStatus({
+          proposalId: item.source_proposal_id,
+          status: newStage === 'published' ? 'completed' : 'in-progress',
+          pipelineStage: newStage,
+          progress: newStage === 'published' ? 100 : undefined,
+          notes: `Pipeline stage changed to ${newStage}`,
+          updatedBy: 'user'
+        });
+      }
+      
       toast.success(`Moved to ${newStage}`);
     } catch (error) {
       toast.error('Failed to update stage');
@@ -191,46 +208,57 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
                              </div>
                            )}
                            
-                           <div className="flex-1">
-                             <div className="flex items-start justify-between mb-2">
-                               <div className="flex items-center gap-2">
-                                 <span className="text-lg">{getTypeIcon(item.content_type)}</span>
-                                 <Badge variant="outline" className={getPriorityColor(item.priority)}>
-                                   {item.priority}
-                                 </Badge>
-                                 {item.source_proposal_id && (
-                                   <Badge variant="secondary" className="text-xs bg-primary/20 text-primary-foreground">
-                                     AI Proposal
-                                   </Badge>
-                                 )}
-                               </div>
-                               <div className="flex items-center gap-1">
-                                 <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                   <Clock className="h-3 w-3" />
-                                   {item.due_date || 'No date'}
-                                 </div>
-                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
-                                   <button
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       handleEditItem(item);
-                                     }}
-                                     className="hover:text-blue-400"
-                                   >
-                                     <Edit className="h-3 w-3" />
-                                   </button>
-                                   <button
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       handleDeleteItem(item.id);
-                                     }}
-                                     className="hover:text-red-400"
-                                   >
-                                     <Trash2 className="h-3 w-3" />
-                                   </button>
-                                 </div>
-                               </div>
-                             </div>
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg">{getTypeIcon(item.content_type)}</span>
+                                  <Badge variant="outline" className={getPriorityColor(item.priority)}>
+                                    {item.priority}
+                                  </Badge>
+                                  {item.source_proposal_id && (
+                                    <>
+                                      <Badge variant="secondary" className="text-xs bg-primary/20 text-primary-foreground">
+                                        AI Proposal
+                                      </Badge>
+                                      <ProposalStatusBadge proposalId={item.source_proposal_id} />
+                                    </>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {item.due_date || 'No date'}
+                                  </div>
+                                  {item.source_proposal_id && (
+                                    <CrossTabActions 
+                                      proposalId={item.source_proposal_id}
+                                      onAction={syncProposalAcrossTabs}
+                                      compact
+                                      size="sm"
+                                    />
+                                  )}
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditItem(item);
+                                      }}
+                                      className="hover:text-blue-400"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteItem(item.id);
+                                      }}
+                                      className="hover:text-red-400"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
 
                              <h4 className="font-medium text-white text-sm mb-2 line-clamp-2">
                                {item.title}

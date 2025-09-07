@@ -8,6 +8,9 @@ import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { CalendarItemDialog } from './CalendarItemDialog';
+import { ProposalStatusBadge } from '../components/ProposalStatusBadge';
+import { CrossTabActions } from '../components/CrossTabActions';
+import { useProposalIntegration } from '@/hooks/useProposalIntegration';
 import { toast } from 'sonner';
 import { proposalManagement } from '@/services/proposalManagement';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +25,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const { syncProposalAcrossTabs, updateProposalStatus } = useProposalIntegration();
   const navigate = useNavigate();
 
   // Check for overdue proposals on mount only (prevent infinite loop)
@@ -110,6 +114,19 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
     try {
       if (editingItem) {
         await updateCalendarItem(editingItem.id, formData);
+        
+        // Update proposal status if it's linked to a proposal
+        const proposalData = getProposalData(editingItem);
+        if (proposalData?.source_proposal_id) {
+          await updateProposalStatus({
+            proposalId: proposalData.source_proposal_id,
+            status: formData.status === 'published' ? 'completed' : 'scheduled',
+            calendarStatus: formData.status,
+            notes: `Calendar status updated to ${formData.status}`,
+            updatedBy: 'user'
+          });
+        }
+        
         toast.success('Calendar item updated');
       } else {
         await createCalendarItem(formData);
@@ -301,10 +318,13 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                             <Badge variant="outline" className={`${getStatusColor(item.status)} text-xs`}>
                               {item.status}
                             </Badge>
-                            {proposalData && (
-                              <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
-                                From Proposal
-                              </Badge>
+                            {proposalData?.source_proposal_id && (
+                              <>
+                                <ProposalStatusBadge proposalId={proposalData.source_proposal_id} />
+                                <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
+                                  From Proposal
+                                </Badge>
+                              </>
                             )}
                           </div>
                         </div>
@@ -349,8 +369,9 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                           <div className="font-medium text-white">{item.title}</div>
                           <div className="text-sm text-muted-foreground flex items-center gap-2">
                             {item.assigned_to && `Assigned to: ${item.assigned_to}`}
-                            {proposalData && (
+                            {proposalData?.source_proposal_id && (
                               <>
+                                <ProposalStatusBadge proposalId={proposalData.source_proposal_id} />
                                 <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
                                   From Proposal
                                 </Badge>
@@ -372,6 +393,14 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                           <Send className="h-4 w-4" />
                           Generate Content
                         </Button>
+                        {proposalData?.source_proposal_id && (
+                          <CrossTabActions 
+                            proposalId={proposalData.source_proposal_id}
+                            onAction={syncProposalAcrossTabs}
+                            compact
+                            size="sm"
+                          />
+                        )}
                         <Badge variant="outline" className={getStatusColor(item.status)}>
                           {item.status}
                         </Badge>
