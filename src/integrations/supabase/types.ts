@@ -2442,6 +2442,45 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_lifecycle_logs: {
+        Row: {
+          calendar_status: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          pipeline_stage: string | null
+          progress: number | null
+          proposal_id: string
+          status: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          calendar_status?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pipeline_stage?: string | null
+          progress?: number | null
+          proposal_id: string
+          status: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          calendar_status?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pipeline_stage?: string | null
+          progress?: number | null
+          proposal_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
       raw_serp_data: {
         Row: {
           cached_at: string
