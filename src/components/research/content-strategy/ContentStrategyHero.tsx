@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Target, TrendingUp, BarChart3, Plus } from 'lucide-react';
+import { Sparkles, Target, TrendingUp, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => void }) => {
@@ -27,7 +27,7 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
         transition={{ delay: 0.2, duration: 0.3 }}
         className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed"
       >
-        AI-powered content strategy with SERP analysis, competitor research, and data-driven recommendations
+        Complete content strategy workspace with AI proposals, production pipeline, editorial calendar, and performance analytics
       </motion.p>
 
       <motion.div
@@ -41,8 +41,8 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
           className="hover-scale bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg px-8 py-3" 
           onClick={onCreate}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Create New Strategy
+          <Target className="h-4 w-4 mr-2" />
+          Set Strategy Goals
         </Button>
       </motion.div>
       
@@ -57,21 +57,21 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
           whileHover={{ scale: 1.05 }}
         >
           <Target className="h-4 w-4 text-blue-400" />
-          <span>SERP Analysis</span>
+          <span>AI Proposals</span>
         </motion.div>
         <motion.div 
           className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all duration-300"
           whileHover={{ scale: 1.05 }}
         >
           <TrendingUp className="h-4 w-4 text-purple-400" />
-          <span>Competitor Research</span>
+          <span>Production Pipeline</span>
         </motion.div>
         <motion.div 
           className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all duration-300"
           whileHover={{ scale: 1.05 }}
         >
           <BarChart3 className="h-4 w-4 text-green-400" />
-          <span>Performance Tracking</span>
+          <span>Editorial Calendar</span>
         </motion.div>
       </motion.div>
     </div>

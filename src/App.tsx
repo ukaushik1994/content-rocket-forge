@@ -22,7 +22,7 @@ import TopicClusters from "./pages/research/TopicClusters";
 import OpportunitiesPage from "./pages/research/Opportunities";
 import ContentGapsPage from "./pages/research/ContentGaps";
 import CalendarPage from "./pages/research/Calendar";
-import PipelinePage from "./pages/research/Pipeline";
+// Pipeline route removed - integrated into Content Strategy
 
 import AioGeo from "./pages/AioGeo";
 import AIChat from "./pages/AIChat";
@@ -77,7 +77,7 @@ const App = () => (
                   
                    <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
                    <Route path="/research/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-                   <Route path="/research/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
+                   <Route path="/research/pipeline" element={<Navigate to="/research/content-strategy#pipeline" replace />} />
                   
                   {/* AIO/GEO route */}
                   <Route path="/aio-geo" element={<ProtectedRoute><AioGeo /></ProtectedRoute>} />
