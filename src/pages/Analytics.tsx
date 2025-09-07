@@ -235,12 +235,12 @@ const Analytics = () => {
                   <span className="text-sm text-blue-300">Real-time Analytics</span>
                 </motion.div>
                 
-                <h1 className="text-6xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                  Analytics Hub
-                </h1>
-                <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-                  Discover insights, track performance, and optimize your content strategy with real analytics data
-                </p>
+                 <h1 className="text-6xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+                   Analytics Hub
+                 </h1>
+                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                   Discover insights, track performance, and optimize your content strategy with real analytics data
+                 </p>
               </motion.div>
 
               {/* Key Metrics Cards - Now using real data */}
@@ -251,16 +251,16 @@ const Analytics = () => {
                 {loading ? (
                   // Loading skeleton
                   Array.from({ length: 4 }).map((_, index) => (
-                    <Card key={index} className="bg-slate-800/50 backdrop-blur-xl border-slate-600/30">
+                    <Card key={`loading-${index}`} className="bg-card/50 backdrop-blur-xl border-border/30">
                       <CardContent className="p-6">
                         <div className="animate-pulse">
                           <div className="flex items-start justify-between mb-4">
-                            <div className="w-12 h-12 bg-slate-600 rounded-xl" />
-                            <div className="w-16 h-6 bg-slate-600 rounded-full" />
-                          </div>
-                          <div className="space-y-2">
-                            <div className="w-20 h-8 bg-slate-600 rounded" />
-                            <div className="w-24 h-4 bg-slate-600 rounded" />
+                             <div className="w-12 h-12 bg-muted rounded-xl" />
+                             <div className="w-16 h-6 bg-muted rounded-full" />
+                           </div>
+                           <div className="space-y-2">
+                             <div className="w-20 h-8 bg-muted rounded" />
+                             <div className="w-24 h-4 bg-muted rounded" />
                           </div>
                         </div>
                       </CardContent>
@@ -291,7 +291,7 @@ const Analytics = () => {
                         <CardContent className="p-6 relative z-10">
                           <div className="flex items-start justify-between mb-4">
                             <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
-                              <metric.icon className="w-6 h-6 text-white" />
+                              <metric.icon className="w-6 h-6 text-primary-foreground" />
                             </div>
                             <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                               metric.trend === 'up' 
@@ -304,11 +304,11 @@ const Analytics = () => {
                           </div>
                           
                           <div className="space-y-1">
-                            <h3 className="text-2xl font-bold text-white">{metric.value}</h3>
-                            <p className="text-sm text-slate-400">{metric.label}</p>
+                             <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
+                             <p className="text-sm text-muted-foreground">{metric.label}</p>
                           </div>
                           
-                          <div className="mt-3 text-xs text-slate-500">
+                          <div className="mt-3 text-xs text-muted-foreground">
                             Click to drill down
                           </div>
                         </CardContent>
@@ -321,19 +321,19 @@ const Analytics = () => {
               {/* Enhanced Control Panel with Custom Date Range */}
               <motion.div 
                 variants={itemVariants}
-                className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 p-6 rounded-2xl bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/30"
-              >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/50 border border-slate-600/30">
-                    <CalendarRange className="w-4 h-4 text-slate-400" />
+               className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 p-6 rounded-2xl bg-card/50 backdrop-blur-xl border border-border/30"
+             >
+               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/50 border border-border/30">
+                   <CalendarRange className="w-4 h-4 text-muted-foreground" />
                     <Select 
                       value={useCustomRange ? "custom" : timeRange} 
                       onValueChange={(value) => value === "custom" ? null : handleTimeRangeChange(value)}
                     >
-                      <SelectTrigger className="border-0 bg-transparent text-white min-w-[140px]">
+                      <SelectTrigger className="border-0 bg-transparent text-foreground min-w-[140px]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600">
+                     <SelectContent className="bg-card border-border">
                         <SelectItem value="24h">Last 24 hours</SelectItem>
                         <SelectItem value="7days">Last 7 days</SelectItem>
                         <SelectItem value="30days">Last 30 days</SelectItem>
@@ -364,17 +364,17 @@ const Analytics = () => {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="bg-slate-800/50 border-slate-600/30 text-white hover:bg-slate-700/50"
-                    onClick={refreshAnalytics}
-                    disabled={loading}
-                  >
-                    <RefreshCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
-                  <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/30 text-white hover:bg-slate-700/50">
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     className="bg-card/50 border-border/30 text-foreground hover:bg-card/70"
+                     onClick={refreshAnalytics}
+                     disabled={loading}
+                   >
+                     <RefreshCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                     Refresh
+                   </Button>
+                   <Button variant="outline" size="sm" className="bg-card/50 border-border/30 text-foreground hover:bg-card/70">
                     <Download className="w-4 h-4 mr-2" />
                     Export
                   </Button>
@@ -383,25 +383,25 @@ const Analytics = () => {
               
               {/* Tabs Section */}
               <motion.div variants={itemVariants}>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                  <TabsList className="bg-slate-800/50 backdrop-blur-xl border border-slate-600/30 p-2 h-auto grid grid-cols-3 gap-2">
+                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+                   <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-3 gap-2">
                     <TabsTrigger 
                       value="overview" 
-                      className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300"
+                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                     >
                       <BarChart3 className="h-4 w-4" />
                       Overview
                     </TabsTrigger>
                     <TabsTrigger 
                       value="content" 
-                      className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300"
+                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                     >
                       <FileText className="h-4 w-4" />
                       Content
                     </TabsTrigger>
                     <TabsTrigger 
                       value="performance" 
-                      className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300"
+                      className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                     >
                       <Activity className="h-4 w-4" />
                       Performance
