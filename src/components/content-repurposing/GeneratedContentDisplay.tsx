@@ -62,11 +62,11 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   console.log('[GeneratedContentDisplay] isCurrentFormatSaved:', isCurrentFormatSaved);
   
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+    <Card className="h-full border-white/10 bg-black/40 backdrop-blur-sm">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between border-b border-white/10">
         <div>
-          <CardTitle className="text-lg">Generated Content</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg text-white font-semibold">Generated Content</CardTitle>
+          <CardDescription className="text-white/70">
             {hasGeneratedContent
               ? selectedPersonas.length > 0
                 ? `${generatedFormats.length} format(s) generated for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}`
@@ -87,7 +87,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
         )}
       </CardHeader>
 
-      <CardContent className="p-4 h-[500px] flex flex-col">
+      <CardContent className="p-4 h-[500px] flex flex-col bg-black/20">
         {!hasGeneratedContent ? (
           <NoContentDisplay />
         ) : activeFormat && generatedContents[activeFormat] ? (

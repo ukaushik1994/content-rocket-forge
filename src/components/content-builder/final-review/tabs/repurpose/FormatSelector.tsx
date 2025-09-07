@@ -28,6 +28,11 @@ export const FormatSelector: React.FC<FormatSelectorProps> = ({
             variant={activeFormat === format.id ? "default" : "outline"}
             size="sm"
             onClick={() => onSelectFormat(format.id)}
+            className={
+              activeFormat === format.id 
+                ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0" 
+                : "bg-transparent border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
+            }
           >
             {format.name}
           </Button>

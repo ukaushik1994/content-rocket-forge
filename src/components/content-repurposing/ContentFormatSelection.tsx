@@ -99,10 +99,10 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
   const generatedFormatsCount = Object.keys(generatedContents).length;
   
   return (
-    <Card className="formats-selection shadow-lg border-border/50">
-      <CardHeader className="pb-3 bg-card/50">
-        <CardTitle className="text-lg text-foreground">Content Formats</CardTitle>
-        <CardDescription>
+    <Card className="h-full border-white/10 bg-black/40 backdrop-blur-sm">
+      <CardHeader className="pb-3 border-b border-white/10">
+        <CardTitle className="text-lg text-white font-semibold">Content Formats</CardTitle>
+        <CardDescription className="text-white/70">
           {selectedPersonas.length > 0 
             ? `Generate content for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}`
             : 'Select formats to generate repurposed content'
@@ -166,9 +166,9 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
         )}
       </CardContent>
       
-      <CardFooter>
+      <CardFooter className="border-t border-white/10 bg-black/20">
         <Button 
-          className="w-full generate-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg border-0"
+          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg border-0 transition-all duration-300"
           disabled={selectedFormats.length === 0 || isGenerating}
           onClick={handleGenerateContent}
         >
