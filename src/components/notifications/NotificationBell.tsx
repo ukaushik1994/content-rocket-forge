@@ -26,17 +26,17 @@ export const NotificationBell: React.FC = () => {
   }, [refresh]);
 
   return (
-    <div className="relative">
+    <div className="relative p-1">
       <Button
         variant="ghost"
         size="icon"
-        className="rounded-full overflow-hidden border border-border relative hover:bg-accent/50 transition-colors"
+        className="rounded-full border border-border relative hover:bg-accent/50 transition-colors"
         onClick={() => setOpen((v) => !v)}
         title="Notifications"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-4 min-w-[16px] rounded-full bg-primary text-primary-foreground text-[10px] leading-4 text-center px-1 animate-pulse">
+          <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] rounded-full bg-primary text-primary-foreground text-[10px] leading-4 text-center px-1 animate-pulse shadow-sm border border-background">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
