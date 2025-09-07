@@ -1792,17 +1792,24 @@ export type Database = {
       }
       dashboard_alerts: {
         Row: {
+          action_buttons: Json | null
           action_label: string | null
           action_url: string | null
           category: string
           created_at: string
           expires_at: string | null
+          grouped_id: string | null
           id: string
+          interaction_count: number | null
           is_read: boolean | null
+          last_interaction_at: string | null
           link_url: string | null
           message: string
           metadata: Json
           module: string | null
+          notification_type: string | null
+          preview_data: Json | null
+          priority: string | null
           severity: string
           status: string
           title: string | null
@@ -1810,17 +1817,24 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          action_buttons?: Json | null
           action_label?: string | null
           action_url?: string | null
           category?: string
           created_at?: string
           expires_at?: string | null
+          grouped_id?: string | null
           id?: string
+          interaction_count?: number | null
           is_read?: boolean | null
+          last_interaction_at?: string | null
           link_url?: string | null
           message: string
           metadata?: Json
           module?: string | null
+          notification_type?: string | null
+          preview_data?: Json | null
+          priority?: string | null
           severity?: string
           status?: string
           title?: string | null
@@ -1828,17 +1842,24 @@ export type Database = {
           user_id: string
         }
         Update: {
+          action_buttons?: Json | null
           action_label?: string | null
           action_url?: string | null
           category?: string
           created_at?: string
           expires_at?: string | null
+          grouped_id?: string | null
           id?: string
+          interaction_count?: number | null
           is_read?: boolean | null
+          last_interaction_at?: string | null
           link_url?: string | null
           message?: string
           metadata?: Json
           module?: string | null
+          notification_type?: string | null
+          preview_data?: Json | null
+          priority?: string | null
           severity?: string
           status?: string
           title?: string | null
@@ -2085,6 +2106,81 @@ export type Database = {
           request_duration_ms?: number | null
           success?: boolean
           total_tokens?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_categories: {
+        Row: {
+          created_at: string | null
+          default_enabled: boolean | null
+          default_frequency: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          default_enabled?: boolean | null
+          default_frequency?: string | null
+          description?: string | null
+          icon?: string | null
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          default_enabled?: boolean | null
+          default_frequency?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      notification_settings: {
+        Row: {
+          auto_dismiss_after_days: number | null
+          category: string
+          channels: Json | null
+          created_at: string | null
+          enabled: boolean | null
+          frequency: string | null
+          id: string
+          priority_threshold: string | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auto_dismiss_after_days?: number | null
+          category: string
+          channels?: Json | null
+          created_at?: string | null
+          enabled?: boolean | null
+          frequency?: string | null
+          id?: string
+          priority_threshold?: string | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auto_dismiss_after_days?: number | null
+          category?: string
+          channels?: Json | null
+          created_at?: string | null
+          enabled?: boolean | null
+          frequency?: string | null
+          id?: string
+          priority_threshold?: string | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -2888,6 +2984,45 @@ export type Database = {
           },
         ]
       }
+      strategy_generation_progress: {
+        Row: {
+          created_at: string
+          id: string
+          progress_percentage: number
+          session_id: string
+          status: string
+          step: number
+          step_data: Json | null
+          step_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          progress_percentage?: number
+          session_id: string
+          status?: string
+          step?: number
+          step_data?: Json | null
+          step_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          progress_percentage?: number
+          session_id?: string
+          status?: string
+          step?: number
+          step_data?: Json | null
+          step_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       strategy_insights: {
         Row: {
           competition_score: number | null
@@ -3237,12 +3372,25 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_expired_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_serp_usage_count: {
         Args: { p_start_date: string; p_user_id: string }
         Returns: number
       }
       get_user_role: {
         Args: { user_id: string }
+        Returns: string
+      }
+      group_notifications: {
+        Args: {
+          p_module: string
+          p_severity: string
+          p_timeframe?: unknown
+          p_user_id: string
+        }
         Returns: string
       }
       is_admin: {
