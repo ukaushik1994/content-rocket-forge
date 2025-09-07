@@ -40,8 +40,6 @@ export const AnimatedBackground = () => {
         }}
       />
 
-      {/* Grid pattern */}
-      <div className="absolute inset-0 futuristic-grid opacity-30" />
       
       {/* Floating particles */}
       {[...Array(6)].map((_, i) => (

@@ -6,7 +6,7 @@ import { Rocket } from 'lucide-react';
 export const RocketLogo = () => {
   return (
     <motion.div
-      className="flex items-center justify-center mb-8"
+      className="flex flex-col items-center justify-center mb-6 text-center"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
