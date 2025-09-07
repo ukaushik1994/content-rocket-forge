@@ -18,7 +18,6 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
 }) => {
   const { contentItems, loading } = useContent();
   const [filteredItems, setFilteredItems] = useState<ContentItemType[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [advancedFilters, setAdvancedFilters] = useState<any>({});
@@ -32,9 +31,9 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
       filtered = filtered.filter(item => item.content_type === advancedFilters.contentType);
     }
 
-    // Filter by status
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(item => item.status === selectedStatus);
+    // Filter by status (now from advanced filters)
+    if (advancedFilters.status && advancedFilters.status !== 'all') {
+      filtered = filtered.filter(item => item.status === advancedFilters.status);
     }
 
     // Filter by search query
@@ -83,7 +82,7 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
     filtered.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
     setFilteredItems(filtered);
-  }, [contentItems, selectedStatus, searchQuery, advancedFilters]);
+  }, [contentItems, searchQuery, advancedFilters]);
 
   // Calculate content statistics
   const contentStats = {
@@ -118,17 +117,14 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
       />
 
       <RepositoryFilters
-        contentStats={contentStats}
-        selectedStatus={selectedStatus}
         searchQuery={searchQuery}
-        onStatusChange={setSelectedStatus}
         onSearchChange={setSearchQuery}
       />
 
       {filteredItems.length === 0 && !loading ? (
         <EmptyState 
           contentType={'all'}
-          status={selectedStatus}
+          status={advancedFilters.status || 'all'}
           searchQuery={searchQuery}
         />
       ) : viewMode === 'grid' ? (

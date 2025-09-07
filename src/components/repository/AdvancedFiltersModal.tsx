@@ -26,6 +26,7 @@ interface ContentStats {
 
 interface AdvancedFilters {
   contentType?: ContentType | 'all';
+  status?: 'all' | 'draft' | 'published' | 'archived';
   dateRange?: {
     from: string;
     to: string;
@@ -89,6 +90,13 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
     { value: 'social_post', label: 'Social Posts', icon: MessageSquare, count: contentStats.socialPosts, color: 'text-pink-500' }
   ];
 
+  const statusFilters = [
+    { value: 'all', label: 'All Status', count: contentStats.total, color: 'text-foreground' },
+    { value: 'draft', label: 'Draft', count: contentStats.drafts, color: 'text-yellow-600' },
+    { value: 'published', label: 'Published', count: contentStats.published, color: 'text-green-600' },
+    { value: 'archived', label: 'Archived', count: contentStats.archived, color: 'text-gray-600' }
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] glass-panel bg-background/95 backdrop-blur-lg border-white/10">
@@ -139,6 +147,44 @@ export const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Status Filter */}
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <div className="flex flex-wrap gap-2">
+              {statusFilters.map((filter, index) => (
+                <motion.div
+                  key={filter.value}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                >
+                  <Button
+                    variant={filters.status === filter.value ? "default" : "outline"}
+                    onClick={() => setFilters(prev => ({ ...prev, status: filter.value as 'all' | 'draft' | 'published' | 'archived' }))}
+                    className={`glass-button transition-all duration-300 ${
+                      filters.status === filter.value 
+                        ? 'bg-gradient-to-r from-primary to-neon-blue text-white border-white/20 shadow-lg' 
+                        : 'bg-background/40 backdrop-blur-sm border-white/10 hover:border-white/20'
+                    }`}
+                    size="sm"
+                  >
+                    {filter.label}
+                    <CustomBadge 
+                      className={`ml-2 text-xs ${
+                        filters.status === filter.value
+                          ? 'bg-white/20 text-white'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {filter.count}
+                    </CustomBadge>
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
           {/* Date Range */}
           <div className="space-y-2">
             <Label>Date Range</Label>
