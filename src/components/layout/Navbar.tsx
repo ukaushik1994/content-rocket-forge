@@ -56,7 +56,7 @@ const Navbar = () => {
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 />
                 <motion.img 
-                  src="/lovable-uploads/7510f296-4af6-45e5-a91c-81c972ab8600.png" 
+                  src="/cr3ate-logo.png"
                   alt="Cr3ate Logo" 
                   className="h-8 w-auto relative z-10"
                   whileHover={{ 
@@ -150,7 +150,7 @@ const Navbar = () => {
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                   />
                   <motion.img 
-                    src="/lovable-uploads/7510f296-4af6-45e5-a91c-81c972ab8600.png" 
+                    src="/cr3ate-logo.png" 
                     alt="Cr3ate Logo" 
                     className="h-7 w-auto relative z-10"
                     whileHover={{ 
