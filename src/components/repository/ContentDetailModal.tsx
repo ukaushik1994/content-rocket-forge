@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   FileText, 
   BookOpen, 
@@ -114,242 +115,274 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-md border-border/50">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg bg-gradient-to-r ${colorGradient} text-white shadow-lg`}>
-                <IconComponent className="h-6 w-6" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-bold text-left">
-                  {content.title}
-                </DialogTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge className={getStatusColor(content.status)}>
-                    {content.status}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground capitalize">
-                    {content.content_type.replace('_', ' ')}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleEdit}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDuplicate}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Duplicate
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+      <DialogContent className="max-w-4xl bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="text-2xl font-bold text-foreground pr-8">
+            {content.title}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 mt-6">
-          {/* Description */}
-          {content.metadata?.description && (
-            <Card className="bg-muted/20">
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">
-                  {content.metadata.description}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Solution Integration */}
-          {solution && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Solution Integration
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  {solution.logoUrl ? (
-                    <img
-                      src={solution.logoUrl}
-                      alt={solution.name}
-                      className="h-8 w-8 rounded object-contain bg-background/80 border border-border p-1"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded bg-muted grid place-items-center text-sm font-semibold">
-                      {solution.name?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium">{solution.name}</p>
-                    {solution.description && (
-                      <p className="text-xs text-muted-foreground">{solution.description}</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Content Preview */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                Content Preview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {content.content_type === 'glossary' && content.metadata ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Terms Progress</span>
-                    <span className="font-medium">
-                      {content.metadata.completedTerms || 0} / {content.metadata.termCount || 0}
-                    </span>
-                  </div>
-                  {content.metadata.domainUrl && (
-                    <div className="text-sm text-muted-foreground">
-                      <span className="font-medium">Domain:</span> {content.metadata.domainUrl}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-sm text-muted-foreground line-clamp-6">
-                    {content.content.substring(0, 500)}
-                    {content.content.length > 500 && '...'}
-                  </p>
-                </div>
+        <ScrollArea className="h-[calc(90vh-8rem)] flex-1 min-h-0" hideScrollbar>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pr-4">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Description */}
+              {content.metadata?.description && (
+                <Card className="bg-muted/5 border-border">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary" />
+                      Description
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground leading-relaxed">{content.metadata.description}</p>
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
 
-          {/* Optimization Badges */}
-          <OptimizationBadges metadata={content.metadata} />
+              {/* Full Content Preview */}
+              <Card className="bg-muted/5 border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-primary" />
+                    Content Preview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {content.content_type === 'glossary' && content.metadata ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
+                        <span className="text-sm text-muted-foreground">Terms Progress</span>
+                        <span className="font-bold text-foreground text-lg">
+                          {content.metadata.completedTerms || 0} / {content.metadata.termCount || 0}
+                        </span>
+                      </div>
+                      {content.metadata.domainUrl && (
+                        <div className="p-3 bg-muted/10 rounded-lg border border-border">
+                          <span className="font-medium text-muted-foreground">Domain:</span>
+                          <span className="ml-2 text-foreground">{content.metadata.domainUrl}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="prose prose-sm max-w-none">
+                      <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        {content.content || 'No content available'}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Metrics */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Content Metrics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-muted/20 rounded-lg">
-                  <FileText className="h-5 w-5 mx-auto mb-1 text-blue-400" />
-                  <div className="font-semibold">{wordCount.toLocaleString()}</div>
-                  <div className="text-xs text-muted-foreground">Words</div>
-                </div>
-                <div className="text-center p-3 bg-muted/20 rounded-lg">
-                  <Clock className="h-5 w-5 mx-auto mb-1 text-green-400" />
-                  <div className="font-semibold">{readingTime} min</div>
-                  <div className="text-xs text-muted-foreground">Read Time</div>
-                </div>
-                {content.seo_score && (
-                  <div className="text-center p-3 bg-muted/20 rounded-lg">
-                    <Star className="h-5 w-5 mx-auto mb-1 text-yellow-400" />
-                    <div className="font-semibold">{content.seo_score}</div>
-                    <div className="text-xs text-muted-foreground">SEO Score</div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              {/* Keywords & Tags */}
+              {(content.keywords?.length > 0 || content.metadata?.tags?.length > 0) && (
+                <Card className="bg-muted/5 border-border">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                      <Hash className="h-5 w-5 text-primary" />
+                      Keywords & Tags
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {content.keywords?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">SEO Keywords</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {content.keywords.map((keyword, index) => (
+                            <Badge key={index} variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
+                              {keyword}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {content.metadata?.tags?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Tags</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {content.metadata.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* Keywords & Tags */}
-          {(content.keywords?.length > 0 || content.metadata?.tags?.length > 0) && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Hash className="h-4 w-4" />
-                  Keywords & Tags
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {content.keywords?.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-medium text-muted-foreground mb-2">SEO Keywords</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {content.keywords.map((keyword, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {keyword}
+              {/* Optimization Badges */}
+              <OptimizationBadges metadata={content.metadata} />
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-4">
+              {/* Header with Icon, Status & Actions */}
+              <Card className="bg-muted/5 border-border">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg bg-gradient-to-r ${colorGradient} text-white shadow-lg`}>
+                        <IconComponent className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <Badge className={getStatusColor(content.status)} variant="outline">
+                          {content.status}
                         </Badge>
-                      ))}
+                        <p className="text-xs text-muted-foreground mt-1 capitalize">
+                          {content.content_type.replace('_', ' ')}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleEdit}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleDuplicate}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Content Metrics */}
+              <Card className="bg-muted/5 border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground">Content Metrics</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border">
+                      <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />
+                      <div className="font-semibold text-foreground">{wordCount.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">Words</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border">
+                      <Clock className="h-5 w-5 mx-auto mb-1 text-primary" />
+                      <div className="font-semibold text-foreground">{readingTime} min</div>
+                      <div className="text-xs text-muted-foreground">Read Time</div>
                     </div>
                   </div>
-                )}
-                
-                {content.metadata?.tags?.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-medium text-muted-foreground mb-2">Tags</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {content.metadata.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
+                  
+                  {content.seo_score && (
+                    <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Star className="h-4 w-4 text-primary" />
+                        <span className="text-xs text-muted-foreground">SEO Score</span>
+                      </div>
+                      <div className="text-xl font-bold text-foreground">
+                        {content.seo_score}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Solution Integration */}
+              {solution && (
+                <Card className="bg-muted/5 border-border">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                      <Target className="h-5 w-5 text-primary" />
+                      Solution Integration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-3">
+                      {solution.logoUrl ? (
+                        <img
+                          src={solution.logoUrl}
+                          alt={solution.name}
+                          className="h-8 w-8 rounded object-contain bg-background/80 border border-border p-1"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded bg-muted grid place-items-center text-sm font-semibold">
+                          {solution.name?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-foreground">{solution.name}</p>
+                        {solution.description && (
+                          <p className="text-xs text-muted-foreground">{solution.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Timeline */}
+              <Card className="bg-muted/5 border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Created:</span>
+                      <span className="text-foreground">{format(new Date(content.created_at), 'MMM dd, yyyy')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Updated:</span>
+                      <span className="text-foreground">{format(new Date(content.updated_at), 'MMM dd, yyyy')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Relative:</span>
+                      <span className="text-foreground">{formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}</span>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
 
-          {/* Timestamps */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created:</span>
-                  <span>{format(new Date(content.created_at), 'MMM dd, yyyy HH:mm')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last Updated:</span>
-                  <span>{format(new Date(content.updated_at), 'MMM dd, yyyy HH:mm')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Relative:</span>
-                  <span>{formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-6 border-t">
-          <Button onClick={handleEdit} className="flex-1">
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Content
-          </Button>
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Close
-          </Button>
-        </div>
+              {/* Actions */}
+              <Card className="bg-muted/5 border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground">Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button
+                    onClick={handleEdit}
+                    className="w-full gap-2 bg-primary/20 border-primary/30 text-primary hover:bg-primary/30"
+                    variant="outline"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Content
+                  </Button>
+                  
+                  <Button
+                    onClick={onClose}
+                    variant="outline"
+                    className="w-full gap-2 bg-muted/10 border-border text-muted-foreground hover:bg-muted/20"
+                  >
+                    Close
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
