@@ -67,9 +67,8 @@ export default function NavItems() {
     '/research/topic-clusters'
   ];
   
-  // More-related routes
+  // More-related routes  
   const moreRoutes = [
-    '/research/content-gaps',
     '/research/calendar',
     '/research/pipeline'
   ];
@@ -216,14 +215,14 @@ export default function NavItems() {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link 
-              to="/research/keyword-research" 
+              to="/research/research-hub" 
               className={cn(
                 'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/keyword-research' && 'bg-accent text-accent-foreground'
+                location.pathname === '/research/research-hub' && 'bg-accent text-accent-foreground'
               )}
             >
               <Search className="h-4 w-4" />
-              Keyword Research
+              Research Hub
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -236,18 +235,6 @@ export default function NavItems() {
             >
               <Target className="h-4 w-4" />
               Opportunities
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/research/answer-the-people" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/answer-the-people' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <Users className="h-4 w-4" />
-              Answer the People
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -294,18 +281,6 @@ export default function NavItems() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52 bg-card border border-white/10 z-50">
-          <DropdownMenuItem asChild>
-            <Link 
-              to="/research/content-gaps" 
-              className={cn(
-                'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/research/content-gaps' && 'bg-accent text-accent-foreground'
-              )}
-            >
-              <FileSearch className="h-4 w-4" />
-              Content Gaps
-            </Link>
-          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link 
               to="/research/calendar" 

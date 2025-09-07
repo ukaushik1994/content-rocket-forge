@@ -16,8 +16,7 @@ import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
 import ContentStrategy from "./pages/research/ContentStrategy";
-import KeywordResearch from "./pages/research/KeywordResearch";
-import AnswerThePeople from "./pages/research/AnswerThePeople";
+import ResearchHub from "./pages/research/ResearchHub";
 import TopicClusters from "./pages/research/TopicClusters";
 import OpportunitiesPage from "./pages/research/Opportunities";
 import ContentGapsPage from "./pages/research/ContentGaps";
@@ -69,8 +68,9 @@ const App = () => (
                   
                   {/* Research routes */}
                   <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
-                  <Route path="/research/keyword-research" element={<ProtectedRoute><KeywordResearch /></ProtectedRoute>} />
-                  <Route path="/research/answer-the-people" element={<ProtectedRoute><AnswerThePeople /></ProtectedRoute>} />
+                   <Route path="/research/research-hub" element={<ProtectedRoute><ResearchHub /></ProtectedRoute>} />
+                   <Route path="/research/keyword-research" element={<Navigate to="/research/research-hub#keyword-intelligence" replace />} />
+                   <Route path="/research/answer-the-people" element={<Navigate to="/research/research-hub#people-questions" replace />} />
                   <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
                   <Route path="/research/opportunities" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
                   <Route path="/research/opportunity-hunter" element={<Navigate to="/research/opportunities" replace />} />
