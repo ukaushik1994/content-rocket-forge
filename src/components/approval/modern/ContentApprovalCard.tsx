@@ -267,74 +267,124 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
 
           {/* Action Buttons */}
           <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onView(content)}
-              className="flex-1 bg-background/40 hover:bg-background/60 border-border/50"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Review
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onView(content)}
+                    className="bg-background/40 hover:bg-background/60 border-border/50"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span className="text-xs">Review Content</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             {onViewReport && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onViewReport(content)}
-                className="flex-1 bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                AI Report
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onViewReport(content)}
+                      className="bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary"
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">View AI Report</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             
             {onAnalyzeAI && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onAnalyzeAI(content)}
-                className="bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary"
-                disabled={isAnalyzing}
-                aria-label="Reanalyze content with AI"
-              >
-                {isAnalyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                Reanalyze
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onAnalyzeAI(content)}
+                      className="bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary"
+                      disabled={isAnalyzing}
+                      aria-label="Reanalyze content with AI"
+                    >
+                      {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Reanalyze with AI</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
 
             {onAssignReviewer && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onAssignReviewer(content)}
-                className="border-border/50"
-              >
-                <User className="h-4 w-4 mr-2" />
-                Assign
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onAssignReviewer(content)}
+                      className="border-border/50"
+                    >
+                      <User className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Assign Reviewer</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
 
             {onViewHistory && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onViewHistory(content)}
-                className="text-muted-foreground"
-              >
-                History
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onViewHistory(content)}
+                      className="text-muted-foreground"
+                    >
+                      <Clock className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">View History</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             
             {status === 'pending_review' && onApprove && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onApprove(content.id)}
-                className="bg-green-500/10 hover:bg-green-500/20 border-green-500/30 text-green-400"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onApprove(content.id)}
+                      className="bg-green-500/10 hover:bg-green-500/20 border-green-500/30 text-green-400"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Approve Content</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </CardContent>
