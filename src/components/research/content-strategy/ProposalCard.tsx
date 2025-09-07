@@ -102,20 +102,20 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
           }
         }}
       >
-      {/* Selection Checkbox */}
+      {/* View Details Button */}
       <div className="absolute top-3 right-3 z-10">
-        <div 
-          className={`p-1 rounded transition-all duration-200 ${
-            isSelected ? 'bg-blue-500/20' : 'bg-white/10'
-          }`}
-          onClick={(e) => e.stopPropagation()}
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            setDetailModalOpen(true);
+          }}
+          size="sm"
+          variant="outline"
+          className="bg-white/10 border-white/20 text-white/80 hover:bg-white/20 w-10 h-8 p-0"
+          title="View Details"
         >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={(checked) => onSelectionChange(index, !!checked)}
-            className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-          />
-        </div>
+          <Eye className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* New Proposal Indicator */}
@@ -236,20 +236,6 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
           >
             <CheckCircle2 className="h-4 w-4" />
             {isSelected ? 'Selected' : 'Select'}
-          </Button>
-          
-          {/* Icon-based actions */}
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              setDetailModalOpen(true);
-            }}
-            size="sm"
-            variant="outline"
-            className="bg-white/10 border-white/20 text-white/80 hover:bg-white/20 w-10 h-8 p-0"
-            title="View Details"
-          >
-            <Eye className="h-4 w-4" />
           </Button>
           
           <Button
