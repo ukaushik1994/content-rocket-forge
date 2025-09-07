@@ -2,18 +2,37 @@ import React from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Button } from '@/components/ui/button';
 import { CustomBadge } from '@/components/ui/custom-badge';
-import { Eye, FileText, BookOpen, Mail, Globe, MessageSquare, Edit } from 'lucide-react';
+import { Eye, FileText, BookOpen, Mail, Globe, MessageSquare, Edit, MoreHorizontal, BarChart2, Archive, Trash } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface RepositoryListItemProps {
   content: ContentItemType;
   onView: () => void;
+  onEdit?: () => void;
+  onPreview?: () => void;
+  onAnalyze?: () => void;
+  onPublish?: () => void;
+  onArchive?: () => void;
+  onDelete?: () => void;
 }
 
 export const RepositoryListItem: React.FC<RepositoryListItemProps> = ({ 
   content, 
-  onView 
+  onView,
+  onEdit,
+  onPreview,
+  onAnalyze,
+  onPublish,
+  onArchive,
+  onDelete
 }) => {
   const getContentTypeIcon = (type: string) => {
     switch (type) {
@@ -91,6 +110,66 @@ export const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
             <Eye className="h-4 w-4 mr-2" />
             View
           </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="glass-button bg-background/40 backdrop-blur-sm border-white/10 hover:border-white/20 px-2"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">More options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end" 
+              className="glass-panel bg-background/95 backdrop-blur-sm border-white/10"
+            >
+              {onEdit && (
+                <DropdownMenuItem onClick={onEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {onPreview && (
+                <DropdownMenuItem onClick={onPreview}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </DropdownMenuItem>
+              )}
+              {onAnalyze && (
+                <DropdownMenuItem onClick={onAnalyze}>
+                  <BarChart2 className="h-4 w-4 mr-2" />
+                  Analyze
+                </DropdownMenuItem>
+              )}
+              {onPublish && content.status === 'draft' && (
+                <DropdownMenuItem onClick={onPublish}>
+                  <span className="text-xs mr-2">📤</span>
+                  Publish
+                </DropdownMenuItem>
+              )}
+              {onArchive && content.status !== 'archived' && (
+                <DropdownMenuItem onClick={onArchive}>
+                  <Archive className="h-4 w-4 mr-2" />
+                  Archive
+                </DropdownMenuItem>
+              )}
+              {(onEdit || onPreview || onAnalyze || onPublish || onArchive) && onDelete && (
+                <DropdownMenuSeparator />
+              )}
+              {onDelete && (
+                <DropdownMenuItem 
+                  className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                  onClick={onDelete}
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </motion.div>

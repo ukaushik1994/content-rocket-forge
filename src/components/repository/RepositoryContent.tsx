@@ -7,6 +7,8 @@ import { EmptyState } from './EmptyState';
 import { LoadingState } from './LoadingState';
 import { useContent } from '@/contexts/content';
 import { ContentItemType, ContentType } from '@/contexts/content/types';
+import { useContentActions } from '@/components/content/repository/hooks/useContentActions';
+import { ContentDialogs } from '@/components/content/repository/ContentDialogs';
 import { motion } from 'framer-motion';
 
 interface RepositoryContentProps {
@@ -17,6 +19,15 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
   onOpenDetailView 
 }) => {
   const { contentItems, loading } = useContent();
+  const {
+    selectedContentId,
+    isEditDialogOpen,
+    setIsEditDialogOpen,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    isDeleting,
+    actions
+  } = useContentActions();
   const [filteredItems, setFilteredItems] = useState<ContentItemType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -136,8 +147,25 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
         <RepositoryList 
           items={filteredItems}
           onOpenDetailView={onOpenDetailView}
+          onEdit={(content) => actions.handleEditContent(content.id)}
+          onPreview={(content) => actions.handlePreviewContent(content.id)}
+          onAnalyze={(content) => actions.handleAnalyzeContent(content.id)}
+          onPublish={(content) => actions.handlePublishContent(content.id)}
+          onArchive={(content) => actions.handleArchiveContent(content.id)}
+          onDelete={(content) => actions.handleDeleteContent(content.id)}
         />
       )}
+
+      <ContentDialogs
+        selectedContent={contentItems.find(item => item.id === selectedContentId) || null}
+        isEditDialogOpen={isEditDialogOpen}
+        setIsEditDialogOpen={setIsEditDialogOpen}
+        isDeleteDialogOpen={isDeleteDialogOpen}
+        setIsDeleteDialogOpen={setIsDeleteDialogOpen}
+        isDeleting={isDeleting}
+        onSaveContent={actions.handleSaveContent}
+        onConfirmDelete={actions.confirmDelete}
+      />
     </motion.div>
   );
 };
