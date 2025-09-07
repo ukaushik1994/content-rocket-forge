@@ -13,6 +13,52 @@ interface PersonaSelectorProps {
   className?: string;
 }
 
+// Default personas available when no user personas exist
+const defaultPersonas: SolutionPersona[] = [
+  {
+    id: 'default-end-user',
+    personaName: 'End User',
+    personaType: 'end_user' as PersonaType,
+    roleTitle: 'Product User',
+    preferredTone: 'Clear and practical',
+    typicalGoals: ['Solve immediate problems', 'Easy to use solutions', 'Quick implementation'],
+    painPoints: ['Complex interfaces', 'Time constraints', 'Learning curves'],
+    keyTopics: ['Usability', 'Implementation', 'Practical benefits'],
+    solutionId: '',
+    userId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'default-decision-maker',
+    personaName: 'Decision Maker',
+    personaType: 'decision_maker' as PersonaType,
+    roleTitle: 'Executive/Manager',
+    preferredTone: 'Professional and data-driven',
+    typicalGoals: ['ROI and business impact', 'Risk mitigation', 'Strategic advantage'],
+    painPoints: ['Budget constraints', 'Implementation risks', 'Stakeholder alignment'],
+    keyTopics: ['ROI', 'Business value', 'Risk management'],
+    solutionId: '',
+    userId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'default-technical-influencer',
+    personaName: 'Technical Influencer',
+    personaType: 'influencer' as PersonaType,
+    roleTitle: 'Technical Lead/Architect',
+    preferredTone: 'Technical and detailed',
+    typicalGoals: ['Architecture excellence', 'Performance optimization', 'Technical feasibility'],
+    painPoints: ['Technical debt', 'Scalability concerns', 'Integration complexity'],
+    keyTopics: ['Architecture', 'Performance', 'Technical specs'],
+    solutionId: '',
+    userId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
 const personaTypeIcons: Record<PersonaType, React.ReactNode> = {
   end_user: <User className="h-4 w-4" />,
   decision_maker: <Target className="h-4 w-4" />,
@@ -31,29 +77,9 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
   onSelectionChange,
   className = ''
 }) => {
-  if (personas.length === 0) {
-    return (
-      <Card className={`bg-gradient-to-br from-background via-muted/5 to-background border border-border backdrop-blur-sm rounded-xl shadow-lg ${className}`}>
-        <CardHeader className="pb-3 bg-card/50">
-          <CardTitle className="text-lg text-foreground">Target Personas</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            No personas available for targeted content generation
-          </p>
-        </CardHeader>
-        <CardContent className="py-6 text-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="p-3 rounded-full bg-muted/20">
-              <User className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <p className="text-muted-foreground">No personas found</p>
-            <p className="text-xs text-muted-foreground">
-              Content will be generated with general targeting
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Use default personas when no user personas are available
+  const availablePersonas = personas.length > 0 ? personas : defaultPersonas;
+  const isUsingDefaults = personas.length === 0;
 
   const handlePersonaToggle = (personaId: string, checked: boolean) => {
     if (checked) {
@@ -64,10 +90,10 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
   };
 
   const handleSelectAll = () => {
-    if (selectedPersonas.length === personas.length) {
+    if (selectedPersonas.length === availablePersonas.length) {
       onSelectionChange([]);
     } else {
-      onSelectionChange(personas.map(p => p.id));
+      onSelectionChange(availablePersonas.map(p => p.id));
     }
   };
 
@@ -77,11 +103,16 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg text-foreground">Target Personas</CardTitle>
           <div className="flex items-center gap-2">
+            {isUsingDefaults && (
+              <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary text-xs">
+                Default Personas
+              </Badge>
+            )}
             <Badge variant="outline" className="border-border/60 bg-card/80">
-              {selectedPersonas.length} of {personas.length} selected
+              {selectedPersonas.length} of {availablePersonas.length} selected
             </Badge>
             <Checkbox
-              checked={selectedPersonas.length === personas.length}
+              checked={selectedPersonas.length === availablePersonas.length}
               onCheckedChange={handleSelectAll}
               className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-border/60 bg-card/80 hover:border-primary/50"
             />
@@ -89,12 +120,15 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Select personas to generate targeted content. Each persona will receive customized content.
+          {isUsingDefaults 
+            ? 'Using built-in personas for targeted content generation. Create custom personas for better targeting.'
+            : 'Select personas to generate targeted content. Each persona will receive customized content.'
+          }
         </p>
       </CardHeader>
       
       <CardContent className="space-y-3">
-        {personas.map((persona) => (
+        {availablePersonas.map((persona) => (
           <motion.div
             key={persona.id}
             initial={{ opacity: 0, scale: 0.95 }}
