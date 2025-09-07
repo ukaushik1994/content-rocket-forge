@@ -116,34 +116,20 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none p-0 border-none overflow-hidden">
-        <div className="h-full bg-background flex flex-col">
-          {/* Header */}
-          <div className="flex-shrink-0 border-b border-border bg-card/50 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">{content.title}</h2>
-                <p className="text-muted-foreground text-sm capitalize mt-1">
-                  {content.content_type.replace('_', ' ')} • {content.status}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+      <DialogContent className="max-w-4xl bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="text-2xl font-bold text-foreground pr-8">
+            {content.title}
+          </DialogTitle>
+          <div className="text-sm text-muted-foreground capitalize">
+            {content.content_type.replace('_', ' ')} • {content.status}
           </div>
+        </DialogHeader>
 
-          {/* Content */}
-          <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full" hideScrollbar>
-              <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 p-6">
-                {/* Main Content */}
-                <div className="xl:col-span-3 space-y-6">
+        <ScrollArea className="h-[calc(90vh-8rem)] flex-1 min-h-0" hideScrollbar>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pr-4">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
               {/* Description */}
               {content.metadata?.description && (
                 <Card className="bg-muted/5 border-border">
@@ -159,7 +145,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 </Card>
               )}
 
-              {/* Full Content Preview */}
+              {/* Content Preview */}
               <Card className="bg-muted/5 border-border">
                 <CardHeader>
                   <CardTitle className="text-lg text-foreground flex items-center gap-2">
@@ -185,9 +171,23 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </div>
                   ) : (
                     <div className="prose prose-sm max-w-none">
-                      <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                        {content.content || 'No content available'}
+                      <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
+                        {content.content ? (
+                          content.content.length > 300 
+                            ? content.content.substring(0, 300) + '...'
+                            : content.content
+                        ) : 'No content available'}
                       </div>
+                      {content.content && content.content.length > 300 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="mt-2 text-primary hover:text-primary/80"
+                          onClick={() => toast.info('Full content view coming soon')}
+                        >
+                          Show More
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -236,56 +236,55 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   <OptimizationBadges metadata={content.metadata} />
                 </div>
 
-                {/* Sidebar */}
-                <div className="xl:col-span-2 space-y-4">
-              {/* Header with Icon, Status & Actions */}
+            {/* Sidebar */}
+            <div className="space-y-4">
+              {/* Content Type & Status */}
               <Card className="bg-muted/5 border-border">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg bg-gradient-to-r ${colorGradient} text-white shadow-lg`}>
-                        <IconComponent className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <Badge className={getStatusColor(content.status)} variant="outline">
-                          {content.status}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1 capitalize">
-                          {content.content_type.replace('_', ' ')}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`p-2 rounded-lg bg-gradient-to-r ${colorGradient} text-white shadow-lg`}>
+                      <IconComponent className="h-6 w-6" />
                     </div>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleEdit}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleDuplicate}>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex-1">
+                      <Badge className={getStatusColor(content.status)} variant="outline">
+                        {content.status}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground mt-1 capitalize">
+                        {content.content_type.replace('_', ' ')}
+                      </p>
+                    </div>
                   </div>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full gap-2">
+                        <MoreVertical className="h-4 w-4" />
+                        More Actions
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={handleEdit}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDuplicate}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </CardContent>
               </Card>
 
-              {/* Content Metrics */}
+              {/* Key Metrics */}
               <Card className="bg-muted/5 border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg text-foreground">Content Metrics</CardTitle>
+                  <CardTitle className="text-lg text-foreground">Key Metrics</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -388,21 +387,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     <Edit className="h-4 w-4" />
                     Edit Content
                   </Button>
-                  
-                  <Button
-                    onClick={onClose}
-                    variant="outline"
-                    className="w-full gap-2 bg-muted/10 border-border text-muted-foreground hover:bg-muted/20"
-                  >
-                    Close
-                  </Button>
                 </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </ScrollArea>
+              </Card>
+            </div>
           </div>
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
