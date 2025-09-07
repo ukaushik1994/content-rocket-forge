@@ -158,34 +158,19 @@ export const PeopleQuestionsTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Description with glassmorphism */}
-      <motion.div 
-        className="text-center space-y-6 bg-gradient-to-b from-white/5 to-transparent p-8 rounded-2xl border border-white/10 backdrop-blur-sm"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <motion.h2 
-          className="text-3xl font-bold bg-gradient-to-r from-green-400 via-blue-400 to-purple-500 bg-clip-text text-transparent flex items-center justify-center gap-3"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-        >
-          <Users className="h-7 w-7 text-green-400" />
-          People Questions Intelligence
-        </motion.h2>
-        <motion.p 
-          className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-        >
+      {/* Enhanced Description */}
+      <div className="text-center space-y-4">
+        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-2">
+          <Users className="h-6 w-6 text-primary" />
+          People Questions Analysis
+        </h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
           Discover what your audience is asking about any topic. Analyze real questions from search engines and create content that answers their needs.
-        </motion.p>
-      </motion.div>
+        </p>
+      </div>
 
-      {/* Enhanced Search Interface */}
-      <Card className="bg-black/20 backdrop-blur-xl border-white/20 shadow-2xl">
+      {/* Search Interface */}
+      <Card className="bg-background/60 backdrop-blur-sm border-border/50">
         <CardContent className="p-6">
           <div className="flex gap-4">
             <div className="flex-1">
@@ -227,14 +212,14 @@ export const PeopleQuestionsTab: React.FC = () => {
         >
           {/* Selected Questions Summary */}
           {selectedQuestions.length > 0 && (
-            <Card className="bg-gradient-to-r from-green-500/10 to-purple-500/10 border-green-500/30 backdrop-blur-sm shadow-lg">
+            <Card className="bg-primary/10 border-primary/30 backdrop-blur-sm">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-primary" />
                     <span className="font-medium">{selectedQuestions.length} questions selected</span>
                   </div>
-                  <Button onClick={handleCreateContent} size="sm" className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg">
+                  <Button onClick={handleCreateContent} size="sm" className="bg-primary hover:bg-primary/90">
                     <Plus className="h-4 w-4 mr-2" />
                     Create FAQ Content
                   </Button>
@@ -245,7 +230,7 @@ export const PeopleQuestionsTab: React.FC = () => {
 
           {/* Questions Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-black/20 backdrop-blur-sm border border-white/20 rounded-xl p-1 shadow-lg">
+            <TabsList className="grid w-full grid-cols-4 bg-background/60 backdrop-blur-sm border border-border/50">
               <TabsTrigger value="questions" className="flex items-center gap-2">
                 <HelpCircle className="h-4 w-4" />
                 Questions
