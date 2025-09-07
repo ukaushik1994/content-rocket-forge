@@ -2,21 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { DashboardAlert, fetchAlerts, subscribeToAlerts } from '@/services/notificationsService';
+import { useNotifications } from '@/hooks/use-notifications';
 import { EnhancedNotificationsCenter } from './EnhancedNotificationsCenter';
 
 export const NotificationBell: React.FC = () => {
   const { user } = useAuth();
-  const userId = user?.id;
   const [open, setOpen] = useState(false);
-  const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchAlerts(userId, 20).then(setAlerts);
-    const unsub = subscribeToAlerts(userId, (a) => setAlerts((prev) => [a, ...prev]));
-    return () => unsub();
-  }, [userId]);
+  const { notifications, unreadCount, refresh } = useNotifications({
+    autoRefresh: true,
+    limit: 20,
+  });
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -25,30 +20,30 @@ export const NotificationBell: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
-    const refresh = () => fetchAlerts(userId, 20).then(setAlerts);
-    document.addEventListener('alerts-updated', refresh as any);
-    return () => document.removeEventListener('alerts-updated', refresh as any);
-  }, [userId]);
-
-  const unreadCount = useMemo(() => alerts.filter(a => (a.status === 'unread') || a.is_read === false).length, [alerts]);
+    const refreshHandler = () => refresh();
+    document.addEventListener('alerts-updated', refreshHandler as any);
+    return () => document.removeEventListener('alerts-updated', refreshHandler as any);
+  }, [refresh]);
 
   return (
     <div className="relative">
       <Button
         variant="ghost"
         size="icon"
-        className="rounded-full overflow-hidden border border-border relative"
+        className="rounded-full overflow-hidden border border-border relative hover:bg-accent/50 transition-colors"
         onClick={() => setOpen((v) => !v)}
         title="Notifications"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-4 min-w-[16px] rounded-full bg-primary text-primary-foreground text-[10px] leading-4 text-center px-1">
+          <span className="absolute -top-1 -right-1 h-4 min-w-[16px] rounded-full bg-primary text-primary-foreground text-[10px] leading-4 text-center px-1 animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </Button>
+      {open && (
+        <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+      )}
       <EnhancedNotificationsCenter open={open} onClose={() => setOpen(false)} />
     </div>
   );

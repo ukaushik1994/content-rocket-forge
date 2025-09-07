@@ -213,10 +213,10 @@ export const EnhancedNotificationsCenter: React.FC<EnhancedNotificationsCenterPr
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: -10 }}
       transition={{ duration: 0.2 }}
-      className="absolute right-2 top-14 z-50 w-[420px] max-h-[80vh] overflow-hidden rounded-xl border border-border/50 bg-background/95 backdrop-blur-lg shadow-2xl"
+      className="absolute right-2 top-14 z-50 w-[420px] max-h-[80vh] overflow-hidden rounded-xl border border-border bg-background backdrop-blur-xl shadow-2xl"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-gradient-to-r from-background to-muted/20">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-background to-muted/20">
         <div className="flex items-center gap-2">
           <div className="relative">
             <Bell className="h-5 w-5 text-primary" />
@@ -258,7 +258,7 @@ export const EnhancedNotificationsCenter: React.FC<EnhancedNotificationsCenterPr
       </div>
 
       {/* Search and Filters */}
-      <div className="p-3 space-y-3 border-b border-border/40 bg-muted/10">
+      <div className="p-3 space-y-3 border-b border-border bg-muted/5">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input

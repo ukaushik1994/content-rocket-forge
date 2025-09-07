@@ -26,6 +26,7 @@ import CalendarPage from "./pages/research/Calendar";
 
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
+import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
 import { ContentProvider } from "@/contexts/content";
@@ -79,10 +80,13 @@ const App = () => (
                    <Route path="/research/pipeline" element={<Navigate to="/research/content-strategy#pipeline" replace />} />
                   
 
-                  {/* Smart Actions Analytics */}
-                  <Route path="/smart-actions/analytics" element={<ProtectedRoute><SmartActionsAnalytics /></ProtectedRoute>} />
-                  
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                   {/* Smart Actions Analytics */}
+                   <Route path="/smart-actions/analytics" element={<ProtectedRoute><SmartActionsAnalytics /></ProtectedRoute>} />
+                   
+                   {/* Notification Demo */}
+                   <Route path="/notifications/demo" element={<ProtectedRoute><NotificationDemo /></ProtectedRoute>} />
+                   
+                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>

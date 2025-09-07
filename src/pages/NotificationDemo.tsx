@@ -1,0 +1,21 @@
+import React from 'react';
+import Navbar from '@/components/layout/Navbar';
+import { NotificationDemo as NotificationDemoComponent } from '@/components/notifications/NotificationDemo';
+import { Helmet } from 'react-helmet-async';
+
+export default function NotificationDemo() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+      <Helmet>
+        <title>Notification System Demo - Lovable</title>
+        <meta name="description" content="Try out the notification system with interactive demos" />
+      </Helmet>
+      
+      <Navbar />
+      
+      <main className="container mx-auto px-4 py-8">
+        <NotificationDemoComponent />
+      </main>
+    </div>
+  );
+}
