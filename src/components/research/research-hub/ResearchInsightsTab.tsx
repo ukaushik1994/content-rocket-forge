@@ -71,21 +71,39 @@ export const ResearchInsightsTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Description */}
-      <div className="text-center space-y-4">
-        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-2">
-          <BarChart3 className="h-6 w-6 text-primary" />
-          Research Insights Dashboard
-        </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+      {/* Enhanced Description with glassmorphism */}
+      <motion.div 
+        className="text-center space-y-6 bg-gradient-to-b from-white/5 to-transparent p-8 rounded-2xl border border-white/10 backdrop-blur-sm"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.h2 
+          className="text-3xl font-bold bg-gradient-to-r from-orange-400 via-pink-400 to-purple-500 bg-clip-text text-transparent flex items-center justify-center gap-3"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <BarChart3 className="h-7 w-7 text-orange-400" />
+          Research Insights Command Center
+        </motion.h2>
+        <motion.p 
+          className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           Unified view of all your research activities. Track performance, identify patterns, and discover high-impact opportunities across all your research sessions.
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
 
-      {/* Key Metrics Overview */}
+      {/* Enhanced Key Metrics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <motion.div whileHover={{ scale: 1.02 }}>
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 backdrop-blur-sm">
+        <motion.div 
+          whileHover={{ scale: 1.02, y: -5 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30 backdrop-blur-xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -102,8 +120,11 @@ export const ResearchInsightsTab: React.FC = () => {
           </Card>
         </motion.div>
 
-        <motion.div whileHover={{ scale: 1.02 }}>
-          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20 backdrop-blur-sm">
+        <motion.div 
+          whileHover={{ scale: 1.02, y: -5 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/30 backdrop-blur-xl shadow-2xl hover:shadow-purple-500/25 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -120,8 +141,11 @@ export const ResearchInsightsTab: React.FC = () => {
           </Card>
         </motion.div>
 
-        <motion.div whileHover={{ scale: 1.02 }}>
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20 backdrop-blur-sm">
+        <motion.div 
+          whileHover={{ scale: 1.02, y: -5 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30 backdrop-blur-xl shadow-2xl hover:shadow-green-500/25 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -138,8 +162,11 @@ export const ResearchInsightsTab: React.FC = () => {
           </Card>
         </motion.div>
 
-        <motion.div whileHover={{ scale: 1.02 }}>
-          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20 backdrop-blur-sm">
+        <motion.div 
+          whileHover={{ scale: 1.02, y: -5 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="bg-gradient-to-br from-orange-500/20 to-orange-600/10 border-orange-500/30 backdrop-blur-xl shadow-2xl hover:shadow-orange-500/25 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -158,13 +185,13 @@ export const ResearchInsightsTab: React.FC = () => {
       </div>
 
       {/* Top Opportunities */}
-      <Card className="bg-background/60 backdrop-blur-sm border-border/50">
+      <Card className="bg-black/20 backdrop-blur-xl border-white/20 shadow-2xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-primary" />
             Top Opportunities This Week
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={handleExportReport}>
+          <Button variant="outline" size="sm" onClick={handleExportReport} className="border-white/20 hover:bg-white/10 backdrop-blur-sm">
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>

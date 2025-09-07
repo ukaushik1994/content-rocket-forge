@@ -172,26 +172,41 @@ export const ContentPipelineTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Description */}
-      <div className="text-center space-y-4">
-        <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-2">
-          <Plus className="h-6 w-6 text-primary" />
-          Content Pipeline
-        </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+      {/* Enhanced Description with glassmorphism */}
+      <motion.div 
+        className="text-center space-y-6 bg-gradient-to-b from-white/5 to-transparent p-8 rounded-2xl border border-white/10 backdrop-blur-sm"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.h2 
+          className="text-3xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-500 bg-clip-text text-transparent flex items-center justify-center gap-3"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <Plus className="h-7 w-7 text-pink-400" />
+          Content Creation Pipeline
+        </motion.h2>
+        <motion.p 
+          className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           Transform your research into content. Select insights from keyword research, content gaps, and people questions to create high-performing content.
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
 
       {/* Quick Actions */}
-      <Card className="bg-background/60 backdrop-blur-sm border-border/50">
+      <Card className="bg-black/20 backdrop-blur-xl border-white/20 shadow-2xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-primary" />
             Quick Content Creation
           </CardTitle>
           {selectedItems.length > 0 && (
-            <Badge className="bg-primary/20 text-primary">
+            <Badge className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-300 border-pink-500/30">
               {selectedItems.length} items selected
             </Badge>
           )}
@@ -201,21 +216,22 @@ export const ContentPipelineTab: React.FC = () => {
             {quickActions.map((action, index) => (
               <motion.div
                 key={action.title}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300 }}
               >
                 <Card 
-                  className={`cursor-pointer hover:border-primary/50 transition-all ${
+                  className={`cursor-pointer hover:border-pink-500/50 transition-all duration-300 bg-black/10 backdrop-blur-sm border-white/20 hover:shadow-2xl hover:shadow-pink-500/25 ${
                     selectedItems.length === 0 ? 'opacity-50' : ''
                   }`}
                   onClick={action.action}
                 >
                   <CardContent className="p-6 text-center">
-                    <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                    <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg`}>
                       <action.icon className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="font-semibold mb-2">{action.title}</h3>
-                    <p className="text-sm text-muted-foreground">{action.description}</p>
+                    <h3 className="font-semibold mb-2 text-white">{action.title}</h3>
+                    <p className="text-sm text-white/70">{action.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -225,7 +241,7 @@ export const ContentPipelineTab: React.FC = () => {
       </Card>
 
       {/* Research Items Pipeline */}
-      <Card className="bg-background/60 backdrop-blur-sm border-border/50">
+      <Card className="bg-black/20 backdrop-blur-xl border-white/20 shadow-2xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
