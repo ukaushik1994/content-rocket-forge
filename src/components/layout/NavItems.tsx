@@ -158,7 +158,7 @@ export default function NavItems() {
       <NavItem 
         to="/research/research-hub" 
         icon={<Search className="h-4 w-4" />} 
-        label="Research Hub" 
+        label="Research" 
         active={location.pathname === '/research/research-hub'} 
       />
       
@@ -166,7 +166,7 @@ export default function NavItems() {
       <NavItem 
         to="/research/content-strategy" 
         icon={<Target className="h-4 w-4" />} 
-        label="Content Strategy" 
+        label="Strategy" 
         active={location.pathname === '/research/content-strategy'} 
       />
       
