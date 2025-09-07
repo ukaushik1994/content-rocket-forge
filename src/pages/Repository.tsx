@@ -6,7 +6,7 @@ import { useContent } from '@/contexts/content';
 import { ContentItemType } from '@/contexts/content/types';
 import { RepositoryHero } from '@/components/repository/RepositoryHero';
 import { RepositoryTabs } from '@/components/repository/RepositoryTabs';
-import { RepositoryDetailView } from '@/components/repository/RepositoryDetailView';
+import { ContentDetailModal } from '@/components/repository/ContentDetailModal';
 import { toast } from 'sonner';
 
 const Repository = () => {
@@ -143,7 +143,7 @@ const Repository = () => {
         </motion.div>
       </div>
 
-      <RepositoryDetailView 
+      <ContentDetailModal 
         content={selectedContent} 
         open={detailViewOpen} 
         onClose={() => setDetailViewOpen(false)} 
