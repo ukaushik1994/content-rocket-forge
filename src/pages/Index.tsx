@@ -128,7 +128,7 @@ const Index = () => {
         
         <Navbar />
         
-        <main className="flex-1 py-8 relative z-0">
+        <main className="flex-1 pt-24 pb-8 relative z-0">
           <Container>
             <motion.div className="space-y-16" initial="hidden" animate={isLoaded ? "visible" : "hidden"} variants={containerVariants}>
               {/* Enhanced Welcome/Hero Section */}
