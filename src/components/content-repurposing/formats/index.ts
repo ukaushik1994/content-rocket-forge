@@ -7,7 +7,6 @@ import {
   Instagram,
   Film,
   Mail,
-  Book,
   Ticket,
   Radio,
   ListTree,
@@ -64,12 +63,6 @@ export const contentFormats: ContentFormat[] = [
     name: 'Email Newsletter',
     description: 'Content formatted for email campaigns',
     icon: Mail
-  },
-  {
-    id: 'glossary',
-    name: 'Glossary',
-    description: 'Key terms and definitions',
-    icon: Book
   },
   {
     id: 'meme',

@@ -47,12 +47,6 @@ export const alternativeContentFormats: ContentFormat[] = [
     icon: FileText
   },
   { 
-    id: 'glossary', 
-    name: 'Glossary', 
-    description: 'List of definitions and terminology',
-    icon: Book
-  },
-  { 
     id: 'carousel', 
     name: 'Carousel', 
     description: 'Content split into sequential slides',
@@ -70,8 +64,6 @@ export const alternativeContentFormats: ContentFormat[] = [
 // but they should now return the proper ContentFormat type
 export const getFormatIconComponent = (formatId: string) => {
   switch (formatId) {
-    case 'glossary':
-      return Book;
     case 'carousel':
       return Images;
     case 'meme':
