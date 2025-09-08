@@ -16,7 +16,7 @@ import { SerpAnalysisModal } from './keyword-analysis/SerpAnalysisModal';
 import { SelectionManagerModal } from './keyword-analysis/SelectionManagerModal';
 import { SelectionSummaryCard } from './keyword-analysis/SelectionSummaryCard';
 import { DataSourceIndicator } from './keyword-analysis/DataSourceIndicator';
-import { CollapsibleRightSidebar } from './keyword-analysis/CollapsibleRightSidebar';
+import { FloatingSelectionWindow } from './keyword-analysis/FloatingSelectionWindow';
 import { ContentBuilderKeywordLibrary } from '@/components/content-builder/keyword/ContentBuilderKeywordLibrary';
 import { KeywordIntelligencePanel } from '@/components/content-builder/keyword/KeywordIntelligencePanel';
 import { toast } from 'sonner';
@@ -497,17 +497,15 @@ export const KeywordSelectionStep = () => {
         </AnimatePresence>
       </div>
 
-      {/* Collapsible Right Sidebar */}
-      {hasSearched && (
-        <CollapsibleRightSidebar
-          selectedKeywords={selectedKeywords}
-          serpSelections={serpSelections}
-          onRemoveKeyword={handleRemoveKeyword}
-          onOpenSelectionManager={() => setShowSelectionManagerModal(true)}
-          onGenerateOutline={handleGenerateOutline}
-          isGeneratingOutline={isGeneratingOutline}
-        />
-      )}
+      {/* Floating Selection Window */}
+      <FloatingSelectionWindow
+        selectedKeywords={selectedKeywords}
+        serpSelections={serpSelections}
+        onRemoveKeyword={handleRemoveKeyword}
+        onOpenSelectionManager={() => setShowSelectionManagerModal(true)}
+        onGenerateOutline={handleGenerateOutline}
+        isGeneratingOutline={isGeneratingOutline}
+      />
 
       {/* Modals */}
       <SerpAnalysisModal
