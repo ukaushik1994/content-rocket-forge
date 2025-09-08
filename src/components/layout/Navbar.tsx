@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings, Puzzle, Bot } from 'lucide-react';
+import { Menu, X, LogOut, UserCircle, User, MessageSquarePlus, Settings, Puzzle, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import NavItems from './NavItems';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useFeedback } from '@/contexts/FeedbackContext';
+import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 
 const Navbar = () => {
   const location = useLocation();
@@ -42,14 +43,8 @@ const Navbar = () => {
       <header className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <div className="mr-4 hidden lg:flex">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="relative">
-                <div className="h-8 w-8 rounded-full bg-neon-blue opacity-40 blur-md absolute"></div>
-                <div className="h-7 w-7 rounded-full bg-glass flex items-center justify-center border border-neon-blue relative">
-                  <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
-                </div>
-              </div>
-              <span className="font-bold text-gradient">CRF</span>
+            <Link to="/">
+              <CreAiterLogo showText={true} size="md" />
             </Link>
           </div>
           
@@ -121,14 +116,8 @@ const Navbar = () => {
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden">
           <div className="fixed inset-y-0 left-0 z-50 w-3/4 bg-background p-6 shadow-lg">
             <div className="flex items-center justify-between mb-8">
-              <Link to="/" className="flex items-center gap-2" onClick={() => setShowMobileMenu(false)}>
-                <div className="relative">
-                  <div className="h-8 w-8 rounded-full bg-neon-blue opacity-40 blur-md absolute"></div>
-                  <div className="h-7 w-7 rounded-full bg-glass flex items-center justify-center border border-neon-blue relative">
-                    <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
-                  </div>
-                </div>
-                <span className="font-bold text-gradient">CreAiter</span>
+              <Link to="/" onClick={() => setShowMobileMenu(false)}>
+                <CreAiterLogo showText={true} size="md" />
               </Link>
               <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
                 <X className="h-5 w-5" />
