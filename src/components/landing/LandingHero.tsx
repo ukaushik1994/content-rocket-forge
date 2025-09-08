@@ -272,155 +272,184 @@ export const LandingHero = () => {
               <BarChart3 className="w-full h-full text-white" />
             </motion.div>
 
-            {/* Main Visual Card */}
-            <motion.div 
-              className="relative"
-              whileHover={{ scale: 1.02, y: -5 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-            >
-              <GlassCard className="p-8 space-y-6 max-w-md ml-auto relative overflow-hidden">
-                {/* Particle Border Effect */}
-                <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-                  {[...Array(12)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-0.5 h-0.5 bg-primary/60 rounded-full"
-                      style={{
-                        left: `${(i / 12) * 100}%`,
-                        top: i % 2 === 0 ? '0%' : '100%',
-                      }}
-                      animate={{
-                        x: i % 2 === 0 ? [0, 20, 0] : [0, -20, 0],
-                        opacity: [0.3, 1, 0.3],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: i * 0.2,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <CreAiterLogo showText={false} size="sm" />
-                  <motion.div 
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
-                    animate={{ opacity: [0.7, 1, 0.7] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    Live AI Assistant
-                  </motion.div>
-                </div>
-
-                {/* Enhanced Content Preview */}
-                <div className="space-y-4">
-                  <motion.div 
-                    className="text-sm font-medium text-foreground flex items-center gap-2"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <motion.span
-                      animate={{ opacity: [0, 1, 0] }}
-                      transition={{ duration: 1, repeat: Infinity, delay: 1 }}
-                    >
-                      ▊
-                    </motion.span>
-                    Content Brief Generated
-                    <CheckCircle className="w-4 h-4 text-green-500 ml-auto" />
-                  </motion.div>
-                  
-                  <div className="space-y-3">
-                    {[
-                      { label: "Target Keywords", value: "15 identified", color: "text-primary", progress: 100 },
-                      { label: "SERP Analysis", value: "Completed", color: "text-neon-blue", progress: 100 },
-                      { label: "Content Score", value: "92/100", color: "text-neon-pink", progress: 92 }
-                    ].map((item, index) => (
-                      <motion.div 
-                        key={index} 
-                        className="p-3 bg-background/50 rounded-lg border border-border/30 relative overflow-hidden"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.7 + index * 0.1 }}
-                      >
-                        {/* Progress bar background */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${item.progress}%` }}
-                          transition={{ delay: 1 + index * 0.2, duration: 1.5, ease: "easeOut" }}
-                        />
-                        
-                        <div className="flex items-center justify-between relative z-10">
-                          <span className="text-sm text-muted-foreground">{item.label}</span>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-sm font-semibold ${item.color}`}>{item.value}</span>
-                            {item.progress === 100 ? (
-                              <CheckCircle className="w-3 h-3 text-green-500" />
-                            ) : (
-                              <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                              >
-                                <Loader2 className="w-3 h-3 text-muted-foreground" />
-                              </motion.div>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button 
-                      size="sm" 
-                      className="w-full bg-gradient-to-r from-primary/20 to-neon-blue/20 text-primary border border-primary/30 hover:from-primary/30 hover:to-neon-blue/30 hover:shadow-neon transition-all duration-300 group relative overflow-hidden"
-                    >
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-primary/10 to-neon-blue/10"
-                        initial={{ x: "-100%" }}
-                        whileHover={{ x: "100%" }}
-                        transition={{ duration: 0.5 }}
-                      />
-                      <span className="relative flex items-center justify-center gap-2">
-                        Generate Content
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </Button>
-                  </motion.div>
-                </div>
-              </GlassCard>
-
-              {/* Enhanced Original Floating Elements */}
+            {/* Enhanced Interactive Icon Playground */}
+            <div className="absolute inset-0 pointer-events-none">
+              {/* Magnetic Hover Icons with Advanced Effects */}
+              
+              {/* Central Hub Icons - More prominent */}
               <motion.div 
-                className="absolute -top-8 -left-8 w-16 h-16 bg-gradient-to-r from-primary to-neon-blue rounded-2xl p-4 shadow-neon"
+                className="absolute top-1/2 left-1/2 w-16 h-16 bg-gradient-to-br from-neon-pink to-purple-600 rounded-3xl p-4 shadow-neon-strong pointer-events-auto cursor-pointer"
+                style={{ transform: 'translate(-50%, -50%)' }}
                 animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0],
+                  rotate: [0, 360],
+                  scale: [1, 1.1, 1],
+                }}
+                whileHover={{ 
+                  scale: 1.3,
+                  rotate: 180,
+                  boxShadow: "0 0 40px rgba(236, 72, 153, 0.6), 0 0 80px rgba(236, 72, 153, 0.3)",
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              >
+                <Brain className="w-full h-full text-white drop-shadow-lg" />
+              </motion.div>
+
+              {/* Orbiting Content Icons */}
+              <motion.div 
+                className="absolute top-1/3 right-1/4 w-12 h-12 bg-gradient-to-br from-neon-blue to-indigo-600 rounded-2xl p-3 shadow-neon pointer-events-auto cursor-pointer"
+                animate={{ 
+                  y: [0, -15, 0],
+                  scale: [1, 1.15, 1],
+                }}
+                whileHover={{
+                  scale: 1.4,
+                  y: -10,
+                  boxShadow: "0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.4)",
+                  transition: { duration: 0.2 }
                 }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               >
+                <FileText className="w-full h-full text-white" />
+              </motion.div>
+
+              <motion.div 
+                className="absolute top-2/3 left-1/3 w-14 h-14 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl p-3 shadow-neon pointer-events-auto cursor-pointer"
+                animate={{ 
+                  x: [0, 12, 0],
+                  rotate: [0, 8, -8, 0],
+                }}
+                whileHover={{
+                  scale: 1.35,
+                  rotate: 15,
+                  boxShadow: "0 0 35px rgba(34, 197, 94, 0.7), 0 0 70px rgba(34, 197, 94, 0.3)",
+                  transition: { duration: 0.2 }
+                }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              >
+                <BarChart3 className="w-full h-full text-white" />
+              </motion.div>
+
+              {/* Scattered Interaction Icons */}
+              <motion.div 
+                className="absolute top-1/4 right-1/6 w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl p-2 shadow-lg pointer-events-auto cursor-pointer"
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.8, 1, 0.8],
+                }}
+                whileHover={{
+                  scale: 1.5,
+                  rotate: 360,
+                  boxShadow: "0 0 25px rgba(245, 158, 11, 0.8), 0 0 50px rgba(245, 158, 11, 0.4)",
+                  transition: { duration: 0.3 }
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              >
+                <Sparkles className="w-full h-full text-white" />
+              </motion.div>
+
+              <motion.div 
+                className="absolute bottom-1/3 right-1/5 w-11 h-11 bg-gradient-to-br from-rose-400 to-red-600 rounded-xl p-2.5 shadow-neon pointer-events-auto cursor-pointer"
+                animate={{ 
+                  y: [0, 10, 0],
+                  x: [0, -8, 0],
+                }}
+                whileHover={{
+                  scale: 1.4,
+                  y: -15,
+                  boxShadow: "0 0 30px rgba(244, 63, 94, 0.8), 0 0 60px rgba(244, 63, 94, 0.4)",
+                  transition: { duration: 0.2 }
+                }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              >
+                <Zap className="w-full h-full text-white" />
+              </motion.div>
+
+              <motion.div 
+                className="absolute top-3/5 right-1/12 w-9 h-9 bg-gradient-to-br from-violet-500 to-purple-700 rounded-lg p-2 shadow-lg pointer-events-auto cursor-pointer"
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  scale: [1, 1.1, 1],
+                }}
+                whileHover={{
+                  scale: 1.6,
+                  rotate: 45,
+                  boxShadow: "0 0 25px rgba(139, 92, 246, 0.8), 0 0 50px rgba(139, 92, 246, 0.4)",
+                  transition: { duration: 0.2 }
+                }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+              >
+                <Target className="w-full h-full text-white" />
+              </motion.div>
+
+              {/* Chain Reaction Icons */}
+              <motion.div 
+                className="absolute bottom-1/4 left-3/4 w-8 h-8 bg-gradient-to-br from-cyan-400 to-teal-600 rounded-full p-2 shadow-lg pointer-events-auto cursor-pointer"
+                animate={{ 
+                  scale: [0.9, 1.1, 0.9],
+                  y: [0, -6, 0],
+                }}
+                whileHover={{
+                  scale: 1.7,
+                  boxShadow: "0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(34, 211, 238, 0.4)",
+                  transition: { duration: 0.2 }
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+              >
                 <Search className="w-full h-full text-white" />
               </motion.div>
-              
+
               <motion.div 
-                className="absolute -bottom-4 -right-6 w-12 h-12 bg-gradient-to-r from-neon-pink to-neon-orange rounded-xl p-3 shadow-lg"
+                className="absolute top-1/6 left-2/3 w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-xl p-2 shadow-lg pointer-events-auto cursor-pointer"
                 animate={{ 
-                  y: [0, 8, 0],
-                  x: [0, 4, 0],
+                  x: [0, 8, 0],
+                  opacity: [0.7, 1, 0.7],
                 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                whileHover={{
+                  scale: 1.45,
+                  x: 12,
+                  boxShadow: "0 0 25px rgba(252, 211, 77, 0.8), 0 0 50px rgba(252, 211, 77, 0.4)",
+                  transition: { duration: 0.2 }
+                }}
+                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
               >
                 <TrendingUp className="w-full h-full text-white" />
               </motion.div>
-            </motion.div>
+
+              {/* Additional Floating Elements for Visual Richness */}
+              <motion.div 
+                className="absolute bottom-1/6 right-2/5 w-7 h-7 bg-gradient-to-br from-pink-500 to-rose-600 rounded-lg p-1.5 shadow-lg pointer-events-auto cursor-pointer"
+                animate={{ 
+                  rotate: [0, 180, 360],
+                  scale: [0.8, 1, 0.8],
+                }}
+                whileHover={{
+                  scale: 1.8,
+                  rotate: 720,
+                  boxShadow: "0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.4)",
+                  transition: { duration: 0.3 }
+                }}
+                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
+              >
+                <Star className="w-full h-full text-white" />
+              </motion.div>
+
+              <motion.div 
+                className="absolute top-4/5 left-1/2 w-9 h-9 bg-gradient-to-br from-indigo-500 to-blue-700 rounded-lg p-2 shadow-lg pointer-events-auto cursor-pointer"
+                animate={{ 
+                  y: [0, -12, 0],
+                  x: [0, 6, 0],
+                }}
+                whileHover={{
+                  scale: 1.5,
+                  y: -20,
+                  boxShadow: "0 0 25px rgba(99, 102, 241, 0.8), 0 0 50px rgba(99, 102, 241, 0.4)",
+                  transition: { duration: 0.2 }
+                }}
+                transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
+              >
+                <Users className="w-full h-full text-white" />
+              </motion.div>
+            </div>
           </div>
 
           {/* Mobile Stats */}
