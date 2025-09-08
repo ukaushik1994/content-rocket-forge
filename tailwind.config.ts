@@ -19,6 +19,13 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'playfair': ['Playfair Display', 'serif'],
+				'space': ['Space Grotesk', 'sans-serif'],  
+				'mono': ['JetBrains Mono', 'monospace'],
+				'crimson': ['Crimson Text', 'serif'],
+				'inter': ['Inter', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

@@ -74,6 +74,10 @@ export const FloatingKeywords = () => {
         const sizes = ['text-sm', 'text-base', 'text-lg'];
         const size = sizes[index % sizes.length];
         
+        // Random font families
+        const fonts = ['font-inter', 'font-playfair', 'font-space', 'font-mono', 'font-crimson'];
+        const font = fonts[index % fonts.length];
+        
         // Opacity variations for white text
         const opacities = ['text-white/10', 'text-white/20', 'text-white/30'];
         const opacity = opacities[index % opacities.length];
@@ -85,7 +89,7 @@ export const FloatingKeywords = () => {
         return (
           <motion.div
             key={keyword}
-            className={`absolute ${size} font-medium select-none`}
+            className={`absolute ${size} ${font} font-medium select-none`}
             style={{
               ...position,
               zIndex: -1,
