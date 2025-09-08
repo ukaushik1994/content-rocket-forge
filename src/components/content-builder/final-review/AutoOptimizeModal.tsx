@@ -277,7 +277,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         </p>
       </div>
 
-      <ScrollArea className="max-h-96">
+      <ScrollArea className="max-h-[50vh] pr-4">
         <div className="space-y-4">
           {suggestionCategories.map((category) => (
             <Card key={category.id} className="border-l-4 border-l-primary/20">
@@ -404,8 +404,8 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
 
         <div>
           <h4 className="font-medium mb-3">Content Preview</h4>
-          <ScrollArea className="h-32 p-3 border rounded-lg bg-muted/50">
-            <p className="text-sm whitespace-pre-wrap">{optimizedContent.substring(0, 500)}...</p>
+          <ScrollArea className="max-h-[25vh] min-h-[120px] p-3 border rounded-lg bg-muted/50">
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">{optimizedContent}</p>
           </ScrollArea>
         </div>
 
@@ -424,22 +424,22 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
             Auto-Optimize Content
           </DialogTitle>
         </DialogHeader>
         
-        <div className="py-4">
+        <ScrollArea className="flex-1 py-4">
           <AnimatePresence mode="wait">
             {currentStep === 'analysis' && renderAnalysisStep()}
             {currentStep === 'suggestions' && renderSuggestionsStep()}
             {currentStep === 'optimization' && renderOptimizationStep()}
             {currentStep === 'results' && renderResultsStep()}
           </AnimatePresence>
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
