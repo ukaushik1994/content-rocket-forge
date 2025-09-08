@@ -38,5 +38,30 @@ export function DataSourceIndicator({
   };
   const statusInfo = getStatusInfo();
   const StatusIcon = statusInfo.icon;
-  return;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`${className}`}
+    >
+      <Card className={`${statusInfo.borderColor} ${statusInfo.bgColor} border backdrop-blur-sm`}>
+        <div className="p-3 flex items-center gap-3">
+          <div className={`p-2 rounded-full ${statusInfo.bgColor}`}>
+            <StatusIcon className={`h-4 w-4 ${statusInfo.textColor}`} />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className={`${statusInfo.textColor} text-xs`}>
+                {statusInfo.status}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {statusInfo.description}
+            </p>
+          </div>
+        </div>
+      </Card>
+    </motion.div>
+  );
 }
