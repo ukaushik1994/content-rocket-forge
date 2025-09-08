@@ -2,7 +2,7 @@ import React from 'react';
 
 interface CreAiterLogoProps {
   showText?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
@@ -14,13 +14,15 @@ export const CreAiterLogo = ({
   const sizeClasses = {
     sm: 'h-6 w-6',
     md: 'h-7 w-7', 
-    lg: 'h-8 w-8'
+    lg: 'h-8 w-8',
+    xl: 'h-12 w-12'
   };
 
   const textSizeClasses = {
     sm: 'text-sm',
     md: 'text-base',
-    lg: 'text-lg'
+    lg: 'text-lg',
+    xl: 'text-3xl'
   };
 
   return (

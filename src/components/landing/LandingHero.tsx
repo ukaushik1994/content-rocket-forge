@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
+import { DemoModal } from '@/components/landing/DemoModal';
 import { Play, ArrowRight, Star, Users, Zap } from 'lucide-react';
 
 export const LandingHero = () => {
   const navigate = useNavigate();
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
 
   const stats = [
     { icon: Users, value: '10k+', label: 'Creators' },
@@ -24,7 +26,7 @@ export const LandingHero = () => {
           transition={{ duration: 0.8 }}
           className="mb-8"
         >
-          <CreAiterLogo showText size="lg" />
+          <CreAiterLogo showText size="xl" />
         </motion.div>
 
         {/* Main Headline */}
@@ -71,6 +73,7 @@ export const LandingHero = () => {
           <Button
             size="lg"
             variant="outline"
+            onClick={() => setIsDemoOpen(true)}
             className="border-primary/30 text-primary hover:bg-primary/10 text-lg px-8 py-6 backdrop-blur-sm"
           >
             <Play className="mr-2 h-5 w-5" />
@@ -124,6 +127,9 @@ export const LandingHero = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Demo Modal */}
+        <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
       </div>
     </section>
   );

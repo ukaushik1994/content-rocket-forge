@@ -1,6 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AnimatedBackground } from '@/components/auth/AnimatedBackground';
+import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingHero } from '@/components/landing/LandingHero';
 import { ValuePropositions } from '@/components/landing/ValuePropositions';
 import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
@@ -23,13 +24,20 @@ const Landing = () => {
 
       <div className="min-h-screen relative overflow-hidden">
         <AnimatedBackground />
+        <LandingNavbar />
         
         <main className="relative z-10">
           <LandingHero />
-          <ValuePropositions />
-          <FeaturesShowcase />
-          <HowItWorks />
-          <SocialProof />
+          <div id="features">
+            <ValuePropositions />
+            <FeaturesShowcase />
+          </div>
+          <div id="how-it-works">
+            <HowItWorks />
+          </div>
+          <div id="testimonials">
+            <SocialProof />
+          </div>
         </main>
         
         <LandingFooter />
