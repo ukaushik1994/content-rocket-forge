@@ -13,7 +13,7 @@ import { ContentGapsTab } from './tabs/ContentGapsTab';
 import { KeywordsTab } from './tabs/KeywordsTab';
 import { RelatedSearchesTab } from './tabs/RelatedSearchesTab';
 import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap, Search, RefreshCw, Database } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { analyzeSerpstackKeyword, testSerpstackConnection } from '@/services/serpstackService';
 import { analyzeKeywordEnhanced } from '@/services/enhancedSerpService';
@@ -231,22 +231,12 @@ export function SerpAnalysisModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-background/95 backdrop-blur-xl border border-border shadow-2xl z-50">
-        {/* Animated background particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '2s' }}></div>
-        </div>
 
         <DialogHeader className="relative z-10">
           <DialogTitle className="flex items-center justify-between">
-            <motion.div 
-              className="flex items-center gap-3"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
+            <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-lg backdrop-blur-sm border border-white/10">
-                <TrendingUp className="h-6 w-6 text-primary animate-pulse" />
+                <TrendingUp className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <div className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
@@ -254,15 +244,10 @@ export function SerpAnalysisModal({
                 </div>
                 <div className="text-sm text-gray-400 font-mono">{keyword}</div>
               </div>
-            </motion.div>
+            </div>
             
             {/* API Provider Selector */}
-            <motion.div 
-              className="flex items-center gap-2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
+            <div className="flex items-center gap-2">
               <div className="text-xs text-gray-400 font-medium">Data Source:</div>
               <div className="flex bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-1">
                 <Button
@@ -308,21 +293,16 @@ export function SerpAnalysisModal({
                   )}
                 </Button>
               </div>
-            </motion.div>
+            </div>
             <AnimatePresence>
               {selectedCount > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2"
-                >
+                <div className="flex items-center gap-2">
                   <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border-green-500/30 px-3 py-1 flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                   <span className="font-mono">{selectedCount}</span>
                   <span>selected</span>
                 </Badge>
-              </motion.div>
+              </div>
             )}
           </AnimatePresence>
         </DialogTitle>
@@ -336,12 +316,7 @@ export function SerpAnalysisModal({
                 value={tab.id} 
                 className="relative flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/10 data-[state=active]:to-white/5 data-[state=active]:border-white/20 transition-all duration-300 rounded-lg group"
               >
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-2"
-                >
+                <div className="flex items-center gap-2">
                   <div className={`p-1 rounded bg-gradient-to-r ${tab.color} bg-opacity-20`}>
                     <tab.icon className="h-3 w-3 text-white" />
                   </div>
@@ -359,27 +334,16 @@ export function SerpAnalysisModal({
                       </div>
                     </div>
                   )}
-                </motion.div>
+                </div>
                 {activeTab === tab.id && (
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-lg -z-10"
-                    layoutId="activeTabBackground"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-lg -z-10 transition-opacity duration-200" />
                 )}
               </TabsTrigger>
             ))}
           </TabsList>
 
           <ScrollArea className="flex-1 mt-6 h-[60vh]">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${activeTab}-${activeProvider}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
+            <div key={`${activeTab}-${activeProvider}`}>
                 {isLoadingProvider ? (
                   <div className="flex items-center justify-center py-20">
                     <div className="text-center">
@@ -459,17 +423,11 @@ export function SerpAnalysisModal({
                     </TabsContent>
                   </>
                 )}
-              </motion.div>
-            </AnimatePresence>
+              </div>
           </ScrollArea>
         </Tabs>
         
-        <motion.div 
-          className="flex justify-between items-center pt-4 border-t border-white/10 relative z-10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
+        <div className="flex justify-between items-center pt-4 border-t border-white/10 relative z-10">
           <div className="text-sm text-gray-400 flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
             <span className="font-mono">{selectedCount}</span>
@@ -477,11 +435,11 @@ export function SerpAnalysisModal({
           </div>
           <Button 
             onClick={onClose}
-            className="bg-gradient-to-r from-primary/20 to-blue-500/20 hover:from-primary/30 hover:to-blue-500/30 border border-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-105"
+            className="bg-gradient-to-r from-primary/20 to-blue-500/20 hover:from-primary/30 hover:to-blue-500/30 border border-white/20 backdrop-blur-sm transition-colors duration-200"
           >
             Done
           </Button>
-        </motion.div>
+        </div>
         
         {/* Enhanced Modal */}
         <EnhancedSerpModal
