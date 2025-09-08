@@ -5,21 +5,24 @@ import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 import { DemoModal } from '@/components/landing/DemoModal';
-import { Play, ArrowRight, Star, Users, Zap, Search, TrendingUp } from 'lucide-react';
+import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
+import { InteractiveContentMock } from '@/components/landing/InteractiveContentMock';
+import { Play, ArrowRight, Zap } from 'lucide-react';
 
 export const LandingHero = () => {
   const navigate = useNavigate();
   const [isDemoOpen, setIsDemoOpen] = useState(false);
 
   const stats = [
-    { icon: Users, value: '10k+', label: 'Creators' },
-    { icon: Star, value: '4.9', label: 'Rating' },
-    { icon: Zap, value: '100M+', label: 'Words Generated' },
+    { value: '10k+', label: 'Active Creators' },
+    { value: '4.9★', label: 'User Rating' },
+    { value: '100M+', label: 'Words Generated' },
   ];
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
-      <div className="container max-w-7xl mx-auto relative">
+    <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-20 relative overflow-hidden">
+      <FloatingKeywords />
+      <div className="container max-w-7xl mx-auto relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
           
           {/* Left Content */}
@@ -72,74 +75,34 @@ export const LandingHero = () => {
               </div>
 
               {/* Trust Indicators */}
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 fill-primary text-primary" />
-                  <span>4.9/5 rating</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" />
-                  <span>10k+ creators</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <span>100M+ words generated</span>
-                </div>
+              <div className="flex flex-wrap items-center gap-6 text-sm">
+                {stats.map((stat, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="font-semibold text-primary">{stat.value}</span>
+                    <span className="text-muted-foreground">{stat.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Right Visual */}
+          {/* Right Visual - Interactive Demo */}
           <div className="relative lg:block hidden animate-fade-in [animation-delay:200ms]">
-            {/* Main Visual Card */}
-            <div className="relative">
-              <GlassCard className="p-8 space-y-6 max-w-md ml-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <CreAiterLogo showText={false} size="sm" />
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    Live AI Assistant
-                  </div>
+            <div className="relative max-w-md ml-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6 px-2">
+                <CreAiterLogo showText={false} size="sm" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  Live Interactive Demo
                 </div>
-
-                {/* Content Preview */}
-                <div className="space-y-4">
-                  <div className="text-sm font-medium text-foreground">Content Brief Generated</div>
-                  
-                  <div className="space-y-3">
-                    {[
-                      { label: "Target Keywords", value: "15 identified", color: "text-primary" },
-                      { label: "SERP Analysis", value: "Completed", color: "text-neon-blue" },
-                      { label: "Content Score", value: "92/100", color: "text-neon-pink" }
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/30">
-                        <span className="text-sm text-muted-foreground">{item.label}</span>
-                        <span className={`text-sm font-semibold ${item.color}`}>{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <Button 
-                    size="sm" 
-                    className="w-full bg-gradient-to-r from-primary/20 to-neon-blue/20 text-primary border border-primary/30 hover:from-primary/30 hover:to-neon-blue/30"
-                  >
-                    Generate Content →
-                  </Button>
-                </div>
-              </GlassCard>
-
-              {/* Floating Elements */}
-              <div className="absolute -top-8 -left-8 w-16 h-16 bg-gradient-to-r from-primary to-neon-blue rounded-2xl p-4 shadow-neon animate-float">
-                <Search className="w-full h-full text-white" />
               </div>
-              
-              <div className="absolute -bottom-4 -right-6 w-12 h-12 bg-gradient-to-r from-neon-pink to-neon-orange rounded-xl p-3 shadow-lg animate-float" style={{ animationDelay: '1s' }}>
-                <TrendingUp className="w-full h-full text-white" />
-              </div>
+
+              {/* Interactive Content Mock */}
+              <InteractiveContentMock />
 
               {/* Background Glow */}
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-neon-blue/20 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
             </div>
           </div>
 
@@ -147,8 +110,7 @@ export const LandingHero = () => {
           <div className="lg:hidden grid grid-cols-3 gap-4 mt-8 animate-fade-in [animation-delay:400ms]">
             {stats.map((stat, index) => (
               <div key={index} className="text-center p-4 glass-card rounded-xl">
-                <stat.icon className="h-6 w-6 text-primary mx-auto mb-2" />
-                <div className="text-lg font-bold text-foreground">{stat.value}</div>
+                <div className="text-lg font-bold text-primary">{stat.value}</div>
                 <div className="text-xs text-muted-foreground">{stat.label}</div>
               </div>
             ))}
