@@ -3,11 +3,9 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 import { DemoModal } from '@/components/landing/DemoModal';
 import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
-import { InteractiveContentMock } from '@/components/landing/InteractiveContentMock';
-import { Play, ArrowRight, Zap } from 'lucide-react';
+import { Play, ArrowRight, Zap, Search, TrendingUp } from 'lucide-react';
 
 export const LandingHero = () => {
   const navigate = useNavigate();
@@ -86,20 +84,35 @@ export const LandingHero = () => {
             </div>
           </div>
 
-          {/* Right Visual - Interactive Demo */}
+          {/* Right Visual - Simple Demo Placeholder */}
           <div className="relative lg:block hidden animate-fade-in [animation-delay:200ms]">
             <div className="relative max-w-md ml-auto">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6 px-2">
-                <CreAiterLogo showText={false} size="sm" />
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  Live Interactive Demo
-                </div>
-              </div>
-
-              {/* Interactive Content Mock */}
-              <InteractiveContentMock />
+              {/* Simple Demo Card */}
+              <GlassCard className="p-8 text-center relative">
+                <h3 className="text-xl font-semibold text-primary mb-2">Interactive Demo</h3>
+                <p className="text-muted-foreground">Coming Soon</p>
+                
+                {/* Floating Icons */}
+                <motion.div
+                  className="absolute -top-4 -left-4"
+                  animate={{ y: [-10, 10, -10], rotate: [0, 5, 0] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/10 backdrop-blur-sm border border-primary/20 flex items-center justify-center">
+                    <Search className="h-5 w-5 text-primary" />
+                  </div>
+                </motion.div>
+                
+                <motion.div
+                  className="absolute -bottom-4 -right-4"
+                  animate={{ y: [10, -10, 10], rotate: [0, -5, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: 2 }}
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/10 backdrop-blur-sm border border-primary/20 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                  </div>
+                </motion.div>
+              </GlassCard>
 
               {/* Background Glow */}
               <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
