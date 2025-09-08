@@ -503,8 +503,6 @@ export const KeywordSelectionStep = () => {
         serpSelections={serpSelections}
         onRemoveKeyword={handleRemoveKeyword}
         onOpenSelectionManager={() => setShowSelectionManagerModal(true)}
-        onGenerateOutline={handleGenerateOutline}
-        isGeneratingOutline={isGeneratingOutline}
       />
 
       {/* Modals */}

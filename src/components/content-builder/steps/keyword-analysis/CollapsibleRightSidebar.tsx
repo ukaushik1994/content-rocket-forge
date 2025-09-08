@@ -13,17 +13,13 @@ interface CollapsibleRightSidebarProps {
   serpSelections: SerpSelection[];
   onRemoveKeyword: (keyword: string) => void;
   onOpenSelectionManager: () => void;
-  onGenerateOutline: () => void;
-  isGeneratingOutline: boolean;
 }
 
 export function CollapsibleRightSidebar({
   selectedKeywords,
   serpSelections,
   onRemoveKeyword,
-  onOpenSelectionManager,
-  onGenerateOutline,
-  isGeneratingOutline
+  onOpenSelectionManager
 }: CollapsibleRightSidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -153,8 +149,6 @@ export function CollapsibleRightSidebar({
                       <SelectionSummaryCard
                         serpSelections={serpSelections}
                         onOpenSelectionManager={onOpenSelectionManager}
-                        onGenerateOutline={onGenerateOutline}
-                        isGenerating={isGeneratingOutline}
                       />
                     </div>
                   </motion.section>

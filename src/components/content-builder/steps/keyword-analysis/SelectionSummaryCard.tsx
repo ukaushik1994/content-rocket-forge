@@ -10,15 +10,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface SelectionSummaryCardProps {
   serpSelections: SerpSelection[];
   onOpenSelectionManager: () => void;
-  onGenerateOutline: () => void;
-  isGenerating?: boolean;
 }
 
 export function SelectionSummaryCard({
   serpSelections,
-  onOpenSelectionManager,
-  onGenerateOutline,
-  isGenerating = false
+  onOpenSelectionManager
 }: SelectionSummaryCardProps) {
   const selectedItems = serpSelections.filter(item => item.selected);
   const totalSelected = selectedItems.length;
@@ -223,36 +219,23 @@ export function SelectionSummaryCard({
           </motion.div>
         )}
 
-        {/* Action Buttons */}
+        {/* Action Button */}
         {totalSelected > 0 && (
-          <div className="flex flex-col gap-3 pt-6 mt-6 border-t border-border/30">
+          <motion.div 
+            className="pt-6 mt-6 border-t border-gradient-to-r border-primary/30"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
             <Button 
               onClick={onOpenSelectionManager}
               variant="outline" 
-              className="w-full bg-background/20 hover:bg-background/40 border-border/50"
+              className="w-full bg-background/20 hover:bg-primary/10 border-primary/30 hover:border-primary/50 group transition-all duration-300"
             >
-              <Settings className="h-4 w-4 mr-2" />
-              Manage Selections
+              <Settings className="h-4 w-4 mr-2 group-hover:rotate-45 transition-transform duration-300" />
+              <span className="text-holographic">Manage Selections</span>
             </Button>
-            <Button 
-              onClick={onGenerateOutline}
-              disabled={isGenerating}
-              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Outline
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </>
-              )}
-            </Button>
-          </div>
+          </motion.div>
         )}
 
         {/* Info Text */}
