@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavItemProps {
   to: string;
@@ -46,6 +47,7 @@ const NavItem: React.FC<NavItemProps> = React.memo(({
 
 export default function NavItems() {
   const location = useLocation();
+  const { user } = useAuth();
   
   const contentRoutes = [
     '/content-builder',
@@ -58,9 +60,12 @@ export default function NavItems() {
   
   const isContentActive = contentRoutes.includes(location.pathname);
   
+  const homeRoute = user ? '/dashboard' : '/';
+  const isHomeActive = user ? location.pathname === '/dashboard' : location.pathname === '/';
+  
   return (
     <div className="flex flex-row gap-1">
-      <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Home" active={location.pathname === '/'} />
+      <NavItem to={homeRoute} icon={<Home className="h-4 w-4" />} label="Home" active={isHomeActive} />
       
       {/* Content Dropdown */}
       <DropdownMenu>
