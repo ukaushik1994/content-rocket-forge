@@ -424,7 +424,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-y-auto">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
@@ -432,14 +432,14 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 py-4">
+        <div className="flex-1 py-4 overflow-y-auto">
           <AnimatePresence mode="wait">
             {currentStep === 'analysis' && renderAnalysisStep()}
             {currentStep === 'suggestions' && renderSuggestionsStep()}
             {currentStep === 'optimization' && renderOptimizationStep()}
             {currentStep === 'results' && renderResultsStep()}
           </AnimatePresence>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
