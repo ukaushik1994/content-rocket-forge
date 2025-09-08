@@ -52,7 +52,7 @@ export function FeedbackAlert({ className }: FeedbackAlertProps) {
           <AlertDescription className="flex-1">
             <div className="flex items-center gap-2">
               <MessageSquarePlus className="h-4 w-4 text-primary" />
-              <span>We'd love to hear your thoughts! How has your experience been with ContentRocketForge?</span>
+              <span>We'd love to hear your thoughts! How has your experience been with CreAiter?</span>
             </div>
           </AlertDescription>
           <div className="flex items-center gap-2 ml-4">

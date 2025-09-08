@@ -17,7 +17,7 @@ export function FeedbackButton({ className, variant = 'ghost', iconOnly = false 
   const openFeedback = () => {
     setDialogOpen(true);
     toast.info('We appreciate your feedback!', {
-      description: 'Help us improve ContentRocketForge'
+      description: 'Help us improve CreAiter'
     });
   };
 

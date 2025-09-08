@@ -26,10 +26,10 @@ export const RocketLogo = () => {
         delay: 0.3
       }}>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-blue-500 to-primary bg-300% bg-clip-text text-transparent animate-gradient-shift">
-            Content Rocket Forge
+            CreAiter
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Launch your content into orbit
+            Where Creativity Meets AI
           </p>
         </motion.div>
       </div>

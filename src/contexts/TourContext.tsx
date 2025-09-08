@@ -43,7 +43,7 @@ export const TourProvider = ({ children }: { children: ReactNode }) => {
   const steps: TourStep[] = [
     {
       id: 'welcome',
-      title: 'Welcome to Content Rocket Forge',
+      title: 'Welcome to CreAiter',
       description: (
         <div className="space-y-3">
           <p>Welcome to the most powerful AI-driven content creation platform!</p>
@@ -126,7 +126,7 @@ export const TourProvider = ({ children }: { children: ReactNode }) => {
       title: 'You\'re All Set!',
       description: (
         <div className="space-y-3">
-          <p>Congratulations! You now know the basics of Content Rocket Forge.</p>
+          <p>Congratulations! You now know the basics of CreAiter.</p>
           <p>Start creating amazing content and watch your online presence soar!</p>
           <div className="flex items-center justify-center p-4">
             <div className="text-4xl">🚀</div>

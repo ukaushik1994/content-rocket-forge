@@ -128,7 +128,7 @@ const Navbar = () => {
                     <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
                   </div>
                 </div>
-                <span className="font-bold text-gradient">ContentRocketForge</span>
+                <span className="font-bold text-gradient">CreAiter</span>
               </Link>
               <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
                 <X className="h-5 w-5" />
