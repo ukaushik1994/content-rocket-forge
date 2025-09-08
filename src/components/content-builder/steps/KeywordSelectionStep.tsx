@@ -303,7 +303,11 @@ export const KeywordSelectionStep = () => {
           duration: 0.6
         }}>
               {/* Data Source Indicator */}
-              {serpData}
+              <DataSourceIndicator
+                isRealData={serpData?.isGoogleData}
+                isMockData={serpData?.isMockData}
+                className="mb-4"
+              />
 
               {/* Main Content Area - Full Width */}
               <motion.div className="w-full" initial={{
