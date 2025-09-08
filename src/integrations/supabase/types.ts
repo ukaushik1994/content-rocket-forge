@@ -1553,6 +1553,72 @@ export type Database = {
           },
         ]
       }
+      content_optimization_logs: {
+        Row: {
+          content_id: string | null
+          created_at: string | null
+          error_details: string | null
+          feedback_score: number | null
+          id: string
+          optimization_results: Json | null
+          optimization_settings: Json | null
+          optimized_content_length: number | null
+          original_content_length: number
+          performance_metrics: Json | null
+          reasoning: Json
+          session_id: string
+          success: boolean | null
+          suggestions_analyzed: Json
+          suggestions_applied: Json
+          suggestions_rejected: Json
+          updated_at: string | null
+          user_feedback: string | null
+          user_id: string
+        }
+        Insert: {
+          content_id?: string | null
+          created_at?: string | null
+          error_details?: string | null
+          feedback_score?: number | null
+          id?: string
+          optimization_results?: Json | null
+          optimization_settings?: Json | null
+          optimized_content_length?: number | null
+          original_content_length: number
+          performance_metrics?: Json | null
+          reasoning?: Json
+          session_id: string
+          success?: boolean | null
+          suggestions_analyzed?: Json
+          suggestions_applied?: Json
+          suggestions_rejected?: Json
+          updated_at?: string | null
+          user_feedback?: string | null
+          user_id: string
+        }
+        Update: {
+          content_id?: string | null
+          created_at?: string | null
+          error_details?: string | null
+          feedback_score?: number | null
+          id?: string
+          optimization_results?: Json | null
+          optimization_settings?: Json | null
+          optimized_content_length?: number | null
+          original_content_length?: number
+          performance_metrics?: Json | null
+          reasoning?: Json
+          session_id?: string
+          success?: boolean | null
+          suggestions_analyzed?: Json
+          suggestions_applied?: Json
+          suggestions_rejected?: Json
+          updated_at?: string | null
+          user_feedback?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_pipeline: {
         Row: {
           assigned_to: string | null
@@ -3397,6 +3463,23 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      log_optimization_activity: {
+        Args: {
+          p_content_id: string
+          p_optimization_settings?: Json
+          p_optimized_length?: number
+          p_original_length: number
+          p_performance_metrics?: Json
+          p_reasoning?: Json
+          p_session_id: string
+          p_success?: boolean
+          p_suggestions_analyzed?: Json
+          p_suggestions_applied?: Json
+          p_suggestions_rejected?: Json
+          p_user_id: string
+        }
+        Returns: string
+      }
       log_serp_usage: {
         Args: {
           p_metadata?: Json
@@ -3410,6 +3493,15 @@ export type Database = {
       migrate_repurposed_content: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      update_optimization_feedback: {
+        Args: {
+          p_feedback_score: number
+          p_log_id: string
+          p_optimization_results?: Json
+          p_user_feedback: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
