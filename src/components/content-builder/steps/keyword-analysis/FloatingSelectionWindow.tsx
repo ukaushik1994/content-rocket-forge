@@ -39,7 +39,7 @@ export function FloatingSelectionWindow({
         initial={{ opacity: 0, y: 100 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
-        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+        className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50"
       >
         <div className="bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl max-w-4xl">
           {/* Collapsed State - Compact Bar */}
