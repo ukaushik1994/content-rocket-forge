@@ -37,7 +37,7 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
   };
   
   return (
-    <div className="w-80 border-r border-border/40 bg-background/60 backdrop-blur-sm">
+    <div className="fixed top-0 left-0 h-screen w-80 border-r border-border/40 bg-background/60 backdrop-blur-sm z-10 overflow-y-auto">
       <div className="p-6">
         <motion.div 
           className="text-center mb-8"
