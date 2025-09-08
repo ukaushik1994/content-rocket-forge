@@ -20,7 +20,6 @@ import { FloatingSelectionWindow } from './keyword-analysis/FloatingSelectionWin
 import { ContentBuilderKeywordLibrary } from '@/components/content-builder/keyword/ContentBuilderKeywordLibrary';
 import { KeywordIntelligencePanel } from '@/components/content-builder/keyword/KeywordIntelligencePanel';
 import { toast } from 'sonner';
-
 interface ApiKeysStatus {
   serpApi: {
     configured: boolean;
@@ -31,7 +30,6 @@ interface ApiKeysStatus {
     working: boolean;
   };
 }
-
 export const KeywordSelectionStep = () => {
   const {
     state,
@@ -39,7 +37,6 @@ export const KeywordSelectionStep = () => {
     analyzeKeyword,
     generateOutlineFromSelections
   } = useContentBuilder();
-  
   const {
     mainKeyword,
     selectedKeywords,
@@ -47,16 +44,20 @@ export const KeywordSelectionStep = () => {
     serpSelections,
     isAnalyzing
   } = state;
-  
   const [hasSearched, setHasSearched] = useState(false);
   const [apiKeysStatus, setApiKeysStatus] = useState<ApiKeysStatus>({
-    serpApi: { configured: false, working: false },
-    serpstack: { configured: false, working: false }
+    serpApi: {
+      configured: false,
+      working: false
+    },
+    serpstack: {
+      configured: false,
+      working: false
+    }
   });
   const [showSerpAnalysisModal, setShowSerpAnalysisModal] = useState(false);
   const [showSelectionManagerModal, setShowSelectionManagerModal] = useState(false);
   const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
-  
   useEffect(() => {
     // Check if we have completed the requirements to move forward
     if (mainKeyword && selectedKeywords.length > 0) {
@@ -72,12 +73,11 @@ export const KeywordSelectionStep = () => {
       });
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
-  
+
   // Handle status updates from the EnhancedSerpStatus component
   const handleStatusChange = (status: ApiKeysStatus) => {
     setApiKeysStatus(status);
   };
-  
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     // Set the main keyword
     dispatch({
@@ -97,22 +97,24 @@ export const KeywordSelectionStep = () => {
     setHasSearched(true);
     await analyzeKeyword(keyword);
   };
-  
   const handleRemoveKeyword = (kw: string) => {
     dispatch({
       type: 'REMOVE_KEYWORD',
       payload: kw
     });
   };
-  
+
   // Helper function to toggle selection state
   const handleToggleSelection = (type: string, content: string) => {
     dispatch({
       type: 'TOGGLE_SERP_SELECTION',
-      payload: { type, content }
+      payload: {
+        type,
+        content
+      }
     });
   };
-  
+
   // Handle generating outline from selections
   const handleGenerateOutline = async () => {
     setIsGeneratingOutline(true);
@@ -130,71 +132,84 @@ export const KeywordSelectionStep = () => {
       handleToggleSelection(item.type, item.content);
     });
   };
-  
+
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
       await analyzeKeyword(mainKeyword);
     }
   };
-  
   const selectedCount = serpSelections.filter(item => item.selected).length;
-  
-  return (
-    <>
+  return <>
       <div className="w-full px-6 pt-24 pb-12">
         {/* Hero Search Section */}
-        <motion.div 
-          className="text-center mb-16 relative"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
-            animate={{ opacity: [0.5, 0.8, 0.5] }}
-            transition={{ duration: 4, repeat: Infinity }}
-          />
+        <motion.div className="text-center mb-16 relative" initial={{
+        opacity: 0,
+        y: 30
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.8
+      }}>
+          <motion.div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl" animate={{
+          opacity: [0.5, 0.8, 0.5]
+        }} transition={{
+          duration: 4,
+          repeat: Infinity
+        }} />
           
           <div className="relative">
-            <motion.div 
-              className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
+            <motion.div className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8" whileHover={{
+            scale: 1.05
+          }} transition={{
+            type: "spring",
+            stiffness: 300
+          }}>
               <Sparkles className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium">AI-Powered SERP Intelligence</span>
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             </motion.div>
             
-            <motion.h1 
-              className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <motion.h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent" initial={{
+            opacity: 0,
+            y: 20
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} transition={{
+            delay: 0.2
+          }}>
               Discover Content
               <br />
               <span className="text-primary">Opportunities</span>
             </motion.h1>
             
-            <motion.p 
-              className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
+            <motion.p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed" initial={{
+            opacity: 0,
+            y: 20
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} transition={{
+            delay: 0.4
+          }}>
               Advanced SERP analysis that reveals competitor insights, content gaps, 
               and optimization opportunities to dominate search results
             </motion.p>
 
             {/* Enhanced Search Input */}
-            <motion.div 
-              className="max-w-2xl mx-auto relative"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
-            >
+            <motion.div className="max-w-2xl mx-auto relative" initial={{
+            opacity: 0,
+            scale: 0.9
+          }} animate={{
+            opacity: 1,
+            scale: 1
+          }} transition={{
+            delay: 0.6,
+            type: "spring",
+            stiffness: 200
+          }}>
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-60" />
               <div className="relative bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-2 shadow-2xl">
                 <EnhancedSerpStatus onStatusChange={handleStatusChange} />
@@ -206,53 +221,65 @@ export const KeywordSelectionStep = () => {
             </motion.div>
 
             {/* Quick Stats */}
-            <motion.div 
-              className="flex justify-center gap-8 mt-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              {[
-                { icon: TrendingUp, label: "SERP Features", value: "15+" },
-                { icon: BarChart3, label: "Data Points", value: "200+" },
-                { icon: Zap, label: "Analysis Time", value: "< 30s" }
-              ].map((stat, index) => (
-                <motion.div 
-                  key={stat.label}
-                  className="text-center"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
+            <motion.div className="flex justify-center gap-8 mt-12" initial={{
+            opacity: 0,
+            y: 20
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} transition={{
+            delay: 0.8
+          }}>
+              {[{
+              icon: TrendingUp,
+              label: "SERP Features",
+              value: "15+"
+            }, {
+              icon: BarChart3,
+              label: "Data Points",
+              value: "200+"
+            }, {
+              icon: Zap,
+              label: "Analysis Time",
+              value: "< 30s"
+            }].map((stat, index) => <motion.div key={stat.label} className="text-center" whileHover={{
+              scale: 1.05
+            }} transition={{
+              type: "spring",
+              stiffness: 300
+            }}>
                   <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
                     <stat.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div className="text-sm font-bold text-foreground">{stat.value}</div>
                   <div className="text-xs text-muted-foreground">{stat.label}</div>
-                </motion.div>
-              ))}
+                </motion.div>)}
             </motion.div>
           </div>
         </motion.div>
 
         {/* Dynamic Content Area */}
         <AnimatePresence mode="wait">
-          {!hasSearched ? (
-            <motion.div 
-              key="welcome-state"
-              className="text-center py-24"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.6 }}
-            >
-              <motion.div 
-                className="relative inline-block mb-8"
-                animate={{ 
-                  rotateY: [0, 5, 0, -5, 0],
-                  scale: [1, 1.02, 1]
-                }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
+          {!hasSearched ? <motion.div key="welcome-state" className="text-center py-24" initial={{
+          opacity: 0,
+          y: 30
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} exit={{
+          opacity: 0,
+          y: -30
+        }} transition={{
+          duration: 0.6
+        }}>
+              <motion.div className="relative inline-block mb-8" animate={{
+            rotateY: [0, 5, 0, -5, 0],
+            scale: [1, 1.02, 1]
+          }} transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-blue-500/30 rounded-full blur-2xl" />
                 <div className="relative p-8 bg-background/60 backdrop-blur-xl rounded-full border border-border/50">
                   <Search className="h-16 w-16 text-primary" />
@@ -263,57 +290,55 @@ export const KeywordSelectionStep = () => {
               <p className="text-muted-foreground max-w-md mx-auto">
                 Enter your target keyword above to begin comprehensive SERP analysis and content intelligence
               </p>
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="results-state"
-              className="space-y-8"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.6 }}
-            >
+            </motion.div> : <motion.div key="results-state" className="space-y-8" initial={{
+          opacity: 0,
+          y: 30
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} exit={{
+          opacity: 0,
+          y: -30
+        }} transition={{
+          duration: 0.6
+        }}>
               {/* Data Source Indicator */}
-              {serpData && (
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <DataSourceIndicator
-                    isRealData={serpData.isGoogleData || false}
-                    isMockData={serpData.isMockData || false}
-                  />
-                </motion.div>
-              )}
+              {serpData}
 
               {/* Main Content Area - Full Width */}
-              <motion.div 
-                className="w-full"
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                {isAnalyzing ? (
-                  <motion.div 
-                    className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
-                    initial={{ scale: 0.95 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200 }}
-                  >
+              <motion.div className="w-full" initial={{
+            opacity: 0,
+            x: 50
+          }} animate={{
+            opacity: 1,
+            x: 0
+          }} transition={{
+            delay: 0.4
+          }}>
+                {isAnalyzing ? <motion.div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden" initial={{
+              scale: 0.95
+            }} animate={{
+              scale: 1
+            }} transition={{
+              type: "spring",
+              stiffness: 200
+            }}>
                     <div className="relative p-12 text-center">
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10"
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
+                      <motion.div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10" animate={{
+                  opacity: [0.5, 1, 0.5]
+                }} transition={{
+                  duration: 2,
+                  repeat: Infinity
+                }} />
                       
                       <div className="relative z-10 space-y-8">
-                        <motion.div
-                          className="relative inline-block"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        >
+                        <motion.div className="relative inline-block" animate={{
+                    rotate: 360
+                  }} transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}>
                           <div className="absolute inset-0 bg-primary/30 rounded-full blur-lg" />
                           <div className="relative p-6 bg-background/80 rounded-full">
                             <Loader2 className="h-12 w-12 text-primary" />
@@ -329,52 +354,51 @@ export const KeywordSelectionStep = () => {
                           </p>
                         </div>
                         
-                        <motion.div 
-                          className="flex justify-center space-x-2"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.5 }}
-                        >
-                          {[0, 1, 2, 3].map((i) => (
-                            <motion.div
-                              key={i}
-                              className="w-3 h-3 bg-primary rounded-full"
-                              animate={{ 
-                                scale: [1, 1.5, 1],
-                                opacity: [0.3, 1, 0.3]
-                              }}
-                              transition={{
-                                duration: 1.5,
-                                repeat: Infinity,
-                                delay: i * 0.2
-                              }}
-                            />
-                          ))}
+                        <motion.div className="flex justify-center space-x-2" initial={{
+                    opacity: 0
+                  }} animate={{
+                    opacity: 1
+                  }} transition={{
+                    delay: 0.5
+                  }}>
+                          {[0, 1, 2, 3].map(i => <motion.div key={i} className="w-3 h-3 bg-primary rounded-full" animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.3, 1, 0.3]
+                    }} transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: i * 0.2
+                    }} />)}
                         </motion.div>
                       </div>
                     </div>
-                  </motion.div>
-                ) : serpData ? (
-                  <motion.div 
-                    className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 200 }}
-                  >
+                  </motion.div> : serpData ? <motion.div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden" initial={{
+              scale: 0.95,
+              opacity: 0
+            }} animate={{
+              scale: 1,
+              opacity: 1
+            }} transition={{
+              type: "spring",
+              stiffness: 200
+            }}>
                     <div className="relative p-8">
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5"
-                        animate={{ opacity: [0.3, 0.6, 0.3] }}
-                        transition={{ duration: 4, repeat: Infinity }}
-                      />
+                      <motion.div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5" animate={{
+                  opacity: [0.3, 0.6, 0.3]
+                }} transition={{
+                  duration: 4,
+                  repeat: Infinity
+                }} />
                       
                       <div className="relative z-10">
                         <div className="flex items-center justify-between mb-8">
-                          <motion.div 
-                            className="flex items-center gap-4"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                          >
+                          <motion.div className="flex items-center gap-4" initial={{
+                      opacity: 0,
+                      x: -20
+                    }} animate={{
+                      opacity: 1,
+                      x: 0
+                    }}>
                             <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl backdrop-blur-sm border border-green-500/30">
                               <BarChart3 className="h-8 w-8 text-green-400" />
                             </div>
@@ -384,47 +408,37 @@ export const KeywordSelectionStep = () => {
                             </div>
                           </motion.div>
                           
-                          <motion.div 
-                            className="flex gap-3"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                          >
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                console.log('🔥 Explore Data button clicked!');
-                                setShowSerpAnalysisModal(true);
-                              }}
-                              className="bg-background/60 hover:bg-background/80 border-border/50 hover:border-border"
-                            >
+                          <motion.div className="flex gap-3" initial={{
+                      opacity: 0,
+                      x: 20
+                    }} animate={{
+                      opacity: 1,
+                      x: 0
+                    }}>
+                            <Button variant="outline" onClick={() => {
+                        console.log('🔥 Explore Data button clicked!');
+                        setShowSerpAnalysisModal(true);
+                      }} className="bg-background/60 hover:bg-background/80 border-border/50 hover:border-border">
                               <Eye className="h-4 w-4 mr-2" />
                               Explore Data
                             </Button>
-                            {selectedCount > 0 && (
-                              <Button
-                                onClick={() => setShowSelectionManagerModal(true)}
-                                className="bg-primary hover:bg-primary/90"
-                              >
+                            {selectedCount > 0 && <Button onClick={() => setShowSelectionManagerModal(true)} className="bg-primary hover:bg-primary/90">
                                 <Settings className="h-4 w-4 mr-2" />
                                 Manage ({selectedCount})
-                              </Button>
-                            )}
+                              </Button>}
                           </motion.div>
                         </div>
                         
-                        <InlineSerpAnalysis
-                          serpData={serpData}
-                          keyword={mainKeyword}
-                        />
+                        <InlineSerpAnalysis serpData={serpData} keyword={mainKeyword} />
                       </div>
                     </div>
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 p-12 text-center"
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                  >
+                  </motion.div> : <motion.div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 p-12 text-center" initial={{
+              scale: 0.95,
+              opacity: 0
+            }} animate={{
+              scale: 1,
+              opacity: 1
+            }}>
                     <div className="space-y-6">
                       <div className="p-6 bg-muted/50 rounded-full inline-block">
                         <Search className="h-12 w-12 text-muted-foreground" />
@@ -436,46 +450,26 @@ export const KeywordSelectionStep = () => {
                         </p>
                       </div>
                     </div>
-                  </motion.div>
-                )}
+                  </motion.div>}
               </motion.div>
-            </motion.div>
-          )}
+            </motion.div>}
         </AnimatePresence>
       </div>
 
       {/* Floating Selection Window */}
-      <FloatingSelectionWindow
-        selectedKeywords={selectedKeywords}
-        serpSelections={serpSelections}
-        onRemoveKeyword={handleRemoveKeyword}
-        onOpenSelectionManager={() => setShowSelectionManagerModal(true)}
-      />
+      <FloatingSelectionWindow selectedKeywords={selectedKeywords} serpSelections={serpSelections} onRemoveKeyword={handleRemoveKeyword} onOpenSelectionManager={() => setShowSelectionManagerModal(true)} />
 
       {/* Modals */}
-      <SerpAnalysisModal
-        isOpen={showSerpAnalysisModal}
-        onClose={() => {
-          console.log('🔥 Modal closing');
-          setShowSerpAnalysisModal(false);
-        }}
-        serpData={serpData}
-        serpSelections={serpSelections}
-        onToggleSelection={handleToggleSelection}
-        keyword={mainKeyword || ''}
-        onSerpDataUpdate={(data) => {
-          dispatch({ type: 'SET_SERP_DATA', payload: data });
-        }}
-      />
+      <SerpAnalysisModal isOpen={showSerpAnalysisModal} onClose={() => {
+      console.log('🔥 Modal closing');
+      setShowSerpAnalysisModal(false);
+    }} serpData={serpData} serpSelections={serpSelections} onToggleSelection={handleToggleSelection} keyword={mainKeyword || ''} onSerpDataUpdate={data => {
+      dispatch({
+        type: 'SET_SERP_DATA',
+        payload: data
+      });
+    }} />
 
-      <SelectionManagerModal
-        isOpen={showSelectionManagerModal}
-        onClose={() => setShowSelectionManagerModal(false)}
-        serpSelections={serpSelections}
-        onToggleSelection={handleToggleSelection}
-        onClearAll={handleClearAllSelections}
-        onGenerateOutline={handleGenerateOutline}
-      />
-    </>
-  );
+      <SelectionManagerModal isOpen={showSelectionManagerModal} onClose={() => setShowSelectionManagerModal(false)} serpSelections={serpSelections} onToggleSelection={handleToggleSelection} onClearAll={handleClearAllSelections} onGenerateOutline={handleGenerateOutline} />
+    </>;
 };
