@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import CheckEmail from "./pages/CheckEmail";
 import Repository from "./pages/Repository";
 import ContentBuilderPage from "./pages/ContentBuilder";
 import ContentTypeSelection from "./pages/ContentTypeSelection";
@@ -51,6 +52,7 @@ const App = () => (
                 <Routes>
                   <Route path="/landing" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth/check-email" element={<CheckEmail />} />
                   
                   {/* Landing is now the main entry point */}
                   <Route path="/" element={<Landing />} />

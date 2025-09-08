@@ -31,7 +31,7 @@ const Auth = () => {
         toast.error(result.error.message);
       } else {
         toast.success('Welcome back! 🚀');
-        navigate(redirectTo || '/');
+        navigate(redirectTo || '/dashboard');
       }
     } finally {
       setIsLoading(false);
