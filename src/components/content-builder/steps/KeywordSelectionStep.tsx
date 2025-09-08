@@ -147,11 +147,52 @@ export const KeywordSelectionStep = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      {/* Simplified Background Effects */}
+      {/* Interactive Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Static gradient orbs - no animation for better performance */}
-        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-full blur-3xl opacity-60" />
-        <div className="absolute bottom-40 right-20 w-96 h-96 bg-gradient-to-r from-purple-500/8 to-pink-500/8 rounded-full blur-3xl opacity-40" />
+        {/* Animated gradient orbs */}
+        <motion.div 
+          className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-full blur-3xl"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
+            x: [0, 50, 0],
+            y: [0, -30, 0]
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute bottom-40 right-20 w-96 h-96 bg-gradient-to-r from-purple-500/15 to-pink-500/15 rounded-full blur-3xl"
+          animate={{ 
+            scale: [1.2, 1, 1.2],
+            opacity: [0.2, 0.5, 0.2],
+            x: [0, -40, 0],
+            y: [0, 40, 0]
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
+        
+        {/* Interactive floating particles */}
+        {Array.from({ length: 15 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-primary/40 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, -200, 0],
+              opacity: [0, 1, 0],
+              scale: [0, 1.5, 0],
+            }}
+            transition={{
+              duration: 4 + Math.random() * 6,
+              repeat: Infinity,
+              delay: Math.random() * 8,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
       </div>
 
       <div className="relative z-10 w-full px-6 pt-24 pb-12">
@@ -162,8 +203,11 @@ export const KeywordSelectionStep = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          {/* Static background - no pulsing animation */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-transparent to-blue-500/8 rounded-3xl blur-3xl opacity-60" />
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
+            animate={{ opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
           
           <div className="relative">
             <motion.div 
@@ -371,8 +415,11 @@ export const KeywordSelectionStep = () => {
                     transition={{ type: "spring", stiffness: 200 }}
                   >
                     <div className="relative p-8">
-                      {/* Static background - no pulsing animation */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-green-500/3 to-blue-500/3 opacity-50" />
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5"
+                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ duration: 4, repeat: Infinity }}
+                      />
                       
                       <div className="relative z-10">
                         <div className="flex items-center justify-between mb-8">
