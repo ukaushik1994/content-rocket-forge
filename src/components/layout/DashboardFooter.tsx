@@ -191,7 +191,7 @@ export const DashboardFooter: React.FC = () => {
             }}>
                 <Heart className="h-4 w-4 text-red-400 fill-current" />
               </motion.div>
-              <span>for content creators worldwide</span>
+              <span>by U for </span>
             </div>
             
             <div className="flex items-center gap-6">
