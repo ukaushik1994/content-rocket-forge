@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 import { DemoModal } from '@/components/landing/DemoModal';
+import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
 import { Play, ArrowRight, Star, Users, Zap, Search, TrendingUp } from 'lucide-react';
 
 export const LandingHero = () => {
@@ -20,6 +21,8 @@ export const LandingHero = () => {
   return (
     <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
       <div className="container max-w-7xl mx-auto relative">
+        {/* Floating Keywords Background */}
+        <FloatingKeywords />
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
           
           {/* Left Content */}
