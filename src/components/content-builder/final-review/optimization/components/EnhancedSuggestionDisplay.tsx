@@ -15,10 +15,11 @@ import {
   CheckCircle,
   Info
 } from 'lucide-react';
-import { OptimizationSuggestion } from '../types';
+import { OptimizationSuggestion, UnifiedSuggestion } from '../types';
+import { QualityCheckSuggestion } from '../hooks/useContentQualityIntegration';
 
 interface EnhancedSuggestionDisplayProps {
-  suggestions: OptimizationSuggestion[];
+  suggestions: (OptimizationSuggestion | QualityCheckSuggestion | UnifiedSuggestion)[];
   selectedSuggestions: string[];
   onToggleSuggestion: (suggestionId: string) => void;
   reasoning?: Record<string, string>;
@@ -44,8 +45,12 @@ export const EnhancedSuggestionDisplay: React.FC<EnhancedSuggestionDisplayProps>
     setExpandedSuggestions(newExpanded);
   };
 
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
+  const getPriorityIcon = (priority: string | number) => {
+    const priorityString = typeof priority === 'number' ? 
+      (priority >= 7 ? 'high' : priority >= 4 ? 'medium' : 'low') : 
+      priority;
+      
+    switch (priorityString) {
       case 'high':
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
       case 'medium':
@@ -84,11 +89,18 @@ export const EnhancedSuggestionDisplay: React.FC<EnhancedSuggestionDisplayProps>
   };
 
   const groupedSuggestions = suggestions.reduce((groups, suggestion) => {
-    const category = suggestion.category;
+    // Handle different suggestion types to get category
+    let category: string;
+    if ('category' in suggestion && suggestion.category) {
+      category = suggestion.category;
+    } else {
+      category = suggestion.type;
+    }
+    
     if (!groups[category]) groups[category] = [];
     groups[category].push(suggestion);
     return groups;
-  }, {} as Record<string, OptimizationSuggestion[]>);
+  }, {} as Record<string, typeof suggestions>);
 
   const categoryIcons = {
     structure: <Target className="h-4 w-4" />,
@@ -146,13 +158,13 @@ export const EnhancedSuggestionDisplay: React.FC<EnhancedSuggestionDisplayProps>
                       </div>
                       
                       <div className="flex gap-1 ml-4">
-                        {suggestion.impact && (
+                        {'impact' in suggestion && suggestion.impact && (
                           <Badge className={`text-xs ${getImpactColor(suggestion.impact)}`}>
                             <TrendingUp className="h-3 w-3 mr-1" />
                             {suggestion.impact}
                           </Badge>
                         )}
-                        {suggestion.effort && (
+                        {'effort' in suggestion && suggestion.effort && (
                           <Badge variant="outline" className={`text-xs ${getEffortColor(suggestion.effort)}`}>
                             <Clock className="h-3 w-3 mr-1" />
                             {suggestion.effort}

@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
-import { OptimizationSuggestion } from '../types';
+import { OptimizationSuggestion, UnifiedSuggestion } from '../types';
 import { QualityCheckSuggestion } from './useContentQualityIntegration';
 
-export type SuggestionType = OptimizationSuggestion | QualityCheckSuggestion;
+export type SuggestionType = OptimizationSuggestion | QualityCheckSuggestion | UnifiedSuggestion;
 export type SelectionCriteria = 'all' | 'none' | 'high_priority' | 'medium_priority' | 'low_priority' | 'high_impact' | 'auto_fixable' | 'category';
 
 export interface BulkSelectionState {

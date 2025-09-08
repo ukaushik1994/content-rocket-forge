@@ -24,7 +24,7 @@ interface OptimizationStep {
 interface OptimizationProgressProps {
   currentStep: number;
   totalSteps: number;
-  steps: OptimizationStep[];
+  steps?: OptimizationStep[];
   isOptimizing: boolean;
   progress: number;
 }
@@ -99,7 +99,7 @@ export const OptimizationProgress: React.FC<OptimizationProgressProps> = ({
     }
   ];
 
-  const displaySteps = steps.length > 0 ? steps : defaultSteps;
+  const displaySteps = steps && steps.length > 0 ? steps : defaultSteps;
 
   return (
     <Card>

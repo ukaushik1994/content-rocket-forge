@@ -107,7 +107,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
 
   // Initialize analysis when dialog opens with progressive loading
   React.useEffect(() => {
-    if (isOpen && !progressiveOptimization.state.isRunning && !allSuggestions.length) {
+    if (isOpen && !progressiveOptimization.state.isRunning && !combinedSuggestions.length) {
       const runProgressiveAnalysis = async () => {
         await progressiveOptimization.startOptimization(content, {
           onQualityAnalysis: async () => {
@@ -143,7 +143,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
         runProgressiveAnalysis();
       }
     }
-  }, [isOpen, progressiveOptimization.state.isRunning, allSuggestions.length, isAnalyzing, analyzeContent]);
+  }, [isOpen, progressiveOptimization.state.isRunning, combinedSuggestions.length, isAnalyzing, analyzeContent]);
 
   const handleApplySuggestions = async () => {
     const startTime = Date.now();
@@ -331,7 +331,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                 <div className="text-xs text-muted-foreground">Checks Passed</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-background/40 border border-white/10 backdrop-blur-sm">
-                <div className="text-2xl font-bold text-amber-500 mb-1">{allSuggestions.length}</div>
+                <div className="text-2xl font-bold text-amber-500 mb-1">{combinedSuggestions.length}</div>
                 <div className="text-xs text-muted-foreground">Suggestions</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-background/40 border border-white/10 backdrop-blur-sm">
@@ -346,7 +346,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
             <OptimizationProgress 
               currentStep={progressiveOptimization.state.currentStep}
               totalSteps={progressiveOptimization.state.totalSteps}
-              steps={progressiveOptimization.state.steps}
+              steps={[]}
               isOptimizing={progressiveOptimization.state.isRunning}
               progress={progressiveOptimization.state.overallProgress}
             />
@@ -427,7 +427,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                       <BulkSelectionControls bulkSelection={bulkSelection} />
                       
                       <EnhancedSuggestionDisplay
-                        suggestions={allSuggestions}
+                        suggestions={combinedSuggestions}
                         selectedSuggestions={bulkSelection.selectedSuggestions}
                         onToggleSuggestion={bulkSelection.toggleSuggestion}
                         showDetailedReasoning={true}
@@ -541,7 +541,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                 <div className="flex justify-between items-center p-4 bg-background/40 rounded-xl border border-white/10 backdrop-blur-sm">
                   <div className="flex items-center gap-4">
                     <div className="text-sm text-muted-foreground">
-                      {selectedSuggestions.length} of {allSuggestions.length} suggestions selected
+                      {bulkSelection.selectedSuggestions.length} of {combinedSuggestions.length} suggestions selected
                     </div>
                     {selectedSuggestions.length > 0 && (
                       <div className="flex items-center gap-2 px-3 py-1 bg-primary/20 rounded-full border border-primary/30">
