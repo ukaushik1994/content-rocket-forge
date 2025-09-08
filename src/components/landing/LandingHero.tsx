@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 import { DemoModal } from '@/components/landing/DemoModal';
-
-import { Play, ArrowRight, Star, Users, Zap, Search, TrendingUp, Brain, Target, Sparkles, BarChart3, FileText, CheckCircle, Loader2 } from 'lucide-react';
+import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
+import { Play, ArrowRight, Star, Users, Zap, Search, TrendingUp } from 'lucide-react';
 
 export const LandingHero = () => {
   const navigate = useNavigate();
@@ -21,6 +21,8 @@ export const LandingHero = () => {
   return (
     <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
       <div className="container max-w-7xl mx-auto relative">
+        {/* Floating Keywords Background */}
+        <FloatingKeywords />
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
           
           {/* Left Content */}
@@ -92,363 +94,55 @@ export const LandingHero = () => {
 
           {/* Right Visual */}
           <div className="relative lg:block hidden animate-fade-in [animation-delay:200ms]">
-            {/* Enhanced Background Effects */}
-            <div className="absolute inset-0 -z-20">
-              {/* Primary Glow */}
-              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-primary/30 to-neon-blue/20 rounded-full blur-3xl animate-pulse"></div>
-              
-              {/* Secondary Orbs */}
-              <motion.div 
-                className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-r from-neon-pink/20 to-neon-orange/10 rounded-full blur-2xl"
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.3, 0.6, 0.3],
-                  x: [0, 20, 0],
-                  y: [0, -10, 0]
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-              />
-              
-              <motion.div 
-                className="absolute bottom-0 left-0 w-40 h-40 bg-gradient-to-r from-neon-blue/15 to-primary/10 rounded-full blur-2xl"
-                animate={{ 
-                  scale: [1.2, 1, 1.2],
-                  opacity: [0.2, 0.5, 0.2],
-                  x: [0, -15, 0],
-                  y: [0, 15, 0]
-                }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              />
-              
-              {/* Floating Particles */}
-              {[...Array(6)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-1 h-1 bg-primary/60 rounded-full"
-                  style={{
-                    left: `${20 + i * 15}%`,
-                    top: `${10 + i * 12}%`,
-                  }}
-                  animate={{
-                    y: [-20, 20, -20],
-                    opacity: [0.2, 0.8, 0.2],
-                    scale: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 4 + i * 0.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.3,
-                  }}
-                />
-              ))}
-            </div>
+            {/* Main Visual Card */}
+            <div className="relative">
+              <GlassCard className="p-8 space-y-6 max-w-md ml-auto">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <CreAiterLogo showText={false} size="sm" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    Live AI Assistant
+                  </div>
+                </div>
 
-            {/* Enhanced Floating Elements Ecosystem - Scattered Layout */}
-            {/* Row 1 - Top scattered icons */}
-            <motion.div 
-              className="absolute -top-16 left-1/4 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-3 shadow-neon"
-              animate={{ 
-                rotate: [0, 5, -5, 0],
-                y: [0, -8, 0],
-              }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Brain className="w-full h-full text-white" />
-            </motion.div>
+                {/* Content Preview */}
+                <div className="space-y-4">
+                  <div className="text-sm font-medium text-foreground">Content Brief Generated</div>
+                  
+                  <div className="space-y-3">
+                    {[
+                      { label: "Target Keywords", value: "15 identified", color: "text-primary" },
+                      { label: "SERP Analysis", value: "Completed", color: "text-neon-blue" },
+                      { label: "Content Score", value: "92/100", color: "text-neon-pink" }
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/30">
+                        <span className="text-sm text-muted-foreground">{item.label}</span>
+                        <span className={`text-sm font-semibold ${item.color}`}>{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
 
-            <motion.div 
-              className="absolute -top-8 right-1/3 w-10 h-10 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl p-2 shadow-lg"
-              animate={{ 
-                scale: [1, 1.2, 1],
-                rotate: [0, 10, -10, 0],
-              }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            >
-              <Target className="w-full h-full text-white" />
-            </motion.div>
+                  <Button 
+                    size="sm" 
+                    className="w-full bg-gradient-to-r from-primary/20 to-neon-blue/20 text-primary border border-primary/30 hover:from-primary/30 hover:to-neon-blue/30"
+                  >
+                    Generate Content →
+                  </Button>
+                </div>
+              </GlassCard>
 
-            <motion.div 
-              className="absolute -top-12 right-8 w-14 h-14 bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl p-3 shadow-neon"
-              animate={{ 
-                rotate: [0, 360],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-            >
-              <Sparkles className="w-full h-full text-white" />
-            </motion.div>
-
-            {/* Row 2 - Middle scattered icons */}
-            <motion.div 
-              className="absolute top-1/4 -left-12 w-11 h-11 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-2.5 shadow-lg"
-              animate={{ 
-                y: [0, 12, 0],
-                x: [0, 6, 0],
-              }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-            >
-              <BarChart3 className="w-full h-full text-white" />
-            </motion.div>
-
-            <motion.div 
-              className="absolute top-1/3 right-1/4 w-13 h-13 bg-gradient-to-r from-rose-400 to-red-500 rounded-xl p-3 shadow-neon"
-              animate={{ 
-                scale: [1, 1.3, 1],
-                opacity: [0.8, 1, 0.8],
-              }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            >
-              <Zap className="w-full h-full text-white" />
-            </motion.div>
-
-            <motion.div 
-              className="absolute top-2/5 -left-6 w-9 h-9 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg p-2 shadow-lg"
-              animate={{ 
-                y: [0, -12, 0],
-                rotate: [0, 8, -8, 0],
-              }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
-            >
-              <FileText className="w-full h-full text-white" />
-            </motion.div>
-
-            {/* Row 3 - Bottom scattered icons */}
-            <motion.div 
-              className="absolute bottom-1/4 -left-8 w-12 h-12 bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-3 shadow-neon"
-              animate={{ 
-                x: [0, 10, 0],
-                scale: [1, 1.15, 1],
-              }}
-              transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
-            >
-              <Search className="w-full h-full text-white" />
-            </motion.div>
-
-            <motion.div 
-              className="absolute bottom-8 right-1/3 w-10 h-10 bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg p-2 shadow-lg"
-              animate={{ 
-                y: [0, 8, 0],
-                x: [0, 4, 0],
-                rotate: [0, 5, -5, 0],
-              }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
-            >
-              <TrendingUp className="w-full h-full text-white" />
-            </motion.div>
-
-            <motion.div 
-              className="absolute bottom-12 left-1/4 w-11 h-11 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-xl p-2.5 shadow-lg"
-              animate={{ 
-                scale: [1, 1.2, 1],
-                y: [0, -6, 0],
-              }}
-              transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-            >
-              <Star className="w-full h-full text-white" />
-            </motion.div>
-
-            {/* Additional scattered elements for more excitement */}
-            <motion.div 
-              className="absolute top-1/2 right-2 w-8 h-8 bg-gradient-to-r from-pink-400 to-rose-500 rounded-full p-2 shadow-lg"
-              animate={{ 
-                rotate: [0, 180, 360],
-                scale: [0.8, 1.1, 0.8],
-              }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-            >
-              <Users className="w-full h-full text-white" />
-            </motion.div>
-
-            <motion.div 
-              className="absolute top-3/4 -left-4 w-9 h-9 bg-gradient-to-r from-indigo-400 to-blue-600 rounded-lg p-2 shadow-lg"
-              animate={{ 
-                y: [0, -10, 0],
-                x: [0, 8, 0],
-                opacity: [0.7, 1, 0.7],
-              }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-            >
-              <BarChart3 className="w-full h-full text-white" />
-            </motion.div>
-
-            {/* Enhanced Interactive Icon Playground */}
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Magnetic Hover Icons with Advanced Effects */}
-              
-              {/* Central Hub Icons - More prominent */}
-              <motion.div 
-                className="absolute top-1/2 left-1/2 w-16 h-16 bg-gradient-to-br from-neon-pink to-purple-600 rounded-3xl p-4 shadow-neon-strong pointer-events-auto cursor-pointer"
-                style={{ transform: 'translate(-50%, -50%)' }}
-                animate={{ 
-                  rotate: [0, 360],
-                  scale: [1, 1.1, 1],
-                }}
-                whileHover={{ 
-                  scale: 1.3,
-                  rotate: 180,
-                  boxShadow: "0 0 40px rgba(236, 72, 153, 0.6), 0 0 80px rgba(236, 72, 153, 0.3)",
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-              >
-                <Brain className="w-full h-full text-white drop-shadow-lg" />
-              </motion.div>
-
-              {/* Orbiting Content Icons */}
-              <motion.div 
-                className="absolute top-1/3 right-1/4 w-12 h-12 bg-gradient-to-br from-neon-blue to-indigo-600 rounded-2xl p-3 shadow-neon pointer-events-auto cursor-pointer"
-                animate={{ 
-                  y: [0, -15, 0],
-                  scale: [1, 1.15, 1],
-                }}
-                whileHover={{
-                  scale: 1.4,
-                  y: -10,
-                  boxShadow: "0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.4)",
-                  transition: { duration: 0.2 }
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <FileText className="w-full h-full text-white" />
-              </motion.div>
-
-              <motion.div 
-                className="absolute top-2/3 left-1/3 w-14 h-14 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl p-3 shadow-neon pointer-events-auto cursor-pointer"
-                animate={{ 
-                  x: [0, 12, 0],
-                  rotate: [0, 8, -8, 0],
-                }}
-                whileHover={{
-                  scale: 1.35,
-                  rotate: 15,
-                  boxShadow: "0 0 35px rgba(34, 197, 94, 0.7), 0 0 70px rgba(34, 197, 94, 0.3)",
-                  transition: { duration: 0.2 }
-                }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              >
-                <BarChart3 className="w-full h-full text-white" />
-              </motion.div>
-
-              {/* Scattered Interaction Icons */}
-              <motion.div 
-                className="absolute top-1/4 right-1/6 w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl p-2 shadow-lg pointer-events-auto cursor-pointer"
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.8, 1, 0.8],
-                }}
-                whileHover={{
-                  scale: 1.5,
-                  rotate: 360,
-                  boxShadow: "0 0 25px rgba(245, 158, 11, 0.8), 0 0 50px rgba(245, 158, 11, 0.4)",
-                  transition: { duration: 0.3 }
-                }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-              >
-                <Sparkles className="w-full h-full text-white" />
-              </motion.div>
-
-              <motion.div 
-                className="absolute bottom-1/3 right-1/5 w-11 h-11 bg-gradient-to-br from-rose-400 to-red-600 rounded-xl p-2.5 shadow-neon pointer-events-auto cursor-pointer"
-                animate={{ 
-                  y: [0, 10, 0],
-                  x: [0, -8, 0],
-                }}
-                whileHover={{
-                  scale: 1.4,
-                  y: -15,
-                  boxShadow: "0 0 30px rgba(244, 63, 94, 0.8), 0 0 60px rgba(244, 63, 94, 0.4)",
-                  transition: { duration: 0.2 }
-                }}
-                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              >
-                <Zap className="w-full h-full text-white" />
-              </motion.div>
-
-              <motion.div 
-                className="absolute top-3/5 right-1/12 w-9 h-9 bg-gradient-to-br from-violet-500 to-purple-700 rounded-lg p-2 shadow-lg pointer-events-auto cursor-pointer"
-                animate={{ 
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1],
-                }}
-                whileHover={{
-                  scale: 1.6,
-                  rotate: 45,
-                  boxShadow: "0 0 25px rgba(139, 92, 246, 0.8), 0 0 50px rgba(139, 92, 246, 0.4)",
-                  transition: { duration: 0.2 }
-                }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-              >
-                <Target className="w-full h-full text-white" />
-              </motion.div>
-
-              {/* Chain Reaction Icons */}
-              <motion.div 
-                className="absolute bottom-1/4 left-3/4 w-8 h-8 bg-gradient-to-br from-cyan-400 to-teal-600 rounded-full p-2 shadow-lg pointer-events-auto cursor-pointer"
-                animate={{ 
-                  scale: [0.9, 1.1, 0.9],
-                  y: [0, -6, 0],
-                }}
-                whileHover={{
-                  scale: 1.7,
-                  boxShadow: "0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(34, 211, 238, 0.4)",
-                  transition: { duration: 0.2 }
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-              >
+              {/* Floating Elements */}
+              <div className="absolute -top-8 -left-8 w-16 h-16 bg-gradient-to-r from-primary to-neon-blue rounded-2xl p-4 shadow-neon animate-float">
                 <Search className="w-full h-full text-white" />
-              </motion.div>
-
-              <motion.div 
-                className="absolute top-1/6 left-2/3 w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-xl p-2 shadow-lg pointer-events-auto cursor-pointer"
-                animate={{ 
-                  x: [0, 8, 0],
-                  opacity: [0.7, 1, 0.7],
-                }}
-                whileHover={{
-                  scale: 1.45,
-                  x: 12,
-                  boxShadow: "0 0 25px rgba(252, 211, 77, 0.8), 0 0 50px rgba(252, 211, 77, 0.4)",
-                  transition: { duration: 0.2 }
-                }}
-                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-              >
+              </div>
+              
+              <div className="absolute -bottom-4 -right-6 w-12 h-12 bg-gradient-to-r from-neon-pink to-neon-orange rounded-xl p-3 shadow-lg animate-float" style={{ animationDelay: '1s' }}>
                 <TrendingUp className="w-full h-full text-white" />
-              </motion.div>
+              </div>
 
-              {/* Additional Floating Elements for Visual Richness */}
-              <motion.div 
-                className="absolute bottom-1/6 right-2/5 w-7 h-7 bg-gradient-to-br from-pink-500 to-rose-600 rounded-lg p-1.5 shadow-lg pointer-events-auto cursor-pointer"
-                animate={{ 
-                  rotate: [0, 180, 360],
-                  scale: [0.8, 1, 0.8],
-                }}
-                whileHover={{
-                  scale: 1.8,
-                  rotate: 720,
-                  boxShadow: "0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.4)",
-                  transition: { duration: 0.3 }
-                }}
-                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
-              >
-                <Star className="w-full h-full text-white" />
-              </motion.div>
-
-              <motion.div 
-                className="absolute top-4/5 left-1/2 w-9 h-9 bg-gradient-to-br from-indigo-500 to-blue-700 rounded-lg p-2 shadow-lg pointer-events-auto cursor-pointer"
-                animate={{ 
-                  y: [0, -12, 0],
-                  x: [0, 6, 0],
-                }}
-                whileHover={{
-                  scale: 1.5,
-                  y: -20,
-                  boxShadow: "0 0 25px rgba(99, 102, 241, 0.8), 0 0 50px rgba(99, 102, 241, 0.4)",
-                  transition: { duration: 0.2 }
-                }}
-                transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
-              >
-                <Users className="w-full h-full text-white" />
-              </motion.div>
+              {/* Background Glow */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-neon-blue/20 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
             </div>
           </div>
 
