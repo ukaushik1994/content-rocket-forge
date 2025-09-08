@@ -230,36 +230,32 @@ export function SerpAnalysisModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-background/95 backdrop-blur-xl border border-border shadow-2xl z-50">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-card border border-border shadow-2xl z-50">
 
-        <DialogHeader className="relative z-10">
+        <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-lg backdrop-blur-sm border border-white/10">
+              <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
                 <TrendingUp className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <div className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                <div className="text-xl font-bold text-foreground">
                   SERP Analysis
                 </div>
-                <div className="text-sm text-gray-400 font-mono">{keyword}</div>
+                <div className="text-sm text-muted-foreground font-mono">{keyword}</div>
               </div>
             </div>
             
             {/* API Provider Selector */}
             <div className="flex items-center gap-2">
-              <div className="text-xs text-gray-400 font-medium">Data Source:</div>
-              <div className="flex bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-1">
+              <div className="text-xs text-muted-foreground font-medium">Data Source:</div>
+              <div className="flex bg-muted/50 border border-border/50 rounded-lg p-1">
                 <Button
                   size="sm"
                   variant={activeProvider === 'serpapi' ? 'default' : 'ghost'}
                   onClick={() => switchProvider('serpapi')}
                   disabled={isLoadingProvider}
-                  className={`text-xs h-8 px-3 transition-all duration-300 ${
-                    activeProvider === 'serpapi' 
-                      ? 'bg-gradient-to-r from-primary/30 to-blue-500/30 text-white border border-white/20' 
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
+                  className="text-xs h-8 px-3"
                 >
                   {isLoadingProvider && activeProvider === 'serpapi' ? (
                     <RefreshCw className="h-3 w-3 animate-spin mr-1" />
@@ -268,7 +264,7 @@ export function SerpAnalysisModal({
                   )}
                   SerpAPI
                   {providerData.serpapi && (
-                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full ml-1" />
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full ml-1" />
                   )}
                 </Button>
                 <Button
@@ -276,11 +272,7 @@ export function SerpAnalysisModal({
                   variant={activeProvider === 'serpstack' ? 'default' : 'ghost'}
                   onClick={() => switchProvider('serpstack')}
                   disabled={isLoadingProvider}
-                  className={`text-xs h-8 px-3 transition-all duration-300 ${
-                    activeProvider === 'serpstack' 
-                      ? 'bg-gradient-to-r from-primary/30 to-blue-500/30 text-white border border-white/20' 
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
+                  className="text-xs h-8 px-3"
                 >
                   {isLoadingProvider && activeProvider === 'serpstack' ? (
                     <RefreshCw className="h-3 w-3 animate-spin mr-1" />
@@ -289,55 +281,50 @@ export function SerpAnalysisModal({
                   )}
                   Serpstack
                   {providerData.serpstack && (
-                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full ml-1" />
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full ml-1" />
                   )}
                 </Button>
               </div>
             </div>
-            <AnimatePresence>
-              {selectedCount > 0 && (
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border-green-500/30 px-3 py-1 flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
+            {selectedCount > 0 && (
+              <div className="flex items-center gap-2">
+                <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-1 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
                   <span className="font-mono">{selectedCount}</span>
                   <span>selected</span>
                 </Badge>
               </div>
             )}
-          </AnimatePresence>
         </DialogTitle>
       </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden relative z-10">
-          <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-5 bg-muted/50 border border-border/50 p-1 rounded-xl">
             {tabs.map((tab, index) => (
               <TabsTrigger 
                 key={tab.id} 
                 value={tab.id} 
-                className="relative flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/10 data-[state=active]:to-white/5 data-[state=active]:border-white/20 transition-all duration-300 rounded-lg group"
+                className="relative flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground transition-all duration-200 rounded-lg"
               >
                 <div className="flex items-center gap-2">
-                  <div className={`p-1 rounded bg-gradient-to-r ${tab.color} bg-opacity-20`}>
-                    <tab.icon className="h-3 w-3 text-white" />
+                  <div className="p-1 rounded bg-primary/10">
+                    <tab.icon className="h-3 w-3 text-primary" />
                   </div>
                   <span className="hidden sm:inline text-sm font-medium">{tab.label}</span>
                   {tab.count !== null && tab.count > 0 && (
-                    <Badge variant="outline" className="ml-1 text-xs bg-white/10 border-white/20 text-white font-mono">
+                    <Badge variant="outline" className="ml-1 text-xs font-mono">
                       {tab.count}
                     </Badge>
                   )}
                   {/* Show capability indicator for active tab */}
                   {activeTab === tab.id && tab.capability && (
                     <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                      <div className="text-[9px] text-gray-400 bg-black/40 px-2 py-1 rounded border border-white/10">
+                      <div className="text-[9px] text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
                         {tab.capability}
                       </div>
                     </div>
                   )}
                 </div>
-                {activeTab === tab.id && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-lg -z-10 transition-opacity duration-200" />
-                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -348,10 +335,10 @@ export function SerpAnalysisModal({
                   <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                       <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                      <p className="text-lg font-medium bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                      <p className="text-lg font-medium text-foreground">
                         Loading {activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'} data...
                       </p>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         Fetching fresh SERP analysis
                       </p>
                     </div>

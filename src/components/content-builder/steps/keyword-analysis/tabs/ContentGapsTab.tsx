@@ -46,7 +46,7 @@ export function ContentGapsTab({
         const gapRecommendation = typeof gap === 'object' ? gap.recommendation : '';
         const selected = isSelected(gapContent);
         return <Card key={index} className={`transition-all ${selected ? 'ring-2 ring-primary' : ''} bg-gradient-to-r from-rose-50/50 to-orange-50/50 dark:from-rose-900/10 dark:to-orange-900/10`}>
-              <CardContent className="p-4 bg-slate-950">
+              <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
