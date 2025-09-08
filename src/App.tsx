@@ -52,8 +52,9 @@ const App = () => (
                   <Route path="/landing" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
                   
-                  {/* Redirect root to landing for unauthenticated users */}
-                  <Route path="/" element={<ProtectedRoute redirectPath="/landing"><Index /></ProtectedRoute>} />
+                  {/* Landing is now the main entry point */}
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                   <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
