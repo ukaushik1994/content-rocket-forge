@@ -277,58 +277,56 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         </p>
       </div>
 
-      <ScrollArea className="max-h-[50vh] pr-4">
-        <div className="space-y-4">
-          {suggestionCategories.map((category) => (
-            <Card key={category.id} className="border-l-4 border-l-primary/20">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <category.icon className={`w-5 h-5 ${category.color}`} />
-                    <CardTitle className="text-base">{category.title}</CardTitle>
-                    <Badge variant="secondary" className="text-xs">
-                      {category.suggestions.length}
-                    </Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => selectAllInCategory(category.id)}
-                    className="text-xs"
-                  >
-                    Select All
-                  </Button>
+      <div className="space-y-4">
+        {suggestionCategories.map((category) => (
+          <Card key={category.id} className="border-l-4 border-l-primary/20">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <category.icon className={`w-5 h-5 ${category.color}`} />
+                  <CardTitle className="text-base">{category.title}</CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {category.suggestions.length}
+                  </Badge>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {category.suggestions.map((suggestion) => (
-                  <div key={suggestion.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
-                    <Checkbox
-                      checked={selectedSuggestions.includes(suggestion.id)}
-                      onCheckedChange={() => toggleSuggestion(suggestion.id)}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-sm">{suggestion.title}</h4>
-                        <Badge variant="outline" className={`text-xs ${getPriorityColor(suggestion.priority)}`}>
-                          {suggestion.priority}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => selectAllInCategory(category.id)}
+                  className="text-xs"
+                >
+                  Select All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {category.suggestions.map((suggestion) => (
+                <div key={suggestion.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                  <Checkbox
+                    checked={selectedSuggestions.includes(suggestion.id)}
+                    onCheckedChange={() => toggleSuggestion(suggestion.id)}
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium text-sm">{suggestion.title}</h4>
+                      <Badge variant="outline" className={`text-xs ${getPriorityColor(suggestion.priority)}`}>
+                        {suggestion.priority}
+                      </Badge>
+                      {suggestion.impact && (
+                        <Badge variant="outline" className="text-xs bg-gray-100 text-gray-800">
+                          {suggestion.impact} impact
                         </Badge>
-                        {suggestion.impact && (
-                          <Badge variant="outline" className="text-xs bg-gray-100 text-gray-800">
-                            {suggestion.impact} impact
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                      )}
                     </div>
+                    <p className="text-sm text-muted-foreground">{suggestion.description}</p>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </ScrollArea>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       <div className="flex items-center justify-between pt-4 border-t">
         <p className="text-sm text-muted-foreground">
@@ -404,9 +402,9 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
 
         <div>
           <h4 className="font-medium mb-3">Content Preview</h4>
-          <ScrollArea className="max-h-[25vh] min-h-[120px] p-3 border rounded-lg bg-muted/50">
+          <div className="max-h-[300px] overflow-y-auto p-3 border rounded-lg bg-muted/50">
             <p className="text-sm whitespace-pre-wrap leading-relaxed">{optimizedContent}</p>
-          </ScrollArea>
+          </div>
         </div>
 
         <div className="flex gap-3 pt-4">
@@ -424,7 +422,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-y-auto">
+      <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
@@ -432,7 +430,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 py-4 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto py-4">
           <AnimatePresence mode="wait">
             {currentStep === 'analysis' && renderAnalysisStep()}
             {currentStep === 'suggestions' && renderSuggestionsStep()}
