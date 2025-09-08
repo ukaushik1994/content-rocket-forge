@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 import { DemoModal } from '@/components/landing/DemoModal';
-import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
+
 import { Play, ArrowRight, Star, Users, Zap, Search, TrendingUp, Brain, Target, Sparkles, BarChart3, FileText, CheckCircle, Loader2 } from 'lucide-react';
 
 export const LandingHero = () => {
@@ -21,8 +21,6 @@ export const LandingHero = () => {
   return (
     <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
       <div className="container max-w-7xl mx-auto relative">
-        {/* Floating Keywords Background */}
-        <FloatingKeywords />
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
           
           {/* Left Content */}
@@ -146,70 +144,55 @@ export const LandingHero = () => {
               ))}
             </div>
 
-            {/* Enhanced Floating Elements Ecosystem */}
-            {/* Brain - Top Right (AI Processing) */}
+            {/* Enhanced Floating Elements Ecosystem - Scattered Layout */}
+            {/* Row 1 - Top scattered icons */}
             <motion.div 
-              className="absolute -top-12 right-8 w-14 h-14 bg-gradient-to-r from-neon-purple to-primary rounded-2xl p-3 shadow-neon"
+              className="absolute -top-16 left-1/4 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-3 shadow-neon"
               animate={{ 
                 rotate: [0, 5, -5, 0],
-                scale: [1, 1.1, 1],
+                y: [0, -8, 0],
               }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             >
               <Brain className="w-full h-full text-white" />
             </motion.div>
 
-            {/* Target - Middle Left (Precision) */}
             <motion.div 
-              className="absolute top-1/3 -left-6 w-10 h-10 bg-gradient-to-r from-neon-blue to-neon-cyan rounded-xl p-2 shadow-lg"
+              className="absolute -top-8 right-1/3 w-10 h-10 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl p-2 shadow-lg"
               animate={{ 
-                y: [0, -15, 0],
-                opacity: [0.7, 1, 0.7],
+                scale: [1, 1.2, 1],
+                rotate: [0, 10, -10, 0],
               }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             >
               <Target className="w-full h-full text-white" />
             </motion.div>
 
-            {/* Sparkles - Bottom Left (Magic) */}
             <motion.div 
-              className="absolute bottom-8 -left-4 w-12 h-12 bg-gradient-to-r from-neon-pink to-neon-orange rounded-xl p-3 shadow-neon"
+              className="absolute -top-12 right-8 w-14 h-14 bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl p-3 shadow-neon"
               animate={{ 
                 rotate: [0, 360],
-                scale: [1, 1.2, 1],
+                scale: [1, 1.1, 1],
               }}
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
             >
               <Sparkles className="w-full h-full text-white" />
             </motion.div>
 
-            {/* BarChart3 - Top Left (Analytics) */}
+            {/* Row 2 - Middle scattered icons */}
             <motion.div 
-              className="absolute top-8 -left-8 w-11 h-11 bg-gradient-to-r from-neon-green to-neon-blue rounded-lg p-2.5 shadow-lg"
+              className="absolute top-1/4 -left-12 w-11 h-11 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-2.5 shadow-lg"
               animate={{ 
-                y: [0, 10, 0],
-                x: [0, 5, 0],
+                y: [0, 12, 0],
+                x: [0, 6, 0],
               }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
             >
               <BarChart3 className="w-full h-full text-white" />
             </motion.div>
 
-            {/* FileText - Bottom Right (Content) */}
             <motion.div 
-              className="absolute bottom-0 right-4 w-10 h-10 bg-gradient-to-r from-primary to-neon-purple rounded-lg p-2 shadow-lg"
-              animate={{ 
-                x: [0, 8, 0],
-                rotate: [0, 3, -3, 0],
-              }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-            >
-              <FileText className="w-full h-full text-white" />
-            </motion.div>
-
-            {/* Zap - Middle Right (Power) */}
-            <motion.div 
-              className="absolute top-1/2 right-0 w-12 h-12 bg-gradient-to-r from-neon-orange to-neon-pink rounded-xl p-3 shadow-neon"
+              className="absolute top-1/3 right-1/4 w-13 h-13 bg-gradient-to-r from-rose-400 to-red-500 rounded-xl p-3 shadow-neon"
               animate={{ 
                 scale: [1, 1.3, 1],
                 opacity: [0.8, 1, 0.8],
@@ -217,6 +200,76 @@ export const LandingHero = () => {
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 2 }}
             >
               <Zap className="w-full h-full text-white" />
+            </motion.div>
+
+            <motion.div 
+              className="absolute top-2/5 -left-6 w-9 h-9 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg p-2 shadow-lg"
+              animate={{ 
+                y: [0, -12, 0],
+                rotate: [0, 8, -8, 0],
+              }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
+            >
+              <FileText className="w-full h-full text-white" />
+            </motion.div>
+
+            {/* Row 3 - Bottom scattered icons */}
+            <motion.div 
+              className="absolute bottom-1/4 -left-8 w-12 h-12 bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-3 shadow-neon"
+              animate={{ 
+                x: [0, 10, 0],
+                scale: [1, 1.15, 1],
+              }}
+              transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
+            >
+              <Search className="w-full h-full text-white" />
+            </motion.div>
+
+            <motion.div 
+              className="absolute bottom-8 right-1/3 w-10 h-10 bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg p-2 shadow-lg"
+              animate={{ 
+                y: [0, 8, 0],
+                x: [0, 4, 0],
+                rotate: [0, 5, -5, 0],
+              }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
+            >
+              <TrendingUp className="w-full h-full text-white" />
+            </motion.div>
+
+            <motion.div 
+              className="absolute bottom-12 left-1/4 w-11 h-11 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-xl p-2.5 shadow-lg"
+              animate={{ 
+                scale: [1, 1.2, 1],
+                y: [0, -6, 0],
+              }}
+              transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+            >
+              <Star className="w-full h-full text-white" />
+            </motion.div>
+
+            {/* Additional scattered elements for more excitement */}
+            <motion.div 
+              className="absolute top-1/2 right-2 w-8 h-8 bg-gradient-to-r from-pink-400 to-rose-500 rounded-full p-2 shadow-lg"
+              animate={{ 
+                rotate: [0, 180, 360],
+                scale: [0.8, 1.1, 0.8],
+              }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+            >
+              <Users className="w-full h-full text-white" />
+            </motion.div>
+
+            <motion.div 
+              className="absolute top-3/4 -left-4 w-9 h-9 bg-gradient-to-r from-indigo-400 to-blue-600 rounded-lg p-2 shadow-lg"
+              animate={{ 
+                y: [0, -10, 0],
+                x: [0, 8, 0],
+                opacity: [0.7, 1, 0.7],
+              }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+            >
+              <BarChart3 className="w-full h-full text-white" />
             </motion.div>
 
             {/* Main Visual Card */}
