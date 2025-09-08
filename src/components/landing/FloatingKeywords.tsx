@@ -24,28 +24,28 @@ const keywords = [
 
 export const FloatingKeywords = () => {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="absolute inset-0 overflow-hidden pointer-events-none lg:block hidden">
       {keywords.map((keyword, index) => {
-        // Create varied positioning
+        // Right-side only positioning (50%+ from left, avoiding GlassCard area)
         const positions = [
-          { top: '10%', left: '5%' },
-          { top: '15%', right: '8%' },
-          { top: '25%', left: '12%' },
-          { top: '35%', right: '15%' },
-          { top: '45%', left: '8%' },
-          { top: '55%', right: '20%' },
-          { top: '65%', left: '15%' },
-          { top: '75%', right: '10%' },
-          { top: '20%', left: '75%' },
-          { top: '40%', left: '80%' },
-          { top: '60%', left: '85%' },
-          { top: '80%', left: '70%' },
-          { top: '30%', left: '25%' },
-          { top: '50%', left: '30%' },
-          { top: '70%', left: '35%' },
-          { top: '85%', left: '25%' },
-          { top: '5%', left: '60%' },
-          { top: '90%', left: '60%' }
+          { top: '5%', left: '52%' },
+          { top: '8%', left: '75%' },
+          { top: '12%', left: '68%' },
+          { top: '15%', left: '85%' },
+          { top: '18%', left: '92%' },
+          { top: '82%', left: '55%' },
+          { top: '85%', left: '72%' },
+          { top: '88%', left: '65%' },
+          { top: '90%', left: '82%' },
+          { top: '92%', left: '95%' },
+          { top: '25%', left: '92%' },
+          { top: '35%', left: '95%' },
+          { top: '45%', left: '92%' },
+          { top: '55%', left: '95%' },
+          { top: '65%', left: '92%' },
+          { top: '75%', left: '95%' },
+          { top: '10%', left: '88%' },
+          { top: '95%', left: '88%' }
         ];
 
         const position = positions[index % positions.length];
