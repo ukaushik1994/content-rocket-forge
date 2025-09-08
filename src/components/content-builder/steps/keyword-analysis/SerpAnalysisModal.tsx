@@ -322,15 +322,6 @@ export function SerpAnalysisModal({
                   <span className="font-mono">{selectedCount}</span>
                   <span>selected</span>
                 </Badge>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowEnhancedModal(true)}
-                  className="text-xs bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-purple-500/30 hover:bg-purple-500/30"
-                >
-                  <Database className="h-3 w-3 mr-1" />
-                  Enhanced View
-                </Button>
               </motion.div>
             )}
           </AnimatePresence>
