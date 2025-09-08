@@ -6,11 +6,13 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle2, BarChart3, FileText, Target, Zap, Sparkles, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, BarChart3, FileText, Target, Zap, Sparkles, AlertTriangle, History } from 'lucide-react';
 import { useContentOptimizer } from './useContentOptimizer';
 import { useContentQualityIntegration } from './hooks/useContentQualityIntegration';
 import { EnhancedSerpItemsReference } from './components/EnhancedSerpItemsReference';
 import { EnhancedSuggestionSection } from './components/EnhancedSuggestionSection';
+import { OptimizationFeedback } from './components/OptimizationFeedback';
+import { OptimizationHistory } from './components/OptimizationHistory';
 import { UnifiedSuggestion } from './types';
 import { 
   generateOptimizationSessionId, 
@@ -30,6 +32,10 @@ interface AutoOptimizeDialogProps {
 
 export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }: AutoOptimizeDialogProps) {
   const [sessionId] = useState(() => generateOptimizationSessionId());
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [optimizationLogId, setOptimizationLogId] = useState<string | null>(null);
+  const [originalContent, setOriginalContent] = useState(content);
+  const [optimizedResult, setOptimizedResult] = useState<string | null>(null);
   const [optimizationSettings] = useState<OptimizationSettings>({
     tone: 'professional',
     audience: 'general',
@@ -101,6 +107,9 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
         false // success - will update after optimization
       );
 
+      setOptimizationLogId(logId);
+      setOriginalContent(content);
+
       const optimizedContent = await optimizeContent();
       
       if (optimizedContent && optimizedContent !== content) {
@@ -128,11 +137,15 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
           );
         }
 
+        setOptimizedResult(optimizedContent);
         onContentUpdate(optimizedContent);
+        
+        // Show feedback dialog
+        setShowFeedback(true);
+        
         toast.success(`Content optimized successfully! Applied ${selectedSuggestions.length} improvements.`, {
           description: `Content length changed from ${content.length} to ${optimizedContent.length} characters.`
         });
-        onClose();
       } else {
         toast.error('Optimization failed or no changes were made. Please try again with different suggestions.');
       }
@@ -239,7 +252,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
             {hasSuggestions ? (
               <div className="flex-1 overflow-hidden px-6">
                 <Tabs defaultValue="quality" className="h-full flex flex-col">
-                  <TabsList className="grid w-full grid-cols-4 bg-background/60 backdrop-blur-sm border border-white/10">
+                  <TabsList className="grid w-full grid-cols-5 bg-background/60 backdrop-blur-sm border border-white/10">
                     <TabsTrigger 
                       value="quality" 
                       className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:border-primary/30"
@@ -267,6 +280,13 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                     >
                       <Zap className="h-4 w-4" />
                       AI ({aiDetectionSuggestions.length})
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="history" 
+                      className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:border-primary/30"
+                    >
+                      <History className="h-4 w-4" />
+                      History
                     </TabsTrigger>
                   </TabsList>
                   
@@ -344,6 +364,10 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                         onToggleSuggestion={toggleSuggestion}
                         showCategory={false}
                       />
+                    </TabsContent>
+                    
+                    <TabsContent value="history" className="space-y-4 mt-0">
+                      <OptimizationHistory />
                     </TabsContent>
                   </div>
                 </Tabs>
@@ -423,6 +447,31 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
         )}
         </div>
       </DialogContent>
+      
+      {/* Feedback Dialog */}
+      {showFeedback && optimizationLogId && optimizedResult && (
+        <Dialog open={showFeedback} onOpenChange={setShowFeedback}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Optimization Complete!</DialogTitle>
+              <DialogDescription>
+                Help us improve by rating this optimization
+              </DialogDescription>
+            </DialogHeader>
+            
+            <OptimizationFeedback
+              logId={optimizationLogId}
+              originalContent={originalContent}
+              optimizedContent={optimizedResult}
+              appliedSuggestions={selectedSuggestions.length}
+              onFeedbackSubmitted={() => {
+                setShowFeedback(false);
+                onClose();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }
