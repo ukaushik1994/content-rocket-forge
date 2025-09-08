@@ -7,13 +7,13 @@ interface SectionSeparatorProps {
 
 export const SectionSeparator: React.FC<SectionSeparatorProps> = ({ className }) => {
   return (
-    <div className={cn("relative py-8", className)}>
+    <div className={cn("relative py-6", className)}>
       <div className="absolute inset-0 flex items-center" aria-hidden="true">
-        <div className="w-full border-t border-border/30" />
+        <div className="w-full border-t border-border/20" />
       </div>
       <div className="relative flex justify-center">
-        <div className="bg-background px-4">
-          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-primary/50 to-neon-blue/50 animate-pulse" />
+        <div className="bg-background px-6">
+          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary/40 to-neon-blue/40 animate-pulse" />
         </div>
       </div>
     </div>

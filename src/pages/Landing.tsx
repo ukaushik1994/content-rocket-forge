@@ -27,14 +27,14 @@ const Landing = () => {
         <AnimatedBackground />
         <LandingNavbar />
         
-        <main className="relative z-10">
-          <section id="hero">
+        <main className="relative z-10" id="main-content">
+          <section id="hero" className="scroll-mt-16">
             <LandingHero />
           </section>
           
           <SectionSeparator />
           
-          <section id="features" className="py-8">
+          <section id="features" className="py-8 scroll-mt-16">
             <ValuePropositions />
             <SectionSeparator className="py-4" />
             <FeaturesShowcase />
@@ -42,13 +42,13 @@ const Landing = () => {
           
           <SectionSeparator />
           
-          <section id="how-it-works" className="py-8">
+          <section id="how-it-works" className="py-8 scroll-mt-16">
             <HowItWorks />
           </section>
           
           <SectionSeparator />
           
-          <section id="testimonials" className="py-8">
+          <section id="testimonials" className="py-8 scroll-mt-16">
             <SocialProof />
           </section>
         </main>

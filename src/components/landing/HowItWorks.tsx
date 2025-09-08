@@ -36,13 +36,7 @@ export const HowItWorks = () => {
   return (
     <section className="py-16 px-4 relative">
       <Container>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
             How CreAiter Works
           </h2>
@@ -50,7 +44,7 @@ export const HowItWorks = () => {
             From research to results in three simple steps. Our AI-powered platform 
             handles the complexity so you can focus on what matters most - creating amazing content.
           </p>
-        </motion.div>
+        </div>
 
         <div className="relative">
           {/* Connection Lines */}
@@ -58,15 +52,12 @@ export const HowItWorks = () => {
           
           <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 relative">
             {steps.map((step, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                className="relative"
+                className="relative animate-fade-in"
+                style={{ animationDelay: `${index * 200}ms` }}
               >
-                <GlassCard className="p-8 text-center hover:shadow-neon transition-all duration-300 card-3d group relative overflow-hidden">
+                <GlassCard className="p-8 text-center hover:shadow-neon transition-all duration-300 group relative overflow-hidden">
                   {/* Background Glow */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
                   
@@ -109,19 +100,13 @@ export const HowItWorks = () => {
                     </div>
                   )}
                 </GlassCard>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
 
         {/* Bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mt-16"
-        >
+        <div className="text-center mt-16 animate-fade-in [animation-delay:600ms]">
           <GlassCard className="p-8 max-w-2xl mx-auto">
             <h3 className="text-2xl font-bold mb-4">Ready to Transform Your Content Strategy?</h3>
             <p className="text-muted-foreground mb-6">
@@ -140,7 +125,7 @@ export const HowItWorks = () => {
               </Button>
             </div>
           </GlassCard>
-        </motion.div>
+        </div>
 
         {/* Floating Elements */}
       </Container>

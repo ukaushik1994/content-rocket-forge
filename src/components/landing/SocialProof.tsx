@@ -55,13 +55,7 @@ export const SocialProof = () => {
     <section className="py-16 px-4">
       <Container>
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
             Loved by Creators Worldwide
           </h2>
@@ -69,16 +63,10 @@ export const SocialProof = () => {
             Join thousands of successful creators, influencers, and businesses who trust CreAiter 
             to power their content strategy and drive real results.
           </p>
-        </motion.div>
+        </div>
 
         {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          viewport={{ once: true }}
-          className="grid md:grid-cols-4 gap-6 mb-16"
-        >
+        <div className="grid md:grid-cols-4 gap-6 mb-16 animate-fade-in [animation-delay:200ms]">
           {stats.map((stat, index) => (
             <GlassCard key={index} className="p-6 text-center hover:shadow-neon transition-all duration-300">
               <stat.icon className="h-8 w-8 text-primary mx-auto mb-3" />
@@ -88,19 +76,17 @@ export const SocialProof = () => {
               <div className="text-sm text-muted-foreground">{stat.label}</div>
             </GlassCard>
           ))}
-        </motion.div>
+        </div>
 
         {/* Testimonials */}
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
           {testimonials.map((testimonial, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: index * 0.2 }}
-              viewport={{ once: true }}
+              className="animate-fade-in"
+              style={{ animationDelay: `${400 + index * 200}ms` }}
             >
-              <GlassCard className="p-6 h-full hover:shadow-neon transition-all duration-300 card-3d">
+              <GlassCard className="p-6 h-full hover:shadow-neon transition-all duration-300">
                 {/* Header */}
                 <div className="flex items-start gap-4 mb-4">
                   <div className="text-3xl">{testimonial.image}</div>
@@ -129,43 +115,28 @@ export const SocialProof = () => {
                   <div className="text-sm font-semibold text-primary">{testimonial.metric}</div>
                 </div>
               </GlassCard>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Brand Logos */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="text-center"
-        >
+        <div className="text-center animate-fade-in [animation-delay:1000ms]">
           <p className="text-sm text-muted-foreground mb-8">Trusted by leading brands and creators</p>
           <div className="flex flex-wrap justify-center items-center gap-8">
             {brands.map((brand, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="glass-card px-6 py-3 rounded-full"
+                className="glass-card px-6 py-3 rounded-full animate-fade-in"
+                style={{ animationDelay: `${1200 + index * 100}ms` }}
               >
                 <span className="text-lg font-semibold text-muted-foreground">{brand}</span>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Bottom Quote */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mt-16"
-        >
+        <div className="text-center mt-16 animate-fade-in [animation-delay:1800ms]">
           <GlassCard className="p-8 max-w-3xl mx-auto">
             <Quote className="h-8 w-8 text-primary mx-auto mb-4" />
             <p className="text-xl font-medium mb-4 leading-relaxed">
@@ -176,7 +147,7 @@ export const SocialProof = () => {
             <div className="text-primary font-semibold">Alex Johnson, CEO of ContentScale</div>
             <div className="text-sm text-muted-foreground">Scaled from $0 to $1M ARR using CreAiter</div>
           </GlassCard>
-        </motion.div>
+        </div>
       </Container>
     </section>
   );

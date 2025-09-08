@@ -72,13 +72,7 @@ export const FeaturesShowcase = () => {
   return (
     <section className="py-16 px-4">
       <Container>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
             Powerful Features, Simple Experience
           </h2>
@@ -86,18 +80,16 @@ export const FeaturesShowcase = () => {
             Everything you need to create, optimize, and scale your content strategy. 
             Built for creators who demand excellence.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-8 xl:gap-12 items-start">
           {/* Feature Tabs */}
           <div className="space-y-4">
             {features.map((feature, index) => (
-              <motion.div
+              <div
                 key={feature.id}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <GlassCard
                   className={`p-6 cursor-pointer transition-all duration-300 ${
@@ -129,19 +121,19 @@ export const FeaturesShowcase = () => {
                     </div>
                   </div>
                 </GlassCard>
-              </motion.div>
+              </div>
             ))}
           </div>
 
           {/* Feature Preview */}
-          <div className="lg:sticky lg:top-8">
+          <div className="lg:sticky lg:top-24">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeFeature}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
               >
                 <GlassCard className="p-8">
                   <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${features[activeFeature].color} p-0.5 mb-6`}>
@@ -190,13 +182,7 @@ export const FeaturesShowcase = () => {
         </div>
 
         {/* Bottom Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="mt-16 text-center"
-        >
+        <div className="mt-16 text-center animate-fade-in [animation-delay:400ms]">
           <div className="grid md:grid-cols-4 gap-6">
             {[
               { icon: Globe, value: '50+', label: 'Content Types' },
@@ -211,7 +197,7 @@ export const FeaturesShowcase = () => {
               </GlassCard>
             ))}
           </div>
-        </motion.div>
+        </div>
       </Container>
     </section>
   );

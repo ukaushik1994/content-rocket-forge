@@ -29,7 +29,10 @@ export const LandingNavbar = () => {
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      const navbar = document.querySelector('nav');
+      const navbarHeight = navbar?.offsetHeight || 64;
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
+      window.scrollTo({ top: elementPosition, behavior: 'smooth' });
     }
     setIsMobileMenuOpen(false);
   };

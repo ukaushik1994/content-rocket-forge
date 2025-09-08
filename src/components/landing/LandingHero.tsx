@@ -17,50 +17,30 @@ export const LandingHero = () => {
   ];
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 py-20">
+    <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
       <div className="container max-w-6xl mx-auto text-center relative">
         {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="mb-8"
-        >
+        <div className="mb-8 animate-fade-in">
           <CreAiterLogo showText size="xl" />
-        </motion.div>
+        </div>
 
         {/* Main Headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-neon-blue to-primary bg-300% bg-clip-text text-transparent animate-gradient-shift"
-        >
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-neon-blue to-primary bg-300% bg-clip-text text-transparent animate-gradient-shift animate-fade-in [animation-delay:200ms]">
           Where Creativity
           <br />
           <span className="text-neon-blue">Meets AI Intelligence</span>
-        </motion.h1>
+        </h1>
 
         {/* Subheading */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
-        >
+        <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in [animation-delay:400ms]">
           Generate high-ranking, conversion-driven content by integrating{' '}
           <span className="text-primary font-semibold">real-time SERP data</span>,{' '}
           <span className="text-neon-blue font-semibold">keyword clusters</span>, and{' '}
           <span className="text-neon-pink font-semibold">business solutions</span>
-        </motion.p>
+        </p>
 
         {/* CTA Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
-        >
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-fade-in [animation-delay:600ms]">
           <Button
             size="lg"
             onClick={() => navigate('/auth?mode=signup')}
@@ -79,15 +59,10 @@ export const LandingHero = () => {
             <Play className="mr-2 h-5 w-5" />
             Watch Demo
           </Button>
-        </motion.div>
+        </div>
 
         {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="flex flex-col sm:flex-row gap-8 justify-center items-center"
-        >
+        <div className="flex flex-col sm:flex-row gap-8 justify-center items-center animate-fade-in [animation-delay:800ms]">
           {stats.map((stat, index) => (
             <div key={index} className="flex items-center gap-3 glass-card px-6 py-3 rounded-full">
               <stat.icon className="h-6 w-6 text-primary" />
@@ -97,7 +72,7 @@ export const LandingHero = () => {
               </div>
             </div>
           ))}
-        </motion.div>
+        </div>
 
 
         {/* Demo Modal */}
