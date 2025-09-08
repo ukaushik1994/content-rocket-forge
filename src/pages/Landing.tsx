@@ -8,6 +8,7 @@ import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { SocialProof } from '@/components/landing/SocialProof';
 import { LandingFooter } from '@/components/landing/LandingFooter';
+import { SectionSeparator } from '@/components/ui/SectionSeparator';
 
 const Landing = () => {
   return (
@@ -31,16 +32,23 @@ const Landing = () => {
             <LandingHero />
           </section>
           
-          <section id="features" className="py-12">
+          <SectionSeparator />
+          
+          <section id="features" className="py-8">
             <ValuePropositions />
+            <SectionSeparator className="py-4" />
             <FeaturesShowcase />
           </section>
           
-          <section id="how-it-works" className="py-12">
+          <SectionSeparator />
+          
+          <section id="how-it-works" className="py-8">
             <HowItWorks />
           </section>
           
-          <section id="testimonials" className="py-12">
+          <SectionSeparator />
+          
+          <section id="testimonials" className="py-8">
             <SocialProof />
           </section>
         </main>

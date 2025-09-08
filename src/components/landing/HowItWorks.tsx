@@ -34,7 +34,7 @@ export const HowItWorks = () => {
   ];
 
   return (
-    <section className="py-24 px-4 relative">
+    <section className="py-16 px-4 relative">
       <Container>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -56,7 +56,7 @@ export const HowItWorks = () => {
           {/* Connection Lines */}
           <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-neon-blue to-neon-pink opacity-30 transform -translate-y-1/2"></div>
           
-          <div className="grid lg:grid-cols-3 gap-8 relative">
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 relative">
             {steps.map((step, index) => (
               <motion.div
                 key={index}
@@ -143,9 +143,6 @@ export const HowItWorks = () => {
         </motion.div>
 
         {/* Floating Elements */}
-        <div className="absolute top-10 left-10 w-2 h-2 bg-primary rounded-full animate-pulse opacity-60 hidden xl:block"></div>
-        <div className="absolute bottom-20 right-16 w-1 h-1 bg-neon-blue rounded-full animate-pulse opacity-80 hidden xl:block" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/3 right-8 w-1.5 h-1.5 bg-neon-pink rounded-full animate-pulse opacity-70 hidden xl:block" style={{ animationDelay: '2s' }}></div>
       </Container>
     </section>
   );

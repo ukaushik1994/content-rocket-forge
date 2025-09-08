@@ -70,7 +70,7 @@ export const FeaturesShowcase = () => {
   ];
 
   return (
-    <section className="py-24 px-4">
+    <section className="py-16 px-4">
       <Container>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -88,7 +88,7 @@ export const FeaturesShowcase = () => {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
+        <div className="grid lg:grid-cols-2 gap-8 xl:gap-12 items-start">
           {/* Feature Tabs */}
           <div className="space-y-4">
             {features.map((feature, index) => (
