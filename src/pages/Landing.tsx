@@ -27,17 +27,22 @@ const Landing = () => {
         <LandingNavbar />
         
         <main className="relative z-10">
-          <LandingHero />
-          <div id="features">
+          <section id="hero">
+            <LandingHero />
+          </section>
+          
+          <section id="features" className="py-12">
             <ValuePropositions />
             <FeaturesShowcase />
-          </div>
-          <div id="how-it-works">
+          </section>
+          
+          <section id="how-it-works" className="py-12">
             <HowItWorks />
-          </div>
-          <div id="testimonials">
+          </section>
+          
+          <section id="testimonials" className="py-12">
             <SocialProof />
-          </div>
+          </section>
         </main>
         
         <LandingFooter />

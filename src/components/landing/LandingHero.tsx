@@ -17,8 +17,8 @@ export const LandingHero = () => {
   ];
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 pt-20">
-      <div className="max-w-6xl mx-auto text-center">
+    <section className="min-h-screen flex items-center justify-center px-4 py-20">
+      <div className="container max-w-6xl mx-auto text-center relative">
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -99,34 +99,6 @@ export const LandingHero = () => {
           ))}
         </motion.div>
 
-        {/* Floating Trust Indicators */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1 }}
-          className="absolute top-1/4 left-8 hidden xl:block"
-        >
-          <div className="glass-card p-4 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-muted-foreground">Real-time SERP data</span>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1.2 }}
-          className="absolute top-1/3 right-8 hidden xl:block"
-        >
-          <div className="glass-card p-4 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              <span className="text-muted-foreground">AI-powered insights</span>
-            </div>
-          </div>
-        </motion.div>
 
         {/* Demo Modal */}
         <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
