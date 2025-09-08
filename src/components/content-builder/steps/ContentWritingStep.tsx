@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { EnhancedContentEditor } from './editor/EnhancedContentEditor';
-import { CollapsibleSerpSidebar } from './writing/CollapsibleSerpSidebar';
+import { MinimalisticSidebar } from './writing/MinimalisticSidebar';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { SaveContentDialog } from './writing/SaveContentDialog';
@@ -267,13 +267,17 @@ export const ContentWritingStep = () => {
         </div>
       </div>
 
-      {/* Collapsible SERP Sidebar */}
-      <CollapsibleSerpSidebar
+      {/* Minimalistic Floating Sidebar */}
+      <MinimalisticSidebar
         content={content}
         serpSelections={state.serpSelections}
+        outline={state.outline}
+        selectedSolution={selectedSolution}
+        additionalInstructions={additionalInstructions}
         onIntegrateItem={(item) => {
           toast.info(`Integration suggestion for: ${item.type.replace(/_/g, ' ')}`);
         }}
+        onInstructionsChange={handleInstructionsChange}
       />
 
       <SaveContentDialog
