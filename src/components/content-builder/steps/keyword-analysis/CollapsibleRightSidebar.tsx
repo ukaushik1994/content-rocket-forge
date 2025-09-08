@@ -64,15 +64,15 @@ export function CollapsibleRightSidebar({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ x: 400, opacity: 0 }}
+            initial={{ x: 320, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 400, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed right-0 top-24 bottom-0 w-80 bg-background/60 backdrop-blur-xl border-l border-border/50 z-40"
+            exit={{ x: 320, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed right-0 top-24 bottom-0 w-80 bg-background/70 backdrop-blur-sm border-l border-border/50 z-40 transform-gpu"
           >
             <div className="h-full flex flex-col">
               {/* Header */}
-              <div className="p-6 border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm flex-shrink-0">
+              <div className="p-6 border-b border-border/50 bg-background/80 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/20">
@@ -111,9 +111,9 @@ export function CollapsibleRightSidebar({
                       </h4>
                     </div>
                     
-                    <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg overflow-hidden">
+                    <div className="bg-card/60 rounded-lg border border-border/50 overflow-hidden">
                       <div className="p-1">
-                        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20">
+                        <div className="bg-primary/5 rounded-lg border border-primary/20">
                           <SelectedKeywords 
                             keywords={selectedKeywords} 
                             onRemoveKeyword={onRemoveKeyword} 
@@ -123,15 +123,11 @@ export function CollapsibleRightSidebar({
                     </div>
                   </motion.section>
 
-                  {/* Visual Separator */}
+                  {/* Simplified Separator */}
                   <div className="flex items-center gap-4 py-2">
-                    <Separator className="flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" />
-                      <div className="w-1 h-1 rounded-full bg-primary/40" />
-                      <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '0.5s' }} />
-                    </div>
-                    <Separator className="flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+                    <Separator className="flex-1" />
+                    <div className="w-2 h-2 rounded-full bg-primary/40" />
+                    <Separator className="flex-1" />
                   </div>
                   
                   {/* SERP Analysis Section */}
@@ -148,8 +144,8 @@ export function CollapsibleRightSidebar({
                       </h4>
                     </div>
                     
-                    {/* Remove the nested containers and scrolling */}
-                    <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg">
+                    {/* Simplified container */}
+                    <div className="bg-card/60 rounded-lg border border-border/50">
                       <SelectionSummaryCard
                         serpSelections={serpSelections}
                         onOpenSelectionManager={onOpenSelectionManager}

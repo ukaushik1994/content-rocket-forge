@@ -11,7 +11,7 @@ interface MetricsTabProps {
   serpData: SerpAnalysisResult;
 }
 
-export function MetricsTab({ serpData }: MetricsTabProps) {
+const MetricsTab = React.memo<MetricsTabProps>(({ serpData }) => {
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -60,19 +60,14 @@ export function MetricsTab({ serpData }: MetricsTabProps) {
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
-            whileHover={{ scale: 1.05, y: -5 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, duration: 0.3 }}
             className="group"
           >
-            <Card className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300 h-full">
-              {/* Animated background gradient */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`} />
-              
-              {/* Floating particles effect */}
-              <div className="absolute top-2 right-2 w-2 h-2 bg-white/20 rounded-full animate-pulse" />
-              <div className="absolute bottom-4 left-4 w-1 h-1 bg-white/30 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+            <Card className="relative overflow-hidden bg-card/80 backdrop-blur-sm border border-border/50 hover:border-border transition-colors duration-200 h-full transform-gpu">
+              {/* Simplified background */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-3 group-hover:opacity-5 transition-opacity duration-200`} />
               
               <CardContent className="p-6 relative z-10">
                 <div className="flex items-center justify-between mb-4">
@@ -111,11 +106,11 @@ export function MetricsTab({ serpData }: MetricsTabProps) {
       {/* Enhanced Volume Metadata */}
       {serpData.volumeMetadata && (
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
         >
-          <Card className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-xl border border-white/10 overflow-hidden">
+          <Card className="bg-card/70 backdrop-blur-sm border border-border/50 overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5" />
             
             <CardHeader className="relative z-10">
@@ -161,11 +156,11 @@ export function MetricsTab({ serpData }: MetricsTabProps) {
       {/* Enhanced Top Results with Holographic Effect */}
       {serpData.topResults && serpData.topResults.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
         >
-          <Card className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-xl border border-white/10 overflow-hidden">
+          <Card className="bg-card/70 backdrop-blur-sm border border-border/50 overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5" />
             
             <CardHeader className="relative z-10">
@@ -189,10 +184,10 @@ export function MetricsTab({ serpData }: MetricsTabProps) {
                 {serpData.topResults.slice(0, 3).map((result, index) => (
                   <motion.div 
                     key={index}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 + index * 0.1 }}
-                    className="flex items-start space-x-4 p-4 bg-gradient-to-r from-white/5 to-white/10 rounded-xl backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300 group"
+                    transition={{ delay: 0.4 + index * 0.05 }}
+                    className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg border border-border/30 hover:border-border/60 transition-colors duration-200 group transform-gpu"
                   >
                     <div className="flex-shrink-0">
                       <Badge className="bg-gradient-to-r from-primary/20 to-blue-500/20 text-white border-white/20 font-mono">
@@ -238,4 +233,7 @@ export function MetricsTab({ serpData }: MetricsTabProps) {
       </motion.div>
     </div>
   );
-}
+});
+
+MetricsTab.displayName = 'MetricsTab';
+export { MetricsTab };
