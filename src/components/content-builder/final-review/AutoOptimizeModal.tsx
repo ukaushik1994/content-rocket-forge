@@ -21,6 +21,7 @@ import {
   Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AnalysisProgress } from './optimization/components/AnalysisProgress';
 import { useContentOptimizer } from './optimization/useContentOptimizer';
 import { OptimizationSuggestion } from './optimization/types';
 import { toast } from 'sonner';
@@ -102,7 +103,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       title: 'SEO & Keywords',
       icon: Search,
       color: 'text-green-600',
-      suggestions: contentSuggestions.filter(s => s.category === 'seo' || s.category === 'keywords').map(normalizeSuggestion)
+      suggestions: [...contentSuggestions.filter(s => s.category === 'seo' || s.category === 'keywords'), ...qualitySuggestions.filter(s => s.category === 'seo' || s.category === 'keywords')].map(normalizeSuggestion)
     },
     {
       id: 'ai-detection',
@@ -123,14 +124,14 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       title: 'Content Quality',
       icon: Lightbulb,
       color: 'text-orange-600',
-      suggestions: [...contentSuggestions.filter(s => s.category === 'content' || s.category === 'structure'), ...qualitySuggestions].map(normalizeSuggestion)
+      suggestions: [...contentSuggestions.filter(s => s.category === 'content' || s.category === 'structure'), ...qualitySuggestions.filter(s => s.category === 'content' || s.category === 'structure')].map(normalizeSuggestion)
     },
     {
       id: 'solution',
       title: 'Solution Integration',
       icon: Target,
       color: 'text-indigo-600',
-      suggestions: solutionSuggestions.map(normalizeSuggestion)
+      suggestions: [...solutionSuggestions, ...qualitySuggestions.filter(s => s.category === 'solution')].map(normalizeSuggestion)
     }
   ].filter(category => category.suggestions.length > 0);
 
@@ -220,37 +221,46 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   };
 
   const renderAnalysisStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center py-8"
-    >
-      <div className="mb-6">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
-          {isAnalyzing ? (
-            <Loader2 className="w-8 h-8 text-white animate-spin" />
-          ) : (
-            <Sparkles className="w-8 h-8 text-white" />
-          )}
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-8"
+      >
+        <div className="mb-6">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
+            {isAnalyzing ? (
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+            ) : (
+              <Sparkles className="w-8 h-8 text-white" />
+            )}
+          </div>
+          <h3 className="text-xl font-semibold mb-2">
+            {isAnalyzing ? 'Analyzing Your Content' : 'Ready to Optimize'}
+          </h3>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            {isAnalyzing 
+              ? 'Our AI is analyzing your content for SEO, readability, and optimization opportunities...'
+              : 'Click the button below to start a comprehensive analysis of your content.'
+            }
+          </p>
         </div>
-        <h3 className="text-xl font-semibold mb-2">
-          {isAnalyzing ? 'Analyzing Your Content' : 'Ready to Optimize'}
-        </h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          {isAnalyzing 
-            ? 'Our AI is analyzing your content for SEO, readability, and optimization opportunities...'
-            : 'Click the button below to start a comprehensive analysis of your content.'
-          }
-        </p>
-      </div>
-      
-      {!isAnalyzing && (
-        <Button onClick={handleStartAnalysis} size="lg" className="gap-2">
-          <Zap className="w-4 h-4" />
-          Start Analysis
-        </Button>
-      )}
-    </motion.div>
+        
+        {!isAnalyzing && (
+          <Button onClick={handleStartAnalysis} size="lg" className="gap-2">
+            <Zap className="w-4 h-4" />
+            Start Analysis
+          </Button>
+        )}
+      </motion.div>
+
+      <AnalysisProgress 
+        isAnalyzing={isAnalyzing} 
+        onAnalysisComplete={() => {
+          // Analysis progress component will handle its own completion
+        }}
+      />
+    </div>
   );
 
   const renderSuggestionsStep = () => (

@@ -30,6 +30,7 @@ export const useContentOptimizer = (content: string) => {
   const analyzeContent = useCallback(async () => {
     if (!content || content.length < 50) {
       setAnalysisError('Content is too short for analysis. Please provide at least 50 characters.');
+      toast.error('Content is too short for analysis');
       return;
     }
 
@@ -91,13 +92,28 @@ export const useContentOptimizer = (content: string) => {
     setIsOptimizing(true);
     
     try {
+      // Convert quality suggestions to optimization suggestions
+      const qualityAsOptimization: OptimizationSuggestion[] = qualitySuggestions.map(q => ({
+        id: q.id,
+        title: q.title,
+        description: q.description,
+        type: 'content' as const,
+        priority: typeof q.priority === 'number' ? 
+          (q.priority >= 8 ? 'high' : q.priority >= 5 ? 'medium' : 'low') as 'high' | 'medium' | 'low' :
+          q.priority as 'high' | 'medium' | 'low',
+        category: q.category,
+        autoFixable: q.autoFixable,
+        impact: q.type === 'critical' ? 'high' as const : q.type === 'major' ? 'medium' as const : 'low' as const,
+        effort: 'medium' as const
+      }));
+
       // Get selected suggestions from all categories
-      const allSuggestions = [
+      const allSuggestions: OptimizationSuggestion[] = [
         ...contentSuggestions,
         ...aiDetectionSuggestions,
         ...serpIntegrationSuggestions,
         ...solutionSuggestions,
-        ...qualitySuggestions
+        ...qualityAsOptimization
       ];
 
       const selected = allSuggestions.filter(s => selectedSuggestions.includes(s.id));
@@ -107,14 +123,13 @@ export const useContentOptimizer = (content: string) => {
         return null;
       }
 
-      // Use the real optimization service with correct parameters
       const optimizedContent = await performOptimization(
         content,
         selectedSuggestions,
-        contentSuggestions,
-        aiDetectionSuggestions,
-        serpIntegrationSuggestions,
-        solutionSuggestions
+        selected.filter(s => s.type === 'content' || s.category === 'content'),
+        selected.filter(s => s.type === 'humanization'),
+        selected.filter(s => s.type === 'serp_integration'),
+        selected.filter(s => s.type === 'solution')
       );
       
       if (optimizedContent) {

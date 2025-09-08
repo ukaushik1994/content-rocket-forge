@@ -8,5 +8,5 @@ export * from './AutoOptimizeModal';
 export * from './ContentReviewCard';
 export * from './ContentRepurposingCard';
 export * from './tabs';
-export * from './optimization/components/BackgroundAnalyzer';
+export * from './optimization/components/AnalysisProgress';
 export * from './optimization/components/AnalyticsDashboard';
