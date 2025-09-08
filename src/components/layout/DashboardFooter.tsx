@@ -195,9 +195,7 @@ export const DashboardFooter: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-6">
-              <p className="text-white/60 text-sm">
-                © 2024 Content Pro. All rights reserved.
-              </p>
+              <p className="text-white/60 text-sm">© 2026 Content Pro. All rights reserved.</p>
               
               <Button onClick={scrollToTop} variant="ghost" size="sm" className="h-10 w-10 rounded-lg bg-white/5 backdrop-blur-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/10 p-0">
                 <ArrowUp className="h-4 w-4" />
