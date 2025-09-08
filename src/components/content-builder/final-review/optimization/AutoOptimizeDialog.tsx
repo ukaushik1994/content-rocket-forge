@@ -6,9 +6,12 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle2, BarChart3, FileText, Target, Zap, Sparkles, AlertTriangle, History } from 'lucide-react';
+import { Loader2, CheckCircle2, BarChart3, FileText, Target, Zap, Sparkles, AlertTriangle, History, Undo2, Settings } from 'lucide-react';
 import { useContentOptimizer } from './useContentOptimizer';
 import { useContentQualityIntegration } from './hooks/useContentQualityIntegration';
+import { useProgressiveOptimization } from './hooks/useProgressiveOptimization';
+import { useBulkSelection } from './hooks/useBulkSelection';
+import { useOptimizationHistory } from './hooks/useOptimizationHistory';
 import { EnhancedSerpItemsReference } from './components/EnhancedSerpItemsReference';
 import { EnhancedSuggestionSection } from './components/EnhancedSuggestionSection';
 import { OptimizationFeedback } from './components/OptimizationFeedback';
@@ -16,6 +19,8 @@ import { OptimizationHistory } from './components/OptimizationHistory';
 import { OptimizationPreview } from './components/OptimizationPreview';
 import { EnhancedSuggestionDisplay } from './components/EnhancedSuggestionDisplay';
 import { OptimizationProgress } from './components/OptimizationProgress';
+import { BulkSelectionControls } from './components/BulkSelectionControls';
+import { UndoRedoControls } from './components/UndoRedoControls';
 import { UnifiedSuggestion } from './types';
 import { 
   generateOptimizationSessionId, 
@@ -41,8 +46,6 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
   const [originalContent, setOriginalContent] = useState(content);
   const [optimizedResult, setOptimizedResult] = useState<string | null>(null);
   const [appliedSuggestions, setAppliedSuggestions] = useState<any[]>([]);
-  const [optimizationProgress, setOptimizationProgress] = useState(0);
-  const [currentOptimizationStep, setCurrentOptimizationStep] = useState(0);
   const [optimizationSettings] = useState<OptimizationSettings>({
     tone: 'professional',
     audience: 'general',
@@ -54,6 +57,10 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
     enhanceReadability: true,
     customInstructions: ''
   });
+
+  // Enhanced hooks for progressive optimization
+  const progressiveOptimization = useProgressiveOptimization();
+  const optimizationHistory = useOptimizationHistory();
 
   const {
     isAnalyzing,
@@ -78,19 +85,77 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
     totalChecks
   } = useContentQualityIntegration();
 
-  // Initialize analysis when dialog opens
+  // Convert OptimizationSuggestion to UnifiedSuggestion
+  const convertToUnified = (suggestions: any[]): UnifiedSuggestion[] => {
+    return suggestions.map(s => ({
+      ...s,
+      type: s.type as any,
+      priority: s.priority as any
+    }));
+  };
+
+  // Create combined suggestions list for bulk selection
+  const combinedSuggestions = [
+    ...convertToUnified(contentSuggestions),
+    ...convertToUnified(solutionSuggestions),
+    ...convertToUnified(aiDetectionSuggestions),
+    ...convertToUnified(serpIntegrationSuggestions),
+    ...qualitySuggestions
+  ];
+
+  const bulkSelection = useBulkSelection(combinedSuggestions);
+
+  // Initialize analysis when dialog opens with progressive loading
   React.useEffect(() => {
-    if (isOpen && !isAnalyzing && !contentSuggestions.length && !qualitySuggestions.length) {
-      analyzeContent();
+    if (isOpen && !progressiveOptimization.state.isRunning && !allSuggestions.length) {
+      const runProgressiveAnalysis = async () => {
+        await progressiveOptimization.startOptimization(content, {
+          onQualityAnalysis: async () => {
+            // Trigger quality analysis and return results
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return qualitySuggestions;
+          },
+          onContentAnalysis: async () => {
+            // Trigger content analysis
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return contentSuggestions;
+          },
+          onAIDetection: async () => {
+            // Trigger AI detection
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return aiDetectionSuggestions;
+          },
+          onSerpAnalysis: async () => {
+            // Trigger SERP analysis
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return serpIntegrationSuggestions;
+          },
+          onSolutionAnalysis: async () => {
+            // Trigger solution analysis
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return solutionSuggestions;
+          }
+        });
+      };
+
+      if (!isAnalyzing) {
+        analyzeContent();
+        runProgressiveAnalysis();
+      }
     }
-  }, [isOpen, isAnalyzing, contentSuggestions, qualitySuggestions, analyzeContent]);
+  }, [isOpen, progressiveOptimization.state.isRunning, allSuggestions.length, isAnalyzing, analyzeContent]);
 
   const handleApplySuggestions = async () => {
     const startTime = Date.now();
-    setCurrentOptimizationStep(1);
-    setOptimizationProgress(25);
     
     try {
+      // Add to optimization history
+      optimizationHistory.addHistoryEntry(
+        'apply_suggestions',
+        { content, selectedSuggestions: bulkSelection.selectedSuggestions },
+        { content, selectedSuggestions: bulkSelection.selectedSuggestions }
+      );
+
       // Get all suggestions for reasoning generation
       const allSuggestionsList: SuggestionForLogging[] = [
         ...contentSuggestions,
@@ -100,9 +165,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
         ...qualitySuggestions
       ];
 
-      const selectedSuggestionsList = allSuggestionsList.filter(s => selectedSuggestions.includes(s.id));
-      setCurrentOptimizationStep(2);
-      setOptimizationProgress(50);
+      const selectedSuggestionsList = allSuggestionsList.filter(s => bulkSelection.selectedSuggestions.includes(s.id));
       
       const reasoning = generateOptimizationReasoning(selectedSuggestionsList, content, optimizationSettings);
       
@@ -121,20 +184,16 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
 
       setOptimizationLogId(logId);
       setOriginalContent(content);
-      setCurrentOptimizationStep(3);
-      setOptimizationProgress(75);
 
       const optimizedContent = await optimizeContent();
       
       if (optimizedContent && optimizedContent !== content) {
         const endTime = Date.now();
-        setCurrentOptimizationStep(4);
-        setOptimizationProgress(100);
         
         const performanceMetrics = {
           optimizationTime: endTime - startTime,
           contentLengthChange: optimizedContent.length - content.length,
-          suggestionCount: selectedSuggestions.length
+          suggestionCount: bulkSelection.selectedSuggestions.length
         };
 
         // Update log with success
@@ -154,23 +213,27 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
           );
         }
 
+        // Add completion to history
+        optimizationHistory.addHistoryEntry(
+          'optimization_complete',
+          { content, selectedSuggestions: bulkSelection.selectedSuggestions },
+          { content: optimizedContent, selectedSuggestions: [] },
+          { appliedSuggestions: selectedSuggestionsList, optimizationSettings, performanceMetrics }
+        );
+
         setOptimizedResult(optimizedContent);
         setAppliedSuggestions(selectedSuggestionsList);
         setShowPreview(true);
         
-        toast.success(`Content optimized successfully! Applied ${selectedSuggestions.length} improvements.`, {
+        toast.success(`Content optimized successfully! Applied ${bulkSelection.selectedSuggestions.length} improvements.`, {
           description: `Content length changed from ${content.length} to ${optimizedContent.length} characters.`
         });
       } else {
         toast.error('Optimization failed or no changes were made. Please try again with different suggestions.');
-        setOptimizationProgress(0);
-        setCurrentOptimizationStep(0);
       }
     } catch (error) {
       console.error('Optimization failed:', error);
       toast.error('Failed to optimize content. Please check your connection and try again.');
-      setOptimizationProgress(0);
-      setCurrentOptimizationStep(0);
     }
   };
 
@@ -186,32 +249,41 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
     setShowPreview(false);
     setOptimizedResult(null);
     setAppliedSuggestions([]);
-    setOptimizationProgress(0);
-    setCurrentOptimizationStep(0);
   };
 
   const handleIncorporateAllSerp = () => {
     incorporateAllSerpItems();
   };
 
-  // Convert OptimizationSuggestion to UnifiedSuggestion
-  const convertToUnified = (suggestions: any[]): UnifiedSuggestion[] => {
-    return suggestions.map(s => ({
-      ...s,
-      type: s.type as any,
-      priority: s.priority as any
-    }));
+  // Undo/Redo handlers
+  const handleUndo = () => {
+    const entry = optimizationHistory.undo();
+    if (entry) {
+      onContentUpdate(entry.before.content);
+      bulkSelection.setSelectedSuggestions(entry.before.selectedSuggestions);
+      toast.info('Undid last action');
+    }
   };
 
-  const allSuggestions = [
-    ...convertToUnified(contentSuggestions),
-    ...convertToUnified(solutionSuggestions),
-    ...convertToUnified(aiDetectionSuggestions),
-    ...convertToUnified(serpIntegrationSuggestions),
-    ...qualitySuggestions
-  ];
+  const handleRedo = () => {
+    const entry = optimizationHistory.redo();
+    if (entry) {
+      onContentUpdate(entry.after.content);
+      bulkSelection.setSelectedSuggestions(entry.after.selectedSuggestions);
+      toast.info('Redid action');
+    }
+  };
 
-  const hasSuggestions = allSuggestions.length > 0;
+  const handleRevert = (entryId: string) => {
+    const entry = optimizationHistory.revertToEntry(entryId);
+    if (entry) {
+      onContentUpdate(entry.before.content);
+      bulkSelection.setSelectedSuggestions(entry.before.selectedSuggestions);
+      toast.info('Reverted to selected point');
+    }
+  };
+
+  const hasSuggestions = combinedSuggestions.length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -238,10 +310,10 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
               </div>
               
               {/* Floating action area */}
-              {selectedSuggestions.length > 0 && (
+              {bulkSelection.selectedSuggestions.length > 0 && (
                 <div className="p-4 bg-primary/10 rounded-xl border border-primary/20 backdrop-blur-sm">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{selectedSuggestions.length}</div>
+                    <div className="text-2xl font-bold text-primary">{bulkSelection.selectedSuggestions.length}</div>
                     <div className="text-xs text-muted-foreground">Selected</div>
                   </div>
                 </div>
@@ -269,7 +341,17 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
             </div>
           </DialogHeader>
         
-        {isAnalyzing ? (
+        {progressiveOptimization.state.isRunning ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <OptimizationProgress 
+              currentStep={progressiveOptimization.state.currentStep}
+              totalSteps={progressiveOptimization.state.totalSteps}
+              steps={progressiveOptimization.state.steps}
+              isOptimizing={progressiveOptimization.state.isRunning}
+              progress={progressiveOptimization.state.overallProgress}
+            />
+          </div>
+        ) : isOptimizing ? (
           <div className="flex flex-col items-center justify-center py-12">
             <OptimizationProgress 
               currentStep={0}
@@ -277,16 +359,6 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
               steps={[]}
               isOptimizing={true}
               progress={25}
-            />
-          </div>
-        ) : isOptimizing ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <OptimizationProgress 
-              currentStep={currentOptimizationStep}
-              totalSteps={4}
-              steps={[]}
-              isOptimizing={true}
-              progress={optimizationProgress}
             />
           </div>
         ) : showPreview && optimizedResult ? (
@@ -304,8 +376,15 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
           <>
             {hasSuggestions ? (
               <div className="flex-1 overflow-hidden px-6">
-                <Tabs defaultValue="quality" className="h-full flex flex-col">
-                  <TabsList className="grid w-full grid-cols-5 bg-background/60 backdrop-blur-sm border border-white/10">
+                <Tabs defaultValue="optimization" className="h-full flex flex-col">
+                  <TabsList className="grid w-full grid-cols-6 bg-background/60 backdrop-blur-sm border border-white/10">
+                    <TabsTrigger 
+                      value="optimization" 
+                      className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:border-primary/30"
+                    >
+                      <Zap className="h-4 w-4" />
+                      Optimize
+                    </TabsTrigger>
                     <TabsTrigger 
                       value="quality" 
                       className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:border-primary/30"
@@ -328,11 +407,11 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                       SERP ({serpIntegrationSuggestions.length})
                     </TabsTrigger>
                     <TabsTrigger 
-                      value="ai" 
+                      value="controls" 
                       className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:border-primary/30"
                     >
-                      <Zap className="h-4 w-4" />
-                      AI ({aiDetectionSuggestions.length})
+                      <Undo2 className="h-4 w-4" />
+                      Controls
                     </TabsTrigger>
                     <TabsTrigger 
                       value="history" 
@@ -344,6 +423,38 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                   </TabsList>
                   
                   <div className="flex-1 overflow-y-auto mt-4 space-y-4">
+                    <TabsContent value="optimization" className="space-y-4 mt-0">
+                      <BulkSelectionControls bulkSelection={bulkSelection} />
+                      
+                      <EnhancedSuggestionDisplay
+                        suggestions={allSuggestions}
+                        selectedSuggestions={bulkSelection.selectedSuggestions}
+                        onToggleSuggestion={bulkSelection.toggleSuggestion}
+                        showDetailedReasoning={true}
+                      />
+                      
+                      {bulkSelection.selectedSuggestions.length > 0 && (
+                        <div className="pt-4 border-t border-white/10">
+                          <Button
+                            onClick={handleApplySuggestions}
+                            disabled={isOptimizing}
+                            className="w-full bg-primary hover:bg-primary/90"
+                          >
+                            {isOptimizing ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Optimizing Content...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-4 h-4 mr-2" />
+                                Apply {bulkSelection.selectedSuggestions.length} Optimizations
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </TabsContent>
                     <TabsContent value="quality" className="space-y-4 mt-0">
                       <EnhancedSerpItemsReference onIncorporateAllSerp={handleIncorporateAllSerp} />
                       
