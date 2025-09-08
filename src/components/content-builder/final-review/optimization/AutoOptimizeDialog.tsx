@@ -13,6 +13,9 @@ import { EnhancedSerpItemsReference } from './components/EnhancedSerpItemsRefere
 import { EnhancedSuggestionSection } from './components/EnhancedSuggestionSection';
 import { OptimizationFeedback } from './components/OptimizationFeedback';
 import { OptimizationHistory } from './components/OptimizationHistory';
+import { OptimizationPreview } from './components/OptimizationPreview';
+import { EnhancedSuggestionDisplay } from './components/EnhancedSuggestionDisplay';
+import { OptimizationProgress } from './components/OptimizationProgress';
 import { UnifiedSuggestion } from './types';
 import { 
   generateOptimizationSessionId, 
@@ -33,9 +36,13 @@ interface AutoOptimizeDialogProps {
 export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }: AutoOptimizeDialogProps) {
   const [sessionId] = useState(() => generateOptimizationSessionId());
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [optimizationLogId, setOptimizationLogId] = useState<string | null>(null);
   const [originalContent, setOriginalContent] = useState(content);
   const [optimizedResult, setOptimizedResult] = useState<string | null>(null);
+  const [appliedSuggestions, setAppliedSuggestions] = useState<any[]>([]);
+  const [optimizationProgress, setOptimizationProgress] = useState(0);
+  const [currentOptimizationStep, setCurrentOptimizationStep] = useState(0);
   const [optimizationSettings] = useState<OptimizationSettings>({
     tone: 'professional',
     audience: 'general',
@@ -80,6 +87,8 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
 
   const handleApplySuggestions = async () => {
     const startTime = Date.now();
+    setCurrentOptimizationStep(1);
+    setOptimizationProgress(25);
     
     try {
       // Get all suggestions for reasoning generation
@@ -92,6 +101,9 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
       ];
 
       const selectedSuggestionsList = allSuggestionsList.filter(s => selectedSuggestions.includes(s.id));
+      setCurrentOptimizationStep(2);
+      setOptimizationProgress(50);
+      
       const reasoning = generateOptimizationReasoning(selectedSuggestionsList, content, optimizationSettings);
       
       // Log optimization attempt
@@ -109,11 +121,16 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
 
       setOptimizationLogId(logId);
       setOriginalContent(content);
+      setCurrentOptimizationStep(3);
+      setOptimizationProgress(75);
 
       const optimizedContent = await optimizeContent();
       
       if (optimizedContent && optimizedContent !== content) {
         const endTime = Date.now();
+        setCurrentOptimizationStep(4);
+        setOptimizationProgress(100);
+        
         const performanceMetrics = {
           optimizationTime: endTime - startTime,
           contentLengthChange: optimizedContent.length - content.length,
@@ -138,21 +155,39 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
         }
 
         setOptimizedResult(optimizedContent);
-        onContentUpdate(optimizedContent);
-        
-        // Show feedback dialog
-        setShowFeedback(true);
+        setAppliedSuggestions(selectedSuggestionsList);
+        setShowPreview(true);
         
         toast.success(`Content optimized successfully! Applied ${selectedSuggestions.length} improvements.`, {
           description: `Content length changed from ${content.length} to ${optimizedContent.length} characters.`
         });
       } else {
         toast.error('Optimization failed or no changes were made. Please try again with different suggestions.');
+        setOptimizationProgress(0);
+        setCurrentOptimizationStep(0);
       }
     } catch (error) {
       console.error('Optimization failed:', error);
       toast.error('Failed to optimize content. Please check your connection and try again.');
+      setOptimizationProgress(0);
+      setCurrentOptimizationStep(0);
     }
+  };
+
+  const handleApplyOptimizedContent = () => {
+    if (optimizedResult) {
+      onContentUpdate(optimizedResult);
+      setShowPreview(false);
+      setShowFeedback(true);
+    }
+  };
+
+  const handleCancelPreview = () => {
+    setShowPreview(false);
+    setOptimizedResult(null);
+    setAppliedSuggestions([]);
+    setOptimizationProgress(0);
+    setCurrentOptimizationStep(0);
   };
 
   const handleIncorporateAllSerp = () => {
@@ -236,16 +271,34 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
         
         {isAnalyzing ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-            <p className="text-center text-muted-foreground">
-              Analyzing content quality and generating optimization suggestions...
-            </p>
-            <div className="mt-4 space-y-2 text-center">
-              <div className="text-xs text-muted-foreground">• Checking document structure</div>
-              <div className="text-xs text-muted-foreground">• Validating SEO elements</div>
-              <div className="text-xs text-muted-foreground">• Analyzing keyword usage</div>
-              <div className="text-xs text-muted-foreground">• Evaluating solution integration</div>
-            </div>
+            <OptimizationProgress 
+              currentStep={0}
+              totalSteps={4}
+              steps={[]}
+              isOptimizing={true}
+              progress={25}
+            />
+          </div>
+        ) : isOptimizing ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <OptimizationProgress 
+              currentStep={currentOptimizationStep}
+              totalSteps={4}
+              steps={[]}
+              isOptimizing={true}
+              progress={optimizationProgress}
+            />
+          </div>
+        ) : showPreview && optimizedResult ? (
+          <div className="flex-1 overflow-y-auto px-6">
+            <OptimizationPreview
+              originalContent={originalContent}
+              optimizedContent={optimizedResult}
+              appliedSuggestions={appliedSuggestions}
+              isOptimizing={false}
+              onApplyChanges={handleApplyOptimizedContent}
+              onCancel={handleCancelPreview}
+            />
           </div>
         ) : (
           <>
