@@ -43,7 +43,7 @@ const Navbar = () => {
       <header className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <div className="mr-4 hidden lg:flex">
-            <Link to="/">
+            <Link to="/dashboard">
               <CreAiterLogo showText={true} size="md" />
             </Link>
           </div>
@@ -116,7 +116,7 @@ const Navbar = () => {
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden">
           <div className="fixed inset-y-0 left-0 z-50 w-3/4 bg-background p-6 shadow-lg">
             <div className="flex items-center justify-between mb-8">
-              <Link to="/" onClick={() => setShowMobileMenu(false)}>
+              <Link to="/dashboard" onClick={() => setShowMobileMenu(false)}>
                 <CreAiterLogo showText={true} size="md" />
               </Link>
               <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
