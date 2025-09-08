@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle2, BarChart3, FileText, Target, Zap, Sparkles, AlertTriangle, History, Undo2, Settings } from 'lucide-react';
+import { Loader2, CheckCircle2, BarChart3, FileText, Target, Zap, Sparkles, AlertTriangle, History, Undo2, Settings, Brain } from 'lucide-react';
 import { useContentOptimizer } from './useContentOptimizer';
 import { useContentQualityIntegration } from './hooks/useContentQualityIntegration';
 import { useProgressiveOptimization } from './hooks/useProgressiveOptimization';
@@ -21,6 +21,7 @@ import { EnhancedSuggestionDisplay } from './components/EnhancedSuggestionDispla
 import { OptimizationProgress } from './components/OptimizationProgress';
 import { BulkSelectionControls } from './components/BulkSelectionControls';
 import { UndoRedoControls } from './components/UndoRedoControls';
+import { ProgressiveAnalysis, defaultAnalysisSteps } from './components/ProgressiveAnalysis';
 import { UnifiedSuggestion } from './types';
 import { 
   generateOptimizationSessionId, 
@@ -29,6 +30,7 @@ import {
   OptimizationSettings,
   SuggestionForLogging
 } from '@/services/contentOptimizationService';
+import { optimizationCache } from '@/services/optimizationCacheService';
 import { toast } from 'sonner';
 
 interface AutoOptimizeDialogProps {
@@ -105,10 +107,19 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
 
   const bulkSelection = useBulkSelection(combinedSuggestions);
 
-  // Initialize analysis when dialog opens with progressive loading
+  // Initialize analysis when dialog opens with progressive loading and caching
   React.useEffect(() => {
     if (isOpen && !progressiveOptimization.state.isRunning && !combinedSuggestions.length) {
       const runProgressiveAnalysis = async () => {
+        // Check cache first
+        const cachedAnalysis = optimizationCache.getCachedAnalysis(content);
+        if (cachedAnalysis) {
+          toast.success('Using cached analysis results', { 
+            description: 'Found recent analysis for this content' 
+          });
+          return;
+        }
+
         await progressiveOptimization.startOptimization(content, {
           onQualityAnalysis: async () => {
             // Trigger quality analysis and return results
@@ -136,6 +147,9 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
             return solutionSuggestions;
           }
         });
+
+        // Cache the results
+        optimizationCache.setCachedAnalysis(content, contentSuggestions, qualitySuggestions);
       };
 
       if (!isAnalyzing) {
@@ -377,13 +391,20 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
             {hasSuggestions ? (
               <div className="flex-1 overflow-hidden px-6">
                 <Tabs defaultValue="optimization" className="h-full flex flex-col">
-                  <TabsList className="grid w-full grid-cols-6 bg-background/60 backdrop-blur-sm border border-white/10">
+                  <TabsList className="grid w-full grid-cols-7 bg-background/60 backdrop-blur-sm border border-white/10">
                     <TabsTrigger 
                       value="optimization" 
                       className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:border-primary/30"
                     >
                       <Zap className="h-4 w-4" />
                       Optimize
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="ai-analysis" 
+                      className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:border-primary/30"
+                    >
+                      <Brain className="h-4 w-4" />
+                      AI Analysis
                     </TabsTrigger>
                     <TabsTrigger 
                       value="quality" 
