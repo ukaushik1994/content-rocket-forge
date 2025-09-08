@@ -141,7 +141,8 @@ export const KeywordSelectionStep = () => {
   const selectedCount = serpSelections.filter(item => item.selected).length;
   
   return (
-    <div className="w-full px-6 pt-24 pb-12">
+    <>
+      <div className="w-full px-6 pt-24 pb-12">
         {/* Hero Search Section */}
         <motion.div 
           className="text-center mb-16 relative"
@@ -438,6 +439,7 @@ export const KeywordSelectionStep = () => {
                   </motion.div>
                 )}
               </motion.div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
@@ -474,6 +476,6 @@ export const KeywordSelectionStep = () => {
         onClearAll={handleClearAllSelections}
         onGenerateOutline={handleGenerateOutline}
       />
-    </div>
+    </>
   );
 };
