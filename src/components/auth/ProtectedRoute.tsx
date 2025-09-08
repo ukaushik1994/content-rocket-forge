@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  redirectPath = '/auth' 
+  redirectPath = '/landing' 
 }) => {
   const { user, loading } = useAuth();
   
