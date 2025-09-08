@@ -116,7 +116,7 @@ export function ContentGapsTab({
                           <div className="p-2 bg-gradient-to-r from-rose-500/20 to-orange-500/20 rounded-lg backdrop-blur-sm border border-white/20">
                             <Star className="h-4 w-4 text-rose-400" />
                           </div>
-                          <Badge className="text-xs font-mono bg-gradient-to-r from-rose-500/20 to-orange-500/20 text-rose-300 border-rose-500/30">
+                          <Badge className="text-xs font-mono bg-gradient-to-r from-purple-500/20 to-indigo-500/20 text-purple-300 border-purple-500/30">
                             Opportunity
                           </Badge>
                           {selected && (
