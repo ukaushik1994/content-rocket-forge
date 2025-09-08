@@ -47,12 +47,12 @@ export function FloatingSelectionWindow({
     }} className="fixed bottom-0 left-0 right-0 z-50 w-full floating-particles flex justify-center p-4">
         <div className="relative max-w-4xl w-full">
           {/* Holographic border effect */}
-          <div className="absolute inset-0 holographic-border rounded-xl" />
+          
           
           {/* Main container with enhanced glass effect */}
           <div className="relative bg-black/80 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl card-glass">
             {/* Animated gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-purple-500/5 to-cyan-500/5 animate-gradient-shift bg-300% rounded-xl" />
+            
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-xl" />
             {/* Collapsed State - Compact Bar */}
             {!isExpanded}
