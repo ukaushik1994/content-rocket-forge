@@ -22,39 +22,41 @@ const keywords = [
   'Leads'
 ];
 
-// Generate randomized positions with collision detection
+// Generate randomized positions with collision detection and full corner coverage
 const generateRandomPositions = (count: number) => {
   const positions: { top: string; left: string }[] = [];
   const minDistance = 8; // Minimum distance between elements (in percentage)
+  
+  // Define the 8 zones for better distribution
+  const zones = [
+    // 4 Corner zones
+    { name: 'top-left', leftRange: [0, 25], topRange: [0, 25] },
+    { name: 'top-right', leftRange: [75, 100], topRange: [0, 25] },
+    { name: 'bottom-left', leftRange: [0, 25], topRange: [75, 100] },
+    { name: 'bottom-right', leftRange: [75, 100], topRange: [75, 100] },
+    // 4 Edge zones (avoiding center content area: 25-75% both axes)
+    { name: 'top-edge', leftRange: [25, 75], topRange: [0, 25] },
+    { name: 'bottom-edge', leftRange: [25, 75], topRange: [75, 100] },
+    { name: 'left-edge', leftRange: [0, 25], topRange: [25, 75] },
+    { name: 'right-edge', leftRange: [75, 100], topRange: [25, 75] }
+  ];
   
   for (let i = 0; i < count; i++) {
     let attempts = 0;
     let position;
     
     do {
-      // Generate position across full screen, avoiding center area (20-80% left, 35-65% top)
-      let left, top;
+      // Select a random zone with equal probability
+      const selectedZone = zones[Math.floor(Math.random() * zones.length)];
       
-      // Randomly choose left or right side, or top/bottom areas
-      const zone = Math.random();
+      // Generate position within the selected zone
+      const leftMin = selectedZone.leftRange[0];
+      const leftMax = selectedZone.leftRange[1];
+      const topMin = selectedZone.topRange[0];
+      const topMax = selectedZone.topRange[1];
       
-      if (zone < 0.3) {
-        // Left side
-        left = 5 + Math.random() * 15; // 5% to 20%
-        top = 5 + Math.random() * 90;  // 5% to 95%
-      } else if (zone < 0.6) {
-        // Right side  
-        left = 80 + Math.random() * 15; // 80% to 95%
-        top = 5 + Math.random() * 90;   // 5% to 95%
-      } else if (zone < 0.8) {
-        // Top area
-        left = 20 + Math.random() * 60; // 20% to 80%
-        top = 5 + Math.random() * 25;   // 5% to 30%
-      } else {
-        // Bottom area
-        left = 20 + Math.random() * 60; // 20% to 80%
-        top = 70 + Math.random() * 25;  // 70% to 95%
-      }
+      const left = leftMin + Math.random() * (leftMax - leftMin);
+      const top = topMin + Math.random() * (topMax - topMin);
       
       position = { 
         top: `${top}%`, 
