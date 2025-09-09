@@ -88,7 +88,7 @@ class ProposalPipelineSyncService implements ProposalSyncService {
           user_id: userId,
           strategy_id: strategyId,
           title: proposal.title,
-          stage: 'idea',
+          stage: 'to_be_written',
           content_type: proposal.content_type || 'blog',
           target_keyword: proposal.primary_keyword,
           priority: this.mapPriorityToLevel(proposal.priority_tag || 'evergreen'),

@@ -27,7 +27,7 @@ export const PipelineItemDialog: React.FC<PipelineItemDialogProps> = ({
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
-    stage: 'ideation',
+    stage: 'to_be_written',
     content_type: 'blog',
     target_keyword: '',
     word_count: 0,
@@ -46,7 +46,7 @@ export const PipelineItemDialog: React.FC<PipelineItemDialogProps> = ({
     if (item) {
       setFormData({
         title: item.title || '',
-        stage: item.stage || 'ideation',
+        stage: item.stage || 'to_be_written',
         content_type: item.content_type || 'blog',
         target_keyword: item.target_keyword || '',
         word_count: item.word_count || 0,
@@ -73,7 +73,7 @@ export const PipelineItemDialog: React.FC<PipelineItemDialogProps> = ({
       onClose();
       setFormData({
         title: '',
-        stage: 'ideation',
+        stage: 'to_be_written',
         content_type: 'blog',
         target_keyword: '',
         word_count: 0,
@@ -148,9 +148,8 @@ export const PipelineItemDialog: React.FC<PipelineItemDialogProps> = ({
                   <SelectValue placeholder="Select stage" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-white/20">
-                  <SelectItem value="ideation">Ideation</SelectItem>
-                  <SelectItem value="research">Research</SelectItem>
-                  <SelectItem value="writing">Writing</SelectItem>
+                  <SelectItem value="to_be_written">To Be Written</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="review">Review</SelectItem>
                   <SelectItem value="scheduled">Scheduled</SelectItem>
                   <SelectItem value="published">Published</SelectItem>

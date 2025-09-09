@@ -155,7 +155,7 @@ class ProposalLifecycleService {
     return {
       canScheduleToCalendar: !context.calendar_item && context.lifecycle_status !== 'completed',
       canAddToPipeline: !context.pipeline_item && context.lifecycle_status !== 'completed',
-      canGenerateContent: context.pipeline_item?.stage === 'writing' || context.calendar_item?.status === 'writing',
+      canGenerateContent: context.pipeline_item?.stage === 'in_progress' || context.calendar_item?.status === 'writing',
       canMarkComplete: context.completion_percentage >= 80 && context.lifecycle_status !== 'completed',
       canArchive: context.lifecycle_status === 'completed' || context.lifecycle_status === 'published'
     };
@@ -315,7 +315,7 @@ class ProposalLifecycleService {
 
       if (pipelineItem?.stage === 'published') return 'completed';
       if (calendarItem?.status === 'published') return 'completed';
-      if (pipelineItem?.stage === 'writing') return 'in-progress';
+      if (pipelineItem?.stage === 'in_progress') return 'in-progress';
       if (calendarItem?.status === 'writing') return 'in-progress';
       if (pipelineItem || calendarItem) return 'scheduled';
       
@@ -334,9 +334,8 @@ class ProposalLifecycleService {
     if (lifecycleStatus === 'completed' || lifecycleStatus === 'published') return 100;
     if (lifecycleStatus === 'review') return 90;
     if (lifecycleStatus === 'in-progress') {
-      if (pipelineStage === 'writing') return 60;
-      if (pipelineStage === 'research') return 40;
-      if (pipelineStage === 'idea') return 20;
+      if (pipelineStage === 'in_progress') return 60;
+      if (pipelineStage === 'to_be_written') return 20;
     }
     if (lifecycleStatus === 'scheduled') return 30;
     if (lifecycleStatus === 'selected') return 10;

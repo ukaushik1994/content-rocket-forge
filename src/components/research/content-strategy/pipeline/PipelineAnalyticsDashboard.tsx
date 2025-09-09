@@ -33,7 +33,7 @@ export const PipelineAnalyticsDashboard: React.FC<PipelineAnalyticsDashboardProp
     const totalItems = pipelineItems.length;
     const completedItems = pipelineItems.filter(item => item.stage === 'published').length;
     const inProgressItems = pipelineItems.filter(item => 
-      ['research', 'writing', 'review'].includes(item.stage)
+      ['in_progress', 'review'].includes(item.stage)
     ).length;
     
     // Priority analysis
@@ -200,9 +200,8 @@ export const PipelineAnalyticsDashboard: React.FC<PipelineAnalyticsDashboardProp
               {Object.entries(analytics.stageDistribution).map(([stage, count]) => {
                 const percentage = analytics.totalItems > 0 ? (Number(count) / Number(analytics.totalItems)) * 100 : 0;
                 const stageLabels: Record<string, string> = {
-                  ideation: 'Ideation',
-                  research: 'Research',
-                  writing: 'Writing', 
+                  to_be_written: 'To Be Written',
+                  in_progress: 'In Progress',
                   review: 'Review',
                   scheduled: 'Scheduled',
                   published: 'Published'

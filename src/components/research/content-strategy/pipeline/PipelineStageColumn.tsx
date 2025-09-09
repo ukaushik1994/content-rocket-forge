@@ -116,7 +116,7 @@ export const PipelineStageColumn: React.FC<PipelineStageColumnProps> = ({
         </CardHeader>
 
         <CardContent className="flex-1 pt-0">
-          <div className="space-y-3 min-h-[400px]">
+          <div className="space-y-2 min-h-[300px]">
             {/* Pipeline Items */}
             {items.map((item, index) => (
               <motion.div
@@ -178,16 +178,16 @@ export const PipelineStageColumn: React.FC<PipelineStageColumnProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-border/30 rounded-xl bg-muted/20 backdrop-blur-sm hover:border-border/50 hover:bg-muted/30 transition-all cursor-pointer group"
+                className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border/30 rounded-xl bg-muted/20 backdrop-blur-sm hover:border-border/50 hover:bg-muted/30 transition-all cursor-pointer group"
                 onClick={() => onAddItem(stage.id)}
               >
-                <div className="text-center space-y-2">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                    <Plus className="h-6 w-6 text-primary" />
+                <div className="text-center space-y-1">
+                  <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                    <Plus className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">No content yet</p>
-                    <p className="text-xs text-muted-foreground">Click to add new content</p>
+                    <p className="text-xs font-medium text-foreground">No content yet</p>
+                    <p className="text-xs text-muted-foreground">Click to add</p>
                   </div>
                 </div>
               </motion.div>

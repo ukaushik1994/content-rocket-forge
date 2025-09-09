@@ -29,14 +29,13 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
   } = useContentStrategy();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [showAnalytics, setShowAnalytics] = useState(true);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const { syncProposalAcrossTabs, updateProposalStatus } = useProposalIntegration();
   const { checkOverdueProposals } = useProposalRestoration();
 
   const stages = [
-    { id: 'ideation', label: 'Ideation', color: 'from-blue-500/30 to-cyan-500/30' },
-    { id: 'research', label: 'Research', color: 'from-purple-500/30 to-pink-500/30' },
-    { id: 'writing', label: 'Writing', color: 'from-yellow-500/30 to-orange-500/30' },
+    { id: 'to_be_written', label: 'To Be Written', color: 'from-blue-500/30 to-cyan-500/30' },
+    { id: 'in_progress', label: 'In Progress', color: 'from-yellow-500/30 to-orange-500/30' },
     { id: 'review', label: 'Review', color: 'from-green-500/30 to-emerald-500/30' },
     { id: 'scheduled', label: 'Scheduled', color: 'from-indigo-500/30 to-blue-500/30' },
     { id: 'published', label: 'Published', color: 'from-gray-500/30 to-gray-600/30' }
@@ -53,7 +52,7 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
   };
 
   const getItemsByStage = (stageId: string) => {
-    return pipelineItems.filter(item => item.stage === stageId);
+    return pipelineItems.filter(item => item.stage === stageId).slice(0, 8); // Limit to 8 items per stage
   };
 
   const handleAddItem = (stageId?: string) => {
@@ -191,8 +190,8 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 min-h-[600px]">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-[500px]">
             {stages.map((stage, index) => (
               <React.Fragment key={stage.id}>
                 <PipelineStageColumn
