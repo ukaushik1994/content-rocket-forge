@@ -93,16 +93,6 @@ export const StrategyOverview: React.FC<StrategyOverviewProps> = ({
       count: proposalsGenerated
     },
     {
-      title: 'Manage Pipeline',
-      description: 'Track content through production stages',
-      icon: BarChart3,
-      color: 'from-green-500/20 to-emerald-500/20',
-      borderColor: 'border-green-400/30',
-      textColor: 'text-green-400',
-      action: onNavigateToPipeline,
-      count: pipelineItems.length
-    },
-    {
       title: 'Schedule Content',
       description: 'Plan and organize your content calendar',
       icon: Calendar,
