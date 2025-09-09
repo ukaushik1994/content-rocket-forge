@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { ArrowRight, Clock, User, Target, Plus, Edit, Trash2 } from 'lucide-react';
+import { ArrowRight, Target, Plus, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { PipelineItemDialog } from './PipelineItemDialog';
-import { ProposalStatusBadge } from '../components/ProposalStatusBadge';
-import { CrossTabActions } from '../components/CrossTabActions';
+import { PipelineStageColumn } from './PipelineStageColumn';
+import { PipelineAnalyticsDashboard } from './PipelineAnalyticsDashboard';
 import { useProposalIntegration } from '@/hooks/useProposalIntegration';
+import { useProposalRestoration } from '@/hooks/useProposalRestoration';
 import { toast } from 'sonner';
 
 interface ContentPipelineProps {
@@ -18,50 +18,46 @@ interface ContentPipelineProps {
 }
 
 export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
-  const { pipelineItems, createPipelineItem, updatePipelineItem, deletePipelineItem, loading } = useContentStrategy();
+  const { 
+    pipelineItems, 
+    calendarItems,
+    createPipelineItem, 
+    updatePipelineItem, 
+    deletePipelineItem, 
+    loading,
+    refreshData
+  } = useContentStrategy();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [showAnalytics, setShowAnalytics] = useState(true);
   const { syncProposalAcrossTabs, updateProposalStatus } = useProposalIntegration();
+  const { checkOverdueProposals } = useProposalRestoration();
 
   const stages = [
-    { id: 'ideation', label: 'Ideation', color: 'from-blue-500 to-cyan-500' },
-    { id: 'research', label: 'Research', color: 'from-purple-500 to-pink-500' },
-    { id: 'writing', label: 'Writing', color: 'from-yellow-500 to-orange-500' },
-    { id: 'review', label: 'Review', color: 'from-green-500 to-emerald-500' },
-    { id: 'scheduled', label: 'Scheduled', color: 'from-indigo-500 to-blue-500' },
-    { id: 'published', label: 'Published', color: 'from-gray-500 to-gray-600' }
+    { id: 'ideation', label: 'Ideation', color: 'from-blue-500/30 to-cyan-500/30' },
+    { id: 'research', label: 'Research', color: 'from-purple-500/30 to-pink-500/30' },
+    { id: 'writing', label: 'Writing', color: 'from-yellow-500/30 to-orange-500/30' },
+    { id: 'review', label: 'Review', color: 'from-green-500/30 to-emerald-500/30' },
+    { id: 'scheduled', label: 'Scheduled', color: 'from-indigo-500/30 to-blue-500/30' },
+    { id: 'published', label: 'Published', color: 'from-gray-500/30 to-gray-600/30' }
   ];
 
-  const getStageColor = (stage: string) => {
-    const stageObj = stages.find(s => s.id === stage);
-    return stageObj?.color || 'from-gray-500 to-gray-600';
-  };
-
-  const getPriorityColor = (priority: string) => {
-    const colors = {
-      high: 'bg-red-500/20 text-red-300 border-red-500/30',
-      medium: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-      low: 'bg-green-500/20 text-green-300 border-green-500/30'
-    };
-    return colors[priority as keyof typeof colors];
-  };
-
-  const getTypeIcon = (type: string) => {
-    const icons = {
-      blog: '📝',
-      social: '📱',
-      video: '🎬',
-      email: '✉️'
-    };
-    return icons[type as keyof typeof icons] || '📝';
+  const handleRefreshOverdue = async () => {
+    try {
+      await checkOverdueProposals();
+      await refreshData();
+      toast.success('Checked for overdue content and updated pipeline');
+    } catch (error) {
+      toast.error('Failed to check overdue content');
+    }
   };
 
   const getItemsByStage = (stageId: string) => {
     return pipelineItems.filter(item => item.stage === stageId);
   };
 
-  const handleAddItem = (stage?: string) => {
-    setEditingItem(null);
+  const handleAddItem = (stageId?: string) => {
+    setEditingItem(stageId ? { stage: stageId } : null);
     setDialogOpen(true);
   };
 
@@ -121,240 +117,119 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
 
   if (loading) {
     return (
-      <Card className="glass-panel border-white/10 shadow-2xl">
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-2 text-white">Loading pipeline...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card className="bg-gradient-to-br from-background/80 via-background/60 to-background/40 backdrop-blur-xl border-border/50 shadow-2xl">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-foreground">Loading pipeline...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
-  const totalItems = pipelineItems.length;
-  const inProgressItems = pipelineItems.filter(item => ['research', 'writing'].includes(item.stage)).length;
-  const avgProgress = totalItems > 0 ? Math.round(pipelineItems.reduce((acc, item) => acc + (item.progress_percentage || 0), 0) / totalItems) : 0;
-  const highPriorityItems = pipelineItems.filter(item => item.priority === 'high').length;
-
   return (
-    <>
-      <Card className="glass-panel border-white/10 shadow-2xl">
+    <div className="space-y-6">
+      {/* Analytics Dashboard */}
+      {showAnalytics && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <PipelineAnalyticsDashboard 
+            pipelineItems={pipelineItems} 
+            calendarItems={calendarItems}
+          />
+        </motion.div>
+      )}
+
+      {/* Main Pipeline */}
+      <Card className="bg-gradient-to-br from-background/90 via-background/80 to-background/70 backdrop-blur-xl border-border/50 shadow-2xl">
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-2xl">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl backdrop-blur-sm border border-white/10">
-                <Target className="h-6 w-6 text-green-400" />
+              <div className="p-3 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl backdrop-blur-sm border border-white/10">
+                <Target className="h-6 w-6 text-primary" />
               </div>
-              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Content Pipeline
+              <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                Content Production Pipeline
               </span>
-              <Badge variant="outline" className="text-green-400 border-green-400">
-                {totalItems} items
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                {pipelineItems.length} items
               </Badge>
             </div>
-            <Button size="sm" className="bg-primary/20 hover:bg-primary/30" onClick={() => handleAddItem()}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Content
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-background/80"
+              >
+                📊 {showAnalytics ? 'Hide' : 'Show'} Analytics
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshOverdue}
+                className="bg-background/50 backdrop-blur-sm border-border/50 hover:bg-background/80"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Check Overdue
+              </Button>
+              <Button 
+                size="sm" 
+                className="bg-primary/20 hover:bg-primary/30 backdrop-blur-sm" 
+                onClick={() => handleAddItem()}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Content
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
-            {stages.map((stage, index) => {
-              const stageItems = getItemsByStage(stage.id);
-              
-              return (
-                <motion.div
-                  key={stage.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="space-y-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className={`px-3 py-2 rounded-lg bg-gradient-to-r ${stage.color} bg-opacity-20 border border-white/10`}>
-                      <h3 className="text-sm font-semibold text-white">{stage.label}</h3>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {stageItems.length}
-                    </Badge>
+        
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 min-h-[600px]">
+            {stages.map((stage, index) => (
+              <React.Fragment key={stage.id}>
+                <PipelineStageColumn
+                  stage={stage}
+                  items={getItemsByStage(stage.id)}
+                  stageIndex={index}
+                  totalStages={stages.length}
+                  stages={stages}
+                  onAddItem={handleAddItem}
+                  onEditItem={handleEditItem}
+                  onDeleteItem={handleDeleteItem}
+                  onStageChange={handleStageChange}
+                  onSyncProposal={syncProposalAcrossTabs}
+                  calendarItems={calendarItems}
+                />
+                
+                {/* Stage Connector */}
+                {index < stages.length - 1 && (
+                  <div className="hidden lg:flex justify-center items-center">
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0.5 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: index * 0.1 + 0.3 }}
+                      className="flex flex-col items-center gap-2"
+                    >
+                      <ArrowRight className="h-5 w-5 text-primary animate-pulse" />
+                      <div className="text-xs text-muted-foreground">Next</div>
+                    </motion.div>
                   </div>
-
-                  <div className="space-y-3 min-h-[200px]">
-                    {stageItems.map(item => (
-                       <motion.div
-                         key={item.id}
-                         whileHover={{ scale: 1.02, y: -2 }}
-                         className="p-4 bg-white/5 border border-white/10 rounded-lg hover:border-white/20 transition-all cursor-pointer group"
-                       >
-                         <div className="flex items-start gap-3 mb-3">
-                           {/* Item Image */}
-                           {item.image_url && (
-                             <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                               <img 
-                                 src={item.image_url} 
-                                 alt={item.title}
-                                 className="w-full h-full object-cover"
-                                 onError={(e) => {
-                                   const target = e.target as HTMLImageElement;
-                                   target.style.display = 'none';
-                                   const parent = target.parentElement;
-                                   if (parent) {
-                                     parent.innerHTML = `<div class="w-full h-full bg-primary/20 flex items-center justify-center text-lg">${getTypeIcon(item.content_type)}</div>`;
-                                   }
-                                 }}
-                               />
-                             </div>
-                           )}
-                           
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg">{getTypeIcon(item.content_type)}</span>
-                                  <Badge variant="outline" className={getPriorityColor(item.priority)}>
-                                    {item.priority}
-                                  </Badge>
-                                  {item.source_proposal_id && (
-                                    <>
-                                      <Badge variant="secondary" className="text-xs bg-primary/20 text-primary-foreground">
-                                        AI Proposal
-                                      </Badge>
-                                      <ProposalStatusBadge proposalId={item.source_proposal_id} />
-                                    </>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {item.due_date || 'No date'}
-                                  </div>
-                                  {item.source_proposal_id && (
-                                    <CrossTabActions 
-                                      proposalId={item.source_proposal_id}
-                                      onAction={syncProposalAcrossTabs}
-                                      compact
-                                      size="sm"
-                                    />
-                                  )}
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEditItem(item);
-                                      }}
-                                      className="hover:text-blue-400"
-                                    >
-                                      <Edit className="h-3 w-3" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteItem(item.id);
-                                      }}
-                                      className="hover:text-red-400"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-
-                             <h4 className="font-medium text-white text-sm mb-2 line-clamp-2">
-                               {item.title}
-                             </h4>
-                           </div>
-                         </div>
-
-                         <div className="space-y-2">
-                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                             <User className="h-3 w-3" />
-                             {item.assigned_to || 'Unassigned'}
-                           </div>
-                           
-                           <div>
-                             <div className="flex justify-between text-xs mb-1">
-                               <span className="text-muted-foreground">Progress</span>
-                               <span className="text-white">{item.progress_percentage || 0}%</span>
-                             </div>
-                             <Progress 
-                               value={item.progress_percentage || 0} 
-                               className="h-2 bg-gray-800"
-                             />
-                           </div>
-
-                           {/* Stage Navigation */}
-                           <div className="flex justify-between items-center pt-2">
-                             {index > 0 && (
-                               <Button
-                                 size="sm"
-                                 variant="ghost"
-                                 className="text-xs p-1 h-6"
-                                 onClick={() => handleStageChange(item, stages[index - 1].id)}
-                               >
-                                 ←
-                               </Button>
-                             )}
-                             {index < stages.length - 1 && (
-                               <Button
-                                 size="sm"
-                                 variant="ghost"
-                                 className="text-xs p-1 h-6 ml-auto"
-                                 onClick={() => handleStageChange(item, stages[index + 1].id)}
-                               >
-                                 →
-                               </Button>
-                             )}
-                           </div>
-                         </div>
-                       </motion.div>
-                    ))}
-                    
-                    {stageItems.length === 0 && (
-                      <div className="flex items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-lg">
-                        <button 
-                          onClick={() => handleAddItem(stage.id)}
-                          className="text-center text-muted-foreground hover:text-white transition-colors"
-                        >
-                          <div className="text-2xl mb-2">+</div>
-                          <div className="text-xs">Add content</div>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {index < stages.length - 1 && (
-                    <div className="hidden lg:flex justify-center items-center">
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Pipeline Stats */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-white/10">
-              <div className="text-2xl font-bold text-blue-400">{totalItems}</div>
-              <div className="text-sm text-muted-foreground">Total Items</div>
-            </div>
-            <div className="p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-white/10">
-              <div className="text-2xl font-bold text-yellow-400">{inProgressItems}</div>
-              <div className="text-sm text-muted-foreground">In Progress</div>
-            </div>
-            <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-white/10">
-              <div className="text-2xl font-bold text-green-400">{avgProgress}%</div>
-              <div className="text-sm text-muted-foreground">Avg Progress</div>
-            </div>
-            <div className="p-4 bg-gradient-to-r from-red-500/10 to-pink-500/10 rounded-lg border border-white/10">
-              <div className="text-2xl font-bold text-red-400">{highPriorityItems}</div>
-              <div className="text-sm text-muted-foreground">High Priority</div>
-            </div>
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </CardContent>
       </Card>
 
+      {/* Pipeline Item Dialog */}
       <PipelineItemDialog
         open={dialogOpen}
         onClose={() => {
@@ -364,6 +239,6 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
         onSave={handleSaveItem}
         item={editingItem}
       />
-    </>
+    </div>
   );
 };
