@@ -59,7 +59,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('analysis');
   const [optimizedContent, setOptimizedContent] = useState<string>('');
   const [optimizationProgress, setOptimizationProgress] = useState(0);
-  const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
 
   const {
     isAnalyzing,
@@ -69,8 +68,10 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     aiDetectionSuggestions,
     serpIntegrationSuggestions,
     qualitySuggestions,
+    selectedSuggestions,
     analyzeContent,
     optimizeContent,
+    toggleSuggestion,
     getTotalSuggestionCount
   } = useContentOptimizer(content);
 
@@ -80,7 +81,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       setCurrentStep('analysis');
       setOptimizedContent('');
       setOptimizationProgress(0);
-      setSelectedSuggestions([]);
     }
   }, [isOpen]);
 
@@ -148,7 +148,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           .flatMap(cat => cat.suggestions)
           .filter(s => s.priority === 'high')
           .map(s => s.id);
-        setSelectedSuggestions(highPrioritySuggestions);
+        highPrioritySuggestions.forEach(id => toggleSuggestion(id));
       } else {
         toast.info('No optimization suggestions found - your content looks great!');
         onClose();
@@ -176,16 +176,23 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       });
     }, 500);
 
-    const result = await optimizeContent();
-    
-    clearInterval(progressInterval);
-    setOptimizationProgress(100);
+    try {
+      const result = await optimizeContent();
+      
+      clearInterval(progressInterval);
+      setOptimizationProgress(100);
 
-    if (result) {
-      setOptimizedContent(result);
-      setTimeout(() => setCurrentStep('results'), 500);
-    } else {
-      toast.error('Optimization failed');
+      if (result) {
+        setOptimizedContent(result);
+        setTimeout(() => setCurrentStep('results'), 500);
+      } else {
+        toast.error('Optimization failed - please try again');
+        setCurrentStep('suggestions');
+      }
+    } catch (error) {
+      clearInterval(progressInterval);
+      console.error('Optimization error:', error);
+      toast.error('Optimization failed - please check your connection and try again');
       setCurrentStep('suggestions');
     }
   };
@@ -196,19 +203,14 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     onClose();
   };
 
-  const toggleSuggestion = (suggestionId: string) => {
-    setSelectedSuggestions(prev =>
-      prev.includes(suggestionId)
-        ? prev.filter(id => id !== suggestionId)
-        : [...prev, suggestionId]
-    );
-  };
-
   const selectAllInCategory = (categoryId: string) => {
     const category = suggestionCategories.find(c => c.id === categoryId);
     if (category) {
-      const categoryIds = category.suggestions.map(s => s.id);
-      setSelectedSuggestions(prev => [...new Set([...prev, ...categoryIds])]);
+      category.suggestions.forEach(suggestion => {
+        if (!selectedSuggestions.includes(suggestion.id)) {
+          toggleSuggestion(suggestion.id);
+        }
+      });
     }
   };
 

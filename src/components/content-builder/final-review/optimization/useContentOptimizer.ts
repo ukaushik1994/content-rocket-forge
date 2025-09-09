@@ -126,10 +126,10 @@ export const useContentOptimizer = (content: string) => {
       const optimizedContent = await performOptimization(
         content,
         selectedSuggestions,
-        selected.filter(s => s.type === 'content' || s.category === 'content'),
+        selected.filter(s => s.type === 'content' || s.category === 'content' || s.category === 'structure' || s.category === 'seo'),
         selected.filter(s => s.type === 'humanization'),
         selected.filter(s => s.type === 'serp_integration'),
-        selected.filter(s => s.type === 'solution')
+        selected.filter(s => s.type === 'solution' || s.category === 'solution')
       );
       
       if (optimizedContent) {

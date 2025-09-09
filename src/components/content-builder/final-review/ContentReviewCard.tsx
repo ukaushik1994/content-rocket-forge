@@ -260,12 +260,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         isOpen={isAutoOptimizeDialogOpen}
         onClose={() => setIsAutoOptimizeDialogOpen(false)}
         content={editedContent}
-        onContentUpdate={(newContent) => {
-          handleContentChange(newContent);
-          setHasOptimized(true);
-          toast.success("Content optimized successfully!");
-          setTimeout(() => setHasOptimized(false), 3000);
-        }}
+        onContentUpdate={handleContentUpdate}
       />
     </Card>
   );
