@@ -54,6 +54,15 @@ serve(async (req) => {
       case 'gemini':
         result = await handleGemini(endpoint, apiKey, params);
         break;
+      case 'openrouter':
+        result = await handleOpenRouter(endpoint, apiKey, params);
+        break;
+      case 'mistral':
+        result = await handleMistral(endpoint, apiKey, params);
+        break;
+      case 'lmstudio':
+        result = await handleLMStudio(endpoint, apiKey, params);
+        break;
       default:
         throw new Error(`Unsupported service: ${service}`);
     }
@@ -377,5 +386,265 @@ async function chatGemini(apiKey: string, params: any) {
   } catch (error: any) {
     console.error('💥 Gemini chat exception:', error);
     throw new Error(`Gemini chat error: ${error.message}`);
+  }
+}
+
+async function handleOpenRouter(endpoint: string, apiKey: string, params: any) {
+  console.log(`🔍 Processing OpenRouter request: ${endpoint}`);
+  
+  if (endpoint === 'test') {
+    return await testOpenRouter(apiKey);
+  }
+  
+  if (endpoint === 'chat' || endpoint === 'completion') {
+    return await chatOpenRouter(apiKey, params);
+  }
+  
+  throw new Error(`Unsupported OpenRouter endpoint: ${endpoint}`);
+}
+
+async function testOpenRouter(apiKey: string) {
+  console.log('🧪 Testing OpenRouter API key');
+  
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ OpenRouter test failed:', response.status, errorData);
+      throw new Error(`OpenRouter API test failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ OpenRouter test successful');
+    
+    return {
+      success: true,
+      provider: 'OpenRouter',
+      message: 'OpenRouter connection successful',
+      models: data.data?.slice(0, 5).map((model: any) => model.id) || []
+    };
+  } catch (error: any) {
+    console.error('💥 OpenRouter test exception:', error);
+    throw new Error(`OpenRouter API error: ${error.message}`);
+  }
+}
+
+async function chatOpenRouter(apiKey: string, params: any) {
+  console.log('💬 Processing OpenRouter chat request');
+  
+  const requestBody = {
+    model: params.model || 'meta-llama/llama-3.2-3b-instruct:free',
+    messages: params.messages || [],
+    temperature: params.temperature || 0.7,
+    max_tokens: params.maxTokens || params.max_tokens || 1000,
+    ...params
+  };
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://your-app.com',
+        'X-Title': 'CreAiter AI Service'
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ OpenRouter chat failed:', response.status, errorData);
+      throw new Error(`OpenRouter chat failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ OpenRouter chat successful');
+    
+    return {
+      success: true,
+      data,
+      provider: 'OpenRouter'
+    };
+  } catch (error: any) {
+    console.error('💥 OpenRouter chat exception:', error);
+    throw new Error(`OpenRouter chat error: ${error.message}`);
+  }
+}
+
+async function handleMistral(endpoint: string, apiKey: string, params: any) {
+  console.log(`🔍 Processing Mistral request: ${endpoint}`);
+  
+  if (endpoint === 'test') {
+    return await testMistral(apiKey);
+  }
+  
+  if (endpoint === 'chat' || endpoint === 'completion') {
+    return await chatMistral(apiKey, params);
+  }
+  
+  throw new Error(`Unsupported Mistral endpoint: ${endpoint}`);
+}
+
+async function testMistral(apiKey: string) {
+  console.log('🧪 Testing Mistral API key');
+  
+  try {
+    const response = await fetch('https://api.mistral.ai/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ Mistral test failed:', response.status, errorData);
+      throw new Error(`Mistral API test failed: ${response.statusText}`);
+    }
+
+    console.log('✅ Mistral test successful');
+    
+    return {
+      success: true,
+      provider: 'Mistral',
+      message: 'Mistral connection successful'
+    };
+  } catch (error: any) {
+    console.error('💥 Mistral test exception:', error);
+    throw new Error(`Mistral API error: ${error.message}`);
+  }
+}
+
+async function chatMistral(apiKey: string, params: any) {
+  console.log('💬 Processing Mistral chat request');
+  
+  const requestBody = {
+    model: params.model || 'mistral-small-latest',
+    messages: params.messages || [],
+    temperature: params.temperature || 0.7,
+    max_tokens: params.maxTokens || params.max_tokens || 1000,
+    ...params
+  };
+
+  try {
+    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ Mistral chat failed:', response.status, errorData);
+      throw new Error(`Mistral chat failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Mistral chat successful');
+    
+    return {
+      success: true,
+      data,
+      provider: 'Mistral'
+    };
+  } catch (error: any) {
+    console.error('💥 Mistral chat exception:', error);
+    throw new Error(`Mistral chat error: ${error.message}`);
+  }
+}
+
+async function handleLMStudio(endpoint: string, apiKey: string, params: any) {
+  console.log(`🔍 Processing LM Studio request: ${endpoint}`);
+  
+  if (endpoint === 'test') {
+    return await testLMStudio(apiKey);
+  }
+  
+  if (endpoint === 'chat' || endpoint === 'completion') {
+    return await chatLMStudio(apiKey, params);
+  }
+  
+  throw new Error(`Unsupported LM Studio endpoint: ${endpoint}`);
+}
+
+async function testLMStudio(apiKey: string) {
+  console.log('🧪 Testing LM Studio API key');
+  
+  try {
+    // LM Studio runs locally, typically on localhost:1234
+    const baseUrl = apiKey.startsWith('http') ? apiKey : 'http://localhost:1234';
+    const response = await fetch(`${baseUrl}/v1/models`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ LM Studio test failed:', response.status, errorData);
+      throw new Error(`LM Studio API test failed: ${response.statusText}`);
+    }
+
+    console.log('✅ LM Studio test successful');
+    
+    return {
+      success: true,
+      provider: 'LM Studio',
+      message: 'LM Studio connection successful'
+    };
+  } catch (error: any) {
+    console.error('💥 LM Studio test exception:', error);
+    throw new Error(`LM Studio API error: ${error.message}`);
+  }
+}
+
+async function chatLMStudio(apiKey: string, params: any) {
+  console.log('💬 Processing LM Studio chat request');
+  
+  const baseUrl = apiKey.startsWith('http') ? apiKey : 'http://localhost:1234';
+  const requestBody = {
+    model: params.model || 'local-model',
+    messages: params.messages || [],
+    temperature: params.temperature || 0.7,
+    max_tokens: params.maxTokens || params.max_tokens || 1000,
+    ...params
+  };
+
+  try {
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ LM Studio chat failed:', response.status, errorData);
+      throw new Error(`LM Studio chat failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ LM Studio chat successful');
+    
+    return {
+      success: true,
+      data,
+      provider: 'LM Studio'
+    };
+  } catch (error: any) {
+    console.error('💥 LM Studio chat exception:', error);
+    throw new Error(`LM Studio chat error: ${error.message}`);
   }
 }

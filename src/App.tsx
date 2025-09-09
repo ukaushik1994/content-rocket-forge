@@ -27,7 +27,7 @@ import CalendarPage from "./pages/research/Calendar";
 
 
 import AIChat from "./pages/AIChat";
-import AISettings from "./pages/AISettings";
+
 import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
@@ -69,7 +69,7 @@ const App = () => (
                   
                   {/* AI Chat routes */}
                   <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
-                  <Route path="/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
+                  
                   
                   {/* Research routes */}
                   <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
