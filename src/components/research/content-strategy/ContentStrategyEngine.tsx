@@ -376,14 +376,32 @@ export const ContentStrategyEngine = ({
           // Don't block the main flow for keyword saving errors
         }
 
-        // Save proposals to history for future reference
+        // Save proposals to history for future reference and ensure persistence
         try {
           console.log('📝 About to save proposals to history:', generatedProposals.length, 'proposals');
+          
+          // Save to ai_strategy_proposals table to ensure persistence
           await proposalKeywordSync.saveProposalsToHistory(generatedProposals);
-          console.log('✅ Successfully saved proposals to history');
+          
+          // Also ensure the proposals have proper IDs for tracking
+          const proposalsWithIds = generatedProposals.map(proposal => ({
+            ...proposal,
+            id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now()
+          }));
+          
+          // Update the local state with proper IDs
+          setProposals(proposalsWithIds);
+          setAiProposals(proposalsWithIds);
+          
+          console.log('✅ Successfully saved proposals to history with proper IDs');
         } catch (error) {
           console.error('❌ Error saving proposals to history:', error);
           // Don't block the main flow for history saving errors
+          toast({
+            title: "Warning",
+            description: "Proposals generated but may not persist across sessions",
+            variant: "default"
+          });
         }
       }
       setProposals(generatedProposals);
