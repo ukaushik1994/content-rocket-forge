@@ -385,7 +385,7 @@ class AIServiceController {
       
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: {
-          provider: provider.provider,
+          service: provider.provider,
           endpoint: 'chat',
           params: {
             model: request.model || provider.preferred_model || this.getDefaultModel(provider.provider),
@@ -510,7 +510,7 @@ class AIServiceController {
     try {
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: {
-          provider,
+          service: provider,
           endpoint: 'test',
           apiKey
         }
