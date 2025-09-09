@@ -5,13 +5,11 @@ import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 import { 
   LayoutDashboard, 
   Lightbulb, 
-  GitBranch,
   Calendar as CalendarIcon,
   BarChart3
 } from 'lucide-react';
 import { StrategyOverview } from './StrategyOverview';
 import { StrategySuggestions } from '../tabs/StrategySuggestions';
-import { ContentPipeline } from '../pipeline/ContentPipeline';
 import { EditorialCalendar } from '../calendar/EditorialCalendar';
 import { StrategyDashboard } from '../dashboard/StrategyDashboard';
 import { useAnalyticsConnection } from '@/hooks/useAnalyticsConnection';
@@ -52,7 +50,7 @@ export const ContentStrategyTabs: React.FC<ContentStrategyTabsProps> = ({ onEdit
 
   const getInitialTab = () => {
     const allowed = new Set([
-      'overview', 'strategies', 'pipeline', 'calendar', 'dashboard'
+      'overview', 'strategies', 'calendar', 'dashboard'
     ]);
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
@@ -108,13 +106,6 @@ export const ContentStrategyTabs: React.FC<ContentStrategyTabsProps> = ({ onEdit
                   <span>AI Proposals</span>
                 </TabsTrigger>
                 <TabsTrigger
-                  value="pipeline"
-                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                >
-                  <GitBranch className="h-4 w-4" />
-                  <span>Pipeline</span>
-                </TabsTrigger>
-                <TabsTrigger
                   value="calendar"
                   className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
                 >
@@ -135,7 +126,6 @@ export const ContentStrategyTabs: React.FC<ContentStrategyTabsProps> = ({ onEdit
               <StrategyOverview
                 onEditGoals={onEditGoals}
                 onNavigateToStrategies={() => navigateToTab('strategies')}
-                onNavigateToPipeline={() => navigateToTab('pipeline')}
                 onNavigateToCalendar={() => navigateToTab('calendar')}
               />
             </TabsContent>
@@ -143,12 +133,6 @@ export const ContentStrategyTabs: React.FC<ContentStrategyTabsProps> = ({ onEdit
             <TabsContent value="strategies" className="animate-fade-in">
               <div className="space-y-6">
                 <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="pipeline" className="animate-fade-in">
-              <div className="space-y-6">
-                <ContentPipeline goals={goals} />
               </div>
             </TabsContent>
 

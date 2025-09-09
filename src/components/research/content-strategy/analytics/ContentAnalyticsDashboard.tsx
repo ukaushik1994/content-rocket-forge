@@ -15,13 +15,13 @@ import {
 import { motion } from 'framer-motion';
 import { isAfter, parseISO, differenceInDays } from 'date-fns';
 
-interface PipelineAnalyticsDashboardProps {
+interface ContentAnalyticsDashboardProps {
   pipelineItems: any[];
   calendarItems: any[];
   className?: string;
 }
 
-export const PipelineAnalyticsDashboard: React.FC<PipelineAnalyticsDashboardProps> = ({
+export const ContentAnalyticsDashboard: React.FC<ContentAnalyticsDashboardProps> = ({
   pipelineItems,
   calendarItems,
   className = ""

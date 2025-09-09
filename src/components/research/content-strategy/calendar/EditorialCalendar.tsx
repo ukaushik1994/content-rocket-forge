@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, ChevronLeft, ChevronRight, Plus, MoreHorizontal, Edit, Trash2, Send } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, MoreHorizontal, Edit, Trash2, Send, BarChart3, Eye, EyeOff } from 'lucide-react';
+import { ContentAnalyticsDashboard } from '../analytics/ContentAnalyticsDashboard';
 import { motion } from 'framer-motion';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
@@ -20,11 +21,12 @@ interface EditorialCalendarProps {
 }
 
 export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
-  const { calendarItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading, refreshData } = useContentStrategy();
+  const { calendarItems, pipelineItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading, refreshData } = useContentStrategy();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const { syncProposalAcrossTabs, updateProposalStatus } = useProposalIntegration();
   const navigate = useNavigate();
 
@@ -199,6 +201,21 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
 
   return (
     <>
+      {/* Analytics Dashboard */}
+      {showAnalytics && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="mb-6"
+        >
+          <ContentAnalyticsDashboard
+            pipelineItems={pipelineItems || []} 
+            calendarItems={calendarItems || []}
+          />
+        </motion.div>
+      )}
+
       <Card className="glass-panel border-white/10 shadow-2xl">
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-2xl">
@@ -219,6 +236,15 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
               </span>
               <Button variant="ghost" size="sm" onClick={nextMonth}>
                 <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className="bg-primary/10 hover:bg-primary/20 border-primary/30"
+              >
+                {showAnalytics ? <EyeOff className="h-4 w-4 mr-1" /> : <BarChart3 className="h-4 w-4 mr-1" />}
+                {showAnalytics ? 'Hide' : 'Show'} Analytics
               </Button>
               <Button size="sm" className="bg-primary/20 hover:bg-primary/30" onClick={() => handleAddContent()}>
                 <Plus className="h-4 w-4 mr-1" />

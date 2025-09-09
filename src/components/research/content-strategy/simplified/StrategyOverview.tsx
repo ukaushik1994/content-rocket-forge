@@ -19,14 +19,12 @@ import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 interface StrategyOverviewProps {
   onEditGoals: () => void;
   onNavigateToStrategies: () => void;
-  onNavigateToPipeline: () => void;
   onNavigateToCalendar: () => void;
 }
 
 export const StrategyOverview: React.FC<StrategyOverviewProps> = ({
   onEditGoals,
   onNavigateToStrategies,
-  onNavigateToPipeline,
   onNavigateToCalendar
 }) => {
   const { 
