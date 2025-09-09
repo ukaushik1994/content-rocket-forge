@@ -93,46 +93,10 @@ export function SerpAnalysisPanel({ keyword, serpData, isLoading, onStoreSelecti
       topCompetitors: 0,
       avgWordsCount: 0
     },
-    topResults: []
-  };
-      {
-        id: 'result-1',
-        title: 'Complete Guide to Content Marketing Strategy 2024',
-        url: 'https://example.com/content-marketing-guide',
-        snippet: 'Learn how to create effective content marketing strategies that drive results...',
-        position: 1,
-        domain: 'example.com',
-        wordCount: 3200,
-        backlinks: 1247
-      },
-      {
-        id: 'result-2', 
-        title: 'Content Marketing Best Practices and Tips',
-        url: 'https://another-site.com/content-tips',
-        snippet: 'Discover proven content marketing tactics used by successful brands...',
-        position: 2,
-        domain: 'another-site.com',
-        wordCount: 2800,
-        backlinks: 892
-      }
-    ],
-    relatedKeywords: [
-      { keyword: 'content strategy', volume: 18100, difficulty: 65 },
-      { keyword: 'content creation', volume: 12200, difficulty: 58 },
-      { keyword: 'content calendar', volume: 8900, difficulty: 52 },
-      { keyword: 'content distribution', volume: 4400, difficulty: 47 }
-    ],
-    peopleAlsoAsk: [
-      'What is content marketing strategy?',
-      'How do you create a content marketing plan?',
-      'What are the best content marketing tools?',
-      'How to measure content marketing ROI?'
-    ],
-    contentGaps: [
-      'Video content strategies missing from top results',
-      'Limited discussion on AI-powered content creation',
-      'Lack of detailed ROI measurement frameworks'
-    ]
+    topResults: [],
+    relatedKeywords: [],
+    peopleAlsoAsk: [],
+    contentGaps: []
   };
 
   return (
