@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
@@ -7,17 +6,23 @@ import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
 import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
+import { OptimizationStatusCard } from '../final-review/OptimizationStatusCard';
+import { OptimizationHistoryModal } from '../final-review/OptimizationHistoryModal';
+import { AutoOptimizeModal } from '../final-review/AutoOptimizeModal';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const { state, dispatch } = useContentBuilder();
+  const [isRunningAllChecks, setIsRunningAllChecks] = useState(false);
+  const [showOptimizationHistory, setShowOptimizationHistory] = useState(false);
+  const [showAutoOptimize, setShowAutoOptimize] = useState(false);
+  
+  const { state, updateContent } = useContentBuilder();
   
   const {
     isAnalyzing,
     isGeneratingTitles,
-    isRunningAllChecks,
     keywordUsage,
     ctaInfo,
     titleSuggestions,
@@ -42,19 +47,28 @@ export const OptimizeAndReviewStep = () => {
       seoScore: state.seoScore
     });
   }, [state]);
+
+  const handleContentUpdate = (newContent: string) => {
+    updateContent(newContent);
+  };
+
+  const handleViewOptimizations = () => {
+    setShowOptimizationHistory(true);
+  };
+
+  const handleReOptimize = () => {
+    setShowAutoOptimize(true);
+  };
   
   // Handler for running checks specific to the current tab
   const handleRunTabChecks = () => {
-    switch(activeTab) {
-      case 'overview':
-        runAllChecks();
-        break;
-      case 'technical':
-        generateTitleSuggestions();
-        break;
-      default:
-        runAllChecks();
-    }
+    console.log(`Running checks for ${activeTab} tab`);
+    setIsRunningAllChecks(true);
+    
+    setTimeout(() => {
+      setIsRunningAllChecks(false);
+      runAllChecks(); // This will trigger analysis for all components
+    }, 2000);
   };
   
   const handleTabChange = (value: string) => {
@@ -62,11 +76,11 @@ export const OptimizeAndReviewStep = () => {
   };
 
   const onMetaTitleChange = (value: string) => {
-    dispatch({ type: 'SET_META_TITLE', payload: value });
+    // dispatch({ type: 'SET_META_TITLE', payload: value });
   };
   
   const onMetaDescriptionChange = (value: string) => {
-    dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
+    // dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
 
   
@@ -122,33 +136,68 @@ export const OptimizeAndReviewStep = () => {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview">
-          <OverviewTab
-            content={state.content}
-            checklistItems={checklistItems}
-            onRunAllChecks={runAllChecks}
-            metaTitle={state.metaTitle}
-            metaDescription={state.metaDescription}
-            onMetaTitleChange={onMetaTitleChange}
-            onMetaDescriptionChange={onMetaDescriptionChange}
-            onGenerateMeta={generateMeta}
-            solutionIntegrationMetrics={state.solutionIntegrationMetrics}
-            selectedSolution={state.selectedSolution}
-            isAnalyzing={isAnalyzing}
-            onAnalyze={analyzeSolutionUsage}
-          />
-        </TabsContent>
-        
-        <TabsContent value="technical">
-          <TechnicalTabContent
-            documentStructure={state.documentStructure}
-            metaTitle={state.metaTitle}
-            metaDescription={state.metaDescription}
-            serpData={serpData}
-          />
-        </TabsContent>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <TabsContent value="overview" className="space-y-6 mt-0">
+              <OverviewTab 
+                content={state.content}
+                checklistItems={checklistItems}
+                onRunAllChecks={runAllChecks}
+                metaTitle={state.metaTitle}
+                metaDescription={state.metaDescription}
+                onMetaTitleChange={onMetaTitleChange}
+                onMetaDescriptionChange={onMetaDescriptionChange}
+                onGenerateMeta={generateMeta}
+                solutionIntegrationMetrics={state.solutionIntegrationMetrics}
+                selectedSolution={state.selectedSolution}
+                isAnalyzing={isAnalyzing}
+                onAnalyze={analyzeSolutionUsage}
+              />
+            </TabsContent>
+            
+            <TabsContent value="technical" className="mt-0">
+              <TechnicalTabContent
+                documentStructure={state.documentStructure}
+                metaTitle={state.metaTitle}
+                metaDescription={state.metaDescription}
+                serpData={serpData}
+              />
+            </TabsContent>
+            
+            <TabsContent value="export" className="mt-0">
+              <SaveAndExportPanel 
+                completionPercentage={completionPercentage}
+                onSave={handleSaveToDraftWrapper}
+                onPublish={handlePublishWrapper}
+                isSaving={isSaving}
+                isSavedToDraft={isSavedToDraft}
+              />
+            </TabsContent>
+          </div>
+          
+          {/* Right Sidebar */}
+          <div className="space-y-6">
+            <OptimizationStatusCard
+              onViewOptimizations={handleViewOptimizations}
+              onReOptimize={handleReOptimize}
+            />
+          </div>
+        </div>
         
       </Tabs>
+
+      {/* Modals */}
+      <OptimizationHistoryModal
+        isOpen={showOptimizationHistory}
+        onClose={() => setShowOptimizationHistory(false)}
+      />
+      
+      <AutoOptimizeModal
+        isOpen={showAutoOptimize}
+        onClose={() => setShowAutoOptimize(false)}
+        content={state.content}
+        onContentUpdate={handleContentUpdate}
+      />
     </div>
   );
 };
