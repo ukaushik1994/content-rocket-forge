@@ -340,16 +340,22 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
 
   // Check if we're on the final step
   const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 4;
-  return <div className="flex min-h-[calc(100vh-theme(spacing.20))] bg-gradient-to-br from-background via-background/95 to-background/90">
+  
+  return (
+    <div className="flex min-h-[calc(100vh-theme(spacing.20))] bg-gradient-to-br from-background via-background/95 to-background/90">
       {/* Content Builder Sidebar */}
-      <ContentBuilderSidebar steps={steps} activeStep={activeStep} navigateToStep={step => {
-      if (hasUnsavedChanges && currentStepId === 3) {
-        setPendingNavigation(step);
-        setShowUnsavedDialog(true);
-      } else {
-        navigateToStep(step);
-      }
-    }} />
+      <ContentBuilderSidebar 
+        steps={steps} 
+        activeStep={activeStep} 
+        navigateToStep={step => {
+          if (hasUnsavedChanges && currentStepId === 3) {
+            setPendingNavigation(step);
+            setShowUnsavedDialog(true);
+          } else {
+            navigateToStep(step);
+          }
+        }} 
+      />
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col relative ml-80">
@@ -414,29 +420,52 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
         </div>
         
         {/* Navigation controls */}
-        {!isLastStep && <div className="sticky bottom-0 z-20 bg-background/90 backdrop-blur-md border-t border-border/40 p-6 shadow-lg">
+        {!isLastStep && (
+          <div className="sticky bottom-0 z-20 bg-background/90 backdrop-blur-md border-t border-border/40 p-6 shadow-lg">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-              <Button variant="outline" onClick={handlePrevStep} disabled={activeStep === 0} className="gap-2 px-6 py-2.5 bg-background/50 border-border/60 hover:border-border hover:bg-background/70 transition-all duration-200 disabled:opacity-40">
+              <Button 
+                variant="outline" 
+                onClick={handlePrevStep} 
+                disabled={activeStep === 0} 
+                className="gap-2 px-6 py-2.5 bg-background/50 border-border/60 hover:border-border hover:bg-background/70 transition-all duration-200 disabled:opacity-40"
+              >
                 <ChevronLeft className="h-4 w-4" /> Previous
               </Button>
               
               <div className="flex items-center gap-3">
-                {currentStepComplete && <div className="flex items-center gap-2 text-sm text-green-400 bg-green-950/20 px-3 py-1.5 rounded-full border border-green-800/30">
+                {currentStepComplete && (
+                  <div className="flex items-center gap-2 text-sm text-green-400 bg-green-950/20 px-3 py-1.5 rounded-full border border-green-800/30">
                     <CheckCircle className="h-4 w-4" />
                     <span>Step complete</span>
-                  </div>}
+                  </div>
+                )}
                 
-                <Button onClick={handleNextStep} disabled={!canGoNext} className={`gap-2 px-6 py-2.5 transition-all duration-300 ${canGoNext ? 'bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg hover:shadow-primary/25' : 'opacity-40 cursor-not-allowed'}`}>
+                <Button 
+                  onClick={handleNextStep} 
+                  disabled={!canGoNext} 
+                  className={`gap-2 px-6 py-2.5 transition-all duration-300 ${
+                    canGoNext 
+                      ? 'bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg hover:shadow-primary/25' 
+                      : 'opacity-40 cursor-not-allowed'
+                  }`}
+                >
                   Next <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-          </div>}
+          </div>
+        )}
       </div>
       
       {/* Unsaved changes dialog */}
-      <UnsavedChangesDialog open={showUnsavedDialog} onClose={() => setShowUnsavedDialog(false)} onSave={handleSaveBeforeNavigation} onDiscard={handleDiscardChanges} />
-    </div>;
+      <UnsavedChangesDialog 
+        open={showUnsavedDialog} 
+        onClose={() => setShowUnsavedDialog(false)} 
+        onSave={handleSaveBeforeNavigation} 
+        onDiscard={handleDiscardChanges} 
+      />
+    </div>
+  );
 };
 
 // Safe default export that ensures a Provider is present when this component is mounted directly

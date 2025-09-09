@@ -29,9 +29,16 @@ export function useAIServiceStatus() {
       // Check if service is enabled
       const isEnabled = getUserPreference('enableAiService') !== false;
 
-      // Get provider information
+      // Get provider information with fresh data
       const providers = await AIServiceController.getActiveProviders();
       const activeProviders = providers.filter(p => p.status === 'active').length;
+
+      console.log('🔄 AI Service Status Refreshed:', {
+        enabled: isEnabled,
+        total: providers.length,
+        active: activeProviders,
+        providers: providers.map(p => ({ name: p.provider, status: p.status }))
+      });
 
       setStatus({
         isEnabled,

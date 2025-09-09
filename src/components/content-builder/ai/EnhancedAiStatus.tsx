@@ -55,7 +55,7 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
     console.log('🔍 Starting AI provider status check');
     
     try {
-      // Use the centralized AI service
+      // Use the centralized AI service for fresh data
       const activeProviders = await AIServiceController.getActiveProviders();
       
       console.log('📊 Active providers:', activeProviders);
@@ -97,6 +97,15 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
 
   useEffect(() => {
     checkApiStatus();
+    
+    // Set up automatic refresh every 30 seconds when not loading
+    const interval = setInterval(() => {
+      if (!isLoading) {
+        checkApiStatus();
+      }
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const getOverallStatus = () => {
