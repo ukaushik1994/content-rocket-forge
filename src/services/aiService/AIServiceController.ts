@@ -496,6 +496,180 @@ class AIServiceController {
   }
 
   /**
+   * Test provider connection - supports both configured and new providers
+   */
+  async testProvider(providerIdOrProvider: string, apiKey?: string): Promise<boolean> {
+    try {
+      // If API key is provided, test with that key (for configuration)
+      if (apiKey) {
+        const result = await this.validateProvider(providerIdOrProvider, apiKey);
+        return result.valid;
+      }
+
+      // If no API key provided, test configured provider by ID
+      const providers = await this.getAllProviders();
+      const provider = providers.find(p => p.id === providerIdOrProvider);
+      
+      if (!provider) {
+        toast.error(`Provider ${providerIdOrProvider} not found`);
+        return false;
+      }
+
+      if (!provider.is_configured) {
+        toast.error(`Provider ${provider.name} is not configured`);
+        return false;
+      }
+
+      // Get the actual provider data with API key
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data: providerData } = await supabase
+        .from('ai_service_providers')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('provider', providerIdOrProvider)
+        .single();
+
+      if (!providerData?.api_key) {
+        toast.error(`No API key found for ${provider.name}`);
+        return false;
+      }
+
+      console.log(`🧪 Testing ${provider.name} connection...`);
+      toast.loading(`Testing ${provider.name} connection...`);
+
+      const { data, error } = await supabase.functions.invoke('ai-proxy', {
+        body: {
+          service: providerIdOrProvider,
+          endpoint: 'test',
+          apiKey: providerData.api_key
+        }
+      });
+
+      if (error) {
+        console.error(`❌ ${provider.name} test failed:`, error);
+        toast.error(`${provider.name} test failed: ${error.message}`);
+        await this.updateProviderStatus(providerData.id, 'error', error.message);
+        return false;
+      }
+
+      if (data?.success) {
+        console.log(`✅ ${provider.name} test successful`);
+        toast.success(data.message || `${provider.name} connection successful`);
+        await this.updateProviderStatus(providerData.id, 'active');
+        return true;
+      } else {
+        console.error(`❌ ${provider.name} test failed:`, data);
+        toast.error(data?.error || `${provider.name} test failed`);
+        await this.updateProviderStatus(providerData.id, 'error', data?.error);
+        return false;
+      }
+    } catch (error: any) {
+      console.error(`💥 Error testing provider:`, error);
+      toast.error(error.message || 'Provider test failed');
+      return false;
+    }
+  }
+
+  /**
+   * Add or update a provider - supports both object and individual parameters
+   */
+  async addProvider(providerDataOrProvider: string | {
+    provider: string;
+    api_key: string;
+    preferred_model?: string;
+    priority: number;
+  }, apiKey?: string, preferredModel?: string): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Handle both signatures
+      let providerData: {
+        provider: string;
+        api_key: string;
+        preferred_model?: string;
+        priority: number;
+      };
+
+      if (typeof providerDataOrProvider === 'string') {
+        // Individual parameters signature
+        const providers = await this.getActiveProviders();
+        providerData = {
+          provider: providerDataOrProvider,
+          api_key: apiKey!,
+          preferred_model: preferredModel,
+          priority: providers.length + 1
+        };
+      } else {
+        // Object signature
+        providerData = providerDataOrProvider;
+      }
+
+      const metadata = AIServiceController.PROVIDER_METADATA[providerData.provider];
+      if (!metadata) {
+        throw new Error(`Unknown provider: ${providerData.provider}`);
+      }
+
+      // Check if provider already exists
+      const { data: existingProvider } = await supabase
+        .from('ai_service_providers')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('provider', providerData.provider)
+        .single();
+
+      if (existingProvider) {
+        // Update existing provider
+        const { error } = await supabase
+          .from('ai_service_providers')
+          .update({
+            api_key: providerData.api_key,
+            preferred_model: providerData.preferred_model,
+            status: 'active',
+            error_message: null,
+            last_verified: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingProvider.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new provider
+        const { error } = await supabase
+          .from('ai_service_providers')
+          .insert({
+            user_id: user.id,
+            provider: providerData.provider,
+            api_key: providerData.api_key,
+            preferred_model: providerData.preferred_model,
+            priority: providerData.priority,
+            status: 'active',
+            description: metadata.description,
+            setup_url: metadata.setup_url,
+            icon_name: metadata.icon_name,
+            category: metadata.category,
+            capabilities: metadata.capabilities,
+            available_models: metadata.available_models,
+            is_required: metadata.is_required
+          });
+
+        if (error) throw error;
+      }
+
+      // Clear cache to force refresh
+      this.clearCache();
+    } catch (error) {
+      console.error('Failed to add/update provider:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get default model for a provider
    */
   getDefaultModel(provider: string): string {
@@ -528,71 +702,13 @@ class AIServiceController {
         return { valid: false, error: error.message };
       }
 
-      if (data && data.valid) {
+      if (data && data.success) {
         return { valid: true };
       }
 
       return { valid: false, error: data?.error || 'Validation failed' };
     } catch (error: any) {
       return { valid: false, error: error.message };
-    }
-  }
-
-  /**
-   * Test provider connection
-   */
-  async testProvider(provider: string, apiKey: string): Promise<boolean> {
-    const result = await this.validateProvider(provider, apiKey);
-    return result.valid;
-  }
-
-  /**
-   * Add a new AI provider with metadata
-   */
-  async addProvider(providerData: {
-    provider: string;
-    api_key: string;
-    preferred_model?: string;
-    priority: number;
-  }): Promise<void> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      const metadata = AIServiceController.PROVIDER_METADATA[providerData.provider];
-      if (!metadata) {
-        throw new Error(`Unknown provider: ${providerData.provider}`);
-      }
-
-      const { error } = await supabase
-        .from('ai_service_providers')
-        .insert({
-          user_id: user.id,
-          provider: providerData.provider,
-          api_key: providerData.api_key,
-          preferred_model: providerData.preferred_model,
-          priority: providerData.priority,
-          status: 'active',
-          description: metadata.description,
-          setup_url: metadata.setup_url,
-          icon_name: metadata.icon_name,
-          category: metadata.category,
-          capabilities: metadata.capabilities,
-          available_models: metadata.available_models,
-          is_required: metadata.is_required
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      // Clear cache to force refresh
-      this.clearCache();
-    } catch (error) {
-      console.error('Failed to add provider:', error);
-      throw error;
     }
   }
 

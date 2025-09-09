@@ -334,7 +334,7 @@ export const EnhancedProviderManagement: React.FC = () => {
 
   const handleProviderTest = async (provider: ProviderInfo) => {
     try {
-      const success = await AIServiceController.testProvider(provider.id, '');
+      const success = await AIServiceController.testProvider(provider.id);
       if (success) {
         toast.success(`${provider.name} is working correctly`);
       } else {
