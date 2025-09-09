@@ -5,22 +5,14 @@ import { useFinalReview } from '@/hooks/useFinalReview';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
-import { RepurposeTab } from '../final-review/tabs/RepurposeTab';
 import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
-import { toast } from 'sonner';
-import { 
-  generateContentWithTemplate, 
-  generateContentByFormatType 
-} from '@/services/contentTemplateService';
-import AIServiceController from '@/services/aiService/AIServiceController';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { state, dispatch } = useContentBuilder();
-  const [generatedFormats, setGeneratedFormats] = useState<Record<string, string>>({});
   
   const {
     isAnalyzing,
@@ -77,60 +69,6 @@ export const OptimizeAndReviewStep = () => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
 
-  // Updated function to handle repurposing content with multiple formats using templates
-  const handleRepurposeContent = async (contentTypes: string[]) => {
-    if (contentTypes.length === 0) {
-      toast.error("Please select at least one content format");
-      return;
-    }
-    
-    toast.info(`Repurposing content to ${contentTypes.length} format(s)`);
-    
-    const newGeneratedFormats: Record<string, string> = { ...generatedFormats };
-    
-    try {
-      for (const contentType of contentTypes) {
-        toast.info(`Processing: ${contentType} format`);
-        
-        // Try to generate content using a template for this format type
-        const generatedContent = await generateContentByFormatType(
-          contentType,
-          state.contentTitle || state.mainKeyword,
-          {
-            content: state.content?.substring(0, 1500) || '',
-            keyword: state.mainKeyword
-          }
-        );
-        
-        if (generatedContent?.content) {
-          newGeneratedFormats[contentType] = generatedContent.content;
-        } else {
-          // Fallback to AI service for generic generation if no template or generation failed
-          const response = await AIServiceController.generate({
-            input: `Transform this content titled "${state.contentTitle}" for the ${contentType} format.
-                    Content: ${state.content?.substring(0, 1500)}...
-                    
-                    Make it appropriate for the ${contentType} format with all necessary elements.`,
-            use_case: 'repurpose',
-            temperature: 0.7,
-            max_tokens: 2000
-          });
-          
-          if (response?.content) {
-            newGeneratedFormats[contentType] = response.content;
-          } else {
-            toast.error(`Failed to generate content for ${contentType} format`);
-          }
-        }
-      }
-      
-      setGeneratedFormats(newGeneratedFormats);
-      
-    } catch (error) {
-      console.error("Error repurposing content:", error);
-      toast.error("Failed to repurpose content");
-    }
-  };
   
   // Wrapper functions to convert Promise<string | null> to Promise<void>
   const handleSaveToDraftWrapper = async () => {
@@ -139,7 +77,6 @@ export const OptimizeAndReviewStep = () => {
       // Don't need to return anything for void
     } catch (error) {
       console.error("Error saving to draft:", error);
-      toast.error("Failed to save to draft");
     }
   };
   
@@ -149,7 +86,6 @@ export const OptimizeAndReviewStep = () => {
       // Don't need to return anything for void
     } catch (error) {
       console.error("Error publishing:", error);
-      toast.error("Failed to publish content");
     }
   };
   
@@ -184,12 +120,6 @@ export const OptimizeAndReviewStep = () => {
           >
             Technical
           </TabsTrigger>
-          <TabsTrigger 
-            value="repurpose"
-            className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
-          >
-            Repurpose
-          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
@@ -218,14 +148,6 @@ export const OptimizeAndReviewStep = () => {
           />
         </TabsContent>
         
-        <TabsContent value="repurpose">
-          <RepurposeTab
-            content={state.content || ''}
-            title={state.contentTitle || ''}
-            isGenerating={isAnalyzing}
-            onGenerateRepurposedContent={handleRepurposeContent}
-          />
-        </TabsContent>
       </Tabs>
     </div>
   );
