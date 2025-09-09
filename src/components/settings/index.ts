@@ -13,5 +13,5 @@ export * from './FormatPromptSettings';
 export * from './SimpleAIServiceToggle';
 export * from './SimpleProviderManagement';
 export * from './ServiceStatusDashboard';
-export * from './EnhancedAISettings';
+export * from './MinimalAPISettings';
 export * from './MigrationNotification';
