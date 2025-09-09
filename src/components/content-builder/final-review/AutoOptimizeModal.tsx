@@ -22,8 +22,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnalysisProgress } from './optimization/components/AnalysisProgress';
+import { HighlightedContentViewer } from './optimization/components/HighlightedContentViewer';
 import { useContentOptimizer } from './optimization/useContentOptimizer';
 import { OptimizationSuggestion } from './optimization/types';
+import { analyzeContentForHighlights, HighlightAnalysisResult } from '@/services/contentHighlightingService';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
 
 interface AutoOptimizeModalProps {
@@ -59,6 +62,9 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('analysis');
   const [optimizedContent, setOptimizedContent] = useState<string>('');
   const [optimizationProgress, setOptimizationProgress] = useState(0);
+  const [highlightAnalysis, setHighlightAnalysis] = useState<HighlightAnalysisResult | null>(null);
+  
+  const { state } = useContentBuilder();
 
   const {
     isAnalyzing,
@@ -81,6 +87,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       setCurrentStep('analysis');
       setOptimizedContent('');
       setOptimizationProgress(0);
+      setHighlightAnalysis(null);
     }
   }, [isOpen]);
 
@@ -177,30 +184,55 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     }, 500);
 
     try {
-      const result = await optimizeContent();
+      // Instead of generating new content, create highlight analysis
+      const selectedSuggestionObjects = suggestionCategories
+        .flatMap(cat => cat.suggestions)
+        .filter(s => selectedSuggestions.includes(s.id))
+        .map(s => ({
+          id: s.id,
+          title: s.title,
+          description: s.description,
+          type: getOptimizationType(s.category),
+          priority: s.priority,
+          category: s.category
+        } as OptimizationSuggestion));
+
+      const analysis = analyzeContentForHighlights(
+        content,
+        selectedSuggestionObjects,
+        state.mainKeyword,
+        state.selectedKeywords
+      );
       
       clearInterval(progressInterval);
       setOptimizationProgress(100);
-
-      if (result) {
-        setOptimizedContent(result);
-        setTimeout(() => setCurrentStep('results'), 500);
-      } else {
-        toast.error('Optimization failed - please try again');
-        setCurrentStep('suggestions');
-      }
+      setHighlightAnalysis(analysis);
+      
+      setTimeout(() => setCurrentStep('results'), 500);
+      
     } catch (error) {
       clearInterval(progressInterval);
       console.error('Optimization error:', error);
-      toast.error('Optimization failed - please check your connection and try again');
+      toast.error('Analysis failed - please check your connection and try again');
       setCurrentStep('suggestions');
     }
   };
 
   const handleApplyChanges = () => {
-    onContentUpdate(optimizedContent);
-    toast.success('Content updated successfully!');
+    // For now, we'll keep the original content since we're showing highlights
+    // In the future, this could trigger actual content modifications
+    toast.success('Optimization areas identified! Use the highlights as a guide to improve your content.');
     onClose();
+  };
+  
+  // Helper function to map categories to optimization types
+  const getOptimizationType = (category: string): OptimizationSuggestion['type'] => {
+    switch (category) {
+      case 'solution': return 'solution';
+      case 'seo':
+      case 'keywords': return 'serp_integration';
+      default: return 'content';
+    }
   };
 
   const selectAllInCategory = (categoryId: string) => {
@@ -366,7 +398,9 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   );
 
   const renderResultsStep = () => {
-    const improvementPercentage = Math.round(((optimizedContent.length - content.length) / content.length) * 100);
+    if (!highlightAnalysis) {
+      return <div>Loading analysis...</div>;
+    }
     
     return (
       <motion.div
@@ -376,37 +410,40 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       >
         <div className="text-center mb-6">
           <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
-          <h3 className="text-xl font-semibold mb-2">Optimization Complete!</h3>
+          <h3 className="text-xl font-semibold mb-2">Analysis Complete!</h3>
           <p className="text-muted-foreground">
-            Applied {selectedSuggestions.length} improvements to your content
+            Found {highlightAnalysis.highlights.length} areas for optimization in your content
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Card className="text-center p-4">
-            <TrendingUp className="w-6 h-6 text-green-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-green-600">+{Math.abs(improvementPercentage)}%</p>
-            <p className="text-xs text-muted-foreground">Content Length</p>
+            <AlertCircle className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
+            <p className="text-2xl font-bold text-yellow-600">{highlightAnalysis.highlights.length}</p>
+            <p className="text-xs text-muted-foreground">Areas to Improve</p>
           </Card>
           <Card className="text-center p-4">
             <Target className="w-6 h-6 text-blue-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-blue-600">{selectedSuggestions.length}</p>
-            <p className="text-xs text-muted-foreground">Improvements</p>
+            <p className="text-xs text-muted-foreground">Suggestions Applied</p>
           </Card>
           <Card className="text-center p-4">
             <Sparkles className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-purple-600">Enhanced</p>
-            <p className="text-xs text-muted-foreground">Quality</p>
+            <p className="text-2xl font-bold text-purple-600">Visual</p>
+            <p className="text-xs text-muted-foreground">Guide</p>
           </Card>
         </div>
 
         <Separator />
 
         <div>
-          <h4 className="font-medium mb-3">Content Preview</h4>
-          <div className="max-h-[300px] overflow-y-auto p-3 border rounded-lg bg-muted/50">
-            <p className="text-sm whitespace-pre-wrap leading-relaxed">{optimizedContent}</p>
-          </div>
+          <HighlightedContentViewer
+            analysisResult={highlightAnalysis}
+            selectedSuggestions={selectedSuggestions}
+            onHighlightClick={(highlight) => {
+              console.log('Highlight clicked:', highlight);
+            }}
+          />
         </div>
 
         <div className="flex gap-3 pt-4">
@@ -415,7 +452,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           </Button>
           <Button onClick={handleApplyChanges} className="flex-1 gap-2">
             <CheckCircle2 className="w-4 h-4" />
-            Apply Changes
+            Got It
           </Button>
         </div>
       </motion.div>
