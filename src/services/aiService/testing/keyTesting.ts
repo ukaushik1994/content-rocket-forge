@@ -17,12 +17,12 @@ export async function testAiApiKey(provider: AiProvider, key: string): Promise<b
     }
 
     // Use the Edge Function to test the API key
-    const { data, error } = await supabase.functions.invoke('api-proxy', {
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('ai-proxy', {
+      body: {
         service: provider,
         endpoint: 'test',
         apiKey: key
-      }),
+      },
     });
 
     if (error) {
