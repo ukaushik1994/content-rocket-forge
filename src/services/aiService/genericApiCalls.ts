@@ -83,7 +83,7 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
     
     // Call the appropriate API proxy function
     const { data, error } = await supabase.functions.invoke(proxyFunction, {
-      body: JSON.stringify(requestBody),
+      body: requestBody,
     });
     
     if (error) {

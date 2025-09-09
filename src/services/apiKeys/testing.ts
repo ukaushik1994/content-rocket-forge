@@ -34,10 +34,15 @@ export async function testApiKey(provider: ApiProvider, apiKey: string): Promise
     }
     console.log(`✅ ${provider} API key format validation passed`);
 
-    // Try to use the api-proxy function if available for real testing
+    // Try to use the appropriate proxy function for real testing
     try {
       console.log(`🌐 Attempting real API test for ${provider} via edge function...`);
-      const { data, error } = await supabase.functions.invoke('api-proxy', {
+      
+      // Route AI providers to ai-proxy, others to api-proxy
+      const aiProviders = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'];
+      const proxyFunction = aiProviders.includes(provider) ? 'ai-proxy' : 'api-proxy';
+      
+      const { data, error } = await supabase.functions.invoke(proxyFunction, {
         body: {
           service: provider,
           endpoint: 'test',
@@ -89,8 +94,11 @@ export async function testApiKeyWithCall(provider: ApiProvider, apiKey: string):
       return false;
     }
 
-    // Try to use the api-proxy function if available
-    const { data, error } = await supabase.functions.invoke('api-proxy', {
+    // Try to use the appropriate proxy function
+    const aiProviders = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'];
+    const proxyFunction = aiProviders.includes(provider) ? 'ai-proxy' : 'api-proxy';
+    
+    const { data, error } = await supabase.functions.invoke(proxyFunction, {
       body: {
         service: provider,
         endpoint: 'test',
