@@ -38,7 +38,6 @@ export const ContentHighlightOverlay: React.FC<ContentHighlightOverlayProps> = (
       suggestion: {
         title: 'Optimize keyword density',
         description: 'Consider adjusting keyword frequency for better SEO',
-        priority: 'high',
         category: 'seo'
       }
     }
