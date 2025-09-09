@@ -112,6 +112,7 @@ export function SimpleProviderManagement() {
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [configureProvider, setConfigureProvider] = useState<ProviderInfo | null>(null);
+  const [testingProvider, setTestingProvider] = useState<string | null>(null);
 
   const loadProviders = async () => {
     try {
@@ -147,6 +148,27 @@ export function SimpleProviderManagement() {
     }
   };
 
+  const handleTestProvider = async (provider: ProviderInfo) => {
+    if (!provider.is_configured) {
+      toast.error('Provider must be configured before testing');
+      return;
+    }
+
+    setTestingProvider(provider.id);
+    try {
+      const success = await AIServiceController.testProvider(provider.id, '');
+      if (success) {
+        toast.success(`${provider.name} is working correctly`);
+      } else {
+        toast.error(`${provider.name} test failed`);
+      }
+    } catch (error) {
+      toast.error(`Failed to test ${provider.name}`);
+    } finally {
+      setTestingProvider(null);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
@@ -171,6 +193,9 @@ export function SimpleProviderManagement() {
     );
   }
 
+  const configuredProviders = providers.filter(p => p.is_configured);
+  const availableProviders = providers.filter(p => !p.is_configured);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -184,55 +209,118 @@ export function SimpleProviderManagement() {
         </Button>
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        {providers.length === 0 ? (
+      <CardContent className="space-y-6">
+        {/* Configured Providers */}
+        {configuredProviders.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Configured Providers</h3>
+            <div className="space-y-2">
+              {configuredProviders.map((provider) => {
+                const IconComponent = ICON_MAP[provider.icon_name] || Brain;
+                const isTestingThis = testingProvider === provider.id;
+                
+                return (
+                  <div 
+                    key={provider.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg bg-green-50/50 border-green-200/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-green-100">
+                        <IconComponent className="h-4 w-4 text-green-700" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{provider.name}</span>
+                          <Badge variant="default" className="text-xs bg-green-100 text-green-700 border-green-200">
+                            Active
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {provider.description}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(provider.status)}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleTestProvider(provider)}
+                        disabled={isTestingThis}
+                      >
+                        {isTestingThis ? (
+                          <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                        )}
+                        Test
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setConfigureProvider(provider)}
+                      >
+                        <Settings className="h-3 w-3 mr-1" />
+                        Configure
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Available Providers */}
+        {availableProviders.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Available Providers</h3>
+            <div className="space-y-2">
+              {availableProviders.map((provider) => {
+                const IconComponent = ICON_MAP[provider.icon_name] || Brain;
+                
+                return (
+                  <div 
+                    key={provider.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-muted">
+                        <IconComponent className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{provider.name}</span>
+                          <Badge variant="outline" className="text-xs">Not configured</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {provider.description}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setConfigureProvider(provider)}
+                      >
+                        <Settings className="h-3 w-3 mr-1" />
+                        Setup
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {providers.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No AI providers available</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {providers.map((provider) => {
-              const IconComponent = ICON_MAP[provider.icon_name] || Brain;
-              
-              return (
-                <div 
-                  key={provider.id} 
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <IconComponent className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{provider.name}</span>
-                        {provider.is_configured ? (
-                          <Badge variant="default" className="text-xs">Configured</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">Not configured</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {provider.description}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(provider.status)}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setConfigureProvider(provider)}
-                    >
-                      <Settings className="h-3 w-3 mr-1" />
-                      Configure
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
 
