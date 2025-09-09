@@ -3465,6 +3465,10 @@ export type Database = {
         }
         Returns: string
       }
+      initialize_default_ai_providers: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
