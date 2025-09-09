@@ -9,7 +9,7 @@ import { AnalyticsConnectionPrompt } from '../AnalyticsConnectionPrompt';
 import { AnalyticsWorkflowSwitch } from '../AnalyticsWorkflowSwitch';
 import { ProposalStatusBadge } from '../components/ProposalStatusBadge';
 import { CrossTabActions } from '../components/CrossTabActions';
-import { AIProposalCard } from '../components/AIProposalCard';
+import { EnhancedAIProposalCard } from '../components/EnhancedAIProposalCard';
 import { useAnalyticsConnection } from '@/hooks/useAnalyticsConnection';
 import { useRealAnalytics } from '@/hooks/useRealAnalytics';
 import { useProposalIntegration } from '@/hooks/useProposalIntegration';
@@ -82,7 +82,7 @@ export const StrategySuggestions = ({
             {aiProposals.map((proposal: any, index: number) => {
               const proposalId = proposal.id || `temp-${index}`;
               return (
-                <AIProposalCard
+                <EnhancedAIProposalCard
                   key={proposalId}
                   proposal={proposal}
                   isSelected={false}
