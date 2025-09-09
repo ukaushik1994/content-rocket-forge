@@ -18,11 +18,14 @@ import {
   Lightbulb,
   TrendingUp,
   AlertCircle,
-  Zap
+  Zap,
+  Save,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnalysisProgress } from './optimization/components/AnalysisProgress';
-import { HighlightedContentViewer } from './optimization/components/HighlightedContentViewer';
+import { EnhancedHighlightedContentViewer } from './optimization/components/EnhancedHighlightedContentViewer';
+import { OptimizationSuggestionsPanel } from './optimization/components/OptimizationSuggestionsPanel';
 import { useContentOptimizer } from './optimization/useContentOptimizer';
 import { OptimizationSuggestion } from './optimization/types';
 import { analyzeContentForHighlights, HighlightAnalysisResult } from '@/services/contentHighlightingService';
@@ -60,11 +63,16 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   onContentUpdate
 }) => {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('analysis');
-  const [optimizedContent, setOptimizedContent] = useState<string>('');
   const [optimizationProgress, setOptimizationProgress] = useState(0);
   const [highlightAnalysis, setHighlightAnalysis] = useState<HighlightAnalysisResult | null>(null);
+  const [selectedHighlights, setSelectedHighlights] = useState<string[]>([]);
   
-  const { state } = useContentBuilder();
+  const { 
+    state, 
+    saveOptimizationSelections, 
+    getOptimizationSelections, 
+    applyOptimizationChanges
+  } = useContentBuilder();
 
   const {
     isAnalyzing,
@@ -76,7 +84,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     qualitySuggestions,
     selectedSuggestions,
     analyzeContent,
-    optimizeContent,
     toggleSuggestion,
     getTotalSuggestionCount
   } = useContentOptimizer(content);
@@ -85,11 +92,17 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setCurrentStep('analysis');
-      setOptimizedContent('');
       setOptimizationProgress(0);
       setHighlightAnalysis(null);
+      setSelectedHighlights([]);
+      
+      // Load saved selections if available
+      const savedSelections = getOptimizationSelections();
+      if (savedSelections) {
+        setSelectedHighlights(savedSelections.highlights);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, getOptimizationSelections]);
 
   // Normalize suggestions to a common format
   const normalizeSuggestion = (suggestion: any) => ({
@@ -150,12 +163,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     setTimeout(() => {
       if (getTotalSuggestionCount() > 0) {
         setCurrentStep('suggestions');
-        // Auto-select high priority suggestions
-        const highPrioritySuggestions = suggestionCategories
-          .flatMap(cat => cat.suggestions)
-          .filter(s => s.priority === 'high')
-          .map(s => s.id);
-        highPrioritySuggestions.forEach(id => toggleSuggestion(id));
       } else {
         toast.info('No optimization suggestions found - your content looks great!');
         onClose();
@@ -172,7 +179,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     setCurrentStep('optimization');
     setOptimizationProgress(0);
 
-    // Simulate progress updates
     const progressInterval = setInterval(() => {
       setOptimizationProgress(prev => {
         if (prev >= 90) {
@@ -184,7 +190,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     }, 500);
 
     try {
-      // Instead of generating new content, create highlight analysis
       const selectedSuggestionObjects = suggestionCategories
         .flatMap(cat => cat.suggestions)
         .filter(s => selectedSuggestions.includes(s.id))
@@ -218,58 +223,54 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     }
   };
 
-  const handleApplyChanges = () => {
-    // For now, we'll keep the original content since we're showing highlights
-    // In the future, this could trigger actual content modifications
-    toast.success('Optimization areas identified! Use the highlights as a guide to improve your content.');
-    onClose();
-  };
-  
-  // Helper function to map categories to optimization types
-  const getOptimizationType = (category: string): OptimizationSuggestion['type'] => {
-    switch (category) {
-      case 'solution': return 'solution';
-      case 'seo':
-      case 'keywords': return 'serp_integration';
-      default: return 'content';
+  const handleApplyChanges = async () => {
+    try {
+      await saveOptimizationSelections(selectedSuggestions, selectedHighlights);
+      const updatedContent = await applyOptimizationChanges(selectedHighlights, content);
+      onContentUpdate(updatedContent);
+      
+      toast.success(`Applied ${selectedSuggestions.length} suggestions and ${selectedHighlights.length} highlights!`);
+      onClose();
+    } catch (error) {
+      console.error('Error applying changes:', error);
+      toast.error('Failed to apply changes - please try again');
     }
   };
 
-  // Export analysis report
-  const exportAnalysisReport = (analysis: HighlightAnalysisResult | null, selectedSuggestionIds: string[]) => {
-    if (!analysis) return;
-    
-    const report = {
-      title: 'Content Optimization Analysis Report',
-      date: new Date().toLocaleDateString(),
-      summary: {
-        totalHighlights: analysis.highlights.length,
-        highPriority: analysis.highlights.filter(h => h.priority === 'high').length,
-        mediumPriority: analysis.highlights.filter(h => h.priority === 'medium').length,
-        lowPriority: analysis.highlights.filter(h => h.priority === 'low').length,
-        selectedSuggestions: selectedSuggestionIds.length
-      },
-      highlights: analysis.highlights.map(h => ({
-        type: h.type,
-        priority: h.priority,
-        title: h.suggestion.title,
-        description: h.suggestion.description,
-        text: h.text.trim(),
-        category: h.suggestion.category
-      }))
-    };
-    
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `content-optimization-report-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success('Analysis report exported successfully!');
+  // Helper functions for highlight selection
+  const toggleHighlight = (highlightId: string) => {
+    setSelectedHighlights(prev => 
+      prev.includes(highlightId)
+        ? prev.filter(id => id !== highlightId)
+        : [...prev, highlightId]
+    );
+  };
+
+  const selectAllHighlights = () => {
+    if (highlightAnalysis) {
+      setSelectedHighlights(highlightAnalysis.highlights.map(h => h.id));
+    }
+  };
+
+  const clearAllHighlights = () => {
+    setSelectedHighlights([]);
+  };
+
+  // Helper functions for suggestion selection
+  const selectAllHighPriority = () => {
+    const highPrioritySuggestions = suggestionCategories
+      .flatMap(cat => cat.suggestions)
+      .filter(s => s.priority === 'high')
+      .map(s => s.id);
+    highPrioritySuggestions.forEach(id => {
+      if (!selectedSuggestions.includes(id)) {
+        toggleSuggestion(id);
+      }
+    });
+  };
+
+  const clearAllSuggestions = () => {
+    selectedSuggestions.forEach(id => toggleSuggestion(id));
   };
 
   const selectAllInCategory = (categoryId: string) => {
@@ -280,6 +281,16 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           toggleSuggestion(suggestion.id);
         }
       });
+    }
+  };
+
+  // Helper function to map categories to optimization types
+  const getOptimizationType = (category: string): OptimizationSuggestion['type'] => {
+    switch (category) {
+      case 'solution': return 'solution';
+      case 'seo':
+      case 'keywords': return 'serp_integration';
+      default: return 'content';
     }
   };
 
@@ -325,12 +336,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         )}
       </motion.div>
 
-      <AnalysisProgress 
-        isAnalyzing={isAnalyzing} 
-        onAnalysisComplete={() => {
-          // Analysis progress component will handle its own completion
-        }}
-      />
+      <AnalysisProgress isAnalyzing={isAnalyzing} onAnalysisComplete={() => {}} />
     </div>
   );
 
@@ -434,92 +440,76 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     </motion.div>
   );
 
-  const renderResultsStep = () => {
-    if (!highlightAnalysis) {
-      return <div>Loading analysis...</div>;
-    }
-    
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
-      >
-        <div className="text-center mb-6">
-          <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
-          <h3 className="text-xl font-semibold mb-2">Analysis Complete!</h3>
-          <p className="text-muted-foreground">
-            Found {highlightAnalysis.highlights.length} areas for optimization in your content
-          </p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="text-center p-4">
-            <AlertCircle className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-yellow-600">{highlightAnalysis.highlights.length}</p>
-            <p className="text-xs text-muted-foreground">Areas to Improve</p>
-          </Card>
-          <Card className="text-center p-4">
-            <Target className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-blue-600">{selectedSuggestions.length}</p>
-            <p className="text-xs text-muted-foreground">Suggestions Applied</p>
-          </Card>
-          <Card className="text-center p-4">
-            <Sparkles className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-purple-600">Visual</p>
-            <p className="text-xs text-muted-foreground">Guide</p>
-          </Card>
-        </div>
-
-        <Separator />
-
-        <div>
-          <HighlightedContentViewer
-            analysisResult={highlightAnalysis}
-            selectedSuggestions={selectedSuggestions}
-            onHighlightClick={(highlight) => {
-              console.log('Highlight clicked:', highlight);
-            }}
-          />
-        </div>
-
-        <div className="flex gap-3 pt-4">
-          <Button variant="outline" onClick={() => setCurrentStep('suggestions')} className="gap-2">
-            Back to Suggestions
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => exportAnalysisReport(highlightAnalysis, selectedSuggestions)} 
-            className="gap-2"
-          >
-            Export Report
-          </Button>
-          <Button onClick={handleApplyChanges} className="flex-1 gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Got It
-          </Button>
-        </div>
-      </motion.div>
-    );
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-500" />
-            Auto-Optimize Content
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="flex-1 overflow-y-auto py-4">
-          <AnimatePresence mode="wait">
-            {currentStep === 'analysis' && renderAnalysisStep()}
-            {currentStep === 'suggestions' && renderSuggestionsStep()}
-            {currentStep === 'optimization' && renderOptimizationStep()}
-            {currentStep === 'results' && renderResultsStep()}
-          </AnimatePresence>
+      <DialogContent className="w-[95vw] h-[95vh] max-w-none max-h-none p-0 overflow-hidden">
+        <div className="h-full bg-background flex flex-col">
+          
+          {/* Header */}
+          <div className="flex-shrink-0 border-b border-border bg-card/50 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl font-bold">Auto-Optimize Content</DialogTitle>
+                <p className="text-muted-foreground">Analyze and optimize your content with AI-powered suggestions</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Two-column layout for results step */}
+          {currentStep === 'results' && highlightAnalysis ? (
+            <div className="flex-1 flex overflow-hidden">
+              
+              {/* Left Panel - Suggestions */}
+              <div className="w-[40%] border-r border-border overflow-y-auto">
+                <div className="p-6">
+                  <OptimizationSuggestionsPanel
+                    suggestionCategories={suggestionCategories}
+                    selectedSuggestions={selectedSuggestions}
+                    onToggleSuggestion={toggleSuggestion}
+                    onSelectAllInCategory={selectAllInCategory}
+                    onSelectAllHighPriority={selectAllHighPriority}
+                    onClearAll={clearAllSuggestions}
+                    totalSuggestionCount={getTotalSuggestionCount()}
+                  />
+                  
+                  <div className="mt-6 flex gap-3">
+                    <Button variant="outline" onClick={() => setCurrentStep('suggestions')}>
+                      Back
+                    </Button>
+                    <Button onClick={handleApplyChanges} className="gap-2 flex-1">
+                      <Save className="w-4 h-4" />
+                      Apply Changes ({selectedSuggestions.length + selectedHighlights.length})
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Panel - Content with highlights */}
+              <div className="w-[60%] overflow-y-auto">
+                <div className="p-6">
+                  <EnhancedHighlightedContentViewer
+                    analysisResult={highlightAnalysis}
+                    selectedHighlights={selectedHighlights}
+                    onHighlightToggle={toggleHighlight}
+                    onSelectAll={selectAllHighlights}
+                    onClearAll={clearAllHighlights}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Single column layout for other steps
+            <div className="flex-1 overflow-y-auto p-6">
+              <AnimatePresence mode="wait">
+                {currentStep === 'analysis' && renderAnalysisStep()}
+                {currentStep === 'suggestions' && renderSuggestionsStep()}
+                {currentStep === 'optimization' && renderOptimizationStep()}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -88,4 +88,10 @@ export interface ContentBuilderState {
       description: string;
     };
   } | null;
+
+  // Optimization Selections
+  optimizationSelections: {
+    suggestions: string[];
+    highlights: string[];
+  } | null;
 }

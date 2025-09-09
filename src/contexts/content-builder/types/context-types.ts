@@ -48,6 +48,12 @@ export interface ContentBuilderContextType {
   applySeoImprovement: (id: string) => void;
   skipOptimizationStep: () => void;
 
+  // Optimization Selection Actions
+  saveOptimizationSelections: (suggestions: string[], highlights: string[]) => Promise<void>;
+  getOptimizationSelections: () => { suggestions: string[]; highlights: string[] } | null;
+  clearOptimizationSelections: () => void;
+  applyOptimizationChanges: (selectedHighlights: string[], content: string) => Promise<string>;
+
   // Advanced Content Actions
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;
   saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;

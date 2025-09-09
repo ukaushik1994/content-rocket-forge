@@ -71,5 +71,8 @@ export const initialState: ContentBuilderState = {
   location: '',
 
   // Strategy Source
-  strategySource: null
+  strategySource: null,
+
+  // Optimization Selections
+  optimizationSelections: null
 };
