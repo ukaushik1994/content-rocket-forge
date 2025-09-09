@@ -32,6 +32,8 @@ export const ContentBuilderProvider: React.FC<{ children: React.ReactNode }> = (
 export const useContentBuilder = () => {
   const context = useContext(ContentBuilderContext);
   if (context === undefined) {
+    console.error('useContentBuilder called outside of ContentBuilderProvider');
+    console.error('Current component stack:', new Error().stack);
     throw new Error('useContentBuilder must be used within a ContentBuilderProvider');
   }
   return context;
