@@ -109,7 +109,7 @@ const findKeywordIssues = (
     
     // Highlight first paragraph if it lacks main keyword
     if (pIndex === 0 && mainKeyword && !paragraph.toLowerCase().includes(mainKeyword.toLowerCase())) {
-      const endIndex = Math.min(paragraphStart + paragraph.length, paragraphStart + 150);
+      const endIndex = Math.min(paragraphStart + paragraph.length, paragraphStart + 200);
       highlights.push({
         id: `keyword-${suggestionIndex}-${pIndex}`,
         startIndex: paragraphStart,
@@ -119,10 +119,33 @@ const findKeywordIssues = (
         priority: suggestion.priority,
         suggestion: {
           title: suggestion.title,
-          description: `Add main keyword \"${mainKeyword}\" to improve SEO relevance`,
+          description: `Add main keyword "${mainKeyword}" to improve SEO relevance and search rankings`,
           category: suggestion.category
         }
       });
+    }
+    
+    // Check for keyword stuffing (too many keywords)
+    if (mainKeyword) {
+      const keywordCount = paragraph.toLowerCase().split(mainKeyword.toLowerCase()).length - 1;
+      const wordCount = paragraph.split(/\s+/).length;
+      const density = (keywordCount / wordCount) * 100;
+      
+      if (density > 4) { // Keyword density over 4%
+        highlights.push({
+          id: `keyword-stuffing-${suggestionIndex}-${pIndex}`,
+          startIndex: paragraphStart,
+          endIndex: paragraphStart + Math.min(paragraph.length, 150),
+          text: content.substring(paragraphStart, paragraphStart + Math.min(paragraph.length, 150)),
+          type: 'seo',
+          priority: 'medium',
+          suggestion: {
+            title: 'Keyword Density Warning',
+            description: `Keyword density is ${density.toFixed(1)}%. Consider reducing keyword usage to avoid over-optimization`,
+            category: suggestion.category
+          }
+        });
+      }
     }
   });
   

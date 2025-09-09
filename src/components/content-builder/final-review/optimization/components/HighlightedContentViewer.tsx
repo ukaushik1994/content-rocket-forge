@@ -77,6 +77,43 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
     return labels[type] || type;
   };
 
+  const getQuickFixSuggestions = (highlight: ContentHighlight): string[] => {
+    switch (highlight.type) {
+      case 'seo':
+        return [
+          'Add relevant keywords naturally to this section',
+          'Ensure keyword density is appropriate (1-3%)',
+          'Consider using semantic variations of your target keywords'
+        ];
+      case 'structure':
+        return [
+          'Break long paragraphs into shorter, scannable chunks',
+          'Add subheadings to improve content organization',
+          'Use bullet points or numbered lists for better readability'
+        ];
+      case 'solution':
+        return [
+          'Mention your product/service naturally in this context',
+          'Add a subtle call-to-action if appropriate',
+          'Link to relevant product pages or features'
+        ];
+      case 'ai-detection':
+        return [
+          'Add more personal experiences or specific examples',
+          'Include unique insights or opinions',
+          'Use more conversational language and contractions'
+        ];
+      case 'serp':
+        return [
+          'Incorporate data from top-ranking pages',
+          'Add relevant statistics or recent information',
+          'Address common questions from search results'
+        ];
+      default:
+        return ['Review and optimize this section based on the suggestion'];
+    }
+  };
+
   const renderHighlightedContent = () => {
     if (highlights.length === 0) {
       return <p className="text-sm leading-relaxed whitespace-pre-wrap">{originalContent}</p>;
@@ -174,7 +211,7 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
             {Object.entries(highlightsByType).map(([type, typeHighlights]) => (
               <div key={type} className="flex items-center gap-2 text-xs">
                 <div className={`w-3 h-3 rounded ${getHighlightColor(type as ContentHighlight['type'], 'medium').split(' ')[0]}`} />
@@ -182,8 +219,25 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
               </div>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Click on highlighted areas to see detailed improvement suggestions
+          
+          {/* Priority Summary */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-red-400" />
+              High Priority: {highlights.filter(h => h.priority === 'high').length}
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-yellow-400" />
+              Medium Priority: {highlights.filter(h => h.priority === 'medium').length}
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-blue-400" />
+              Low Priority: {highlights.filter(h => h.priority === 'low').length}
+            </span>
+          </div>
+          
+          <p className="text-xs text-muted-foreground">
+            Click on highlighted areas to see detailed improvement suggestions and quick fixes
           </p>
         </CardContent>
       </Card>
@@ -217,7 +271,7 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
               if (!selectedHighlight) return null;
               
               return (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     {getTypeIcon(selectedHighlight.type)}
                     <span className="font-medium">{selectedHighlight.suggestion.title}</span>
@@ -233,14 +287,38 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
                     <p className="text-xs font-medium mb-1">Highlighted Text:</p>
                     <p className="text-sm italic">"{selectedHighlight.text.trim()}"</p>
                   </div>
+
+                  {/* Quick Fix Suggestions */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Quick Fix Ideas:</p>
+                    <div className="bg-background border rounded-lg p-3 space-y-2">
+                      {getQuickFixSuggestions(selectedHighlight).map((fix, index) => (
+                        <div key={index} className="flex items-start gap-2 text-xs">
+                          <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span>{fix}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedHighlightId(null)}
-                  >
-                    Close Details
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedHighlightId(null)}
+                    >
+                      Close Details
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedHighlight.text);
+                        // toast.success('Text copied to clipboard');
+                      }}
+                    >
+                      Copy Text
+                    </Button>
+                  </div>
                 </div>
               );
             })()}

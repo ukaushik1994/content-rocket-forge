@@ -235,6 +235,43 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     }
   };
 
+  // Export analysis report
+  const exportAnalysisReport = (analysis: HighlightAnalysisResult | null, selectedSuggestionIds: string[]) => {
+    if (!analysis) return;
+    
+    const report = {
+      title: 'Content Optimization Analysis Report',
+      date: new Date().toLocaleDateString(),
+      summary: {
+        totalHighlights: analysis.highlights.length,
+        highPriority: analysis.highlights.filter(h => h.priority === 'high').length,
+        mediumPriority: analysis.highlights.filter(h => h.priority === 'medium').length,
+        lowPriority: analysis.highlights.filter(h => h.priority === 'low').length,
+        selectedSuggestions: selectedSuggestionIds.length
+      },
+      highlights: analysis.highlights.map(h => ({
+        type: h.type,
+        priority: h.priority,
+        title: h.suggestion.title,
+        description: h.suggestion.description,
+        text: h.text.trim(),
+        category: h.suggestion.category
+      }))
+    };
+    
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `content-optimization-report-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Analysis report exported successfully!');
+  };
+
   const selectAllInCategory = (categoryId: string) => {
     const category = suggestionCategories.find(c => c.id === categoryId);
     if (category) {
@@ -449,6 +486,13 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         <div className="flex gap-3 pt-4">
           <Button variant="outline" onClick={() => setCurrentStep('suggestions')} className="gap-2">
             Back to Suggestions
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => exportAnalysisReport(highlightAnalysis, selectedSuggestions)} 
+            className="gap-2"
+          >
+            Export Report
           </Button>
           <Button onClick={handleApplyChanges} className="flex-1 gap-2">
             <CheckCircle2 className="w-4 h-4" />
