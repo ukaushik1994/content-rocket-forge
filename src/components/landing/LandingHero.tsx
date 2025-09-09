@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DemoModal } from '@/components/landing/DemoModal';
@@ -9,6 +9,82 @@ import { Play, ArrowRight, Star, Users, Zap } from 'lucide-react';
 export const LandingHero = () => {
   const navigate = useNavigate();
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  // Dynamic hero messages that rotate every 3 seconds
+  const heroMessages = [
+    {
+      headline: "Create Content That",
+      highlightedText: "Converts & Ranks",
+      description: "Transform your content strategy with AI that understands",
+      highlightedPhrases: [
+        { text: "SERP data", color: "text-primary" },
+        { text: "engaging copy", color: "text-neon-blue" },
+        { text: "measurable results", color: "text-neon-pink" }
+      ]
+    },
+    {
+      headline: "Generate Content That",
+      highlightedText: "Dominates SERPs",
+      description: "Leverage real-time",
+      highlightedPhrases: [
+        { text: "competitor analysis", color: "text-primary" },
+        { text: "keyword intelligence", color: "text-neon-blue" },
+        { text: "SEO optimization", color: "text-neon-pink" }
+      ]
+    },
+    {
+      headline: "Build Content That",
+      highlightedText: "Drives Revenue",
+      description: "Monitor",
+      highlightedPhrases: [
+        { text: "performance analytics", color: "text-primary" },
+        { text: "ROI metrics", color: "text-neon-blue" },
+        { text: "data-driven insights", color: "text-neon-pink" }
+      ]
+    },
+    {
+      headline: "Craft Content That",
+      highlightedText: "Outranks Competitors",
+      description: "Maintain consistent",
+      highlightedPhrases: [
+        { text: "brand voice", color: "text-primary" },
+        { text: "multi-format content", color: "text-neon-blue" },
+        { text: "multiple platforms", color: "text-neon-pink" }
+      ]
+    },
+    {
+      headline: "Produce Content That",
+      highlightedText: "Scales Your Brand",
+      description: "Research trending",
+      highlightedPhrases: [
+        { text: "keywords", color: "text-primary" },
+        { text: "content gaps", color: "text-neon-blue" },
+        { text: "competitor opportunities", color: "text-neon-pink" }
+      ]
+    },
+    {
+      headline: "Design Content That",
+      highlightedText: "Engages & Converts",
+      description: "Generate",
+      highlightedPhrases: [
+        { text: "high-quality content", color: "text-primary" },
+        { text: "search optimization", color: "text-neon-blue" },
+        { text: "social platforms", color: "text-neon-pink" }
+      ]
+    }
+  ];
+
+  // Rotate messages every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % heroMessages.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [heroMessages.length]);
+
+  const currentMessage = heroMessages[currentMessageIndex];
 
   const stats = [
     { icon: Users, value: '10k+', label: 'Creators' },
@@ -33,20 +109,43 @@ export const LandingHero = () => {
 
             {/* Main Headline */}
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-6xl xl:text-7xl font-bold leading-tight">
-                Create Content That
-                <br />
-                <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-300% bg-clip-text text-transparent animate-gradient-shift">
-                  Converts & Ranks
-                </span>
-              </h1>
+              <AnimatePresence mode="wait">
+                <motion.h1 
+                  key={currentMessageIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-4xl md:text-6xl xl:text-7xl font-bold leading-tight"
+                >
+                  {currentMessage.headline}
+                  <br />
+                  <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-300% bg-clip-text text-transparent animate-gradient-shift">
+                    {currentMessage.highlightedText}
+                  </span>
+                </motion.h1>
+              </AnimatePresence>
               
-              <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-                Transform your content strategy with AI that understands 
-                <span className="text-primary font-semibold"> SERP data</span>, 
-                creates <span className="text-neon-blue font-semibold">engaging copy</span>, 
-                and delivers <span className="text-neon-pink font-semibold">measurable results</span>.
-              </p>
+              <AnimatePresence mode="wait">
+                <motion.p 
+                  key={`desc-${currentMessageIndex}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-3xl mx-auto"
+                >
+                  {currentMessage.description}{' '}
+                  {currentMessage.highlightedPhrases.map((phrase, index) => (
+                    <span key={index}>
+                      <span className={`${phrase.color} font-semibold`}>{phrase.text}</span>
+                      {index < currentMessage.highlightedPhrases.length - 1 && ', '}
+                      {index === currentMessage.highlightedPhrases.length - 2 && ' and '}
+                      {index === currentMessage.highlightedPhrases.length - 1 && '.'}
+                    </span>
+                  ))}
+                </motion.p>
+              </AnimatePresence>
             </div>
 
             {/* CTA Section */}
