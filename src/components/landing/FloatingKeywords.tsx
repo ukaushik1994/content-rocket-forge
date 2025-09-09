@@ -27,18 +27,18 @@ const generateRandomPositions = (count: number) => {
   const positions: { top: string; left: string }[] = [];
   const minDistance = 8; // Minimum distance between elements (in percentage)
   
-  // Define the 8 zones for better distribution
+  // Define the 8 zones for better distribution with 1-inch spacing from center
   const zones = [
-    // 4 Corner zones
-    { name: 'top-left', leftRange: [0, 25], topRange: [0, 25] },
-    { name: 'top-right', leftRange: [75, 100], topRange: [0, 25] },
-    { name: 'bottom-left', leftRange: [0, 25], topRange: [75, 100] },
-    { name: 'bottom-right', leftRange: [75, 100], topRange: [75, 100] },
-    // 4 Edge zones (avoiding center content area: 25-75% both axes)
-    { name: 'top-edge', leftRange: [25, 75], topRange: [0, 25] },
-    { name: 'bottom-edge', leftRange: [25, 75], topRange: [75, 100] },
-    { name: 'left-edge', leftRange: [0, 25], topRange: [25, 75] },
-    { name: 'right-edge', leftRange: [75, 100], topRange: [25, 75] }
+    // 4 Corner zones (expanded exclusion: 20-80%)
+    { name: 'top-left', leftRange: [0, 20], topRange: [0, 20] },
+    { name: 'top-right', leftRange: [80, 100], topRange: [0, 20] },
+    { name: 'bottom-left', leftRange: [0, 20], topRange: [80, 100] },
+    { name: 'bottom-right', leftRange: [80, 100], topRange: [80, 100] },
+    // 4 Edge zones (avoiding center content area: 20-80% both axes)
+    { name: 'top-edge', leftRange: [20, 80], topRange: [0, 20] },
+    { name: 'bottom-edge', leftRange: [20, 80], topRange: [80, 100] },
+    { name: 'left-edge', leftRange: [0, 20], topRange: [20, 80] },
+    { name: 'right-edge', leftRange: [80, 100], topRange: [20, 80] }
   ];
   
   for (let i = 0; i < count; i++) {
@@ -93,12 +93,19 @@ export const FloatingKeywords = () => {
       {keywords.map((keyword, index) => {
         const position = positions[index];
 
-        // Consistent sizing with only 3 variations
-        const sizes = ['text-sm', 'text-base', 'text-lg'];
-        const size = sizes[index % sizes.length];
+        // Multi-word detection for dynamic sizing
+        const wordCount = keyword.split(' ').length;
+        const isMultiWord = wordCount > 1;
         
-        // Random font families
-        const fonts = ['font-inter', 'font-playfair', 'font-space', 'font-mono', 'font-crimson'];
+        // Size arrays based on word count to prevent wrapping
+        const singleWordSizes = ['text-sm', 'text-base', 'text-lg'];
+        const multiWordSizes = ['text-xs', 'text-sm', 'text-base']; // Smaller for multi-word
+        const size = isMultiWord 
+          ? multiWordSizes[index % multiWordSizes.length]
+          : singleWordSizes[index % singleWordSizes.length];
+        
+        // Limited to 2 fonts only (as requested)
+        const fonts = ['font-space', 'font-playfair'];
         const font = fonts[index % fonts.length];
         
         // Opacity variations for white text
@@ -112,7 +119,7 @@ export const FloatingKeywords = () => {
         return (
           <motion.div
             key={keyword}
-            className={`absolute ${size} ${font} font-medium select-none`}
+            className={`absolute ${size} ${font} font-medium select-none whitespace-nowrap`}
             style={{
               ...position,
               zIndex: -1,
