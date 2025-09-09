@@ -15,6 +15,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { ContentHighlight, HighlightAnalysisResult } from '@/services/contentHighlightingService';
+import { HighlightBatchActions } from './HighlightBatchActions';
 
 interface HighlightedContentViewerProps {
   analysisResult: HighlightAnalysisResult;
@@ -28,11 +29,21 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
   onHighlightClick
 }) => {
   const [selectedHighlightId, setSelectedHighlightId] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<ContentHighlight['type'] | 'all'>('all');
+  const [filterPriority, setFilterPriority] = useState<ContentHighlight['priority'] | 'all'>('all');
+  const [showFilters, setShowFilters] = useState(false);
   
   const { highlights, originalContent } = analysisResult;
 
+  // Filter highlights based on selected filters
+  const filteredHighlights = highlights.filter(highlight => {
+    if (filterType !== 'all' && highlight.type !== filterType) return false;
+    if (filterPriority !== 'all' && highlight.priority !== filterPriority) return false;
+    return true;
+  });
+
   // Group highlights by type for the legend
-  const highlightsByType = highlights.reduce((acc, highlight) => {
+  const highlightsByType = filteredHighlights.reduce((acc, highlight) => {
     if (!acc[highlight.type]) acc[highlight.type] = [];
     acc[highlight.type].push(highlight);
     return acc;
@@ -115,15 +126,15 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
   };
 
   const renderHighlightedContent = () => {
-    if (highlights.length === 0) {
+    if (filteredHighlights.length === 0) {
       return <p className="text-sm leading-relaxed whitespace-pre-wrap">{originalContent}</p>;
     }
 
     let lastIndex = 0;
     const elements: JSX.Element[] = [];
 
-    // Sort highlights by start index
-    const sortedHighlights = [...highlights].sort((a, b) => a.startIndex - b.startIndex);
+    // Sort filtered highlights by start index
+    const sortedHighlights = [...filteredHighlights].sort((a, b) => a.startIndex - b.startIndex);
 
     sortedHighlights.forEach((highlight, index) => {
       // Add text before highlight
@@ -202,39 +213,118 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
 
   return (
     <div className="space-y-4">
-      {/* Legend */}
+      {/* Analytics Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="text-center p-3">
+          <div className="text-2xl font-bold text-primary">{highlights.length}</div>
+          <div className="text-xs text-muted-foreground">Total Issues</div>
+        </Card>
+        <Card className="text-center p-3">
+          <div className="text-2xl font-bold text-red-600">{highlights.filter(h => h.priority === 'high').length}</div>
+          <div className="text-xs text-muted-foreground">High Priority</div>
+        </Card>
+        <Card className="text-center p-3">
+          <div className="text-2xl font-bold text-yellow-600">{highlights.filter(h => h.priority === 'medium').length}</div>
+          <div className="text-xs text-muted-foreground">Medium Priority</div>
+        </Card>
+        <Card className="text-center p-3">
+          <div className="text-2xl font-bold text-blue-600">{Object.keys(highlightsByType).length}</div>
+          <div className="text-xs text-muted-foreground">Categories</div>
+        </Card>
+      </div>
+
+      {/* Filters and Legend */}
       <Card className="border-l-4 border-l-primary">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Info className="w-4 h-4" />
-            Optimization Areas ({highlights.length} found)
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Info className="w-4 h-4" />
+              Optimization Areas ({filteredHighlights.length} of {highlights.length} shown)
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
+            >
+              Filters
+              {showFilters ? '▼' : '▶'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
+          {/* Filter Controls */}
+          {showFilters && (
+            <div className="space-y-3 mb-4 p-3 bg-muted rounded-lg">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Filter by Type</label>
+                  <select 
+                    value={filterType} 
+                    onChange={(e) => setFilterType(e.target.value as any)}
+                    className="w-full text-xs p-2 border rounded"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="seo">SEO & Keywords</option>
+                    <option value="structure">Content Structure</option>
+                    <option value="solution">Solution Integration</option>
+                    <option value="ai-detection">AI Humanization</option>
+                    <option value="serp">SERP Integration</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Filter by Priority</label>
+                  <select 
+                    value={filterPriority} 
+                    onChange={(e) => setFilterPriority(e.target.value as any)}
+                    className="w-full text-xs p-2 border rounded"
+                  >
+                    <option value="all">All Priorities</option>
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => { setFilterType('all'); setFilterPriority('all'); }}
+                >
+                  Clear Filters
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setFilterPriority('high')}
+                >
+                  Show High Priority Only
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
             {Object.entries(highlightsByType).map(([type, typeHighlights]) => (
-              <div key={type} className="flex items-center gap-2 text-xs">
+              <button
+                key={type}
+                onClick={() => setFilterType(type as ContentHighlight['type'])}
+                className={`flex items-center gap-2 text-xs p-2 rounded border transition-colors ${
+                  filterType === type ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                }`}
+              >
                 <div className={`w-3 h-3 rounded ${getHighlightColor(type as ContentHighlight['type'], 'medium').split(' ')[0]}`} />
                 <span>{getTypeLabel(type as ContentHighlight['type'])} ({typeHighlights.length})</span>
-              </div>
+              </button>
             ))}
           </div>
           
-          {/* Priority Summary */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
-            <span className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-red-400" />
-              High Priority: {highlights.filter(h => h.priority === 'high').length}
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-yellow-400" />
-              Medium Priority: {highlights.filter(h => h.priority === 'medium').length}
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-blue-400" />
-              Low Priority: {highlights.filter(h => h.priority === 'low').length}
-            </span>
-          </div>
+          {filteredHighlights.length < highlights.length && (
+            <div className="text-xs text-muted-foreground mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+              Showing {filteredHighlights.length} of {highlights.length} highlights. Adjust filters to see more.
+            </div>
+          )}
           
           <p className="text-xs text-muted-foreground">
             Click on highlighted areas to see detailed improvement suggestions and quick fixes
@@ -267,7 +357,7 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
           </CardHeader>
           <CardContent>
             {(() => {
-              const selectedHighlight = highlights.find(h => h.id === selectedHighlightId);
+              const selectedHighlight = filteredHighlights.find(h => h.id === selectedHighlightId);
               if (!selectedHighlight) return null;
               
               return (
@@ -325,6 +415,17 @@ export const HighlightedContentViewer: React.FC<HighlightedContentViewerProps> =
           </CardContent>
         </Card>
       )}
+
+      {/* Batch Actions */}
+      <HighlightBatchActions
+        highlights={highlights}
+        onHighlightToggle={(highlightId, visible) => {
+          console.log('Toggle highlight:', highlightId, visible);
+        }}
+        onBulkAction={(action, highlightIds) => {
+          console.log('Bulk action:', action, highlightIds);
+        }}
+      />
     </div>
   );
 };
