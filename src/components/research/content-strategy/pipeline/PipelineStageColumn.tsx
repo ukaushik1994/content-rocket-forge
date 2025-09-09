@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Clock } from 'lucide-react';
+import { Plus, Calendar, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { EnhancedPipelineCard } from './EnhancedPipelineCard';
+import { MinimalPipelineCard } from './MinimalPipelineCard';
 
 interface PipelineStageColumnProps {
   stage: { id: string; label: string; color: string };
@@ -33,6 +33,8 @@ export const PipelineStageColumn: React.FC<PipelineStageColumnProps> = ({
   onSyncProposal,
   calendarItems = []
 }) => {
+  const [showAll, setShowAll] = useState(false);
+  const ITEMS_LIMIT = 6;
   // Get calendar items that should show in scheduled stage
   const getScheduledItems = () => {
     if (stage.id !== 'scheduled') return [];
@@ -44,6 +46,9 @@ export const PipelineStageColumn: React.FC<PipelineStageColumnProps> = ({
 
   const scheduledItems = getScheduledItems();
   const allItems = [...items, ...scheduledItems];
+  
+  const displayItems = showAll ? items : items.slice(0, ITEMS_LIMIT);
+  const hasMoreItems = items.length > ITEMS_LIMIT;
 
   const columnVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -73,16 +78,17 @@ export const PipelineStageColumn: React.FC<PipelineStageColumnProps> = ({
       animate="visible"
       className="flex flex-col h-full"
     >
-      <Card className="flex-1 bg-gradient-to-br from-background/90 via-background/80 to-background/70 backdrop-blur-xl border-border/50 shadow-lg">
-        <CardHeader className="pb-3">
+      <Card className="flex-1 bg-card/80 backdrop-blur border-border/50">
+        <CardHeader className="pb-2 px-3 pt-3">
           {/* Stage Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`px-3 py-2 rounded-xl bg-gradient-to-r ${stage.color} border border-white/10 backdrop-blur-sm`}>
-                <h3 className="text-sm font-semibold text-white">{stage.label}</h3>
+            <div className="flex items-center gap-2">
+              <div className={`px-2 py-1 rounded-lg bg-gradient-to-r ${stage.color} text-white text-xs font-medium`}>
+                {stage.label}
               </div>
-              <Badge variant="outline" className="text-xs bg-background/50 backdrop-blur-sm">
-                {totalItems}
+              <Badge variant="outline" className="text-xs">
+                {showAll ? items.length : Math.min(items.length, ITEMS_LIMIT)}
+                {!showAll && items.length > ITEMS_LIMIT && `/${items.length}`}
               </Badge>
             </div>
             
@@ -90,42 +96,24 @@ export const PipelineStageColumn: React.FC<PipelineStageColumnProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onAddItem(stage.id)}
-              className="h-8 w-8 p-0 hover:bg-primary/20 text-muted-foreground hover:text-primary"
+              className="h-6 w-6 p-0 hover:bg-muted text-muted-foreground hover:text-foreground"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3" />
             </Button>
-          </div>
-
-          {/* Stage Stats */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-            {totalItems > 0 && (
-              <>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-primary rounded-full" />
-                  <span>{avgProgress}% avg progress</span>
-                </div>
-                {highPriorityCount > 0 && (
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-red-500 rounded-full" />
-                    <span>{highPriorityCount} high priority</span>
-                  </div>
-                )}
-              </>
-            )}
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 pt-0">
-          <div className="space-y-2 min-h-[300px]">
+        <CardContent className="flex-1 pt-0 px-3 pb-3">
+          <div className="space-y-2 min-h-[200px]">
             {/* Pipeline Items */}
-            {items.map((item, index) => (
+            {displayItems.map((item, index) => (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.02 }}
               >
-                <EnhancedPipelineCard
+                <MinimalPipelineCard
                   item={item}
                   stageIndex={stageIndex}
                   totalStages={totalStages}
@@ -137,34 +125,59 @@ export const PipelineStageColumn: React.FC<PipelineStageColumnProps> = ({
                 />
               </motion.div>
             ))}
+            
+            {/* Show More/Less Button */}
+            {hasMoreItems && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex justify-center pt-1"
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAll(!showAll)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {showAll ? (
+                    <>
+                      <ChevronUp className="h-3 w-3 mr-1" />
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3 mr-1" />
+                      Show {items.length - ITEMS_LIMIT} More
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            )}
 
             {/* Scheduled Calendar Items (for scheduled stage only) */}
             {stage.id === 'scheduled' && scheduledItems.map((item, index) => (
               <motion.div
                 key={`calendar-${item.id}`}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: (items.length + index) * 0.05 }}
+                transition={{ delay: (displayItems.length + index) * 0.02 }}
               >
-                <Card className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent backdrop-blur-xl border-blue-400/30 shadow-lg">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-4 w-4 text-blue-400" />
-                      <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-300 border-blue-400/30">
-                        From Calendar
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="h-3 w-3 text-primary" />
+                      <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                        Calendar
                       </Badge>
                     </div>
-                    <h4 className="font-medium text-sm text-foreground mb-2">{item.title}</h4>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>Scheduled: {item.scheduled_date}</span>
-                    </div>
-                    <div className="flex items-center gap-1 mt-2">
-                      <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-400/30">
-                        {item.status}
-                      </Badge>
+                    <h4 className="font-medium text-sm text-foreground mb-2 line-clamp-1">{item.title}</h4>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{item.scheduled_date}</span>
+                      </div>
                       <Badge variant="outline" className="text-xs">
-                        {item.content_type}
+                        {item.status}
                       </Badge>
                     </div>
                   </CardContent>
@@ -177,18 +190,13 @@ export const PipelineStageColumn: React.FC<PipelineStageColumnProps> = ({
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border/30 rounded-xl bg-muted/20 backdrop-blur-sm hover:border-border/50 hover:bg-muted/30 transition-all cursor-pointer group"
+                transition={{ delay: 0.2 }}
+                className="flex flex-col items-center justify-center h-24 border border-dashed border-border/50 rounded-lg bg-muted/10 hover:bg-muted/20 transition-all cursor-pointer group"
                 onClick={() => onAddItem(stage.id)}
               >
                 <div className="text-center space-y-1">
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                    <Plus className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-foreground">No content yet</p>
-                    <p className="text-xs text-muted-foreground">Click to add</p>
-                  </div>
+                  <Plus className="h-4 w-4 text-muted-foreground group-hover:text-foreground mx-auto" />
+                  <p className="text-xs text-muted-foreground group-hover:text-foreground">Add content</p>
                 </div>
               </motion.div>
             )}

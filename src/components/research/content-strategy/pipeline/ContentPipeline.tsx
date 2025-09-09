@@ -52,7 +52,7 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
   };
 
   const getItemsByStage = (stageId: string) => {
-    return pipelineItems.filter(item => item.stage === stageId).slice(0, 8); // Limit to 8 items per stage
+    return pipelineItems.filter(item => item.stage === stageId);
   };
 
   const handleAddItem = (stageId?: string) => {
@@ -190,8 +190,8 @@ export const ContentPipeline = ({ goals }: ContentPipelineProps) => {
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-[500px]">
+        <CardContent className="p-3">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 min-h-[400px]">
             {stages.map((stage, index) => (
               <React.Fragment key={stage.id}>
                 <PipelineStageColumn
