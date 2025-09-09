@@ -13,6 +13,7 @@ import { getAllApiKeysStatus, testAllApiKeys, ApiKeyStatusResult, ApiKeyStatus }
 import { getUserPreference } from '@/services/userPreferencesService';
 import { AIChatTestModal } from './modals/AIChatTestModal';
 import { SERPTestModal } from './modals/SERPTestModal';
+import { ApiKeyDebugModal } from './debug/ApiKeyDebugModal';
 import { UsageSection } from './UsageSection';
 import { AIServiceToggle } from './AIServiceToggle';
 import { ProviderManagement } from './ProviderManagement';
@@ -151,6 +152,7 @@ export function MinimalAPISettings() {
   
   // Test modal states
   const [testProvider, setTestProvider] = useState<string | null>(null);
+  const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
   const [isAITestModalOpen, setIsAITestModalOpen] = useState(false);
   const [isSERPTestModalOpen, setIsSERPTestModalOpen] = useState(false);
 

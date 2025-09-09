@@ -187,6 +187,14 @@ class AIServiceController {
       return this.providersCache;
     }
 
+    // Auto-sync API keys if needed
+    try {
+      const { autoSyncApiKeys } = await import('./providerSync');
+      await autoSyncApiKeys();
+    } catch (error) {
+      console.error('Auto-sync failed:', error);
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
