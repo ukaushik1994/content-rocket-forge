@@ -13,30 +13,8 @@ interface SerpTopStoriesSectionProps {
 export function SerpTopStoriesSection({ serpData, expanded, onAddToContent }: SerpTopStoriesSectionProps) {
   if (!expanded) return null;
 
-  // Mock data for demonstration - in real implementation this would come from serpData.topStories
-  const topStories = [
-    {
-      title: "Major Project Management Platform Announces AI Integration",
-      source: "TechCrunch",
-      publishedDate: "2 hours ago",
-      thumbnail: "/api/placeholder/60/60",
-      url: "https://techcrunch.com/story1"
-    },
-    {
-      title: "Remote Work Tools See 40% Usage Increase in Q4 2024",
-      source: "Forbes",
-      publishedDate: "5 hours ago", 
-      thumbnail: "/api/placeholder/60/60",
-      url: "https://forbes.com/story2"
-    },
-    {
-      title: "Best Practices for Team Collaboration in 2024",
-      source: "Harvard Business Review",
-      publishedDate: "1 day ago",
-      thumbnail: "/api/placeholder/60/60", 
-      url: "https://hbr.org/story3"
-    }
-  ];
+  // No top stories data without real SERP API
+  const topStories: any[] = [];
 
   if (topStories.length === 0) {
     return (

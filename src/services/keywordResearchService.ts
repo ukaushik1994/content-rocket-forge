@@ -39,14 +39,14 @@ export async function researchKeyword(keyword: string): Promise<KeywordResearchR
     const keywordAnalysis = await analyzeKeywordSerp(keyword);
     console.log('Keyword analysis received');
     
-    // Map keyword data to our format
+    // Map keyword data to our format - only use real data from API
     const relatedKeywords = keywordAnalysis.keywords?.map(kw => ({
       keyword: kw,
-      searchVolume: Math.floor(Math.random() * 5000) + 1000, // Use random for now until API provides this
-      difficulty: Math.floor(Math.random() * 100),
-      cpc: `$${(Math.random() * 5).toFixed(2)}`,
-      competition: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)],
-      intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'][Math.floor(Math.random() * 4)] as 'Informational' | 'Commercial' | 'Transactional' | 'Navigational'
+      searchVolume: 0, // Will be populated when real API provides this data
+      difficulty: 0,
+      cpc: '$0.00',
+      competition: 'Unknown',
+      intent: 'Informational' as 'Informational' | 'Commercial' | 'Transactional' | 'Navigational'
     })) || [];
     
     // Extract questions from people also ask data
@@ -55,70 +55,26 @@ export async function researchKeyword(keyword: string): Promise<KeywordResearchR
     // Extract competitor keywords from related searches
     const competitorKeywords = keywordAnalysis.relatedSearches?.map(item => item.query) || [];
     
-    // Create trend data (still using mock data for visualization)
-    const trendData = [
-      { period: 'Jan', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'Feb', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'Mar', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'Apr', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'May', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'Jun', volume: Math.floor(Math.random() * 5000) + 3000 }
-    ];
+    // No trend data - would need real trending API
+    const trendData: { period: string; volume: number }[] = [];
 
     return {
       mainKeyword: keyword,
-      relatedKeywords: relatedKeywords.length > 0 ? relatedKeywords : [
-        { keyword: keyword + ' tools', searchVolume: 1200, difficulty: 45, cpc: '$1.20', competition: 'Medium', intent: 'Commercial' },
-        { keyword: keyword + ' software', searchVolume: 2100, difficulty: 52, cpc: '$2.10', competition: 'High', intent: 'Transactional' },
-        { keyword: 'best ' + keyword, searchVolume: 1800, difficulty: 38, cpc: '$1.85', competition: 'Medium', intent: 'Commercial' },
-        { keyword: keyword + ' guide', searchVolume: 980, difficulty: 25, cpc: '$0.95', competition: 'Low', intent: 'Informational' }
-      ],
-      questions: questions.length > 0 ? questions : [
-        'What is the best ' + keyword + '?',
-        'How to use ' + keyword + ' effectively?',
-        'How much does ' + keyword + ' cost?',
-        'Is ' + keyword + ' worth it?'
-      ],
-      competitorKeywords: competitorKeywords.length > 0 ? competitorKeywords : [
-        keyword + ' alternative',
-        'compare ' + keyword,
-        keyword + ' vs competition',
-        'affordable ' + keyword
-      ],
+      relatedKeywords,
+      questions,
+      competitorKeywords,
       trendData
     };
   } catch (error) {
     console.error('Keyword research error:', error);
     
-    // Return fallback data on error to ensure UI doesn't break
+    // Return empty data on error - no fallback mock data
     return {
       mainKeyword: keyword,
-      relatedKeywords: [
-        { keyword: keyword + ' tools', searchVolume: 1200, difficulty: 45, cpc: '$1.20', competition: 'Medium', intent: 'Commercial' },
-        { keyword: keyword + ' software', searchVolume: 2100, difficulty: 52, cpc: '$2.10', competition: 'High', intent: 'Transactional' },
-        { keyword: 'best ' + keyword, searchVolume: 1800, difficulty: 38, cpc: '$1.85', competition: 'Medium', intent: 'Commercial' },
-        { keyword: keyword + ' guide', searchVolume: 980, difficulty: 25, cpc: '$0.95', competition: 'Low', intent: 'Informational' }
-      ],
-      questions: [
-        'What is the best ' + keyword + '?',
-        'How to use ' + keyword + ' effectively?',
-        'How much does ' + keyword + ' cost?',
-        'Is ' + keyword + ' worth it?'
-      ],
-      competitorKeywords: [
-        keyword + ' alternative',
-        'compare ' + keyword,
-        keyword + ' vs competition',
-        'affordable ' + keyword
-      ],
-      trendData: [
-        { period: 'Jan', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'Feb', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'Mar', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'Apr', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'May', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'Jun', volume: Math.floor(Math.random() * 5000) + 3000 }
-      ]
+      relatedKeywords: [],
+      questions: [],
+      competitorKeywords: [],
+      trendData: []
     };
   }
 }

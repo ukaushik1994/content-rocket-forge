@@ -32,32 +32,8 @@ class AdaptivePromptService {
    */
   async analyzeFeedbackPatterns(): Promise<FeedbackPattern[]> {
     try {
-      // Since optimization_logs table doesn't exist yet, return mock data
-      // In production, replace this with actual database queries
-      const mockPatterns: FeedbackPattern[] = [
-        {
-          feedbackType: 'positive',
-          category: 'content',
-          commonIssues: [],
-          successfulPatterns: ['improved readability', 'better structure'],
-          averageRating: 4.2,
-          frequency: 25
-        },
-        {
-          feedbackType: 'neutral',
-          category: 'seo',
-          commonIssues: ['over-optimization'],
-          successfulPatterns: ['keyword integration'],
-          averageRating: 3.8,
-          frequency: 15
-        }
-      ];
-
-      mockPatterns.forEach(pattern => {
-        this.feedbackPatterns.set(pattern.category, pattern);
-      });
-
-      return mockPatterns;
+      // Return empty array - no mock data
+      return [];
     } catch (error) {
       console.error('Failed to analyze feedback patterns:', error);
       return [];

@@ -11,64 +11,8 @@ export const ContentPipelineTab: React.FC = () => {
   const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
-  // Mock research data that would come from other tabs
-  const researchItems = [
-    {
-      id: '1',
-      type: 'keyword',
-      title: 'content marketing strategy',
-      source: 'Keyword Intelligence',
-      opportunity: 'High volume, medium competition',
-      searchVolume: '8.1K',
-      difficulty: 'Medium',
-      priority: 'High',
-      status: 'ready'
-    },
-    {
-      id: '2',
-      type: 'question',
-      title: 'What is content marketing?',
-      source: 'People Questions',
-      opportunity: 'High-intent informational query',
-      searchVolume: '2.4K',
-      difficulty: 'Low',
-      priority: 'Medium',
-      status: 'ready'
-    },
-    {
-      id: '3',
-      type: 'gap',
-      title: 'Content creation tools comparison',
-      source: 'Content Gaps',
-      opportunity: 'Competitor gap identified',
-      searchVolume: '1.8K',
-      difficulty: 'Low',
-      priority: 'High',
-      status: 'ready'
-    },
-    {
-      id: '4',
-      type: 'keyword',
-      title: 'SEO content optimization',
-      source: 'Keyword Intelligence',
-      opportunity: 'Rising trend topic',
-      searchVolume: '3.2K',
-      difficulty: 'Medium',
-      priority: 'Medium',
-      status: 'in-progress'
-    },
-    {
-      id: '5',
-      type: 'question',
-      title: 'How to measure content marketing ROI?',
-      source: 'People Questions',
-      opportunity: 'Business-focused question',
-      searchVolume: '1.2K',
-      difficulty: 'Low',
-      priority: 'Low',
-      status: 'scheduled'
-    }
-  ];
+  // No research data without real research integration
+  const researchItems: any[] = [];
 
   const quickActions = [
     {

@@ -38,7 +38,7 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
 }) => {
   const [showProgress, setShowProgress] = useState(false);
   
-  // Mock progress data for demonstration
+  // No progress data without real generation tracking
   const [formatProgresses, setFormatProgresses] = useState<any[]>([]);
   
   const toggleFormatSelection = (formatId: string) => {
@@ -60,40 +60,8 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
   const handleGenerateContent = () => {
     if (selectedFormats.length === 0) return;
     
-    // Create mock progress data
-    const progressItems = selectedFormats.map(formatId => ({
-      formatId,
-      status: 'generating',
-      progress: 0
-    }));
-    setFormatProgresses(progressItems);
-    setShowProgress(true);
-    
     // Call the actual generate function
     onGenerateContent(selectedFormats);
-    
-    // Update mock progress (this would be replaced with real progress in production)
-    const interval = setInterval(() => {
-      setFormatProgresses(prev => {
-        const updated = [...prev];
-        const pendingIndex = updated.findIndex(f => f.status === 'pending' || f.status === 'generating');
-        
-        if (pendingIndex >= 0) {
-          const current = updated[pendingIndex];
-          if (current.progress < 100) {
-            current.progress = Math.min(100, (current.progress || 0) + 20);
-          } else {
-            current.status = 'completed';
-          }
-        } else {
-          clearInterval(interval);
-          // Hide progress after a delay
-          setTimeout(() => setShowProgress(false), 2000);
-        }
-        
-        return updated;
-      });
-    }, 800);
   };
   
   const generatedFormatsCount = Object.keys(generatedContents).length;

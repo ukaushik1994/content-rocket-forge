@@ -9,36 +9,8 @@ import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 export const ResearchInsightsTab: React.FC = () => {
   const { insights, currentStrategy } = useContentStrategy();
 
-  // Mock data for demonstration - in real implementation, this would come from aggregated research
-  const researchSessions = [
-    {
-      id: 1,
-      keyword: 'content marketing',
-      timestamp: '2 hours ago',
-      questionsFound: 24,
-      contentGaps: 8,
-      opportunities: 12,
-      status: 'completed'
-    },
-    {
-      id: 2,
-      keyword: 'SEO strategy',
-      timestamp: '1 day ago',
-      questionsFound: 31,
-      contentGaps: 15,
-      opportunities: 20,
-      status: 'completed'
-    },
-    {
-      id: 3,
-      keyword: 'digital marketing',
-      timestamp: '3 days ago',
-      questionsFound: 18,
-      contentGaps: 6,
-      opportunities: 9,
-      status: 'completed'
-    }
-  ];
+  // No research sessions without real research tracking
+  const researchSessions: any[] = [];
 
   const topOpportunities = [
     {

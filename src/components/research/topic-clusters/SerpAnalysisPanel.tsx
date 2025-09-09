@@ -85,15 +85,16 @@ export function SerpAnalysisPanel({ keyword, serpData, isLoading, onStoreSelecti
     }
   };
 
-  // Mock SERP analysis data - replace with actual serpData processing
+  // No SERP analysis data without real API
   const analysisData = {
     overview: {
-      totalResults: serpData?.searchInformation?.totalResults || '12,345,678',
-      searchTime: serpData?.searchInformation?.searchTime || 0.45,
-      topCompetitors: 10,
-      avgWordsCount: 2247
+      totalResults: '0',
+      searchTime: 0,
+      topCompetitors: 0,
+      avgWordsCount: 0
     },
-    topResults: [
+    topResults: []
+  };
       {
         id: 'result-1',
         title: 'Complete Guide to Content Marketing Strategy 2024',

@@ -133,7 +133,7 @@ class UnifiedDataService {
   }
 
   private async getUserAnalytics(userId: string) {
-    // Mock analytics - in real app would fetch from analytics service
+    // Return empty analytics - no mock data
     return {
       totalContent: 0,
       published: 0,

@@ -55,8 +55,11 @@ export function AnalyticsDashboard({ className = '', timeRange = '30d' }: Analyt
         Promise.resolve(optimizationCache.getCacheStats())
       ]);
 
-      // Simulate trend data (in production, fetch from analytics service)
-      const optimizationTrends = generateMockTrends(timeRange);
+      // No trend data without real analytics service
+      const optimizationTrends = {
+        daily: [] as Array<{ date: string; count: number; avgRating: number }>,
+        weekly: [] as Array<{ week: string; count: number; avgRating: number }>
+      };
 
       setAnalyticsData({
         successRates,
@@ -64,7 +67,7 @@ export function AnalyticsDashboard({ className = '', timeRange = '30d' }: Analyt
         cacheStats: {
           totalEntries: cacheStats.analysisEntries + cacheStats.optimizationEntries,
           memoryUsage: cacheStats.totalMemoryUsage,
-          hitRate: Math.random() * 0.3 + 0.6 // Mock hit rate between 60-90%
+          hitRate: 0 // No hit rate without real cache metrics
         },
         optimizationTrends
       });
@@ -73,34 +76,6 @@ export function AnalyticsDashboard({ className = '', timeRange = '30d' }: Analyt
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const generateMockTrends = (range: string) => {
-    const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
-    const daily = [];
-    
-    for (let i = days; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      daily.push({
-        date: date.toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 20) + 5,
-        avgRating: Math.random() * 1.5 + 3.5 // Rating between 3.5-5
-      });
-    }
-
-    const weekly = [];
-    for (let i = 0; i < Math.ceil(days / 7); i++) {
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - (i * 7));
-      weekly.push({
-        week: `Week ${i + 1}`,
-        count: Math.floor(Math.random() * 100) + 50,
-        avgRating: Math.random() * 1.5 + 3.5
-      });
-    }
-
-    return { daily, weekly };
   };
 
   const getSuccessRateColor = (rate: number) => {
