@@ -32,9 +32,30 @@ const generateRandomPositions = (count: number) => {
     let position;
     
     do {
-      // Generate position in right half only (52% to 95% left, 5% to 95% top)
-      const left = 52 + Math.random() * 43;
-      const top = 5 + Math.random() * 90;
+      // Generate position across full screen, avoiding center area (20-80% left, 35-65% top)
+      let left, top;
+      
+      // Randomly choose left or right side, or top/bottom areas
+      const zone = Math.random();
+      
+      if (zone < 0.3) {
+        // Left side
+        left = 5 + Math.random() * 15; // 5% to 20%
+        top = 5 + Math.random() * 90;  // 5% to 95%
+      } else if (zone < 0.6) {
+        // Right side  
+        left = 80 + Math.random() * 15; // 80% to 95%
+        top = 5 + Math.random() * 90;   // 5% to 95%
+      } else if (zone < 0.8) {
+        // Top area
+        left = 20 + Math.random() * 60; // 20% to 80%
+        top = 5 + Math.random() * 25;   // 5% to 30%
+      } else {
+        // Bottom area
+        left = 20 + Math.random() * 60; // 20% to 80%
+        top = 70 + Math.random() * 25;  // 70% to 95%
+      }
+      
       position = { 
         top: `${top}%`, 
         left: `${left}%` 
