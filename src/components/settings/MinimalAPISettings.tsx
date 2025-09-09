@@ -2,6 +2,7 @@ import React from 'react';
 import { Settings } from 'lucide-react';
 import { SimpleProviderManagement } from './SimpleProviderManagement';
 import { SimpleAIServiceToggle } from './SimpleAIServiceToggle';
+import { TestAllProvidersButton } from '../ai-chat/TestAllProvidersButton';
 
 export function MinimalAPISettings() {
   return (
@@ -19,6 +20,11 @@ export function MinimalAPISettings() {
       <div className="space-y-6">
         <SimpleAIServiceToggle />
         <SimpleProviderManagement />
+        
+        <div className="pt-4 border-t">
+          <h2 className="text-lg font-medium mb-3">Testing & Diagnostics</h2>
+          <TestAllProvidersButton />
+        </div>
       </div>
     </div>
   );
