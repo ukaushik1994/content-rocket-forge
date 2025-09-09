@@ -1146,7 +1146,9 @@ export type Database = {
           id: string
           notes: string | null
           priority: string
+          proposal_data: Json | null
           scheduled_date: string
+          source_proposal_id: string | null
           status: string
           strategy_id: string | null
           tags: Json | null
@@ -1163,7 +1165,9 @@ export type Database = {
           id?: string
           notes?: string | null
           priority?: string
+          proposal_data?: Json | null
           scheduled_date: string
+          source_proposal_id?: string | null
           status?: string
           strategy_id?: string | null
           tags?: Json | null
@@ -1180,7 +1184,9 @@ export type Database = {
           id?: string
           notes?: string | null
           priority?: string
+          proposal_data?: Json | null
           scheduled_date?: string
+          source_proposal_id?: string | null
           status?: string
           strategy_id?: string | null
           tags?: Json | null
