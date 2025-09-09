@@ -5,6 +5,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getApiKey } from '../apiKeyService';
 
 interface UserApiKey {
   id: string;
@@ -131,13 +132,15 @@ export async function syncApiKeysToProviders(): Promise<boolean> {
       
       try {
         // Decrypt the API key
-        const { getApiKey } = await import('../apiKeyService');
+        console.log(`🔓 Attempting to decrypt API key for ${key.service}...`);
         const decryptedKey = await getApiKey(key.service as any);
         
         if (!decryptedKey) {
-          console.warn(`Could not decrypt API key for ${key.service}`);
+          console.warn(`❌ Could not decrypt API key for ${key.service}`);
           continue;
         }
+        
+        console.log(`✅ Successfully decrypted API key for ${key.service}`);
         
         const metadata = PROVIDER_METADATA[key.service];
         providersToInsert.push({
@@ -156,13 +159,17 @@ export async function syncApiKeysToProviders(): Promise<boolean> {
           last_verified: new Date().toISOString()
         });
       } catch (error) {
-        console.error(`Failed to decrypt key for ${key.service}:`, error);
+        console.error(`❌ Failed to decrypt key for ${key.service}:`, error);
+        toast.error(`Failed to decrypt ${key.service} API key: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
     if (providersToInsert.length === 0) {
-      console.log('✅ All API keys already synced');
-      return true;
+      console.log('⚠️ No providers to insert - either all already synced or decryption failed');
+      const existingCount = existingProviderNames.size;
+      const keyCount = apiKeys.length;
+      console.log(`📊 Status: ${existingCount} existing providers, ${keyCount} API keys found`);
+      return existingCount > 0; // Return true only if we actually have existing providers
     }
 
     // Insert providers

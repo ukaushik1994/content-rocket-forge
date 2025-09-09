@@ -5,6 +5,7 @@ import { Settings, Zap, BarChart3 } from 'lucide-react';
 import { AIServiceToggle } from './AIServiceToggle';
 import { EnhancedProviderManagement } from './EnhancedProviderManagement';
 import { MigrationNotification } from './MigrationNotification';
+import { SyncDebugButton } from './debug/SyncDebugButton';
 
 export function EnhancedAISettings() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -51,6 +52,7 @@ export function EnhancedAISettings() {
         <TabsContent value="overview" className="space-y-6">
           <MigrationNotification />
           <AIServiceToggle onManageProviders={handleManageProviders} />
+          <SyncDebugButton />
           
           <Card>
             <CardHeader>
