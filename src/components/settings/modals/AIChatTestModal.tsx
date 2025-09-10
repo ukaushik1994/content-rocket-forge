@@ -42,17 +42,21 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
         throw new Error('User not authenticated');
       }
 
-      // Call enhanced-ai-chat edge function directly
+      // Call enhanced-ai-chat edge function with correct format
+      console.log('🧪 Testing AI with message:', testMessage);
       const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
-          message: testMessage,
-          userId: user.id,
-          context: {
-            type: 'test',
-            userInput: testMessage
-          }
+          messages: [
+            {
+              role: 'user',
+              content: testMessage
+            }
+          ],
+          userId: user.id
         }
       });
+
+      console.log('🔍 Edge function response:', { data, error });
 
       if (error) {
         throw new Error(error.message || 'Failed to call AI service');
