@@ -11,6 +11,7 @@ import { BillingSettings } from '@/components/settings';
 import { ExportSettings } from '@/components/settings';
 import { AppearanceSettings } from '@/components/settings';
 import { FormatPromptSettings } from '@/components/settings';
+import { AIGenerationTest } from '@/components/ai/AIGenerationTest';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';

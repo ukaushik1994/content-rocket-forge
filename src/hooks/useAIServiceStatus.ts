@@ -26,6 +26,9 @@ export function useAIServiceStatus() {
     try {
       setStatus(prev => ({ ...prev, isLoading: true }));
 
+      // Clear provider cache to force fresh data
+      AIServiceController.clearCache();
+      
       // Check if service is enabled
       const isEnabled = getUserPreference('enableAiService') !== false;
 

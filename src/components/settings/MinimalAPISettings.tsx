@@ -17,6 +17,7 @@ import { ApiKeyDebugModal } from './debug/ApiKeyDebugModal';
 import { UsageSection } from './UsageSection';
 import { AIServiceToggle } from './AIServiceToggle';
 import { ProviderManagement } from './ProviderManagement';
+import { AIGenerationTest } from '@/components/ai/AIGenerationTest';
 
 const StatusDot = ({ status }: { status: ApiKeyStatus }) => {
   const colors = {
@@ -376,6 +377,19 @@ export function MinimalAPISettings() {
 
       {/* Provider Management Section */}
       <ProviderManagement />
+
+      {/* AI Generation Test - Remove this after testing */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Test AI Content Generation
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AIGenerationTest />
+        </CardContent>
+      </Card>
 
       {/* Configuration Modal */}
       <ConfigurationModal
