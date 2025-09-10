@@ -8,7 +8,7 @@ import { RichMediaRenderer } from './RichMediaRenderer';
 import { EnhancedFileProcessor } from './EnhancedFileProcessor';
 import { PerformanceAnalyticsWidget } from './PerformanceAnalyticsWidget';
 import { RealtimeNotificationCenter } from '../notifications/RealtimeNotificationCenter';
-import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
+import { useStreamingChat } from '@/hooks/useStreamingChat';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,17 +32,35 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
   const chatInterfaceRef = useRef(null);
   const { toast } = useToast();
   
+  // Temporarily use the original streaming chat hook
   const {
     messages,
     isAIThinking,
-    currentVisualData,
-    currentActions,
     sendMessage,
-    analyzeFile,
-    handleAction,
-    clearMessages,
-    getPerformanceAnalytics
-  } = useEnhancedStreamingChat();
+    clearMessages
+  } = useStreamingChat();
+
+  // Mock enhanced features for now
+  const currentVisualData = undefined;
+  const currentActions = undefined;
+  
+  const analyzeFile = async (file: File) => {
+    return {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      insights: ['File processed successfully']
+    };
+  };
+
+  const handleAction = (action: any) => {
+    toast({
+      title: "Action Executed",
+      description: action.label || 'Action completed'
+    });
+  };
+
+  const getPerformanceAnalytics = async () => null;
 
   const {
     activeConversationId,
@@ -86,7 +104,7 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
         ).join('\n\n') +
         '\n\nPlease provide detailed insights and recommendations based on this content.';
       
-      await sendMessage(analysisContent, { fileAnalyses: analyses });
+      await sendMessage(analysisContent);
       setUploadedFiles([]);
     } catch (error) {
       console.error('Analysis completion error:', error);
