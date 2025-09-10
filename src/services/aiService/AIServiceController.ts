@@ -430,6 +430,7 @@ class AIServiceController {
       
       const responseData = data.data || data;
       
+      // Enhanced response format handling with more robust parsing
       if (responseData.choices && responseData.choices[0]?.message?.content) {
         // OpenAI format
         content = responseData.choices[0].message.content;
@@ -439,13 +440,38 @@ class AIServiceController {
       } else if (responseData.candidates && responseData.candidates[0]?.content?.parts[0]?.text) {
         // Gemini format
         content = responseData.candidates[0].content.parts[0].text;
+      } else if (responseData.message && typeof responseData.message === 'string') {
+        // Generic message format
+        content = responseData.message;
+      } else if (responseData.text && typeof responseData.text === 'string') {
+        // Generic text format
+        content = responseData.text;
+      } else if (responseData.response && typeof responseData.response === 'string') {
+        // Generic response format
+        content = responseData.response;
       } else if (typeof responseData === 'string') {
         content = responseData;
       } else if (data.content && typeof data.content === 'string') {
         content = data.content;
+      } else if (data.message && typeof data.message === 'string') {
+        content = data.message;
+      } else if (data.text && typeof data.text === 'string') {
+        content = data.text;
       } else {
-        console.error('Unexpected response format:', { data, responseData });
-        throw new Error('Unexpected response format from AI provider');
+        // Try to extract any string content from nested objects
+        const extractedContent = this.extractStringContent(responseData);
+        if (extractedContent) {
+          content = extractedContent;
+        } else {
+          console.error('Unexpected response format:', { 
+            provider: provider.provider,
+            dataKeys: Object.keys(data),
+            responseDataKeys: Object.keys(responseData),
+            fullData: data,
+            fullResponseData: responseData 
+          });
+          throw new Error(`Unexpected response format from ${provider.provider}. Please check provider configuration.`);
+        }
       }
 
       return {
@@ -456,6 +482,47 @@ class AIServiceController {
       console.error(`Error calling ${provider.provider}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Attempts to extract string content from nested response objects
+   */
+  private extractStringContent(obj: any): string | null {
+    if (typeof obj === 'string') {
+      return obj;
+    }
+    
+    if (typeof obj !== 'object' || obj === null) {
+      return null;
+    }
+
+    // Common content field names to check
+    const contentFields = ['content', 'text', 'message', 'response', 'output', 'result', 'answer'];
+    
+    for (const field of contentFields) {
+      if (obj[field]) {
+        if (typeof obj[field] === 'string') {
+          return obj[field];
+        }
+        // Recursively check nested objects
+        const nestedContent = this.extractStringContent(obj[field]);
+        if (nestedContent) {
+          return nestedContent;
+        }
+      }
+    }
+
+    // Check array elements
+    if (Array.isArray(obj) && obj.length > 0) {
+      for (const item of obj) {
+        const itemContent = this.extractStringContent(item);
+        if (itemContent) {
+          return itemContent;
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
