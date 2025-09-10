@@ -123,5 +123,117 @@ export function UsageSection() {
   const totalSerpRequests = serpStats.reduce((sum, stat) => sum + stat.requestCount, 0);
   const averageAISuccess = aiStats.length > 0 ? aiStats.reduce((sum, stat) => sum + stat.successRate, 0) / aiStats.length : 0;
   const averageSerpSuccess = serpStats.length > 0 ? serpStats.reduce((sum, stat) => sum + stat.successRate, 0) / serpStats.length : 0;
-  return;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Usage Analytics
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {USAGE_PERIODS.map(p => (
+                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="ai">AI Providers</TabsTrigger>
+            <TabsTrigger value="serp">SERP Providers</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                icon={Zap}
+                label="AI Requests"
+                value={totalAIRequests}
+                color={totalAIRequests > 0 ? 'success' : 'default'}
+              />
+              <StatCard
+                icon={Search}
+                label="SERP Requests"
+                value={totalSerpRequests}
+                color={totalSerpRequests > 0 ? 'success' : 'default'}
+              />
+              <StatCard
+                icon={CheckCircle}
+                label="AI Success"
+                value={`${averageAISuccess.toFixed(1)}`}
+                unit="%"
+                color={averageAISuccess >= 90 ? 'success' : averageAISuccess >= 70 ? 'warning' : 'error'}
+              />
+              <StatCard
+                icon={CheckCircle}
+                label="SERP Success"
+                value={`${averageSerpSuccess.toFixed(1)}`}
+                unit="%"
+                color={averageSerpSuccess >= 90 ? 'success' : averageSerpSuccess >= 70 ? 'warning' : 'error'}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ai" className="space-y-4">
+            {loading ? (
+              <div className="text-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
+                <p className="text-muted-foreground">Loading AI usage data...</p>
+              </div>
+            ) : aiStats.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {aiStats.map((stats) => (
+                  <ProviderUsageCard key={stats.provider} stats={stats} type="ai" />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground">No AI usage data for the selected period</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="serp" className="space-y-4">
+            {loading ? (
+              <div className="text-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
+                <p className="text-muted-foreground">Loading SERP usage data...</p>
+              </div>
+            ) : serpStats.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {serpStats.map((stats) => (
+                  <ProviderUsageCard key={stats.provider} stats={stats} type="serp" />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground">No SERP usage data for the selected period</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
 }

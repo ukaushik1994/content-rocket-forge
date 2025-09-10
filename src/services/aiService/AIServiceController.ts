@@ -420,27 +420,52 @@ class AIServiceController {
         throw new Error(data.error);
       }
 
-      // Extract content from response - handle edge function wrapped responses
+      // Enhanced response parsing with detailed logging
+      console.log('🔍 Raw response from edge function:', JSON.stringify(data, null, 2));
+      
       let content = '';
       
-      // Check if this is a wrapped response from edge function
-      const responseData = data.data || data;
+      // Check if the edge function returned an error
+      if (data.error || !data.success) {
+        throw new Error(data.error || 'Edge function returned failure response');
+      }
       
+      // Extract the actual AI response data
+      const responseData = data.data || data;
+      console.log('📦 Extracted response data:', JSON.stringify(responseData, null, 2));
+      
+      // Handle different AI provider response formats
       if (responseData.choices && responseData.choices[0]?.message?.content) {
+        // OpenAI/OpenRouter format
         content = responseData.choices[0].message.content;
-      } else if (responseData.content && responseData.content[0]?.text) {
-        // Anthropic/Gemini format
+        console.log('✅ Extracted content using OpenAI format');
+      } else if (responseData.content && Array.isArray(responseData.content) && responseData.content[0]?.text) {
+        // Anthropic format
         content = responseData.content[0].text;
+        console.log('✅ Extracted content using Anthropic format');
       } else if (responseData.candidates && responseData.candidates[0]?.content?.parts[0]?.text) {
-        // Gemini specific format
+        // Gemini format
         content = responseData.candidates[0].content.parts[0].text;
-      } else if (data.content) {
-        content = data.content;
-      } else if (typeof data === 'string') {
-        content = data;
+        console.log('✅ Extracted content using Gemini format');
+      } else if (typeof responseData.content === 'string') {
+        // Direct content string
+        content = responseData.content;
+        console.log('✅ Extracted content as direct string');
+      } else if (typeof responseData === 'string') {
+        // Raw string response
+        content = responseData;
+        console.log('✅ Using raw string response');
       } else {
-        console.error('Unexpected response format:', data);
-        throw new Error('Unexpected response format from AI provider');
+        console.error('❌ Unexpected response format from AI provider:', {
+          hasData: !!data.data,
+          hasChoices: !!(responseData.choices),
+          hasContent: !!(responseData.content),
+          hasCandidates: !!(responseData.candidates),
+          responseDataType: typeof responseData,
+          responseDataKeys: Object.keys(responseData || {}),
+          fullResponse: data
+        });
+        throw new Error(`Unexpected response format from AI provider. Response type: ${typeof responseData}, Keys: ${Object.keys(responseData || {}).join(', ')}`);
       }
 
       return {
