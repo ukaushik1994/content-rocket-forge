@@ -10,7 +10,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
-import { Sparkles, Brain, TrendingUp, Menu, History } from 'lucide-react';
+import { Sparkles, Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 interface EnhancedChatInterfaceProps {
   className?: string;
 }
@@ -27,11 +34,20 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     messages,
     isLoading,
     isTyping,
+    searchTerm,
     createConversation,
     deleteConversation,
     sendMessage,
     handleAction,
-    selectConversation
+    selectConversation,
+    togglePinConversation,
+    toggleArchiveConversation,
+    addTagToConversation,
+    removeTagFromConversation,
+    exportConversation,
+    shareConversation,
+    searchConversations,
+    clearSearch
   } = useEnhancedAIChatDB();
 
   // Auto-scroll to bottom when new messages arrive
@@ -86,7 +102,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   return <div className={`h-full ${className}`}>
       {/* Chat History Sidebar */}
       <AnimatePresence>
-        {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} />}
+        {showSidebar && (
+          <ChatHistorySidebar 
+            conversations={conversations} 
+            activeConversation={activeConversation} 
+            onSelectConversation={selectConversation} 
+            onCreateConversation={() => createConversation()} 
+            onDeleteConversation={deleteConversation} 
+            onToggleSidebar={() => setShowSidebar(false)}
+            onPinConversation={togglePinConversation}
+            onArchiveConversation={toggleArchiveConversation}
+          />
+        )}
       </AnimatePresence>
 
       {/* Main Chat Interface */}
@@ -141,6 +168,44 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 />
                 <span className="text-xs text-success font-medium">Online</span>
               </motion.div>
+              
+              {/* Chat Actions Menu */}
+              {activeConversation && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => shareConversation(activeConversation)}>
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share Conversation
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportConversation(activeConversation)}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Chat
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        if (activeConversation) {
+                          deleteConversation(activeConversation);
+                        }
+                      }}
+                      disabled={messages.length === 0}
+                      className="text-destructive hover:text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Conversation
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>

@@ -21,18 +21,35 @@ export const useEnhancedAIChatDB = () => {
   const [messages, setMessages] = useState<EnhancedChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load conversations from database
-  const loadConversations = useCallback(async () => {
+  // Load conversations from database with search and filter support
+  const loadConversations = useCallback(async (options?: {
+    search?: string;
+    includeArchived?: boolean;
+  }) => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ai_conversations')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id);
+
+      // Apply archived filter
+      if (!options?.includeArchived) {
+        query = query.neq('archived', true);
+      }
+
+      // Apply search filter
+      if (options?.search) {
+        query = query.ilike('title', `%${options.search}%`);
+      }
+
+      const { data, error } = await query
+        .order('pinned', { ascending: false })
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
@@ -331,6 +348,245 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [sendMessage, user]);
 
+  // Pin/Unpin conversation
+  const togglePinConversation = useCallback(async (conversationId: string) => {
+    try {
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (!conversation) return;
+
+      const { error } = await supabase
+        .from('ai_conversations')
+        .update({ pinned: !conversation.pinned })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === conversationId 
+            ? { ...conv, pinned: !conv.pinned }
+            : conv
+        )
+      );
+
+      toast({
+        title: conversation.pinned ? "Conversation unpinned" : "Conversation pinned",
+        description: `Conversation has been ${conversation.pinned ? 'unpinned' : 'pinned'}`,
+      });
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update conversation",
+        variant: "destructive"
+      });
+    }
+  }, [conversations, toast]);
+
+  // Archive/Unarchive conversation
+  const toggleArchiveConversation = useCallback(async (conversationId: string) => {
+    try {
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (!conversation) return;
+
+      const { error } = await supabase
+        .from('ai_conversations')
+        .update({ archived: !conversation.archived })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      // Remove from current list if archiving, or reload if unarchiving
+      if (!conversation.archived) {
+        setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+        if (activeConversation === conversationId) {
+          setActiveConversation(null);
+          setMessages([]);
+        }
+      } else {
+        await loadConversations();
+      }
+
+      toast({
+        title: conversation.archived ? "Conversation unarchived" : "Conversation archived",
+        description: `Conversation has been ${conversation.archived ? 'restored' : 'archived'}`,
+      });
+    } catch (error) {
+      console.error('Error toggling archive:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to update conversation",
+        variant: "destructive"
+      });
+    }
+  }, [conversations, activeConversation, toast, loadConversations]);
+
+  // Add tag to conversation
+  const addTagToConversation = useCallback(async (conversationId: string, tag: string) => {
+    try {
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (!conversation) return;
+
+      const currentTags = conversation.tags || [];
+      if (currentTags.includes(tag)) return;
+
+      const newTags = [...currentTags, tag];
+      
+      const { error } = await supabase
+        .from('ai_conversations')
+        .update({ tags: newTags })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === conversationId 
+            ? { ...conv, tags: newTags }
+            : conv
+        )
+      );
+    } catch (error) {
+      console.error('Error adding tag:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add tag",
+        variant: "destructive"
+      });
+    }
+  }, [conversations, toast]);
+
+  // Remove tag from conversation
+  const removeTagFromConversation = useCallback(async (conversationId: string, tag: string) => {
+    try {
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (!conversation) return;
+
+      const newTags = (conversation.tags || []).filter(t => t !== tag);
+      
+      const { error } = await supabase
+        .from('ai_conversations')
+        .update({ tags: newTags })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === conversationId 
+            ? { ...conv, tags: newTags }
+            : conv
+        )
+      );
+    } catch (error) {
+      console.error('Error removing tag:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove tag",
+        variant: "destructive"
+      });
+    }
+  }, [conversations, toast]);
+
+  // Export conversation
+  const exportConversation = useCallback(async (conversationId: string) => {
+    try {
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (!conversation) return;
+
+      // Load all messages for this conversation
+      const { data: messagesData, error } = await supabase
+        .from('ai_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const exportData = {
+        conversation: {
+          title: conversation.title,
+          created_at: conversation.created_at,
+          updated_at: conversation.updated_at,
+          tags: conversation.tags || []
+        },
+        messages: (messagesData || []).map(msg => ({
+          role: msg.type,
+          content: msg.content,
+          timestamp: msg.created_at,
+          visual_data: msg.visual_data && typeof msg.visual_data === 'string' ? JSON.parse(msg.visual_data) : msg.visual_data,
+          actions: msg.function_calls && typeof msg.function_calls === 'string' ? JSON.parse(msg.function_calls) : msg.function_calls
+        })),
+        exported_at: new Date().toISOString()
+      };
+
+      // Create and download file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+        type: 'application/json' 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `conversation-${conversation.title.replace(/[^a-z0-9]/gi, '_')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Export successful",
+        description: "Conversation exported successfully",
+      });
+    } catch (error) {
+      console.error('Error exporting conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export conversation",
+        variant: "destructive"
+      });
+    }
+  }, [conversations, toast]);
+
+  // Share conversation (generate shareable link)
+  const shareConversation = useCallback(async (conversationId: string) => {
+    try {
+      const shareUrl = `${window.location.origin}/shared-conversation/${conversationId}`;
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: 'AI Conversation',
+          text: 'Check out this AI conversation',
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "Link copied",
+          description: "Conversation link copied to clipboard",
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to share conversation",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
+  // Search conversations
+  const searchConversations = useCallback(async (term: string) => {
+    setSearchTerm(term);
+    await loadConversations({ search: term });
+  }, [loadConversations]);
+
+  // Clear search
+  const clearSearch = useCallback(async () => {
+    setSearchTerm('');
+    await loadConversations();
+  }, [loadConversations]);
+
   // Load conversations on user change
   useEffect(() => {
     if (user) {
@@ -339,6 +595,7 @@ export const useEnhancedAIChatDB = () => {
       setConversations([]);
       setActiveConversation(null);
       setMessages([]);
+      setSearchTerm('');
     }
   }, [user, loadConversations]);
 
@@ -357,11 +614,20 @@ export const useEnhancedAIChatDB = () => {
     messages,
     isLoading,
     isTyping,
+    searchTerm,
     loadConversations,
     createConversation,
     deleteConversation,
     sendMessage,
     handleAction,
-    selectConversation: setActiveConversation
+    selectConversation: setActiveConversation,
+    togglePinConversation,
+    toggleArchiveConversation,
+    addTagToConversation,
+    removeTagFromConversation,
+    exportConversation,
+    shareConversation,
+    searchConversations,
+    clearSearch
   };
 };

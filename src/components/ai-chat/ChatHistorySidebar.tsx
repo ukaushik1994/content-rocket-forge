@@ -234,35 +234,26 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                       onClick={() => onSelectConversation(conversation.id)}
                     >
                       <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            {conversation.pinned && <Pin className="h-3 w-3 text-warning fill-warning" />}
-                            <MessageSquare className="h-4 w-4 text-white/60 flex-shrink-0" />
-                            <h3 className="text-sm font-medium text-white truncate">
-                              {conversation.title}
-                            </h3>
-                          </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            {conversation.pinned && <Pin className="h-3 w-3 text-warning fill-warning" />}
-                            <MessageSquare className="h-4 w-4 text-white/60 flex-shrink-0" />
-                            <h3 className="text-sm font-medium text-white truncate">
-                              {conversation.title}
-                            </h3>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-white/50">
-                              {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
-                            </p>
-                            {conversation.tags && conversation.tags.length > 0 && (
-                              <Badge variant="secondary" className="bg-white/10 text-white/70 text-xs h-5">
-                                <Tag className="h-2 w-2 mr-1" />
-                                {conversation.tags[0]}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        </div>
+                         <div className="flex-1 min-w-0">
+                           <div className="flex items-center gap-2 mb-1">
+                             {conversation.pinned && <Pin className="h-3 w-3 text-warning fill-warning" />}
+                             <MessageSquare className="h-4 w-4 text-white/60 flex-shrink-0" />
+                             <h3 className="text-sm font-medium text-white truncate">
+                               {conversation.title}
+                             </h3>
+                           </div>
+                           <div className="flex items-center justify-between">
+                             <p className="text-xs text-white/50">
+                               {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
+                             </p>
+                             {conversation.tags && conversation.tags.length > 0 && (
+                               <Badge variant="secondary" className="bg-white/10 text-white/70 text-xs h-5">
+                                 <Tag className="h-2 w-2 mr-1" />
+                                 {conversation.tags[0]}
+                               </Badge>
+                             )}
+                           </div>
+                         </div>
                         
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
