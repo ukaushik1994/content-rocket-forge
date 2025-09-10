@@ -2,6 +2,8 @@ import { ContentBuilderState, ContentBuilderAction, SaveContentParams } from '..
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { keywordLibraryService } from '@/services/keywordLibraryService';
+import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 
 export const createPublishActions = (
   state: ContentBuilderState, 
@@ -63,47 +65,61 @@ export const createPublishActions = (
 
       if (error) throw error;
 
-      // Save keywords if available
+      // Save keywords to unified library
       if (content.mainKeyword || (content.secondaryKeywords && content.secondaryKeywords.length > 0)) {
-        const keywords = [content.mainKeyword, ...(content.secondaryKeywords || [])];
+        const allKeywords = [content.mainKeyword, ...(content.secondaryKeywords || [])].filter(Boolean);
         
-        for (const keyword of keywords) {
-          // Check if keyword exists
-          const { data: existingKeyword } = await supabase
-            .from('keywords')
-            .select('id')
-            .eq('keyword', keyword)
-            .eq('user_id', user.id)
-            .single();
-
-          let keywordId;
-          
-          if (!existingKeyword) {
-            // Create new keyword
-            const { data: newKeyword, error: keywordError } = await supabase
-              .from('keywords')
-              .insert({
-                keyword,
-                user_id: user.id
-              })
-              .select('id')
-              .single();
-
-            if (keywordError) throw keywordError;
-            keywordId = newKeyword.id;
-          } else {
-            keywordId = existingKeyword.id;
-          }
-
-          // Create content-keyword relationship
-          const { error: relationError } = await supabase
-            .from('content_keywords')
-            .insert({
-              content_id: data.id,
-              keyword_id: keywordId
+        for (const [index, keyword] of allKeywords.entries()) {
+          try {
+            // Save to unified keyword library
+            const unifiedKeyword = await keywordLibraryService.upsertKeyword({
+              keyword,
+              source_type: 'content_draft',
+              source_id: data.id
             });
 
-          if (relationError) throw relationError;
+            // Track keyword usage
+            await keywordLibraryService.trackKeywordUsage(
+              unifiedKeyword.id,
+              data.id,
+              'content_item',
+              index === 0 ? 'primary' : 'secondary'
+            );
+          } catch (keywordError) {
+            console.error(`Error saving keyword "${keyword}" to unified library:`, keywordError);
+          }
+        }
+      }
+
+      // Auto-sync proposal keywords if content originated from a proposal
+      if ((content.metadata as any)?.source_proposal_id) {
+        try {
+          const proposalId = (content.metadata as any).source_proposal_id;
+          
+          // Get proposal data to sync its keywords
+          const { data: proposal } = await supabase
+            .from('ai_strategy_proposals')
+            .select('primary_keyword, related_keywords')
+            .eq('id', proposalId)
+            .single();
+
+          if (proposal) {
+            const proposalKeywords = [proposal.primary_keyword, ...(proposal.related_keywords || [])].filter(Boolean);
+            
+            for (const keyword of proposalKeywords) {
+              try {
+                await keywordLibraryService.upsertKeyword({
+                  keyword,
+                  source_type: 'strategy_proposal',
+                  source_id: proposalId
+                });
+              } catch (error) {
+                console.error(`Error syncing proposal keyword "${keyword}":`, error);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error syncing proposal keywords:', error);
         }
       }
 
@@ -204,47 +220,61 @@ export const createPublishActions = (
 
       if (error) throw error;
 
-      // Save keywords if available
+      // Save keywords to unified library
       if (content.mainKeyword || (content.secondaryKeywords && content.secondaryKeywords.length > 0)) {
-        const keywords = [content.mainKeyword, ...(content.secondaryKeywords || [])];
+        const allKeywords = [content.mainKeyword, ...(content.secondaryKeywords || [])].filter(Boolean);
         
-        for (const keyword of keywords) {
-          // Check if keyword exists
-          const { data: existingKeyword } = await supabase
-            .from('keywords')
-            .select('id')
-            .eq('keyword', keyword)
-            .eq('user_id', user.id)
-            .single();
-
-          let keywordId;
-          
-          if (!existingKeyword) {
-            // Create new keyword
-            const { data: newKeyword, error: keywordError } = await supabase
-              .from('keywords')
-              .insert({
-                keyword,
-                user_id: user.id
-              })
-              .select('id')
-              .single();
-
-            if (keywordError) throw keywordError;
-            keywordId = newKeyword.id;
-          } else {
-            keywordId = existingKeyword.id;
-          }
-
-          // Create content-keyword relationship
-          const { error: relationError } = await supabase
-            .from('content_keywords')
-            .insert({
-              content_id: data.id,
-              keyword_id: keywordId
+        for (const [index, keyword] of allKeywords.entries()) {
+          try {
+            // Save to unified keyword library
+            const unifiedKeyword = await keywordLibraryService.upsertKeyword({
+              keyword,
+              source_type: 'content_published',
+              source_id: data.id
             });
 
-          if (relationError) throw relationError;
+            // Track keyword usage
+            await keywordLibraryService.trackKeywordUsage(
+              unifiedKeyword.id,
+              data.id,
+              'content_item',
+              index === 0 ? 'primary' : 'secondary'
+            );
+          } catch (keywordError) {
+            console.error(`Error saving keyword "${keyword}" to unified library:`, keywordError);
+          }
+        }
+      }
+
+      // Auto-sync proposal keywords if content originated from a proposal
+      if ((content.metadata as any)?.source_proposal_id) {
+        try {
+          const proposalId = (content.metadata as any).source_proposal_id;
+          
+          // Get proposal data to sync its keywords
+          const { data: proposal } = await supabase
+            .from('ai_strategy_proposals')
+            .select('primary_keyword, related_keywords')
+            .eq('id', proposalId)
+            .single();
+
+          if (proposal) {
+            const proposalKeywords = [proposal.primary_keyword, ...(proposal.related_keywords || [])].filter(Boolean);
+            
+            for (const keyword of proposalKeywords) {
+              try {
+                await keywordLibraryService.upsertKeyword({
+                  keyword,
+                  source_type: 'strategy_proposal',
+                  source_id: proposalId
+                });
+              } catch (error) {
+                console.error(`Error syncing proposal keyword "${keyword}":`, error);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error syncing proposal keywords:', error);
         }
       }
 
