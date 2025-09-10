@@ -32,7 +32,18 @@ export function ProviderManager({
   const loadProviders = async () => {
     setIsLoading(true);
     try {
+      console.log('🔄 Loading providers...');
+      
+      // Clear cache and get fresh data
+      AIServiceController.clearCache();
       const activeProviders = await AIServiceController.getActiveProviders();
+      
+      console.log('📊 Loaded providers:', activeProviders.map(p => ({ 
+        provider: p.provider, 
+        status: p.status, 
+        error: p.error_message 
+      })));
+      
       const available = activeProviders.map(p => p.provider as AiProvider);
       
       // Create status map based on provider status
@@ -44,15 +55,18 @@ export function ProviderManager({
       setAvailableProviders(available);
       setProviderStatus(status);
 
-      // Auto-select best provider if none selected or current is unavailable
-      if (!selectedProvider || !available.includes(selectedProvider)) {
-        if (activeProviders.length > 0) {
-          const bestProvider = activeProviders.sort((a, b) => a.priority - b.priority)[0];
+      // Auto-select working provider if none selected or current is not working
+      const workingProviders = activeProviders.filter(p => p.status === 'active');
+      if (workingProviders.length > 0) {
+        if (!selectedProvider || !status[selectedProvider]) {
+          const bestProvider = workingProviders.sort((a, b) => a.priority - b.priority)[0];
           onProviderChange(bestProvider.provider as AiProvider);
         }
       }
     } catch (error) {
-      console.error('Error loading providers:', error);
+      console.error('❌ Failed to load providers:', error);
+      setAvailableProviders([]);
+      setProviderStatus({} as Record<AiProvider, boolean>);
     } finally {
       setIsLoading(false);
     }
