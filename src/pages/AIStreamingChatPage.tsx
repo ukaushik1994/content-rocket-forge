@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StreamingChatInterface } from '@/components/ai-chat/StreamingChatInterface';
+import { EnhancedStreamingInterface } from '@/components/ai-chat/EnhancedStreamingInterface';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
 import { motion } from 'framer-motion';
 
@@ -37,7 +37,7 @@ export const AIStreamingChatPage: React.FC = () => {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <StreamingChatInterface
+        <EnhancedStreamingInterface
           onClearConversation={handleClearConversation}
           onToggleSidebar={handleToggleSidebar}
           isSidebarOpen={isSidebarOpen}

@@ -116,6 +116,63 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_context_snapshots: {
+        Row: {
+          conversation_type: string | null
+          created_at: string
+          id: string
+          messages: Json | null
+          title: string
+          user_id: string
+          workflow_state: Json | null
+        }
+        Insert: {
+          conversation_type?: string | null
+          created_at?: string
+          id?: string
+          messages?: Json | null
+          title: string
+          user_id: string
+          workflow_state?: Json | null
+        }
+        Update: {
+          conversation_type?: string | null
+          created_at?: string
+          id?: string
+          messages?: Json | null
+          title?: string
+          user_id?: string
+          workflow_state?: Json | null
+        }
+        Relationships: []
+      }
+      ai_context_state: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          workflow_state: Json | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          workflow_state?: Json | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          workflow_state?: Json | null
+        }
+        Relationships: []
+      }
       ai_conversations: {
         Row: {
           archived: boolean | null

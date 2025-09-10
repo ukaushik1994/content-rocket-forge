@@ -25,7 +25,7 @@ interface RealTimeCollaborationProps {
   onInviteUser?: (userId: string) => void;
 }
 
-interface Presence {
+interface UserPresence {
   user_id: string;
   user_name: string;
   avatar_url?: string;
@@ -49,7 +49,7 @@ export const RealTimeCollaboration: React.FC<RealTimeCollaborationProps> = ({
     updateMessageStatus
   } = useChatContextBridge();
 
-  const [presences, setPresences] = useState<Record<string, Presence>>({});
+  const [presences, setPresences] = useState<Record<string, UserPresence>>({});
   const [isCollaborating, setIsCollaborating] = useState(false);
   const [showPresence, setShowPresence] = useState(true);
   const channel = supabase.channel(`conversation:${conversationId}`);
@@ -61,11 +61,14 @@ export const RealTimeCollaboration: React.FC<RealTimeCollaborationProps> = ({
     channel
       .on('presence', { event: 'sync' }, () => {
         const newState = channel.presenceState();
-        const newPresences: Record<string, Presence> = {};
+        const newPresences: Record<string, UserPresence> = {};
         
-        Object.entries(newState).forEach(([key, presence]) => {
-          if (Array.isArray(presence) && presence.length > 0) {
-            newPresences[key] = presence[0] as Presence;
+        Object.entries(newState).forEach(([key, presenceArray]) => {
+          if (Array.isArray(presenceArray) && presenceArray.length > 0) {
+            const presence = presenceArray[0] as any;
+            if (presence && presence.user_id) {
+              newPresences[key] = presence as UserPresence;
+            }
           }
         });
         
@@ -79,14 +82,20 @@ export const RealTimeCollaboration: React.FC<RealTimeCollaborationProps> = ({
         });
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        const presence = newPresences[0] as Presence;
-        if (presence.user_id !== user.id) {
-          addCollaborator(presence.user_id, presence.user_name);
+        if (Array.isArray(newPresences) && newPresences.length > 0) {
+          const presence = newPresences[0] as any;
+          if (presence && presence.user_id && presence.user_id !== user.id) {
+            addCollaborator(presence.user_id, presence.user_name);
+          }
         }
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        const presence = leftPresences[0] as Presence;
-        removeCollaborator(presence.user_id);
+        if (Array.isArray(leftPresences) && leftPresences.length > 0) {
+          const presence = leftPresences[0] as any;
+          if (presence && presence.user_id) {
+            removeCollaborator(presence.user_id);
+          }
+        }
       })
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
         if (payload.user_id !== user.id) {
@@ -98,7 +107,7 @@ export const RealTimeCollaboration: React.FC<RealTimeCollaborationProps> = ({
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          const userStatus: Presence = {
+          const userStatus: UserPresence = {
             user_id: user.id,
             user_name: user.email?.split('@')[0] || 'Anonymous',
             avatar_url: user.user_metadata?.avatar_url,

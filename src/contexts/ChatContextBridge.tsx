@@ -108,17 +108,18 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
       if (!user) return;
       
       try {
-        const { data } = await supabase
-          .from('ai_context_state')
+        const { data, error } = await supabase
+          .from('ai_context_state' as any)
           .select('*')
           .eq('user_id', user.id)
           .single();
           
-        if (data?.context) {
+        if (!error && data) {
+          const contextData = data as any;
           setState(prev => ({
             ...prev,
-            persistentContext: data.context,
-            workflowState: data.workflow_state || {}
+            persistentContext: contextData.context || {},
+            workflowState: contextData.workflow_state || {}
           }));
         }
       } catch (error) {
@@ -136,7 +137,7 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
       
       try {
         await supabase
-          .from('ai_context_state')
+          .from('ai_context_state' as any)
           .upsert({
             user_id: user.id,
             context: state.persistentContext,
@@ -220,7 +221,7 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
 
     try {
       const { error } = await supabase
-        .from('ai_context_snapshots')
+        .from('ai_context_snapshots' as any)
         .insert({
           id: snapshot.id,
           user_id: user.id,
@@ -247,7 +248,7 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
   const loadContextSnapshot = useCallback(async (snapshotId: string) => {
     try {
       const { data, error } = await supabase
-        .from('ai_context_snapshots')
+        .from('ai_context_snapshots' as any)
         .select('*')
         .eq('id', snapshotId)
         .single();
@@ -256,9 +257,9 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
 
       setState(prev => ({
         ...prev,
-        sharedMessages: data.messages || [],
-        workflowState: data.workflow_state || {},
-        conversationType: data.conversation_type || 'regular'
+        sharedMessages: (data as any)?.messages || [],
+        workflowState: (data as any)?.workflow_state || {},
+        conversationType: (data as any)?.conversation_type || 'regular'
       }));
     } catch (error) {
       console.error('Error loading context snapshot:', error);
