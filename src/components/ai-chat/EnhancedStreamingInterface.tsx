@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { StreamingChatInterface } from './StreamingChatInterface';
 import { RealTimeCollaboration } from './RealTimeCollaboration';
 import { SmartActionsIntegration } from './SmartActionsIntegration';
@@ -8,6 +8,7 @@ import { RichMediaRenderer } from './RichMediaRenderer';
 import { EnhancedFileProcessor } from './EnhancedFileProcessor';
 import { PerformanceAnalyticsWidget } from './PerformanceAnalyticsWidget';
 import { EnhancedContextSidebar } from '@/components/context/EnhancedContextSidebar';
+import { SmartWorkflowAutomation } from './SmartWorkflowAutomation';
 import { CollaborationManager } from '@/components/collaboration/CollaborationManager';
 import { RealtimeNotificationCenter } from '../notifications/RealtimeNotificationCenter';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
@@ -18,7 +19,7 @@ import { advancedFileAnalyzer } from '@/services/fileAnalysis/AdvancedFileAnalyz
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Brain } from 'lucide-react';
+import { MessageSquare, Brain, TrendingUp, Zap } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,74 +37,89 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
   const [showNotifications, setShowNotifications] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showContextSidebar, setShowContextSidebar] = useState(false);
+  const [showWorkflowAutomation, setShowWorkflowAutomation] = useState(false);
+  const [performanceData, setPerformanceData] = useState<any>(null);
   const chatInterfaceRef = useRef(null);
-  const { toast } = useToast();
   
-  // Use enhanced streaming chat with AI integration
   const {
     messages,
     isAIThinking,
-    currentVisualData,
-    currentActions,
     sendMessage,
     analyzeFile,
     handleAction,
     getPerformanceAnalytics,
-    clearMessages
+    clearMessages,
+    contextData
   } = useEnhancedStreamingChat();
 
-  const {
-    activeConversationId,
-    collaborators
-  } = useChatContextBridge();
+  const { updateActiveConversation, activeConversationId } = useChatContextBridge();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Enhanced context for smart actions
-  const smartContext = {
-    contentId: activeConversationId,
-    approvalStatus: 'draft',
-    isSubmitting: false,
-    hasNotes: messages.length > 0
+  // Initialize real-time performance service
+  useEffect(() => {
+    if (user) {
+      realTimePerformanceService.setUserId(user.id);
+      loadRealTimePerformanceData();
+      
+      // Subscribe to real-time updates
+      const subscription = realTimePerformanceService.subscribeToPerformanceUpdates(
+        (data) => {
+          setPerformanceData(data);
+        }
+      );
+
+      return () => {
+        realTimePerformanceService.unsubscribeFromPerformanceUpdates();
+      };
+    }
+  }, [user]);
+
+  const loadRealTimePerformanceData = async () => {
+    try {
+      const data = await realTimePerformanceService.getRealtimePerformanceData();
+      setPerformanceData(data);
+    } catch (error) {
+      console.error('Failed to load performance data:', error);
+    }
   };
 
   const handleFileUpload = async (files: File[]) => {
+    setUploadedFiles(files);
+    
+    // Enhanced file analysis
     try {
-      console.log('Files uploaded:', files);
-      setUploadedFiles(files);
+      const analysisResults = await Promise.all(
+        files.map(async (file) => {
+          return await advancedFileAnalyzer.analyzeExcelFile(file);
+        })
+      );
       
       toast({
-        title: "Files received",
-        description: `${files.length} file(s) ready for analysis`,
+        title: "Files analyzed",
+        description: `${files.length} file(s) analyzed successfully`,
       });
+      
+      handleFileAnalysisComplete(analysisResults);
     } catch (error) {
-      console.error('File upload error:', error);
       toast({
-        title: "Upload failed",
-        description: "Could not process uploaded files",
+        title: "Analysis error",
+        description: "Failed to analyze some files",
         variant: "destructive"
       });
     }
   };
 
-  const handleFileAnalysisComplete = async (analyses: any[]) => {
-    try {
-      // Create a comprehensive analysis message
-      const analysisContent = `I've uploaded ${analyses.length} file(s) for analysis:\n\n` +
-        analyses.map(analysis => 
-          `**${analysis.name}** (${analysis.size} bytes)\n` +
-          `${analysis.insights ? analysis.insights.join('\n') : 'Basic file processed'}`
-        ).join('\n\n') +
-        '\n\nPlease provide detailed insights and recommendations based on this content.';
-      
-      await sendMessage(analysisContent, { fileAnalyses: analyses });
-      setUploadedFiles([]);
-    } catch (error) {
-      console.error('Analysis completion error:', error);
-      toast({
-        title: "Analysis failed",
-        description: "Could not process file analysis",
-        variant: "destructive"
-      });
-    }
+  const handleFileAnalysisComplete = async (analysisResults: any[]) => {
+    const analysisMessage = `📊 **Advanced File Analysis Complete**\n\n${analysisResults.map(result => 
+      `📄 **${result.file_name || result.name}** (${result.file_type || result.type})\n` +
+      `💡 **Key Insights:**\n${result.insights?.join('\n• ') || 'Basic analysis completed'}\n` +
+      `${result.extracted_text ? `📝 **Extracted Content:** ${result.extracted_text.substring(0, 200)}...\n` : ''}` +
+      `🎯 **Optimization Suggestions:** ${result.optimization_suggestions?.length || 0} recommendations\n`
+    ).join('\n')}`;
+    
+    await sendMessage(analysisMessage, { fileAnalysis: analysisResults });
   };
 
   const handleVoiceInput = async (audioBlob: Blob) => {
@@ -186,153 +202,207 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
     });
   };
 
+  const handleSmartAction = async (action: string, data?: any) => {
+    switch (action) {
+      case 'clear':
+        handleClear();
+        break;
+      case 'export':
+        toast({
+          title: "Export started",
+          description: "Your conversation is being exported",
+        });
+        break;
+      case 'analyze':
+        handleRequestAnalytics();
+        break;
+      case 'context-sidebar':
+        setShowContextSidebar(true);
+        break;
+      case 'workflow-automation':
+        setShowWorkflowAutomation(true);
+        break;
+      case 'performance-forecast':
+        await handlePerformanceForecast();
+        break;
+      case 'ab-test-suggestions':
+        await handleABTestSuggestions();
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
+  };
+
+  const handleRequestAnalytics = async () => {
+    await getPerformanceAnalytics();
+    setShowAnalytics(true);
+    
+    // Load real-time data for enhanced analytics
+    if (performanceData) {
+      const enhancedMessage = `🚀 **Real-time Performance Dashboard**\n\n` +
+        `📈 **Overview Metrics:**\n` +
+        `• Content Views: ${performanceData.overview?.contentViews || 0}\n` +
+        `• Engagement Rate: ${performanceData.overview?.engagementRate || 0}%\n` +
+        `• SEO Score: ${performanceData.overview?.seoScore || 0}\n` +
+        `• Conversion Rate: ${performanceData.overview?.conversionRate || 0}%\n\n` +
+        `🎯 **Top Performers:** ${performanceData.topPerformers?.length || 0} content pieces\n` +
+        `⚠️ **Active Alerts:** ${performanceData.alerts?.length || 0} items need attention\n` +
+        `🔮 **Predictive Insights:** ${performanceData.insights?.length || 0} forecasts available`;
+        
+      await sendMessage(enhancedMessage, { performanceData });
+    }
+  };
+
+  const handlePerformanceForecast = async () => {
+    try {
+      const insights = await realTimePerformanceService.generatePredictiveInsights(
+        performanceData?.overview || {}
+      );
+      
+      const forecastMessage = `🔮 **Performance Forecast & Predictions**\n\n${
+        insights.map(insight => 
+          `📊 **${insight.metric}**\n` +
+          `Current: ${insight.currentValue}\n` +
+          `Predicted (${insight.timeframe}): ${insight.predictedValue}\n` +
+          `Trend: ${insight.trend} (${Math.round(insight.confidence * 100)}% confidence)\n` +
+          `💡 ${insight.recommendation}\n`
+        ).join('\n')
+      }`;
+      
+      await sendMessage(forecastMessage, { insights });
+    } catch (error) {
+      toast({
+        title: "Forecast Error",
+        description: "Unable to generate performance forecast",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleABTestSuggestions = async () => {
+    try {
+      const suggestions = await realTimePerformanceService.generateABTestingSuggestions();
+      
+      const testMessage = `🧪 **A/B Testing Recommendations**\n\n${
+        suggestions.map(test => 
+          `🎯 **${test.testName}**\n` +
+          `Hypothesis: ${test.hypothesis}\n` +
+          `Variants: ${test.variants.join(' vs ')}\n` +
+          `Expected Impact: ${test.expectedImpact}\n` +
+          `Duration: ${test.duration}\n`
+        ).join('\n')
+      }`;
+      
+      await sendMessage(testMessage, { abTests: suggestions });
+    } catch (error) {
+      toast({
+        title: "Testing Error", 
+        description: "Unable to generate A/B test suggestions",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleNavigateToConversation = (conversationId: string) => {
+    updateActiveConversation(conversationId);
+    toast({
+      title: "Conversation switched",
+      description: "Switched to selected conversation"
+    });
+  };
+
   const handleClear = () => {
     clearMessages();
     onClearConversation?.();
   };
 
-  const handleSmartAction = (action: string) => {
-    console.log('Smart action triggered:', action);
-    
-    // Handle built-in actions
-    switch (action) {
-      case 'clear-conversation':
-        handleClear();
-        break;
-      case 'export-chat':
-        // Export functionality
-        break;
-      case 'analyze-performance':
-        setShowAnalytics(true);
-        sendMessage('Please provide a comprehensive performance analysis of my content including SEO metrics, publication rates, and optimization opportunities.');
-        break;
-      default:
-        // Custom action handling
-        toast({
-          title: "Action executed",
-          description: `Performed: ${action}`,
-        });
-    }
-  };
-
-  const handleRequestAnalytics = async () => {
-    setShowAnalytics(true);
-    await sendMessage('Show me my current performance analytics and provide insights for optimization.');
-  };
-
   return (
-    <div className="flex-1 flex flex-col h-full">
-      {/* Real-time Collaboration */}
-      {activeConversationId && (
-        <RealTimeCollaboration 
-          conversationId={activeConversationId}
-        />
-      )}
+    <div className="flex flex-col h-full bg-gradient-to-br from-background to-muted/20 relative">
+      {/* Enhanced Context Sidebar */}
+      <AnimatePresence>
+        {showContextSidebar && (
+          <EnhancedContextSidebar
+            isOpen={showContextSidebar}
+            onClose={() => setShowContextSidebar(false)}
+            currentConversationId={activeConversationId || undefined}
+            onNavigateToConversation={handleNavigateToConversation}
+          />
+        )}
+      </AnimatePresence>
 
+      {/* Real-time Collaboration */}
+      <RealTimeCollaboration conversationId={activeConversationId || ''} />
+      
       {/* Main Chat Interface */}
-      <div className="flex-1 flex flex-col">
-        <StreamingChatInterface 
-          ref={chatInterfaceRef}
+      <div className="flex-1 flex flex-col min-h-0">
+        <StreamingChatInterface
           onClearConversation={handleClear}
           onToggleSidebar={onToggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
-        
-        <AdvancedChatFeatures
-          onFileUpload={handleFileUpload}
-          onVoiceInput={handleVoiceInput}
-          onScreenCapture={handleScreenCapture}
-          isRecording={false}
-        />
-
-        {/* Notification Toggle Button */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
-          >
-            <span className="text-sm">🔔 Notifications</span>
-          </button>
-        </div>
-
-        {/* Enhanced File Processing */}
-        {uploadedFiles.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mb-4"
-          >
-            <Card>
-              <CardContent className="p-4">
-                <EnhancedFileProcessor
-                  files={uploadedFiles}
-                  onAnalysisComplete={handleFileAnalysisComplete}
-                  onAnalyzeFile={analyzeFile}
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Rich Media Renderer for enhanced responses */}
-        {(currentVisualData || currentActions) && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4"
-          >
-            <Card>
-              <CardContent className="p-4">
-                <RichMediaRenderer
-                  visualData={currentVisualData}
-                  actions={currentActions}
-                  onActionClick={handleAction}
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-      {/* Collaboration Manager */}
-      <CollaborationManager 
-        conversationId={activeConversationId}
-      />
-
-      {/* Performance Analytics Widget */}
-        {showAnalytics && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4"
-          >
-            <PerformanceAnalyticsWidget
-              onRequestAnalysis={handleRequestAnalytics}
-              onGenerateReport={() => sendMessage('Generate a comprehensive performance report with actionable recommendations.')}
-            />
-          </motion.div>
-        )}
       </div>
 
-      {/* Smart Actions Integration */}
-      <SmartActionsIntegration 
-        context={smartContext}
-        onAction={handleSmartAction}
+      {/* Advanced Chat Features */}
+      <AdvancedChatFeatures
+        onFileUpload={handleFileUpload}
+        onVoiceInput={handleVoiceInput}
+        onScreenCapture={handleScreenCapture}
+        isProcessing={isAIThinking}
       />
 
-      {/* Enhanced Features Separator */}
-      {(currentVisualData || currentActions || showAnalytics || uploadedFiles.length > 0) && (
-        <Separator className="my-4" />
+      {/* Enhanced File Processor */}
+      {uploadedFiles.length > 0 && (
+        <EnhancedFileProcessor
+          files={uploadedFiles}
+          onAnalysisComplete={handleFileAnalysisComplete}
+        />
       )}
 
+      {/* Rich Media Renderer */}
+      <RichMediaRenderer />
+
+      {/* Enhanced Performance Analytics Widget */}
+      {showAnalytics && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="fixed inset-4 z-50 bg-background border border-border rounded-lg shadow-2xl"
+        >
+          <PerformanceAnalyticsWidget
+            onRequestAnalysis={handleRequestAnalytics}
+            onGenerateReport={() => {
+              toast({
+                title: "Report Generation",
+                description: "Enhanced performance report with predictions is being generated",
+              });
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-4 right-4"
+            onClick={() => setShowAnalytics(false)}
+          >
+            ×
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Collaboration Manager */}
+      <CollaborationManager />
+
+      {/* Smart Actions Integration */}
+      <SmartActionsIntegration onAction={handleSmartAction} />
+
       {/* Realtime Notification Center */}
-      <RealtimeNotificationCenter
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-        onNotificationClick={(notification) => {
-          console.log('Notification clicked:', notification);
-          // Handle notification actions
-        }}
-      />
+      {showNotifications && (
+        <div className="fixed bottom-24 right-4 z-50">
+          <RealtimeNotificationCenter 
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
