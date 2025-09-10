@@ -428,7 +428,15 @@ class AIServiceController {
         throw new Error(data.error || 'AI provider request failed');
       }
       
+      // The ai-proxy edge function returns { success: true, data: actualProviderResponse }
       const responseData = data.data || data;
+      
+      console.log(`🔍 Parsing response from ${provider.provider}:`, {
+        hasSuccess: !!data.success,
+        hasData: !!data.data,
+        responseDataKeys: Object.keys(responseData || {}),
+        responseDataType: typeof responseData
+      });
       
       // Enhanced response format handling with more robust parsing
       if (responseData.choices && responseData.choices[0]?.message?.content) {
@@ -451,12 +459,6 @@ class AIServiceController {
         content = responseData.response;
       } else if (typeof responseData === 'string') {
         content = responseData;
-      } else if (data.content && typeof data.content === 'string') {
-        content = data.content;
-      } else if (data.message && typeof data.message === 'string') {
-        content = data.message;
-      } else if (data.text && typeof data.text === 'string') {
-        content = data.text;
       } else {
         // Try to extract any string content from nested objects
         const extractedContent = this.extractStringContent(responseData);
@@ -466,17 +468,28 @@ class AIServiceController {
           console.error('Unexpected response format:', { 
             provider: provider.provider,
             dataKeys: Object.keys(data),
-            responseDataKeys: Object.keys(responseData),
+            responseDataKeys: Object.keys(responseData || {}),
             fullData: data,
             fullResponseData: responseData 
           });
-          throw new Error(`Unexpected response format from ${provider.provider}. Please check provider configuration.`);
+          throw new Error(`Unexpected response format from ${provider.provider}. Expected content in response but found: ${JSON.stringify(Object.keys(responseData || {}))}`);
         }
       }
 
+      if (!content) {
+        console.error('No content extracted from response:', {
+          provider: provider.provider,
+          fullData: data,
+          responseData: responseData
+        });
+        throw new Error(`No content found in response from ${provider.provider}`);
+      }
+
+      console.log(`✅ Successfully extracted content from ${provider.provider} (${content.length} chars)`);
+
       return {
         content,
-        usage: data.usage
+        usage: responseData.usage || data.usage
       };
     } catch (error: any) {
       console.error(`Error calling ${provider.provider}:`, error);
