@@ -22,6 +22,8 @@ export type ContentBuilderAction =
   | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
   | { type: 'SET_SERP_DATA'; payload: any }
   | { type: 'SET_IS_ANALYZING'; payload: boolean }
+  | { type: 'CLEAR_SERP_DATA' }
+  | { type: 'SET_ANALYZING_NEW_KEYWORD'; payload: boolean }
   | { type: 'ADD_SERP_SELECTION'; payload: import('./serp-types').SerpSelection }
   | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
   | { type: 'SET_OUTLINE'; payload: string[] | OutlineSection[] }

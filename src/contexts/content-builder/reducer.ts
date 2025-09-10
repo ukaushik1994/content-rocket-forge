@@ -72,6 +72,24 @@ export const contentBuilderReducer = (
         isAnalyzing: action.payload
       };
       
+    case 'CLEAR_SERP_DATA':
+      return {
+        ...state,
+        serpData: null,
+        serpSelections: [],
+        isAnalyzing: false,
+        steps: state.steps.map((step, index) => 
+          step.id === 1 ? { ...step, analyzed: false } : step
+        )
+      };
+      
+    case 'SET_ANALYZING_NEW_KEYWORD':
+      return {
+        ...state,
+        isAnalyzing: action.payload,
+        serpData: action.payload ? null : state.serpData
+      };
+      
     case 'ADD_SERP_SELECTION': {
       const newSelection = action.payload;
       

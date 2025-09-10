@@ -7,9 +7,11 @@ import { TrendingUp, Target, Users, Calendar, Zap, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 interface MetricsTabProps {
   serpData: SerpAnalysisResult;
+  keyword?: string;
 }
 export function MetricsTab({
-  serpData
+  serpData,
+  keyword
 }: MetricsTabProps) {
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;

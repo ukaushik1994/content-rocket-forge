@@ -77,8 +77,12 @@ export const createSerpActions = (
   const analyzeKeyword = async (keyword: string, forceRefresh: boolean = false) => {
     if (!keyword) return;
     
-    // Start loading
-    dispatch({ type: 'SET_IS_ANALYZING', payload: true });
+    // Clear old SERP data before analyzing new keyword
+    console.log(`🔄 Clearing old SERP data before analyzing new keyword: "${keyword}"`);
+    dispatch({ type: 'CLEAR_SERP_DATA' });
+    
+    // Start loading with new keyword flag
+    dispatch({ type: 'SET_ANALYZING_NEW_KEYWORD', payload: true });
     
     try {
       console.log(`🎯 Starting SERP analysis for keyword: "${keyword}"`);
@@ -170,7 +174,7 @@ export const createSerpActions = (
         }
       });
     } finally {
-      dispatch({ type: 'SET_IS_ANALYZING', payload: false });
+      dispatch({ type: 'SET_ANALYZING_NEW_KEYWORD', payload: false });
     }
   };
   
