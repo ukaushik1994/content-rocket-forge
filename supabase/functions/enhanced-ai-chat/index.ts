@@ -190,13 +190,13 @@ EXAMPLE FOR METRICS DISPLAY:
       {
         "id": "total-content",
         "title": "Total Content",
-        "value": "${analytics.totalContent || 0}",
+        "value": "${finalAnalytics.totalContent || 0}",
         "icon": "filetext"
       },
       {
         "id": "seo-score",
         "title": "Avg SEO Score", 
-        "value": "${analytics.avgSeoScore || 0}%",
+        "value": "${finalAnalytics.avgSeoScore || 0}%",
         "change": { "value": 5, "type": "increase", "period": "vs last month" }
       }
     ]

@@ -443,7 +443,11 @@ class AIServiceController {
           ],
           userId: user.id,
           apiKeys,
-          context: {} // Empty context for non-chat AI generations
+          context: {
+            analytics: {},
+            solutions: [],
+            workflowContext: {}
+          }
         }
       });
 
