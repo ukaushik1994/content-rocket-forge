@@ -273,8 +273,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               : `${conversations.length} conversations`
             }
           </span>
-          <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
-            <div className="w-2 h-2 bg-green-400 rounded-full mr-1" />
+          <Badge variant="secondary" className="bg-success/20 text-success border-success/30">
+            <div className="w-2 h-2 bg-success rounded-full mr-1" />
             Synced
           </Badge>
         </div>

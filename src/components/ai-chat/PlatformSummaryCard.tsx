@@ -61,26 +61,26 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     label: 'Content Pieces',
     value: summary.totalContent,
     icon: FileText,
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20'
+    color: 'text-info',
+    bgColor: 'bg-info/20'
   }, {
     label: 'Published',
     value: summary.published,
     icon: CheckCircle,
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/20'
+    color: 'text-success',
+    bgColor: 'bg-success/20'
   }, {
     label: 'In Review',
     value: summary.inReview,
     icon: Clock,
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/20'
+    color: 'text-warning',
+    bgColor: 'bg-warning/20'
   }, {
     label: 'Avg SEO Score',
     value: `${summary.avgSeoScore}%`,
     icon: TrendingUp,
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/20'
+    color: 'text-primary',
+    bgColor: 'bg-primary/20'
   }];
   if (isLoading) {
     return <Card className="bg-background/60 backdrop-blur-xl border-border/50">

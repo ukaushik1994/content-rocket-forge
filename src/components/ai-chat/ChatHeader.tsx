@@ -98,15 +98,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         transition={{ delay: 0.2 }}
       >
         {/* Online Status Indicator */}
-        <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-green-500/20 border border-green-500/30">
-          <div className="w-2 h-2 bg-green-400 rounded-full">
+        <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-success/20 border border-success/30">
+          <div className="w-2 h-2 bg-success rounded-full">
             <motion.div
-              className="w-2 h-2 bg-green-400 rounded-full"
+              className="w-2 h-2 bg-success rounded-full"
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
           </div>
-          <span className="text-xs text-green-400 font-medium">Online</span>
+          <span className="text-xs text-success font-medium">Online</span>
         </div>
 
         {/* Actions Menu */}

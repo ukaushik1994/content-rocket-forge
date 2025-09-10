@@ -45,13 +45,13 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
   const getColorGradient = (color?: string) => {
     switch (color) {
       case 'blue':
-        return 'from-blue-500/20 to-cyan-500/5';
+        return 'from-info/20 to-info/5';
       case 'green':
-        return 'from-green-500/20 to-emerald-500/5';
+        return 'from-success/20 to-success/5';
       case 'purple':
-        return 'from-purple-500/20 to-violet-500/5';
+        return 'from-primary/20 to-primary/5';
       case 'orange':
-        return 'from-orange-500/20 to-amber-500/5';
+        return 'from-warning/20 to-warning/5';
       default:
         return 'from-neon-blue/20 to-neon-purple/5';
     }
@@ -60,13 +60,13 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
   const getIconColorClass = (color?: string) => {
     switch (color) {
       case 'blue':
-        return 'text-blue-400';
+        return 'text-info';
       case 'green':
-        return 'text-green-400';
+        return 'text-success';
       case 'purple':
-        return 'text-purple-400';
+        return 'text-primary';
       case 'orange':
-        return 'text-orange-400';
+        return 'text-warning';
       default:
         return 'text-primary';
     }
@@ -264,8 +264,8 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
                       "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
                       "backdrop-blur-sm border",
                       metric.change.type === 'increase' 
-                        ? "bg-green-500/20 text-green-400 border-green-500/30" 
-                        : "bg-red-500/20 text-red-400 border-red-500/30"
+                        ? "bg-success/20 text-success border-success/30" 
+                        : "bg-destructive/20 text-destructive border-destructive/30"
                     )}>
                       {metric.change.type === 'increase' ? (
                         <TrendingUp className="h-3 w-3" />
@@ -432,31 +432,31 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
       switch (status) {
         case 'good':
           return {
-            bg: 'bg-green-500/20',
-            text: 'text-green-400',
-            border: 'border-green-500/30',
-            icon: 'text-green-400'
+            bg: 'bg-success/20',
+            text: 'text-success',
+            border: 'border-success/30',
+            icon: 'text-success'
           };
         case 'warning':
           return {
-            bg: 'bg-amber-500/20',
-            text: 'text-amber-400',
-            border: 'border-amber-500/30',
-            icon: 'text-amber-400'
+            bg: 'bg-warning/20',
+            text: 'text-warning',
+            border: 'border-warning/30',
+            icon: 'text-warning'
           };
         case 'needs-attention':
           return {
-            bg: 'bg-red-500/20',
-            text: 'text-red-400',
-            border: 'border-red-500/30',
-            icon: 'text-red-400'
+            bg: 'bg-destructive/20',
+            text: 'text-destructive',
+            border: 'border-destructive/30',
+            icon: 'text-destructive'
           };
         default:
           return {
-            bg: 'bg-blue-500/20',
-            text: 'text-blue-400',
-            border: 'border-blue-500/30',
-            icon: 'text-blue-400'
+            bg: 'bg-info/20',
+            text: 'text-info',
+            border: 'border-info/30',
+            icon: 'text-info'
           };
       }
     };
@@ -505,7 +505,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
               whileHover={{ rotate: 5, scale: 1.1 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <Info className="w-6 h-6 text-blue-400" />
+              <Info className="w-6 h-6 text-info" />
             </motion.div>
             
             <h3 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">

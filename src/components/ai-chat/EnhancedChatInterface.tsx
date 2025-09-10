@@ -129,7 +129,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             </div>
             <div className="flex items-center gap-3">
               <motion.div 
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2 }}
@@ -139,7 +139,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                   animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
-                <span className="text-xs text-green-400 font-medium">Online</span>
+                <span className="text-xs text-success font-medium">Online</span>
               </motion.div>
             </div>
           </div>

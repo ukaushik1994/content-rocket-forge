@@ -149,7 +149,7 @@ export const OpenRouterSettings: React.FC<OpenRouterSettingsProps> = ({
           <p className="text-sm text-white/60">Configure your OpenRouter API key and preferences</p>
         </div>
         {isConfigured && (
-          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 ml-auto">
+          <Badge className="bg-success/20 text-success border-success/30 ml-auto">
             <Check className="h-3 w-3 mr-1" />
             Configured
           </Badge>
@@ -175,7 +175,7 @@ export const OpenRouterSettings: React.FC<OpenRouterSettingsProps> = ({
               href="https://openrouter.ai/keys" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300"
+              className="text-info hover:text-info/80"
             >
               openrouter.ai/keys
             </a>
@@ -206,9 +206,9 @@ export const OpenRouterSettings: React.FC<OpenRouterSettingsProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-          <AlertCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-          <p className="text-xs text-blue-300">
+        <div className="flex items-center gap-2 p-3 bg-info/10 border border-info/20 rounded-lg">
+          <AlertCircle className="h-4 w-4 text-info flex-shrink-0" />
+          <p className="text-xs text-info/80">
             Your API key is stored securely and encrypted. It will be used for AI chat responses and content generation.
           </p>
         </div>
