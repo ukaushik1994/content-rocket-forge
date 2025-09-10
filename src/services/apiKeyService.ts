@@ -155,7 +155,20 @@ class ApiKeyService {
         .single();
 
       if (error || !data) {
-        console.log(`ℹ️ No ${normalizedService} API key found in database`);
+        console.log(`ℹ️ No ${normalizedService} API key found in new table, checking legacy table...`);
+        
+        // Fallback to check the old user_llm_keys table
+        try {
+          const legacyKey = await ApiKeyService.getLegacyApiKey(user.id, normalizedService);
+          if (legacyKey) {
+            console.log(`✅ Found ${normalizedService} API key in legacy table`);
+            return legacyKey;
+          }
+        } catch (legacyError: any) {
+          console.warn(`⚠️ Error checking legacy table for ${normalizedService}:`, legacyError);
+        }
+        
+        console.log(`ℹ️ No ${normalizedService} API key found in any table`);
         return null;
       }
 
@@ -252,6 +265,51 @@ class ApiKeyService {
     } catch (error: any) {
       console.error('❌ Error getting configured services:', error);
       return [];
+    }
+  }
+
+  /**
+   * Retrieves API key from the legacy user_llm_keys table
+   */
+  private static async getLegacyApiKey(userId: string, service: ApiProvider): Promise<string | null> {
+    try {
+      console.log(`🔍 Checking legacy table for ${service} API key...`);
+      
+      // Map service names to legacy column names
+      const serviceColumnMap: Record<string, string> = {
+        'openai': 'openai_api_key',
+        'anthropic': 'anthropic_api_key',
+        'gemini': 'gemini_api_key',
+        'mistral': 'mistral_api_key',
+        'lmstudio': 'lmstudio_api_key',
+        'openrouter': 'openrouter_api_key'
+      };
+
+      const columnName = serviceColumnMap[service];
+      if (!columnName) {
+        console.log(`ℹ️ No legacy column mapping for ${service}`);
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('user_llm_keys')
+        .select(columnName)
+        .eq('user_id', userId)
+        .single();
+
+      if (error || !data || !data[columnName]) {
+        console.log(`ℹ️ No ${service} API key found in legacy table`);
+        return null;
+      }
+
+      const legacyKey = data[columnName];
+      console.log(`✅ Found ${service} API key in legacy table`);
+      
+      // The legacy key might be stored directly (not encrypted)
+      return legacyKey;
+    } catch (error: any) {
+      console.error(`❌ Error retrieving legacy ${service} API key:`, error);
+      return null;
     }
   }
 
