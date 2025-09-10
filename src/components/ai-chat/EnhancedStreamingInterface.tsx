@@ -7,6 +7,7 @@ import { AdvancedChatFeatures } from './AdvancedChatFeatures';
 import { RichMediaRenderer } from './RichMediaRenderer';
 import { EnhancedFileProcessor } from './EnhancedFileProcessor';
 import { PerformanceAnalyticsWidget } from './PerformanceAnalyticsWidget';
+import { CollaborationManager } from '@/components/collaboration/CollaborationManager';
 import { RealtimeNotificationCenter } from '../notifications/RealtimeNotificationCenter';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
@@ -286,7 +287,12 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
           </motion.div>
         )}
 
-        {/* Performance Analytics Widget */}
+      {/* Collaboration Manager */}
+      <CollaborationManager 
+        conversationId={activeConversationId}
+      />
+
+      {/* Performance Analytics Widget */}
         {showAnalytics && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
