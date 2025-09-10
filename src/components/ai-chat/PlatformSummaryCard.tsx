@@ -83,12 +83,12 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     bgColor: 'bg-purple-500/20'
   }];
   if (isLoading) {
-    return <Card className="bg-gradient-to-br from-white/10 to-white/5 border-white/10 backdrop-blur-sm">
+    return <Card className="bg-background/60 backdrop-blur-xl border-border/50">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-white/20 rounded w-1/3"></div>
+            <div className="h-4 bg-border/50 rounded w-1/3"></div>
             <div className="grid grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-white/10 rounded"></div>)}
+              {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-background/60 rounded"></div>)}
             </div>
           </div>
         </CardContent>
@@ -104,6 +104,55 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     duration: 0.6,
     delay: 0.1
   }}>
-      
+      <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+                Platform Overview
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {metrics.map((metric, index) => (
+                <motion.div 
+                  key={metric.label}
+                  className={`p-4 rounded-xl bg-gradient-to-br ${metric.bgColor} border border-border/50`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1 * index }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <metric.icon className={`h-4 w-4 ${metric.color}`} />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{metric.value}</div>
+                  <div className="text-xs text-muted-foreground">{metric.label}</div>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div 
+              className="flex items-center justify-between p-4 bg-gradient-to-br from-primary/5 to-blue-500/5 rounded-xl border border-primary/20"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Ready to optimize?</span>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => onAction('workflow:get-started')}
+                className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-primary-foreground"
+              >
+                <ArrowRight className="h-4 w-4 mr-1" />
+                Get Started
+              </Button>
+            </motion.div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>;
 };

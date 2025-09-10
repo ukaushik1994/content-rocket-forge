@@ -30,16 +30,16 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
     >
       {/* Avatar */}
       <div className="flex-shrink-0">
-        <Avatar className="h-10 w-10 border border-white/20">
+        <Avatar className="h-10 w-10 border border-border/50">
           <AvatarFallback className={
             isUser 
-              ? 'bg-gradient-to-br from-blue-500/20 to-cyan-500/20' 
+              ? 'bg-gradient-to-br from-primary/20 to-blue-500/20' 
               : 'bg-gradient-to-br from-purple-500/20 to-pink-500/20'
           }>
             {isUser ? (
-              <User className="h-5 w-5 text-white" />
+              <User className="h-5 w-5 text-primary" />
             ) : (
-              <Sparkles className="h-5 w-5 text-white" />
+              <Sparkles className="h-5 w-5 text-primary" />
             )}
           </AvatarFallback>
         </Avatar>
@@ -49,14 +49,14 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       <div className={`flex-1 space-y-4 ${isUser ? 'items-end' : 'items-start'}`}>
         {/* Progress Indicator */}
         {message.progressIndicator && !isUser && (
-          <div className="flex items-center gap-2 text-xs text-white/60">
-            <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
               Step {message.progressIndicator.currentStep} of {message.progressIndicator.totalSteps}
             </Badge>
             <span>{message.progressIndicator.stepName}</span>
-            <div className="flex-1 bg-white/10 rounded-full h-1 max-w-[100px]">
+            <div className="flex-1 bg-border/50 rounded-full h-1 max-w-[100px]">
               <div 
-                className="bg-gradient-to-r from-purple-500 to-blue-500 h-1 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-primary to-blue-500 h-1 rounded-full transition-all duration-300"
                 style={{ 
                   width: `${(message.progressIndicator.currentStep / message.progressIndicator.totalSteps) * 100}%` 
                 }}
@@ -66,15 +66,17 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         )}
 
         {/* Main Message */}
-        <Card className={`p-4 max-w-4xl backdrop-blur-sm ${
+        <Card className={`p-4 max-w-4xl backdrop-blur-xl ${
           isUser 
-            ? 'bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 ml-auto' 
-            : 'bg-gradient-to-br from-white/10 to-white/5 border-white/10'
+            ? 'bg-gradient-to-br from-primary/10 to-blue-500/10 border-primary/20 ml-auto' 
+            : 'bg-background/60 border-border/50'
         }`}>
           {/* Text Content */}
-          <div className="prose prose-invert max-w-none">
+          <div className="prose prose-sm max-w-none">
             {message.content.split('\n').map((line, i) => (
-              <p key={i} className="text-sm leading-relaxed mb-2 last:mb-0 text-white/90">
+              <p key={i} className={`text-sm leading-relaxed mb-2 last:mb-0 ${
+                isUser ? 'text-primary-foreground' : 'text-foreground'
+              }`}>
                 {line}
               </p>
             ))}

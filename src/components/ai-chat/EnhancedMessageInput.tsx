@@ -50,13 +50,13 @@ export const EnhancedMessageInput: React.FC<EnhancedMessageInputProps> = ({
       transition={{ duration: 0.5 }}
     >
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-end gap-3 p-4 bg-gradient-to-r from-white/10 to-white/5 border border-white/20 rounded-2xl backdrop-blur-sm hover:border-white/30 transition-colors">
+        <div className="relative flex items-end gap-3 p-4 bg-background/60 border border-border/50 rounded-2xl backdrop-blur-xl hover:border-border/70 transition-colors">
           {/* Attachment Button */}
           <Button
             type="button"
             size="sm"
             variant="ghost"
-            className="text-white/60 hover:text-white hover:bg-white/10 p-2"
+            className="text-muted-foreground hover:text-foreground hover:bg-background/60 p-2"
             disabled={isLoading}
           >
             <Paperclip className="h-4 w-4" />
@@ -70,7 +70,7 @@ export const EnhancedMessageInput: React.FC<EnhancedMessageInputProps> = ({
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
             disabled={isLoading}
-            className="flex-1 min-h-[20px] max-h-[120px] resize-none bg-transparent border-0 text-white placeholder-white/50 focus:ring-0 focus:outline-none p-0"
+            className="flex-1 min-h-[20px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground focus:ring-0 focus:outline-none p-0"
             rows={1}
           />
 
@@ -79,7 +79,7 @@ export const EnhancedMessageInput: React.FC<EnhancedMessageInputProps> = ({
             type="button"
             size="sm"
             variant="ghost"
-            className="text-white/60 hover:text-white hover:bg-white/10 p-2"
+            className="text-muted-foreground hover:text-foreground hover:bg-background/60 p-2"
             disabled={isLoading}
           >
             <Mic className="h-4 w-4" />
@@ -90,13 +90,13 @@ export const EnhancedMessageInput: React.FC<EnhancedMessageInputProps> = ({
             type="submit"
             size="sm"
             disabled={!message.trim() || isLoading}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 p-2 min-w-[40px] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-primary-foreground border-0 p-2 min-w-[40px] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full"
+                className="w-4 h-4 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full"
               />
             ) : (
               <Send className="h-4 w-4" />
@@ -106,10 +106,10 @@ export const EnhancedMessageInput: React.FC<EnhancedMessageInputProps> = ({
 
         {/* Helper Text */}
         <div className="flex items-center justify-between mt-2 px-2">
-          <span className="text-xs text-white/40">
+          <span className="text-xs text-muted-foreground">
             Press Enter to send, Shift+Enter for new line
           </span>
-          <span className="text-xs text-white/40">
+          <span className="text-xs text-muted-foreground">
             {message.length > 0 && `${message.length} characters`}
           </span>
         </div>
