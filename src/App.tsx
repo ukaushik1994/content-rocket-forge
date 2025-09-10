@@ -38,6 +38,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
+import { EnterpriseRBACProvider } from "./contexts/EnterpriseRBACContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -46,10 +47,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <ContentProvider>
-          <FeedbackProvider>
-            <TourProvider>
-              <ChatContextBridgeProvider>
+        <EnterpriseRBACProvider>
+          <ContentProvider>
+            <FeedbackProvider>
+              <TourProvider>
+                <ChatContextBridgeProvider>
               <Toaster />
               <Sonner />
               <BrowserRouter>
@@ -102,11 +104,12 @@ const App = () => (
                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </BrowserRouter>
-              </ChatContextBridgeProvider>
-            </TourProvider>
-          </FeedbackProvider>
-        </ContentProvider>
+               </BrowserRouter>
+                </ChatContextBridgeProvider>
+              </TourProvider>
+            </FeedbackProvider>
+          </ContentProvider>
+        </EnterpriseRBACProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
