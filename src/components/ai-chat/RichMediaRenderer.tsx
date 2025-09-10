@@ -296,7 +296,7 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
             </Card>
           ) : (
             <Button
-              variant={action.variant || 'outline'}
+              variant={action.variant === 'primary' ? 'default' : action.variant || 'outline'}
               onClick={() => onActionClick?.(action)}
               className="w-full justify-start"
               size="sm"

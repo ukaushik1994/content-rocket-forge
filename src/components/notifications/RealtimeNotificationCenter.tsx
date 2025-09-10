@@ -75,22 +75,40 @@ export const RealtimeNotificationCenter: React.FC<RealtimeNotificationCenterProp
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Load existing notifications
+  // Load existing notifications from dashboard_alerts for now
   useEffect(() => {
     if (!user || !isOpen) return;
 
     const loadNotifications = async () => {
       try {
         const { data, error } = await supabase
-          .from('realtime_notifications')
+          .from('dashboard_alerts')
           .select('*')
           .eq('user_id', user.id)
-          .order('timestamp', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(50);
 
         if (error) throw error;
 
-        setNotifications(data || []);
+        // Transform dashboard_alerts to our notification format
+        const transformedNotifications = (data || []).map(alert => ({
+          id: alert.id,
+          type: alert.severity === 'critical' ? 'error' as const : 
+                alert.severity === 'warning' ? 'warning' as const : 
+                alert.severity === 'success' ? 'success' as const : 'info' as const,
+          title: alert.title,
+          message: alert.message,
+          timestamp: alert.created_at,
+          read: alert.is_read || false,
+          category: alert.module === 'content_workflow' ? 'content' as const : 
+                   alert.module === 'performance' ? 'performance' as const : 
+                   alert.module === 'collaboration' ? 'collaboration' as const : 'system' as const,
+          actionUrl: alert.action_url,
+          actionLabel: 'View',
+          data: alert.metadata || {}
+        }));
+
+        setNotifications(transformedNotifications);
       } catch (error) {
         console.error('Error loading notifications:', error);
         toast({
@@ -106,22 +124,39 @@ export const RealtimeNotificationCenter: React.FC<RealtimeNotificationCenterProp
     loadNotifications();
   }, [user, isOpen, toast]);
 
-  // Real-time subscription
+  // Real-time subscription for dashboard_alerts for now
   useEffect(() => {
     if (!user || !isOpen) return;
 
     const channel = supabase
-      .channel('realtime-notifications')
+      .channel('dashboard-alerts')
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'realtime_notifications',
+          table: 'dashboard_alerts',
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          const newNotification = payload.new as RealtimeNotification;
+          const newAlert = payload.new;
+          const newNotification: RealtimeNotification = {
+            id: newAlert.id,
+            type: newAlert.severity === 'critical' ? 'error' as const : 
+                  newAlert.severity === 'warning' ? 'warning' as const : 
+                  newAlert.severity === 'success' ? 'success' as const : 'info' as const,
+            title: newAlert.title,
+            message: newAlert.message,
+            timestamp: newAlert.created_at,
+            read: false,
+            category: newAlert.module === 'content_workflow' ? 'content' as const : 
+                     newAlert.module === 'performance' ? 'performance' as const : 
+                     newAlert.module === 'collaboration' ? 'collaboration' as const : 'system' as const,
+            actionUrl: newAlert.action_url,
+            actionLabel: 'View',
+            data: newAlert.metadata || {}
+          };
+          
           setNotifications(prev => [newNotification, ...prev]);
           
           // Play sound if enabled
@@ -166,8 +201,8 @@ export const RealtimeNotificationCenter: React.FC<RealtimeNotificationCenterProp
   const markAsRead = async (notificationId: string) => {
     try {
       const { error } = await supabase
-        .from('realtime_notifications')
-        .update({ read: true })
+        .from('dashboard_alerts')
+        .update({ is_read: true })
         .eq('id', notificationId);
 
       if (error) throw error;
@@ -185,10 +220,10 @@ export const RealtimeNotificationCenter: React.FC<RealtimeNotificationCenterProp
 
     try {
       const { error } = await supabase
-        .from('realtime_notifications')
-        .update({ read: true })
+        .from('dashboard_alerts')
+        .update({ is_read: true })
         .eq('user_id', user.id)
-        .eq('read', false);
+        .eq('is_read', false);
 
       if (error) throw error;
 
@@ -211,7 +246,7 @@ export const RealtimeNotificationCenter: React.FC<RealtimeNotificationCenterProp
   const deleteNotification = async (notificationId: string) => {
     try {
       const { error } = await supabase
-        .from('realtime_notifications')
+        .from('dashboard_alerts')
         .delete()
         .eq('id', notificationId);
 

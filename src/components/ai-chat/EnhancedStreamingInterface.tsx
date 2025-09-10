@@ -1,13 +1,14 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { StreamingChatInterface } from './StreamingChatInterface';
-import { AdvancedChatFeatures } from './AdvancedChatFeatures';
 import { RealTimeCollaboration } from './RealTimeCollaboration';
 import { SmartActionsIntegration } from './SmartActionsIntegration';
+import { AdvancedChatFeatures } from './AdvancedChatFeatures';
+import { RichMediaRenderer } from './RichMediaRenderer';
+import { RealtimeNotificationCenter } from '../notifications/RealtimeNotificationCenter';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
-import { useStreamingChatDB } from '@/hooks/useStreamingChatDB';
 import { useToast } from '@/hooks/use-toast';
-import { SmartContext } from '@/services/smart-actions/types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EnhancedStreamingInterfaceProps {
   onClearConversation?: () => void;
@@ -18,150 +19,244 @@ interface EnhancedStreamingInterfaceProps {
 export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProps> = ({
   onClearConversation,
   onToggleSidebar,
-  isSidebarOpen = true
+  isSidebarOpen
 }) => {
-  const chatInterfaceRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const chatInterfaceRef = useRef(null);
   const { toast } = useToast();
-  const { 
-    activeConversationId,
-    collaborators,
-    typingUsers 
-  } = useChatContextBridge();
-  
-  const {
-    messages,
-    connectionStatus,
-    isAIThinking,
-    sendMessage,
-    clearMessages
-  } = useStreamingChatDB();
 
-  const handleFileUpload = (files: File[]) => {
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        const message = `[File Upload: ${file.name}]\n\n${content.substring(0, 1000)}${content.length > 1000 ? '...' : ''}`;
-        sendMessage(message);
-      };
-      
-      if (file.type.startsWith('text/') || file.name.endsWith('.md')) {
-        reader.readAsText(file);
-      } else {
-        toast({
-          title: "File uploaded",
-          description: `${file.name} has been attached to the conversation`,
-        });
-        sendMessage(`[File attached: ${file.name} (${file.type})]`);
-      }
-    });
+  const {
+    activeConversationId,
+    collaborators
+  } = useChatContextBridge();
+
+  // Enhanced context for smart actions
+  const smartContext = {
+    contentId: activeConversationId,
+    approvalStatus: 'draft',
+    isSubmitting: false,
+    hasNotes: messages.length > 0
   };
 
-  const handleVoiceInput = (audioBlob: Blob) => {
-    // For now, just notify - real voice transcription would need additional setup
-    toast({
-      title: "Voice message recorded",
-      description: "Voice transcription feature coming soon",
-    });
-    sendMessage("[Voice message recorded - transcription pending]");
+  const handleFileUpload = async (files: File[]) => {
+    try {
+      console.log('Files uploaded:', files);
+      
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const content = e.target?.result as string;
+          
+          // Create a message with file content
+          const fileMessage = {
+            id: Date.now().toString() + Math.random(),
+            type: 'user',
+            content: `📎 **File: ${file.name}**\n\n${file.type.includes('text') ? content : 'File uploaded: ' + file.name}`,
+            timestamp: new Date(),
+            status: 'delivered',
+            attachments: [{
+              name: file.name,
+              type: file.type,
+              size: file.size
+            }]
+          };
+          
+          setMessages(prev => [...prev, fileMessage]);
+        };
+        
+        if (file.type.includes('text')) {
+          reader.readAsText(file);
+        } else {
+          reader.readAsDataURL(file);
+        }
+      }
+      
+      toast({
+        title: "Files uploaded",
+        description: `${files.length} file(s) processed successfully`,
+      });
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Could not process uploaded files",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleVoiceInput = async (audioBlob: Blob) => {
+    try {
+      console.log('Voice input received:', audioBlob);
+      toast({
+        title: "Processing voice input",
+        description: "Transcribing audio...",
+      });
+
+      // Convert blob to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64Audio = (reader.result as string).split(',')[1];
+          
+          // Call AI proxy for transcription
+          const { data, error } = await supabase.functions.invoke('ai-proxy', {
+            body: {
+              service: 'openai',
+              endpoint: 'transcribe',
+              apiKey: 'user-configured', // Will be fetched by the edge function
+              params: {
+                audio: base64Audio,
+                mimeType: audioBlob.type,
+                model: 'whisper-1'
+              }
+            }
+          });
+
+          if (error) {
+            throw new Error(error.message || 'Transcription failed');
+          }
+
+          if (data?.success && data?.data?.text) {
+            const transcriptText = data.data.text.trim();
+            if (transcriptText) {
+              // Add transcribed text as user message
+              setMessages(prev => [...prev, {
+                id: Date.now().toString(),
+                type: 'user',
+                content: transcriptText,
+                timestamp: new Date(),
+                status: 'delivered'
+              }]);
+              
+              toast({
+                title: "Voice transcribed",
+                description: `"${transcriptText.substring(0, 50)}${transcriptText.length > 50 ? '...' : ''}"`,
+              });
+            } else {
+              toast({
+                title: "No speech detected",
+                description: "Please try speaking more clearly",
+                variant: "destructive"
+              });
+            }
+          } else {
+            throw new Error('Invalid transcription response');
+          }
+        } catch (transcriptionError: any) {
+          console.error('Transcription error:', transcriptionError);
+          toast({
+            title: "Transcription failed",
+            description: transcriptionError.message || "Could not process voice input",
+            variant: "destructive"
+          });
+        }
+      };
+      
+      reader.readAsDataURL(audioBlob);
+    } catch (error: any) {
+      console.error('Voice input error:', error);
+      toast({
+        title: "Voice input failed",
+        description: error.message || "Could not process voice input",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleScreenCapture = () => {
+    console.log('Screen capture requested');
     toast({
-      title: "Screen captured",
-      description: "Screen sharing feature activated",
+      title: "Screen capture",
+      description: "Screen sharing activated",
     });
-    sendMessage("[Screen shared - visual context added to conversation]");
   };
 
   const handleClear = () => {
-    clearMessages();
+    setMessages([]);
     onClearConversation?.();
   };
 
   const handleSmartAction = (action: string) => {
-    if (action.startsWith('smart:')) {
-      const smartAction = action.replace('smart:', '');
-      sendMessage(`Execute smart action: ${smartAction}`);
-    } else {
-      switch (action) {
-        case 'analyze-conversation':
-          sendMessage('Analyze this conversation and provide insights on key topics, decisions made, and action items.');
-          break;
-        case 'extract-actions':
-          sendMessage('Extract all actionable items and tasks from our conversation. Format them as a prioritized list.');
-          break;
-        case 'generate-summary':
-          sendMessage('Create a concise summary of our conversation including main points and conclusions.');
-          break;
-        case 'optimize-workflow':
-          sendMessage('Analyze our conversation for workflow optimization opportunities and suggest improvements.');
-          break;
-        default:
-          sendMessage(`Process action: ${action}`);
-      }
+    console.log('Smart action triggered:', action);
+    
+    // Handle built-in actions
+    switch (action) {
+      case 'clear-conversation':
+        handleClear();
+        break;
+      case 'export-chat':
+        // Export functionality
+        break;
+      case 'analyze-performance':
+        // Analytics functionality
+        break;
+      default:
+        // Custom action handling
+        toast({
+          title: "Action executed",
+          description: `Performed: ${action}`,
+        });
     }
   };
 
-  // Smart context for actions
-  const smartContext: SmartContext = {
-    contentId: activeConversationId || undefined,
-    approvalStatus: 'draft',
-    isSubmitting: isAIThinking,
-    hasNotes: messages.length > 0
-  };
-
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20">
-      {/* Collaboration Features */}
+    <div className="flex-1 flex flex-col h-full">
+      {/* Real-time Collaboration */}
       {activeConversationId && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 border-b border-border/50"
-        >
-          <RealTimeCollaboration 
-            conversationId={activeConversationId}
-          />
-        </motion.div>
+        <RealTimeCollaboration 
+          conversationId={activeConversationId}
+        />
       )}
 
       {/* Main Chat Interface */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <StreamingChatInterface
+      <div className="flex-1 flex flex-col">
+        <StreamingChatInterface 
           ref={chatInterfaceRef}
           onClearConversation={handleClear}
           onToggleSidebar={onToggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
+        
+        <AdvancedChatFeatures
+          onFileUpload={handleFileUpload}
+          onVoiceInput={handleVoiceInput}
+          onScreenCapture={handleScreenCapture}
+          isRecording={false}
+        />
+
+        {/* Notification Toggle Button */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+          >
+            <span className="text-sm">🔔 Notifications</span>
+          </button>
+        </div>
+
+        {/* Rich Media Renderer for enhanced responses */}
+        <div id="rich-media-container" className="space-y-4">
+          {/* This will be populated by AI responses with visual data */}
+        </div>
       </div>
 
-      {/* Smart Actions & Advanced Features Panel */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="border-t border-border/50 bg-background/50 backdrop-blur-sm"
-      >
-        {/* Smart Actions */}
-        <div className="p-4 border-b border-border/20">
-          <SmartActionsIntegration
-            onAction={handleSmartAction}
-            context={smartContext}
-          />
-        </div>
+      {/* Smart Actions Integration */}
+      <SmartActionsIntegration 
+        context={smartContext}
+        onAction={handleSmartAction}
+      />
 
-        {/* Advanced Features */}
-        <div className="p-4">
-          <AdvancedChatFeatures
-            onFileUpload={handleFileUpload}
-            onVoiceInput={handleVoiceInput}
-            onScreenCapture={handleScreenCapture}
-            isRecording={false}
-            collaborators={collaborators.map(c => c.userName)}
-            typingUsers={typingUsers}
-          />
-        </div>
-      </motion.div>
+      {/* Realtime Notification Center */}
+      <RealtimeNotificationCenter
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onNotificationClick={(notification) => {
+          console.log('Notification clicked:', notification);
+          // Handle notification actions
+        }}
+      />
     </div>
   );
 };

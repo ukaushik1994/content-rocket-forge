@@ -2838,6 +2838,54 @@ export type Database = {
         }
         Relationships: []
       }
+      realtime_notifications: {
+        Row: {
+          action_label: string | null
+          action_url: string | null
+          category: string
+          created_at: string
+          data: Json | null
+          id: string
+          message: string
+          read: boolean
+          timestamp: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_label?: string | null
+          action_url?: string | null
+          category: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean
+          timestamp?: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_label?: string | null
+          action_url?: string | null
+          category?: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean
+          timestamp?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       repurposed_contents: {
         Row: {
           content: string
