@@ -5,9 +5,14 @@ import { RealTimeCollaboration } from './RealTimeCollaboration';
 import { SmartActionsIntegration } from './SmartActionsIntegration';
 import { AdvancedChatFeatures } from './AdvancedChatFeatures';
 import { RichMediaRenderer } from './RichMediaRenderer';
+import { EnhancedFileProcessor } from './EnhancedFileProcessor';
+import { PerformanceAnalyticsWidget } from './PerformanceAnalyticsWidget';
 import { RealtimeNotificationCenter } from '../notifications/RealtimeNotificationCenter';
+import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EnhancedStreamingInterfaceProps {
@@ -21,10 +26,23 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
   onToggleSidebar,
   isSidebarOpen
 }) => {
-  const [messages, setMessages] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const chatInterfaceRef = useRef(null);
   const { toast } = useToast();
+  
+  const {
+    messages,
+    isAIThinking,
+    currentVisualData,
+    currentActions,
+    sendMessage,
+    analyzeFile,
+    handleAction,
+    clearMessages,
+    getPerformanceAnalytics
+  } = useEnhancedStreamingChat();
 
   const {
     activeConversationId,
@@ -42,45 +60,39 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
   const handleFileUpload = async (files: File[]) => {
     try {
       console.log('Files uploaded:', files);
-      
-      for (const file of files) {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const content = e.target?.result as string;
-          
-          // Create a message with file content
-          const fileMessage = {
-            id: Date.now().toString() + Math.random(),
-            type: 'user',
-            content: `📎 **File: ${file.name}**\n\n${file.type.includes('text') ? content : 'File uploaded: ' + file.name}`,
-            timestamp: new Date(),
-            status: 'delivered',
-            attachments: [{
-              name: file.name,
-              type: file.type,
-              size: file.size
-            }]
-          };
-          
-          setMessages(prev => [...prev, fileMessage]);
-        };
-        
-        if (file.type.includes('text')) {
-          reader.readAsText(file);
-        } else {
-          reader.readAsDataURL(file);
-        }
-      }
+      setUploadedFiles(files);
       
       toast({
-        title: "Files uploaded",
-        description: `${files.length} file(s) processed successfully`,
+        title: "Files received",
+        description: `${files.length} file(s) ready for analysis`,
       });
     } catch (error) {
       console.error('File upload error:', error);
       toast({
         title: "Upload failed",
         description: "Could not process uploaded files",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFileAnalysisComplete = async (analyses: any[]) => {
+    try {
+      // Create a comprehensive analysis message
+      const analysisContent = `I've uploaded ${analyses.length} file(s) for analysis:\n\n` +
+        analyses.map(analysis => 
+          `**${analysis.name}** (${analysis.size} bytes)\n` +
+          `${analysis.insights ? analysis.insights.join('\n') : 'Basic file processed'}`
+        ).join('\n\n') +
+        '\n\nPlease provide detailed insights and recommendations based on this content.';
+      
+      await sendMessage(analysisContent, { fileAnalyses: analyses });
+      setUploadedFiles([]);
+    } catch (error) {
+      console.error('Analysis completion error:', error);
+      toast({
+        title: "Analysis failed",
+        description: "Could not process file analysis",
         variant: "destructive"
       });
     }
@@ -105,7 +117,7 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
             body: {
               service: 'openai',
               endpoint: 'transcribe',
-              apiKey: 'user-configured', // Will be fetched by the edge function
+              apiKey: 'user-configured',
               params: {
                 audio: base64Audio,
                 mimeType: audioBlob.type,
@@ -121,14 +133,7 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
           if (data?.success && data?.data?.text) {
             const transcriptText = data.data.text.trim();
             if (transcriptText) {
-              // Add transcribed text as user message
-              setMessages(prev => [...prev, {
-                id: Date.now().toString(),
-                type: 'user',
-                content: transcriptText,
-                timestamp: new Date(),
-                status: 'delivered'
-              }]);
+              await sendMessage(transcriptText);
               
               toast({
                 title: "Voice transcribed",
@@ -174,7 +179,7 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
   };
 
   const handleClear = () => {
-    setMessages([]);
+    clearMessages();
     onClearConversation?.();
   };
 
@@ -190,7 +195,8 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
         // Export functionality
         break;
       case 'analyze-performance':
-        // Analytics functionality
+        setShowAnalytics(true);
+        sendMessage('Please provide a comprehensive performance analysis of my content including SEO metrics, publication rates, and optimization opportunities.');
         break;
       default:
         // Custom action handling
@@ -199,6 +205,11 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
           description: `Performed: ${action}`,
         });
     }
+  };
+
+  const handleRequestAnalytics = async () => {
+    setShowAnalytics(true);
+    await sendMessage('Show me my current performance analytics and provide insights for optimization.');
   };
 
   return (
@@ -236,10 +247,57 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
           </button>
         </div>
 
+        {/* Enhanced File Processing */}
+        {uploadedFiles.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-4"
+          >
+            <Card>
+              <CardContent className="p-4">
+                <EnhancedFileProcessor
+                  files={uploadedFiles}
+                  onAnalysisComplete={handleFileAnalysisComplete}
+                  onAnalyzeFile={analyzeFile}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Rich Media Renderer for enhanced responses */}
-        <div id="rich-media-container" className="space-y-4">
-          {/* This will be populated by AI responses with visual data */}
-        </div>
+        {(currentVisualData || currentActions) && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4"
+          >
+            <Card>
+              <CardContent className="p-4">
+                <RichMediaRenderer
+                  visualData={currentVisualData}
+                  actions={currentActions}
+                  onActionClick={handleAction}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Performance Analytics Widget */}
+        {showAnalytics && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4"
+          >
+            <PerformanceAnalyticsWidget
+              onRequestAnalysis={handleRequestAnalytics}
+              onGenerateReport={() => sendMessage('Generate a comprehensive performance report with actionable recommendations.')}
+            />
+          </motion.div>
+        )}
       </div>
 
       {/* Smart Actions Integration */}
@@ -247,6 +305,11 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
         context={smartContext}
         onAction={handleSmartAction}
       />
+
+      {/* Enhanced Features Separator */}
+      {(currentVisualData || currentActions || showAnalytics || uploadedFiles.length > 0) && (
+        <Separator className="my-4" />
+      )}
 
       {/* Realtime Notification Center */}
       <RealtimeNotificationCenter
