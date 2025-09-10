@@ -426,46 +426,61 @@ class AIServiceController {
       let content = '';
       
       // Check if the edge function returned an error
-      if (data.error || !data.success) {
-        throw new Error(data.error || 'Edge function returned failure response');
+      if (data.error) {
+        throw new Error(data.error);
       }
       
-      // Extract the actual AI response data
-      const responseData = data.data || data;
-      console.log('📦 Extracted response data:', JSON.stringify(responseData, null, 2));
+      // Extract the actual AI response data - handle enhanced-ai-chat response format
+      let responseData = data;
       
-      // Handle different AI provider response formats
-      if (responseData.choices && responseData.choices[0]?.message?.content) {
-        // OpenAI/OpenRouter format
-        content = responseData.choices[0].message.content;
-        console.log('✅ Extracted content using OpenAI format');
-      } else if (responseData.content && Array.isArray(responseData.content) && responseData.content[0]?.text) {
-        // Anthropic format
-        content = responseData.content[0].text;
-        console.log('✅ Extracted content using Anthropic format');
-      } else if (responseData.candidates && responseData.candidates[0]?.content?.parts[0]?.text) {
-        // Gemini format
-        content = responseData.candidates[0].content.parts[0].text;
-        console.log('✅ Extracted content using Gemini format');
-      } else if (typeof responseData.content === 'string') {
-        // Direct content string
-        content = responseData.content;
-        console.log('✅ Extracted content as direct string');
-      } else if (typeof responseData === 'string') {
-        // Raw string response
-        content = responseData;
-        console.log('✅ Using raw string response');
+      // If this looks like an enhanced-ai-chat response, extract the message content
+      if (data.message && typeof data.message === 'string') {
+        content = data.message;
+        console.log('✅ Extracted content from enhanced-ai-chat message field');
+      } else if (data.data) {
+        responseData = data.data;
+        console.log('📦 Extracted response data from data field:', JSON.stringify(responseData, null, 2));
       } else {
-        console.error('❌ Unexpected response format from AI provider:', {
-          hasData: !!data.data,
-          hasChoices: !!(responseData.choices),
-          hasContent: !!(responseData.content),
-          hasCandidates: !!(responseData.candidates),
-          responseDataType: typeof responseData,
-          responseDataKeys: Object.keys(responseData || {}),
-          fullResponse: data
-        });
-        throw new Error(`Unexpected response format from AI provider. Response type: ${typeof responseData}, Keys: ${Object.keys(responseData || {}).join(', ')}`);
+        console.log('📦 Using direct response data:', JSON.stringify(responseData, null, 2));
+      }
+      
+      
+      // Continue parsing if content not already extracted
+      if (!content) {
+        // Handle different AI provider response formats
+        if (responseData.choices && responseData.choices[0]?.message?.content) {
+          // OpenAI/OpenRouter format
+          content = responseData.choices[0].message.content;
+          console.log('✅ Extracted content using OpenAI format');
+        } else if (responseData.content && Array.isArray(responseData.content) && responseData.content[0]?.text) {
+          // Anthropic format
+          content = responseData.content[0].text;
+          console.log('✅ Extracted content using Anthropic format');
+        } else if (responseData.candidates && responseData.candidates[0]?.content?.parts[0]?.text) {
+          // Gemini format
+          content = responseData.candidates[0].content.parts[0].text;
+          console.log('✅ Extracted content using Gemini format');
+        } else if (typeof responseData.content === 'string') {
+          // Direct content string
+          content = responseData.content;
+          console.log('✅ Extracted content as direct string');
+        } else if (typeof responseData === 'string') {
+          // Raw string response
+          content = responseData;
+          console.log('✅ Using raw string response');
+        } else {
+          console.error('❌ Unexpected response format from AI provider:', {
+            hasData: !!data.data,
+            hasMessage: !!data.message,
+            hasChoices: !!(responseData.choices),
+            hasContent: !!(responseData.content),
+            hasCandidates: !!(responseData.candidates),
+            responseDataType: typeof responseData,
+            responseDataKeys: Object.keys(responseData || {}),
+            fullResponse: data
+          });
+          throw new Error(`Unexpected response format from AI provider. Response type: ${typeof responseData}, Keys: ${Object.keys(responseData || {}).join(', ')}`);
+        }
       }
 
       return {

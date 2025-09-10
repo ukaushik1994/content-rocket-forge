@@ -54,10 +54,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user's AI provider configuration
+    // Get user's API keys from the api_keys table
     console.log(`🔍 Fetching API keys for user: ${userId}`);
     const { data: userKeys, error: keysError } = await supabase
-      .from('user_llm_keys')
+      .from('api_keys')
       .select('*')
       .eq('user_id', userId)
       .eq('is_active', true)
@@ -67,12 +67,34 @@ serve(async (req) => {
       console.error('❌ Error fetching user keys:', keysError);
     }
 
-    console.log(`📋 Found ${userKeys?.length || 0} active API keys:`, userKeys?.map(k => ({ provider: k.provider, model: k.model, keyLength: k.api_key?.length })));
+    console.log(`📋 Found ${userKeys?.length || 0} active API keys:`, userKeys?.map(k => ({ service: k.service, keyLength: k.encrypted_key?.length })));
 
-    // Priority: OpenRouter > Anthropic > OpenAI
-    const openrouterKey = userKeys?.find(k => k.provider === 'openrouter');
-    const anthropicKey = userKeys?.find(k => k.provider === 'anthropic');
-    const openaiKey = userKeys?.find(k => k.provider === 'openai');
+    // Decrypt and map API keys by service
+    const { getApiKey } = await import('../../shared/apiKeyService.ts');
+    let openrouterKey = null;
+    let anthropicKey = null; 
+    let openaiKey = null;
+
+    if (userKeys) {
+      for (const key of userKeys) {
+        try {
+          const decryptedKey = await getApiKey(key.service, userId);
+          if (decryptedKey) {
+            const keyObj = { api_key: decryptedKey, service: key.service };
+            
+            if (key.service === 'openrouter') {
+              openrouterKey = { ...keyObj, model: 'openai/gpt-4o-mini' };
+            } else if (key.service === 'anthropic') {
+              anthropicKey = { ...keyObj, model: 'claude-3-haiku-20240307' };
+            } else if (key.service === 'openai') {
+              openaiKey = { ...keyObj, model: 'gpt-4o-mini' };
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to decrypt key for ${key.service}:`, error);
+        }
+      }
+    }
 
     console.log(`🎯 OpenRouter key found: ${!!openrouterKey}, model: ${openrouterKey?.model}`);
     console.log(`🧠 Anthropic key found: ${!!anthropicKey}, model: ${anthropicKey?.model}`);
