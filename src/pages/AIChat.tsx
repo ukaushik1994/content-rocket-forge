@@ -9,39 +9,61 @@ const AIChat = () => {
     hidden: { opacity: 0 },
     visible: { 
       opacity: 1,
-      transition: { duration: 0.3 }
+      transition: { duration: 0.8 }
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Animated background */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-neon-purple/5 via-transparent to-neon-blue/5" />
+    <motion.div 
+      className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+    >
+      {/* Interactive Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
-          className="absolute top-[20%] left-[10%] w-[600px] h-[600px] rounded-full bg-neon-blue opacity-[0.02] blur-[120px]"
+          className="absolute top-32 right-32 w-80 h-80 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-full blur-3xl"
           animate={{ 
-            x: [0, 100, 0],
-            y: [0, 50, 0],
+            scale: [1, 1.3, 1],
+            opacity: [0.3, 0.6, 0.3],
+            x: [0, -30, 0],
+            y: [0, 20, 0]
           }}
-          transition={{ 
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div 
-          className="absolute bottom-[20%] right-[10%] w-[500px] h-[500px] rounded-full bg-neon-purple opacity-[0.02] blur-[120px]"
+          className="absolute bottom-32 left-32 w-96 h-96 bg-gradient-to-r from-purple-500/15 to-pink-500/15 rounded-full blur-3xl"
           animate={{ 
-            x: [0, -80, 0],
-            y: [0, -60, 0],
+            scale: [1.2, 1, 1.2],
+            opacity: [0.4, 0.7, 0.4],
+            x: [0, 40, 0],
+            y: [0, -25, 0]
           }}
-          transition={{ 
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear"
-          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
         />
+        
+        {/* Floating particles */}
+        {Array.from({ length: 20 }, (_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-primary/40 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0, 1, 0],
+              scale: [0, 1, 0],
+              y: [0, -100],
+            }}
+            transition={{
+              duration: Math.random() * 4 + 2,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
       </div>
 
       <Navbar />
@@ -56,7 +78,7 @@ const AIChat = () => {
           <EnhancedChatInterface />
         </div>
       </motion.main>
-    </div>
+    </motion.div>
   );
 };
 

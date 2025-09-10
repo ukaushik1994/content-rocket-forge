@@ -97,7 +97,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         variants={containerVariants}
       >
       {/* Elegant Header */}
-      <div className="fixed top-16 left-0 right-0 z-30 border-b border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm">
+      <div className="fixed top-16 left-0 right-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className={`max-w-6xl mx-auto px-6 py-4 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -106,26 +106,41 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowSidebar(true)}
-                  className="text-white/60 hover:text-white hover:bg-white/10 mr-2"
+                  className="text-muted-foreground hover:text-foreground hover:bg-background/60 mr-2"
                 >
                   <Menu className="h-4 w-4" />
                 </Button>
               )}
-              <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10">
-                <Brain className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                  AI Content Assistant
-                </h1>
-                <p className="text-sm text-white/60">
-                  Your intelligent content marketing companion
-                </p>
-              </div>
+              <motion.div 
+                className="inline-flex items-center gap-3 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-blue-500/20 border border-border/30">
+                  <Brain className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+                    AI Assistant
+                  </h2>
+                  <p className="text-xs text-muted-foreground">Ready to help with your content strategy</p>
+                </div>
+              </motion.div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm text-white/60">AI Service</span>
-              <AiServiceStatusIndicator size="md" />
+              <motion.div 
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <motion.div 
+                  className="w-2 h-2 rounded-full bg-green-400"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                <span className="text-xs text-green-400 font-medium">Online</span>
+              </motion.div>
             </div>
           </div>
         </div>
@@ -140,33 +155,48 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             <AnimatePresence mode="wait">
               {showWelcome && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
                   {/* Welcome Hero */}
-                  <div className="text-center py-8">
-                    <motion.div initial={{
-                    scale: 0.8,
-                    opacity: 0
-                  }} animate={{
-                    scale: 1,
-                    opacity: 1
-                  }} transition={{
-                    delay: 0.3,
-                    duration: 0.6
-                  }} className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10 mb-6">
-                      <Sparkles className="h-8 w-8 text-white" />
+                  <motion.div 
+                    className="text-center py-8"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                  >
+                    <motion.div 
+                      className="p-6 rounded-2xl bg-background/60 backdrop-blur-xl border border-border/50 mx-auto w-fit mb-6"
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Brain className="h-12 w-12 text-primary" />
                     </motion.div>
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent mb-3">
-                      Welcome to Your Content Intelligence Hub
-                    </h2>
-                    <p className="text-white/70 max-w-2xl mx-auto leading-relaxed">
-                      I'm your AI assistant, here to help you optimize content, analyze performance, 
-                      and grow your business using your solutions and real data.
-                    </p>
-                  </div>
+                    <motion.h2 
+                      className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent mb-6"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      Welcome to AI Assistant
+                    </motion.h2>
+                    <motion.p 
+                      className="text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      I'm here to help you optimize your content strategy, analyze performance, 
+                      and discover new opportunities using your solutions and real data.
+                    </motion.p>
+                  </motion.div>
 
-                  {/* Platform Summary */}
-                  <PlatformSummaryCard onAction={handleAction} />
-
-                  {/* Quick Actions */}
-                  <EnhancedQuickActions onAction={handleAction} />
+                  {/* Platform Summary & Quick Actions */}
+                  <motion.div 
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    <PlatformSummaryCard onAction={handleAction} />
+                    <EnhancedQuickActions onAction={handleAction} />
+                  </motion.div>
                 </motion.div>}
             </AnimatePresence>
 
@@ -226,7 +256,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </ScrollArea>
 
         {/* Input Area */}
-        <div className={`fixed bottom-0 right-0 z-50 border-t border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'}`}>
+        <div className={`fixed bottom-0 right-0 z-50 border-t border-border/50 bg-background/80 backdrop-blur-xl transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'}`}>
           <div className="max-w-6xl mx-auto px-6 py-4">
             <EnhancedMessageInput onSendMessage={handleSendMessage} isLoading={isLoading} placeholder={messages.length === 0 ? "Ask me about your content performance, start optimization workflows, or get strategic insights..." : "Continue the conversation..."} />
           </div>
