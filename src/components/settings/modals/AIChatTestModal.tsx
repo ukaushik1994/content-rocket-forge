@@ -42,7 +42,30 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
         throw new Error('User not authenticated');
       }
 
-      // Call enhanced-ai-chat edge function with correct format
+      // Get decrypted API keys from frontend
+      const { getApiKey } = await import('@/services/apiKeys/crud');
+      const apiKeys: Record<string, string> = {};
+      
+      // Try to get keys for all providers
+      const providers: ('openrouter' | 'anthropic' | 'openai')[] = ['openrouter', 'anthropic', 'openai'];
+      for (const providerName of providers) {
+        try {
+          const key = await getApiKey(providerName);
+          if (key) {
+            apiKeys[providerName] = key;
+          }
+        } catch (error) {
+          console.log(`No ${providerName} key available:`, error);
+        }
+      }
+      
+      console.log('🔑 Available decrypted keys for test:', Object.keys(apiKeys));
+      
+      if (Object.keys(apiKeys).length === 0) {
+        throw new Error('No API keys configured. Please add at least one API key in Settings.');
+      }
+
+      // Call enhanced-ai-chat edge function with decrypted keys
       console.log('🧪 Testing AI with message:', testMessage);
       const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
@@ -52,7 +75,8 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
               content: testMessage
             }
           ],
-          userId: user.id
+          userId: user.id,
+          apiKeys
         }
       });
 
@@ -69,7 +93,7 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
         setResponse(data.message);
         setTestSuccess(true);
         setTestComplete(true);
-        toast.success(`✅ AI service test successful! (${responseTime}ms) Provider: ${data.providerUsed || 'Unknown'}`);
+        toast.success(`✅ AI service test successful! (${responseTime}ms) Provider: ${data.provider || 'Unknown'}`);
         
         if (onTestComplete && provider) {
           onTestComplete(provider, true);
@@ -82,7 +106,7 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
       setResponse(`Error: ${error.message || 'Failed to connect to AI provider'}`);
       setTestSuccess(false);
       setTestComplete(true);
-      toast.error(`❌ ${provider?.charAt(0).toUpperCase() + provider?.slice(1)} test failed`);
+      toast.error(`❌ AI Chat test failed`);
       
       if (onTestComplete && provider) {
         onTestComplete(provider, false);
