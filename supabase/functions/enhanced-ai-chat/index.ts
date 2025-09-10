@@ -69,8 +69,7 @@ serve(async (req) => {
 
     console.log(`📋 Found ${userKeys?.length || 0} active API keys:`, userKeys?.map(k => ({ service: k.service, keyLength: k.encrypted_key?.length })));
 
-    // Decrypt and map API keys by service
-    const { getApiKey } = await import('../../shared/apiKeyService.ts');
+    // Map API keys by service (keys are stored as plaintext in encrypted_key field)
     let openrouterKey = null;
     let anthropicKey = null; 
     let openaiKey = null;
@@ -78,9 +77,10 @@ serve(async (req) => {
     if (userKeys) {
       for (const key of userKeys) {
         try {
-          const decryptedKey = await getApiKey(key.service, userId);
-          if (decryptedKey) {
-            const keyObj = { api_key: decryptedKey, service: key.service };
+          // Use the encrypted_key directly (it's actually plaintext in our setup)
+          const apiKey = key.encrypted_key;
+          if (apiKey) {
+            const keyObj = { api_key: apiKey, service: key.service };
             
             if (key.service === 'openrouter') {
               openrouterKey = { ...keyObj, model: 'openai/gpt-4o-mini' };
@@ -91,7 +91,7 @@ serve(async (req) => {
             }
           }
         } catch (error) {
-          console.error(`Failed to decrypt key for ${key.service}:`, error);
+          console.error(`Failed to process key for ${key.service}:`, error);
         }
       }
     }
