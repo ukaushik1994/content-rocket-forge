@@ -3,16 +3,37 @@ import { useState, useCallback } from 'react';
 import { OptimizationSuggestion } from '../types';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import AIServiceController from '@/services/aiService/AIServiceController';
+import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
 import { toast } from 'sonner';
 
 export function useContentAnalysis() {
   const { state } = useContentBuilder();
+  const { isEnabled, hasProviders, activeProviders, refreshStatus } = useAIServiceStatus();
   const [contentSuggestions, setContentSuggestions] = useState<OptimizationSuggestion[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const analyzeContentQuality = useCallback(async (content: string) => {
     if (!content || content.length < 100) {
       toast.error('Content too short for analysis');
+      return [];
+    }
+
+    // Check AI service status before proceeding
+    if (!isEnabled) {
+      toast.error('AI service is disabled. Please enable it in Settings to use content analysis.');
+      return [];
+    }
+
+    if (!hasProviders) {
+      toast.error('No AI providers configured. Please add at least one API key in Settings.');
+      return [];
+    }
+
+    // Refresh provider status to ensure we have current information
+    await refreshStatus();
+    
+    if (activeProviders === 0) {
+      toast.error(`No AI providers are currently working. Please check your API keys in Settings.`);
       return [];
     }
 
@@ -86,14 +107,24 @@ Provide 3-8 specific, actionable suggestions.`;
         }
       }
       return [];
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing content quality:', error);
-      toast.error('Failed to analyze content quality');
+      
+      // Provide more specific error messages based on error type
+      if (error.message?.includes('quota') || error.message?.includes('rate limit')) {
+        toast.error('AI provider quota exceeded. Please check your usage limits or try again later.');
+      } else if (error.message?.includes('API key') || error.message?.includes('authentication')) {
+        toast.error('AI provider authentication failed. Please check your API keys in Settings.');
+      } else if (error.message?.includes('network') || error.message?.includes('connection')) {
+        toast.error('Connection error. Please check your internet connection and try again.');
+      } else {
+        toast.error(`Failed to analyze content: ${error.message || 'Unknown error'}`);
+      }
       return [];
     } finally {
       setIsAnalyzing(false);
     }
-  }, [state.mainKeyword, state.selectedKeywords]);
+  }, [state.mainKeyword, state.selectedKeywords, isEnabled, hasProviders, activeProviders, refreshStatus]);
 
   return {
     contentSuggestions,

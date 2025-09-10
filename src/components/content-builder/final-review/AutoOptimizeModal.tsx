@@ -30,6 +30,7 @@ import { useContentOptimizer } from './optimization/useContentOptimizer';
 import { OptimizationSuggestion } from './optimization/types';
 import { analyzeContentForHighlights, HighlightAnalysisResult } from '@/services/contentHighlightingService';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
 import { toast } from 'sonner';
 
 interface AutoOptimizeModalProps {
@@ -73,6 +74,8 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     getOptimizationSelections, 
     applyOptimizationChanges
   } = useContentBuilder();
+  
+  const { isEnabled, hasProviders, activeProviders, refreshStatus } = useAIServiceStatus();
 
   const {
     isAnalyzing,
@@ -156,18 +159,44 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   ].filter(category => category.suggestions.length > 0);
 
   const handleStartAnalysis = async () => {
-    setCurrentStep('analysis');
-    await analyzeContent();
+    // Check AI service status before starting
+    if (!isEnabled) {
+      toast.error('AI service is disabled. Please enable it in Settings to use auto-optimization.');
+      return;
+    }
+
+    if (!hasProviders) {
+      toast.error('No AI providers configured. Please add at least one API key in Settings to use auto-optimization.');
+      return;
+    }
+
+    // Refresh status to get current provider information
+    await refreshStatus();
     
-    // Move to suggestions step after analysis
-    setTimeout(() => {
-      if (getTotalSuggestionCount() > 0) {
-        setCurrentStep('suggestions');
-      } else {
-        toast.info('No optimization suggestions found - your content looks great!');
-        onClose();
-      }
-    }, 1000);
+    if (activeProviders === 0) {
+      toast.error(`No AI providers are currently working. Please check your API keys in Settings.`);
+      return;
+    }
+
+    setCurrentStep('analysis');
+    
+    try {
+      await analyzeContent();
+      
+      // Move to suggestions step after analysis
+      setTimeout(() => {
+        if (getTotalSuggestionCount() > 0) {
+          setCurrentStep('suggestions');
+        } else {
+          toast.info('No optimization suggestions found - your content looks great!');
+          onClose();
+        }
+      }, 1000);
+    } catch (error: any) {
+      console.error('Analysis failed:', error);
+      toast.error(`Analysis failed: ${error.message || 'Please check your AI provider configuration and try again.'}`);
+      setCurrentStep('analysis');
+    }
   };
 
   const handleOptimize = async () => {
@@ -329,10 +358,50 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         </div>
         
         {!isAnalyzing && (
-          <Button onClick={handleStartAnalysis} size="lg" className="gap-2">
-            <Zap className="w-4 h-4" />
-            Start Analysis
-          </Button>
+          <div className="space-y-4">
+            {!hasProviders ? (
+              <div className="max-w-md mx-auto p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2 text-yellow-800 mb-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="font-medium">AI Service Not Available</span>
+                </div>
+                <p className="text-sm text-yellow-700 mb-3">
+                  No AI providers are configured. You need to add at least one API key to use auto-optimization.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.open('/settings', '_blank')}
+                  className="w-full"
+                >
+                  Configure AI Providers
+                </Button>
+              </div>
+            ) : activeProviders === 0 ? (
+              <div className="max-w-md mx-auto p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-2 text-red-800 mb-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="font-medium">AI Providers Unavailable</span>
+                </div>
+                <p className="text-sm text-red-700 mb-3">
+                  Your AI providers are not working properly. Please check your API keys and try again.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshStatus}
+                  className="w-full"
+                >
+                  Refresh Status
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={handleStartAnalysis} size="lg" className="gap-2">
+                <Zap className="w-4 h-4" />
+                Start Analysis ({activeProviders} AI provider{activeProviders !== 1 ? 's' : ''} ready)
+              </Button>
+            )}
+          </div>
         )}
       </motion.div>
 
