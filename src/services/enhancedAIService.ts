@@ -44,20 +44,58 @@ class EnhancedAIService {
         mainKeyword: bc.mainKeyword || null
       });
 
-      // Use AIServiceController for the actual AI generation
-      const result = await AIServiceController.generate({
-        input: message,
-        use_case: 'chat',
-        temperature: 0.8,
-        max_tokens: 2000
-      }, systemPrompt);
+      // Get decrypted API keys and call enhanced-ai-chat edge function directly
+      const { getApiKey } = await import('@/services/apiKeys/crud');
+      const apiKeys: Record<string, string> = {};
+      
+      // Try to get keys for all providers
+      const providers: ('openrouter' | 'anthropic' | 'openai')[] = ['openrouter', 'anthropic', 'openai'];
+      for (const providerName of providers) {
+        try {
+          const key = await getApiKey(providerName);
+          if (key) {
+            apiKeys[providerName] = key;
+          }
+        } catch (error) {
+          console.log(`No ${providerName} key available:`, error);
+        }
+      }
+      
+      if (Object.keys(apiKeys).length === 0) {
+        return this.createErrorMessage('No API keys configured. Please add at least one API key in Settings.');
+      }
 
-      if (!result || !result.content) {
-        console.warn('❌ No response from AI service');
+      // Call enhanced-ai-chat edge function with decrypted keys
+      const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+        body: {
+          messages: [{ role: 'user', content: message }],
+          userId,
+          apiKeys,
+          context,
+          solutions: context?.solutions,
+          analytics: context?.analytics,
+          workflowContext: this.workflowContext
+        }
+      });
+
+      if (error) {
+        console.error('❌ Enhanced AI chat error:', error);
+        return this.createErrorMessage(`AI service error: ${error.message}`);
+      }
+
+      if (!data || !data.message) {
+        console.warn('❌ No response from enhanced AI service');
         return this.createErrorMessage('No response received. Please check your AI provider configuration in Settings.');
       }
 
-      console.log('✅ Enhanced AI response received from AIServiceController');
+      console.log('✅ Enhanced AI response received from edge function');
+      
+      // Use the response from the edge function
+      const result = {
+        content: data.message,
+        provider_used: data.provider,
+        model_used: data.model
+      };
 
       // Parse response for structured data
       const parsedResponse = this.parseAIResponse(result.content);
