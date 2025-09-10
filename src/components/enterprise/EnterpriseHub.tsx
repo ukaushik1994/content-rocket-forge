@@ -18,6 +18,10 @@ import { AIModelOrchestrator } from './AIModelOrchestrator';
 import { ThirdPartyIntegrations } from './ThirdPartyIntegrations';
 import { AdvancedAnalyticsDashboard } from './AdvancedAnalyticsDashboard';
 import { SecurityCompliancePanel } from './SecurityCompliancePanel';
+import { TeamWorkspaceManager } from './TeamWorkspaceManager';
+import { MobileExperienceSettings } from './MobileExperienceSettings';
+import { APIEcosystemManager } from './APIEcosystemManager';
+import { AITrainingCustomization } from './AITrainingCustomization';
 
 interface EnterpriseFeature {
   id: string;
@@ -66,7 +70,7 @@ const ENTERPRISE_FEATURES: EnterpriseFeature[] = [
     title: 'Team Workspace',
     description: 'Collaborative AI workspace with role management',
     icon: <Users className="h-5 w-5" />,
-    status: 'beta',
+    status: 'active',
     category: 'collaboration'
   },
   {
@@ -74,7 +78,7 @@ const ENTERPRISE_FEATURES: EnterpriseFeature[] = [
     title: 'Mobile Experience',
     description: 'Progressive web app with offline capabilities',
     icon: <Smartphone className="h-5 w-5" />,
-    status: 'coming_soon',
+    status: 'active',
     category: 'mobile'
   },
   {
@@ -82,7 +86,7 @@ const ENTERPRISE_FEATURES: EnterpriseFeature[] = [
     title: 'API Ecosystem',
     description: 'RESTful APIs and webhook integrations',
     icon: <Globe className="h-5 w-5" />,
-    status: 'beta',
+    status: 'active',
     category: 'integrations'
   },
   {
@@ -90,7 +94,7 @@ const ENTERPRISE_FEATURES: EnterpriseFeature[] = [
     title: 'AI Training & Customization',
     description: 'Custom AI models trained on your data',
     icon: <Settings className="h-5 w-5" />,
-    status: 'coming_soon',
+    status: 'active',
     category: 'ai'
   }
 ];
@@ -159,6 +163,50 @@ export const EnterpriseHub: React.FC = () => {
     );
   }
 
+  if (activeFeature === 'team-workspace') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <TeamWorkspaceManager />
+      </div>
+    );
+  }
+
+  if (activeFeature === 'mobile-app') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <MobileExperienceSettings />
+      </div>
+    );
+  }
+
+  if (activeFeature === 'api-ecosystem') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <APIEcosystemManager />
+      </div>
+    );
+  }
+
+  if (activeFeature === 'custom-training') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <AITrainingCustomization />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -181,6 +229,10 @@ export const EnterpriseHub: React.FC = () => {
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="team-workspace">Team</TabsTrigger>
+          <TabsTrigger value="mobile-app">Mobile</TabsTrigger>
+          <TabsTrigger value="api-ecosystem">APIs</TabsTrigger>
+          <TabsTrigger value="custom-training">Training</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
