@@ -4,6 +4,7 @@ import { enhancedAIService } from '@/services/enhancedAIService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ContextualAction } from '@/services/aiService';
 
 export interface AIConversation {
   id: string;
@@ -298,7 +299,41 @@ export const useEnhancedAIChatDB = () => {
     }
   }, [messages, toast, user, activeConversation, createConversation, saveMessage]);
 
-  const handleAction = useCallback(async (action: string, data?: any) => {
+  const handleAction = useCallback(async (action: ContextualAction) => {
+    console.log('Handling action:', action);
+    
+    // Handle based on action string property for backward compatibility
+    const actionString = action.action;
+    
+    if (actionString.startsWith('workflow:')) {
+      const workflowAction = actionString.replace('workflow:', '');
+      await handleWorkflowAction(workflowAction, action.data);
+    } else if (actionString.startsWith('send:')) {
+      const message = actionString.replace('send:', '');
+      await sendMessage(message);
+    } else {
+      // Handle new action types based on action string patterns
+      switch (actionString) {
+        case 'navigate-content-builder':
+          window.location.href = '/content-builder';
+          break;
+        case 'navigate-analytics':
+          window.location.href = '/analytics';
+          break;
+        case 'navigate-keyword-research':
+          window.location.href = '/keyword-research';
+          break;
+        case 'navigate-strategy':
+          window.location.href = '/strategy';
+          break;
+        default:
+          console.warn('Unknown action:', actionString);
+          break;
+      }
+    }
+  }, [sendMessage, user]);
+
+  const handleLegacyAction = useCallback(async (action: string, data?: any) => {
     if (!user || !action) return;
 
     if (action.startsWith('workflow:')) {
@@ -620,6 +655,7 @@ export const useEnhancedAIChatDB = () => {
     deleteConversation,
     sendMessage,
     handleAction,
+    handleLegacyAction,
     selectConversation: setActiveConversation,
     togglePinConversation,
     toggleArchiveConversation,

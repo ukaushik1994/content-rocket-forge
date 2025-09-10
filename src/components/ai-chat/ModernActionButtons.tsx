@@ -20,7 +20,7 @@ import { ContextualAction } from '@/services/aiService';
 
 interface ModernActionButtonsProps {
   actions: ContextualAction[];
-  onAction: (action: string, data?: any) => void;
+  onAction: (action: ContextualAction) => void;
 }
 
 const getActionIcon = (action: string) => {
@@ -99,7 +99,7 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
       navigate('/strategies');
     } else {
       // Handle other actions through the normal flow
-      onAction(action.action, action.data);
+      onAction(action);
     }
   };
 

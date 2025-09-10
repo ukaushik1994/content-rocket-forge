@@ -8,11 +8,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bot, User, Sparkles } from 'lucide-react';
+import { ContextualAction } from '@/services/aiService';
 
 interface EnhancedMessageBubbleProps {
   message: EnhancedChatMessage;
   isLatest: boolean;
-  onAction: (action: string, data?: any) => void;
+  onAction: (action: ContextualAction) => void;
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({

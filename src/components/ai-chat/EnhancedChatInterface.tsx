@@ -39,6 +39,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     deleteConversation,
     sendMessage,
     handleAction,
+    handleLegacyAction,
     selectConversation,
     togglePinConversation,
     toggleArchiveConversation,
@@ -259,8 +260,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
                   >
-                    <PlatformSummaryCard onAction={handleAction} />
-                    <EnhancedQuickActions onAction={handleAction} />
+                    <PlatformSummaryCard onAction={handleLegacyAction} />
+                    <EnhancedQuickActions onAction={handleLegacyAction} />
                   </motion.div>
                 </motion.div>}
             </AnimatePresence>
