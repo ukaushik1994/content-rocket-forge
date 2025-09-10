@@ -213,28 +213,41 @@ class AIServiceController {
         return [];
       }
 
-      // Filter providers that have decryptable API keys
+      // Filter providers that have valid API keys (either new decrypted or legacy encrypted)
       const { getApiKey } = await import('@/services/apiKeys/crud');
       const validProviders: AIProvider[] = [];
       
       for (const providerData of data || []) {
+        let hasValidKey = false;
+        
         try {
-          // Check if we can decrypt the API key
+          // First, try to get decrypted key from new API key service
           const decryptedKey = await getApiKey(providerData.provider as any);
           if (decryptedKey) {
-            validProviders.push({
-              ...providerData,
-              status: providerData.status as 'active' | 'inactive' | 'error',
-              capabilities: Array.isArray(providerData.capabilities) 
-                ? providerData.capabilities.filter((item): item is string => typeof item === 'string')
-                : [],
-              available_models: Array.isArray(providerData.available_models) 
-                ? providerData.available_models.filter((item): item is string => typeof item === 'string')
-                : []
-            });
+            hasValidKey = true;
+            console.log(`✅ Found decrypted key for ${providerData.provider}`);
           }
         } catch (error) {
-          console.warn(`Provider ${providerData.provider} has no valid API key:`, error);
+          // If new API key service fails, check if there's an encrypted key in database
+          if (providerData.api_key && providerData.api_key.trim()) {
+            hasValidKey = true;
+            console.log(`✅ Found legacy encrypted key for ${providerData.provider}`);
+          }
+        }
+        
+        if (hasValidKey) {
+          validProviders.push({
+            ...providerData,
+            status: providerData.status as 'active' | 'inactive' | 'error',
+            capabilities: Array.isArray(providerData.capabilities) 
+              ? providerData.capabilities.filter((item): item is string => typeof item === 'string')
+              : [],
+            available_models: Array.isArray(providerData.available_models) 
+              ? providerData.available_models.filter((item): item is string => typeof item === 'string')
+              : []
+          });
+        } else {
+          console.warn(`❌ Provider ${providerData.provider} has no valid API key`);
         }
       }
 
@@ -407,12 +420,25 @@ class AIServiceController {
     try {
       const systemPrompt = customSystemPrompt || this.getSystemPrompt(request.use_case);
       
-      // Get decrypted API key from frontend
+      // Try to get decrypted API key from new service, fallback to encrypted key from database
       const { getApiKey } = await import('@/services/apiKeys/crud');
-      const decryptedApiKey = await getApiKey(provider.provider as any);
+      let apiKeyToUse = null;
       
-      if (!decryptedApiKey) {
-        throw new Error(`Failed to decrypt API key for ${provider.provider}`);
+      try {
+        apiKeyToUse = await getApiKey(provider.provider as any);
+        if (apiKeyToUse) {
+          console.log(`🔑 Using decrypted key for ${provider.provider}`);
+        }
+      } catch (error) {
+        // Fallback to database encrypted key
+        if (provider.api_key && provider.api_key.trim()) {
+          apiKeyToUse = provider.api_key;
+          console.log(`🔑 Using legacy encrypted key for ${provider.provider}`);
+        }
+      }
+      
+      if (!apiKeyToUse) {
+        throw new Error(`No valid API key found for ${provider.provider}`);
       }
       
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
@@ -428,7 +454,7 @@ class AIServiceController {
             temperature: request.temperature || 0.7,
             max_tokens: request.max_tokens || 2000
           },
-          apiKey: decryptedApiKey
+          apiKey: apiKeyToUse
         }
       });
 
@@ -614,19 +640,32 @@ class AIServiceController {
       console.log(`🧪 Testing ${provider.name} connection...`);
       toast.loading(`Testing ${provider.name} connection...`);
 
-      // Get decrypted API key from frontend
+      // Try to get decrypted API key from new service, fallback to encrypted key from database
       const { getApiKey } = await import('@/services/apiKeys/crud');
-      const decryptedApiKey = await getApiKey(providerIdOrProvider as any);
+      let apiKeyToUse = null;
       
-      if (!decryptedApiKey) {
-        throw new Error(`Failed to decrypt API key for ${provider.name}`);
+      try {
+        apiKeyToUse = await getApiKey(providerIdOrProvider as any);
+        if (apiKeyToUse) {
+          console.log(`🔑 Using decrypted key for testing ${provider.name}`);
+        }
+      } catch (error) {
+        // Fallback to database encrypted key
+        if (providerData.api_key && providerData.api_key.trim()) {
+          apiKeyToUse = providerData.api_key;
+          console.log(`🔑 Using legacy encrypted key for testing ${provider.name}`);
+        }
+      }
+      
+      if (!apiKeyToUse) {
+        throw new Error(`No valid API key found for ${provider.name}`);
       }
 
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: {
           service: providerIdOrProvider,
           endpoint: 'test',
-          apiKey: decryptedApiKey
+          apiKey: apiKeyToUse
         }
       });
 
