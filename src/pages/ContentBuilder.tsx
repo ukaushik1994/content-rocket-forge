@@ -2,7 +2,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
-import { ContentBuilderWithProvider as ContentBuilder } from '@/components/content-builder/ContentBuilder';
+import ContentBuilder from '@/components/content-builder/ContentBuilder';
 import { Helmet } from 'react-helmet-async';
 
 const ContentBuilderPage = () => {

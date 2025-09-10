@@ -469,7 +469,10 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
 };
 
 // Safe default export that ensures a Provider is present when this component is mounted directly
-export const ContentBuilderWithProvider: React.FC<ContentBuilderProps> = props => <ContentBuilderProvider>
+export const ContentBuilderWithProvider: React.FC<ContentBuilderProps> = props => (
+  <ContentBuilderProvider>
     <ContentBuilder {...props} />
-  </ContentBuilderProvider>;
+  </ContentBuilderProvider>
+);
+
 export default ContentBuilderWithProvider;
