@@ -77,7 +77,7 @@ serve(async (req) => {
       success: false, 
       error: error.message || 'Unknown error occurred'
     }), {
-      status: 500,
+      status: 200, // Return 200 with error in body for consistent parsing
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

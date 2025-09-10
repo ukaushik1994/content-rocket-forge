@@ -420,15 +420,26 @@ class AIServiceController {
         throw new Error(data.error);
       }
 
-      // Extract content from response
+      // Extract content from response - handle edge function wrapped responses
       let content = '';
-      if (data.choices && data.choices[0]?.message?.content) {
-        content = data.choices[0].message.content;
+      
+      // Check if this is a wrapped response from edge function
+      const responseData = data.data || data;
+      
+      if (responseData.choices && responseData.choices[0]?.message?.content) {
+        content = responseData.choices[0].message.content;
+      } else if (responseData.content && responseData.content[0]?.text) {
+        // Anthropic/Gemini format
+        content = responseData.content[0].text;
+      } else if (responseData.candidates && responseData.candidates[0]?.content?.parts[0]?.text) {
+        // Gemini specific format
+        content = responseData.candidates[0].content.parts[0].text;
       } else if (data.content) {
         content = data.content;
       } else if (typeof data === 'string') {
         content = data;
       } else {
+        console.error('Unexpected response format:', data);
         throw new Error('Unexpected response format from AI provider');
       }
 
