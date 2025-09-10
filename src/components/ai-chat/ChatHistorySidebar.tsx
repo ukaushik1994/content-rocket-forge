@@ -96,7 +96,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   return (
     <motion.div 
-      className={`w-80 h-full bg-background/95 backdrop-blur-sm border-r border-white/10 flex flex-col ${className}`}
+      className={`fixed left-0 top-16 bottom-0 w-80 bg-background/95 backdrop-blur-sm border-r border-white/10 flex flex-col z-40 ${className}`}
       variants={sidebarVariants}
       initial="hidden"
       animate="visible"

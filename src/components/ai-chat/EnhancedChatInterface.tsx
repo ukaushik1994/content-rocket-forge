@@ -83,20 +83,34 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       }
     }
   };
-  return <div className={`flex h-full ${className}`}>
+  return <div className={`h-full ${className}`}>
       {/* Chat History Sidebar */}
       <AnimatePresence>
         {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} />}
       </AnimatePresence>
 
       {/* Main Chat Interface */}
-      <motion.div className="flex flex-col h-full flex-1" initial="hidden" animate="visible" variants={containerVariants}>
+      <motion.div 
+        className={`flex flex-col h-full pt-16 pb-24 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`} 
+        initial="hidden" 
+        animate="visible" 
+        variants={containerVariants}
+      >
       {/* Elegant Header */}
-      <div className="border-b border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+      <div className="fixed top-16 left-0 right-0 z-30 border-b border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm">
+        <div className={`max-w-6xl mx-auto px-6 py-4 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              
+              {!showSidebar && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSidebar(true)}
+                  className="text-white/60 hover:text-white hover:bg-white/10 mr-2"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              )}
               <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10">
                 <Brain className="h-5 w-5 text-white" />
               </div>
@@ -118,7 +132,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-0 relative">
+      <div className="flex-1 flex flex-col min-h-0 relative pt-20">
         {/* Messages Area */}
         <ScrollArea className="flex-1 px-6">
           <div className="max-w-6xl mx-auto py-6 space-y-8">
@@ -212,7 +226,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm">
+        <div className={`fixed bottom-0 right-0 z-50 border-t border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'}`}>
           <div className="max-w-6xl mx-auto px-6 py-4">
             <EnhancedMessageInput onSendMessage={handleSendMessage} isLoading={isLoading} placeholder={messages.length === 0 ? "Ask me about your content performance, start optimization workflows, or get strategic insights..." : "Continue the conversation..."} />
           </div>
