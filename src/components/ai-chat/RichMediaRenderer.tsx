@@ -15,7 +15,9 @@ import {
   Line,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  AreaChart,
+  Area
 } from 'recharts';
 import {
   FileText,
@@ -43,7 +45,7 @@ interface MetricData {
 }
 
 interface ChartData {
-  type: 'line' | 'bar' | 'pie';
+  type: 'line' | 'bar' | 'pie' | 'area';
   data: any[];
   categories?: string[];
   colors?: string[];
@@ -60,11 +62,28 @@ interface ActionButton {
 }
 
 interface VisualData {
-  type: 'metrics' | 'chart' | 'table' | 'progress';
+  type: 'metrics' | 'chart' | 'table' | 'progress' | 'summary' | 'workflow';
   metrics?: MetricData[];
   chartConfig?: ChartData;
   tableData?: { headers: string[]; rows: any[][] };
   progressSteps?: { id: string; title: string; completed: boolean }[];
+  summary?: {
+    title: string;
+    items: Array<{
+      label: string;
+      value: string;
+      status: 'good' | 'warning' | 'needs-attention';
+    }>;
+  };
+  workflowStep?: {
+    id: string;
+    title: string;
+    description: string;
+    progress?: {
+      current: number;
+      total: number;
+    };
+  };
 }
 
 interface RichMediaRendererProps {
@@ -107,20 +126,27 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{metric.title}</p>
-                    <p className="text-2xl font-bold">{metric.value}</p>
-                    {metric.change && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <TrendingUp className="h-3 w-3 text-green-500" />
-                        <span className="text-xs text-green-500">
-                          +{metric.change.value} {metric.change.period}
-                        </span>
-                      </div>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <IconComponent className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
+                      <p className="text-2xl font-bold">{metric.value}</p>
+                    </div>
                   </div>
-                  <IconComponent className="h-8 w-8 text-muted-foreground" />
                 </div>
+                {metric.change && (
+                  <div className="mt-3 flex items-center gap-1 text-xs">
+                    <span className={`flex items-center gap-1 ${
+                      metric.change.type === 'increase' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      <TrendingUp className="h-3 w-3" />
+                      {metric.change.value > 0 ? '+' : ''}{metric.change.value}%
+                    </span>
+                    <span className="text-muted-foreground">{metric.change.period}</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -137,21 +163,15 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
         return (
           <ResponsiveContainer width="100%" height={chartHeight}>
             <LineChart data={config.data}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="name" className="text-xs" />
-              <YAxis className="text-xs" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-              />
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
               {config.categories?.map((category, index) => (
-                <Line 
+                <Line
                   key={category}
-                  type="monotone" 
-                  dataKey={category} 
+                  type="monotone"
+                  dataKey={category}
                   stroke={config.colors?.[index] || CHART_COLORS[index % CHART_COLORS.length]}
                   strokeWidth={2}
                 />
@@ -164,24 +184,40 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
         return (
           <ResponsiveContainer width="100%" height={chartHeight}>
             <BarChart data={config.data}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="name" className="text-xs" />
-              <YAxis className="text-xs" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-              />
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
               {config.categories?.map((category, index) => (
-                <Bar 
+                <Bar
                   key={category}
-                  dataKey={category} 
+                  dataKey={category}
                   fill={config.colors?.[index] || CHART_COLORS[index % CHART_COLORS.length]}
                 />
               ))}
             </BarChart>
+          </ResponsiveContainer>
+        );
+        
+      case 'area':
+        return (
+          <ResponsiveContainer width="100%" height={chartHeight}>
+            <AreaChart data={config.data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              {config.categories?.map((category, index) => (
+                <Area
+                  key={category}
+                  type="monotone"
+                  dataKey={category}
+                  stackId="1"
+                  stroke={config.colors?.[index] || CHART_COLORS[index % CHART_COLORS.length]}
+                  fill={config.colors?.[index] || CHART_COLORS[index % CHART_COLORS.length]}
+                />
+              ))}
+            </AreaChart>
           </ResponsiveContainer>
         );
         
@@ -271,6 +307,61 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
     </div>
   );
 
+  const renderSummary = (summary: { title: string; items: Array<{ label: string; value: string; status: 'good' | 'warning' | 'needs-attention' }> }) => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">{summary.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {summary.items.map((item, index) => (
+            <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+              <span className="font-medium">{item.label}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">{item.value}</span>
+                <Badge variant={
+                  item.status === 'good' ? 'default' : 
+                  item.status === 'warning' ? 'secondary' : 
+                  'destructive'
+                }>
+                  {item.status.replace('-', ' ')}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderWorkflow = (workflow: { id: string; title: string; description: string; progress?: { current: number; total: number } }) => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Target className="h-5 w-5" />
+          {workflow.title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">{workflow.description}</p>
+        {workflow.progress && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Progress</span>
+              <span>{workflow.progress.current} of {workflow.progress.total}</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2">
+              <div
+                className="bg-primary h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(workflow.progress.current / workflow.progress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   const renderActions = (actionList: ActionButton[]) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {actionList.map((action, index) => (
@@ -351,6 +442,10 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
               </CardContent>
             </Card>
           )}
+
+          {visualData.type === 'summary' && visualData.summary && renderSummary(visualData.summary)}
+          
+          {visualData.type === 'workflow' && visualData.workflowStep && renderWorkflow(visualData.workflowStep)}
         </motion.div>
       )}
 
