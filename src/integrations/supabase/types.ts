@@ -520,42 +520,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ai_training_logs: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          error_message: string | null
-          id: string
-          model_type: string
-          status: string
-          training_data: Json | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          model_type: string
-          status: string
-          training_data?: Json | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          model_type?: string
-          status?: string
-          training_data?: Json | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       ai_workflow_states: {
         Row: {
           conversation_id: string | null
@@ -2144,59 +2108,6 @@ export type Database = {
           },
         ]
       }
-      custom_models: {
-        Row: {
-          accuracy: number | null
-          base_model: string
-          created_at: string
-          dataset_id: string | null
-          id: string
-          model_config: Json
-          name: string
-          status: string
-          training_progress: number | null
-          updated_at: string
-          use_case: string | null
-          user_id: string
-        }
-        Insert: {
-          accuracy?: number | null
-          base_model?: string
-          created_at?: string
-          dataset_id?: string | null
-          id?: string
-          model_config?: Json
-          name: string
-          status?: string
-          training_progress?: number | null
-          updated_at?: string
-          use_case?: string | null
-          user_id: string
-        }
-        Update: {
-          accuracy?: number | null
-          base_model?: string
-          created_at?: string
-          dataset_id?: string | null
-          id?: string
-          model_config?: Json
-          name?: string
-          status?: string
-          training_progress?: number | null
-          updated_at?: string
-          use_case?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "custom_models_dataset_id_fkey"
-            columns: ["dataset_id"]
-            isOneToOne: false
-            referencedRelation: "training_datasets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       dashboard_alerts: {
         Row: {
           action_buttons: Json | null
@@ -2513,45 +2424,6 @@ export type Database = {
           request_duration_ms?: number | null
           success?: boolean
           total_tokens?: number | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      mobile_settings: {
-        Row: {
-          created_at: string
-          id: string
-          notification_settings: Json
-          notifications_enabled: boolean
-          offline_mode: boolean
-          performance_settings: Json
-          pwa_enabled: boolean
-          ui_settings: Json
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notification_settings?: Json
-          notifications_enabled?: boolean
-          offline_mode?: boolean
-          performance_settings?: Json
-          pwa_enabled?: boolean
-          ui_settings?: Json
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notification_settings?: Json
-          notifications_enabled?: boolean
-          offline_mode?: boolean
-          performance_settings?: Json
-          pwa_enabled?: boolean
-          ui_settings?: Json
-          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -3692,125 +3564,6 @@ export type Database = {
         }
         Relationships: []
       }
-      team_members: {
-        Row: {
-          created_at: string
-          id: string
-          invited_by: string | null
-          joined_at: string
-          last_active: string | null
-          permissions: Json
-          role: string
-          status: string
-          updated_at: string
-          user_id: string
-          workspace_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          invited_by?: string | null
-          joined_at?: string
-          last_active?: string | null
-          permissions?: Json
-          role?: string
-          status?: string
-          updated_at?: string
-          user_id: string
-          workspace_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          invited_by?: string | null
-          joined_at?: string
-          last_active?: string | null
-          permissions?: Json
-          role?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-          workspace_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_members_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "team_workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_workspaces: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          owner_id: string
-          settings: Json
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          owner_id: string
-          settings?: Json
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          owner_id?: string
-          settings?: Json
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      training_datasets: {
-        Row: {
-          accuracy: number | null
-          created_at: string
-          file_path: string | null
-          id: string
-          metadata: Json
-          name: string
-          size: number
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          accuracy?: number | null
-          created_at?: string
-          file_path?: string | null
-          id?: string
-          metadata?: Json
-          name: string
-          size?: number
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          accuracy?: number | null
-          created_at?: string
-          file_path?: string | null
-          id?: string
-          metadata?: Json
-          name?: string
-          size?: number
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       unified_keywords: {
         Row: {
           competition_score: number | null
@@ -3972,51 +3725,6 @@ export type Database = {
           scan_frequency?: string
           trend_threshold?: number | null
           updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      webhooks: {
-        Row: {
-          created_at: string
-          events: Json
-          failure_count: number
-          id: string
-          last_triggered: string | null
-          name: string
-          secret: string
-          status: string
-          success_count: number
-          updated_at: string
-          url: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          events?: Json
-          failure_count?: number
-          id?: string
-          last_triggered?: string | null
-          name: string
-          secret: string
-          status?: string
-          success_count?: number
-          updated_at?: string
-          url: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          events?: Json
-          failure_count?: number
-          id?: string
-          last_triggered?: string | null
-          name?: string
-          secret?: string
-          status?: string
-          success_count?: number
-          updated_at?: string
-          url?: string
           user_id?: string
         }
         Relationships: []

@@ -424,118 +424,33 @@ class AIServiceController {
       let content = '';
       
       // Check if this is a wrapped response from edge function
-      if (!data.success) {
-        throw new Error(data.error || 'AI provider request failed');
-      }
-      
-      // The ai-proxy edge function returns { success: true, data: actualProviderResponse }
       const responseData = data.data || data;
       
-      console.log(`🔍 Parsing response from ${provider.provider}:`, {
-        hasSuccess: !!data.success,
-        hasData: !!data.data,
-        responseDataKeys: Object.keys(responseData || {}),
-        responseDataType: typeof responseData
-      });
-      
-      // Enhanced response format handling with more robust parsing
       if (responseData.choices && responseData.choices[0]?.message?.content) {
-        // OpenAI format
         content = responseData.choices[0].message.content;
-      } else if (responseData.content && Array.isArray(responseData.content) && responseData.content[0]?.text) {
-        // Anthropic format
+      } else if (responseData.content && responseData.content[0]?.text) {
+        // Anthropic/Gemini format
         content = responseData.content[0].text;
       } else if (responseData.candidates && responseData.candidates[0]?.content?.parts[0]?.text) {
-        // Gemini format
+        // Gemini specific format
         content = responseData.candidates[0].content.parts[0].text;
-      } else if (responseData.message && typeof responseData.message === 'string') {
-        // Generic message format
-        content = responseData.message;
-      } else if (responseData.text && typeof responseData.text === 'string') {
-        // Generic text format
-        content = responseData.text;
-      } else if (responseData.response && typeof responseData.response === 'string') {
-        // Generic response format
-        content = responseData.response;
-      } else if (typeof responseData === 'string') {
-        content = responseData;
+      } else if (data.content) {
+        content = data.content;
+      } else if (typeof data === 'string') {
+        content = data;
       } else {
-        // Try to extract any string content from nested objects
-        const extractedContent = this.extractStringContent(responseData);
-        if (extractedContent) {
-          content = extractedContent;
-        } else {
-          console.error('Unexpected response format:', { 
-            provider: provider.provider,
-            dataKeys: Object.keys(data),
-            responseDataKeys: Object.keys(responseData || {}),
-            fullData: data,
-            fullResponseData: responseData 
-          });
-          throw new Error(`Unexpected response format from ${provider.provider}. Expected content in response but found: ${JSON.stringify(Object.keys(responseData || {}))}`);
-        }
+        console.error('Unexpected response format:', data);
+        throw new Error('Unexpected response format from AI provider');
       }
-
-      if (!content) {
-        console.error('No content extracted from response:', {
-          provider: provider.provider,
-          fullData: data,
-          responseData: responseData
-        });
-        throw new Error(`No content found in response from ${provider.provider}`);
-      }
-
-      console.log(`✅ Successfully extracted content from ${provider.provider} (${content.length} chars)`);
 
       return {
         content,
-        usage: responseData.usage || data.usage
+        usage: data.usage
       };
     } catch (error: any) {
       console.error(`Error calling ${provider.provider}:`, error);
       throw error;
     }
-  }
-
-  /**
-   * Attempts to extract string content from nested response objects
-   */
-  private extractStringContent(obj: any): string | null {
-    if (typeof obj === 'string') {
-      return obj;
-    }
-    
-    if (typeof obj !== 'object' || obj === null) {
-      return null;
-    }
-
-    // Common content field names to check
-    const contentFields = ['content', 'text', 'message', 'response', 'output', 'result', 'answer'];
-    
-    for (const field of contentFields) {
-      if (obj[field]) {
-        if (typeof obj[field] === 'string') {
-          return obj[field];
-        }
-        // Recursively check nested objects
-        const nestedContent = this.extractStringContent(obj[field]);
-        if (nestedContent) {
-          return nestedContent;
-        }
-      }
-    }
-
-    // Check array elements
-    if (Array.isArray(obj) && obj.length > 0) {
-      for (const item of obj) {
-        const itemContent = this.extractStringContent(item);
-        if (itemContent) {
-          return itemContent;
-        }
-      }
-    }
-
-    return null;
   }
 
   /**

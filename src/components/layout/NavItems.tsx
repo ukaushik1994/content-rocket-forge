@@ -152,6 +152,8 @@ export default function NavItems() {
       />
       
       
+      
+      
       <NavItem to="/analytics" icon={<BarChart3 className="h-4 w-4" />} label="Analytics" active={location.pathname === '/analytics'} />
     </div>
   );
