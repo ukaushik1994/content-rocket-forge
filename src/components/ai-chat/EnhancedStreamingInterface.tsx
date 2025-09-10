@@ -122,6 +122,28 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
     await sendMessage(analysisMessage, { fileAnalysis: analysisResults });
   };
 
+  const handleFileAnalysis = async (file: File) => {
+    try {
+      const result = await advancedFileAnalyzer.analyzeExcelFile(file);
+      return {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        content: result.extractedText || '',
+        insights: result.insights || [],
+        wordCount: result.extractedText?.split(' ').length || 0
+      };
+    } catch (error) {
+      console.error('File analysis error:', error);
+      return {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        error: 'Failed to analyze file'
+      };
+    }
+  };
+
   const handleVoiceInput = async (audioBlob: Blob) => {
     try {
       console.log('Voice input received:', audioBlob);
@@ -347,7 +369,7 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
         onFileUpload={handleFileUpload}
         onVoiceInput={handleVoiceInput}
         onScreenCapture={handleScreenCapture}
-        isProcessing={isAIThinking}
+        isRecording={false}
       />
 
       {/* Enhanced File Processor */}
@@ -355,6 +377,7 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
         <EnhancedFileProcessor
           files={uploadedFiles}
           onAnalysisComplete={handleFileAnalysisComplete}
+          onAnalyzeFile={handleFileAnalysis}
         />
       )}
 
