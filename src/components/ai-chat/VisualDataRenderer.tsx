@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { VisualData } from '@/types/enhancedChat';
 import { LineChart, BarChart, PieChartComponent } from '@/components/ui/chart';
+import { InteractiveChart } from './InteractiveChart';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -76,67 +77,20 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
     if (!visualData.chartConfig) return null;
 
     const { type, data, categories, colors, valueFormatter, height = 300 } = visualData.chartConfig;
-    const ChartIcon = getChartIcon(type);
-
-    const chartProps = {
-      data,
-      categories,
-      colors,
-      valueFormatter,
-      className: `h-[${height}px]`
-    };
-
+    
+    // Use InteractiveChart for enhanced experience
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.3 }}
-        className="relative group"
-      >
-        {/* Background with animated grid pattern */}
-        <div className="absolute inset-0 bg-grid opacity-10 group-hover:opacity-20 transition-opacity duration-300" />
-        
-        {/* Animated background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/5 to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-6 group-hover:shadow-neon transition-all duration-300">
-          {/* Header with icon and title */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 group-hover:from-primary/30 group-hover:to-primary/10 transition-all duration-300">
-              <ChartIcon className="w-5 h-5 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
-              {type.charAt(0).toUpperCase() + type.slice(1)} Chart
-            </h3>
-          </div>
-          
-          {/* Chart container with enhanced styling */}
-          <div className="relative bg-white/5 rounded-lg p-4 backdrop-blur-sm border border-white/5">
-            {(() => {
-              switch (type) {
-                case 'line':
-                  return <LineChart {...chartProps} />;
-                case 'bar':
-                  return <BarChart {...chartProps} />;
-                case 'pie':
-                  return <PieChartComponent {...chartProps} />;
-                case 'area':
-                  return <LineChart {...chartProps} />;
-                default:
-                  return (
-                    <div className="flex items-center justify-center h-48 text-muted-foreground">
-                      <div className="text-center">
-                        <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p>Chart type not supported</p>
-                      </div>
-                    </div>
-                  );
-              }
-            })()}
-          </div>
-        </Card>
-      </motion.div>
+      <InteractiveChart
+        chartConfig={visualData.chartConfig}
+        title={`${type.charAt(0).toUpperCase() + type.slice(1)} Chart`}
+        description="Interactive data visualization"
+        allowTypeSwitch={true}
+        allowDataFilter={true}
+        onDataUpdate={(newData) => {
+          console.log('Chart data updated:', newData);
+          // Handle real-time data updates here
+        }}
+      />
     );
   };
 

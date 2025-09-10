@@ -15,7 +15,12 @@ import {
   History,
   Settings,
   ChevronDown,
-  Loader2
+  Loader2,
+  Pin,
+  Archive,
+  Filter,
+  SortAsc,
+  Tag
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,6 +38,8 @@ interface ChatHistorySidebarProps {
   onCreateConversation: () => void;
   onDeleteConversation: (id: string) => void;
   onToggleSidebar: () => void;
+  onArchiveConversation?: (id: string) => void;
+  onPinConversation?: (id: string) => void;
   className?: string;
 }
 
@@ -43,15 +50,42 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   onCreateConversation,
   onDeleteConversation,
   onToggleSidebar,
+  onArchiveConversation,
+  onPinConversation,
   className = ""
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [displayLimit, setDisplayLimit] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [sortBy, setSortBy] = useState<'recent' | 'title' | 'pinned'>('recent');
+  const [filterBy, setFilterBy] = useState<'all' | 'pinned' | 'archived'>('all');
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredConversations = conversations
+    .filter(conv => {
+      // Text search
+      if (searchTerm && !conv.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      
+      // Filter by type
+      if (filterBy === 'pinned' && !conv.pinned) return false;
+      if (filterBy === 'archived' && !conv.archived) return false;
+      if (filterBy === 'all' && conv.archived) return false;
+      
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'pinned') {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      }
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      // Default to recent
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
 
   const displayedConversations = filteredConversations.slice(0, displayLimit);
   const hasMoreConversations = filteredConversations.length > displayLimit;
@@ -140,6 +174,37 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
             className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-purple-500/50"
           />
         </div>
+        
+        {/* Filters and Sort */}
+        <div className="flex gap-2 mt-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10 text-xs">
+                <Filter className="h-3 w-3 mr-1" />
+                {filterBy === 'all' ? 'All' : filterBy === 'pinned' ? 'Pinned' : 'Archived'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-background/90 backdrop-blur-sm border-white/20">
+              <DropdownMenuItem onClick={() => setFilterBy('all')}>All Chats</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterBy('pinned')}>Pinned</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterBy('archived')}>Archived</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10 text-xs">
+                <SortAsc className="h-3 w-3 mr-1" />
+                {sortBy === 'recent' ? 'Recent' : sortBy === 'title' ? 'Title' : 'Pinned'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-background/90 backdrop-blur-sm border-white/20">
+              <DropdownMenuItem onClick={() => setSortBy('recent')}>Recent</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('title')}>Title</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('pinned')}>Pinned First</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Conversations List */}
@@ -171,14 +236,23 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
+                            {conversation.pinned && <Pin className="h-3 w-3 text-warning fill-warning" />}
                             <MessageSquare className="h-4 w-4 text-white/60 flex-shrink-0" />
                             <h3 className="text-sm font-medium text-white truncate">
                               {conversation.title}
                             </h3>
                           </div>
-                          <p className="text-xs text-white/50">
-                            {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-white/50">
+                              {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
+                            </p>
+                            {conversation.tags && conversation.tags.length > 0 && (
+                              <Badge variant="secondary" className="bg-white/10 text-white/70 text-xs h-5">
+                                <Tag className="h-2 w-2 mr-1" />
+                                {conversation.tags[0]}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         
                         <DropdownMenu>
@@ -193,6 +267,30 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-background/90 backdrop-blur-sm border-white/20">
+                            {onPinConversation && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onPinConversation(conversation.id);
+                                }}
+                                className="text-white/70 hover:text-white focus:text-white"
+                              >
+                                <Pin className="h-4 w-4 mr-2" />
+                                {conversation.pinned ? 'Unpin' : 'Pin'}
+                              </DropdownMenuItem>
+                            )}
+                            {onArchiveConversation && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onArchiveConversation(conversation.id);
+                                }}
+                                className="text-white/70 hover:text-white focus:text-white"
+                              >
+                                <Archive className="h-4 w-4 mr-2" />
+                                {conversation.archived ? 'Unarchive' : 'Archive'}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();

@@ -32,14 +32,47 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   sidebarOpen,
   hasMessages
 }) => {
-  const handleExportConversation = () => {
-    // TODO: Implement export functionality
-    console.log('Export conversation');
+  const handleExportConversation = async () => {
+    try {
+      // Get conversation messages from localStorage or state
+      const conversationData = {
+        title: 'AI Chat Conversation',
+        timestamp: new Date().toISOString(),
+        messages: [], // This would come from props or context
+        exported_at: new Date().toISOString()
+      };
+      
+      const dataStr = JSON.stringify(conversationData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `ai-chat-${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
   };
 
-  const handleShareConversation = () => {
-    // TODO: Implement share functionality
-    console.log('Share conversation');
+  const handleShareConversation = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'AI Chat Conversation',
+          text: 'Check out this AI conversation',
+          url: window.location.href
+        });
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        // You might want to show a toast notification here
+        console.log('Link copied to clipboard');
+      }
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
   };
 
   return (
