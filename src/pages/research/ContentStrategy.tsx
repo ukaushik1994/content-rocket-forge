@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
@@ -53,10 +52,10 @@ const ContentStrategy = () => {
           </motion.div>
         </main>
         
-        {/* Strategy Creator Modal (Legacy) */}
+        {/* Strategy Creator Modal (Legacy) - Inside Provider */}
         <StrategyCreationModal open={creatorOpen} onOpenChange={setCreatorOpen} />
         
-        {/* Strategy Goals Modal (New Simplified) */}
+        {/* Strategy Goals Modal (New Simplified) - Inside Provider */}
         <StrategyGoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
       </div>
     </ContentStrategyProvider>

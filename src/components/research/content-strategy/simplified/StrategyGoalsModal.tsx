@@ -32,9 +32,9 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
     updateStrategy,
     analyzeSERP,
     saveInsight,
-    loading
+    loading,
+    generateGoalBasedProposals
   } = useContentStrategy();
-  const ctx = useContentStrategy();
   
   const [goals, setGoals] = useState({
     monthlyTraffic: '',
@@ -161,7 +161,6 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
       }
 
       // Always generate AI proposals based on traffic goal
-      const { generateGoalBasedProposals } = ctx || {};
       if (generateGoalBasedProposals) {
         toast.success('Strategy saved! Generating AI proposals based on your traffic goal...');
         setTimeout(() => {
