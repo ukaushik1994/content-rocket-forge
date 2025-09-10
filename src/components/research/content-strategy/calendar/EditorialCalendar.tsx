@@ -14,21 +14,23 @@ import { CrossTabActions } from '../components/CrossTabActions';
 import { useProposalIntegration } from '@/hooks/useProposalIntegration';
 import { toast } from 'sonner';
 import { proposalManagement } from '@/services/proposalManagement';
-import { useNavigate } from 'react-router-dom';
+import { StrategyBuilderDialog } from '../StrategyBuilderDialog';
+import { CalendarLoadingSkeleton } from '../components/CalendarLoadingSkeleton';
 
 interface EditorialCalendarProps {
   goals: any;
 }
 
 export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
-  const { calendarItems, pipelineItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading, refreshData } = useContentStrategy();
+  const { calendarItems, pipelineItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading, loadingCalendar, refreshData } = useContentStrategy();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [strategyDialogOpen, setStrategyDialogOpen] = useState(false);
+  const [selectedCalendarItem, setSelectedCalendarItem] = useState<any>(null);
   const { syncProposalAcrossTabs, updateProposalStatus } = useProposalIntegration();
-  const navigate = useNavigate();
 
   // Check for overdue proposals on mount only (prevent infinite loop)
   useEffect(() => {
@@ -147,30 +149,25 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
       const proposalData = notes.proposal_data;
 
       if (proposalData) {
-        // Navigate to content builder with proposal data
-        navigate('/content-builder', {
-          state: {
-            fromProposal: true,
-            proposalData: {
-              ...proposalData,
-              source_proposal_id: notes.source_proposal_id
-            }
-          }
+        // Use StrategyBuilderDialog with proposal data
+        setSelectedCalendarItem({
+          ...proposalData,
+          source_proposal_id: notes.source_proposal_id,
+          fromCalendar: true
         });
       } else {
-        // Navigate to content builder with basic calendar item data
-        navigate('/content-builder', {
-          state: {
-            fromCalendar: true,
-            calendarData: {
-              title: item.title,
-              content_type: item.content_type,
-              tags: item.tags,
-              notes: item.notes
-            }
-          }
+        // Create proposal-like data structure from calendar item for StrategyBuilderDialog
+        setSelectedCalendarItem({
+          title: item.title,
+          primary_keyword: item.title.split(' ')[0], // Use first word as primary keyword
+          description: item.notes || `Content piece about ${item.title}`,
+          content_type: item.content_type || 'blog',
+          fromCalendar: true,
+          calendarItemId: item.id,
+          tags: item.tags
         });
       }
+      setStrategyDialogOpen(true);
     } catch (error) {
       console.error('Error generating content:', error);
       toast.error('Failed to generate content');
@@ -186,17 +183,8 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
     }
   };
 
-  if (loading) {
-    return (
-      <Card className="glass-panel border-white/10 shadow-2xl">
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-2 text-white">Loading calendar...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  if (loading || loadingCalendar) {
+    return <CalendarLoadingSkeleton />;
   }
 
   return (
@@ -458,6 +446,13 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
         onSave={handleSaveItem}
         item={editingItem}
         selectedDate={selectedDate}
+      />
+
+      {/* Strategy Builder Dialog for unified content creation */}
+      <StrategyBuilderDialog
+        open={strategyDialogOpen}
+        onOpenChange={setStrategyDialogOpen}
+        proposal={selectedCalendarItem}
       />
     </>
   );

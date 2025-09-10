@@ -26,6 +26,8 @@ interface ContentStrategyContextType {
   contentItems: ContentItem[];
   insights: StrategyInsight[];
   loading: boolean;
+  loadingProposals: boolean;
+  loadingCalendar: boolean;
 
   // AI Proposals state
   aiProposals: any[];
@@ -69,6 +71,8 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [insights, setInsights] = useState<StrategyInsight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProposals, setLoadingProposals] = useState(false);
+  const [loadingCalendar, setLoadingCalendar] = useState(false);
 
   // AI Proposals state
   const [aiProposals, setAiProposals] = useState<any[]>([]);
@@ -102,6 +106,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       // Load secondary data in background without blocking UI
       setTimeout(async () => {
         try {
+          setLoadingCalendar(true);
           const [calendarData, pipelineData, insightsData] = await Promise.all([
             contentStrategyService.getCalendarItems(),
             contentStrategyService.getPipelineItems(),
@@ -114,6 +119,8 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
           setInsights(insightsData);
         } catch (error: any) {
           console.error('Error loading secondary data:', error);
+        } finally {
+          setLoadingCalendar(false);
         }
       }, 100);
       
@@ -288,6 +295,8 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     if (!user) return;
     
     try {
+      setLoadingProposals(true);
+      
       // Always use batch size of 6, regardless of contentPieces goal
       const targetCount = 6;
       const result = await contentStrategyService.generateAIStrategy({ 
@@ -308,6 +317,8 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     } catch (error) {
       console.error('Error generating goal-based proposals:', error);
       toast.error('Failed to generate proposals');
+    } finally {
+      setLoadingProposals(false);
     }
   };
 
@@ -326,6 +337,8 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
         contentItems,
         insights,
         loading,
+        loadingProposals,
+        loadingCalendar,
         
         // AI Proposals state
         aiProposals,

@@ -14,6 +14,7 @@ import { useAnalyticsConnection } from '@/hooks/useAnalyticsConnection';
 import { useRealAnalytics } from '@/hooks/useRealAnalytics';
 import { useProposalIntegration } from '@/hooks/useProposalIntegration';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { ProposalsLoadingSkeleton } from '../components/ProposalsLoadingSkeleton';
 
 interface StrategySuggestionsProps {
   serpMetrics: any;
@@ -30,7 +31,7 @@ export const StrategySuggestions = ({
   
   const analyticsConnection = useAnalyticsConnection();
   const { metrics, contentAnalytics, loading: analyticsLoading } = useRealAnalytics('30days');
-  const { aiProposals } = useContentStrategy();
+  const { aiProposals, loadingProposals } = useContentStrategy();
   const { 
     syncProposalAcrossTabs,
     updateProposalStatus 
@@ -61,7 +62,9 @@ export const StrategySuggestions = ({
       )}
 
       {/* Enhanced Proposals Section with Beautiful Cards */}
-      {aiProposals.length > 0 && (
+      {loadingProposals ? (
+        <ProposalsLoadingSkeleton />
+      ) : aiProposals.length > 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,19 +109,23 @@ export const StrategySuggestions = ({
             })}
           </div>
         </motion.div>
-      )}
+      ) : null}
 
       {/* Content Strategy Engine with conditional data */}
-      <ContentStrategyEngine 
-        serpMetrics={serpMetrics} 
-        goals={goals}
-        workflowMode={workflowMode}
-        realAnalytics={workflowMode === 'real' && canUseRealData ? {
-          metrics,
-          contentAnalytics,
-          loading: analyticsLoading
-        } : undefined}
-      />
+      {loadingProposals ? (
+        <ProposalsLoadingSkeleton />
+      ) : (
+        <ContentStrategyEngine 
+          serpMetrics={serpMetrics} 
+          goals={goals}
+          workflowMode={workflowMode}
+          realAnalytics={workflowMode === 'real' && canUseRealData ? {
+            metrics,
+            contentAnalytics,
+            loading: analyticsLoading
+          } : undefined}
+        />
+      )}
     </div>
   );
 };
