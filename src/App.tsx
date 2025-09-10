@@ -28,6 +28,7 @@ import CalendarPage from "./pages/research/Calendar";
 
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
+import { AIStreamingChatPage } from "./pages/AIStreamingChatPage";
 import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
@@ -35,6 +36,7 @@ import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
 import { TourProvider } from "@/contexts/TourContext";
+import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -46,6 +48,7 @@ const App = () => (
         <ContentProvider>
           <FeedbackProvider>
             <TourProvider>
+              <ChatContextBridgeProvider>
               <Toaster />
               <Sonner />
               <BrowserRouter>
@@ -67,9 +70,10 @@ const App = () => (
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                   
-                  {/* AI Chat routes */}
-                  <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
-                  <Route path="/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
+                   {/* AI Chat routes */}
+                   <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+                   <Route path="/ai-streaming-chat" element={<ProtectedRoute><AIStreamingChatPage /></ProtectedRoute>} />
+                   <Route path="/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
                   
                   {/* Research routes */}
                   <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
@@ -95,6 +99,7 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
+              </ChatContextBridgeProvider>
             </TourProvider>
           </FeedbackProvider>
         </ContentProvider>
