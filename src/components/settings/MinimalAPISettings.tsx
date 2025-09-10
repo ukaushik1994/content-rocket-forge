@@ -18,8 +18,11 @@ import { UsageSection } from './UsageSection';
 import { AIServiceToggle } from './AIServiceToggle';
 import { ProviderManagement } from './ProviderManagement';
 import { AIGenerationTest } from '@/components/ai/AIGenerationTest';
-
-const StatusDot = ({ status }: { status: ApiKeyStatus }) => {
+const StatusDot = ({
+  status
+}: {
+  status: ApiKeyStatus;
+}) => {
   const colors = {
     'not-configured': 'bg-muted-foreground',
     'configured': 'bg-warning',
@@ -27,34 +30,37 @@ const StatusDot = ({ status }: { status: ApiKeyStatus }) => {
   };
   return <div className={`w-2 h-2 rounded-full ${colors[status]}`} />;
 };
-
-const ProviderCard = ({ 
-  provider, 
-  statusResult, 
+const ProviderCard = ({
+  provider,
+  statusResult,
   onConfigure,
   onTest
-}: { 
-  provider: ApiProvider; 
-  statusResult: ApiKeyStatusResult; 
+}: {
+  provider: ApiProvider;
+  statusResult: ApiKeyStatusResult;
   onConfigure: () => void;
   onTest?: () => void;
 }) => {
   const isConfigured = statusResult.status !== 'not-configured';
-  
   const getStatusText = (status: ApiKeyStatus) => {
     switch (status) {
-      case 'not-configured': return 'Not configured';
-      case 'configured': return 'Configured (untested)';
-      case 'verified': return 'Verified & working';
+      case 'not-configured':
+        return 'Not configured';
+      case 'configured':
+        return 'Configured (untested)';
+      case 'verified':
+        return 'Verified & working';
     }
   };
-
-  return (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3 }}
-  >
+  return <motion.div initial={{
+    opacity: 0,
+    y: 20
+  }} animate={{
+    opacity: 1,
+    y: 0
+  }} transition={{
+    duration: 0.3
+  }}>
     <Card className="hover:shadow-md transition-all duration-200">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -69,63 +75,42 @@ const ProviderCard = ({
                 <span className="text-xs text-muted-foreground">
                   {getStatusText(statusResult.status)}
                 </span>
-                {statusResult.error && (
-                  <span className="text-xs text-destructive" title={statusResult.error}>⚠️</span>
-                )}
+                {statusResult.error && <span className="text-xs text-destructive" title={statusResult.error}>⚠️</span>}
               </div>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={onConfigure}
-          >
+          <Button variant="ghost" size="sm" onClick={onConfigure}>
             <Settings2 className="h-4 w-4" />
           </Button>
         </div>
         
         {/* Test Button for configured providers */}
-        {isConfigured && onTest && (
-          <div className="mt-3 pt-3 border-t">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full"
-              onClick={onTest}
-            >
-              {provider.category === 'AI Services' ? (
-                <>
+        {isConfigured && onTest && <div className="mt-3 pt-3 border-t">
+            <Button variant="outline" size="sm" className="w-full" onClick={onTest}>
+              {provider.category === 'AI Services' ? <>
                   <MessageSquare className="h-3 w-3 mr-2" />
                   Test Chat
-                </>
-              ) : (
-                <>
+                </> : <>
                   <Search className="h-3 w-3 mr-2" />
                   Test Search
-                </>
-              )}
+                </>}
             </Button>
-          </div>
-        )}
+          </div>}
       </CardContent>
     </Card>
-  </motion.div>
-  );
+  </motion.div>;
 };
-
-const ConfigurationModal = ({ 
-  provider, 
-  isOpen, 
-  onClose 
-}: { 
-  provider: ApiProvider | null; 
-  isOpen: boolean; 
+const ConfigurationModal = ({
+  provider,
+  isOpen,
+  onClose
+}: {
+  provider: ApiProvider | null;
+  isOpen: boolean;
   onClose: () => void;
 }) => {
   if (!provider) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+  return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -140,25 +125,22 @@ const ConfigurationModal = ({
           <ApiKeyInput provider={provider} />
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export function MinimalAPISettings() {
   const [configuredProviders, setConfiguredProviders] = useState<Record<string, ApiKeyStatusResult>>({});
   const [selectedProvider, setSelectedProvider] = useState<ApiProvider | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [defaultAiProvider, setDefaultAiProvider] = useState<'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio' | undefined>();
   const [isTestingAll, setIsTestingAll] = useState(false);
-  
+
   // Test modal states
   const [testProvider, setTestProvider] = useState<string | null>(null);
   const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
   const [isAITestModalOpen, setIsAITestModalOpen] = useState(false);
   const [isSERPTestModalOpen, setIsSERPTestModalOpen] = useState(false);
-
   const [allProviders, setAllProviders] = useState<ProviderInfo[]>([]);
-  
+
   // Load providers from AIServiceController
   useEffect(() => {
     const loadProviders = async () => {
@@ -182,16 +164,11 @@ export function MinimalAPISettings() {
     name: provider.name,
     description: provider.description,
     serviceKey: provider.id,
-    icon: provider.icon_name === 'brain' ? Brain : 
-          provider.icon_name === 'message-square' ? MessageSquare :
-          provider.icon_name === 'binary' ? Binary :
-          provider.icon_name === 'server' ? Server : 
-          provider.icon_name === 'search' ? Search : Brain,
+    icon: provider.icon_name === 'brain' ? Brain : provider.icon_name === 'message-square' ? MessageSquare : provider.icon_name === 'binary' ? Binary : provider.icon_name === 'server' ? Server : provider.icon_name === 'search' ? Search : Brain,
     link: provider.setup_url,
     required: provider.is_required,
     category: provider.category
   });
-
   useEffect(() => {
     const loadProviderStatus = async () => {
       try {
@@ -201,28 +178,23 @@ export function MinimalAPISettings() {
         console.error('Failed to load provider status:', error);
       }
     };
-
     const loadDefaultProvider = async () => {
       const defaultProvider = getUserPreference('defaultAiProvider');
       setDefaultAiProvider(defaultProvider || 'openrouter');
     };
-
     loadProviderStatus();
     loadDefaultProvider();
   }, []);
-
   const handleProviderConfigure = (provider: ApiProvider) => {
     setSelectedProvider(provider);
     setIsModalOpen(true);
   };
-
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedProvider(null);
     // Only refresh basic status after configuration (no testing)
     getAllApiKeysStatus().then(setConfiguredProviders);
   };
-
   const handleTestAllProviders = async () => {
     setIsTestingAll(true);
     try {
@@ -234,7 +206,6 @@ export function MinimalAPISettings() {
       setIsTestingAll(false);
     }
   };
-
   const handleTestProvider = (provider: ApiProvider) => {
     setTestProvider(provider.serviceKey);
     if (provider.category === 'AI Services') {
@@ -243,13 +214,11 @@ export function MinimalAPISettings() {
       setIsSERPTestModalOpen(true);
     }
   };
-
   const handleTestModalClose = () => {
     setIsAITestModalOpen(false);
     setIsSERPTestModalOpen(false);
     setTestProvider(null);
   };
-
   const handleTestComplete = async (provider: string, success: boolean) => {
     // Update the provider status immediately
     setConfiguredProviders(prev => ({
@@ -265,9 +234,7 @@ export function MinimalAPISettings() {
   // Show all providers, not just configured ones
   const allAiProviders = aiProviders;
   const allSerpProviders = serpProviders;
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-8">
+  return <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold">API Settings</h1>
@@ -289,10 +256,7 @@ export function MinimalAPISettings() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <DefaultAiProviderSelector 
-            defaultAiProvider={defaultAiProvider} 
-            onDefaultAiProviderChange={setDefaultAiProvider} 
-          />
+          <DefaultAiProviderSelector defaultAiProvider={defaultAiProvider} onDefaultAiProviderChange={setDefaultAiProvider} />
         </CardContent>
       </Card>
 
@@ -308,23 +272,14 @@ export function MinimalAPISettings() {
                   AI Providers
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  <Button
-                    onClick={handleTestAllProviders}
-                    disabled={isTestingAll}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {isTestingAll ? (
-                      <>
+                  <Button onClick={handleTestAllProviders} disabled={isTestingAll} variant="outline" size="sm">
+                    {isTestingAll ? <>
                         <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                         Testing...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         <RefreshCw className="h-3 w-3 mr-1" />
                         Test All
-                      </>
-                    )}
+                      </>}
                   </Button>
                   <Badge variant="secondary">
                     {allAiProviders.filter(p => configuredProviders[p.id]?.status !== 'not-configured').length} configured
@@ -333,15 +288,9 @@ export function MinimalAPISettings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {allAiProviders.map(provider => (
-                <ProviderCard
-                  key={provider.id}
-                  provider={convertToApiProvider(provider)}
-                  statusResult={configuredProviders[provider.id] || { status: 'not-configured' }}
-                  onConfigure={() => handleProviderConfigure(convertToApiProvider(provider))}
-                  onTest={() => handleTestProvider(convertToApiProvider(provider))}
-                />
-              ))}
+              {allAiProviders.map(provider => <ProviderCard key={provider.id} provider={convertToApiProvider(provider)} statusResult={configuredProviders[provider.id] || {
+              status: 'not-configured'
+            }} onConfigure={() => handleProviderConfigure(convertToApiProvider(provider))} onTest={() => handleTestProvider(convertToApiProvider(provider))} />)}
             </CardContent>
           </Card>
         </div>
@@ -361,15 +310,9 @@ export function MinimalAPISettings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {allSerpProviders.map(provider => (
-                <ProviderCard
-                  key={provider.id}
-                  provider={convertToApiProvider(provider)}
-                  statusResult={configuredProviders[provider.id] || { status: 'not-configured' }}
-                  onConfigure={() => handleProviderConfigure(convertToApiProvider(provider))}
-                  onTest={() => handleTestProvider(convertToApiProvider(provider))}
-                />
-              ))}
+              {allSerpProviders.map(provider => <ProviderCard key={provider.id} provider={convertToApiProvider(provider)} statusResult={configuredProviders[provider.id] || {
+              status: 'not-configured'
+            }} onConfigure={() => handleProviderConfigure(convertToApiProvider(provider))} onTest={() => handleTestProvider(convertToApiProvider(provider))} />)}
             </CardContent>
           </Card>
         </div>
@@ -379,38 +322,14 @@ export function MinimalAPISettings() {
       <ProviderManagement />
 
       {/* AI Generation Test - Remove this after testing */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Test AI Content Generation
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AIGenerationTest />
-        </CardContent>
-      </Card>
+      
 
       {/* Configuration Modal */}
-      <ConfigurationModal
-        provider={selectedProvider}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-      />
+      <ConfigurationModal provider={selectedProvider} isOpen={isModalOpen} onClose={handleModalClose} />
 
       {/* Test Modals */}
-      <AIChatTestModal
-        provider={testProvider}
-        isOpen={isAITestModalOpen}
-        onClose={handleTestModalClose}
-        onTestComplete={handleTestComplete}
-      />
+      <AIChatTestModal provider={testProvider} isOpen={isAITestModalOpen} onClose={handleTestModalClose} onTestComplete={handleTestComplete} />
       
-      <SERPTestModal
-        provider={testProvider}
-        isOpen={isSERPTestModalOpen}
-        onClose={handleTestModalClose}
-      />
-    </div>
-  );
+      <SERPTestModal provider={testProvider} isOpen={isSERPTestModalOpen} onClose={handleTestModalClose} />
+    </div>;
 }
