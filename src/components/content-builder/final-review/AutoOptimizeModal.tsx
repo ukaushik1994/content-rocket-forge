@@ -91,21 +91,27 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     getTotalSuggestionCount
   } = useContentOptimizer(content);
 
-  // Reset state when modal opens
+  // Refresh status when modal opens
   useEffect(() => {
     if (isOpen) {
-      setCurrentStep('analysis');
-      setOptimizationProgress(0);
-      setHighlightAnalysis(null);
-      setSelectedHighlights([]);
-      
-      // Load saved selections if available
-      const savedSelections = getOptimizationSelections();
-      if (savedSelections) {
-        setSelectedHighlights(savedSelections.highlights);
-      }
+      console.log('🔄 Auto Optimize Modal opened, refreshing AI service status...');
+      // Add a small delay to ensure the modal is fully rendered before checking status
+      setTimeout(() => {
+        refreshStatus();
+      }, 100);
     }
-  }, [isOpen, getOptimizationSelections]);
+  }, [isOpen, refreshStatus]);
+
+  // Debug logging for modal state
+  useEffect(() => {
+    console.log('🔍 AutoOptimizeModal Status Update:', {
+      isOpen,
+      isEnabled,
+      hasProviders,
+      activeProviders,
+      totalProviders: 5 // We check 5 providers: openrouter, anthropic, openai, gemini, mistral
+    });
+  }, [isOpen, isEnabled, hasProviders, activeProviders]);
 
   // Normalize suggestions to a common format
   const normalizeSuggestion = (suggestion: any) => ({
