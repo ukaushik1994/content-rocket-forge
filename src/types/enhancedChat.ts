@@ -68,4 +68,12 @@ export interface EnhancedChatMessage {
     currentWorkflow?: string;
     stepData?: Record<string, any>;
   };
+  isStreaming?: boolean;
+  type?: 'user' | 'assistant' | 'system';
+  metadata?: {
+    reasoning?: string;
+    confidence?: number;
+    sources?: string[];
+    actionResults?: any;
+  };
 }
