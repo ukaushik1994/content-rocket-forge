@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_analytics: {
+        Row: {
+          action_id: string
+          action_label: string
+          action_type: string
+          completed_at: string | null
+          conversation_id: string | null
+          created_at: string
+          effectiveness_score: number | null
+          id: string
+          interaction_data: Json | null
+          success: boolean
+          triggered_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_id: string
+          action_label: string
+          action_type: string
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          effectiveness_score?: number | null
+          id?: string
+          interaction_data?: Json | null
+          success?: boolean
+          triggered_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_id?: string
+          action_label?: string
+          action_type?: string
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          effectiveness_score?: number | null
+          id?: string
+          interaction_data?: Json | null
+          success?: boolean
+          triggered_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      action_patterns: {
+        Row: {
+          action_sequence: string[]
+          context: Json | null
+          created_at: string
+          id: string
+          outcome: string
+          user_id: string
+        }
+        Insert: {
+          action_sequence: string[]
+          context?: Json | null
+          created_at?: string
+          id?: string
+          outcome: string
+          user_id: string
+        }
+        Update: {
+          action_sequence?: string[]
+          context?: Json | null
+          created_at?: string
+          id?: string
+          outcome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_chat_contexts: {
         Row: {
           context_data: Json
@@ -43,22 +118,31 @@ export type Database = {
       }
       ai_conversations: {
         Row: {
+          archived: boolean | null
           created_at: string
           id: string
+          pinned: boolean | null
+          tags: string[] | null
           title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          archived?: boolean | null
           created_at?: string
           id?: string
+          pinned?: boolean | null
+          tags?: string[] | null
           title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          archived?: boolean | null
           created_at?: string
           id?: string
+          pinned?: boolean | null
+          tags?: string[] | null
           title?: string | null
           updated_at?: string
           user_id?: string

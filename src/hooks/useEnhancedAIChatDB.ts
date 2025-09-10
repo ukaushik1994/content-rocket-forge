@@ -10,6 +10,9 @@ export interface AIConversation {
   title: string;
   created_at: string;
   updated_at: string;
+  pinned?: boolean;
+  archived?: boolean;
+  tags?: string[];
 }
 
 export const useEnhancedAIChatDB = () => {

@@ -1,4 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
 import { ContextualAction } from '@/services/aiService';
 
 export interface ActionAnalytics {
@@ -28,7 +27,7 @@ export interface ActionEffectiveness {
 
 class ActionAnalyticsService {
   /**
-   * Track when an action is triggered
+   * Track when an action is triggered (mock implementation until Supabase types update)
    */
   async trackActionTrigger(
     action: ContextualAction,
@@ -37,27 +36,25 @@ class ActionAnalyticsService {
     additionalData?: Record<string, any>
   ): Promise<string | null> {
     try {
-      const { data, error } = await supabase
-        .from('action_analytics')
-        .insert({
-          action_id: action.id,
-          action_type: action.type,
-          action_label: action.label,
-          user_id: userId,
-          conversation_id: conversationId,
-          triggered_at: new Date().toISOString(),
-          success: false, // Will be updated when completed
-          interaction_data: additionalData || {}
-        })
-        .select('id')
-        .single();
+      // Mock implementation - store in localStorage temporarily
+      const analyticsData = {
+        id: `analytics-${Date.now()}`,
+        action_id: action.id,
+        action_type: action.type,
+        action_label: action.label,
+        user_id: userId,
+        conversation_id: conversationId,
+        triggered_at: new Date().toISOString(),
+        success: false,
+        interaction_data: additionalData || {}
+      };
 
-      if (error) {
-        console.error('Error tracking action trigger:', error);
-        return null;
-      }
+      const stored = localStorage.getItem('ai-action-analytics') || '[]';
+      const analytics = JSON.parse(stored);
+      analytics.push(analyticsData);
+      localStorage.setItem('ai-action-analytics', JSON.stringify(analytics));
 
-      return data.id;
+      return analyticsData.id;
     } catch (error) {
       console.error('Error tracking action trigger:', error);
       return null;
@@ -65,7 +62,7 @@ class ActionAnalyticsService {
   }
 
   /**
-   * Track when an action is completed
+   * Track when an action is completed (mock implementation)
    */
   async trackActionCompletion(
     analyticsId: string,
@@ -74,27 +71,18 @@ class ActionAnalyticsService {
     completionData?: Record<string, any>
   ): Promise<void> {
     try {
-      const updateData: any = {
-        completed_at: new Date().toISOString(),
-        success,
-        updated_at: new Date().toISOString()
-      };
-
-      if (effectivenessScore !== undefined) {
-        updateData.effectiveness_score = effectivenessScore;
-      }
-
-      if (completionData) {
-        updateData.interaction_data = completionData;
-      }
-
-      const { error } = await supabase
-        .from('action_analytics')
-        .update(updateData)
-        .eq('id', analyticsId);
-
-      if (error) {
-        console.error('Error tracking action completion:', error);
+      const stored = localStorage.getItem('ai-action-analytics') || '[]';
+      const analytics = JSON.parse(stored);
+      
+      const index = analytics.findIndex((item: any) => item.id === analyticsId);
+      if (index !== -1) {
+        analytics[index].completed_at = new Date().toISOString();
+        analytics[index].success = success;
+        analytics[index].effectiveness_score = effectivenessScore;
+        if (completionData) {
+          analytics[index].interaction_data = { ...analytics[index].interaction_data, ...completionData };
+        }
+        localStorage.setItem('ai-action-analytics', JSON.stringify(analytics));
       }
     } catch (error) {
       console.error('Error tracking action completion:', error);
@@ -102,24 +90,19 @@ class ActionAnalyticsService {
   }
 
   /**
-   * Get action effectiveness data for a user
+   * Get action effectiveness data for a user (mock implementation)
    */
   async getActionEffectiveness(userId: string, limit: number = 50): Promise<ActionEffectiveness[]> {
     try {
-      const { data, error } = await supabase
-        .from('action_analytics')
-        .select('*')
-        .eq('user_id', userId)
-        .order('triggered_at', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('Error fetching action analytics:', error);
-        return [];
-      }
+      const stored = localStorage.getItem('ai-action-analytics') || '[]';
+      const analytics = JSON.parse(stored);
+      
+      const userAnalytics = analytics
+        .filter((item: any) => item.user_id === userId)
+        .slice(0, limit);
 
       // Group by action_id and calculate effectiveness
-      const actionGroups = data.reduce((acc, record) => {
+      const actionGroups = userAnalytics.reduce((acc: any, record: any) => {
         const key = record.action_id;
         if (!acc[key]) {
           acc[key] = {
@@ -131,7 +114,7 @@ class ActionAnalyticsService {
         }
         acc[key].records.push(record);
         return acc;
-      }, {} as Record<string, any>);
+      }, {});
 
       return Object.values(actionGroups).map((group: any) => {
         const records = group.records;
@@ -157,7 +140,7 @@ class ActionAnalyticsService {
           total_triggers: records.length,
           success_rate: completedRecords.length > 0 ? (successfulRecords.length / completedRecords.length) * 100 : 0,
           avg_completion_time: avgCompletionTime,
-          effectiveness_score,
+          effectiveness_score: effectivenessScore,
           last_triggered: records[0]?.triggered_at || ''
         };
       });
@@ -174,9 +157,8 @@ class ActionAnalyticsService {
     const effectiveness = await this.getActionEffectiveness(userId, 100);
     
     return effectiveness
-      .filter(action => action.total_triggers >= 2) // Minimum threshold
+      .filter(action => action.total_triggers >= 2)
       .sort((a, b) => {
-        // Sort by effectiveness score, then success rate, then usage frequency
         if (b.effectiveness_score !== a.effectiveness_score) {
           return b.effectiveness_score - a.effectiveness_score;
         }
@@ -199,7 +181,7 @@ class ActionAnalyticsService {
       const topActions = await this.getTopPerformingActions(userId, 5);
       
       const recommendations: ContextualAction[] = topActions
-        .filter(action => action.success_rate > 50) // Only recommend successful actions
+        .filter(action => action.success_rate > 50)
         .map(action => ({
           id: `recommended-${action.action_id}`,
           type: action.action_type as any,
@@ -223,7 +205,7 @@ class ActionAnalyticsService {
   }
 
   /**
-   * Track action patterns for learning
+   * Track action patterns for learning (mock implementation)
    */
   async trackActionPattern(
     userId: string,
@@ -232,19 +214,18 @@ class ActionAnalyticsService {
     context?: Record<string, any>
   ): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('action_patterns')
-        .insert({
-          user_id: userId,
-          action_sequence: actionSequence,
-          outcome,
-          context: context || {},
-          created_at: new Date().toISOString()
-        });
+      const patternData = {
+        user_id: userId,
+        action_sequence: actionSequence,
+        outcome,
+        context: context || {},
+        created_at: new Date().toISOString()
+      };
 
-      if (error) {
-        console.error('Error tracking action pattern:', error);
-      }
+      const stored = localStorage.getItem('ai-action-patterns') || '[]';
+      const patterns = JSON.parse(stored);
+      patterns.push(patternData);
+      localStorage.setItem('ai-action-patterns', JSON.stringify(patterns));
     } catch (error) {
       console.error('Error tracking action pattern:', error);
     }
@@ -272,7 +253,6 @@ class ActionAnalyticsService {
       );
       const overallSuccessRate = totalActions > 0 ? (totalSuccesses / totalActions) * 100 : 0;
 
-      // Generate trend data (last 7 days)
       const trendData = await this.generateTrendData(userId, 7);
 
       return {
@@ -296,19 +276,13 @@ class ActionAnalyticsService {
 
   private async getRecentActivity(userId: string, limit: number): Promise<ActionAnalytics[]> {
     try {
-      const { data, error } = await supabase
-        .from('action_analytics')
-        .select('*')
-        .eq('user_id', userId)
-        .order('triggered_at', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('Error fetching recent activity:', error);
-        return [];
-      }
-
-      return data || [];
+      const stored = localStorage.getItem('ai-action-analytics') || '[]';
+      const analytics = JSON.parse(stored);
+      
+      return analytics
+        .filter((item: any) => item.user_id === userId)
+        .sort((a: any, b: any) => new Date(b.triggered_at).getTime() - new Date(a.triggered_at).getTime())
+        .slice(0, limit);
     } catch (error) {
       console.error('Error fetching recent activity:', error);
       return [];
@@ -316,25 +290,20 @@ class ActionAnalyticsService {
   }
 
   private async generateTrendData(userId: string, days: number): Promise<any[]> {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - days);
-
     try {
-      const { data, error } = await supabase
-        .from('action_analytics')
-        .select('triggered_at, success')
-        .eq('user_id', userId)
-        .gte('triggered_at', startDate.toISOString())
-        .lte('triggered_at', endDate.toISOString());
+      const stored = localStorage.getItem('ai-action-analytics') || '[]';
+      const analytics = JSON.parse(stored);
+      
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - days);
 
-      if (error) {
-        console.error('Error generating trend data:', error);
-        return [];
-      }
+      const filteredData = analytics.filter((item: any) => {
+        const itemDate = new Date(item.triggered_at);
+        return item.user_id === userId && itemDate >= startDate && itemDate <= endDate;
+      });
 
-      // Group by day
-      const dailyData = data.reduce((acc, record) => {
+      const dailyData = filteredData.reduce((acc: any, record: any) => {
         const date = new Date(record.triggered_at).toISOString().split('T')[0];
         if (!acc[date]) {
           acc[date] = { date, total: 0, successful: 0 };
@@ -342,7 +311,7 @@ class ActionAnalyticsService {
         acc[date].total++;
         if (record.success) acc[date].successful++;
         return acc;
-      }, {} as Record<string, any>);
+      }, {});
 
       return Object.values(dailyData).sort((a: any, b: any) => 
         new Date(a.date).getTime() - new Date(b.date).getTime()

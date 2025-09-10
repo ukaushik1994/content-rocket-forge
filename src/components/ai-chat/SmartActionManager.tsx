@@ -165,7 +165,7 @@ export const SmartActionManager: React.FC<SmartActionManagerProps> = ({
           <Button
             onClick={() => handleActionClick(action)}
             disabled={isLoading}
-            variant={action.variant || (isRecommendation ? 'outline' : 'default')}
+            variant={action.variant === 'primary' ? 'default' : (action.variant || (isRecommendation ? 'outline' : 'default'))}
             size="sm"
             className="w-full"
           >

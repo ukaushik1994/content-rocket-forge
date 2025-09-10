@@ -242,6 +242,14 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               {conversation.title}
                             </h3>
                           </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {conversation.pinned && <Pin className="h-3 w-3 text-warning fill-warning" />}
+                            <MessageSquare className="h-4 w-4 text-white/60 flex-shrink-0" />
+                            <h3 className="text-sm font-medium text-white truncate">
+                              {conversation.title}
+                            </h3>
+                          </div>
                           <div className="flex items-center justify-between">
                             <p className="text-xs text-white/50">
                               {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
@@ -253,6 +261,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               </Badge>
                             )}
                           </div>
+                        </div>
                         </div>
                         
                         <DropdownMenu>
@@ -271,7 +280,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onPinConversation(conversation.id);
+                                  onPinConversation?.(conversation.id);
                                 }}
                                 className="text-white/70 hover:text-white focus:text-white"
                               >
@@ -287,10 +296,10 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                 }}
                                 className="text-white/70 hover:text-white focus:text-white"
                               >
-                                <Archive className="h-4 w-4 mr-2" />
-                                {conversation.archived ? 'Unarchive' : 'Archive'}
-                              </DropdownMenuItem>
-                            )}
+                                 <Archive className="h-4 w-4 mr-2" />
+                                 {conversation.archived ? 'Unarchive' : 'Archive'}
+                               </DropdownMenuItem>
+                             )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
