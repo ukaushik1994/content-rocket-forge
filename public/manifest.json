@@ -1,0 +1,35 @@
+{
+  "name": "Creaiter - AI Content Platform",
+  "short_name": "Creaiter",
+  "description": "Enterprise AI content creation and management platform",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48 32x32 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "AI Chat",
+      "short_name": "Chat",
+      "description": "Start a new AI conversation",
+      "url": "/ai-chat",
+      "icons": [{ "src": "/favicon.ico", "sizes": "96x96" }]
+    },
+    {
+      "name": "Enterprise Hub",
+      "short_name": "Enterprise",
+      "description": "Access enterprise features",
+      "url": "/enterprise",
+      "icons": [{ "src": "/favicon.ico", "sizes": "96x96" }]
+    }
+  ]
+}

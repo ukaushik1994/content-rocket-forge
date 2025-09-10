@@ -206,6 +206,63 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_file_analyses: {
+        Row: {
+          analysis_type: string
+          competitive_analysis: Json | null
+          content_preview: string | null
+          created_at: string
+          entities: Json | null
+          extracted_text: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          insights: Json | null
+          key_topics: string[] | null
+          optimization_suggestions: Json | null
+          sentiment_score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_type?: string
+          competitive_analysis?: Json | null
+          content_preview?: string | null
+          created_at?: string
+          entities?: Json | null
+          extracted_text?: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          insights?: Json | null
+          key_topics?: string[] | null
+          optimization_suggestions?: Json | null
+          sentiment_score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_type?: string
+          competitive_analysis?: Json | null
+          content_preview?: string | null
+          created_at?: string
+          entities?: Json | null
+          extracted_text?: string | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          insights?: Json | null
+          key_topics?: string[] | null
+          optimization_suggestions?: Json | null
+          sentiment_score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_messages: {
         Row: {
           attachments: Json | null
@@ -864,6 +921,54 @@ export type Database = {
           is_primary?: boolean | null
           keyword_id?: string
           volume?: number | null
+        }
+        Relationships: []
+      }
+      collaboration_sessions: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          ended_at: string | null
+          host_user_id: string
+          id: string
+          participants: Json | null
+          screen_sharing_active: boolean | null
+          screen_sharing_user_id: string | null
+          session_data: Json | null
+          session_name: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          host_user_id: string
+          id?: string
+          participants?: Json | null
+          screen_sharing_active?: boolean | null
+          screen_sharing_user_id?: string | null
+          session_data?: Json | null
+          session_name: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          host_user_id?: string
+          id?: string
+          participants?: Json | null
+          screen_sharing_active?: boolean | null
+          screen_sharing_user_id?: string | null
+          session_data?: Json | null
+          session_name?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2003,6 +2108,59 @@ export type Database = {
           },
         ]
       }
+      custom_models: {
+        Row: {
+          accuracy: number | null
+          base_model: string
+          created_at: string
+          dataset_id: string | null
+          id: string
+          model_config: Json
+          name: string
+          status: string
+          training_progress: number | null
+          updated_at: string
+          use_case: string | null
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          base_model?: string
+          created_at?: string
+          dataset_id?: string | null
+          id?: string
+          model_config?: Json
+          name: string
+          status?: string
+          training_progress?: number | null
+          updated_at?: string
+          use_case?: string | null
+          user_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          base_model?: string
+          created_at?: string
+          dataset_id?: string | null
+          id?: string
+          model_config?: Json
+          name?: string
+          status?: string
+          training_progress?: number | null
+          updated_at?: string
+          use_case?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_models_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "training_datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dashboard_alerts: {
         Row: {
           action_buttons: Json | null
@@ -2319,6 +2477,45 @@ export type Database = {
           request_duration_ms?: number | null
           success?: boolean
           total_tokens?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mobile_settings: {
+        Row: {
+          created_at: string
+          id: string
+          notification_settings: Json
+          notifications_enabled: boolean
+          offline_mode: boolean
+          performance_settings: Json
+          pwa_enabled: boolean
+          ui_settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_settings?: Json
+          notifications_enabled?: boolean
+          offline_mode?: boolean
+          performance_settings?: Json
+          pwa_enabled?: boolean
+          ui_settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_settings?: Json
+          notifications_enabled?: boolean
+          offline_mode?: boolean
+          performance_settings?: Json
+          pwa_enabled?: boolean
+          ui_settings?: Json
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -3459,6 +3656,125 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          joined_at: string
+          last_active: string | null
+          permissions: Json
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          last_active?: string | null
+          permissions?: Json
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          last_active?: string | null
+          permissions?: Json
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_workspaces: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          settings: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          settings?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_datasets: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          file_path: string | null
+          id: string
+          metadata: Json
+          name: string
+          size: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          metadata?: Json
+          name: string
+          size?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          metadata?: Json
+          name?: string
+          size?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       unified_keywords: {
         Row: {
           competition_score: number | null
@@ -3619,6 +3935,96 @@ export type Database = {
           relevance_threshold?: number | null
           scan_frequency?: string
           trend_threshold?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webhooks: {
+        Row: {
+          created_at: string
+          events: Json
+          failure_count: number
+          id: string
+          last_triggered: string | null
+          name: string
+          secret: string
+          status: string
+          success_count: number
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          events?: Json
+          failure_count?: number
+          id?: string
+          last_triggered?: string | null
+          name: string
+          secret: string
+          status?: string
+          success_count?: number
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          events?: Json
+          failure_count?: number
+          id?: string
+          last_triggered?: string | null
+          name?: string
+          secret?: string
+          status?: string
+          success_count?: number
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workflow_automations: {
+        Row: {
+          actions: Json | null
+          automation_name: string
+          created_at: string
+          execution_count: number | null
+          id: string
+          is_active: boolean | null
+          last_executed_at: string | null
+          success_count: number | null
+          trigger_conditions: Json | null
+          trigger_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json | null
+          automation_name: string
+          created_at?: string
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_executed_at?: string | null
+          success_count?: number | null
+          trigger_conditions?: Json | null
+          trigger_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json | null
+          automation_name?: string
+          created_at?: string
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_executed_at?: string | null
+          success_count?: number | null
+          trigger_conditions?: Json | null
+          trigger_type?: string
           updated_at?: string
           user_id?: string
         }
