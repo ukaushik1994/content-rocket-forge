@@ -22,6 +22,11 @@ import { TeamWorkspaceManager } from './TeamWorkspaceManager';
 import { MobileExperienceSettings } from './MobileExperienceSettings';
 import { APIEcosystemManager } from './APIEcosystemManager';
 import { AITrainingCustomization } from './AITrainingCustomization';
+import { EnhancedSecurityDashboard } from './enhanced/EnhancedSecurityDashboard';
+import { AdvancedMobileExperience } from './enhanced/AdvancedMobileExperience';
+import { AITrainingPipeline } from './enhanced/AITrainingPipeline';
+import { PerformanceMonitor } from './enhanced/PerformanceMonitor';
+import { RealTimeCollaboration } from './enhanced/RealTimeCollaboration';
 
 interface EnterpriseFeature {
   id: string;
@@ -96,6 +101,46 @@ const ENTERPRISE_FEATURES: EnterpriseFeature[] = [
     icon: <Settings className="h-5 w-5" />,
     status: 'active',
     category: 'ai'
+  },
+  {
+    id: 'enhanced-security',
+    title: 'Enhanced Security Dashboard',
+    description: 'Advanced threat detection and compliance monitoring',
+    icon: <Shield className="h-5 w-5" />,
+    status: 'active',
+    category: 'security'
+  },
+  {
+    id: 'advanced-mobile',
+    title: 'Advanced Mobile Experience',
+    description: 'Native mobile features and offline sync',
+    icon: <Smartphone className="h-5 w-5" />,
+    status: 'active',
+    category: 'mobile'
+  },
+  {
+    id: 'ai-training-pipeline',
+    title: 'AI Training Pipeline',
+    description: 'Automated training workflows and model management',
+    icon: <Brain className="h-5 w-5" />,
+    status: 'active',
+    category: 'ai'
+  },
+  {
+    id: 'performance-monitor',
+    title: 'Performance Monitor',
+    description: 'Real-time system performance and optimization',
+    icon: <BarChart3 className="h-5 w-5" />,
+    status: 'active',
+    category: 'analytics'
+  },
+  {
+    id: 'real-time-collaboration',
+    title: 'Real-Time Collaboration',
+    description: 'Live editing and team coordination features',
+    icon: <Users className="h-5 w-5" />,
+    status: 'active',
+    category: 'collaboration'
   }
 ];
 
@@ -207,6 +252,61 @@ export const EnterpriseHub: React.FC = () => {
     );
   }
 
+  if (activeFeature === 'enhanced-security') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <EnhancedSecurityDashboard />
+      </div>
+    );
+  }
+
+  if (activeFeature === 'advanced-mobile') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <AdvancedMobileExperience />
+      </div>
+    );
+  }
+
+  if (activeFeature === 'ai-training-pipeline') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <AITrainingPipeline />
+      </div>
+    );
+  }
+
+  if (activeFeature === 'performance-monitor') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <PerformanceMonitor />
+      </div>
+    );
+  }
+
+  if (activeFeature === 'real-time-collaboration') {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setActiveFeature('overview')}>
+          ← Back to Enterprise Hub
+        </Button>
+        <RealTimeCollaboration />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -233,6 +333,11 @@ export const EnterpriseHub: React.FC = () => {
           <TabsTrigger value="mobile-app">Mobile</TabsTrigger>
           <TabsTrigger value="api-ecosystem">APIs</TabsTrigger>
           <TabsTrigger value="custom-training">Training</TabsTrigger>
+          <TabsTrigger value="enhanced-security">Enhanced Security</TabsTrigger>
+          <TabsTrigger value="advanced-mobile">Advanced Mobile</TabsTrigger>
+          <TabsTrigger value="ai-training-pipeline">AI Pipeline</TabsTrigger>
+          <TabsTrigger value="performance-monitor">Performance</TabsTrigger>
+          <TabsTrigger value="real-time-collaboration">Collaboration</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
