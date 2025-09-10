@@ -21,7 +21,8 @@ import {
   Database,
   Globe
 } from 'lucide-react';
-import { useUser } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface SecurityMetrics {
   overallScore: number;
@@ -147,7 +148,24 @@ export const SecurityCompliancePanel: React.FC = () => {
   const [metrics, setMetrics] = useState<SecurityMetrics>(MOCK_SECURITY_METRICS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(MOCK_AUDIT_LOGS);
   const [encryptionEnabled, setEncryptionEnabled] = useState(true);
-  const { data: user } = useUser();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Get current user
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    getCurrentUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
