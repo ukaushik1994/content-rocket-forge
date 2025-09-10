@@ -29,7 +29,7 @@ import CalendarPage from "./pages/research/Calendar";
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
 import { AIStreamingChatPage } from "./pages/AIStreamingChatPage";
-import { EnterpriseHubPage } from "./pages/EnterpriseHubPage";
+
 import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
@@ -38,7 +38,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
-import { EnterpriseRBACProvider } from "./contexts/EnterpriseRBACContext";
+
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -47,7 +47,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <EnterpriseRBACProvider>
+        
           <ContentProvider>
             <FeedbackProvider>
               <TourProvider>
@@ -78,8 +78,6 @@ const App = () => (
                    <Route path="/ai-streaming-chat" element={<ProtectedRoute><AIStreamingChatPage /></ProtectedRoute>} />
                    <Route path="/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
                    
-                   {/* Enterprise Hub route */}
-                   <Route path="/enterprise" element={<ProtectedRoute><EnterpriseHubPage /></ProtectedRoute>} />
                   
                   {/* Research routes */}
                   <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
@@ -109,7 +107,7 @@ const App = () => (
               </TourProvider>
             </FeedbackProvider>
           </ContentProvider>
-        </EnterpriseRBACProvider>
+        
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
