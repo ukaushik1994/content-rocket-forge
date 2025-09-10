@@ -26,26 +26,40 @@ export function useAIServiceStatus() {
     try {
       setStatus(prev => ({ ...prev, isLoading: true }));
 
-      // Clear provider cache to force fresh data
-      AIServiceController.clearCache();
-      
       // Check if service is enabled
       const isEnabled = getUserPreference('enableAiService') !== false;
 
-      // Get provider information with fresh data
-      const providers = await AIServiceController.getActiveProviders();
-      const activeProviders = providers.filter(p => p.status === 'active').length;
+      // Check if we have any API keys configured using the unified service
+      const { getApiKey } = await import('@/services/apiKeys/crud');
+      const providers = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral'] as const;
+      
+      let activeProviders = 0;
+      const providerStatus: Array<{name: string, status: string}> = [];
+      
+      for (const provider of providers) {
+        try {
+          const key = await getApiKey(provider);
+          if (key && key.length > 0) {
+            activeProviders++;
+            providerStatus.push({ name: provider, status: 'active' });
+          } else {
+            providerStatus.push({ name: provider, status: 'inactive' });
+          }
+        } catch (error) {
+          providerStatus.push({ name: provider, status: 'error' });
+        }
+      }
 
       console.log('🔄 AI Service Status Refreshed:', {
         enabled: isEnabled,
         total: providers.length,
         active: activeProviders,
-        providers: providers.map(p => ({ name: p.provider, status: p.status }))
+        providers: providerStatus
       });
 
       setStatus({
         isEnabled,
-        hasProviders: providers.length > 0,
+        hasProviders: activeProviders > 0,
         activeProviders,
         totalProviders: providers.length,
         isLoading: false

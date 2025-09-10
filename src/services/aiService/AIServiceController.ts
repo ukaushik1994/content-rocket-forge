@@ -414,123 +414,75 @@ class AIServiceController {
   }
 
   /**
-   * Call a specific provider
+   * Call a specific provider using the unified enhanced-ai-chat function
    */
   private async callProvider(provider: AIProvider, request: AIGenerateRequest, customSystemPrompt?: string): Promise<any> {
     try {
       const systemPrompt = customSystemPrompt || this.getSystemPrompt(request.use_case);
       
-      // Try to get decrypted API key from new service, fallback to encrypted key from database
+      // Get decrypted API keys from new unified service
       const { getApiKey } = await import('@/services/apiKeys/crud');
-      let apiKeyToUse = null;
+      const apiKeys: Record<string, string> = {};
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User authentication required');
+      }
+      
+      // Try to get decrypted key for the specific provider
       try {
-        apiKeyToUse = await getApiKey(provider.provider as any);
-        if (apiKeyToUse) {
+        const key = await getApiKey(provider.provider as any);
+        if (key) {
+          apiKeys[provider.provider] = key;
           console.log(`🔑 Using decrypted key for ${provider.provider}`);
         }
       } catch (error) {
-        // Fallback to database encrypted key
-        if (provider.api_key && provider.api_key.trim()) {
-          apiKeyToUse = provider.api_key;
-          console.log(`🔑 Using legacy encrypted key for ${provider.provider}`);
-        }
-      }
-      
-      if (!apiKeyToUse) {
+        console.error(`Failed to get API key for ${provider.provider}:`, error);
         throw new Error(`No valid API key found for ${provider.provider}`);
       }
       
-      const { data, error } = await supabase.functions.invoke('ai-proxy', {
+      if (Object.keys(apiKeys).length === 0) {
+        throw new Error(`No API keys configured for ${provider.provider}`);
+      }
+      
+      // Use enhanced-ai-chat edge function for consistency
+      const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
-          service: provider.provider,
-          endpoint: 'chat',
-          params: {
-            model: request.model || provider.preferred_model || this.getDefaultModel(provider.provider),
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: request.input }
-            ],
-            temperature: request.temperature || 0.7,
-            max_tokens: request.max_tokens || 2000
-          },
-          apiKey: apiKeyToUse
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: request.input }
+          ],
+          userId: user.id,
+          apiKeys,
+          context: {} // Empty context for non-chat AI generations
         }
       });
 
       if (error) {
-        throw new Error(`Edge function error: ${error.message}`);
+        throw new Error(`Enhanced AI service error: ${error.message}`);
       }
 
       if (!data) {
-        throw new Error('No response from AI proxy');
+        throw new Error('No response from enhanced AI service');
       }
 
       if (data.error) {
         throw new Error(data.error);
       }
 
-      // Enhanced response parsing with detailed logging
-      console.log('🔍 Raw response from edge function:', JSON.stringify(data, null, 2));
+      // Enhanced response parsing for enhanced-ai-chat format
+      console.log('🔍 Raw response from enhanced-ai-chat:', JSON.stringify(data, null, 2));
       
       let content = '';
       
-      // Check if the edge function returned an error
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
-      // Extract the actual AI response data - handle enhanced-ai-chat response format
-      let responseData = data;
-      
-      // If this looks like an enhanced-ai-chat response, extract the message content
+      // Enhanced-ai-chat returns the message directly
       if (data.message && typeof data.message === 'string') {
         content = data.message;
         console.log('✅ Extracted content from enhanced-ai-chat message field');
-      } else if (data.data) {
-        responseData = data.data;
-        console.log('📦 Extracted response data from data field:', JSON.stringify(responseData, null, 2));
       } else {
-        console.log('📦 Using direct response data:', JSON.stringify(responseData, null, 2));
-      }
-      
-      
-      // Continue parsing if content not already extracted
-      if (!content) {
-        // Handle different AI provider response formats
-        if (responseData.choices && responseData.choices[0]?.message?.content) {
-          // OpenAI/OpenRouter format
-          content = responseData.choices[0].message.content;
-          console.log('✅ Extracted content using OpenAI format');
-        } else if (responseData.content && Array.isArray(responseData.content) && responseData.content[0]?.text) {
-          // Anthropic format
-          content = responseData.content[0].text;
-          console.log('✅ Extracted content using Anthropic format');
-        } else if (responseData.candidates && responseData.candidates[0]?.content?.parts[0]?.text) {
-          // Gemini format
-          content = responseData.candidates[0].content.parts[0].text;
-          console.log('✅ Extracted content using Gemini format');
-        } else if (typeof responseData.content === 'string') {
-          // Direct content string
-          content = responseData.content;
-          console.log('✅ Extracted content as direct string');
-        } else if (typeof responseData === 'string') {
-          // Raw string response
-          content = responseData;
-          console.log('✅ Using raw string response');
-        } else {
-          console.error('❌ Unexpected response format from AI provider:', {
-            hasData: !!data.data,
-            hasMessage: !!data.message,
-            hasChoices: !!(responseData.choices),
-            hasContent: !!(responseData.content),
-            hasCandidates: !!(responseData.candidates),
-            responseDataType: typeof responseData,
-            responseDataKeys: Object.keys(responseData || {}),
-            fullResponse: data
-          });
-          throw new Error(`Unexpected response format from AI provider. Response type: ${typeof responseData}, Keys: ${Object.keys(responseData || {}).join(', ')}`);
-        }
+        console.warn('❌ Unexpected response format from enhanced-ai-chat:', data);
+        throw new Error('Invalid response format from AI service');
       }
 
       return {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getApiKey } from '@/services/apiKeyService';
+import { getApiKey } from '@/services/apiKeys/crud';
 
 interface SerpServiceStatus {
   isEnabled: boolean;
