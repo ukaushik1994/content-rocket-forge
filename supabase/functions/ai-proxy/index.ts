@@ -98,6 +98,10 @@ async function handleOpenAI(endpoint: string, apiKey: string, params: any) {
     return await completionOpenAI(apiKey, params);
   }
   
+  if (endpoint === 'transcribe') {
+    return await transcribeOpenAI(apiKey, params);
+  }
+  
   throw new Error(`Unsupported OpenAI endpoint: ${endpoint}`);
 }
 
@@ -204,6 +208,66 @@ async function completionOpenAI(apiKey: string, params: any) {
   ];
 
   return await chatOpenAI(apiKey, { ...params, messages });
+}
+
+async function transcribeOpenAI(apiKey: string, params: any) {
+  console.log('🎤 Processing OpenAI transcription request');
+  
+  if (!params.audio) {
+    throw new Error('No audio data provided for transcription');
+  }
+
+  try {
+    // Convert base64 audio to blob
+    const binaryString = atob(params.audio);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    // Prepare form data
+    const formData = new FormData();
+    const blob = new Blob([bytes], { type: params.mimeType || 'audio/webm' });
+    formData.append('file', blob, `audio.${params.extension || 'webm'}`);
+    formData.append('model', params.model || 'whisper-1');
+    
+    if (params.language) {
+      formData.append('language', params.language);
+    }
+    
+    if (params.prompt) {
+      formData.append('prompt', params.prompt);
+    }
+
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ OpenAI transcription failed:', response.status, errorData);
+      throw new Error(`OpenAI transcription failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ OpenAI transcription successful');
+    
+    return {
+      success: true,
+      data: {
+        text: data.text,
+        language: data.language
+      },
+      provider: 'OpenAI'
+    };
+  } catch (error: any) {
+    console.error('💥 OpenAI transcription exception:', error);
+    throw new Error(`OpenAI transcription error: ${error.message}`);
+  }
 }
 
 async function handleAnthropic(endpoint: string, apiKey: string, params: any) {
