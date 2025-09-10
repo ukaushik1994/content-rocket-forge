@@ -212,7 +212,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="border-t border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm">
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm">
           <div className="max-w-6xl mx-auto px-6 py-4">
             <EnhancedMessageInput onSendMessage={handleSendMessage} isLoading={isLoading} placeholder={messages.length === 0 ? "Ask me about your content performance, start optimization workflows, or get strategic insights..." : "Continue the conversation..."} />
           </div>
