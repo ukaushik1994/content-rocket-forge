@@ -59,6 +59,14 @@ class AIServiceController {
   private lastCacheUpdate = 0;
   private readonly CACHE_TTL = 30000; // 30 seconds
 
+  /**
+   * Clear provider cache to force fresh data fetch
+   */
+  clearCache(): void {
+    this.providersCache = [];
+    this.lastCacheUpdate = 0;
+  }
+
   // Provider metadata registry
   private static readonly PROVIDER_METADATA: Record<string, Omit<ProviderInfo, 'id' | 'status' | 'is_configured' | 'last_verified'>> = {
     openrouter: {
@@ -187,73 +195,53 @@ class AIServiceController {
       return this.providersCache;
     }
 
-    // Auto-sync API keys if needed
-    try {
-      const { autoSyncApiKeys } = await import('./providerSync');
-      await autoSyncApiKeys();
-    } catch (error) {
-      console.error('Auto-sync failed:', error);
-    }
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         return [];
       }
 
-      const { data, error } = await supabase
-        .from('ai_service_providers')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('priority', { ascending: true });
-
-      if (error) {
-        console.error('Failed to fetch AI providers:', error);
-        return [];
-      }
-
-      // Filter providers that have valid API keys (either new decrypted or legacy encrypted)
+      // Use unified API key detection - check all supported providers
       const { getApiKey } = await import('@/services/apiKeys/crud');
+      const supportedProviders = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
       const validProviders: AIProvider[] = [];
       
-      for (const providerData of data || []) {
-        let hasValidKey = false;
+      for (let i = 0; i < supportedProviders.length; i++) {
+        const providerId = supportedProviders[i];
         
         try {
-          // First, try to get decrypted key from new API key service
-          const decryptedKey = await getApiKey(providerData.provider as any);
-          if (decryptedKey) {
-            hasValidKey = true;
-            console.log(`✅ Found decrypted key for ${providerData.provider}`);
+          // Use the same unified API key service as chat
+          const apiKey = await getApiKey(providerId as any);
+          if (apiKey && apiKey.trim()) {
+            const metadata = AIServiceController.PROVIDER_METADATA[providerId];
+            if (metadata) {
+              validProviders.push({
+                id: `provider-${i}`,
+                provider: providerId,
+                api_key: apiKey, // This will be handled securely by the service
+                preferred_model: metadata.available_models[0],
+                priority: i + 1,
+                status: 'active',
+                description: metadata.description,
+                setup_url: metadata.setup_url,
+                icon_name: metadata.icon_name,
+                category: metadata.category,
+                capabilities: metadata.capabilities,
+                available_models: metadata.available_models,
+                is_required: metadata.is_required
+              });
+              console.log(`✅ Found API key for ${providerId} via unified service`);
+            }
           }
         } catch (error) {
-          // If new API key service fails, check if there's an encrypted key in database
-          if (providerData.api_key && providerData.api_key.trim()) {
-            hasValidKey = true;
-            console.log(`✅ Found legacy encrypted key for ${providerData.provider}`);
-          }
-        }
-        
-        if (hasValidKey) {
-          validProviders.push({
-            ...providerData,
-            status: providerData.status as 'active' | 'inactive' | 'error',
-            capabilities: Array.isArray(providerData.capabilities) 
-              ? providerData.capabilities.filter((item): item is string => typeof item === 'string')
-              : [],
-            available_models: Array.isArray(providerData.available_models) 
-              ? providerData.available_models.filter((item): item is string => typeof item === 'string')
-              : []
-          });
-        } else {
-          console.warn(`❌ Provider ${providerData.provider} has no valid API key`);
+          console.warn(`❌ No API key found for ${providerId}:`, error);
         }
       }
 
       this.providersCache = validProviders;
       this.lastCacheUpdate = now;
       
+      console.log(`🔄 Loaded ${validProviders.length} active providers via unified API key service`);
       return this.providersCache;
     } catch (error) {
       console.error('Error getting active providers:', error);
@@ -522,14 +510,6 @@ class AIServiceController {
     } catch (error) {
       console.error('Error updating provider status:', error);
     }
-  }
-
-  /**
-   * Clear providers cache
-   */
-  clearCache(): void {
-    this.providersCache = [];
-    this.lastCacheUpdate = 0;
   }
 
   /**
