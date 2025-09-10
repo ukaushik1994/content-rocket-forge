@@ -7,12 +7,18 @@ import { AdvancedChatFeatures } from './AdvancedChatFeatures';
 import { RichMediaRenderer } from './RichMediaRenderer';
 import { EnhancedFileProcessor } from './EnhancedFileProcessor';
 import { PerformanceAnalyticsWidget } from './PerformanceAnalyticsWidget';
+import { EnhancedContextSidebar } from '@/components/context/EnhancedContextSidebar';
 import { CollaborationManager } from '@/components/collaboration/CollaborationManager';
 import { RealtimeNotificationCenter } from '../notifications/RealtimeNotificationCenter';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
+import { useAuth } from '@/contexts/AuthContext';
+import { realTimePerformanceService } from '@/services/analytics/RealTimePerformanceService';
+import { advancedFileAnalyzer } from '@/services/fileAnalysis/AdvancedFileAnalyzer';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { MessageSquare, Brain } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 

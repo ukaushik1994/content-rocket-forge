@@ -11,12 +11,7 @@ export class AdvancedFileAnalyzer {
         ...baseAnalysis,
         insights: [
           ...(baseAnalysis.insights || []),
-          {
-            category: 'excel-analysis',
-            insight: 'Excel file contains structured data suitable for analysis',
-            confidence: 0.9,
-            impact: 'high'
-          }
+          'Excel file contains structured data suitable for analysis'
         ]
       };
     } catch (error) {
@@ -35,12 +30,7 @@ export class AdvancedFileAnalyzer {
         ...baseAnalysis,
         insights: [
           ...(baseAnalysis.insights || []),
-          {
-            category: 'presentation-analysis',
-            insight: 'PowerPoint presentation analyzed for content structure',
-            confidence: 0.8,
-            impact: 'medium'
-          }
+          'PowerPoint presentation analyzed for content structure'
         ]
       };
     } catch (error) {
@@ -59,12 +49,7 @@ export class AdvancedFileAnalyzer {
         ...baseAnalysis,
         insights: [
           ...(baseAnalysis.insights || []),
-          {
-            category: 'image-analysis',
-            insight: 'Image analyzed with computer vision techniques',
-            confidence: 0.85,
-            impact: 'medium'
-          }
+          'Image analyzed with computer vision techniques'
         ]
       };
     } catch (error) {

@@ -434,7 +434,7 @@ export class EnhancedContextManager {
         .eq('user_id', this.userId)
         .contains('workflow_data', { projectId });
 
-      return data?.[0]?.workflow_data || {};
+      return (data?.[0]?.workflow_data as Record<string, any>) || {};
     } catch (error) {
       return {};
     }
