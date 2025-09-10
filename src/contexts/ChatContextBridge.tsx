@@ -1,6 +1,15 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
-import { ConversationMessage } from '@/hooks/useAIChat';
+
+// Define ConversationMessage interface locally since the hook was removed
+interface ConversationMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  actions?: any[];
+  type?: 'user' | 'assistant' | 'system';
+}
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 

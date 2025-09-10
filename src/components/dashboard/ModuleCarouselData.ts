@@ -118,10 +118,10 @@ export const modules: ModuleData[] = [
     description: 'Get instant help with content strategy, writing assistance, and SEO guidance from your AI companion.',
     features: ['Content Strategy', 'Writing Help', 'SEO Guidance', '24/7 Support'],
     icon: MessageSquare,
-    route: '/ai-chat',
+    route: '/ai-streaming-chat',
     cta: 'Chat with AI',
     secondaryCta: 'Quick Help',
-    secondaryRoute: '/ai-chat/quick-help',
+    secondaryRoute: '/ai-streaming-chat',
     theme: {
       gradient: 'from-pink-400 via-purple-500 to-indigo-600',
       glowColor: 'from-pink-400/30 via-purple-500/20 to-indigo-600/30',

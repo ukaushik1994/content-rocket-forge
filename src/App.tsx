@@ -26,7 +26,6 @@ import CalendarPage from "./pages/research/Calendar";
 // Pipeline route removed - integrated into Content Strategy
 
 
-import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
 import { AIStreamingChatPage } from "./pages/AIStreamingChatPage";
 
@@ -74,7 +73,7 @@ const App = () => (
                   <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                   
                    {/* AI Chat routes */}
-                   <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+                   <Route path="/ai-chat" element={<Navigate to="/ai-streaming-chat" replace />} />
                    <Route path="/ai-streaming-chat" element={<ProtectedRoute><AIStreamingChatPage /></ProtectedRoute>} />
                    <Route path="/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
                    

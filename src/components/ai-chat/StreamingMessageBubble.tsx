@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
-import { MessageBubble } from './MessageBubble';
 import { Loader2 } from 'lucide-react';
 
 interface StreamingMessageBubbleProps {
@@ -17,7 +16,19 @@ export const StreamingMessageBubble: React.FC<StreamingMessageBubbleProps> = ({
 
   return (
     <div className="relative">
-      <MessageBubble message={message} isLatest={isLatest} />
+      {/* Basic Message Display */}
+      <div className={`p-4 rounded-lg ${
+        message.role === 'user' 
+          ? 'bg-primary text-primary-foreground ml-12' 
+          : 'bg-muted text-foreground mr-12'
+      }`}>
+        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        {message.timestamp && (
+          <p className="text-xs opacity-70 mt-1">
+            {new Date(message.timestamp).toLocaleTimeString()}
+          </p>
+        )}
+      </div>
       
       {/* Streaming indicator */}
       <AnimatePresence>
