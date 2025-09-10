@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Send, Loader2, CheckCircle, XCircle } from 'lucide-react';
-import AIServiceController from '@/services/aiService/AIServiceController';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface AIChatTestModalProps {
@@ -36,26 +36,42 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
     try {
       const startTime = Date.now();
       
-      const result = await AIServiceController.generate({
-        input: testMessage,
-        use_case: 'chat',
-        temperature: 0.7,
-        max_tokens: 100
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Call enhanced-ai-chat edge function directly
+      const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+        body: {
+          message: testMessage,
+          userId: user.id,
+          context: {
+            type: 'test',
+            userInput: testMessage
+          }
+        }
       });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to call AI service');
+      }
 
       const responseTime = Date.now() - startTime;
 
-      if (result?.content) {
-        setResponse(result.content);
+      // Parse the enhanced chat response format
+      if (data?.message) {
+        setResponse(data.message);
         setTestSuccess(true);
         setTestComplete(true);
-        toast.success(`✅ AI service test successful! (${responseTime}ms) Provider: ${result.provider_used || 'Unknown'}`);
-        // Notify parent of successful test
+        toast.success(`✅ AI service test successful! (${responseTime}ms) Provider: ${data.providerUsed || 'Unknown'}`);
+        
         if (onTestComplete && provider) {
           onTestComplete(provider, true);
         }
       } else {
-        throw new Error('No response received from AI service');
+        throw new Error('No message received from AI service');
       }
     } catch (error: any) {
       console.error('AI test failed:', error);
@@ -63,7 +79,7 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
       setTestSuccess(false);
       setTestComplete(true);
       toast.error(`❌ ${provider?.charAt(0).toUpperCase() + provider?.slice(1)} test failed`);
-      // Notify parent of failed test
+      
       if (onTestComplete && provider) {
         onTestComplete(provider, false);
       }
