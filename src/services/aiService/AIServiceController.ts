@@ -213,16 +213,32 @@ class AIServiceController {
         return [];
       }
 
-      this.providersCache = (data || []).map(p => ({
-        ...p,
-        status: p.status as 'active' | 'inactive' | 'error',
-        capabilities: Array.isArray(p.capabilities) 
-          ? p.capabilities.filter((item): item is string => typeof item === 'string')
-          : [],
-        available_models: Array.isArray(p.available_models) 
-          ? p.available_models.filter((item): item is string => typeof item === 'string')
-          : []
-      }));
+      // Filter providers that have decryptable API keys
+      const { getApiKey } = await import('@/services/apiKeys/crud');
+      const validProviders: AIProvider[] = [];
+      
+      for (const providerData of data || []) {
+        try {
+          // Check if we can decrypt the API key
+          const decryptedKey = await getApiKey(providerData.provider as any);
+          if (decryptedKey) {
+            validProviders.push({
+              ...providerData,
+              status: providerData.status as 'active' | 'inactive' | 'error',
+              capabilities: Array.isArray(providerData.capabilities) 
+                ? providerData.capabilities.filter((item): item is string => typeof item === 'string')
+                : [],
+              available_models: Array.isArray(providerData.available_models) 
+                ? providerData.available_models.filter((item): item is string => typeof item === 'string')
+                : []
+            });
+          }
+        } catch (error) {
+          console.warn(`Provider ${providerData.provider} has no valid API key:`, error);
+        }
+      }
+
+      this.providersCache = validProviders;
       this.lastCacheUpdate = now;
       
       return this.providersCache;
@@ -391,6 +407,14 @@ class AIServiceController {
     try {
       const systemPrompt = customSystemPrompt || this.getSystemPrompt(request.use_case);
       
+      // Get decrypted API key from frontend
+      const { getApiKey } = await import('@/services/apiKeys/crud');
+      const decryptedApiKey = await getApiKey(provider.provider as any);
+      
+      if (!decryptedApiKey) {
+        throw new Error(`Failed to decrypt API key for ${provider.provider}`);
+      }
+      
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: {
           service: provider.provider,
@@ -404,7 +428,7 @@ class AIServiceController {
             temperature: request.temperature || 0.7,
             max_tokens: request.max_tokens || 2000
           },
-          apiKey: provider.api_key
+          apiKey: decryptedApiKey
         }
       });
 
@@ -590,11 +614,19 @@ class AIServiceController {
       console.log(`🧪 Testing ${provider.name} connection...`);
       toast.loading(`Testing ${provider.name} connection...`);
 
+      // Get decrypted API key from frontend
+      const { getApiKey } = await import('@/services/apiKeys/crud');
+      const decryptedApiKey = await getApiKey(providerIdOrProvider as any);
+      
+      if (!decryptedApiKey) {
+        throw new Error(`Failed to decrypt API key for ${provider.name}`);
+      }
+
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: {
           service: providerIdOrProvider,
           endpoint: 'test',
-          apiKey: providerData.api_key
+          apiKey: decryptedApiKey
         }
       });
 
