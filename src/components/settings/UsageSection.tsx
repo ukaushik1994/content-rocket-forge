@@ -123,30 +123,5 @@ export function UsageSection() {
   const totalSerpRequests = serpStats.reduce((sum, stat) => sum + stat.requestCount, 0);
   const averageAISuccess = aiStats.length > 0 ? aiStats.reduce((sum, stat) => sum + stat.successRate, 0) / aiStats.length : 0;
   const averageSerpSuccess = serpStats.length > 0 ? serpStats.reduce((sum, stat) => sum + stat.successRate, 0) / serpStats.length : 0;
-  return <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            API Usage Analytics
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {USAGE_PERIODS.map(p => <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Button onClick={handleRefresh} disabled={refreshing || loading} variant="outline" size="sm">
-              <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      
-    </Card>;
+  return;
 }

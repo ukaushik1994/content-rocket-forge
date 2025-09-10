@@ -236,10 +236,7 @@ export function MinimalAPISettings() {
   const allSerpProviders = serpProviders;
   return <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold">API Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your API integrations</p>
-      </div>
+      
 
       {/* Usage Analytics Section - Top Priority */}
       <UsageSection />
