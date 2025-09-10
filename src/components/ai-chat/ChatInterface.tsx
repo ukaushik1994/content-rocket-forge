@@ -8,6 +8,7 @@ import { QuickActionsPanel } from './QuickActionsPanel';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { ContextualAction } from '@/services/aiService';
 import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
 
 interface ChatInterfaceProps {
@@ -48,6 +49,13 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
   const handleSendMessage = async (message: string) => {
     setShowQuickActions(false);
     await sendMessage(message);
+  };
+
+  // Wrapper to handle ContextualAction format for EnhancedMessageBubble
+  const handleContextualAction = (action: ContextualAction) => {
+    console.log('Converting contextual action:', action);
+    // Convert ContextualAction to the string format expected by handleAction
+    handleAction(action.action, action.data);
   };
 
   const handleQuickAction = (action: string, data?: any) => {
@@ -108,7 +116,7 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
                     key={message.id}
                     message={message}
                     isLatest={index === messages.length - 1}
-                    onAction={handleAction}
+                    onAction={handleContextualAction}
                   />
                 ))}
               </div>
