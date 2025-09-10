@@ -56,7 +56,6 @@ export const AdvancedChatFeatures: React.FC<AdvancedChatFeaturesProps> = ({
     contextHistory, 
     saveContextSnapshot, 
     loadContextSnapshot,
-    getContextSuggestions,
     conversationType,
     switchToStreaming,
     switchToRegular
@@ -206,12 +205,13 @@ export const AdvancedChatFeatures: React.FC<AdvancedChatFeaturesProps> = ({
 
   const loadSuggestions = useCallback(async () => {
     try {
-      const suggestions = await getContextSuggestions();
+    // Placeholder context suggestions
+    const suggestions = ['Quick optimization', 'Generate summary', 'Extract actions'];
       setContextSuggestions(suggestions);
     } catch (error) {
       console.error('Error loading suggestions:', error);
     }
-  }, [getContextSuggestions]);
+  }, [toast]);
 
   // Switch chat modes
   const handleModeSwitch = useCallback(() => {

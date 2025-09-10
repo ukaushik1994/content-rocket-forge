@@ -1,39 +1,73 @@
 import React, { useState } from 'react';
 import { EnhancedStreamingInterface } from '@/components/ai-chat/EnhancedStreamingInterface';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
+import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
+import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 import { motion } from 'framer-motion';
 
 export const AIStreamingChatPage: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // Enhanced AI Chat DB for conversation management
+  const {
+    conversations,
+    activeConversation,
+    createConversation,
+    deleteConversation,
+    selectConversation,
+    togglePinConversation,
+    toggleArchiveConversation
+  } = useEnhancedAIChatDB();
+
+  // Chat context for streaming integration  
+  const {
+    activeConversationId,
+    updateActiveConversation
+  } = useChatContextBridge();
 
   const handleToggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
   const handleClearConversation = () => {
-    // Clear current conversation
     console.log('Clearing conversation');
+  };
+
+  const handleCreateConversation = async () => {
+    const newConversationId = await createConversation("New Streaming Chat");
+    if (newConversationId) {
+      updateActiveConversation(newConversationId);
+    }
+  };
+
+  const handleSelectConversation = (conversationId: string) => {
+    selectConversation(conversationId);
+    updateActiveConversation(conversationId);
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    await deleteConversation(conversationId);
+    if (activeConversationId === conversationId) {
+      updateActiveConversation(null);
+    }
   };
 
   return (
     <div className="h-screen flex bg-gradient-to-br from-background to-muted/20">
-      {/* Sidebar */}
-      <motion.div
-        initial={false}
-        animate={{
-          width: isSidebarOpen ? 320 : 0,
-          opacity: isSidebarOpen ? 1 : 0
-        }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="flex-shrink-0 border-r border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden"
-      >
-        {isSidebarOpen && (
-          <div className="p-4 text-center text-muted-foreground">
-            <p>Streaming Chat Sidebar</p>
-            <p className="text-xs mt-2">History features coming soon</p>
-          </div>
-        )}
-      </motion.div>
+      {/* Chat History Sidebar */}
+      {isSidebarOpen && (
+        <ChatHistorySidebar
+          conversations={conversations}
+          activeConversation={activeConversationId}
+          onSelectConversation={handleSelectConversation}
+          onCreateConversation={handleCreateConversation}
+          onDeleteConversation={handleDeleteConversation}
+          onToggleSidebar={handleToggleSidebar}
+          onPinConversation={togglePinConversation}
+          onArchiveConversation={toggleArchiveConversation}
+          className="relative z-40"
+        />
+      )}
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">

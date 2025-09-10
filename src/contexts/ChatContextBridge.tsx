@@ -73,7 +73,7 @@ interface ChatContextBridgeValue extends ChatContextState {
   updateMessageStatus: (messageId: string, status: MessageStatus['status'], userId?: string) => void;
   
   // Smart suggestions
-  getContextSuggestions: () => Promise<string[]>;
+  updateActiveConversation: (conversationId: string | null) => void;
   persistContext: (key: string, value: any) => void;
   retrieveContext: (key: string) => any;
 }
@@ -371,6 +371,10 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
     }));
   }, []);
 
+  const updateActiveConversation = useCallback((conversationId: string | null) => {
+    setState(prev => ({ ...prev, activeConversationId: conversationId }));
+  }, []);
+
   const value: ChatContextBridgeValue = {
     ...state,
     switchToStreaming,
@@ -383,9 +387,11 @@ export const ChatContextBridgeProvider: React.FC<ChatContextBridgeProps> = ({ ch
     updateWorkflowState,
     getWorkflowState,
     clearWorkflowState,
-    getContextSuggestions,
     persistContext,
     retrieveContext,
+    updateActiveConversation,
+    
+    // Collaboration
     addCollaborator,
     removeCollaborator,
     setUserTyping,

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChatHeader } from './ChatHeader';
 import { MessageInput } from './MessageInput';
 import { StreamingMessageBubble } from './StreamingMessageBubble';
-import { useStreamingChat } from '@/hooks/useStreamingChat';
+import { useStreamingChatDB } from '@/hooks/useStreamingChatDB';
 import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,7 +34,7 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     sendMessage,
     sendTypingIndicator,
     clearMessages
-  } = useStreamingChat();
+  } = useStreamingChatDB();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

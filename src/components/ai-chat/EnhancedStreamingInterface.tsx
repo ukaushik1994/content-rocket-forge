@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { StreamingChatInterface } from './StreamingChatInterface';
 import { AdvancedChatFeatures } from './AdvancedChatFeatures';
 import { RealTimeCollaboration } from './RealTimeCollaboration';
+import { SmartActionsIntegration } from './SmartActionsIntegration';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
-import { useStreamingChat } from '@/hooks/useStreamingChat';
+import { useStreamingChatDB } from '@/hooks/useStreamingChatDB';
 import { useToast } from '@/hooks/use-toast';
+import { SmartContext } from '@/services/smart-actions/types';
 
 interface EnhancedStreamingInterfaceProps {
   onClearConversation?: () => void;
@@ -32,7 +34,7 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
     isAIThinking,
     sendMessage,
     clearMessages
-  } = useStreamingChat();
+  } = useStreamingChatDB();
 
   const handleFileUpload = (files: File[]) => {
     files.forEach(file => {
@@ -77,6 +79,38 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
     onClearConversation?.();
   };
 
+  const handleSmartAction = (action: string) => {
+    if (action.startsWith('smart:')) {
+      const smartAction = action.replace('smart:', '');
+      sendMessage(`Execute smart action: ${smartAction}`);
+    } else {
+      switch (action) {
+        case 'analyze-conversation':
+          sendMessage('Analyze this conversation and provide insights on key topics, decisions made, and action items.');
+          break;
+        case 'extract-actions':
+          sendMessage('Extract all actionable items and tasks from our conversation. Format them as a prioritized list.');
+          break;
+        case 'generate-summary':
+          sendMessage('Create a concise summary of our conversation including main points and conclusions.');
+          break;
+        case 'optimize-workflow':
+          sendMessage('Analyze our conversation for workflow optimization opportunities and suggest improvements.');
+          break;
+        default:
+          sendMessage(`Process action: ${action}`);
+      }
+    }
+  };
+
+  // Smart context for actions
+  const smartContext: SmartContext = {
+    contentId: activeConversationId || undefined,
+    approvalStatus: 'draft',
+    isSubmitting: isAIThinking,
+    hasNotes: messages.length > 0
+  };
+
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/20">
       {/* Collaboration Features */}
@@ -102,20 +136,31 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
         />
       </div>
 
-      {/* Advanced Features Panel */}
+      {/* Smart Actions & Advanced Features Panel */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-sm"
+        className="border-t border-border/50 bg-background/50 backdrop-blur-sm"
       >
-        <AdvancedChatFeatures
-          onFileUpload={handleFileUpload}
-          onVoiceInput={handleVoiceInput}
-          onScreenCapture={handleScreenCapture}
-          isRecording={false}
-          collaborators={collaborators.map(c => c.userName)}
-          typingUsers={typingUsers}
-        />
+        {/* Smart Actions */}
+        <div className="p-4 border-b border-border/20">
+          <SmartActionsIntegration
+            onAction={handleSmartAction}
+            context={smartContext}
+          />
+        </div>
+
+        {/* Advanced Features */}
+        <div className="p-4">
+          <AdvancedChatFeatures
+            onFileUpload={handleFileUpload}
+            onVoiceInput={handleVoiceInput}
+            onScreenCapture={handleScreenCapture}
+            isRecording={false}
+            collaborators={collaborators.map(c => c.userName)}
+            typingUsers={typingUsers}
+          />
+        </div>
       </motion.div>
     </div>
   );
