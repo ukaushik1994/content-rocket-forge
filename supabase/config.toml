@@ -52,5 +52,8 @@ verify_jwt = true
 [functions.api-key-manager]
 verify_jwt = true
 
+[functions.ai-context-manager]
+verify_jwt = false
+
 [functions.ai-training-pipeline]
 verify_jwt = true

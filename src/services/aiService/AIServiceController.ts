@@ -424,22 +424,27 @@ class AIServiceController {
       let content = '';
       
       // Check if this is a wrapped response from edge function
+      if (!data.success) {
+        throw new Error(data.error || 'AI provider request failed');
+      }
+      
       const responseData = data.data || data;
       
       if (responseData.choices && responseData.choices[0]?.message?.content) {
+        // OpenAI format
         content = responseData.choices[0].message.content;
-      } else if (responseData.content && responseData.content[0]?.text) {
-        // Anthropic/Gemini format
+      } else if (responseData.content && Array.isArray(responseData.content) && responseData.content[0]?.text) {
+        // Anthropic format
         content = responseData.content[0].text;
       } else if (responseData.candidates && responseData.candidates[0]?.content?.parts[0]?.text) {
-        // Gemini specific format
+        // Gemini format
         content = responseData.candidates[0].content.parts[0].text;
-      } else if (data.content) {
+      } else if (typeof responseData === 'string') {
+        content = responseData;
+      } else if (data.content && typeof data.content === 'string') {
         content = data.content;
-      } else if (typeof data === 'string') {
-        content = data;
       } else {
-        console.error('Unexpected response format:', data);
+        console.error('Unexpected response format:', { data, responseData });
         throw new Error('Unexpected response format from AI provider');
       }
 
