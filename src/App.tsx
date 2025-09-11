@@ -20,7 +20,7 @@ import Analytics from "./pages/Analytics";
 import ContentStrategy from "./pages/research/ContentStrategy";
 import ResearchHub from "./pages/research/ResearchHub";
 import TopicClusters from "./pages/research/TopicClusters";
-import OpportunitiesPage from "./pages/research/Opportunities";
+
 import ContentGapsPage from "./pages/research/ContentGaps";
 import CalendarPage from "./pages/research/Calendar";
 // Pipeline route removed - integrated into Content Strategy
@@ -85,8 +85,6 @@ const App = () => (
                    <Route path="/research/keyword-research" element={<Navigate to="/research/research-hub#keyword-intelligence" replace />} />
                    <Route path="/research/answer-the-people" element={<Navigate to="/research/research-hub#people-questions" replace />} />
                   <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
-                  <Route path="/research/opportunities" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
-                  <Route path="/research/opportunity-hunter" element={<Navigate to="/research/opportunities" replace />} />
                   
                    <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
                    <Route path="/research/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />

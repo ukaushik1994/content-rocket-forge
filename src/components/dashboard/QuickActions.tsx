@@ -40,15 +40,6 @@ const quickActions: QuickAction[] = [
     iconGradient: 'from-neon-blue to-cyan-400'
   },
   {
-    id: 'view-opportunities',
-    title: 'View Opportunities',
-    description: 'Discover new content opportunities and gaps',
-    icon: Eye,
-    route: '/research/opportunities',
-    gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
-    iconGradient: 'from-emerald-400 to-green-400'
-  },
-  {
     id: 'glossary-builder',
     title: 'Glossary Builder',
     description: 'Build comprehensive glossaries for your industry',
