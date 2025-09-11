@@ -6,20 +6,16 @@ import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
 import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
-import { OptimizationStatusButton } from '../final-review/OptimizationStatusButton';
-import { OptimizationStatusPopover } from '../final-review/OptimizationStatusPopover';
 import { OptimizationHistoryModal } from '../final-review/OptimizationHistoryModal';
 import { AutoOptimizeModal } from '../final-review/AutoOptimizeModal';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
-import { Popover, PopoverTrigger } from '@/components/ui/popover';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isRunningAllChecks, setIsRunningAllChecks] = useState(false);
   const [showOptimizationHistory, setShowOptimizationHistory] = useState(false);
   const [showAutoOptimize, setShowAutoOptimize] = useState(false);
-  const [showOptimizationPopover, setShowOptimizationPopover] = useState(false);
   
   const { state, updateContent } = useContentBuilder();
   
@@ -53,14 +49,6 @@ export const OptimizeAndReviewStep = () => {
 
   const handleContentUpdate = (newContent: string) => {
     updateContent(newContent);
-  };
-
-  const handleViewOptimizations = () => {
-    setShowOptimizationHistory(true);
-  };
-
-  const handleReOptimize = () => {
-    setShowAutoOptimize(true);
   };
   
   // Handler for running checks specific to the current tab
@@ -139,59 +127,42 @@ export const OptimizeAndReviewStep = () => {
           </TabsTrigger>
         </TabsList>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
-            <TabsContent value="overview" className="space-y-6 mt-0">
-              <OverviewTab 
-                content={state.content}
-                checklistItems={checklistItems}
-                onRunAllChecks={runAllChecks}
-                metaTitle={state.metaTitle}
-                metaDescription={state.metaDescription}
-                onMetaTitleChange={onMetaTitleChange}
-                onMetaDescriptionChange={onMetaDescriptionChange}
-                onGenerateMeta={generateMeta}
-                solutionIntegrationMetrics={state.solutionIntegrationMetrics}
-                selectedSolution={state.selectedSolution}
-                isAnalyzing={isAnalyzing}
-                onAnalyze={analyzeSolutionUsage}
-              />
-            </TabsContent>
-            
-            <TabsContent value="technical" className="mt-0">
-              <TechnicalTabContent
-                documentStructure={state.documentStructure}
-                metaTitle={state.metaTitle}
-                metaDescription={state.metaDescription}
-                serpData={serpData}
-              />
-            </TabsContent>
-            
-            <TabsContent value="export" className="mt-0">
-              <SaveAndExportPanel 
-                completionPercentage={completionPercentage}
-                onSave={handleSaveToDraftWrapper}
-                onPublish={handlePublishWrapper}
-                isSaving={isSaving}
-                isSavedToDraft={isSavedToDraft}
-              />
-            </TabsContent>
-          </div>
+        <div className="space-y-6 mb-6">
+          <TabsContent value="overview" className="space-y-6 mt-0">
+            <OverviewTab 
+              content={state.content}
+              checklistItems={checklistItems}
+              onRunAllChecks={runAllChecks}
+              metaTitle={state.metaTitle}
+              metaDescription={state.metaDescription}
+              onMetaTitleChange={onMetaTitleChange}
+              onMetaDescriptionChange={onMetaDescriptionChange}
+              onGenerateMeta={generateMeta}
+              solutionIntegrationMetrics={state.solutionIntegrationMetrics}
+              selectedSolution={state.selectedSolution}
+              isAnalyzing={isAnalyzing}
+              onAnalyze={analyzeSolutionUsage}
+            />
+          </TabsContent>
           
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            <Popover open={showOptimizationPopover} onOpenChange={setShowOptimizationPopover}>
-              <PopoverTrigger asChild>
-                <div>
-                  <OptimizationStatusButton onClick={() => setShowOptimizationPopover(true)} />
-                </div>
-              </PopoverTrigger>
-              <OptimizationStatusPopover
-                onViewOptimizations={handleViewOptimizations}
-                onReOptimize={handleReOptimize}
-              />
-            </Popover>
-          </div>
+          <TabsContent value="technical" className="mt-0">
+            <TechnicalTabContent
+              documentStructure={state.documentStructure}
+              metaTitle={state.metaTitle}
+              metaDescription={state.metaDescription}
+              serpData={serpData}
+            />
+          </TabsContent>
+          
+          <TabsContent value="export" className="mt-0">
+            <SaveAndExportPanel 
+              completionPercentage={completionPercentage}
+              onSave={handleSaveToDraftWrapper}
+              onPublish={handlePublishWrapper}
+              isSaving={isSaving}
+              isSavedToDraft={isSavedToDraft}
+            />
+          </TabsContent>
         </div>
         
       </Tabs>
