@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import AIServiceController from '@/services/aiService/AIServiceController';
@@ -18,7 +19,8 @@ export function OutlineGenerator() {
     selectedKeywords,
     serpSelections,
     contentTitle,
-    additionalInstructions
+    additionalInstructions,
+    outline
   } = state;
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -49,6 +51,7 @@ export function OutlineGenerator() {
   
   const selectedItems = serpSelections.filter(item => item.selected);
   const totalSelectedItems = selectedItems.length;
+  const hasOutline = outline.length > 0;
 
   // Generate an AI outline based on selections and keywords
   const handleGenerateOutline = async () => {
@@ -216,47 +219,57 @@ export function OutlineGenerator() {
 
   return (
     <Card className="border-neon-purple/20 bg-gradient-to-br from-indigo-950/20 to-black/30">
-      <CardContent className="pt-6">
-        <div className="flex items-start gap-4 mb-6">
-          <div className="bg-gradient-to-r from-neon-purple to-neon-blue p-2.5 rounded-lg">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">AI Outline Generator</h3>
-            <p className="text-sm text-white/70">
-              Generate a structured outline based on your research
-            </p>
-          </div>
-        </div>
-        
-        <div className="space-y-6">
-          {/* AI Service Status */}
-          <AiProviderSelector />
-          
-          {availableProviders.length === 0 && (
-            <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-md text-sm text-amber-200">
-              No AI provider API keys configured. Please add at least one AI provider API key in Settings.
-            </div>
-          )}
-          
-          {/* Additional Instructions */}
-          <AIInstructionsInput 
-            customInstructions={customInstructions}
-            setCustomInstructions={setCustomInstructions}
-            onSave={handleSaveInstructions}
-          />
-          
-          {/* Generate Button */}
-          <AIGenerateButton
-            isGenerating={isGenerating}
-            onGenerate={handleGenerateOutline}
-            disabled={!mainKeyword || availableProviders.length === 0}
-            totalSelectedItems={totalSelectedItems}
-            mainKeyword={mainKeyword}
-          />
-        </div>
-      </CardContent>
+      <AnimatePresence>
+        {!hasOutline && (
+          <motion.div
+            initial={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="bg-gradient-to-r from-neon-purple to-neon-blue p-2.5 rounded-lg">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">AI Outline Generator</h3>
+                  <p className="text-sm text-white/70">
+                    Generate a structured outline based on your research
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                {/* AI Service Status */}
+                <AiProviderSelector />
+                
+                {availableProviders.length === 0 && (
+                  <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-md text-sm text-amber-200">
+                    No AI provider API keys configured. Please add at least one AI provider API key in Settings.
+                  </div>
+                )}
+                
+                {/* Additional Instructions */}
+                <AIInstructionsInput 
+                  customInstructions={customInstructions}
+                  setCustomInstructions={setCustomInstructions}
+                  onSave={handleSaveInstructions}
+                />
+                
+                {/* Generate Button */}
+                <AIGenerateButton
+                  isGenerating={isGenerating}
+                  onGenerate={handleGenerateOutline}
+                  disabled={!mainKeyword || availableProviders.length === 0}
+                  totalSelectedItems={totalSelectedItems}
+                  mainKeyword={mainKeyword}
+                />
+              </div>
+            </CardContent>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Card>
   );
 }
