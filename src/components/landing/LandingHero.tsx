@@ -3,9 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DemoModal } from '@/components/landing/DemoModal';
-import { DigitalCanvas } from './DigitalCanvas';
-import { LeftSidePanel } from './LeftSidePanel';
-import { RightSidePanel } from './RightSidePanel';
+import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
 import { Play, ArrowRight, Star, Users, Zap } from 'lucide-react';
 
 export const LandingHero = () => {
@@ -88,52 +86,41 @@ export const LandingHero = () => {
 
   const currentMessage = heroMessages[currentMessageIndex];
 
+  const stats = [
+    { icon: Users, value: '10k+', label: 'Creators' },
+    { icon: Star, value: '4.9', label: 'Rating' },
+    { icon: Zap, value: '100M+', label: 'Words Generated' },
+  ];
+
   return (
-    <section className="min-h-screen relative overflow-hidden">
-      {/* Digital Canvas Background */}
-      <DigitalCanvas />
-      
-      {/* Side Panels */}
-      <LeftSidePanel />
-      <RightSidePanel />
-      
-      <div className="flex items-center justify-center min-h-screen px-4 pt-32 pb-20 relative z-10">
-        <div className="flex flex-col items-center justify-center max-w-6xl mx-auto">
+    <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
+      <div className="container max-w-5xl mx-auto relative">
+        {/* Floating Keywords Background */}
+        <FloatingKeywords />
+        <div className="flex flex-col items-center justify-center min-h-[80vh]">
           
           {/* Main Content - Centered */}
-          <div className="text-center space-y-8 animate-fade-in max-w-5xl mx-auto">
-            {/* Enhanced Badge */}
-            <motion.div 
-              className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-background/20 backdrop-blur-xl border border-primary/30 text-primary text-sm font-medium shadow-xl"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, type: "spring" }}
-              whileHover={{ scale: 1.05 }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-              >
-                <Zap className="h-5 w-5" />
-              </motion.div>
-              AI-Powered Content Creation Platform
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            </motion.div>
+          <div className="text-center space-y-8 animate-fade-in max-w-4xl mx-auto">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
+              <Zap className="h-4 w-4" />
+              AI-Powered Content Creation
+            </div>
 
             {/* Main Headline */}
             <div className="space-y-4">
               <AnimatePresence mode="wait">
                 <motion.h1 
                   key={currentMessageIndex}
-                  initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -30, scale: 0.95 }}
-                  transition={{ duration: 0.7, type: "spring", bounce: 0.3 }}
-                  className="text-5xl md:text-7xl xl:text-8xl font-bold leading-tight tracking-tight"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-4xl md:text-6xl xl:text-7xl font-bold leading-tight"
                 >
                   {currentMessage.headline}
                   <br />
-                  <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-300% bg-clip-text text-transparent animate-gradient-shift drop-shadow-lg">
+                  <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-300% bg-clip-text text-transparent animate-gradient-shift">
                     {currentMessage.highlightedText}
                   </span>
                 </motion.h1>
@@ -145,8 +132,8 @@ export const LandingHero = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.6, delay: 0.15 }}
-                  className="text-xl md:text-3xl text-muted-foreground leading-relaxed max-w-4xl mx-auto font-light"
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-3xl mx-auto"
                 >
                   {currentMessage.description}{' '}
                   {currentMessage.highlightedPhrases.map((phrase, index) => (
@@ -161,73 +148,59 @@ export const LandingHero = () => {
               </AnimatePresence>
             </div>
 
-            {/* Enhanced CTA Section */}
-            <motion.div 
-              className="space-y-8"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-            >
-              <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    size="lg"
-                    onClick={() => navigate('/auth?mode=signup')}
-                    className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 text-white text-xl font-semibold px-10 py-6 rounded-2xl shadow-2xl hover:shadow-neon-strong transition-all duration-300 group relative overflow-hidden"
-                  >
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"
-                      initial={{ x: '-100%' }}
-                      whileHover={{ x: '100%' }}
-                      transition={{ duration: 0.6 }}
-                    />
-                    <span className="relative z-10 flex items-center">
-                      Start Creating for Free
-                      <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-2 transition-transform" />
-                    </span>
-                  </Button>
-                </motion.div>
+            {/* CTA Section */}
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  size="lg"
+                  onClick={() => navigate('/auth?mode=signup')}
+                  className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 text-lg px-8 py-4 shadow-xl hover:shadow-neon-strong transition-all duration-300 group"
+                >
+                  Start Creating for Free
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
                 
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => setIsDemoOpen(true)}
-                    className="border-2 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary/60 text-xl font-semibold px-10 py-6 rounded-2xl backdrop-blur-xl transition-all duration-300 group"
-                  >
-                    <Play className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
-                    Watch Demo
-                  </Button>
-                </motion.div>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setIsDemoOpen(true)}
+                  className="border-2 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 text-lg px-8 py-4 backdrop-blur-sm transition-all duration-300"
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  Watch Demo
+                </Button>
               </div>
 
-              {/* Enhanced Trust Indicators */}
-              <div className="flex items-center justify-center gap-8 text-base text-muted-foreground flex-wrap">
-                <motion.div 
-                  className="flex items-center gap-3 bg-background/20 backdrop-blur-xl rounded-full px-4 py-2 border border-primary/20"
-                  whileHover={{ scale: 1.05, backgroundColor: 'hsla(var(--primary) / 0.1)' }}
-                >
-                  <Star className="h-5 w-5 fill-primary text-primary" />
-                  <span className="font-medium">4.9/5 rating</span>
-                </motion.div>
-                <motion.div 
-                  className="flex items-center gap-3 bg-background/20 backdrop-blur-xl rounded-full px-4 py-2 border border-primary/20"
-                  whileHover={{ scale: 1.05, backgroundColor: 'hsla(var(--primary) / 0.1)' }}
-                >
-                  <Users className="h-5 w-5 text-primary" />
-                  <span className="font-medium">10k+ creators</span>
-                </motion.div>
-                <motion.div 
-                  className="flex items-center gap-3 bg-background/20 backdrop-blur-xl rounded-full px-4 py-2 border border-primary/20"
-                  whileHover={{ scale: 1.05, backgroundColor: 'hsla(var(--primary) / 0.1)' }}
-                >
-                  <Zap className="h-5 w-5 text-primary" />
-                  <span className="font-medium">100M+ words generated</span>
-                </motion.div>
+              {/* Trust Indicators */}
+              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 fill-primary text-primary" />
+                  <span>4.9/5 rating</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span>10k+ creators</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <span>100M+ words generated</span>
+                </div>
               </div>
-            </motion.div>
+            </div>
+          </div>
+
+          {/* Stats Section */}
+          <div className="lg:hidden grid grid-cols-3 gap-4 mt-8 animate-fade-in [animation-delay:400ms]">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center p-4 glass-card rounded-xl">
+                <stat.icon className="h-6 w-6 text-primary mx-auto mb-2" />
+                <div className="text-lg font-bold text-foreground">{stat.value}</div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
+
 
         {/* Demo Modal */}
         <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
