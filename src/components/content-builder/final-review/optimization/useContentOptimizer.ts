@@ -38,29 +38,49 @@ export const useContentOptimizer = (content: string) => {
     setAnalysisError(null);
     
     try {
-      // Run all analysis in parallel for better performance
-      const analysisPromises = [
-        analyzeContentQuality(content).catch(err => {
-          console.error('Content quality analysis failed:', err);
-          return [];
-        }),
-        analyzeAIContent(content).catch(err => {
-          console.error('AI detection analysis failed:', err);
-          return [];
-        }),
-        analyzeSerpUsage(content).catch(err => {
-          console.error('SERP integration analysis failed:', err);
-          return [];
-        }),
-        analyzeSolution(content).catch(err => {
-          console.error('Solution analysis failed:', err);
-          return [];
-        })
-      ];
-
-      await Promise.all(analysisPromises);
+      console.log('🔄 Starting sequential content analysis to avoid rate limits...');
       
-      // Check if we have any suggestions
+      // Run analyses sequentially to avoid rate limits and improve reliability
+      let completedAnalyses = 0;
+      const totalAnalyses = 4;
+      
+      // Phase 1: Content Quality Analysis
+      try {
+        console.log('📝 Phase 1: Content Quality Analysis');
+        await analyzeContentQuality(content);
+        completedAnalyses++;
+      } catch (err) {
+        console.error('❌ Content quality analysis failed:', err);
+      }
+      
+      // Phase 2: AI Detection Analysis  
+      try {
+        console.log('🤖 Phase 2: AI Detection Analysis');
+        await analyzeAIContent(content);
+        completedAnalyses++;
+      } catch (err) {
+        console.error('❌ AI detection analysis failed:', err);
+      }
+      
+      // Phase 3: SERP Integration Analysis
+      try {
+        console.log('🔍 Phase 3: SERP Integration Analysis');
+        await analyzeSerpUsage(content);
+        completedAnalyses++;
+      } catch (err) {
+        console.error('❌ SERP integration analysis failed:', err);
+      }
+      
+      // Phase 4: Solution Analysis
+      try {
+        console.log('🎯 Phase 4: Solution Analysis');
+        await analyzeSolution(content);
+        completedAnalyses++;
+      } catch (err) {
+        console.error('❌ Solution analysis failed:', err);
+      }
+      
+      // Check results and provide feedback
       const totalSuggestions = 
         contentSuggestions.length + 
         aiDetectionSuggestions.length + 
@@ -68,14 +88,19 @@ export const useContentOptimizer = (content: string) => {
         solutionSuggestions.length +
         qualitySuggestions.length;
 
-      if (totalSuggestions === 0) {
+      if (completedAnalyses === 0) {
+        setAnalysisError('All analyses failed. Please check your AI provider configuration.');
+        toast.error('Analysis failed. Please check your AI provider settings and try again.');
+      } else if (completedAnalyses < totalAnalyses) {
+        toast.warning(`Analysis partially completed (${completedAnalyses}/${totalAnalyses} successful). Found ${totalSuggestions} suggestions.`);
+      } else if (totalSuggestions === 0) {
         toast.info('Content analysis complete. No optimization suggestions found - your content looks great!');
       } else {
         toast.success(`Analysis complete! Found ${totalSuggestions} optimization opportunities.`);
       }
 
     } catch (error) {
-      console.error('Error analyzing content:', error);
+      console.error('❌ Critical error in content analysis:', error);
       setAnalysisError('Failed to analyze content. Please try again.');
       toast.error('Analysis failed. Please check your connection and try again.');
     } finally {

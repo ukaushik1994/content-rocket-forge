@@ -23,31 +23,8 @@ export function useContentAnalysis() {
       console.log('🔄 Starting content quality analysis...');
       setIsAnalyzing(true);
 
-      // Pre-flight check: Verify AI service is available
-      if (!isEnabled) {
-        console.warn('❌ AI service disabled by user preference');
-        toast.error('AI service is disabled. Enable it in Settings to use content analysis.');
-        return [];
-      }
-
-      if (!hasProviders) {
-        console.warn('❌ No AI providers configured');
-        toast.error('No AI providers configured. Add API keys in Settings to use analysis.');
-        return [];
-      }
-
-      if (activeProviders === 0) {
-        console.warn('❌ No working AI providers found');
-        await refreshStatus(); // Try to refresh status
-        
-        // Check again after refresh
-        if (activeProviders === 0) {
-          toast.error('No working AI providers found. Please check your API keys in Settings.');
-          return [];
-        }
-      }
-
-      console.log(`✅ AI service pre-flight check passed: ${activeProviders} provider(s) available`);
+      // Pre-flight check: Use AIServiceController's built-in validation
+      console.log(`🔄 Using AIServiceController for content analysis...`);
 
       const prompt = `Analyze this content and provide specific optimization suggestions with detailed reasoning:
 
@@ -88,99 +65,70 @@ Respond in JSON format:
 
 Provide 3-8 specific, actionable suggestions.`;
 
-      console.log('🤖 Making AI request for content analysis...');
+      console.log('🤖 Making AI request for content analysis via AIServiceController...');
       
-      try {
-        const response = await AIServiceController.generate({
-          input: prompt,
-          use_case: 'strategy',
-          temperature: 0.3,
-          max_tokens: 2000
-        });
+      // Use AIServiceController which has built-in error handling and fallback
+      const response = await AIServiceController.generate({
+        input: prompt,
+        use_case: 'strategy',
+        temperature: 0.3,
+        max_tokens: 2000
+      });
 
-        console.log('📨 AI response received:', response ? 'Success' : 'Empty');
-
-        if (!response || !response.content) {
-          console.error('❌ No content in AI response:', response);
-          throw new Error('AI service returned empty response');
-        }
-
-        // Parse the JSON response
-        let parsedResponse;
-        try {
-          // Clean the response content to extract JSON
-          const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-          
-          if (jsonMatch) {
-            parsedResponse = JSON.parse(jsonMatch[0]);
-            console.log('✅ Successfully parsed AI response with', parsedResponse.suggestions?.length || 0, 'suggestions');
-          } else {
-            console.warn('⚠️ No JSON found in response, attempting direct parse...');
-            parsedResponse = JSON.parse(response.content.trim());
-          }
-        } catch (parseError) {
-          console.error('❌ Failed to parse AI response as JSON:', parseError);
-          console.error('Raw content:', response.content);
-          throw new Error(`Failed to parse AI response: ${parseError.message}`);
-        }
-
-        if (!parsedResponse.suggestions || !Array.isArray(parsedResponse.suggestions)) {
-          console.error('❌ Invalid response structure:', parsedResponse);
-          throw new Error('AI response missing suggestions array');
-        }
-
-        const suggestions = parsedResponse.suggestions.map((s: any, index: number) => ({
-          id: s.id || `content_${index}`,
-          title: s.title || 'Content Improvement',
-          description: s.description || 'Improve content quality',
-          type: 'content' as const,
-          priority: s.priority || 'medium',
-          category: s.category || 'content',
-          autoFixable: s.autoFixable !== false,
-          impact: s.impact || 'medium',
-          effort: s.effort || 'medium',
-          reasoning: s.reasoning || '',
-          example: s.example || ''
-        }));
-
-        console.log(`✅ Content analysis complete: ${suggestions.length} suggestions generated`);
-        setContentSuggestions(suggestions);
-        return suggestions;
-
-      } catch (aiError: any) {
-        console.error('❌ AI service error:', aiError);
-        
-        // Provide specific error messages based on the error type
-        if (aiError.message?.includes('No API keys configured')) {
-          toast.error('AI providers not configured. Please add API keys in Settings.');
-        } else if (aiError.message?.includes('All configured providers are currently unavailable')) {
-          toast.error('All AI providers are currently unavailable. Please check your API keys.');
-        } else if (aiError.message?.includes('Failed to parse')) {
-          toast.error('AI service returned invalid response. Please try again.');
-        } else if (aiError.message?.includes('quota') || aiError.message?.includes('rate limit')) {
-          toast.error('AI provider quota exceeded. Please check your usage limits or try again later.');
-        } else if (aiError.message?.includes('API key') || aiError.message?.includes('authentication')) {
-          toast.error('AI provider authentication failed. Please check your API keys in Settings.');
-        } else if (aiError.message?.includes('network') || aiError.message?.includes('connection')) {
-          toast.error('Connection error. Please check your internet connection and try again.');
-        } else {
-          toast.error(`AI analysis failed: ${aiError.message || 'Unknown error'}`);
-        }
-        
-        throw aiError;
+      if (!response || !response.content) {
+        console.warn('❌ No content in AI response, returning empty suggestions');
+        setContentSuggestions([]);
+        return [];
       }
+
+      // Parse the JSON response
+      let parsedResponse;
+      try {
+        // Clean the response content to extract JSON
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+          console.log('✅ Successfully parsed AI response with', parsedResponse.suggestions?.length || 0, 'suggestions');
+        } else {
+          console.warn('⚠️ No JSON found in response, attempting direct parse...');
+          parsedResponse = JSON.parse(response.content.trim());
+        }
+      } catch (parseError) {
+        console.error('❌ Failed to parse AI response as JSON:', parseError);
+        console.error('Raw content:', response.content);
+        setContentSuggestions([]);
+        return [];
+      }
+
+      if (!parsedResponse.suggestions || !Array.isArray(parsedResponse.suggestions)) {
+        console.error('❌ Invalid response structure:', parsedResponse);
+        setContentSuggestions([]);
+        return [];
+      }
+
+      const suggestions = parsedResponse.suggestions.map((s: any, index: number) => ({
+        id: s.id || `content_${index}`,
+        title: s.title || 'Content Improvement',
+        description: s.description || 'Improve content quality',
+        type: 'content' as const,
+        priority: s.priority || 'medium',
+        category: s.category || 'content',
+        autoFixable: s.autoFixable !== false,
+        impact: s.impact || 'medium',
+        effort: s.effort || 'medium',
+        reasoning: s.reasoning || '',
+        example: s.example || ''
+      }));
+
+      console.log(`✅ Content analysis complete: ${suggestions.length} suggestions generated`);
+      setContentSuggestions(suggestions);
+      return suggestions;
 
     } catch (error: any) {
       console.error('❌ Content analysis failed:', error);
       
-      // Don't show duplicate error messages
-      if (!error.message?.includes('AI analysis failed:') && 
-          !error.message?.includes('AI providers not configured') &&
-          !error.message?.includes('All AI providers are currently unavailable') &&
-          !error.message?.includes('Failed to parse')) {
-        toast.error(`Content analysis failed: ${error.message || 'Please try again'}`);
-      }
-      
+      // AIServiceController handles error messages, so we just return empty array
       setContentSuggestions([]);
       return [];
     } finally {

@@ -165,25 +165,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   ].filter(category => category.suggestions.length > 0);
 
   const handleStartAnalysis = async () => {
-    // Check AI service status before starting
-    if (!isEnabled) {
-      toast.error('AI service is disabled. Please enable it in Settings to use auto-optimization.');
-      return;
-    }
-
-    if (!hasProviders) {
-      toast.error('No AI providers configured. Please add at least one API key in Settings to use auto-optimization.');
-      return;
-    }
-
-    // Refresh status to get current provider information
-    await refreshStatus();
-    
-    if (activeProviders === 0) {
-      toast.error(`No AI providers are currently working. Please check your API keys in Settings.`);
-      return;
-    }
-
     setCurrentStep('analysis');
     
     try {
@@ -200,7 +181,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       }, 1000);
     } catch (error: any) {
       console.error('Analysis failed:', error);
-      toast.error(`Analysis failed: ${error.message || 'Please check your AI provider configuration and try again.'}`);
       setCurrentStep('analysis');
     }
   };
