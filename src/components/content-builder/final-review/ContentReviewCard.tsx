@@ -8,8 +8,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Eye, Edit, FileText, Save, Wand, Sparkles, CheckCircle, Loader2, Badge } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { OptimizedAutoOptimizeDialog } from './optimization/OptimizedAutoOptimizeDialog';
-import { OptimizationErrorBoundary } from './optimization/components/ErrorBoundary';
+import { AutoOptimizeModal } from './AutoOptimizeModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useContentOptimizer } from './optimization/useContentOptimizer';
 
@@ -257,15 +256,12 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         </TabsContent>
       </Tabs>
 
-        {/* Optimized modal with error boundary */}
-        <OptimizationErrorBoundary>
-          <OptimizedAutoOptimizeDialog 
-            isOpen={isAutoOptimizeDialogOpen}
-            onClose={() => setIsAutoOptimizeDialogOpen(false)}
-            content={editedContent}
-            onContentUpdate={handleContentUpdate}
-          />
-        </OptimizationErrorBoundary>
+      <AutoOptimizeModal 
+        isOpen={isAutoOptimizeDialogOpen}
+        onClose={() => setIsAutoOptimizeDialogOpen(false)}
+        content={editedContent}
+        onContentUpdate={handleContentUpdate}
+      />
     </Card>
   );
 }
