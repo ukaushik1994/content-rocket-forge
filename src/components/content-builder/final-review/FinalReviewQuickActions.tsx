@@ -41,5 +41,22 @@ export const FinalReviewQuickActions = ({
     }
   };
   const tabAction = getTabAction();
-  return;
+
+  return (
+    <div className="flex gap-3 mb-6">
+      <RunChecksButton
+        isRunningAllChecks={isRunningAllChecks}
+        onRunChecks={onRunAllChecks}
+        label="Run All Checks"
+        variant="default"
+      />
+      
+      <RunChecksButton
+        isRunningAllChecks={isRunningAllChecks}
+        onRunChecks={onRunTabChecks}
+        label={tabAction.label}
+        variant="outline"
+      />
+    </div>
+  );
 };

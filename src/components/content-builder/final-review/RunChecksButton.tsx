@@ -18,5 +18,25 @@ export const RunChecksButton = ({
   variant = "default",
   label = "Run All Checks"
 }: RunChecksButtonProps) => {
-  return;
+  return (
+    <Button
+      onClick={onRunChecks}
+      disabled={isRunningAllChecks}
+      variant={variant}
+      className={className}
+    >
+      {isRunningAllChecks ? (
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="mr-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </motion.div>
+      ) : (
+        icon && <CheckCircle className="h-4 w-4 mr-2" />
+      )}
+      {label}
+    </Button>
+  );
 };
