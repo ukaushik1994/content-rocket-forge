@@ -17,6 +17,7 @@ export const useContentOptimizer = (content: string) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
+  const [analysisAbortController, setAnalysisAbortController] = useState<AbortController | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Use the real hooks for analysis
@@ -174,6 +175,18 @@ export const useContentOptimizer = (content: string) => {
            qualitySuggestions.length;
   }, [contentSuggestions.length, aiDetectionSuggestions.length, serpIntegrationSuggestions.length, solutionSuggestions.length, qualitySuggestions.length]);
 
+  // Cleanup function to abort any ongoing analysis
+  const clearAnalysis = useCallback(() => {
+    if (analysisAbortController) {
+      analysisAbortController.abort();
+      setAnalysisAbortController(null);
+    }
+    setIsAnalyzing(false);
+    setIsOptimizing(false);
+    setAnalysisError(null);
+    setSelectedSuggestions([]);
+  }, [analysisAbortController]);
+
   return {
     isAnalyzing: isAnalyzing || isContentAnalyzing,
     isOptimizing,
@@ -188,6 +201,7 @@ export const useContentOptimizer = (content: string) => {
     optimizeContent,
     toggleSuggestion,
     incorporateAllSerpItems: incorporateAllSerpItemsLocal,
-    getTotalSuggestionCount
+    getTotalSuggestionCount,
+    clearAnalysis
   };
 };

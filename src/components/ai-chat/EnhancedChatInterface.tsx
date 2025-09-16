@@ -164,8 +164,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               >
                 <motion.div 
                   className="w-2 h-2 rounded-full bg-green-400"
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  animate={{ opacity: 1 }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity,
+                    repeatType: "reverse" 
+                  }}
                 />
                 <span className="text-xs text-success font-medium">Online</span>
               </motion.div>
@@ -290,27 +294,36 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                   </div>
                   <Card className="flex items-center gap-3 text-white/70 text-sm px-4 py-3 bg-white/5 border-white/10 backdrop-blur-sm">
                     <div className="flex gap-1">
-                      <motion.div className="w-2 h-2 bg-purple-400 rounded-full" animate={{
-                      scale: [1, 1.2, 1]
-                    }} transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: 0
-                    }} />
-                      <motion.div className="w-2 h-2 bg-blue-400 rounded-full" animate={{
-                      scale: [1, 1.2, 1]
-                    }} transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: 0.2
-                    }} />
-                      <motion.div className="w-2 h-2 bg-purple-400 rounded-full" animate={{
-                      scale: [1, 1.2, 1]
-                    }} transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: 0.4
-                    }} />
+                      <motion.div 
+                        className="w-2 h-2 bg-purple-400 rounded-full" 
+                        animate={{ scale: 1.2 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          delay: 0
+                        }} 
+                      />
+                      <motion.div 
+                        className="w-2 h-2 bg-blue-400 rounded-full" 
+                        animate={{ scale: 1.2 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          delay: 0.2
+                        }} 
+                      />
+                      <motion.div 
+                        className="w-2 h-2 bg-purple-400 rounded-full" 
+                        animate={{ scale: 1.2 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          delay: 0.4
+                        }} 
+                      />
                     </div>
                     AI is analyzing your data and preparing insights...
                   </Card>

@@ -9,6 +9,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Eye, Edit, FileText, Save, Wand, Sparkles, CheckCircle, Loader2, Badge } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AutoOptimizeModal } from './AutoOptimizeModal';
+import { OptimizedAutoOptimizeDialog } from './optimization/OptimizedAutoOptimizeDialog';
+import { OptimizationErrorBoundary } from './optimization/components/ErrorBoundary';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useContentOptimizer } from './optimization/useContentOptimizer';
 
@@ -256,12 +258,15 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         </TabsContent>
       </Tabs>
 
-      <AutoOptimizeModal 
-        isOpen={isAutoOptimizeDialogOpen}
-        onClose={() => setIsAutoOptimizeDialogOpen(false)}
-        content={editedContent}
-        onContentUpdate={handleContentUpdate}
-      />
+        {/* Optimized modal with error boundary */}
+        <OptimizationErrorBoundary>
+          <OptimizedAutoOptimizeDialog 
+            isOpen={isAutoOptimizeDialogOpen}
+            onClose={() => setIsAutoOptimizeDialogOpen(false)}
+            content={editedContent}
+            onContentUpdate={handleContentUpdate}
+          />
+        </OptimizationErrorBoundary>
     </Card>
   );
 }
