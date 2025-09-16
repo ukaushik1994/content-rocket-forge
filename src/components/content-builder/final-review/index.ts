@@ -4,7 +4,6 @@ export * from './FinalChecklistCard';
 export * from './KeywordUsageSummaryCard';
 export * from './MetaInformationCard';
 export * from './SolutionIntegrationCard';
-export * from './AutoOptimizeModal';
 export * from './ContentReviewCard';
 export * from './ContentRepurposingCard';
 export * from './OptimizationStatusButton';

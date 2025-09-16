@@ -57,14 +57,11 @@ export function OptimizedAutoOptimizeDialog({
     isAnalyzing,
     isOptimizing,
     contentSuggestions,
-    solutionSuggestions,
     aiDetectionSuggestions,
-    serpIntegrationSuggestions,
     analyzeContent,
     optimizeContent,
     selectedSuggestions,
     toggleSuggestion,
-    incorporateAllSerpItems,
     clearAnalysis
   } = useContentOptimizer(content);
 
@@ -167,11 +164,9 @@ export function OptimizedAutoOptimizeDialog({
 
   const allSuggestions = React.useMemo(() => [
     ...convertToUnified(contentSuggestions),
-    ...convertToUnified(solutionSuggestions),
     ...convertToUnified(aiDetectionSuggestions),
-    ...convertToUnified(serpIntegrationSuggestions),
     ...qualitySuggestions
-  ], [contentSuggestions, solutionSuggestions, aiDetectionSuggestions, serpIntegrationSuggestions, qualitySuggestions, convertToUnified]);
+  ], [contentSuggestions, aiDetectionSuggestions, qualitySuggestions, convertToUnified]);
 
   const hasSuggestions = allSuggestions.length > 0;
 
@@ -263,7 +258,7 @@ export function OptimizedAutoOptimizeDialog({
         ) : (
           <div className="flex-1 overflow-hidden">
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="analysis" className="flex items-center gap-2">
                   <Brain className="h-4 w-4" />
                   Analysis
@@ -276,18 +271,12 @@ export function OptimizedAutoOptimizeDialog({
                   <BarChart3 className="h-4 w-4" />
                   Quality
                 </TabsTrigger>
-                <TabsTrigger value="preview" className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  Preview
-                </TabsTrigger>
               </TabsList>
               
               <div className="flex-1 overflow-y-auto mt-4">
                 <TabsContent value="analysis" className="space-y-4 mt-0">
                   {hasSuggestions ? (
                     <div className="space-y-6">
-                      <EnhancedSerpItemsReference onIncorporateAllSerp={incorporateAllSerpItems} />
-                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Card>
                           <CardHeader className="pb-3">
@@ -311,13 +300,13 @@ export function OptimizedAutoOptimizeDialog({
                         <Card>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-sm flex items-center gap-2">
-                              <Target className="h-4 w-4" />
-                              SERP Integration ({serpIntegrationSuggestions.length})
+                              <Brain className="h-4 w-4" />
+                              AI Humanization ({aiDetectionSuggestions.length})
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-2">
-                              {serpIntegrationSuggestions.slice(0, 3).map(suggestion => (
+                              {aiDetectionSuggestions.slice(0, 3).map(suggestion => (
                                 <div key={suggestion.id} className="text-xs p-2 bg-muted/30 rounded">
                                   <div className="font-medium">{suggestion.title}</div>
                                   <div className="text-muted-foreground">{suggestion.description}</div>
@@ -339,11 +328,10 @@ export function OptimizedAutoOptimizeDialog({
                 
                 <TabsContent value="suggestions" className="space-y-4 mt-0">
                   <Tabs defaultValue="quality" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="quality">Quality ({qualitySuggestions.length})</TabsTrigger>
                       <TabsTrigger value="content">Content ({contentSuggestions.length})</TabsTrigger>
-                      <TabsTrigger value="serp">SERP ({serpIntegrationSuggestions.length})</TabsTrigger>
-                      <TabsTrigger value="ai">AI ({aiDetectionSuggestions.length})</TabsTrigger>
+                      <TabsTrigger value="ai">AI Humanization ({aiDetectionSuggestions.length})</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="quality" className="space-y-4">
@@ -379,19 +367,8 @@ export function OptimizedAutoOptimizeDialog({
                     
                     <TabsContent value="content">
                       <EnhancedSuggestionSection
-                        title="Content Improvements"
-                        suggestions={convertToUnified([...contentSuggestions, ...solutionSuggestions])}
-                        selectedSuggestions={selectedSuggestions}
-                        onToggleSuggestion={toggleSuggestion}
-                        showCategory={false}
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="serp">
-                      <EnhancedSerpItemsReference onIncorporateAllSerp={incorporateAllSerpItems} />
-                      <EnhancedSuggestionSection
-                        title="SERP Integration Opportunities"
-                        suggestions={convertToUnified(serpIntegrationSuggestions)}
+                        title="Content & SEO Improvements"
+                        suggestions={convertToUnified(contentSuggestions)}
                         selectedSuggestions={selectedSuggestions}
                         onToggleSuggestion={toggleSuggestion}
                         showCategory={false}

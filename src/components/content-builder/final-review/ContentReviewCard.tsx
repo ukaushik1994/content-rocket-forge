@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Eye, Edit, FileText, Save, Wand, Sparkles, CheckCircle, Loader2, Badge } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AutoOptimizeModal } from './AutoOptimizeModal';
 import { OptimizedAutoOptimizeDialog } from './optimization/OptimizedAutoOptimizeDialog';
 import { OptimizationErrorBoundary } from './optimization/components/ErrorBoundary';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';

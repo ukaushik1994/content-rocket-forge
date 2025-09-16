@@ -1,12 +1,9 @@
-
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OptimizationSuggestion } from './types';
 import { 
   useContentAnalysis, 
   useAIDetection, 
-  useSerpIntegration, 
-  useSolutionAnalysis,
   useContentOptimization
 } from './hooks';
 import { useContentQualityIntegration } from './hooks/useContentQualityIntegration';
@@ -20,11 +17,9 @@ export const useContentOptimizer = (content: string) => {
   const [analysisAbortController, setAnalysisAbortController] = useState<AbortController | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  // Use the real hooks for analysis
+  // Use focused hooks for content-specific analysis only
   const { contentSuggestions, analyzeContentQuality, isAnalyzing: isContentAnalyzing } = useContentAnalysis();
   const { aiDetectionSuggestions, analyzeAIContent } = useAIDetection();
-  const { serpIntegrationSuggestions, analyzeSerpUsage, incorporateAllSerpItems } = useSerpIntegration();
-  const { solutionSuggestions, analyzeSolution } = useSolutionAnalysis();
   const { qualitySuggestions } = useContentQualityIntegration();
   const { optimizeContent: performOptimization } = useContentOptimization();
 
@@ -38,170 +33,114 @@ export const useContentOptimizer = (content: string) => {
     setIsAnalyzing(true);
     setAnalysisError(null);
     
+    const abortController = new AbortController();
+    setAnalysisAbortController(abortController);
+    
     try {
-      // Run all analysis in parallel for better performance
-      const analysisPromises = [
-        analyzeContentQuality(content).catch(err => {
-          console.error('Content quality analysis failed:', err);
-          return [];
-        }),
-        analyzeAIContent(content).catch(err => {
-          console.error('AI detection analysis failed:', err);
-          return [];
-        }),
-        analyzeSerpUsage(content).catch(err => {
-          console.error('SERP integration analysis failed:', err);
-          return [];
-        }),
-        analyzeSolution(content).catch(err => {
-          console.error('Solution analysis failed:', err);
-          return [];
-        })
-      ];
+      // Run focused content analyses in parallel
+      const [contentResults, aiResults] = await Promise.allSettled([
+        analyzeContentQuality(content),
+        analyzeAIContent(content)
+      ]);
 
-      await Promise.all(analysisPromises);
-      
-      // Check if we have any suggestions
-      const totalSuggestions = 
-        contentSuggestions.length + 
-        aiDetectionSuggestions.length + 
-        serpIntegrationSuggestions.length + 
-        solutionSuggestions.length +
-        qualitySuggestions.length;
-
-      if (totalSuggestions === 0) {
-        toast.info('Content analysis complete. No optimization suggestions found - your content looks great!');
-      } else {
-        toast.success(`Analysis complete! Found ${totalSuggestions} optimization opportunities.`);
+      // Handle any failures gracefully
+      if (contentResults.status === 'rejected') {
+        console.error('Content analysis failed:', contentResults.reason);
+      }
+      if (aiResults.status === 'rejected') {
+        console.error('AI detection failed:', aiResults.reason);
       }
 
-    } catch (error) {
-      console.error('Error analyzing content:', error);
-      setAnalysisError('Failed to analyze content. Please try again.');
-      toast.error('Analysis failed. Please check your connection and try again.');
+      toast.success('Content analysis complete!');
+    } catch (error: any) {
+      console.error('Analysis failed:', error);
+      setAnalysisError(error?.message || 'Analysis failed');
+      toast.error('Analysis failed: ' + (error?.message || 'Unknown error'));
     } finally {
       setIsAnalyzing(false);
+      setAnalysisAbortController(null);
     }
-  }, [content, analyzeContentQuality, analyzeAIContent, analyzeSerpUsage, analyzeSolution, contentSuggestions.length, aiDetectionSuggestions.length, serpIntegrationSuggestions.length, solutionSuggestions.length, qualitySuggestions.length]);
+  }, [content, analyzeContentQuality, analyzeAIContent, isOptimizing]);
 
   const optimizeContent = useCallback(async (): Promise<string | null> => {
-    if (selectedSuggestions.length === 0) {
-      toast.error('Please select at least one suggestion to optimize.');
-      return null;
-    }
+    if (isOptimizing || selectedSuggestions.length === 0) return null;
     
     setIsOptimizing(true);
-    
     try {
-      // Convert quality suggestions to optimization suggestions
-      const qualityAsOptimization: OptimizationSuggestion[] = qualitySuggestions.map(q => ({
-        id: q.id,
-        title: q.title,
-        description: q.description,
-        type: 'content' as const,
-        priority: typeof q.priority === 'number' ? 
-          (q.priority >= 8 ? 'high' : q.priority >= 5 ? 'medium' : 'low') as 'high' | 'medium' | 'low' :
-          q.priority as 'high' | 'medium' | 'low',
-        category: q.category,
-        autoFixable: q.autoFixable,
-        impact: q.type === 'critical' ? 'high' as const : q.type === 'major' ? 'medium' as const : 'low' as const,
-        effort: 'medium' as const
-      }));
-
-      // Get selected suggestions from all categories
-      const allSuggestions: OptimizationSuggestion[] = [
-        ...contentSuggestions,
-        ...aiDetectionSuggestions,
-        ...serpIntegrationSuggestions,
-        ...solutionSuggestions,
-        ...qualityAsOptimization
-      ];
-
-      const selected = allSuggestions.filter(s => selectedSuggestions.includes(s.id));
+      // Filter suggestions for content quality and AI humanization only
+      const contentSuggestionsFiltered = contentSuggestions
+        .filter(s => selectedSuggestions.includes(s.id))
+        .filter(s => ['content', 'seo', 'structure', 'keywords'].includes(s.category || ''));
       
-      if (selected.length === 0) {
-        toast.error('Selected suggestions not found.');
+      const aiSuggestionsFiltered = aiDetectionSuggestions
+        .filter(s => selectedSuggestions.includes(s.id));
+
+      if (contentSuggestionsFiltered.length === 0 && aiSuggestionsFiltered.length === 0) {
+        toast.error('No valid suggestions selected for optimization');
         return null;
       }
 
-      const optimizedContent = await performOptimization(
+      return await performOptimization(
         content,
-        selectedSuggestions,
-        selected.filter(s => s.type === 'content' || s.category === 'content' || s.category === 'structure' || s.category === 'seo'),
-        selected.filter(s => s.type === 'humanization'),
-        selected.filter(s => s.type === 'serp_integration'),
-        selected.filter(s => s.type === 'solution' || s.category === 'solution')
+        selectedSuggestions.map(id => 
+          [...contentSuggestionsFiltered, ...aiSuggestionsFiltered].find(s => s.id === id)?.id || id
+        ),
+        contentSuggestionsFiltered,
+        aiSuggestionsFiltered,
+        [],
+        []
       );
-      
-      if (optimizedContent) {
-        toast.success(`Content optimized using ${selected.length} suggestions!`);
-        return optimizedContent;
-      } else {
-        toast.error('Optimization failed. Please try again.');
-        return null;
-      }
-      
-    } catch (error) {
-      console.error('Error optimizing content:', error);
-      toast.error('Optimization failed. Please check your connection and try again.');
+    } catch (error: any) {
+      console.error('Optimization failed:', error);
+      toast.error('Optimization failed: ' + (error?.message || 'Unknown error'));
       return null;
     } finally {
       setIsOptimizing(false);
     }
-  }, [content, selectedSuggestions, contentSuggestions, aiDetectionSuggestions, serpIntegrationSuggestions, solutionSuggestions, qualitySuggestions, performOptimization]);
+  }, [isOptimizing, selectedSuggestions, contentSuggestions, aiDetectionSuggestions, performOptimization, content]);
 
-  const toggleSuggestion = useCallback((suggestionId: string) => {
-    setSelectedSuggestions(prev => 
-      prev.includes(suggestionId)
-        ? prev.filter(id => id !== suggestionId)
-        : [...prev, suggestionId]
-    );
-  }, []);
-
-  const incorporateAllSerpItemsLocal = useCallback(() => {
-    const serpSuggestionIds = serpIntegrationSuggestions.map(s => s.id);
-    setSelectedSuggestions(prev => [...new Set([...prev, ...serpSuggestionIds])]);
-    // Also trigger the hook's incorporate function
-    incorporateAllSerpItems();
-    toast.info(`Selected ${serpSuggestionIds.length} SERP integration suggestions.`);
-  }, [serpIntegrationSuggestions, incorporateAllSerpItems]);
-
-  // Get total suggestion count for UI
-  const getTotalSuggestionCount = useCallback(() => {
-    return contentSuggestions.length + 
-           aiDetectionSuggestions.length + 
-           serpIntegrationSuggestions.length + 
-           solutionSuggestions.length +
-           qualitySuggestions.length;
-  }, [contentSuggestions.length, aiDetectionSuggestions.length, serpIntegrationSuggestions.length, solutionSuggestions.length, qualitySuggestions.length]);
-
-  // Cleanup function to abort any ongoing analysis
   const clearAnalysis = useCallback(() => {
+    // Cancel any ongoing analysis
     if (analysisAbortController) {
       analysisAbortController.abort();
       setAnalysisAbortController(null);
     }
+    
+    // Clear state
+    setSelectedSuggestions([]);
+    setAnalysisError(null);
     setIsAnalyzing(false);
     setIsOptimizing(false);
-    setAnalysisError(null);
-    setSelectedSuggestions([]);
   }, [analysisAbortController]);
 
   return {
-    isAnalyzing: isAnalyzing || isContentAnalyzing,
+    // State
+    isAnalyzing,
     isOptimizing,
-    contentSuggestions,
-    solutionSuggestions,
-    aiDetectionSuggestions,
-    serpIntegrationSuggestions,
-    qualitySuggestions,
-    selectedSuggestions,
     analysisError,
+    
+    // Focused suggestions only
+    contentSuggestions,
+    aiDetectionSuggestions,
+    
+    // Actions
     analyzeContent,
     optimizeContent,
-    toggleSuggestion,
-    incorporateAllSerpItems: incorporateAllSerpItemsLocal,
-    getTotalSuggestionCount,
+    
+    // Selection management
+    selectedSuggestions,
+    toggleSuggestion: (suggestionId: string) => {
+      setSelectedSuggestions(prev => 
+        prev.includes(suggestionId) 
+          ? prev.filter(id => id !== suggestionId)
+          : [...prev, suggestionId]
+      );
+    },
+    
+    // Utilities
+    getTotalSuggestionCount: () => 
+      contentSuggestions.length + 
+      aiDetectionSuggestions.length,
     clearAnalysis
   };
 };
