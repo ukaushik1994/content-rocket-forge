@@ -28,14 +28,22 @@ export const useContentOptimizer = (content: string) => {
   const { qualitySuggestions } = useContentQualityIntegration();
   const { optimizeContent: performOptimization } = useContentOptimization();
 
-  // Check AI provider availability on mount
+  // Check AI provider availability on mount and refresh
   useEffect(() => {
     const checkAIProviders = async () => {
       try {
+        console.log('🔄 Refreshing AI providers in useContentOptimizer...');
+        
+        // Clear AIServiceController cache and get fresh data
         const { default: AIServiceController } = await import('@/services/aiService/AIServiceController');
+        AIServiceController.clearCache();
+        
+        // Get fresh provider list using unified service
         const providers = await AIServiceController.getActiveProviders();
         setHasAIProviders(providers.length > 0);
-        console.log(`🔍 AI providers check: ${providers.length} providers available`);
+        
+        console.log(`🔍 AI providers refreshed: ${providers.length} providers found`);
+        console.log('📋 Available providers:', providers.map(p => p.provider));
       } catch (error) {
         console.error('❌ Error checking AI providers:', error);
         setHasAIProviders(false);

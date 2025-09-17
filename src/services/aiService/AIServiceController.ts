@@ -65,6 +65,7 @@ class AIServiceController {
   clearCache(): void {
     this.providersCache = [];
     this.lastCacheUpdate = 0;
+    console.log('🗑️ AIServiceController cache cleared');
   }
 
   // Provider metadata registry
@@ -206,11 +207,13 @@ class AIServiceController {
       const supportedProviders = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
       const validProviders: AIProvider[] = [];
       
+      console.log('🔍 Using unified API key detection service...');
+      
       for (let i = 0; i < supportedProviders.length; i++) {
         const providerId = supportedProviders[i];
         
         try {
-          // Use the same unified API key service as chat
+          // Use the unified API key service that checks both tables
           const apiKey = await getApiKey(providerId as any);
           if (apiKey && apiKey.trim()) {
             const metadata = AIServiceController.PROVIDER_METADATA[providerId];
@@ -232,9 +235,11 @@ class AIServiceController {
               });
               console.log(`✅ Found API key for ${providerId} via unified service`);
             }
+          } else {
+            console.log(`❌ No API key found for ${providerId}`);
           }
         } catch (error) {
-          console.warn(`❌ No API key found for ${providerId}:`, error);
+          console.warn(`❌ Error checking API key for ${providerId}:`, error);
         }
       }
 
@@ -242,6 +247,7 @@ class AIServiceController {
       this.lastCacheUpdate = now;
       
       console.log(`🔄 Loaded ${validProviders.length} active providers via unified API key service`);
+      console.log('🔍 Active providers:', validProviders.map(p => `${p.provider} (${p.api_key ? 'key present' : 'no key'})`));
       return this.providersCache;
     } catch (error) {
       console.error('Error getting active providers:', error);

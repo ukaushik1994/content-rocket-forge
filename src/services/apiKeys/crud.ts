@@ -1,13 +1,14 @@
 
 // CRUD operations for API keys using the main apiKeyService functions
-import { getApiKey, saveApiKey, deleteApiKey, ApiProvider } from '../apiKeyService';
+import { getApiKey as getOriginalApiKey, saveApiKey, deleteApiKey, ApiProvider } from '../apiKeyService';
 import AIServiceController from '../aiService/AIServiceController';
 import { searchKeywords } from '../serpApiService';
 import { AiProvider } from '../aiService/types';
 import { supabase } from '@/integrations/supabase/client';
 
-// Re-export the main functions for consistency
-export { getApiKey, saveApiKey, deleteApiKey };
+// Re-export the main functions for consistency, but override getApiKey with unified version
+export { saveApiKey, deleteApiKey };
+export { getUnifiedApiKey as getApiKey };
 export type { ApiProvider };
 
 export type ApiKeyStatus = 'not-configured' | 'configured' | 'verified';
@@ -23,24 +24,41 @@ const TEST_CACHE_DURATION = 5 * 60 * 1000;
 const testCache = new Map<string, { result: boolean; timestamp: number; error?: string }>();
 
 /**
- * Check if an OpenRouter API key exists in user_llm_keys table
+ * Unified API key retrieval that checks both tables
  */
-async function hasOpenRouterKey(): Promise<boolean> {
+async function getUnifiedApiKey(provider: ApiProvider): Promise<string | null> {
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) return false;
+    if (error || !user) return null;
 
-    const { data, error: keyError } = await supabase
-      .from('user_llm_keys')
-      .select('api_key')
-      .eq('user_id', user.id)
-      .eq('provider', 'openrouter')
-      .eq('is_active', true)
-      .single();
+    // For OpenRouter, check user_llm_keys table first (new format)
+    if (provider === 'openrouter') {
+      const { data, error: keyError } = await supabase
+        .from('user_llm_keys')
+        .select('api_key')
+        .eq('user_id', user.id)
+        .eq('provider', 'openrouter')
+        .eq('is_active', true)
+        .single();
 
-    return !keyError && !!data?.api_key;
+      if (!keyError && data?.api_key) {
+        console.log(`✅ Found ${provider} key in user_llm_keys table`);
+        return data.api_key;
+      }
+    }
+    
+    // Use the main service for all providers (it has fallback logic)
+    const key = await getOriginalApiKey(provider);
+    if (key) {
+      console.log(`✅ Found ${provider} key via main service`);
+      return key;
+    }
+    
+    console.log(`❌ No ${provider} key found in any table`);
+    return null;
   } catch (error) {
-    return false;
+    console.error(`❌ Error getting ${provider} key:`, error);
+    return null;
   }
 }
 
@@ -48,14 +66,8 @@ async function hasOpenRouterKey(): Promise<boolean> {
  * Check if an API key exists for a provider
  */
 export async function hasApiKey(provider: ApiProvider): Promise<boolean> {
-  // OpenRouter uses user_llm_keys table
-  if (provider === 'openrouter') {
-    return hasOpenRouterKey();
-  }
-  
-  // All other providers use api_keys table
-  const key = await getApiKey(provider);
-  return !!key;
+  const key = await getUnifiedApiKey(provider);
+  return !!key && key.trim().length > 0;
 }
 
 /**
