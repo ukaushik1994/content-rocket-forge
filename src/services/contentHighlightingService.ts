@@ -5,13 +5,17 @@ export interface ContentHighlight {
   startIndex: number;
   endIndex: number;
   text: string;
-  type: 'seo' | 'structure' | 'solution' | 'ai-detection' | 'serp';
+  type: 'seo' | 'structure' | 'solution' | 'ai-detection' | 'serp' | 'compliant' | 'partially-compliant' | 'non-compliant';
   priority: 'high' | 'medium' | 'low';
   suggestion: {
     title: string;
     description: string;
     category: string;
   };
+  // Compliance-specific properties
+  complianceStatus?: 'compliant' | 'partially-compliant' | 'non-compliant';
+  violationId?: string;
+  complianceCategory?: 'keyword' | 'serp' | 'solution' | 'structure';
 }
 
 export interface HighlightAnalysisResult {

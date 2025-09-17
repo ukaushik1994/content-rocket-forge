@@ -1,6 +1,18 @@
 import { OptimizationSuggestion } from '@/components/content-builder/final-review/optimization/types';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { ContentHighlight, HighlightAnalysisResult } from './contentHighlightingService';
+import { ComplianceAnalysisResult } from '@/types/contentCompliance';
+import { analyzeContentForComplianceHighlights } from './complianceHighlightingService';
+
+/**
+ * Compliance-based content highlighting using rule-based analysis
+ */
+export const generateComplianceHighlights = (
+  content: string,
+  complianceResult: ComplianceAnalysisResult
+): HighlightAnalysisResult => {
+  return analyzeContentForComplianceHighlights(content, complianceResult);
+};
 
 /**
  * AI-powered content highlighting service that provides real optimization suggestions
