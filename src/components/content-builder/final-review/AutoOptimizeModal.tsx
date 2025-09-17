@@ -8,30 +8,30 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
-  Sparkles, 
+  FileText, 
   Loader2, 
   CheckCircle2, 
   ArrowRight, 
   Target, 
   Search, 
-  Bot, 
-  Lightbulb,
+  FileCheck,
+  Shield,
   TrendingUp,
   AlertCircle,
-  Zap,
+  ClipboardCheck,
   Save,
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AnalysisProgress } from './optimization/components/AnalysisProgress';
-import { EnhancedHighlightedContentViewer } from './optimization/components/EnhancedHighlightedContentViewer';
+import { ComplianceDashboard } from './optimization/components/ComplianceDashboard';
+import { ComplianceHighlightedViewer } from './optimization/components/ComplianceHighlightedViewer';
 import { OptimizationSuggestionsPanel } from './optimization/components/OptimizationSuggestionsPanel';
-import { useContentOptimizer } from './optimization/useContentOptimizer';
-import { OptimizationSuggestion } from './optimization/types';
-  import { analyzeContentForAIHighlights } from '@/services/aiContentHighlightingService';
-  import { HighlightAnalysisResult } from '@/services/contentHighlightingService';
-  import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-  import { toast } from 'sonner';
+import { useContentCompliance } from '@/hooks/useContentCompliance';
+import { analyzeContentForComplianceHighlights } from '@/services/complianceHighlightingService';
+import { HighlightAnalysisResult } from '@/services/contentHighlightingService';
+import { ComplianceViolation } from '@/types/contentCompliance';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { toast } from 'sonner';
 
 interface AutoOptimizeModalProps {
   isOpen: boolean;
@@ -40,21 +40,14 @@ interface AutoOptimizeModalProps {
   onContentUpdate: (newContent: string) => void;
 }
 
-type WorkflowStep = 'analysis' | 'suggestions' | 'highlighting' | 'results';
+type WorkflowStep = 'compliance-check' | 'review-results' | 'fix-selection' | 'implementation';
 
-interface SuggestionCategory {
+interface ComplianceCategory {
   id: string;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  suggestions: Array<{
-    id: string;
-    title: string;
-    description: string;
-    priority: 'high' | 'medium' | 'low';
-    impact?: 'high' | 'medium' | 'low';
-    category: string;
-  }>;
+  violations: ComplianceViolation[];
 }
 
 export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
@@ -63,11 +56,10 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   content,
   onContentUpdate
 }) => {
-  const [currentStep, setCurrentStep] = useState<WorkflowStep>('analysis');
-  const [optimizationProgress, setOptimizationProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>('compliance-check');
   const [highlightAnalysis, setHighlightAnalysis] = useState<HighlightAnalysisResult | null>(null);
+  const [selectedViolations, setSelectedViolations] = useState<string[]>([]);
   const [selectedHighlights, setSelectedHighlights] = useState<string[]>([]);
-  const [isGeneratingHighlights, setIsGeneratingHighlights] = useState(false);
   
   const { 
     state, 
@@ -78,177 +70,117 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
 
   const {
     isAnalyzing,
-    isOptimizing,
-    contentSuggestions,
-    solutionSuggestions,
-    aiDetectionSuggestions,
-    serpIntegrationSuggestions,
-    qualitySuggestions,
-    selectedSuggestions,
     analysisError,
-    analyzeContent,
-    toggleSuggestion,
-    getTotalSuggestionCount,
-    hasAIProviders
-  } = useContentOptimizer(content);
+    complianceResult,
+    runComplianceAnalysis,
+    clearAnalysis,
+    getOverallCompliance,
+    getCriticalViolations,
+    hasKeywordIssues,
+    hasSerpIssues,
+    hasSolutionIssues,
+    hasStructureIssues
+  } = useContentCompliance();
 
   // Reset step when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setCurrentStep('analysis');
-      setOptimizationProgress(0);
+      setCurrentStep('compliance-check');
       setHighlightAnalysis(null);
+      setSelectedViolations([]);
       setSelectedHighlights([]);
     }
   }, [isOpen]);
 
-  // Normalize suggestions to a common format
-  const normalizeSuggestion = (suggestion: any) => ({
-    id: suggestion.id,
-    title: suggestion.title,
-    description: suggestion.description,
-    priority: typeof suggestion.priority === 'number' 
-      ? (suggestion.priority >= 8 ? 'high' : suggestion.priority >= 5 ? 'medium' : 'low')
-      : suggestion.priority,
-    impact: suggestion.impact,
-    category: suggestion.category || 'content'
-  });
-
-  // Organize suggestions into categories
-  const suggestionCategories: SuggestionCategory[] = [
+  // Organize violations into categories
+  const complianceCategories: ComplianceCategory[] = complianceResult ? [
     {
-      id: 'seo',
-      title: 'SEO & Keywords',
+      id: 'keyword',
+      title: 'Keyword Usage',
       icon: Search,
       color: 'text-green-600',
-      suggestions: [...contentSuggestions.filter(s => s.category === 'seo' || s.category === 'keywords'), ...qualitySuggestions.filter(s => s.category === 'seo' || s.category === 'keywords')].map(normalizeSuggestion)
-    },
-    {
-      id: 'ai-detection',
-      title: 'AI Humanization',
-      icon: Bot,
-      color: 'text-purple-600',
-      suggestions: aiDetectionSuggestions.map(normalizeSuggestion)
+      violations: complianceResult.keyword.violations
     },
     {
       id: 'serp',
       title: 'SERP Integration',
       icon: TrendingUp,
       color: 'text-blue-600',
-      suggestions: serpIntegrationSuggestions.map(normalizeSuggestion)
-    },
-    {
-      id: 'content',
-      title: 'Content Quality',
-      icon: Lightbulb,
-      color: 'text-orange-600',
-      suggestions: [...contentSuggestions.filter(s => s.category === 'content' || s.category === 'structure'), ...qualitySuggestions.filter(s => s.category === 'content' || s.category === 'structure')].map(normalizeSuggestion)
+      violations: complianceResult.serp.violations
     },
     {
       id: 'solution',
       title: 'Solution Integration',
       icon: Target,
       color: 'text-indigo-600',
-      suggestions: [...solutionSuggestions, ...qualitySuggestions.filter(s => s.category === 'solution')].map(normalizeSuggestion)
+      violations: complianceResult.solution.violations
+    },
+    {
+      id: 'structure',
+      title: 'Content Structure',
+      icon: FileCheck,
+      color: 'text-orange-600',
+      violations: complianceResult.structure.violations
     }
-  ].filter(category => category.suggestions.length > 0);
+  ].filter(category => category.violations.length > 0) : [];
 
-  const handleStartAnalysis = async () => {
-    setCurrentStep('analysis');
+  const handleStartComplianceCheck = async () => {
+    setCurrentStep('compliance-check');
     
     try {
-      console.log('🚀 Starting analysis from modal...');
-      const result = await analyzeContent();
+      console.log('🚀 Starting compliance analysis...');
+      await runComplianceAnalysis();
       
-      console.log('📊 Analysis result:', result);
-      
-      // Use the returned values instead of relying on state
-      if (result && result.totalSuggestions > 0) {
-        console.log(`✅ Analysis found ${result.totalSuggestions} suggestions, proceeding to suggestions step`);
-        setCurrentStep('suggestions');
-        toast.success(`Analysis complete! Found ${result.totalSuggestions} optimization opportunities.`);
-      } else if (result && result.completedAnalyses > 0) {
-        console.log('ℹ️ Analysis completed but no suggestions found');
-        toast.info('Analysis complete! No optimization suggestions found - your content looks great!');
-        onClose();
+      if (complianceResult) {
+        console.log(`✅ Compliance analysis complete, proceeding to review step`);
+        setCurrentStep('review-results');
+        toast.success(`Compliance analysis complete! Found ${complianceResult.overall.totalViolations} issues to review.`);
       } else {
-        console.log('❌ Analysis failed or returned no results');
-        toast.error('Analysis failed. Please check your AI provider settings and try again.');
-        setCurrentStep('analysis');
+        console.log('ℹ️ Compliance analysis completed but no issues found');
+        toast.success('Compliance analysis complete! Your content meets all requirements.');
+        onClose();
       }
     } catch (error: any) {
-      console.error('❌ Analysis failed in modal:', error);
-      setCurrentStep('analysis');
-      toast.error('Analysis failed. Please check your connection and try again.');
+      console.error('❌ Compliance analysis failed:', error);
+      setCurrentStep('compliance-check');
+      toast.error('Compliance analysis failed. Please try again.');
     }
   };
 
 
   const handleGenerateHighlights = async () => {
-    if (selectedSuggestions.length === 0) {
-      toast.error('Please select at least one suggestion');
+    if (selectedViolations.length === 0 && !getOverallCompliance()) {
+      toast.error('Please select at least one compliance issue to fix');
       return;
     }
 
-    setIsGeneratingHighlights(true);
-    setCurrentStep('highlighting');
-    setOptimizationProgress(0);
-
-    const progressInterval = setInterval(() => {
-      setOptimizationProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return 90;
-        }
-        return prev + Math.random() * 15;
-      });
-    }, 500);
+    setCurrentStep('fix-selection');
 
     try {
-      console.log('🎨 Generating AI highlights for selected suggestions...');
-      const selectedSuggestionObjects = suggestionCategories
-        .flatMap(cat => cat.suggestions)
-        .filter(s => selectedSuggestions.includes(s.id))
-        .map(s => ({
-          id: s.id,
-          title: s.title,
-          description: s.description,
-          type: getOptimizationType(s.category),
-          priority: s.priority,
-          category: s.category
-        } as OptimizationSuggestion));
-
-      const analysis = await analyzeContentForAIHighlights(
-        content,
-        selectedSuggestionObjects,
-        state.mainKeyword || '',
-        state.selectedKeywords || []
-      );
+      console.log('🎨 Generating compliance-based highlights...');
       
-      clearInterval(progressInterval);
-      setOptimizationProgress(100);
-      setHighlightAnalysis(analysis);
-      
-      console.log(`✅ Generated ${analysis.highlights.length} highlights, proceeding to results`);
-      setTimeout(() => setCurrentStep('results'), 500);
+      if (complianceResult) {
+        const analysis = await analyzeContentForComplianceHighlights(content, complianceResult);
+        setHighlightAnalysis(analysis);
+        
+        console.log(`✅ Generated ${analysis.highlights.length} compliance highlights`);
+        setTimeout(() => setCurrentStep('implementation'), 500);
+      }
       
     } catch (error) {
-      clearInterval(progressInterval);
       console.error('Highlight generation error:', error);
-      toast.error('Failed to generate highlights - please check your connection and try again');
-      setCurrentStep('suggestions');
-    } finally {
-      setIsGeneratingHighlights(false);
+      toast.error('Failed to generate highlights - please try again');
+      setCurrentStep('review-results');
     }
   };
 
   const handleApplyChanges = async () => {
     try {
-      await saveOptimizationSelections(selectedSuggestions, selectedHighlights);
+      await saveOptimizationSelections(selectedViolations, selectedHighlights);
       const updatedContent = await applyOptimizationChanges(selectedHighlights, content);
       onContentUpdate(updatedContent);
       
-      toast.success(`Applied ${selectedSuggestions.length} suggestions and ${selectedHighlights.length} highlights!`);
+      toast.success(`Applied ${selectedViolations.length} compliance fixes and ${selectedHighlights.length} highlights!`);
       onClose();
     } catch (error) {
       console.error('Error applying changes:', error);
@@ -275,42 +207,44 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     setSelectedHighlights([]);
   };
 
-  // Helper functions for suggestion selection
-  const selectAllHighPriority = () => {
-    const highPrioritySuggestions = suggestionCategories
-      .flatMap(cat => cat.suggestions)
-      .filter(s => s.priority === 'high')
-      .map(s => s.id);
-    highPrioritySuggestions.forEach(id => {
-      if (!selectedSuggestions.includes(id)) {
-        toggleSuggestion(id);
+  // Helper functions for violation selection
+  const toggleViolation = (violationId: string) => {
+    setSelectedViolations(prev => 
+      prev.includes(violationId)
+        ? prev.filter(id => id !== violationId)
+        : [...prev, violationId]
+    );
+  };
+
+  const selectAllCritical = () => {
+    const criticalViolations = complianceCategories
+      .flatMap(cat => cat.violations)
+      .filter(v => v.severity === 'critical')
+      .map(v => v.id);
+    criticalViolations.forEach(id => {
+      if (!selectedViolations.includes(id)) {
+        toggleViolation(id);
       }
     });
   };
 
-  const clearAllSuggestions = () => {
-    selectedSuggestions.forEach(id => toggleSuggestion(id));
+  const clearAllViolations = () => {
+    setSelectedViolations([]);
   };
 
   const selectAllInCategory = (categoryId: string) => {
-    const category = suggestionCategories.find(c => c.id === categoryId);
+    const category = complianceCategories.find(c => c.id === categoryId);
     if (category) {
-      category.suggestions.forEach(suggestion => {
-        if (!selectedSuggestions.includes(suggestion.id)) {
-          toggleSuggestion(suggestion.id);
+      category.violations.forEach(violation => {
+        if (!selectedViolations.includes(violation.id)) {
+          toggleViolation(violation.id);
         }
       });
     }
   };
 
-  // Helper function to map categories to optimization types
-  const getOptimizationType = (category: string): OptimizationSuggestion['type'] => {
-    switch (category) {
-      case 'solution': return 'solution';
-      case 'seo':
-      case 'keywords': return 'serp_integration';
-      default: return 'content';
-    }
+  const getTotalViolationCount = () => {
+    return complianceCategories.reduce((total, cat) => total + cat.violations.length, 0);
   };
 
   const getPriorityColor = (priority: 'high' | 'medium' | 'low') => {
@@ -321,7 +255,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     }
   };
 
-  const renderAnalysisStep = () => (
+  const renderComplianceCheckStep = () => (
     <div className="space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -329,20 +263,20 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         className="text-center py-8"
       >
         <div className="mb-6">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
             {isAnalyzing ? (
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             ) : (
-              <Sparkles className="w-8 h-8 text-white" />
+              <FileText className="w-8 h-8 text-white" />
             )}
           </div>
           <h3 className="text-xl font-semibold mb-2">
-            {isAnalyzing ? 'Analyzing Your Content' : 'Ready to Optimize'}
+            {isAnalyzing ? 'Analyzing Content Compliance' : 'Ready to Review Content'}
           </h3>
           <p className="text-muted-foreground max-w-md mx-auto">
             {isAnalyzing 
-              ? 'Running 4-phase AI analysis: Content Quality → AI Detection → SERP Integration → Solution Analysis'
-              : 'Click the button below to start a comprehensive analysis of your content.'
+              ? 'Running comprehensive compliance analysis: Keyword Usage → SERP Integration → Solution Compliance → Content Structure'
+              : 'Click the button below to analyze your content against all compliance requirements.'
             }
           </p>
           
@@ -351,14 +285,14 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
               <div className="text-sm text-muted-foreground space-y-1">
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Phase 1: Content Quality Analysis</span>
+                  <span>Checking Keyword Compliance</span>
                 </div>
-                <div className="text-xs opacity-70">Phase 2: AI Detection Analysis</div>
-                <div className="text-xs opacity-70">Phase 3: SERP Integration Analysis</div>
-                <div className="text-xs opacity-70">Phase 4: Solution Analysis</div>
+                <div className="text-xs opacity-70">Analyzing SERP Integration</div>
+                <div className="text-xs opacity-70">Validating Solution Integration</div>
+                <div className="text-xs opacity-70">Reviewing Content Structure</div>
               </div>
               <p className="text-xs text-muted-foreground">
-                This may take 30-60 seconds to complete all phases
+                This analysis is instantaneous using rule-based checking
               </p>
             </div>
           )}
@@ -378,7 +312,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={handleStartAnalysis}
+                  onClick={handleStartComplianceCheck}
                   className="w-full"
                 >
                   Try Again
@@ -386,39 +320,19 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
               </div>
             )}
             
-            {!hasAIProviders ? (
-              <div className="max-w-md mx-auto p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center gap-2 text-yellow-800 mb-2">
-                  <AlertCircle className="w-4 h-4" />
-                  <span className="font-medium">AI Service Not Available</span>
-                </div>
-                <p className="text-sm text-yellow-700 mb-3">
-                  No AI providers are configured. You need to add at least one API key to use auto-optimization.
-                </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => window.open('/settings', '_blank')}
-                  className="w-full"
-                >
-                  Configure AI Providers
-                </Button>
-              </div>
-            ) : !analysisError ? (
-              <Button onClick={handleStartAnalysis} size="lg" className="gap-2">
-                <Zap className="w-4 h-4" />
-                Start AI Analysis
+            {!analysisError && (
+              <Button onClick={handleStartComplianceCheck} size="lg" className="gap-2">
+                <ClipboardCheck className="w-4 h-4" />
+                Start Compliance Review
               </Button>
-            ) : null}
+            )}
           </div>
         )}
       </motion.div>
-
-      <AnalysisProgress isAnalyzing={isAnalyzing} onAnalysisComplete={() => {}} />
     </div>
   );
 
-  const renderSuggestionsStep = () => (
+  const renderReviewResultsStep = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -426,94 +340,95 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     >
       <div className="text-center mb-6">
         <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
-        <h3 className="text-xl font-semibold mb-2">Optimization Suggestions</h3>
+        <h3 className="text-xl font-semibold mb-2">Compliance Review Complete</h3>
         <p className="text-muted-foreground">
-          Found {getTotalSuggestionCount()} opportunities to improve your content
+          {complianceResult ? 
+            `Found ${complianceResult.overall.totalViolations} compliance issues to address` :
+            'Your content meets all compliance requirements'
+          }
         </p>
       </div>
 
-      <div className="space-y-4">
-        {suggestionCategories.map((category) => (
-          <Card key={category.id} className="border-l-4 border-l-primary/20">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <category.icon className={`w-5 h-5 ${category.color}`} />
-                  <CardTitle className="text-base">{category.title}</CardTitle>
-                  <Badge variant="secondary" className="text-xs">
-                    {category.suggestions.length}
-                  </Badge>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => selectAllInCategory(category.id)}
-                  className="text-xs"
-                >
-                  Select All
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {category.suggestions.map((suggestion) => (
-                <div key={suggestion.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
-                  <Checkbox
-                    checked={selectedSuggestions.includes(suggestion.id)}
-                    onCheckedChange={() => toggleSuggestion(suggestion.id)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1 space-y-1">
+      {complianceResult && (
+        <>
+          <ComplianceDashboard 
+            complianceResult={complianceResult}
+          />
+
+          <div className="space-y-4">
+            {complianceCategories.map((category) => (
+              <Card key={category.id} className="border-l-4 border-l-primary/20">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-sm">{suggestion.title}</h4>
-                      <Badge variant="outline" className={`text-xs ${getPriorityColor(suggestion.priority)}`}>
-                        {suggestion.priority}
+                      <category.icon className={`w-5 h-5 ${category.color}`} />
+                      <CardTitle className="text-base">{category.title}</CardTitle>
+                      <Badge variant="secondary" className="text-xs">
+                        {category.violations.length}
                       </Badge>
-                      {suggestion.impact && (
-                        <Badge variant="outline" className="text-xs bg-gray-100 text-gray-800">
-                          {suggestion.impact} impact
-                        </Badge>
-                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => selectAllInCategory(category.id)}
+                      className="text-xs"
+                    >
+                      Select All
+                    </Button>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {category.violations.map((violation) => (
+                    <div key={violation.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                      <Checkbox
+                        checked={selectedViolations.includes(violation.id)}
+                        onCheckedChange={() => toggleViolation(violation.id)}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-sm">{violation.message}</h4>
+                          <Badge variant="outline" className={`text-xs ${violation.severity === 'critical' ? 'bg-red-100 text-red-800 border-red-200' : violation.severity === 'warning' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>
+                            {violation.severity}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{violation.suggestion}</p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      <div className="flex items-center justify-between pt-4 border-t">
-        <p className="text-sm text-muted-foreground">
-          {selectedSuggestions.length} of {getTotalSuggestionCount()} suggestions selected
-        </p>
-        <Button onClick={handleGenerateHighlights} disabled={selectedSuggestions.length === 0} className="gap-2">
-          <ArrowRight className="w-4 h-4" />
-          Generate Highlights
-        </Button>
-      </div>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              {selectedViolations.length} of {getTotalViolationCount()} issues selected
+            </p>
+            <Button onClick={handleGenerateHighlights} disabled={selectedViolations.length === 0} className="gap-2">
+              <ArrowRight className="w-4 h-4" />
+              Review Selected Issues
+            </Button>
+          </div>
+        </>
+      )}
     </motion.div>
   );
 
-  const renderOptimizationStep = () => (
+  const renderFixSelectionStep = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="text-center py-8"
     >
       <div className="mb-6">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mb-4">
+        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mb-4">
           <Loader2 className="w-8 h-8 text-white animate-spin" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Optimizing Content</h3>
+        <h3 className="text-xl font-semibold mb-2">Preparing Compliance Review</h3>
         <p className="text-muted-foreground max-w-md mx-auto mb-6">
-          Applying {selectedSuggestions.length} optimizations to improve your content...
+          Analyzing {selectedViolations.length} selected compliance issues and generating detailed review...
         </p>
-        
-        <div className="max-w-md mx-auto">
-          <Progress value={optimizationProgress} className="h-2 mb-2" />
-          <p className="text-sm text-muted-foreground">{Math.round(optimizationProgress)}% complete</p>
-        </div>
       </div>
     </motion.div>
   );
@@ -565,8 +480,8 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           <div className="flex-shrink-0 border-b border-border bg-card/50 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-bold">Auto-Optimize Content</DialogTitle>
-                <p className="text-muted-foreground">Analyze and optimize your content with AI-powered suggestions</p>
+              <DialogTitle className="text-2xl font-bold">Content Review</DialogTitle>
+              <p className="text-muted-foreground">Review and fix content compliance issues with instant analysis</p>
               </div>
               <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
                 <X className="h-4 w-4" />
@@ -574,30 +489,30 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
             </div>
           </div>
 
-          {/* Two-column layout for results step */}
-          {currentStep === 'results' && highlightAnalysis ? (
+          {/* Two-column layout for implementation step */}
+          {currentStep === 'implementation' && highlightAnalysis ? (
             <div className="flex-1 flex overflow-hidden">
               
-              {/* Left Panel - Suggestions */}
+              {/* Left Panel - Violations */}
               <div className="w-[40%] border-r border-border overflow-y-auto">
                 <div className="p-6">
                   <OptimizationSuggestionsPanel
-                    suggestionCategories={suggestionCategories}
-                    selectedSuggestions={selectedSuggestions}
-                    onToggleSuggestion={toggleSuggestion}
+                    complianceCategories={complianceCategories}
+                    selectedViolations={selectedViolations}
+                    onToggleViolation={toggleViolation}
                     onSelectAllInCategory={selectAllInCategory}
-                    onSelectAllHighPriority={selectAllHighPriority}
-                    onClearAll={clearAllSuggestions}
-                    totalSuggestionCount={getTotalSuggestionCount()}
+                    onSelectAllCritical={selectAllCritical}
+                    onClearAll={clearAllViolations}
+                    totalViolationCount={getTotalViolationCount()}
                   />
                   
                   <div className="mt-6 flex gap-3">
-                    <Button variant="outline" onClick={() => setCurrentStep('suggestions')}>
+                    <Button variant="outline" onClick={() => setCurrentStep('review-results')}>
                       Back
                     </Button>
                     <Button onClick={handleApplyChanges} className="gap-2 flex-1">
                       <Save className="w-4 h-4" />
-                      Apply Changes ({selectedSuggestions.length + selectedHighlights.length})
+                      Apply Fixes ({selectedViolations.length + selectedHighlights.length})
                     </Button>
                   </div>
                 </div>
@@ -606,7 +521,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
               {/* Right Panel - Content with highlights */}
               <div className="w-[60%] overflow-y-auto">
                 <div className="p-6">
-                  <EnhancedHighlightedContentViewer
+                  <ComplianceHighlightedViewer
                     analysisResult={highlightAnalysis}
                     selectedHighlights={selectedHighlights}
                     onHighlightToggle={toggleHighlight}
@@ -620,9 +535,9 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
             // Single column layout for other steps
             <div className="flex-1 overflow-y-auto p-6">
               <AnimatePresence mode="wait">
-                {currentStep === 'analysis' && renderAnalysisStep()}
-                {currentStep === 'suggestions' && renderSuggestionsStep()}
-                {currentStep === 'highlighting' && renderHighlightingStep()}
+                {currentStep === 'compliance-check' && renderComplianceCheckStep()}
+                {currentStep === 'review-results' && renderReviewResultsStep()}
+                {currentStep === 'fix-selection' && renderFixSelectionStep()}
               </AnimatePresence>
             </div>
           )}

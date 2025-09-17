@@ -16,50 +16,54 @@ import {
   Info
 } from 'lucide-react';
 
-interface SuggestionCategory {
+interface ComplianceCategory {
   id: string;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  suggestions: Array<{
+  violations: Array<{
     id: string;
-    title: string;
+    message: string;
     description: string;
-    priority: 'high' | 'medium' | 'low';
-    impact?: 'high' | 'medium' | 'low';
+    severity: 'critical' | 'major' | 'minor';
     category: string;
+    textLocation?: {
+      start: number;
+      end: number;
+      text: string;
+    };
   }>;
 }
 
 interface OptimizationSuggestionsPanelProps {
-  suggestionCategories: SuggestionCategory[];
-  selectedSuggestions: string[];
-  onToggleSuggestion: (suggestionId: string) => void;
+  complianceCategories: ComplianceCategory[];
+  selectedViolations: string[];
+  onToggleViolation: (violationId: string) => void;
   onSelectAllInCategory: (categoryId: string) => void;
-  onSelectAllHighPriority: () => void;
+  onSelectAllCritical: () => void;
   onClearAll: () => void;
-  totalSuggestionCount: number;
+  totalViolationCount: number;
 }
 
 export const OptimizationSuggestionsPanel: React.FC<OptimizationSuggestionsPanelProps> = ({
-  suggestionCategories,
-  selectedSuggestions,
-  onToggleSuggestion,
+  complianceCategories,
+  selectedViolations,
+  onToggleViolation,
   onSelectAllInCategory,
-  onSelectAllHighPriority,
+  onSelectAllCritical,
   onClearAll,
-  totalSuggestionCount
+  totalViolationCount
 }) => {
 
-  const getPriorityColor = (priority: 'high' | 'medium' | 'low') => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
+  const getSeverityColor = (severity: 'critical' | 'major' | 'minor') => {
+    switch (severity) {
+      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
+      case 'major': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'minor': return 'bg-blue-100 text-blue-800 border-blue-200';
     }
   };
 
-  const selectionProgress = totalSuggestionCount > 0 ? (selectedSuggestions.length / totalSuggestionCount) * 100 : 0;
+  const selectionProgress = totalViolationCount > 0 ? (selectedViolations.length / totalViolationCount) * 100 : 0;
 
   return (
     <div className="space-y-4">
@@ -70,17 +74,17 @@ export const OptimizationSuggestionsPanel: React.FC<OptimizationSuggestionsPanel
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">Selection Progress</span>
+              <span className="text-muted-foreground">Selection Progress</span>
               </div>
               <span className="text-sm text-muted-foreground">
-                {selectedSuggestions.length} / {totalSuggestionCount}
+                {selectedViolations.length} / {totalViolationCount}
               </span>
             </div>
             <Progress value={selectionProgress} className="h-2" />
             
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={onSelectAllHighPriority}>
-                Select High Priority
+              <Button size="sm" variant="outline" onClick={onSelectAllCritical}>
+                Select Critical
               </Button>
               <Button size="sm" variant="outline" onClick={onClearAll}>
                 Clear All
@@ -93,7 +97,7 @@ export const OptimizationSuggestionsPanel: React.FC<OptimizationSuggestionsPanel
       {/* Suggestions by Category */}
       <ScrollArea className="h-[600px]">
         <div className="space-y-4 pr-4">
-          {suggestionCategories.map((category) => (
+          {complianceCategories.map((category) => (
             <Card key={category.id} className="border-l-4 border-l-primary/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -101,10 +105,10 @@ export const OptimizationSuggestionsPanel: React.FC<OptimizationSuggestionsPanel
                     <category.icon className={`w-5 h-5 ${category.color}`} />
                     <CardTitle className="text-base">{category.title}</CardTitle>
                     <Badge variant="secondary" className="text-xs">
-                      {category.suggestions.length}
+                      {category.violations.length}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      {category.suggestions.filter(s => selectedSuggestions.includes(s.id)).length} selected
+                      {category.violations.filter(v => selectedViolations.includes(v.id)).length} selected
                     </Badge>
                   </div>
                   <Button
@@ -118,35 +122,30 @@ export const OptimizationSuggestionsPanel: React.FC<OptimizationSuggestionsPanel
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {category.suggestions.map((suggestion) => {
-                  const isSelected = selectedSuggestions.includes(suggestion.id);
+                {category.violations.map((violation) => {
+                  const isSelected = selectedViolations.includes(violation.id);
                   
                   return (
                     <div 
-                      key={suggestion.id} 
+                      key={violation.id} 
                       className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
                         isSelected ? 'bg-primary/5 border-primary/30' : 'hover:bg-accent/50 border-border'
                       }`}
-                      onClick={() => onToggleSuggestion(suggestion.id)}
+                      onClick={() => onToggleViolation(violation.id)}
                     >
                       <Checkbox
                         checked={isSelected}
-                        onCheckedChange={() => onToggleSuggestion(suggestion.id)}
+                        onCheckedChange={() => onToggleViolation(violation.id)}
                         className="mt-0.5"
                       />
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-medium text-sm">{suggestion.title}</h4>
-                          <Badge variant="outline" className={`text-xs ${getPriorityColor(suggestion.priority)}`}>
-                            {suggestion.priority}
+                          <h4 className="font-medium text-sm">{violation.message}</h4>
+                          <Badge variant="outline" className={`text-xs ${getSeverityColor(violation.severity)}`}>
+                            {violation.severity}
                           </Badge>
-                          {suggestion.impact && (
-                            <Badge variant="outline" className="text-xs bg-gray-100 text-gray-800">
-                              {suggestion.impact} impact
-                            </Badge>
-                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                        <p className="text-sm text-muted-foreground">{violation.description}</p>
                       </div>
                       {isSelected && (
                         <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
@@ -158,12 +157,12 @@ export const OptimizationSuggestionsPanel: React.FC<OptimizationSuggestionsPanel
             </Card>
           ))}
 
-          {suggestionCategories.length === 0 && (
+          {complianceCategories.length === 0 && (
             <Card>
               <CardContent className="pt-6 text-center">
                 <Info className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  No optimization suggestions available. Your content looks great!
+                  No compliance violations found. Your content meets all requirements!
                 </p>
               </CardContent>
             </Card>
