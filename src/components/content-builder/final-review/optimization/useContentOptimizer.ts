@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OptimizationSuggestion } from './types';
 import { 
@@ -18,6 +18,7 @@ export const useContentOptimizer = (content: string) => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [hasAIProviders, setHasAIProviders] = useState<boolean>(true);
 
   // Use the real hooks for analysis
   const { contentSuggestions, analyzeContentQuality, isAnalyzing: isContentAnalyzing } = useContentAnalysis();
@@ -27,10 +28,33 @@ export const useContentOptimizer = (content: string) => {
   const { qualitySuggestions } = useContentQualityIntegration();
   const { optimizeContent: performOptimization } = useContentOptimization();
 
+  // Check AI provider availability on mount
+  useEffect(() => {
+    const checkAIProviders = async () => {
+      try {
+        const { default: AIServiceController } = await import('@/services/aiService/AIServiceController');
+        const providers = await AIServiceController.getActiveProviders();
+        setHasAIProviders(providers.length > 0);
+        console.log(`🔍 AI providers check: ${providers.length} providers available`);
+      } catch (error) {
+        console.error('❌ Error checking AI providers:', error);
+        setHasAIProviders(false);
+      }
+    };
+    
+    checkAIProviders();
+  }, []);
+
   const analyzeContent = useCallback(async () => {
     if (!content || content.length < 50) {
       setAnalysisError('Content is too short for analysis. Please provide at least 50 characters.');
       toast.error('Content is too short for analysis');
+      return;
+    }
+
+    if (!hasAIProviders) {
+      setAnalysisError('No AI providers configured. Please add API keys in Settings.');
+      toast.error('No AI providers configured. Please add API keys in Settings.');
       return;
     }
 
@@ -40,7 +64,7 @@ export const useContentOptimizer = (content: string) => {
     try {
       console.log('🔄 Starting sequential content analysis to avoid rate limits...');
       
-      // Run analyses sequentially to avoid rate limits and improve reliability
+      // Run analyses sequentially with delays to avoid rate limits
       let completedAnalyses = 0;
       const totalAnalyses = 4;
       
@@ -49,6 +73,8 @@ export const useContentOptimizer = (content: string) => {
         console.log('📝 Phase 1: Content Quality Analysis');
         await analyzeContentQuality(content);
         completedAnalyses++;
+        // Small delay between analyses
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
         console.error('❌ Content quality analysis failed:', err);
       }
@@ -58,6 +84,7 @@ export const useContentOptimizer = (content: string) => {
         console.log('🤖 Phase 2: AI Detection Analysis');
         await analyzeAIContent(content);
         completedAnalyses++;
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
         console.error('❌ AI detection analysis failed:', err);
       }
@@ -67,6 +94,7 @@ export const useContentOptimizer = (content: string) => {
         console.log('🔍 Phase 3: SERP Integration Analysis');
         await analyzeSerpUsage(content);
         completedAnalyses++;
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
         console.error('❌ SERP integration analysis failed:', err);
       }
@@ -106,7 +134,7 @@ export const useContentOptimizer = (content: string) => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [content, analyzeContentQuality, analyzeAIContent, analyzeSerpUsage, analyzeSolution, contentSuggestions.length, aiDetectionSuggestions.length, serpIntegrationSuggestions.length, solutionSuggestions.length, qualitySuggestions.length]);
+  }, [content, hasAIProviders, analyzeContentQuality, analyzeAIContent, analyzeSerpUsage, analyzeSolution, contentSuggestions.length, aiDetectionSuggestions.length, serpIntegrationSuggestions.length, solutionSuggestions.length, qualitySuggestions.length]);
 
   const optimizeContent = useCallback(async (): Promise<string | null> => {
     if (selectedSuggestions.length === 0) {
@@ -213,6 +241,7 @@ export const useContentOptimizer = (content: string) => {
     optimizeContent,
     toggleSuggestion,
     incorporateAllSerpItems: incorporateAllSerpItemsLocal,
-    getTotalSuggestionCount
+    getTotalSuggestionCount,
+    hasAIProviders
   };
 };

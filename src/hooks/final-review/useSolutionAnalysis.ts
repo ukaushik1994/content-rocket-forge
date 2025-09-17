@@ -31,10 +31,9 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
     
     try {
       // First try to use AI service for advanced analysis
-      const aiResponse = await AIServiceController.generate({
-        input: `You are an expert content strategist. Assess how well the following solution is CONTEXTUALLY integrated into the content. Consider narrative flow, audience fit, and depth – not just keyword hits.
-
-Return ONLY valid JSON matching this schema:
+      const systemPrompt = 'You are an expert content strategist. Assess how well the following solution is CONTEXTUALLY integrated into the content. Consider narrative flow, audience fit, and depth – not just keyword hits.';
+      
+      const userPrompt = `Return ONLY valid JSON matching this schema:
 {
   "featureIncorporation": number,                 // 0-100
   "positioningScore": number,                     // 0-100
@@ -73,11 +72,14 @@ Target Audience: ${selectedSolution.targetAudience.join(', ')}
 Unique Value Props: ${selectedSolution.uniqueValuePropositions?.join(', ') || 'N/A'}
 Differentiators: ${selectedSolution.keyDifferentiators?.join(', ') || 'N/A'}
 
-CONTENT (first 5k chars):\n${content.substring(0, 5000)}\n`,
-        use_case: 'strategy',
-        temperature: 0.3,
-        max_tokens: 1600
-      });
+CONTENT (first 5k chars):\n${content.substring(0, 5000)}\n`;
+
+      const aiResponse = await AIServiceController.generate(
+        'strategy',
+        systemPrompt,
+        userPrompt,
+        { temperature: 0.3, maxTokens: 1600 }
+      );
 
       console.log("[useSolutionAnalysis] AI response:", aiResponse);
       

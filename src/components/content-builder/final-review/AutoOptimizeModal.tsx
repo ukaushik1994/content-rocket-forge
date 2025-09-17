@@ -28,10 +28,10 @@ import { EnhancedHighlightedContentViewer } from './optimization/components/Enha
 import { OptimizationSuggestionsPanel } from './optimization/components/OptimizationSuggestionsPanel';
 import { useContentOptimizer } from './optimization/useContentOptimizer';
 import { OptimizationSuggestion } from './optimization/types';
-import { analyzeContentForHighlights, HighlightAnalysisResult } from '@/services/contentHighlightingService';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
-import { toast } from 'sonner';
+  import { analyzeContentForAIHighlights } from '@/services/aiContentHighlightingService';
+  import { HighlightAnalysisResult } from '@/services/contentHighlightingService';
+  import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+  import { toast } from 'sonner';
 
 interface AutoOptimizeModalProps {
   isOpen: boolean;
@@ -74,8 +74,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     getOptimizationSelections, 
     applyOptimizationChanges
   } = useContentBuilder();
-  
-  const { isEnabled, hasProviders, activeProviders, refreshStatus } = useAIServiceStatus();
 
   const {
     isAnalyzing,
@@ -86,32 +84,22 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     serpIntegrationSuggestions,
     qualitySuggestions,
     selectedSuggestions,
+    analysisError,
     analyzeContent,
     toggleSuggestion,
-    getTotalSuggestionCount
+    getTotalSuggestionCount,
+    hasAIProviders
   } = useContentOptimizer(content);
 
-  // Refresh status when modal opens
+  // Reset step when modal opens
   useEffect(() => {
     if (isOpen) {
-      console.log('🔄 Auto Optimize Modal opened, refreshing AI service status...');
-      // Add a small delay to ensure the modal is fully rendered before checking status
-      setTimeout(() => {
-        refreshStatus();
-      }, 100);
+      setCurrentStep('analysis');
+      setOptimizationProgress(0);
+      setHighlightAnalysis(null);
+      setSelectedHighlights([]);
     }
-  }, [isOpen, refreshStatus]);
-
-  // Debug logging for modal state
-  useEffect(() => {
-    console.log('🔍 AutoOptimizeModal Status Update:', {
-      isOpen,
-      isEnabled,
-      hasProviders,
-      activeProviders,
-      totalProviders: 5 // We check 5 providers: openrouter, anthropic, openai, gemini, mistral
-    });
-  }, [isOpen, isEnabled, hasProviders, activeProviders]);
+  }, [isOpen]);
 
   // Normalize suggestions to a common format
   const normalizeSuggestion = (suggestion: any) => ({
@@ -217,7 +205,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           category: s.category
         } as OptimizationSuggestion));
 
-      const analysis = analyzeContentForHighlights(
+      const analysis = await analyzeContentForAIHighlights(
         content,
         selectedSuggestionObjects,
         state.mainKeyword,
@@ -345,7 +333,27 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         
         {!isAnalyzing && (
           <div className="space-y-4">
-            {!hasProviders ? (
+            {analysisError && (
+              <div className="max-w-md mx-auto p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-2 text-red-800 mb-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="font-medium">Analysis Error</span>
+                </div>
+                <p className="text-sm text-red-700 mb-3">
+                  {analysisError}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleStartAnalysis}
+                  className="w-full"
+                >
+                  Try Again
+                </Button>
+              </div>
+            )}
+            
+            {!hasAIProviders ? (
               <div className="max-w-md mx-auto p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div className="flex items-center gap-2 text-yellow-800 mb-2">
                   <AlertCircle className="w-4 h-4" />
@@ -363,30 +371,12 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
                   Configure AI Providers
                 </Button>
               </div>
-            ) : activeProviders === 0 ? (
-              <div className="max-w-md mx-auto p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center gap-2 text-red-800 mb-2">
-                  <AlertCircle className="w-4 h-4" />
-                  <span className="font-medium">AI Providers Unavailable</span>
-                </div>
-                <p className="text-sm text-red-700 mb-3">
-                  Your AI providers are not working properly. Please check your API keys and try again.
-                </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={refreshStatus}
-                  className="w-full"
-                >
-                  Refresh Status
-                </Button>
-              </div>
-            ) : (
+            ) : !analysisError ? (
               <Button onClick={handleStartAnalysis} size="lg" className="gap-2">
                 <Zap className="w-4 h-4" />
-                Start Analysis ({activeProviders} AI provider{activeProviders !== 1 ? 's' : ''} ready)
+                Start AI Analysis
               </Button>
-            )}
+            ) : null}
           </div>
         )}
       </motion.div>
