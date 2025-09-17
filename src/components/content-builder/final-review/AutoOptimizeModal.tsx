@@ -156,19 +156,29 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     setCurrentStep('analysis');
     
     try {
+      console.log('🚀 Starting analysis from modal...');
       const result = await analyzeContent();
+      
+      console.log('📊 Analysis result:', result);
       
       // Use the returned values instead of relying on state
       if (result && result.totalSuggestions > 0) {
+        console.log(`✅ Analysis found ${result.totalSuggestions} suggestions, proceeding to suggestions step`);
         setCurrentStep('suggestions');
-      } else {
-        toast.info('No optimization suggestions found - your content looks great!');
+        toast.success(`Analysis complete! Found ${result.totalSuggestions} optimization opportunities.`);
+      } else if (result && result.completedAnalyses > 0) {
+        console.log('ℹ️ Analysis completed but no suggestions found');
+        toast.info('Analysis complete! No optimization suggestions found - your content looks great!');
         onClose();
+      } else {
+        console.log('❌ Analysis failed or returned no results');
+        toast.error('Analysis failed. Please check your AI provider settings and try again.');
+        setCurrentStep('analysis');
       }
     } catch (error: any) {
-      console.error('Analysis failed:', error);
+      console.error('❌ Analysis failed in modal:', error);
       setCurrentStep('analysis');
-      toast.error('Analysis failed. Please try again.');
+      toast.error('Analysis failed. Please check your connection and try again.');
     }
   };
 
@@ -324,10 +334,27 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           </h3>
           <p className="text-muted-foreground max-w-md mx-auto">
             {isAnalyzing 
-              ? 'Our AI is analyzing your content for SEO, readability, and optimization opportunities...'
+              ? 'Running 4-phase AI analysis: Content Quality → AI Detection → SERP Integration → Solution Analysis'
               : 'Click the button below to start a comprehensive analysis of your content.'
             }
           </p>
+          
+          {isAnalyzing && (
+            <div className="mt-6 max-w-md mx-auto space-y-2">
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Phase 1: Content Quality Analysis</span>
+                </div>
+                <div className="text-xs opacity-70">Phase 2: AI Detection Analysis</div>
+                <div className="text-xs opacity-70">Phase 3: SERP Integration Analysis</div>
+                <div className="text-xs opacity-70">Phase 4: Solution Analysis</div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                This may take 30-60 seconds to complete all phases
+              </p>
+            </div>
+          )}
         </div>
         
         {!isAnalyzing && (

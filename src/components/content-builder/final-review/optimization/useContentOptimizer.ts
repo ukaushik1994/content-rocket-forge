@@ -11,6 +11,7 @@ import {
 } from './hooks';
 import { useContentQualityIntegration } from './hooks/useContentQualityIntegration';
 import { toast } from 'sonner';
+import { AnalysisDebugger } from './utils/analysisDebugger';
 
 export const useContentOptimizer = (content: string) => {
   const { state } = useContentBuilder();
@@ -19,6 +20,7 @@ export const useContentOptimizer = (content: string) => {
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [hasAIProviders, setHasAIProviders] = useState<boolean>(true);
+  const [analysisDebugger] = useState(() => new AnalysisDebugger());
 
   // Use the real hooks for analysis
   const { contentSuggestions, analyzeContentQuality, isAnalyzing: isContentAnalyzing } = useContentAnalysis();
@@ -54,22 +56,38 @@ export const useContentOptimizer = (content: string) => {
   }, []);
 
   const analyzeContent = useCallback(async () => {
-    if (!content || content.length < 50) {
-      setAnalysisError('Content is too short for analysis. Please provide at least 50 characters.');
+    // Validate content length and quality
+    if (!content || content.trim().length < 50) {
+      const error = `Content is too short for analysis. Please provide at least 50 characters. Current length: ${content?.length || 0}`;
+      console.log('❌ Content validation failed:', error);
+      setAnalysisError(error);
       toast.error('Content is too short for analysis');
       return { totalSuggestions: 0, completedAnalyses: 0 };
     }
 
     if (!hasAIProviders) {
-      setAnalysisError('No AI providers configured. Please add API keys in Settings.');
+      const error = 'No AI providers configured. Please add API keys in Settings.';
+      console.log('❌ AI providers check failed:', error);
+      setAnalysisError(error);
       toast.error('No AI providers configured. Please add API keys in Settings.');
       return { totalSuggestions: 0, completedAnalyses: 0 };
     }
 
+    // Log content details for debugging
+    console.log('📊 Content Analysis Starting:', {
+      contentLength: content.length,
+      wordCount: content.split(/\s+/).length,
+      hasAIProviders,
+      mainKeyword: state.mainKeyword,
+      selectedKeywords: state.selectedKeywords?.length || 0
+    });
+
     setIsAnalyzing(true);
     setAnalysisError(null);
+    analysisDebugger.reset();
     
     try {
+      toast.info('Starting AI analysis... This may take a few moments.');
       console.log('🔄 Starting sequential content analysis to avoid rate limits...');
       
       // Run analyses sequentially with delays to avoid rate limits
@@ -82,65 +100,129 @@ export const useContentOptimizer = (content: string) => {
       
       // Phase 1: Content Quality Analysis
       try {
-        console.log('📝 Phase 1: Content Quality Analysis');
+        console.log('📝 Phase 1/4: Content Quality Analysis');
+        analysisDebugger.startPhase('content');
+        toast.info('Analyzing content quality...');
         newContentSuggestions = await analyzeContentQuality(content);
+        analysisDebugger.completePhase('content', newContentSuggestions?.length || 0);
+        console.log(`✅ Phase 1 complete: ${newContentSuggestions?.length || 0} content suggestions`);
         completedAnalyses++;
-        // Small delay between analyses
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
+        const error = err instanceof Error ? err.message : 'Unknown error';
+        analysisDebugger.failPhase('content', error);
         console.error('❌ Content quality analysis failed:', err);
+        toast.error('Content quality analysis failed');
       }
       
       // Phase 2: AI Detection Analysis  
       try {
-        console.log('🤖 Phase 2: AI Detection Analysis');
+        console.log('🤖 Phase 2/4: AI Detection Analysis');
+        analysisDebugger.startPhase('ai');
+        toast.info('Analyzing AI patterns...');
         newAiDetectionSuggestions = await analyzeAIContent(content);
+        analysisDebugger.completePhase('ai', newAiDetectionSuggestions?.length || 0);
+        console.log(`✅ Phase 2 complete: ${newAiDetectionSuggestions?.length || 0} AI detection suggestions`);
         completedAnalyses++;
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
+        const error = err instanceof Error ? err.message : 'Unknown error';
+        analysisDebugger.failPhase('ai', error);
         console.error('❌ AI detection analysis failed:', err);
+        toast.error('AI detection analysis failed');
       }
       
       // Phase 3: SERP Integration Analysis
       try {
-        console.log('🔍 Phase 3: SERP Integration Analysis');
+        console.log('🔍 Phase 3/4: SERP Integration Analysis');
+        analysisDebugger.startPhase('serp');
+        toast.info('Analyzing SERP integration...');
         newSerpIntegrationSuggestions = await analyzeSerpUsage(content);
+        analysisDebugger.completePhase('serp', newSerpIntegrationSuggestions?.length || 0);
+        console.log(`✅ Phase 3 complete: ${newSerpIntegrationSuggestions?.length || 0} SERP suggestions`);
         completedAnalyses++;
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
+        const error = err instanceof Error ? err.message : 'Unknown error';
+        analysisDebugger.failPhase('serp', error);
         console.error('❌ SERP integration analysis failed:', err);
+        toast.error('SERP integration analysis failed');
       }
       
       // Phase 4: Solution Analysis
       try {
-        console.log('🎯 Phase 4: Solution Analysis');
+        console.log('🎯 Phase 4/4: Solution Analysis');
+        analysisDebugger.startPhase('solution');
+        toast.info('Analyzing solution integration...');
         newSolutionSuggestions = await analyzeSolution(content);
+        analysisDebugger.completePhase('solution', newSolutionSuggestions?.length || 0);
+        console.log(`✅ Phase 4 complete: ${newSolutionSuggestions?.length || 0} solution suggestions`);
         completedAnalyses++;
       } catch (err) {
+        const error = err instanceof Error ? err.message : 'Unknown error';
+        analysisDebugger.failPhase('solution', error);
         console.error('❌ Solution analysis failed:', err);
+        toast.error('Solution analysis failed');
       }
       
       // Wait for state updates to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Calculate total suggestions from the actual results
-      const totalSuggestions = 
+      // Calculate total suggestions from the actual results AND state
+      const totalFromResults = 
         (newContentSuggestions?.length || 0) + 
         (newAiDetectionSuggestions?.length || 0) + 
         (newSerpIntegrationSuggestions?.length || 0) + 
-        (newSolutionSuggestions?.length || 0) +
+        (newSolutionSuggestions?.length || 0);
+      
+      const totalFromState = 
+        contentSuggestions.length + 
+        aiDetectionSuggestions.length + 
+        serpIntegrationSuggestions.length + 
+        solutionSuggestions.length +
         qualitySuggestions.length;
 
+      // Use the higher count to ensure we don't miss any suggestions
+      const totalSuggestions = Math.max(totalFromResults, totalFromState);
+      
+      console.log('📊 Analysis Results Summary:', {
+        completedAnalyses,
+        totalAnalyses,
+        totalFromResults,
+        totalFromState,
+        finalTotal: totalSuggestions,
+        breakdown: {
+          content: newContentSuggestions?.length || 0,
+          aiDetection: newAiDetectionSuggestions?.length || 0,
+          serpIntegration: newSerpIntegrationSuggestions?.length || 0,
+          solution: newSolutionSuggestions?.length || 0,
+          quality: qualitySuggestions.length
+        }
+      });
+
+      // Log detailed debugger report
+      const report = analysisDebugger.logReport();
+      console.log('🎯 Final Report:', report.summary);
+
       if (completedAnalyses === 0) {
-        setAnalysisError('All analyses failed. Please check your AI provider configuration.');
+        const error = 'All analyses failed. Please check your AI provider configuration.';
+        console.log('❌ All analyses failed');
+        setAnalysisError(error);
         toast.error('Analysis failed. Please check your AI provider settings and try again.');
         return { totalSuggestions: 0, completedAnalyses };
       } else if (completedAnalyses < totalAnalyses) {
-        toast.warning(`Analysis partially completed (${completedAnalyses}/${totalAnalyses} successful). Found ${totalSuggestions} suggestions.`);
+        console.log(`⚠️ Partial analysis completion: ${completedAnalyses}/${totalAnalyses}`);
+        if (totalSuggestions > 0) {
+          toast.warning(`Analysis partially completed (${completedAnalyses}/${totalAnalyses} successful). Found ${totalSuggestions} suggestions.`);
+        } else {
+          toast.warning(`Analysis partially completed (${completedAnalyses}/${totalAnalyses} successful). No suggestions found.`);
+        }
       } else if (totalSuggestions === 0) {
-        toast.info('Content analysis complete. No optimization suggestions found - your content looks great!');
+        console.log('✅ Analysis complete with no suggestions');
+        // Don't show toast here - let the modal handle the message
       } else {
-        toast.success(`Analysis complete! Found ${totalSuggestions} optimization opportunities.`);
+        console.log(`✅ Analysis complete with ${totalSuggestions} suggestions`);
+        // Don't show toast here - let the modal handle the message
       }
 
       return { totalSuggestions, completedAnalyses };
