@@ -40,14 +40,25 @@ interface AutoOptimizeModalProps {
   onContentUpdate: (newContent: string) => void;
 }
 
-type WorkflowStep = 'compliance-check' | 'review-results' | 'fix-selection' | 'implementation';
+type WorkflowStep = 'compliance-check' | 'review-results' | 'implementation';
 
 interface ComplianceCategory {
   id: string;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  violations: ComplianceViolation[];
+  violations: {
+    id: string;
+    message: string;
+    description: string;
+    severity: 'critical' | 'major' | 'minor';
+    category: string;
+    textLocation?: {
+      start: number;
+      end: number;
+      text: string;
+    };
+  }[];
 }
 
 export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
@@ -99,28 +110,48 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       title: 'Keyword Usage',
       icon: Search,
       color: 'text-green-600',
-      violations: complianceResult.keyword.violations
+      violations: complianceResult.keyword.violations.map(v => ({
+        ...v,
+        description: v.suggestion || 'No additional details provided',
+        severity: v.severity === 'warning' ? 'major' as const : v.severity === 'critical' ? 'critical' as const : 'minor' as const,
+        category: 'keyword'
+      }))
     },
     {
       id: 'serp',
       title: 'SERP Integration',
       icon: TrendingUp,
       color: 'text-blue-600',
-      violations: complianceResult.serp.violations
+      violations: complianceResult.serp.violations.map(v => ({
+        ...v,
+        description: v.suggestion || 'No additional details provided',
+        severity: v.severity === 'warning' ? 'major' as const : v.severity === 'critical' ? 'critical' as const : 'minor' as const,
+        category: 'serp'
+      }))
     },
     {
       id: 'solution',
       title: 'Solution Integration',
       icon: Target,
       color: 'text-indigo-600',
-      violations: complianceResult.solution.violations
+      violations: complianceResult.solution.violations.map(v => ({
+        ...v,
+        description: v.suggestion || 'No additional details provided',
+        severity: v.severity === 'warning' ? 'major' as const : v.severity === 'critical' ? 'critical' as const : 'minor' as const,
+        category: 'solution'
+      }))
     },
     {
       id: 'structure',
       title: 'Content Structure',
       icon: FileCheck,
       color: 'text-orange-600',
-      violations: complianceResult.structure.violations
+      violations: complianceResult.structure.violations.map(v => ({
+        ...v,
+        description: v.suggestion || 'No additional details provided',
+        severity: v.severity === 'warning' ? 'major' as const : v.severity === 'critical' ? 'critical' as const : 'minor' as const,
+        category: 'structure'
+      }))
     }
   ].filter(category => category.violations.length > 0) : [];
 
@@ -154,8 +185,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       return;
     }
 
-    setCurrentStep('fix-selection');
-
     try {
       console.log('🎨 Generating compliance-based highlights...');
       
@@ -164,7 +193,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         setHighlightAnalysis(analysis);
         
         console.log(`✅ Generated ${analysis.highlights.length} compliance highlights`);
-        setTimeout(() => setCurrentStep('implementation'), 500);
+        setCurrentStep('implementation');
       }
       
     } catch (error) {
@@ -388,11 +417,11 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
                           <h4 className="font-medium text-sm">{violation.message}</h4>
-                          <Badge variant="outline" className={`text-xs ${violation.severity === 'critical' ? 'bg-red-100 text-red-800 border-red-200' : violation.severity === 'warning' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>
+                          <Badge variant="outline" className={`text-xs ${violation.severity === 'critical' ? 'bg-red-100 text-red-800 border-red-200' : violation.severity === 'major' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>
                             {violation.severity}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{violation.suggestion}</p>
+                        <p className="text-sm text-muted-foreground">{violation.description}</p>
                       </div>
                     </div>
                   ))}
@@ -415,62 +444,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     </motion.div>
   );
 
-  const renderFixSelectionStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center py-8"
-    >
-      <div className="mb-6">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mb-4">
-          <Loader2 className="w-8 h-8 text-white animate-spin" />
-        </div>
-        <h3 className="text-xl font-semibold mb-2">Preparing Compliance Review</h3>
-        <p className="text-muted-foreground max-w-md mx-auto mb-6">
-          Analyzing {selectedViolations.length} selected compliance issues and generating detailed review...
-        </p>
-      </div>
-    </motion.div>
-  );
 
-  const renderHighlightingStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
-    >
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          {isGeneratingHighlights ? (
-            <Loader2 className="w-6 h-6 text-primary animate-spin" />
-          ) : (
-            <CheckCircle2 className="w-6 h-6 text-green-500" />
-          )}
-        </div>
-        <h3 className="text-xl font-semibold mb-2">
-          {isGeneratingHighlights ? 'Generating Content Highlights' : 'Content Analysis Complete'}
-        </h3>
-        <p className="text-muted-foreground">
-          {isGeneratingHighlights 
-            ? 'AI is analyzing your content and generating highlights based on selected suggestions...'
-            : 'Content highlights have been generated. You can now see the optimized version.'
-          }
-        </p>
-      </div>
-
-      {isGeneratingHighlights && (
-        <div className="max-w-md mx-auto">
-          <Progress value={optimizationProgress} className="mb-2" />
-          <p className="text-xs text-center text-muted-foreground">
-            {optimizationProgress < 30 && 'Analyzing content structure...'}
-            {optimizationProgress >= 30 && optimizationProgress < 60 && 'Generating AI suggestions...'}
-            {optimizationProgress >= 60 && optimizationProgress < 90 && 'Creating content highlights...'}
-            {optimizationProgress >= 90 && 'Finalizing analysis...'}
-          </p>
-        </div>
-      )}
-    </motion.div>
-  );
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] h-[95vh] max-w-none max-h-none p-0 overflow-hidden">
@@ -521,13 +495,12 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
               {/* Right Panel - Content with highlights */}
               <div className="w-[60%] overflow-y-auto">
                 <div className="p-6">
-                  <ComplianceHighlightedViewer
-                    analysisResult={highlightAnalysis}
-                    selectedHighlights={selectedHighlights}
-                    onHighlightToggle={toggleHighlight}
-                    onSelectAll={selectAllHighlights}
-                    onClearAll={clearAllHighlights}
-                  />
+            <ComplianceHighlightedViewer
+              content={content}
+              highlightResult={highlightAnalysis}
+              complianceResult={complianceResult}
+              onHighlightSelect={(highlightIds) => setSelectedHighlights(highlightIds)}
+            />
                 </div>
               </div>
             </div>
@@ -537,7 +510,6 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
               <AnimatePresence mode="wait">
                 {currentStep === 'compliance-check' && renderComplianceCheckStep()}
                 {currentStep === 'review-results' && renderReviewResultsStep()}
-                {currentStep === 'fix-selection' && renderFixSelectionStep()}
               </AnimatePresence>
             </div>
           )}
