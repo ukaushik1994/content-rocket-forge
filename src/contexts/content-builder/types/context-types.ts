@@ -53,6 +53,10 @@ export interface ContentBuilderContextType {
   getOptimizationSelections: () => { suggestions: string[]; highlights: string[] } | null;
   clearOptimizationSelections: () => void;
   applyOptimizationChanges: (selectedHighlights: string[], content: string) => Promise<string>;
+  
+  // Compliance Fix Actions
+  applyComplianceFixes: (selectedViolations: any[], content: string) => Promise<{ fixedContent: string; appliedFixes: string[] }>;
+  previewComplianceFixes: (selectedViolations: any[], content: string) => Promise<string | null>;
 
   // Advanced Content Actions
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;

@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ComplianceDashboard } from './optimization/components/ComplianceDashboard';
 import { ComplianceHighlightedViewer } from './optimization/components/ComplianceHighlightedViewer';
 import { OptimizationSuggestionsPanel } from './optimization/components/OptimizationSuggestionsPanel';
+import { ComplianceFixPreview } from './optimization/ComplianceFixPreview';
 import { useContentCompliance } from '@/hooks/useContentCompliance';
 import { analyzeContentForComplianceHighlights } from '@/services/complianceHighlightingService';
 import { HighlightAnalysisResult } from '@/services/contentHighlightingService';
@@ -71,12 +72,18 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   const [highlightAnalysis, setHighlightAnalysis] = useState<HighlightAnalysisResult | null>(null);
   const [selectedViolations, setSelectedViolations] = useState<string[]>([]);
   const [selectedHighlights, setSelectedHighlights] = useState<string[]>([]);
+  const [showAIFixPreview, setShowAIFixPreview] = useState(false);
+  const [isGeneratingFix, setIsGeneratingFix] = useState(false);
+  const [fixPreviewContent, setFixPreviewContent] = useState<string | null>(null);
+  const [appliedFixes, setAppliedFixes] = useState<string[]>([]);
   
   const { 
     state, 
     saveOptimizationSelections, 
     getOptimizationSelections, 
-    applyOptimizationChanges
+    applyOptimizationChanges,
+    applyComplianceFixes,
+    previewComplianceFixes
   } = useContentBuilder();
 
   const {
@@ -100,6 +107,9 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       setHighlightAnalysis(null);
       setSelectedViolations([]);
       setSelectedHighlights([]);
+      setShowAIFixPreview(false);
+      setFixPreviewContent(null);
+      setAppliedFixes([]);
     }
   }, [isOpen]);
 
@@ -215,6 +225,61 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       console.error('Error applying changes:', error);
       toast.error('Failed to apply changes - please try again');
     }
+  };
+
+  const handleShowAIFixPreview = () => {
+    if (selectedViolations.length === 0) {
+      toast.warning('Please select violations to fix');
+      return;
+    }
+    setShowAIFixPreview(true);
+  };
+
+  const handleGeneratePreview = async () => {
+    if (!content || selectedViolations.length === 0) return;
+    
+    setIsGeneratingFix(true);
+    try {
+      const selectedViolationObjects = complianceCategories
+        .flatMap(cat => cat.violations)
+        .filter(violation => selectedViolations.includes(violation.id));
+      
+      const preview = await previewComplianceFixes(selectedViolationObjects, content);
+      setFixPreviewContent(preview);
+    } catch (error) {
+      console.error('Error generating preview:', error);
+      toast.error('Failed to generate fix preview');
+    } finally {
+      setIsGeneratingFix(false);
+    }
+  };
+
+  const handleApplyAIFixes = async () => {
+    if (!content || !fixPreviewContent) return;
+    
+    try {
+      const selectedViolationObjects = complianceCategories
+        .flatMap(cat => cat.violations)
+        .filter(violation => selectedViolations.includes(violation.id));
+      
+      const { fixedContent, appliedFixes } = await applyComplianceFixes(selectedViolationObjects, content);
+      onContentUpdate(fixedContent);
+      setAppliedFixes(appliedFixes);
+      toast.success(`Applied ${appliedFixes.length} AI-powered compliance fixes!`);
+      
+      // Close modal after brief delay
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error) {
+      console.error('Error applying fixes:', error);
+      toast.error('Failed to apply compliance fixes');
+    }
+  };
+
+  const handleCloseAIPreview = () => {
+    setShowAIFixPreview(false);
+    setFixPreviewContent(null);
   };
 
   // Helper functions for highlight selection
@@ -484,9 +549,9 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
                     <Button variant="outline" onClick={() => setCurrentStep('review-results')}>
                       Back
                     </Button>
-                    <Button onClick={handleApplyChanges} className="gap-2 flex-1">
-                      <Save className="w-4 h-4" />
-                      Apply Fixes ({selectedViolations.length + selectedHighlights.length})
+                    <Button onClick={handleShowAIFixPreview} className="gap-2 flex-1" disabled={selectedViolations.length === 0}>
+                      <ArrowRight className="w-4 h-4" />
+                      AI Fix Preview ({selectedViolations.length})
                     </Button>
                   </div>
                 </div>
@@ -515,6 +580,29 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
           )}
         </div>
       </DialogContent>
+
+      {/* AI Fix Preview Modal */}
+      <Dialog open={showAIFixPreview} onOpenChange={setShowAIFixPreview}>
+        <DialogContent className="w-[95vw] h-[95vh] max-w-none max-h-none p-0 overflow-hidden">
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-y-auto p-6">
+              <ComplianceFixPreview
+                originalContent={content}
+                fixedContent={fixPreviewContent}
+                selectedViolations={complianceCategories
+                  .flatMap(cat => cat.violations)
+                  .filter(violation => selectedViolations.includes(violation.id))
+                }
+                appliedFixes={appliedFixes}
+                isGeneratingFix={isGeneratingFix}
+                onApplyFixes={handleApplyAIFixes}
+                onGeneratePreview={handleGeneratePreview}
+                onCancel={handleCloseAIPreview}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };

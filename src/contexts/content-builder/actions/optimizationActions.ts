@@ -136,10 +136,101 @@ Return ONLY the improved content (no explanations or metadata). Maintain the sam
     }
   };
 
+  const applyComplianceFixes = async (selectedViolations: any[], content: string): Promise<{ fixedContent: string; appliedFixes: string[] }> => {
+    try {
+      if (selectedViolations.length === 0) {
+        toast.info('No compliance violations selected');
+        return { fixedContent: content, appliedFixes: [] };
+      }
+
+      // Group violations by category for more efficient processing
+      const violationsByCategory = selectedViolations.reduce((acc: Record<string, any[]>, violation: any) => {
+        const category = violation.category || 'general';
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(violation);
+        return acc;
+      }, {} as Record<string, any[]>);
+
+      // Create specific fix instructions based on violation types
+      const systemPrompt = 'You are an expert content compliance specialist. Fix the identified compliance violations while preserving the original content quality, tone, and meaning. Make precise, targeted changes only where needed.';
+      
+      const fixInstructions = Object.entries(violationsByCategory).map(([category, violations]: [string, any[]]) => {
+        const violationTexts = violations.map((v: any) => `- ${v.title}: ${v.description}`).join('\n');
+        return `${category.toUpperCase()} VIOLATIONS TO FIX:\n${violationTexts}`;
+      }).join('\n\n');
+
+      const userPrompt = `
+Fix these specific compliance violations in the content:
+
+${fixInstructions}
+
+ORIGINAL CONTENT:
+${content}
+
+INSTRUCTIONS:
+- Make ONLY the changes needed to address the listed violations
+- Preserve the original tone, style, and overall structure
+- Maintain content quality and readability
+- Do not add unnecessary changes beyond fixing the violations
+- Return ONLY the corrected content (no explanations or metadata)
+
+FIXED CONTENT:`;
+
+      const { default: AIServiceController } = await import('@/services/aiService/AIServiceController');
+      
+      const response = await AIServiceController.generate(
+        'content_generation',
+        systemPrompt,
+        userPrompt,
+        { temperature: 0.2, maxTokens: 4000 }
+      );
+
+      let fixedContent = content; // Default fallback
+      const appliedFixes: string[] = [];
+
+      if (response?.content) {
+        // Clean up the response to get just the content
+        let improvedContent = response.content.trim();
+        
+        // Remove any markdown formatting or explanations
+        improvedContent = improvedContent.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '');
+        
+        // Validate that we got meaningful content back
+        if (improvedContent.length > content.length * 0.5 && 
+            improvedContent.length < content.length * 3 && 
+            improvedContent !== content) {
+          fixedContent = improvedContent;
+          appliedFixes.push(...selectedViolations.map((v: any) => v.title));
+          console.log('✅ Successfully applied compliance fixes');
+        } else {
+          console.warn('⚠️ AI compliance fix result seems invalid, using original content');
+        }
+      }
+      
+      return { fixedContent, appliedFixes };
+    } catch (error) {
+      console.error('Error applying compliance fixes:', error);
+      toast.error('Failed to apply compliance fixes');
+      return { fixedContent: content, appliedFixes: [] };
+    }
+  };
+
+  const previewComplianceFixes = async (selectedViolations: any[], content: string): Promise<string | null> => {
+    try {
+      const { fixedContent } = await applyComplianceFixes(selectedViolations, content);
+      return fixedContent !== content ? fixedContent : null;
+    } catch (error) {
+      console.error('Error previewing compliance fixes:', error);
+      return null;
+    }
+  };
+
   return {
     saveOptimizationSelections,
     getOptimizationSelections,
     clearOptimizationSelections,
-    applyOptimizationChanges
+    applyOptimizationChanges,
+    applyComplianceFixes,
+    previewComplianceFixes
   };
 };
