@@ -158,15 +158,13 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     try {
       await analyzeContent();
       
-      // Move to suggestions step after analysis
-      setTimeout(() => {
-        if (getTotalSuggestionCount() > 0) {
-          setCurrentStep('suggestions');
-        } else {
-          toast.info('No optimization suggestions found - your content looks great!');
-          onClose();
-        }
-      }, 1000);
+      // Move to suggestions step after analysis completes
+      if (getTotalSuggestionCount() > 0) {
+        setCurrentStep('suggestions');
+      } else {
+        toast.info('No optimization suggestions found - your content looks great!');
+        onClose();
+      }
     } catch (error: any) {
       console.error('Analysis failed:', error);
       setCurrentStep('analysis');
