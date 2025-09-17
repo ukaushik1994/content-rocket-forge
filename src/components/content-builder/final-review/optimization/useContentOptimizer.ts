@@ -57,13 +57,13 @@ export const useContentOptimizer = (content: string) => {
     if (!content || content.length < 50) {
       setAnalysisError('Content is too short for analysis. Please provide at least 50 characters.');
       toast.error('Content is too short for analysis');
-      return;
+      return { totalSuggestions: 0, completedAnalyses: 0 };
     }
 
     if (!hasAIProviders) {
       setAnalysisError('No AI providers configured. Please add API keys in Settings.');
       toast.error('No AI providers configured. Please add API keys in Settings.');
-      return;
+      return { totalSuggestions: 0, completedAnalyses: 0 };
     }
 
     setIsAnalyzing(true);
@@ -75,11 +75,15 @@ export const useContentOptimizer = (content: string) => {
       // Run analyses sequentially with delays to avoid rate limits
       let completedAnalyses = 0;
       const totalAnalyses = 4;
+      let newContentSuggestions: any[] = [];
+      let newAiDetectionSuggestions: any[] = [];
+      let newSerpIntegrationSuggestions: any[] = [];
+      let newSolutionSuggestions: any[] = [];
       
       // Phase 1: Content Quality Analysis
       try {
         console.log('📝 Phase 1: Content Quality Analysis');
-        await analyzeContentQuality(content);
+        newContentSuggestions = await analyzeContentQuality(content);
         completedAnalyses++;
         // Small delay between analyses
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -90,7 +94,7 @@ export const useContentOptimizer = (content: string) => {
       // Phase 2: AI Detection Analysis  
       try {
         console.log('🤖 Phase 2: AI Detection Analysis');
-        await analyzeAIContent(content);
+        newAiDetectionSuggestions = await analyzeAIContent(content);
         completedAnalyses++;
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
@@ -100,7 +104,7 @@ export const useContentOptimizer = (content: string) => {
       // Phase 3: SERP Integration Analysis
       try {
         console.log('🔍 Phase 3: SERP Integration Analysis');
-        await analyzeSerpUsage(content);
+        newSerpIntegrationSuggestions = await analyzeSerpUsage(content);
         completedAnalyses++;
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
@@ -110,23 +114,27 @@ export const useContentOptimizer = (content: string) => {
       // Phase 4: Solution Analysis
       try {
         console.log('🎯 Phase 4: Solution Analysis');
-        await analyzeSolution(content);
+        newSolutionSuggestions = await analyzeSolution(content);
         completedAnalyses++;
       } catch (err) {
         console.error('❌ Solution analysis failed:', err);
       }
       
-      // Check results and provide feedback
+      // Wait for state updates to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Calculate total suggestions from the actual results
       const totalSuggestions = 
-        contentSuggestions.length + 
-        aiDetectionSuggestions.length + 
-        serpIntegrationSuggestions.length + 
-        solutionSuggestions.length +
+        (newContentSuggestions?.length || 0) + 
+        (newAiDetectionSuggestions?.length || 0) + 
+        (newSerpIntegrationSuggestions?.length || 0) + 
+        (newSolutionSuggestions?.length || 0) +
         qualitySuggestions.length;
 
       if (completedAnalyses === 0) {
         setAnalysisError('All analyses failed. Please check your AI provider configuration.');
         toast.error('Analysis failed. Please check your AI provider settings and try again.');
+        return { totalSuggestions: 0, completedAnalyses };
       } else if (completedAnalyses < totalAnalyses) {
         toast.warning(`Analysis partially completed (${completedAnalyses}/${totalAnalyses} successful). Found ${totalSuggestions} suggestions.`);
       } else if (totalSuggestions === 0) {
@@ -135,14 +143,17 @@ export const useContentOptimizer = (content: string) => {
         toast.success(`Analysis complete! Found ${totalSuggestions} optimization opportunities.`);
       }
 
+      return { totalSuggestions, completedAnalyses };
+
     } catch (error) {
       console.error('❌ Critical error in content analysis:', error);
       setAnalysisError('Failed to analyze content. Please try again.');
       toast.error('Analysis failed. Please check your connection and try again.');
+      return { totalSuggestions: 0, completedAnalyses: 0 };
     } finally {
       setIsAnalyzing(false);
     }
-  }, [content, hasAIProviders, analyzeContentQuality, analyzeAIContent, analyzeSerpUsage, analyzeSolution, contentSuggestions.length, aiDetectionSuggestions.length, serpIntegrationSuggestions.length, solutionSuggestions.length, qualitySuggestions.length]);
+  }, [content, hasAIProviders, analyzeContentQuality, analyzeAIContent, analyzeSerpUsage, analyzeSolution, qualitySuggestions.length]);
 
   const optimizeContent = useCallback(async (): Promise<string | null> => {
     if (selectedSuggestions.length === 0) {
