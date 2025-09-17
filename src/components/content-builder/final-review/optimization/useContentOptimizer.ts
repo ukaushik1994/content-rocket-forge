@@ -132,14 +132,22 @@ export const useContentOptimizer = (content: string) => {
         toast.error('AI detection analysis failed');
       }
       
-      // Phase 3: SERP Integration Analysis
+      // Phase 3: SERP Integration Analysis (Optional - only if SERP data exists)
       try {
-        console.log('🔍 Phase 3/4: SERP Integration Analysis');
-        analysisDebugger.startPhase('serp');
-        toast.info('Analyzing SERP integration...');
-        newSerpIntegrationSuggestions = await analyzeSerpUsage(content);
-        analysisDebugger.completePhase('serp', newSerpIntegrationSuggestions?.length || 0);
-        console.log(`✅ Phase 3 complete: ${newSerpIntegrationSuggestions?.length || 0} SERP suggestions`);
+        const selectedSerpItems = state.serpSelections?.filter(item => item.selected) || [];
+        
+        if (selectedSerpItems.length > 0) {
+          console.log('🔍 Phase 3/4: SERP Integration Analysis');
+          analysisDebugger.startPhase('serp');
+          toast.info('Analyzing SERP integration...');
+          newSerpIntegrationSuggestions = await analyzeSerpUsage(content);
+          analysisDebugger.completePhase('serp', newSerpIntegrationSuggestions?.length || 0);
+          console.log(`✅ Phase 3 complete: ${newSerpIntegrationSuggestions?.length || 0} SERP suggestions`);
+        } else {
+          console.log('ℹ️ Phase 3/4: Skipping SERP analysis (no SERP items selected from Step 1)');
+          analysisDebugger.completePhase('serp', 0);
+          newSerpIntegrationSuggestions = [];
+        }
         completedAnalyses++;
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
@@ -165,8 +173,8 @@ export const useContentOptimizer = (content: string) => {
         toast.error('Solution analysis failed');
       }
       
-      // Wait for state updates to complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Allow React state updates to propagate without artificial delays
+      // State updates are synchronous in this context since we're using the returned values directly
       
       // Calculate total suggestions from the actual results AND state
       const totalFromResults = 

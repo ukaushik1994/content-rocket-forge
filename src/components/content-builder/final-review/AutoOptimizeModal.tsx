@@ -40,7 +40,7 @@ interface AutoOptimizeModalProps {
   onContentUpdate: (newContent: string) => void;
 }
 
-type WorkflowStep = 'analysis' | 'suggestions' | 'optimization' | 'results';
+type WorkflowStep = 'analysis' | 'suggestions' | 'highlighting' | 'results';
 
 interface SuggestionCategory {
   id: string;
@@ -67,6 +67,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
   const [optimizationProgress, setOptimizationProgress] = useState(0);
   const [highlightAnalysis, setHighlightAnalysis] = useState<HighlightAnalysisResult | null>(null);
   const [selectedHighlights, setSelectedHighlights] = useState<string[]>([]);
+  const [isGeneratingHighlights, setIsGeneratingHighlights] = useState(false);
   
   const { 
     state, 
@@ -91,7 +92,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     hasAIProviders
   } = useContentOptimizer(content);
 
-  // Reset step when modal opens
+  // Reset step when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setCurrentStep('analysis');
@@ -182,13 +183,15 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     }
   };
 
-  const handleOptimize = async () => {
+
+  const handleGenerateHighlights = async () => {
     if (selectedSuggestions.length === 0) {
       toast.error('Please select at least one suggestion');
       return;
     }
 
-    setCurrentStep('optimization');
+    setIsGeneratingHighlights(true);
+    setCurrentStep('highlighting');
     setOptimizationProgress(0);
 
     const progressInterval = setInterval(() => {
@@ -202,6 +205,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     }, 500);
 
     try {
+      console.log('🎨 Generating AI highlights for selected suggestions...');
       const selectedSuggestionObjects = suggestionCategories
         .flatMap(cat => cat.suggestions)
         .filter(s => selectedSuggestions.includes(s.id))
@@ -217,21 +221,24 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
       const analysis = await analyzeContentForAIHighlights(
         content,
         selectedSuggestionObjects,
-        state.mainKeyword,
-        state.selectedKeywords
+        state.mainKeyword || '',
+        state.selectedKeywords || []
       );
       
       clearInterval(progressInterval);
       setOptimizationProgress(100);
       setHighlightAnalysis(analysis);
       
+      console.log(`✅ Generated ${analysis.highlights.length} highlights, proceeding to results`);
       setTimeout(() => setCurrentStep('results'), 500);
       
     } catch (error) {
       clearInterval(progressInterval);
-      console.error('Optimization error:', error);
-      toast.error('Analysis failed - please check your connection and try again');
+      console.error('Highlight generation error:', error);
+      toast.error('Failed to generate highlights - please check your connection and try again');
       setCurrentStep('suggestions');
+    } finally {
+      setIsGeneratingHighlights(false);
     }
   };
 
@@ -480,9 +487,9 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         <p className="text-sm text-muted-foreground">
           {selectedSuggestions.length} of {getTotalSuggestionCount()} suggestions selected
         </p>
-        <Button onClick={handleOptimize} disabled={selectedSuggestions.length === 0} className="gap-2">
+        <Button onClick={handleGenerateHighlights} disabled={selectedSuggestions.length === 0} className="gap-2">
           <ArrowRight className="w-4 h-4" />
-          Optimize Content
+          Generate Highlights
         </Button>
       </div>
     </motion.div>
@@ -511,6 +518,44 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     </motion.div>
   );
 
+  const renderHighlightingStep = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      <div className="text-center mb-6">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          {isGeneratingHighlights ? (
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+          ) : (
+            <CheckCircle2 className="w-6 h-6 text-green-500" />
+          )}
+        </div>
+        <h3 className="text-xl font-semibold mb-2">
+          {isGeneratingHighlights ? 'Generating Content Highlights' : 'Content Analysis Complete'}
+        </h3>
+        <p className="text-muted-foreground">
+          {isGeneratingHighlights 
+            ? 'AI is analyzing your content and generating highlights based on selected suggestions...'
+            : 'Content highlights have been generated. You can now see the optimized version.'
+          }
+        </p>
+      </div>
+
+      {isGeneratingHighlights && (
+        <div className="max-w-md mx-auto">
+          <Progress value={optimizationProgress} className="mb-2" />
+          <p className="text-xs text-center text-muted-foreground">
+            {optimizationProgress < 30 && 'Analyzing content structure...'}
+            {optimizationProgress >= 30 && optimizationProgress < 60 && 'Generating AI suggestions...'}
+            {optimizationProgress >= 60 && optimizationProgress < 90 && 'Creating content highlights...'}
+            {optimizationProgress >= 90 && 'Finalizing analysis...'}
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] h-[95vh] max-w-none max-h-none p-0 overflow-hidden">
@@ -577,7 +622,7 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
               <AnimatePresence mode="wait">
                 {currentStep === 'analysis' && renderAnalysisStep()}
                 {currentStep === 'suggestions' && renderSuggestionsStep()}
-                {currentStep === 'optimization' && renderOptimizationStep()}
+                {currentStep === 'highlighting' && renderHighlightingStep()}
               </AnimatePresence>
             </div>
           )}
