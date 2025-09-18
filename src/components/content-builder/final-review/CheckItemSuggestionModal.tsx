@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, ThumbsUp, ThumbsDown, Lightbulb } from 'lucide-react';
+import { Loader2, CheckCircle, ThumbsUp, ThumbsDown, Lightbulb, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
@@ -33,6 +33,7 @@ export const CheckItemSuggestionModal = ({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackGiven, setFeedbackGiven] = useState<string[]>([]);
+  const [copiedSuggestions, setCopiedSuggestions] = useState<string[]>([]);
 
   // Generate AI suggestions based on check title and content
   const generateAISuggestions = async (title: string): Promise<Suggestion[]> => {
@@ -42,10 +43,13 @@ export const CheckItemSuggestionModal = ({
 Check Issue: ${title}
 Content: ${state.content || 'No content provided'}
 Main Keyword: ${state.mainKeyword || 'Not specified'}
+Selected Keywords: ${state.selectedKeywords?.join(', ') || 'Not specified'}
 Meta Title: ${state.metaTitle || 'Not specified'}
 Meta Description: ${state.metaDescription || 'Not specified'}
+SERP Data: ${state.serpData ? `Top competitor titles: ${state.serpData.organic_results?.slice(0, 3).map(r => r.title).join('; ') || 'Not available'}` : 'Not available'}
+CTA Present: ${state.content?.includes('cta') || state.content?.toLowerCase().includes('contact') || state.content?.toLowerCase().includes('book') || state.content?.toLowerCase().includes('get started') ? 'Yes' : 'No'}
 
-Please provide 3-5 actionable suggestions to address this specific issue.`;
+Please provide 3-5 specific, actionable suggestions to address this issue. Focus on practical steps the user can take immediately.`;
 
       const response = await AIServiceController.generate({
         input: prompt,
@@ -153,6 +157,21 @@ Please provide 3-5 actionable suggestions to address this specific issue.`;
     );
   };
 
+  const handleCopyToClipboard = async (suggestion: Suggestion) => {
+    try {
+      await navigator.clipboard.writeText(suggestion.text);
+      setCopiedSuggestions(prev => [...prev, suggestion.id]);
+      toast.success('Suggestion copied to clipboard!');
+      
+      // Reset copy status after 2 seconds
+      setTimeout(() => {
+        setCopiedSuggestions(prev => prev.filter(id => id !== suggestion.id));
+      }, 2000);
+    } catch (error) {
+      toast.error('Failed to copy suggestion');
+    }
+  };
+
   const getPriorityColor = (priority: 'high' | 'medium' | 'low') => {
     switch (priority) {
       case 'high': return 'bg-red-50 text-red-700 border-red-200';
@@ -202,9 +221,24 @@ Please provide 3-5 actionable suggestions to address this specific issue.`;
                         )}
                       </div>
                       
-                      <p className="text-sm leading-relaxed mb-4">
-                        {suggestion.text}
-                      </p>
+                      <div className="flex items-start justify-between gap-2 mb-4">
+                        <p className="text-sm leading-relaxed flex-1">
+                          {suggestion.text}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopyToClipboard(suggestion)}
+                          className="h-7 w-7 p-0 shrink-0"
+                          title="Copy to clipboard"
+                        >
+                          {copiedSuggestions.includes(suggestion.id) ? (
+                            <Check className="h-3 w-3 text-green-600" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
                       
                       {!feedbackGiven.includes(suggestion.id) && (
                         <div className="flex items-center gap-2">
