@@ -12,7 +12,6 @@ import { AiProvider } from '@/services/aiService/types';
 import { toast } from 'sonner';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
-import { useSerpServiceStatus } from '@/hooks/useSerpServiceStatus';
 
 interface AiProviderStatus {
   configured: boolean;
@@ -46,9 +45,8 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [workingProviders, setWorkingProviders] = useState<AiProvider[]>([]);
   
-  // Check both AI and SERP service status
+  // Check AI service status only
   const aiServiceStatus = useAIServiceStatus();
-  const serpServiceStatus = useSerpServiceStatus();
 
   const checkApiStatus = async () => {
     setIsLoading(true);
@@ -121,12 +119,6 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
   };
 
   const overallStatus = getOverallStatus();
-
-  // Hide completely when both AI and SERP services are ready
-  const bothServicesReady = aiServiceStatus.activeProviders > 0 && serpServiceStatus.activeProviders > 0;
-  if (bothServicesReady && !aiServiceStatus.isLoading && !serpServiceStatus.isLoading) {
-    return null;
-  }
 
   if (isLoading) {
     return (
