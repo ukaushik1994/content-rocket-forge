@@ -198,11 +198,19 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
     try {
       console.log('🚀 Starting unified analysis (Compliance + AI)...');
       
-      // Run both analyses in parallel
+      // Run analyses in parallel
       const [complianceResults, aiResults] = await Promise.allSettled([
         runComplianceAnalysis(),
         runAIAnalysis()
       ]);
+      
+      console.log('📊 Analysis results received:', {
+        compliance: complianceResults.status,
+        ai: aiResults.status
+      });
+      
+      // Give React time to update hook states after async operations
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       let hasComplianceIssues = false;
       let hasAISuggestions = false;
@@ -213,12 +221,13 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         hasComplianceIssues = complianceResult.overall.totalViolations > 0;
         totalIssues += complianceResult.overall.totalViolations;
         console.log(`✅ Compliance analysis complete: ${complianceResult.overall.totalViolations} issues found`);
-      } else {
-        console.log('⚠️ Compliance analysis failed:', complianceResults.status === 'rejected' ? complianceResults.reason : 'No results');
+      } else if (complianceResults.status === 'rejected') {
+        console.log('⚠️ Compliance analysis failed:', complianceResults.reason);
       }
       
-      // Check AI results  
+      // Check AI results - use the returned values from the hook instead of state
       if (aiResults.status === 'fulfilled') {
+        // Get fresh suggestion count after analysis
         const aiSuggestionCount = getTotalSuggestionCount();
         hasAISuggestions = aiSuggestionCount > 0;
         totalIssues += aiSuggestionCount;
@@ -226,15 +235,34 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         console.log(`✅ AI analysis complete: ${aiSuggestionCount} suggestions found`);
       } else {
         console.log('⚠️ AI analysis failed:', aiResults.reason);
+        // Don't treat this as a complete failure - partial success is acceptable
       }
       
-      // Proceed to review if we have any results
-      if (hasComplianceIssues || hasAISuggestions) {
+      console.log('📋 Final analysis summary:', {
+        hasComplianceIssues,
+        hasAISuggestions,
+        totalIssues,
+        complianceViolations: complianceResult?.overall?.totalViolations || 0,
+        aiSuggestions: getTotalSuggestionCount()
+      });
+      
+      // Success if we have ANY results (compliance OR AI suggestions)
+      if (hasComplianceIssues || hasAISuggestions || totalIssues > 0) {
         setCurrentStep('review-results');
         toast.success(`Analysis complete! Found ${totalIssues} optimization opportunities.`);
       } else {
-        toast.success('Analysis complete! Your content is well-optimized.');
-        onClose();
+        // Check if analyses actually ran but found no issues
+        const complianceRan = complianceResults.status === 'fulfilled';
+        const aiRan = aiResults.status === 'fulfilled';
+        
+        if (complianceRan || aiRan) {
+          toast.success('Analysis complete! Your content is well-optimized.');
+          setCurrentStep('review-results'); // Still show results even if no issues found
+        } else {
+          // Both analyses failed
+          toast.error('Analysis failed. Please check your AI provider settings and try again.');
+          setCurrentStep('unified-analysis');
+        }
       }
       
     } catch (error: any) {
