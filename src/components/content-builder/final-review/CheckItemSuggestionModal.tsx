@@ -2,14 +2,19 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Copy, Check, Wand2, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Loader2, Copy, Check, Wand2, Eye, EyeOff, ArrowRight, Undo2, Redo2, AlertTriangle } from 'lucide-react';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { saveSuggestionFeedback } from '@/services/suggestionFeedbackService';
 import { ContentHighlightService, EnhancedSuggestion } from '@/services/contentHighlightService';
 import { ContentSyncService } from '@/services/contentSyncService';
 import { supabase } from '@/integrations/supabase/client';
+import { useBatchOperations } from '@/hooks/final-review/useBatchOperations';
+import { useUndoSystem } from '@/hooks/final-review/useUndoSystem';
+import { useContentIntegration } from '@/hooks/final-review/useContentIntegration';
+import { useErrorBoundary } from '@/hooks/final-review/useErrorBoundary';
 
 interface CheckItemSuggestionModalProps {
   isOpen: boolean;
@@ -26,7 +31,27 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
   const [applyingIds, setApplyingIds] = useState<Set<string>>(new Set());
   const { state, setContent } = useContentBuilder();
 
-  const generateSuggestion = async () => {
+  // Enhanced functionality hooks
+  const { 
+    selectedSuggestions, 
+    isApplyingBatch, 
+    toggleSuggestionSelection, 
+    clearSelection, 
+    applySelectedSuggestions 
+  } = useBatchOperations();
+  
+  const { 
+    addUndoEntry, 
+    undo, 
+    redo, 
+    canUndo, 
+    canRedo 
+  } = useUndoSystem();
+
+  const { safeUpdateContent } = useContentIntegration();
+  const { withErrorBoundary, hasRecentErrors } = useErrorBoundary();
+
+  const generateSuggestion = withErrorBoundary(async () => {
     if (!checkTitle || !state.content) {
       toast.error('Missing check title or content');
       return;
@@ -34,6 +59,7 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
 
     setIsGenerating(true);
     try {
+      // AIServiceController is already a singleton instance
       const aiController = AIServiceController;
       
       // Enhanced system prompt with context and SERP data
@@ -90,7 +116,7 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
       
       Provide specific text replacements that will fix this issue.`;
 
-      const result = await AIServiceController.generate({
+      const result = await aiController.generate({
         input: userPrompt,
         use_case: 'suggestion_generation' as any,
         temperature: 0.3,
@@ -114,7 +140,7 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, 'AI Suggestion Generation', true);
 
   const copyToClipboard = async (text: string, index: number) => {
     try {
@@ -127,13 +153,14 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
     }
   };
 
-  const applySuggestion = async (suggestionId: string, replacement: any) => {
+  const applySuggestion = withErrorBoundary(async (suggestionId: string, replacement: any) => {
     if (!state.content) {
       toast.error('No content available');
       return;
     }
 
     setApplyingIds(prev => new Set([...prev, suggestionId]));
+    const originalContent = state.content;
     
     try {
       const success = await ContentSyncService.applySuggestion(
@@ -141,7 +168,15 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
         suggestionId,
         replacement,
         (newContent: string) => {
-          setContent(newContent);
+          // Add to undo history before updating
+          addUndoEntry(
+            originalContent,
+            newContent,
+            `Applied suggestion: ${replacement.reason}`,
+            suggestionId
+          );
+          // Use safe content update with validation and refresh
+          safeUpdateContent(originalContent, newContent, `Applied: ${replacement.reason}`);
         }
       );
 
@@ -164,6 +199,38 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
         return newSet;
       });
     }
+  }, 'Suggestion Application', true);
+
+  const handleBatchApply = async () => {
+    if (!state.content) {
+      toast.error('No content available');
+      return;
+    }
+
+    const originalContent = state.content;
+    
+    await applySelectedSuggestions(
+      state.content,
+      enhancedSuggestions,
+      (newContent: string) => {
+        // Add to undo history before updating
+        addUndoEntry(
+          originalContent,
+          newContent,
+          `Applied ${selectedSuggestions.size} suggestions in batch`,
+        );
+        setContent(newContent);
+        
+        // Update suggestions to show as applied
+        setEnhancedSuggestions(prev => 
+          prev.map(s => 
+            selectedSuggestions.has(s.id) 
+              ? { ...s, applied: true } 
+              : s
+          )
+        );
+      }
+    );
   };
 
   const togglePreview = (suggestionId: string) => {
@@ -198,6 +265,12 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="h-5 w-5 text-purple-400" />
             AI Content Optimizer: {checkTitle}
+            {hasRecentErrors && (
+              <Badge variant="destructive" className="ml-2">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Issues detected
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -225,15 +298,82 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-lg font-semibold text-white">Smart Text Replacements</h4>
-                <Badge className="bg-purple-500/20 text-purple-300">
-                  {enhancedSuggestions.length} suggestions
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-purple-500/20 text-purple-300">
+                    {enhancedSuggestions.length} suggestions
+                  </Badge>
+                  {selectedSuggestions.size > 0 && (
+                    <Badge className="bg-green-500/20 text-green-300">
+                      {selectedSuggestions.size} selected
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Batch Operations */}
+              <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => undo(setContent)}
+                    disabled={!canUndo}
+                    className="text-white/70 hover:text-white"
+                  >
+                    <Undo2 className="h-4 w-4 mr-1" />
+                    Undo
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => redo(setContent)}
+                    disabled={!canRedo}
+                    className="text-white/70 hover:text-white"
+                  >
+                    <Redo2 className="h-4 w-4 mr-1" />
+                    Redo
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectedSuggestions.size > 0 && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearSelection}
+                        className="text-white/70 hover:text-white"
+                      >
+                        Clear Selection
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleBatchApply}
+                        disabled={isApplyingBatch}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {isApplyingBatch ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Applying {selectedSuggestions.size}...
+                          </>
+                        ) : (
+                          `Apply ${selectedSuggestions.size} Selected`
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
 
               {enhancedSuggestions.map((suggestion) => (
                 <div key={suggestion.id} className="bg-glass border border-white/10 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={selectedSuggestions.has(suggestion.id)}
+                        onCheckedChange={() => toggleSuggestionSelection(suggestion.id)}
+                        className="border-white/20"
+                      />
                       <h5 className="font-medium text-white">{suggestion.title}</h5>
                       <Badge variant={suggestion.impact === 'high' ? 'destructive' : suggestion.impact === 'medium' ? 'default' : 'secondary'}>
                         {suggestion.impact} impact
