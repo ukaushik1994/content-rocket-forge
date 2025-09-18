@@ -1,286 +1,378 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, ThumbsUp, ThumbsDown, Lightbulb, Copy, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { Loader2, Copy, Check, Wand2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import AIServiceController from '@/services/aiService/AIServiceController';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { saveSuggestionFeedback } from '@/services/suggestionFeedbackService';
+import { ContentHighlightService, EnhancedSuggestion } from '@/services/contentHighlightService';
+import { ContentSyncService } from '@/services/contentSyncService';
 
 interface CheckItemSuggestionModalProps {
   isOpen: boolean;
   onClose: () => void;
   checkTitle: string;
-  onFeedback?: (suggestion: string, helpful: boolean) => void;
 }
 
-interface Suggestion {
-  id: string;
-  text: string;
-  priority: 'high' | 'medium' | 'low';
-  actionable: boolean;
-}
+export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckItemSuggestionModalProps) => {
+  const [suggestion, setSuggestion] = useState<string>('');
+  const [enhancedSuggestions, setEnhancedSuggestions] = useState<EnhancedSuggestion[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [showPreview, setShowPreview] = useState<string | null>(null);
+  const [applyingIds, setApplyingIds] = useState<Set<string>>(new Set());
+  const { state, setContent } = useContentBuilder();
 
-export const CheckItemSuggestionModal = ({ 
-  isOpen, 
-  onClose, 
-  checkTitle, 
-  onFeedback 
-}: CheckItemSuggestionModalProps) => {
-  const { state } = useContentBuilder();
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [feedbackGiven, setFeedbackGiven] = useState<string[]>([]);
-  const [copiedSuggestions, setCopiedSuggestions] = useState<string[]>([]);
+  const generateSuggestion = async () => {
+    if (!checkTitle || !state.content) {
+      toast.error('Missing check title or content');
+      return;
+    }
 
-  // Generate AI suggestions based on check title and content
-  const generateAISuggestions = async (title: string): Promise<Suggestion[]> => {
+    setIsGenerating(true);
     try {
-      const prompt = `Analyze the following content issue and provide specific suggestions for improvement:
+      const aiController = AIServiceController.getInstance();
+      
+      // Enhanced system prompt with context and SERP data
+      const systemPrompt = `You are an expert content optimizer. Analyze the content and provide specific, actionable text replacements to fix: "${checkTitle}".
 
-Check Issue: ${title}
-Content: ${state.content || 'No content provided'}
-Main Keyword: ${state.mainKeyword || 'Not specified'}
-Selected Keywords: ${state.selectedKeywords?.join(', ') || 'Not specified'}
-Meta Title: ${state.metaTitle || 'Not specified'}
-Meta Description: ${state.metaDescription || 'Not specified'}
-SERP Data: ${state.serpData ? `Top competitor titles: ${state.serpData.organic_results?.slice(0, 3).map(r => r.title).join('; ') || 'Not available'}` : 'Not available'}
-CTA Present: ${state.content?.includes('cta') || state.content?.toLowerCase().includes('contact') || state.content?.toLowerCase().includes('book') || state.content?.toLowerCase().includes('get started') ? 'Yes' : 'No'}
-
-Please provide 3-5 specific, actionable suggestions to address this issue. Focus on practical steps the user can take immediately.`;
-
-      const response = await AIServiceController.generate({
-        input: prompt,
-        use_case: 'suggestion_generation',
-        temperature: 0.7,
-        max_tokens: 800
-      });
-
-      if (response?.content) {
-        try {
-          // Try to parse as JSON first
-          const parsed = JSON.parse(response.content);
-          if (Array.isArray(parsed)) {
-            return parsed.map((item, index) => ({
-              id: `ai-${index}`,
-              text: item.text || item.suggestion || String(item),
-              priority: item.priority || 'medium',
-              actionable: item.actionable !== false
-            }));
-          }
-        } catch (parseError) {
-          // If JSON parsing fails, extract suggestions from text
-          console.log('Parsing as text instead of JSON');
+      Return your response in this JSON format:
+      [
+        {
+          "id": "suggestion-1",
+          "title": "Brief description of the fix",
+          "replacements": [
+            {
+              "location": {
+                "paragraph": 0,
+                "startIndex": 0,
+                "endIndex": 20,
+                "originalText": "exact text to replace"
+              },
+              "replacementText": "improved text",
+              "reason": "Why this change improves the content",
+              "before": "exact text to replace",
+              "after": "improved text"
+            }
+          ],
+          "impact": "high|medium|low",
+          "category": "seo|readability|compliance|solution"
         }
+      ]
+      
+      Context:
+      - Main keyword: ${state.mainKeyword || 'Not specified'}
+      - Selected keywords: ${state.selectedKeywords?.join(', ') || 'None'}
+      - SERP competitors: ${state.serpData ? 'Available for analysis' : 'Not available'}
+      - Solution: ${state.selectedSolution?.name || 'None'}
+      - Content type: ${state.contentType || 'Not specified'}`;
+
+      const userPrompt = `Issue to fix: "${checkTitle}"
+      
+      Content:
+      ${state.content}
+      
+      ${state.serpData ? `
+      SERP Context:
+      Top competitors are focusing on: ${state.serpData.relatedKeywords?.slice(0, 5).join(', ') || 'N/A'}
+      Search intent: ${state.serpData.searchIntent || 'Informational'}
+      ` : ''}
+      
+      ${state.selectedSolution ? `
+      Solution Context:
+      Name: ${state.selectedSolution.name}
+      Key Features: ${state.selectedSolution.features?.slice(0, 3).join(', ') || 'N/A'}
+      Benefits: ${state.selectedSolution.benefits?.slice(0, 3).join(', ') || 'N/A'}
+      ` : ''}
+      
+      Provide specific text replacements that will fix this issue.`;
+
+      const result = await AIServiceController.getInstance().generate({
+        input: userPrompt,
+        use_case: 'suggestion_generation' as any,
+        temperature: 0.3,
+        max_tokens: 1500
+      }, systemPrompt, userPrompt);
+
+      if (result?.content) {
+        setSuggestion(result.content);
         
-        // Fallback: parse text response
-        const suggestions = response.content
-          .split('\n')
-          .filter(line => line.trim() && (line.includes('-') || line.includes('•') || line.includes('1.') || line.includes('2.')))
-          .slice(0, 5)
-          .map((text, index) => ({
-            id: `ai-${index}`,
-            text: text.replace(/^[-•\d.]\s*/, '').trim(),
-            priority: index === 0 ? 'high' : index < 3 ? 'medium' : 'low',
-            actionable: true
-          }));
-          
-        return suggestions.length > 0 ? suggestions : getFallbackSuggestions(title);
+        // Parse enhanced suggestions
+        const parsed = ContentHighlightService.parseSuggestions(result.content);
+        setEnhancedSuggestions(parsed);
+        
+        toast.success(`Generated ${parsed.length} specific suggestions`);
+      } else {
+        toast.error('No suggestion generated');
       }
-      
-      return getFallbackSuggestions(title);
+    } catch (error: any) {
+      console.error('Error generating suggestion:', error);
+      toast.error('Failed to generate suggestion: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      toast.success('Copied to clipboard!');
+      setTimeout(() => setCopiedIndex(null), 2000);
     } catch (error) {
-      console.error('AI suggestion generation failed:', error);
-      return getFallbackSuggestions(title);
+      toast.error('Failed to copy text');
     }
   };
 
-  // Fallback suggestions if AI fails
-  const getFallbackSuggestions = (title: string): Suggestion[] => {
-    const titleLower = title.toLowerCase();
-    
-    if (titleLower.includes('keyword')) {
-      return [
-        { id: '1', text: 'Add your primary keyword 2-3 more times naturally throughout the content', priority: 'high', actionable: true },
-        { id: '2', text: 'Include keyword variations and synonyms for better relevance', priority: 'medium', actionable: true },
-        { id: '3', text: 'Use the keyword in subheadings and the first paragraph', priority: 'medium', actionable: true }
-      ];
+  const applySuggestion = async (suggestionId: string, replacement: any) => {
+    if (!state.content) {
+      toast.error('No content available');
+      return;
     }
-    
-    if (titleLower.includes('meta')) {
-      return [
-        { id: '1', text: 'Create a compelling title under 60 characters with your main keyword', priority: 'high', actionable: true },
-        { id: '2', text: 'Add emotional triggers or numbers to improve click-through rates', priority: 'medium', actionable: true },
-        { id: '3', text: 'Ensure the title accurately represents your content', priority: 'low', actionable: true }
-      ];
-    }
-    
-    if (titleLower.includes('solution') || titleLower.includes('product')) {
-      return [
-        { id: '1', text: 'Highlight specific benefits and features of your solution', priority: 'high', actionable: true },
-        { id: '2', text: 'Add customer testimonials or case studies for credibility', priority: 'medium', actionable: true },
-        { id: '3', text: 'Include clear call-to-action buttons throughout the content', priority: 'high', actionable: true }
-      ];
-    }
-    
-    return [
-      { id: '1', text: 'Review the specific requirements for this check', priority: 'high', actionable: true },
-      { id: '2', text: 'Consult content guidelines for detailed optimization tips', priority: 'medium', actionable: true },
-      { id: '3', text: 'Test different approaches and measure their impact', priority: 'low', actionable: true }
-    ];
-  };
 
-  useEffect(() => {
-    if (isOpen && checkTitle) {
-      setIsLoading(true);
-      setFeedbackGiven([]);
-      
-      generateAISuggestions(checkTitle).then((newSuggestions) => {
-        setSuggestions(newSuggestions);
-        setIsLoading(false);
-      }).catch(() => {
-        setSuggestions(getFallbackSuggestions(checkTitle));
-        setIsLoading(false);
+    setApplyingIds(prev => new Set([...prev, suggestionId]));
+    
+    try {
+      const success = await ContentSyncService.applySuggestion(
+        state.content,
+        suggestionId,
+        replacement,
+        (newContent: string) => {
+          setContent(newContent);
+        }
+      );
+
+      if (success) {
+        // Update the suggestions to show as applied
+        setEnhancedSuggestions(prev => 
+          prev.map(s => 
+            s.id === suggestionId 
+              ? { ...s, applied: true } 
+              : s
+          )
+        );
+      }
+    } catch (error: any) {
+      toast.error('Failed to apply suggestion: ' + error.message);
+    } finally {
+      setApplyingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suggestionId);
+        return newSet;
       });
     }
-  }, [isOpen, checkTitle, state.content]);
-
-  const handleFeedback = (suggestion: Suggestion, helpful: boolean) => {
-    setFeedbackGiven(prev => [...prev, suggestion.id]);
-    onFeedback?.(suggestion.text, helpful);
-    
-    toast.success(
-      helpful ? 'Thanks for the positive feedback!' : 'Thanks for the feedback - we\'ll improve our suggestions',
-      { id: `feedback-${suggestion.id}` }
-    );
   };
 
-  const handleCopyToClipboard = async (suggestion: Suggestion) => {
+  const togglePreview = (suggestionId: string) => {
+    setShowPreview(prev => prev === suggestionId ? null : suggestionId);
+  };
+
+  const handleFeedback = async (type: 'helpful' | 'not_helpful' | 'partially_helpful') => {
     try {
-      await navigator.clipboard.writeText(suggestion.text);
-      setCopiedSuggestions(prev => [...prev, suggestion.id]);
-      toast.success('Suggestion copied to clipboard!');
-      
-      // Reset copy status after 2 seconds
-      setTimeout(() => {
-        setCopiedSuggestions(prev => prev.filter(id => id !== suggestion.id));
-      }, 2000);
+      await saveSuggestionFeedback({
+        checkTitle,
+        suggestion: suggestion || enhancedSuggestions.map(s => s.title).join('; '),
+        feedbackType: type,
+        context: {
+          contentLength: state.content?.length || 0,
+          mainKeyword: state.mainKeyword,
+          hasSerp: !!state.serpData,
+          hasSolution: !!state.selectedSolution
+        }
+      });
+      toast.success('Thank you for your feedback!');
     } catch (error) {
-      toast.error('Failed to copy suggestion');
-    }
-  };
-
-  const getPriorityColor = (priority: 'high' | 'medium' | 'low') => {
-    switch (priority) {
-      case 'high': return 'bg-red-50 text-red-700 border-red-200';
-      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'low': return 'bg-blue-50 text-blue-700 border-blue-200';
+      console.error('Failed to save feedback:', error);
+      toast.error('Failed to save feedback');
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-primary" />
-            AI Suggestions for: {checkTitle}
+            <Wand2 className="h-5 w-5 text-purple-400" />
+            AI Content Optimizer: {checkTitle}
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4 overflow-y-auto max-h-[60vh]">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-              <span className="text-muted-foreground">Generating personalized suggestions...</span>
-            </div>
-          ) : (
-            <AnimatePresence>
-              {suggestions.map((suggestion, index) => (
-                <motion.div
-                  key={suggestion.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="border-l-4 border-l-primary/30">
-                    <CardContent className="pt-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <Badge 
-                          variant="outline" 
-                          className={getPriorityColor(suggestion.priority)}
-                        >
-                          {suggestion.priority} priority
-                        </Badge>
-                        {suggestion.actionable && (
-                          <Badge variant="secondary" className="text-xs">
-                            Actionable
-                          </Badge>
+
+        <div className="flex-1 space-y-4 overflow-y-auto">
+          <Button 
+            onClick={generateSuggestion}
+            disabled={isGenerating}
+            className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing Content & Generating Suggestions...
+              </>
+            ) : (
+              <>
+                <Wand2 className="mr-2 h-4 w-4" />
+                Generate Smart Suggestions
+              </>
+            )}
+          </Button>
+
+          {/* Enhanced Suggestions Display */}
+          {enhancedSuggestions.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-lg font-semibold text-white">Smart Text Replacements</h4>
+                <Badge className="bg-purple-500/20 text-purple-300">
+                  {enhancedSuggestions.length} suggestions
+                </Badge>
+              </div>
+
+              {enhancedSuggestions.map((suggestion) => (
+                <div key={suggestion.id} className="bg-glass border border-white/10 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h5 className="font-medium text-white">{suggestion.title}</h5>
+                      <Badge variant={suggestion.impact === 'high' ? 'destructive' : suggestion.impact === 'medium' ? 'default' : 'secondary'}>
+                        {suggestion.impact} impact
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {suggestion.category}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => togglePreview(suggestion.id)}
+                        className="text-white/70 hover:text-white"
+                      >
+                        {showPreview === suggestion.id ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
                         )}
-                      </div>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {suggestion.replacements.map((replacement, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <div className="text-sm text-white/80 mb-2">{replacement.reason}</div>
                       
-                      <div className="flex items-start justify-between gap-2 mb-4">
-                        <p className="text-sm leading-relaxed flex-1">
-                          {suggestion.text}
-                        </p>
+                      {/* Before/After Preview */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
+                          <div className="text-xs text-red-400 mb-1">BEFORE</div>
+                          <div className="text-sm text-white/90 font-mono">
+                            "{replacement.before}"
+                          </div>
+                        </div>
+                        <div className="bg-green-500/10 border border-green-500/20 rounded p-3">
+                          <div className="text-xs text-green-400 mb-1">AFTER</div>
+                          <div className="text-sm text-white/90 font-mono">
+                            "{replacement.after}"
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 pt-2">
                         <Button
-                          variant="ghost"
                           size="sm"
-                          onClick={() => handleCopyToClipboard(suggestion)}
-                          className="h-7 w-7 p-0 shrink-0"
-                          title="Copy to clipboard"
+                          onClick={() => applySuggestion(suggestion.id, replacement)}
+                          disabled={applyingIds.has(suggestion.id) || ContentSyncService.isSuggestionApplied(suggestion.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
                         >
-                          {copiedSuggestions.includes(suggestion.id) ? (
-                            <Check className="h-3 w-3 text-green-600" />
+                          {applyingIds.has(suggestion.id) ? (
+                            <>
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              Applying...
+                            </>
+                          ) : ContentSyncService.isSuggestionApplied(suggestion.id) ? (
+                            <>
+                              <Check className="mr-2 h-3 w-3" />
+                              Applied
+                            </>
+                          ) : (
+                            <>
+                              <ArrowRight className="mr-2 h-3 w-3" />
+                              Apply This Fix
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(replacement.after, idx)}
+                          className="text-white/70 hover:text-white"
+                        >
+                          {copiedIndex === idx ? (
+                            <Check className="h-3 w-3 text-green-400" />
                           ) : (
                             <Copy className="h-3 w-3" />
                           )}
                         </Button>
                       </div>
-                      
-                      {!feedbackGiven.includes(suggestion.id) && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Was this helpful?</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleFeedback(suggestion, true)}
-                            className="h-7 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                          >
-                            <ThumbsUp className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleFeedback(suggestion, false)}
-                            className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <ThumbsDown className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {feedbackGiven.includes(suggestion.id) && (
-                        <div className="flex items-center gap-1 text-green-600 text-xs">
-                          <CheckCircle className="h-3 w-3" />
-                          <span>Thanks for your feedback!</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                    </div>
+                  ))}
+                </div>
               ))}
-            </AnimatePresence>
+            </div>
+          )}
+
+          {/* Raw suggestion fallback */}
+          {suggestion && enhancedSuggestions.length === 0 && (
+            <div className="space-y-4">
+              <div className="bg-glass border border-white/10 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium text-white">AI Analysis</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(suggestion, 0)}
+                    className="text-white/70 hover:text-white"
+                  >
+                    {copiedIndex === 0 ? (
+                      <Check className="h-4 w-4 text-green-400" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <div className="text-sm text-white/80 whitespace-pre-wrap bg-black/20 rounded p-3 max-h-64 overflow-y-auto">
+                  {suggestion}
+                </div>
+              </div>
+            </div>
           )}
         </div>
-        
-        <div className="flex justify-end pt-4 border-t">
-          <Button onClick={onClose} variant="outline">
-            Close
-          </Button>
-        </div>
+
+        <DialogFooter className="pt-4 border-t border-white/10">
+          <div className="flex items-center justify-between w-full">
+            <div className="text-xs text-white/60">
+              Applied {ContentSyncService.getAppliedCount()} suggestions in this session
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleFeedback('helpful')}
+                className="text-green-400 border-green-400 hover:bg-green-400/10"
+              >
+                👍 Helpful
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleFeedback('not_helpful')}
+                className="text-red-400 border-red-400 hover:bg-red-400/10"
+              >
+                👎 Not Helpful
+              </Button>
+            </div>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

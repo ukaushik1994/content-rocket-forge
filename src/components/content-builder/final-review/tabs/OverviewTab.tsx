@@ -83,6 +83,7 @@ export const OverviewTab = ({
           <FinalChecklistCard 
             checks={checklistItems}
             isRefreshing={isRunningAllChecks}
+            onRefresh={refreshChecklist}
           />
         </motion.div>
         

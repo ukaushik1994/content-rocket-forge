@@ -160,7 +160,6 @@ export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: 
         isOpen={!!selectedCheck}
         onClose={() => setSelectedCheck(null)}
         checkTitle={selectedCheck || ''}
-        onFeedback={handleFeedback}
       />
     </Card>
   );
