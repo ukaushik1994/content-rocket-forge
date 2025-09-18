@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,106 +8,20 @@ import {
   Settings,
   Brain
 } from 'lucide-react';
-import { AiProvider } from '@/services/aiService/types';
-import { toast } from 'sonner';
-import AIServiceController from '@/services/aiService/AIServiceController';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
 
-interface AiProviderStatus {
-  configured: boolean;
-  working: boolean;
-  testing: boolean;
-}
-
-interface AiApiStatus {
-  [key: string]: AiProviderStatus;
-}
-
 interface EnhancedAiStatusProps {
-  onStatusChange?: (status: AiApiStatus) => void;
+  onStatusChange?: () => void;
 }
-
-const AI_PROVIDERS: AiProvider[] = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
-
-const PROVIDER_NAMES: Record<AiProvider, string> = {
-  openrouter: 'OpenRouter',
-  anthropic: 'Anthropic',
-  openai: 'OpenAI',
-  gemini: 'Gemini',
-  mistral: 'Mistral',
-  lmstudio: 'LM Studio'
-};
 
 export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
   onStatusChange
 }) => {
-  const [status, setStatus] = useState<AiApiStatus>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [workingProviders, setWorkingProviders] = useState<AiProvider[]>([]);
-  
-  // Check AI service status only
+  // Use only the AI service status hook
   const aiServiceStatus = useAIServiceStatus();
 
-  const checkApiStatus = async () => {
-    setIsLoading(true);
-    console.log('🔍 Starting AI provider status check');
-    
-    try {
-      // Use the centralized AI service for fresh data
-      const activeProviders = await AIServiceController.getActiveProviders();
-      
-      console.log('📊 Active providers:', activeProviders);
-      
-      const newStatus: AiApiStatus = {};
-      const working: AiProvider[] = [];
-      
-      // Process all providers to maintain compatibility with the interface
-      for (const provider of AI_PROVIDERS) {
-        const activeProvider = activeProviders.find(p => p.provider === provider);
-        const isConfigured = !!activeProvider;
-        const isWorking = activeProvider?.status === 'active';
-        
-        newStatus[provider] = {
-          configured: isConfigured,
-          working: isWorking || false,
-          testing: false
-        };
-        
-        if (isWorking) {
-          working.push(provider);
-        }
-      }
-      
-      console.log('📊 Final AI provider status:', newStatus);
-      console.log('✅ Working providers:', working);
-      
-      setStatus(newStatus);
-      setWorkingProviders(working);
-      onStatusChange?.(newStatus);
-      
-    } catch (error) {
-      console.error('💥 Error checking AI provider status:', error);
-      toast.error('Failed to check AI provider status');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    checkApiStatus();
-    
-    // Set up automatic refresh every 30 seconds when not loading
-    const interval = setInterval(() => {
-      if (!isLoading) {
-        checkApiStatus();
-      }
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
   const getOverallStatus = () => {
-    const workingCount = workingProviders.length;
+    const workingCount = aiServiceStatus.activeProviders;
     
     if (workingCount >= 2) {
       return { status: 'excellent', label: `${workingCount} AI Providers Ready`, color: 'bg-green-600' };
@@ -120,7 +34,7 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
 
   const overallStatus = getOverallStatus();
 
-  if (isLoading) {
+  if (aiServiceStatus.isLoading) {
     return (
       <Card className="border-neon-purple/20">
         <CardContent className="flex items-center justify-center py-6">
@@ -131,8 +45,8 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
     );
   }
 
-  // Show minimized status when providers are working, hide only if user prefers
-  const showMinimized = workingProviders.length > 0;
+  // Show minimized status when providers are working
+  const showMinimized = aiServiceStatus.activeProviders > 0;
 
   if (showMinimized) {
     return (
@@ -143,14 +57,17 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
               <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
               <span className="text-sm font-medium">AI Service Ready</span>
               <Badge className="ml-2 bg-green-600 hover:bg-green-600/80 text-xs">
-                {workingProviders.length} Provider{workingProviders.length > 1 ? 's' : ''}
+                {aiServiceStatus.activeProviders} Provider{aiServiceStatus.activeProviders > 1 ? 's' : ''}
               </Badge>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={checkApiStatus}
-              disabled={isLoading}
+              onClick={() => {
+                aiServiceStatus.refreshStatus();
+                onStatusChange?.();
+              }}
+              disabled={aiServiceStatus.isLoading}
             >
               <RefreshCw className="h-3 w-3" />
             </Button>
@@ -171,8 +88,11 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={checkApiStatus}
-            disabled={isLoading}
+            onClick={() => {
+              aiServiceStatus.refreshStatus();
+              onStatusChange?.();
+            }}
+            disabled={aiServiceStatus.isLoading}
           >
             <RefreshCw className="h-4 w-4 mr-1" />
             Refresh
@@ -213,7 +133,7 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
         <div className="text-xs text-muted-foreground">
           <p>
             <span className="font-medium">Content Generation:</span>{' '}
-            Limited (No AI Providers)
+            {aiServiceStatus.activeProviders > 0 ? `Ready (${aiServiceStatus.activeProviders} Providers)` : 'Limited (No AI Providers)'}
           </p>
         </div>
       </CardContent>
