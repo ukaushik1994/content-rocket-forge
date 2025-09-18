@@ -36,7 +36,7 @@ export interface ProviderInfo {
 
 export interface AIGenerateRequest {
   input: string;
-  use_case: 'title_generation' | 'outline_generation' | 'content_generation' | 'repurpose' | 'chat' | 'strategy';
+  use_case: 'title_generation' | 'outline_generation' | 'content_generation' | 'repurpose' | 'chat' | 'strategy' | 'suggestion_generation';
   temperature?: number;
   max_tokens?: number;
   model?: string;
@@ -532,7 +532,8 @@ class AIServiceController {
       content_generation: "You are an expert content writer. Create high-quality, engaging, and informative content that provides value to readers and follows SEO best practices.",
       repurpose: "You are an expert content repurposing specialist. Transform the given content into the requested format while maintaining key information and adapting the tone appropriately.",
       chat: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user queries.",
-      strategy: "You are an expert content strategist. Analyze the given information and provide strategic recommendations for content creation and marketing."
+      strategy: "You are an expert content strategist. Analyze the given information and provide strategic recommendations for content creation and marketing.",
+      suggestion_generation: "You are an expert content optimization specialist. Analyze the given content and provide specific, actionable suggestions to improve the content based on the identified issue. Return your response as a JSON array of suggestions, each with 'id', 'text', 'priority' (high/medium/low), and 'actionable' (boolean) fields. Focus on practical, implementable improvements."
     };
 
     return prompts[useCase as keyof typeof prompts] || prompts.chat;

@@ -7,7 +7,7 @@ import { Loader2, CheckCircle, ThumbsUp, ThumbsDown, Lightbulb } from 'lucide-re
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { supabase } from '@/integrations/supabase/client';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 interface CheckItemSuggestionModalProps {
   isOpen: boolean;
@@ -37,21 +37,56 @@ export const CheckItemSuggestionModal = ({
   // Generate AI suggestions based on check title and content
   const generateAISuggestions = async (title: string): Promise<Suggestion[]> => {
     try {
-      const response = await supabase.functions.invoke('generate-suggestions', {
-        body: { 
-          checkTitle: title,
-          content: state.content || '',
-          keyword: state.mainKeyword || '',
-          context: {
-            metaTitle: state.metaTitle,
-            metaDescription: state.metaDescription,
-            selectedKeywords: state.selectedKeywords
-          }
-        }
+      const prompt = `Analyze the following content issue and provide specific suggestions for improvement:
+
+Check Issue: ${title}
+Content: ${state.content || 'No content provided'}
+Main Keyword: ${state.mainKeyword || 'Not specified'}
+Meta Title: ${state.metaTitle || 'Not specified'}
+Meta Description: ${state.metaDescription || 'Not specified'}
+
+Please provide 3-5 actionable suggestions to address this specific issue.`;
+
+      const response = await AIServiceController.generate({
+        input: prompt,
+        use_case: 'suggestion_generation',
+        temperature: 0.7,
+        max_tokens: 800
       });
 
-      if (response.error) throw response.error;
-      return response.data.suggestions || getFallbackSuggestions(title);
+      if (response?.content) {
+        try {
+          // Try to parse as JSON first
+          const parsed = JSON.parse(response.content);
+          if (Array.isArray(parsed)) {
+            return parsed.map((item, index) => ({
+              id: `ai-${index}`,
+              text: item.text || item.suggestion || String(item),
+              priority: item.priority || 'medium',
+              actionable: item.actionable !== false
+            }));
+          }
+        } catch (parseError) {
+          // If JSON parsing fails, extract suggestions from text
+          console.log('Parsing as text instead of JSON');
+        }
+        
+        // Fallback: parse text response
+        const suggestions = response.content
+          .split('\n')
+          .filter(line => line.trim() && (line.includes('-') || line.includes('•') || line.includes('1.') || line.includes('2.')))
+          .slice(0, 5)
+          .map((text, index) => ({
+            id: `ai-${index}`,
+            text: text.replace(/^[-•\d.]\s*/, '').trim(),
+            priority: index === 0 ? 'high' : index < 3 ? 'medium' : 'low',
+            actionable: true
+          }));
+          
+        return suggestions.length > 0 ? suggestions : getFallbackSuggestions(title);
+      }
+      
+      return getFallbackSuggestions(title);
     } catch (error) {
       console.error('AI suggestion generation failed:', error);
       return getFallbackSuggestions(title);
