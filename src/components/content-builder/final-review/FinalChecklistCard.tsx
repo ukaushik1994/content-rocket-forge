@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SuggestionButton } from './SuggestionButton';
+import { CheckItemSuggestionModal } from './CheckItemSuggestionModal';
 
 interface FinalChecklistProps {
   checks: {
@@ -14,8 +16,22 @@ interface FinalChecklistProps {
 }
 
 export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: FinalChecklistProps) => {
+  const [selectedCheck, setSelectedCheck] = useState<string | null>(null);
   const passedChecks = checks.filter(check => check.passed).length;
   const progress = Math.round((passedChecks / checks.length) * 100);
+
+  const handleSuggestionClick = (checkTitle: string) => {
+    setSelectedCheck(checkTitle);
+  };
+
+  const handleFeedback = async (suggestion: string, helpful: boolean) => {
+    try {
+      // Save feedback to database - simplified for now
+      console.log('Feedback saved:', { suggestion, helpful });
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+    }
+  };
   
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -65,7 +81,7 @@ export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: 
           {checks.map((check, index) => (
             <motion.div 
               key={`${index}-${check.passed}`} // Added check.passed to force re-render when passed state changes
-              className={`flex items-start gap-3 p-3 rounded-md transition-all ${
+              className={`flex items-start justify-between gap-3 p-3 rounded-md transition-all ${
                 check.passed 
                   ? 'bg-green-500/10 border border-green-500/30' 
                   : 'bg-secondary/20 hover:bg-secondary/30'
@@ -74,26 +90,41 @@ export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: 
               transition={{ duration: 0.3 }}
               whileHover={{ scale: 1.01, x: 2 }}
             >
-              <div className="mt-0.5">
-                {check.passed ? (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 15, delay: index * 0.05 + 0.2 }}
-                  >
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  </motion.div>
-                ) : (
-                  <XCircle className="h-5 w-5 text-red-500/70" />
-                )}
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5">
+                  {check.passed ? (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 15, delay: index * 0.05 + 0.2 }}
+                    >
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    </motion.div>
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-500/70" />
+                  )}
+                </div>
+                <span className={`text-sm ${check.passed ? 'font-medium' : 'text-muted-foreground'}`}>
+                  {check.title}
+                </span>
               </div>
-              <span className={`text-sm ${check.passed ? 'font-medium' : 'text-muted-foreground'}`}>
-                {check.title}
-              </span>
+              
+              {!check.passed && (
+                <SuggestionButton 
+                  onClick={() => handleSuggestionClick(check.title)}
+                />
+              )}
             </motion.div>
           ))}
         </motion.div>
       </CardContent>
+
+      <CheckItemSuggestionModal
+        isOpen={!!selectedCheck}
+        onClose={() => setSelectedCheck(null)}
+        checkTitle={selectedCheck || ''}
+        onFeedback={handleFeedback}
+      />
     </Card>
   );
 };

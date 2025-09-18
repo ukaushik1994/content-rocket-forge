@@ -1,7 +1,8 @@
 
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useState, useCallback, useEffect } from 'react';
-import { useContentAnalysis } from '@/hooks/final-review/useContentAnalysis'; 
+import { useContentAnalysis } from '@/hooks/final-review/useContentAnalysis';
+import { useContentCompliance } from '@/hooks/useContentCompliance';
 
 /**
  * Custom hook to generate and manage the checklist items for the final review
@@ -19,6 +20,7 @@ export const useChecklistItems = () => {
 
   // Get content analysis data directly instead of via useFinalReview
   const { keywordUsage, ctaInfo } = useContentAnalysis();
+  const { complianceResult, runComplianceAnalysis } = useContentCompliance();
   
   // State to store checklist items
   const [checklistItems, setChecklistItems] = useState<Array<{title: string, passed: boolean}>>([]);
@@ -68,6 +70,57 @@ export const useChecklistItems = () => {
         )
       }
     ];
+
+    // Add compliance-based checks if available
+    if (complianceResult) {
+      // Keyword compliance checks
+      if (complianceResult.keyword.violations.length > 0) {
+        items.push({
+          title: "Keyword density optimized",
+          passed: complianceResult.keyword.violations.filter(v => v.severity === 'critical').length === 0
+        });
+        items.push({
+          title: "Keyword placement strategic",
+          passed: complianceResult.keyword.violations.filter(v => v.message.includes('placement')).length === 0
+        });
+      }
+
+      // SERP compliance checks
+      if (complianceResult.serp.violations.length > 0) {
+        items.push({
+          title: "SERP competition addressed",
+          passed: complianceResult.serp.violations.filter(v => v.severity === 'critical').length === 0
+        });
+        items.push({
+          title: "Search intent alignment verified",
+          passed: complianceResult.serp.violations.filter(v => v.message.includes('intent')).length === 0
+        });
+      }
+
+      // Solution compliance checks
+      if (complianceResult.solution.violations.length > 0) {
+        items.push({
+          title: "Solution benefits highlighted",
+          passed: complianceResult.solution.violations.filter(v => v.severity === 'critical').length === 0
+        });
+        items.push({
+          title: "Product features integrated",
+          passed: complianceResult.solution.violations.filter(v => v.message.includes('feature')).length === 0
+        });
+      }
+
+      // Structure compliance checks
+      if (complianceResult.structure.violations.length > 0) {
+        items.push({
+          title: "Content structure compliant",
+          passed: complianceResult.structure.violations.filter(v => v.severity === 'critical').length === 0
+        });
+        items.push({
+          title: "Readability standards met",
+          passed: complianceResult.structure.violations.filter(v => v.message.includes('readability')).length === 0
+        });
+      }
+    }
     
     setChecklistItems(items);
     return items;
@@ -79,14 +132,19 @@ export const useChecklistItems = () => {
     solutionIntegrationMetrics, 
     mainKeyword, 
     keywordUsage, 
-    selectedKeywords
+    selectedKeywords,
+    complianceResult
   ]);
   
   // Function to trigger a refresh of checklist items
-  const refreshChecklist = useCallback(() => {
+  const refreshChecklist = useCallback(async () => {
     console.log('[useChecklistItems] Refreshing checklist items');
+    // Auto-run compliance analysis when refreshing
+    if (state.content && mainKeyword) {
+      await runComplianceAnalysis();
+    }
     setRefreshTrigger(prev => prev + 1); // Increment to trigger a refresh
-  }, []);
+  }, [runComplianceAnalysis, state.content, mainKeyword]);
 
   // Calculate items on mount and when dependencies change
   useEffect(() => {

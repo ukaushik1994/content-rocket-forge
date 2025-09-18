@@ -7,7 +7,7 @@ import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
 import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 import { OptimizationHistoryModal } from '../final-review/OptimizationHistoryModal';
-import { AutoOptimizeModal } from '../final-review/AutoOptimizeModal';
+
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 
@@ -15,7 +15,7 @@ export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isRunningAllChecks, setIsRunningAllChecks] = useState(false);
   const [showOptimizationHistory, setShowOptimizationHistory] = useState(false);
-  const [showAutoOptimize, setShowAutoOptimize] = useState(false);
+  
   
   const { state, updateContent } = useContentBuilder();
   
@@ -173,12 +173,6 @@ export const OptimizeAndReviewStep = () => {
         onClose={() => setShowOptimizationHistory(false)}
       />
       
-      <AutoOptimizeModal
-        isOpen={showAutoOptimize}
-        onClose={() => setShowAutoOptimize(false)}
-        content={state.content}
-        onContentUpdate={handleContentUpdate}
-      />
     </div>
   );
 };
