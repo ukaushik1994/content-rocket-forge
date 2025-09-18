@@ -25,6 +25,7 @@ export const useContentOptimizer = (content: string) => {
   // Use the real hooks for analysis
   const { contentSuggestions, analyzeContentQuality, isAnalyzing: isContentAnalyzing } = useContentAnalysis();
   const { aiDetectionSuggestions, analyzeAIContent } = useAIDetection();
+  // Remove SERP analysis from AI system - modify to exclude SERP integration
   const { serpIntegrationSuggestions, analyzeSerpUsage, incorporateAllSerpItems } = useSerpIntegration();
   const { solutionSuggestions, analyzeSolution } = useSolutionAnalysis();
   const { qualitySuggestions } = useContentQualityIntegration();
