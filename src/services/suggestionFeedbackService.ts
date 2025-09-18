@@ -173,3 +173,4 @@ class SuggestionFeedbackService {
 }
 
 export const suggestionFeedbackService = new SuggestionFeedbackService();
+export const saveSuggestionFeedback = suggestionFeedbackService.saveFeedback.bind(suggestionFeedbackService);

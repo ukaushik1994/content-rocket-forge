@@ -9,6 +9,7 @@ import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderCont
 import { saveSuggestionFeedback } from '@/services/suggestionFeedbackService';
 import { ContentHighlightService, EnhancedSuggestion } from '@/services/contentHighlightService';
 import { ContentSyncService } from '@/services/contentSyncService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CheckItemSuggestionModalProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
 
     setIsGenerating(true);
     try {
-      const aiController = AIServiceController.getInstance();
+      const aiController = AIServiceController;
       
       // Enhanced system prompt with context and SERP data
       const systemPrompt = `You are an expert content optimizer. Analyze the content and provide specific, actionable text replacements to fix: "${checkTitle}".
@@ -89,7 +90,7 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
       
       Provide specific text replacements that will fix this issue.`;
 
-      const result = await AIServiceController.getInstance().generate({
+      const result = await AIServiceController.generate({
         input: userPrompt,
         use_case: 'suggestion_generation' as any,
         temperature: 0.3,
@@ -171,16 +172,17 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
 
   const handleFeedback = async (type: 'helpful' | 'not_helpful' | 'partially_helpful') => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('User authentication required');
+        return;
+      }
+
       await saveSuggestionFeedback({
-        checkTitle,
-        suggestion: suggestion || enhancedSuggestions.map(s => s.title).join('; '),
-        feedbackType: type,
-        context: {
-          contentLength: state.content?.length || 0,
-          mainKeyword: state.mainKeyword,
-          hasSerp: !!state.serpData,
-          hasSolution: !!state.selectedSolution
-        }
+        user_id: user.id,
+        check_title: checkTitle,
+        suggestion_text: suggestion || enhancedSuggestions.map(s => s.title).join('; '),
+        helpful: type === 'helpful'
       });
       toast.success('Thank you for your feedback!');
     } catch (error) {
