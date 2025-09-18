@@ -855,14 +855,14 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
         </p>
       </div>
 
-      {highlightAnalysis && (
+      {highlightAnalysis && complianceResult && (
         <ComplianceHighlightedViewer
           content={content}
-          highlights={highlightAnalysis.highlights}
-          selectedHighlights={selectedHighlights}
-          onToggleHighlight={toggleHighlight}
-          onSelectAll={selectAllHighlights}
-          onClearAll={clearAllHighlights}
+          highlightResult={highlightAnalysis}
+          complianceResult={complianceResult}
+          onHighlightSelect={(highlightIds: string[]) => {
+            setSelectedHighlights(highlightIds);
+          }}
         />
       )}
 
@@ -945,18 +945,22 @@ export const AutoOptimizeModal: React.FC<AutoOptimizeModalProps> = ({
 
         {/* Preview Modal */}
         {showAIFixPreview && (
-          <ComplianceFixPreview
-            isOpen={showAIFixPreview}
-            onClose={() => setShowAIFixPreview(false)}
-            content={content}
-            fixedContent={fixPreviewContent}
-            selectedViolations={selectedViolations}
-            selectedAISuggestions={selectedAISuggestions}
-            complianceCategories={complianceCategories}
-            isGenerating={isGeneratingFix}
-            onGeneratePreview={handleGeneratePreview}
-            onApplyFixes={handleApplyAIFixes}
-          />
+          <Dialog open={showAIFixPreview} onOpenChange={() => setShowAIFixPreview(false)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+              <ComplianceFixPreview
+                originalContent={content}
+                fixedContent={fixPreviewContent}
+                selectedViolations={selectedViolations.map(id => 
+                  complianceCategories.flatMap(cat => cat.violations).find(v => v.id === id)
+                ).filter(Boolean)}
+                appliedFixes={appliedFixes}
+                isGeneratingFix={isGeneratingFix}
+                onGeneratePreview={handleGeneratePreview}
+                onApplyFixes={handleApplyAIFixes}
+                onCancel={() => setShowAIFixPreview(false)}
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </DialogContent>
     </Dialog>
