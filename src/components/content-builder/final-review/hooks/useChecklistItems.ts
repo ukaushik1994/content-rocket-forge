@@ -146,6 +146,14 @@ export const useChecklistItems = () => {
     setRefreshTrigger(prev => prev + 1); // Increment to trigger a refresh
   }, [runComplianceAnalysis, state.content, mainKeyword]);
 
+  // Auto-run compliance analysis on load
+  useEffect(() => {
+    if (state.content && mainKeyword && !complianceResult) {
+      console.log('[useChecklistItems] Auto-running compliance analysis on load');
+      runComplianceAnalysis();
+    }
+  }, [state.content, mainKeyword, runComplianceAnalysis, complianceResult]);
+
   // Calculate items on mount and when dependencies change
   useEffect(() => {
     calculateChecklistItems();

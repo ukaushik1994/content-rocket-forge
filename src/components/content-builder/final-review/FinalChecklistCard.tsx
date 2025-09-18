@@ -1,10 +1,13 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SuggestionButton } from './SuggestionButton';
 import { CheckItemSuggestionModal } from './CheckItemSuggestionModal';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface FinalChecklistProps {
   checks: {
@@ -24,12 +27,32 @@ export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: 
     setSelectedCheck(checkTitle);
   };
 
+  const { toast } = useToast();
+
   const handleFeedback = async (suggestion: string, helpful: boolean) => {
     try {
-      // Save feedback to database - simplified for now
-      console.log('Feedback saved:', { suggestion, helpful });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('feedback').insert({
+          user_id: user.id,
+          message: suggestion,
+          sentiment: helpful ? 'positive' : 'negative',
+          type: 'suggestion',
+          status: 'unread'
+        });
+        
+        toast({
+          title: 'Feedback saved',
+          description: 'Thank you for helping us improve our suggestions!'
+        });
+      }
     } catch (error) {
       console.error('Error saving feedback:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save feedback',
+        variant: 'destructive'
+      });
     }
   };
   
@@ -55,6 +78,20 @@ export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: 
           <div className="w-2 h-2 rounded-full bg-green-500"></div>
           Content Quality Checklist
         </CardTitle>
+        <Button
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2"
+        >
+          <motion.div
+            animate={isRefreshing ? { rotate: 360 } : { rotate: 0 }}
+            transition={{ duration: 1, repeat: isRefreshing ? Infinity : 0, ease: "linear" }}
+          >
+            <RefreshCw className="h-3 w-3" />
+          </motion.div>
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <div className="flex items-center justify-between">

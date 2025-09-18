@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, ThumbsUp, ThumbsDown, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CheckItemSuggestionModalProps {
   isOpen: boolean;
@@ -27,119 +29,84 @@ export const CheckItemSuggestionModal = ({
   checkTitle, 
   onFeedback 
 }: CheckItemSuggestionModalProps) => {
+  const { state } = useContentBuilder();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackGiven, setFeedbackGiven] = useState<string[]>([]);
 
-  // Generate suggestions based on check title
-  const generateSuggestions = (title: string): Suggestion[] => {
-    const suggestionMap: Record<string, Suggestion[]> = {
-      'keyword density': [
-        {
-          id: '1',
-          text: 'Add your primary keyword 2-3 more times naturally throughout the content, especially in subheadings',
-          priority: 'high',
-          actionable: true
-        },
-        {
-          id: '2', 
-          text: 'Include keyword variations and synonyms to avoid over-optimization while maintaining relevance',
-          priority: 'medium',
-          actionable: true
-        },
-        {
-          id: '3',
-          text: 'Consider using the keyword in the first 100 words of your content for better SEO impact',
-          priority: 'medium',
-          actionable: true
+  // Generate AI suggestions based on check title and content
+  const generateAISuggestions = async (title: string): Promise<Suggestion[]> => {
+    try {
+      const response = await supabase.functions.invoke('generate-suggestions', {
+        body: { 
+          checkTitle: title,
+          content: state.content || '',
+          keyword: state.mainKeyword || '',
+          context: {
+            metaTitle: state.metaTitle,
+            metaDescription: state.metaDescription,
+            selectedKeywords: state.selectedKeywords
+          }
         }
-      ],
-      'meta title': [
-        {
-          id: '1',
-          text: 'Create a compelling title under 60 characters that includes your primary keyword',
-          priority: 'high',
-          actionable: true
-        },
-        {
-          id: '2',
-          text: 'Add emotional triggers or numbers to make your title more clickable',
-          priority: 'medium',
-          actionable: true
-        },
-        {
-          id: '3',
-          text: 'Ensure your title accurately represents the content to improve user experience',
-          priority: 'low',
-          actionable: true
-        }
-      ],
-      'solution integration': [
-        {
-          id: '1',
-          text: 'Highlight specific benefits and features of your solution within the content',
-          priority: 'high',
-          actionable: true
-        },
-        {
-          id: '2',
-          text: 'Add customer testimonials or case studies to build credibility',
-          priority: 'medium',
-          actionable: true
-        },
-        {
-          id: '3',
-          text: 'Include clear call-to-action buttons that guide users to your solution',
-          priority: 'high',
-          actionable: true
-        }
-      ],
-      'default': [
-        {
-          id: '1',
-          text: 'Review the specific requirements for this check and ensure all criteria are met',
-          priority: 'high',
-          actionable: true
-        },
-        {
-          id: '2',
-          text: 'Consider consulting the content guidelines for detailed optimization tips',
-          priority: 'medium',
-          actionable: true
-        },
-        {
-          id: '3',
-          text: 'Test different approaches and measure the impact on your content performance',
-          priority: 'low',
-          actionable: true
-        }
-      ]
-    };
+      });
 
-    // Find matching suggestions based on keywords in the title
+      if (response.error) throw response.error;
+      return response.data.suggestions || getFallbackSuggestions(title);
+    } catch (error) {
+      console.error('AI suggestion generation failed:', error);
+      return getFallbackSuggestions(title);
+    }
+  };
+
+  // Fallback suggestions if AI fails
+  const getFallbackSuggestions = (title: string): Suggestion[] => {
     const titleLower = title.toLowerCase();
-    for (const [key, suggestions] of Object.entries(suggestionMap)) {
-      if (titleLower.includes(key) || key === 'default') {
-        return suggestions;
-      }
+    
+    if (titleLower.includes('keyword')) {
+      return [
+        { id: '1', text: 'Add your primary keyword 2-3 more times naturally throughout the content', priority: 'high', actionable: true },
+        { id: '2', text: 'Include keyword variations and synonyms for better relevance', priority: 'medium', actionable: true },
+        { id: '3', text: 'Use the keyword in subheadings and the first paragraph', priority: 'medium', actionable: true }
+      ];
     }
     
-    return suggestionMap.default;
+    if (titleLower.includes('meta')) {
+      return [
+        { id: '1', text: 'Create a compelling title under 60 characters with your main keyword', priority: 'high', actionable: true },
+        { id: '2', text: 'Add emotional triggers or numbers to improve click-through rates', priority: 'medium', actionable: true },
+        { id: '3', text: 'Ensure the title accurately represents your content', priority: 'low', actionable: true }
+      ];
+    }
+    
+    if (titleLower.includes('solution') || titleLower.includes('product')) {
+      return [
+        { id: '1', text: 'Highlight specific benefits and features of your solution', priority: 'high', actionable: true },
+        { id: '2', text: 'Add customer testimonials or case studies for credibility', priority: 'medium', actionable: true },
+        { id: '3', text: 'Include clear call-to-action buttons throughout the content', priority: 'high', actionable: true }
+      ];
+    }
+    
+    return [
+      { id: '1', text: 'Review the specific requirements for this check', priority: 'high', actionable: true },
+      { id: '2', text: 'Consult content guidelines for detailed optimization tips', priority: 'medium', actionable: true },
+      { id: '3', text: 'Test different approaches and measure their impact', priority: 'low', actionable: true }
+    ];
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && checkTitle) {
       setIsLoading(true);
       setFeedbackGiven([]);
       
-      // Simulate AI generation delay
-      setTimeout(() => {
-        const newSuggestions = generateSuggestions(checkTitle);
+      generateAISuggestions(checkTitle).then((newSuggestions) => {
         setSuggestions(newSuggestions);
         setIsLoading(false);
-      }, 1000);
+      }).catch(() => {
+        setSuggestions(getFallbackSuggestions(checkTitle));
+        setIsLoading(false);
+      });
     }
-  }, [isOpen, checkTitle]);
+  }, [isOpen, checkTitle, state.content]);
 
   const handleFeedback = (suggestion: Suggestion, helpful: boolean) => {
     setFeedbackGiven(prev => [...prev, suggestion.id]);
