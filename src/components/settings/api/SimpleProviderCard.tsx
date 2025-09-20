@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
-  CheckCircle, 
-  AlertCircle, 
   Loader2, 
   Eye, 
   EyeOff, 
-  ExternalLink
+  ExternalLink,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -30,6 +28,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
   const [status, setStatus] = useState<'unconfigured' | 'connected' | 'error' | 'testing'>('unconfigured');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     loadApiKey();
@@ -93,99 +92,147 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
       case 'connected': 
         return <div className="w-2 h-2 bg-green-500 rounded-full" />;
       case 'error': 
-        return <div className="w-2 h-2 bg-red-500 rounded-full" />;
+        return <div className="w-2 h-2 bg-destructive rounded-full" />;
       case 'testing': 
-        return <Loader2 className="w-3 h-3 animate-spin text-amber-500" />;
+        return <Loader2 className="w-3 h-3 animate-spin text-primary" />;
       default: 
-        return <div className="w-2 h-2 bg-muted-foreground rounded-full" />;
+        return <div className="w-2 h-2 bg-muted-foreground/40 rounded-full" />;
+    }
+  };
+
+  const getStatusText = () => {
+    switch (status) {
+      case 'connected': return 'Connected';
+      case 'error': return 'Error';
+      case 'testing': return 'Testing...';
+      default: return 'Not configured';
     }
   };
 
   if (isLoading) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-6 h-6 rounded bg-muted animate-pulse" />
-          <div className="flex-1">
-            <div className="h-4 bg-muted rounded w-24 animate-pulse mb-1" />
-            <div className="h-3 bg-muted/50 rounded w-32 animate-pulse" />
-          </div>
+      <div className="flex items-center justify-between py-2 px-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+        <div className="flex items-center gap-3">
+          <div className="w-4 h-4 rounded bg-muted animate-pulse" />
+          <div className="h-4 bg-muted rounded w-20 animate-pulse" />
         </div>
-      </Card>
+        <div className="w-2 h-2 bg-muted animate-pulse rounded-full" />
+      </div>
     );
   }
 
-  return (
-    <Card className="p-4 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-            <provider.icon className="h-3 w-3 text-primary" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-sm">{provider.name}</h3>
-              {getStatusIndicator()}
-            </div>
-            <p className="text-xs text-muted-foreground">{provider.description}</p>
-          </div>
-        </div>
-        
+  // Ultra-minimal collapsed state
+  if (!isExpanded) {
+    return (
+      <div className="group">
         <Button
           variant="ghost"
-          size="sm"
-          asChild
-          className="h-6 w-6 p-0"
+          className="w-full h-auto p-0 justify-start hover:bg-accent/50"
+          onClick={() => setIsExpanded(true)}
         >
-          <a href={provider.link} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="h-3 w-3" />
-          </a>
+          <div className="flex items-center justify-between w-full py-2 px-3">
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-4 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                <provider.icon className="h-2.5 w-2.5 text-primary" />
+              </div>
+              <span className="font-medium text-sm text-left">{provider.name}</span>
+              {provider.required && status === 'unconfigured' && (
+                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {getStatusIndicator()}
+              <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </div>
+          </div>
         </Button>
       </div>
+    );
+  }
 
-      {/* API Key Input */}
-      <div className="space-y-2">
-        <Label htmlFor={`${provider.serviceKey}-key`} className="text-xs">API Key</Label>
-        <div className="relative">
-          <Input
-            id={`${provider.serviceKey}-key`}
-            type={showKey ? "text" : "password"}
-            placeholder={`Enter ${provider.name} API key`}
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="pr-10 text-sm"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-0 h-full px-2"
-            onClick={() => setShowKey(!showKey)}
-            type="button"
-          >
-            {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-          </Button>
+  // Expanded state with full configuration
+  return (
+    <div className="border rounded-lg bg-card">
+      {/* Collapsible header */}
+      <Button
+        variant="ghost"
+        className="w-full h-auto p-0 justify-start hover:bg-accent/50"
+        onClick={() => setIsExpanded(false)}
+      >
+        <div className="flex items-center justify-between w-full py-3 px-4">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center shrink-0">
+              <provider.icon className="h-3 w-3 text-primary" />
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm">{provider.name}</span>
+                {provider.required && (
+                  <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded">Required</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{provider.description}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {getStatusIndicator()}
+            <span className="text-xs text-muted-foreground">{getStatusText()}</span>
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          </div>
+        </div>
+      </Button>
+
+      {/* Configuration section */}
+      <div className="px-4 pb-4 space-y-4 border-t bg-muted/20">
+        {/* API Key Input */}
+        <div className="space-y-2">
+          <div className="relative">
+            <Input
+              type={showKey ? "text" : "password"}
+              placeholder={`Enter ${provider.name} API key`}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="pr-10 text-sm"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-2"
+              onClick={() => setShowKey(!showKey)}
+              type="button"
+            >
+              {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || !apiKey.trim()}
+              size="sm"
+            >
+              {isSaving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+              Save & Test
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+            >
+              <a href={provider.link} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Get Key
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || !apiKey.trim()}
-          size="sm"
-        >
-          {isSaving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-          Save
-        </Button>
-        
-        <div className="text-xs text-muted-foreground">
-          {status === 'connected' && 'Connected'}
-          {status === 'error' && 'Connection failed'}
-          {status === 'testing' && 'Testing...'}
-          {status === 'unconfigured' && 'Not configured'}
-        </div>
-      </div>
-    </Card>
+    </div>
   );
 };
