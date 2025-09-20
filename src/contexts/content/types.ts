@@ -48,6 +48,9 @@ export interface ContentItemType {
     domainUrl?: string;
     exportFormats?: string[];
     lastExportDate?: string;
+    // SERP Analysis data
+    serpSelections?: any[];
+    documentStructure?: any;
   };
   submitted_for_review_at?: string;
   reviewer_id?: string;

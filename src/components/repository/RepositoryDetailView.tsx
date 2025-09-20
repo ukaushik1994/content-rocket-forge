@@ -18,6 +18,8 @@ import { ContentItemType } from '@/contexts/content/types';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, format } from 'date-fns';
 import { CustomBadge } from '@/components/ui/custom-badge';
+import { RepositorySerpDisplay } from './RepositorySerpDisplay';
+import { RepositoryDocumentStructure } from './RepositoryDocumentStructure';
 
 interface RepositoryDetailViewProps {
   open: boolean;
@@ -189,6 +191,20 @@ const RepositoryDetailViewBody: React.FC<RepositoryDetailViewBodyProps> = ({ ope
                     </CustomBadge>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* SERP Analysis Results */}
+            {content.metadata?.serpSelections && content.metadata.serpSelections.length > 0 && (
+              <div>
+                <RepositorySerpDisplay serpSelections={content.metadata.serpSelections} />
+              </div>
+            )}
+
+            {/* Document Structure Analysis */}
+            {content.metadata?.documentStructure && (
+              <div>
+                <RepositoryDocumentStructure documentStructure={content.metadata.documentStructure} />
               </div>
             )}
           </div>
