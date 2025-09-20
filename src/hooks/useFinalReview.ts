@@ -10,7 +10,7 @@ import { useSolutionAnalysis } from './final-review/useSolutionAnalysis';
 import { useStepCompletion } from './final-review/useStepCompletion';
 import { useTitleSuggestions } from './final-review/useTitleSuggestions';
 import { useDocumentAnalysis } from './final-review/useDocumentAnalysis';
-import { useRunChecks } from './final-review/useRunChecks';
+
 import { useDebugLogging } from './final-review/useDebugLogging';
 
 export const useFinalReview = () => {
@@ -30,8 +30,6 @@ export const useFinalReview = () => {
   const { checkStepCompletion } = useStepCompletion();
   const { documentStructure } = useDocumentAnalysis();
   
-  // Create the runChecks hook directly here to avoid circular dependencies
-  const { isRunningAllChecks, runAllChecks } = useRunChecks();
   
   // Debug logging
   useDebugLogging(metaTitle, contentTitle);
@@ -48,7 +46,6 @@ export const useFinalReview = () => {
   return {
     isAnalyzing,
     isGeneratingTitles,
-    isRunningAllChecks,
     keywordUsage,
     ctaInfo,
     titleSuggestions,
@@ -56,7 +53,6 @@ export const useFinalReview = () => {
     generateMeta,
     generateTitleSuggestions,
     analyzeSolutionUsage,
-    checkStepCompletion,
-    runAllChecks
+    checkStepCompletion
   };
 };

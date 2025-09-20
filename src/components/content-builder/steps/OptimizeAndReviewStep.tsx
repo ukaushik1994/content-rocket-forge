@@ -4,7 +4,7 @@ import { useFinalReview } from '@/hooks/useFinalReview';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
-import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
+
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
@@ -12,8 +12,6 @@ import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [isRunningAllChecks, setIsRunningAllChecks] = useState(false);
-  const [showOptimizationHistory, setShowOptimizationHistory] = useState(false);
   
   
   const { state, updateContent } = useContentBuilder();
@@ -28,7 +26,7 @@ export const OptimizeAndReviewStep = () => {
     generateMeta,
     generateTitleSuggestions,
     analyzeSolutionUsage,
-    runAllChecks
+    checkStepCompletion
   } = useFinalReview();
   
   const { isSaving, isSavedToDraft, handleSaveToDraft, handlePublish } = useSaveContent();
@@ -50,16 +48,6 @@ export const OptimizeAndReviewStep = () => {
     updateContent(newContent);
   };
   
-  // Handler for running checks specific to the current tab
-  const handleRunTabChecks = () => {
-    console.log(`Running checks for ${activeTab} tab`);
-    setIsRunningAllChecks(true);
-    
-    setTimeout(() => {
-      setIsRunningAllChecks(false);
-      runAllChecks(); // This will trigger analysis for all components
-    }, 2000);
-  };
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -103,12 +91,6 @@ export const OptimizeAndReviewStep = () => {
         isSavedToDraft={isSavedToDraft}
       />
       
-      <FinalReviewQuickActions 
-        isRunningAllChecks={isRunningAllChecks}
-        onRunAllChecks={runAllChecks}
-        activeTab={activeTab}
-        onRunTabChecks={handleRunTabChecks}
-      />
       
       <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="mb-2 w-full gap-4 h-auto p-1 bg-transparent">
@@ -131,7 +113,6 @@ export const OptimizeAndReviewStep = () => {
             <OverviewTab 
               content={state.content}
               checklistItems={checklistItems}
-              onRunAllChecks={runAllChecks}
               metaTitle={state.metaTitle}
               metaDescription={state.metaDescription}
               onMetaTitleChange={onMetaTitleChange}
