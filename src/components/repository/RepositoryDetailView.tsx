@@ -47,6 +47,12 @@ interface RepositoryDetailViewBodyProps {
 
 const RepositoryDetailViewBody: React.FC<RepositoryDetailViewBodyProps> = ({ open, onClose, content }) => {
   const navigate = useNavigate();
+  
+  // Debug logging to understand the data structure
+  console.log('Repository Detail View - Content:', content);
+  console.log('Repository Detail View - Metadata:', content.metadata);
+  console.log('Repository Detail View - SERP Selections:', content.metadata?.serpSelections);
+  console.log('Repository Detail View - Document Structure:', content.metadata?.documentStructure);
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
