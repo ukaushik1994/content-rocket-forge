@@ -71,10 +71,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   
   // Collapsible section states
-  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isContentPreviewOpen, setIsContentPreviewOpen] = useState(true);
   const [isKeywordsOpen, setIsKeywordsOpen] = useState(true);
   const [isSerpAnalysisOpen, setIsSerpAnalysisOpen] = useState(true);
+  const [isDocumentStructureOpen, setIsDocumentStructureOpen] = useState(false);
   const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
   const [isRepurposedOpen, setIsRepurposedOpen] = useState(true);
   
@@ -305,7 +305,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] xl:w-[75vw] max-w-7xl h-[95vh] sm:h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
+        <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[80vw] lg:w-[75vw] max-w-6xl h-[95vh] sm:h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
           <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-4 border-b border-border">
             <DialogTitle className="text-lg sm:text-2xl font-bold text-foreground pr-8 line-clamp-2">
               {content.title}
@@ -328,334 +328,325 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    const allOpen = isDescriptionOpen && isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isOptimizationOpen && isRepurposedOpen;
-                    setIsDescriptionOpen(!allOpen);
+                    const allOpen = isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isOptimizationOpen && isRepurposedOpen;
                     setIsContentPreviewOpen(!allOpen);
                     setIsKeywordsOpen(!allOpen);
                     setIsSerpAnalysisOpen(!allOpen);
+                    setIsDocumentStructureOpen(!allOpen);
                     setIsOptimizationOpen(!allOpen);
                     setIsRepurposedOpen(!allOpen);
                   }}
                   className="text-xs h-7 px-2"
                 >
-                  {(isDescriptionOpen && isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isOptimizationOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
+                  {(isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isOptimizationOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-6 pb-6">
-            {/* Main Content */}
-            <div className="xl:col-span-2 space-y-4 sm:space-y-6">
-              {/* Description */}
-              {content.metadata?.description && (
+            
+            {/* Two-Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-6 pb-6">
+              {/* Left Side - Content Preview Only */}
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                {/* Content Preview */}
                 <CollapsibleSection
-                  isOpen={isDescriptionOpen}
-                  onToggle={() => setIsDescriptionOpen(!isDescriptionOpen)}
-                  title="Description"
-                  icon={FileText}
+                  isOpen={isContentPreviewOpen}
+                  onToggle={() => setIsContentPreviewOpen(!isContentPreviewOpen)}
+                  title="Content Preview"
+                  icon={Eye}
                 >
-                  <p className="text-muted-foreground leading-relaxed">{content.metadata.description}</p>
-                </CollapsibleSection>
-              )}
-
-              {/* Content Preview */}
-              <CollapsibleSection
-                isOpen={isContentPreviewOpen}
-                onToggle={() => setIsContentPreviewOpen(!isContentPreviewOpen)}
-                title="Content Preview"
-                icon={Eye}
-              >
-                {content.content_type === 'glossary' && content.metadata ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
-                      <span className="text-sm text-muted-foreground">Terms Progress</span>
-                      <span className="font-bold text-foreground text-lg">
-                        {content.metadata.completedTerms || 0} / {content.metadata.termCount || 0}
-                      </span>
-                    </div>
-                    {content.metadata.domainUrl && (
-                      <div className="p-3 bg-muted/10 rounded-lg border border-border">
-                        <span className="font-medium text-muted-foreground">Domain:</span>
-                        <span className="ml-2 text-foreground">{content.metadata.domainUrl}</span>
+                  {content.content_type === 'glossary' && content.metadata ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
+                        <span className="text-sm text-muted-foreground">Terms Progress</span>
+                        <span className="font-bold text-foreground text-lg">
+                          {content.metadata.completedTerms || 0} / {content.metadata.termCount || 0}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="prose prose-sm max-w-none">
-                    <AnimatePresence mode="wait">
-                      {isContentExpanded ? (
-                        <motion.div 
-                          key="expanded"
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="space-y-3"
-                        >
-                          <ScrollArea className="h-64 w-full border border-border rounded-lg bg-muted/5">
-                            <div className="p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                              {content.content || 'No content available'}
-                            </div>
-                          </ScrollArea>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-primary hover:text-primary/80"
-                            onClick={() => setIsContentExpanded(false)}
+                      {content.metadata.domainUrl && (
+                        <div className="p-3 bg-muted/10 rounded-lg border border-border">
+                          <span className="font-medium text-muted-foreground">Domain:</span>
+                          <span className="ml-2 text-foreground">{content.metadata.domainUrl}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="prose prose-sm max-w-none">
+                      <AnimatePresence mode="wait">
+                        {isContentExpanded ? (
+                          <motion.div 
+                            key="expanded"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-3"
                           >
-                            Show Less
-                          </Button>
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="collapsed"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
-                            {content.content ? (
-                              content.content.length > 300 
-                                ? content.content.substring(0, 300) + '...'
-                                : content.content
-                            ) : 'No content available'}
-                          </div>
-                          {content.content && content.content.length > 300 && (
+                            <ScrollArea className="h-64 w-full border border-border rounded-lg bg-muted/5">
+                              <div className="p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                                {content.content || 'No content available'}
+                              </div>
+                            </ScrollArea>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="mt-2 text-primary hover:text-primary/80"
-                              onClick={() => setIsContentExpanded(true)}
+                              className="text-primary hover:text-primary/80"
+                              onClick={() => setIsContentExpanded(false)}
                             >
-                              Show More
+                              Show Less
                             </Button>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </CollapsibleSection>
-
-              {/* Keywords & Tags */}
-              {(content.keywords?.length > 0 || content.metadata?.tags?.length > 0) && (
-                <CollapsibleSection
-                  isOpen={isKeywordsOpen}
-                  onToggle={() => setIsKeywordsOpen(!isKeywordsOpen)}
-                  title="Keywords & Tags"
-                  icon={Hash}
-                  count={(content.keywords?.length || 0) + (content.metadata?.tags?.length || 0)}
-                >
-                  <div className="space-y-4">
-                    {content.keywords?.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-3">SEO Keywords</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {content.keywords.map((keyword, index) => (
-                            <Badge key={index} variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
-                              {keyword}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {content.metadata?.tags?.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Tags</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {content.metadata.tags.map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="collapsed"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
+                              {content.content ? (
+                                content.content.length > 300 
+                                  ? content.content.substring(0, 300) + '...'
+                                  : content.content
+                              ) : 'No content available'}
+                            </div>
+                            {content.content && content.content.length > 300 && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="mt-2 text-primary hover:text-primary/80"
+                                onClick={() => setIsContentExpanded(true)}
+                              >
+                                Show More
+                              </Button>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
                 </CollapsibleSection>
-              )}
+              </div>
 
-              {/* SERP Analysis */}
-              {(content.metadata?.serpSelections?.length > 0 || content.metadata?.documentStructure) && (
-                <CollapsibleSection
-                  isOpen={isSerpAnalysisOpen}
-                  onToggle={() => setIsSerpAnalysisOpen(!isSerpAnalysisOpen)}
-                  title="SERP Analysis"
-                  icon={Search}
-                  count={content.metadata?.serpSelections?.length || 0}
-                >
-                  <div className="space-y-6">
-                    {content.metadata?.serpSelections?.length > 0 && (
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-muted-foreground">Selected SERP Items</h4>
-                        <RepositorySerpDisplay serpSelections={content.metadata.serpSelections} />
-                      </div>
-                    )}
-                    
-                    {content.metadata?.documentStructure && (
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-muted-foreground">Document Structure</h4>
-                        <RepositoryDocumentStructure documentStructure={content.metadata.documentStructure} />
-                      </div>
-                    )}
-                  </div>
-                </CollapsibleSection>
-              )}
-
-              {/* Optimization Badges */}
-              <CollapsibleSection
-                isOpen={isOptimizationOpen}
-                onToggle={() => setIsOptimizationOpen(!isOptimizationOpen)}
-                title="Optimization"
-                icon={Target}
-              >
-                <OptimizationBadges metadata={content.metadata} />
-              </CollapsibleSection>
-
-              {/* Repurposed Content Section */}
-              {repurposedFormats.length > 0 && (
-                <CollapsibleSection
-                  isOpen={isRepurposedOpen}
-                  onToggle={() => setIsRepurposedOpen(!isRepurposedOpen)}
-                  title="Repurposed Content"
-                  icon={Layers}
-                  count={repurposedFormats.length}
-                >
-                  <RepurposedContentIcons
-                    repurposedFormats={repurposedFormats}
-                    onFormatClick={handleRepurposedFormatClick}
-                  />
-                </CollapsibleSection>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-4 sm:space-y-6">
-              {/* Content Stats */}
-              <Card className="bg-muted/5 border-border">
-                <CardHeader>
-                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-primary" />
-                    Content Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
-                      <div className="text-2xl font-bold text-foreground">{wordCount}</div>
-                      <div className="text-xs text-muted-foreground">Words</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
-                      <div className="text-2xl font-bold text-foreground">{readingTime}m</div>
-                      <div className="text-xs text-muted-foreground">Read time</div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Created</span>
-                      <span className="text-sm text-foreground">
-                        {format(new Date(content.created_at), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Modified</span>
-                      <span className="text-sm text-foreground">
-                        {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Solution Badge */}
-              {solution && (
+              {/* Right Sidebar */}
+              <div className="space-y-4 sm:space-y-6">
+                {/* Content Stats with Status & Solution */}
                 <Card className="bg-muted/5 border-border">
                   <CardHeader>
                     <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                      <Target className="h-5 w-5 text-primary" />
-                      Solution
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                      Content Stats
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <SolutionIntegrationBadge metadata={content.metadata} />
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
+                        <div className="text-2xl font-bold text-foreground">{wordCount}</div>
+                        <div className="text-xs text-muted-foreground">Words</div>
+                      </div>
+                      <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
+                        <div className="text-2xl font-bold text-foreground">{readingTime}m</div>
+                        <div className="text-xs text-muted-foreground">Read time</div>
+                      </div>
+                    </div>
+                    
+                    {/* Status & Solution Indicators */}
+                    <div className="space-y-3 pt-2 border-t border-border/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          <span className="text-sm text-muted-foreground">Status</span>
+                        </div>
+                        <Badge className={`${getStatusColor(content.status)} text-xs px-2 py-1`}>
+                          {content.status}
+                        </Badge>
+                      </div>
+                      
+                      {solution && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Target className="h-4 w-4 text-primary" />
+                            <span className="text-sm text-muted-foreground">Solution</span>
+                          </div>
+                          <div className="flex items-center">
+                            <SolutionIntegrationBadge metadata={content.metadata} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2 pt-2 border-t border-border/20">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Created</span>
+                        <span className="text-sm text-foreground">
+                          {format(new Date(content.created_at), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Modified</span>
+                        <span className="text-sm text-foreground">
+                          {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
-              )}
 
-              {/* Status Badge */}
-              <Card className="bg-muted/5 border-border">
-                <CardHeader>
-                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                    Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Badge className={`${getStatusColor(content.status)} text-sm px-3 py-1`}>
-                    {content.status}
-                  </Badge>
-                </CardContent>
-              </Card>
+                {/* Keywords & Tags */}
+                {(content.keywords?.length > 0 || content.metadata?.tags?.length > 0) && (
+                  <CollapsibleSection
+                    isOpen={isKeywordsOpen}
+                    onToggle={() => setIsKeywordsOpen(!isKeywordsOpen)}
+                    title="Keywords & Tags"
+                    icon={Hash}
+                    count={(content.keywords?.length || 0) + (content.metadata?.tags?.length || 0)}
+                  >
+                    <div className="space-y-4">
+                      {content.keywords?.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-3">SEO Keywords</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {content.keywords.map((keyword, index) => (
+                              <Badge key={index} variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
+                                {keyword}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {content.metadata?.tags?.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-3">Tags</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {content.metadata.tags.map((tag, index) => (
+                              <Badge key={index} variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleSection>
+                )}
 
-              {/* Actions */}
-              <Card className="bg-muted/5 border-border">
-                <CardHeader>
-                  <CardTitle className="text-lg text-foreground">Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      onClick={handleEdit}
-                      className="w-full"
-                      variant="default"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Content
-                    </Button>
+                {/* SERP Analysis */}
+                {content.metadata?.serpSelections?.length > 0 && (
+                  <CollapsibleSection
+                    isOpen={isSerpAnalysisOpen}
+                    onToggle={() => setIsSerpAnalysisOpen(!isSerpAnalysisOpen)}
+                    title="SERP Analysis"
+                    icon={Search}
+                    count={content.metadata?.serpSelections?.length || 0}
+                  >
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-muted-foreground">Selected SERP Items</h4>
+                      <RepositorySerpDisplay serpSelections={content.metadata.serpSelections} />
+                    </div>
+                  </CollapsibleSection>
+                )}
 
-                    {repurposedFormats.length > 0 && (
+                {/* Document Structure */}
+                {content.metadata?.documentStructure && (
+                  <CollapsibleSection
+                    isOpen={isDocumentStructureOpen}
+                    onToggle={() => setIsDocumentStructureOpen(!isDocumentStructureOpen)}
+                    title="Document Structure"
+                    icon={FileSearch}
+                    count={content.metadata.documentStructure.headings?.length || 0}
+                  >
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-muted-foreground">Structure Analysis</h4>
+                      <RepositoryDocumentStructure documentStructure={content.metadata.documentStructure} />
+                    </div>
+                  </CollapsibleSection>
+                )}
+
+                {/* Optimization */}
+                <CollapsibleSection
+                  isOpen={isOptimizationOpen}
+                  onToggle={() => setIsOptimizationOpen(!isOptimizationOpen)}
+                  title="Optimization"
+                  icon={Target}
+                >
+                  <OptimizationBadges metadata={content.metadata} />
+                </CollapsibleSection>
+
+                {/* Repurposed Content Section */}
+                {repurposedFormats.length > 0 && (
+                  <CollapsibleSection
+                    isOpen={isRepurposedOpen}
+                    onToggle={() => setIsRepurposedOpen(!isRepurposedOpen)}
+                    title="Repurposed Content"
+                    icon={Layers}
+                    count={repurposedFormats.length}
+                  >
+                    <RepurposedContentIcons
+                      repurposedFormats={repurposedFormats}
+                      onFormatClick={handleRepurposedFormatClick}
+                    />
+                  </CollapsibleSection>
+                )}
+
+                {/* Actions */}
+                <Card className="bg-muted/5 border-border">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-foreground">Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex flex-col gap-2">
                       <Button
-                        onClick={handleRepurpose}
+                        onClick={handleEdit}
                         className="w-full"
-                        variant="outline"
+                        variant="default"
                       >
-                        <Layers className="h-4 w-4 mr-2" />
-                        Repurpose Content
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Content
                       </Button>
-                    )}
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full">
-                          <MoreVertical className="h-4 w-4 mr-2" />
-                          More Actions
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={handleDuplicate}>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={handleDelete}
-                          className="text-destructive"
-                          disabled={isLoading}
+                      {repurposedFormats.length > 0 && (
+                        <Button
+                          onClick={handleRepurpose}
+                          className="w-full"
+                          variant="outline"
                         >
-                          {isLoading ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4 mr-2" />
-                          )}
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                          <Layers className="h-4 w-4 mr-2" />
+                          Repurpose Content
+                        </Button>
+                      )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full">
+                            <MoreVertical className="h-4 w-4 mr-2" />
+                            More Actions
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={handleDuplicate}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={handleDelete}
+                            className="text-destructive"
+                            disabled={isLoading}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4 mr-2" />
+                            )}
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </ScrollArea>
         </div>
