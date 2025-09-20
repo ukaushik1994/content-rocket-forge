@@ -657,7 +657,6 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
               </Card>
             </div>
             </div>
-            </div>
           </ScrollArea>
         </div>
         </DialogContent>
