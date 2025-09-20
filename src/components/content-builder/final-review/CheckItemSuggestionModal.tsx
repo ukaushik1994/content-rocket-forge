@@ -71,22 +71,42 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
         selectedSolution: state.selectedSolution
       };
 
-      // Use the dedicated content-suggestions edge function
-      const response = await supabase.functions.invoke('content-suggestions', {
-        body: {
-          content: state.content,
-          checkTitle,
-          context
-        }
-      });
+      // Use AIServiceController with suggestion_generation use case
+      const AIServiceController = (await import('@/services/aiService/AIServiceController')).default;
+      
+      // Create the prompt for AI analysis
+      const userPrompt = `Check Title: ${checkTitle}
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Edge function error');
+Content to analyze:
+${state.content}
+
+Context:
+- Main Keyword: ${context.mainKeyword || 'Not specified'}
+- Secondary Keywords: ${context.selectedKeywords?.join(', ') || 'None'}
+- Content Type: ${context.contentType}
+- Word Count: ${context.wordCount}
+- Target Goal: ${context.targetGoal}
+
+Please analyze this content for the specific issue mentioned in the check title and provide text replacement suggestions to address it.`;
+
+      const response = await AIServiceController.generate('suggestion_generation', undefined, userPrompt);
+
+      if (!response || !response.content) {
+        toast.error('No suggestions generated');
+        return;
       }
 
-      const { suggestions: rawSuggestions, success } = response.data;
+      // Parse AI response as JSON
+      let rawSuggestions;
+      try {
+        rawSuggestions = JSON.parse(response.content);
+      } catch (error) {
+        console.error('Failed to parse AI response as JSON:', response.content);
+        toast.error('Invalid AI response format');
+        return;
+      }
 
-      if (!success || !rawSuggestions || rawSuggestions.length === 0) {
+      if (!Array.isArray(rawSuggestions) || rawSuggestions.length === 0) {
         toast.error('No suggestions generated');
         return;
       }

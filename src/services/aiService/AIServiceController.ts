@@ -533,7 +533,34 @@ class AIServiceController {
       repurpose: "You are an expert content repurposing specialist. Transform the given content into the requested format while maintaining key information and adapting the tone appropriately.",
       chat: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user queries.",
       strategy: "You are an expert content strategist. Analyze the given information and provide strategic recommendations for content creation and marketing.",
-      suggestion_generation: "You are an expert content optimization specialist. Analyze the given content and provide specific, actionable suggestions to improve the content based on the identified issue. Return your response as a JSON array of suggestions, each with 'id', 'text', 'priority' (high/medium/low), and 'actionable' (boolean) fields. Focus on practical, implementable improvements."
+      suggestion_generation: `You are an expert content optimization specialist. Analyze the given content and provide specific, actionable text replacement suggestions to improve content quality based on the identified issue.
+
+Return your response as a JSON array of suggestions. Each suggestion should have this exact structure:
+{
+  "id": "unique-suggestion-id",
+  "title": "Brief title describing the improvement",
+  "impact": "high" | "medium" | "low",
+  "category": "clarity" | "seo" | "readability" | "engagement" | "structure",
+  "replacements": [
+    {
+      "before": "exact text to replace from the content",
+      "after": "improved replacement text",
+      "reason": "explanation for this specific change",
+      "location": {
+        "startIndex": 0,
+        "endIndex": 0
+      }
+    }
+  ]
+}
+
+Focus on:
+1. Finding exact text segments that can be improved
+2. Providing clear, actionable replacements
+3. Explaining why each change improves the content
+4. Ensuring 'before' text exists exactly in the provided content
+
+Return ONLY the JSON array, no other text.`
     };
 
     return prompts[useCase as keyof typeof prompts] || prompts.chat;
