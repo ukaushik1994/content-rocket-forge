@@ -1,26 +1,21 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Pencil, Save, Sparkles, Loader2, BarChart3 } from 'lucide-react';
-// Import both the contentFormats array and the getFormatIconComponent function 
-import { contentFormats, getFormatByIdOrDefault, getFormatIconComponent } from '@/components/content-repurposing/formats';
+import { Sparkles, Loader2, BarChart3, Plus } from 'lucide-react';
+import { contentFormats, getFormatByIdOrDefault, getFormatIconComponent, ContentFormat } from '@/components/content-repurposing/formats';
 import { 
   PromptTemplate, 
   getPromptTemplatesByType,
   savePromptTemplate,
   updatePromptTemplate,
-  getPromptTemplateById
 } from '@/services/userPreferencesService';
 import { logActivity } from '@/services/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
-import { enhancePromptWithFeedback, EnhancementResult, getRecentApprovalFeedback, FeedbackData } from '@/services/promptEnhancementService';
+import { enhancePromptWithFeedback, EnhancementResult } from '@/services/promptEnhancementService';
+import { CategorySection, MinimalFormatCard, TemplateEditor, SearchBar } from './prompts';
 
 export function FormatPromptSettings() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -29,8 +24,48 @@ export function FormatPromptSettings() {
   const [isEnhancing, setIsEnhancing] = useState<string | null>(null);
   const [enhancementResult, setEnhancementResult] = useState<EnhancementResult | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [currentFeedback, setCurrentFeedback] = useState<FeedbackData[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [openCategories, setOpenCategories] = useState<string[]>(['social-media']); // Social Media open by default
   const { user } = useAuth();
+
+  // Categorize formats
+  const formatCategories = useMemo(() => {
+    const categories = {
+      'social-media': {
+        title: 'Social Media',
+        description: 'Posts and content for social platforms',
+        formats: contentFormats.filter(f => f.id.startsWith('social-') || f.id === 'carousel' || f.id === 'meme')
+      },
+      'long-form': {
+        title: 'Long-form Content',
+        description: 'Detailed articles and structured content',
+        formats: contentFormats.filter(f => ['blog', 'email', 'script'].includes(f.id))
+      }
+    };
+    return categories;
+  }, []);
+
+  // Filter formats based on search
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return formatCategories;
+    
+    const filtered: Record<string, { title: string; description: string; formats: ContentFormat[] }> = {};
+    Object.entries(formatCategories).forEach(([key, category]) => {
+      const matchingFormats = category.formats.filter(format =>
+        format.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        format.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (matchingFormats.length > 0) {
+        filtered[key] = { ...category, formats: matchingFormats };
+      }
+    });
+    return filtered;
+  }, [formatCategories, searchQuery]);
+
+  // Statistics
+  const totalFormats = contentFormats.length;
+  const configuredFormats = contentFormats.filter(f => getPromptTemplatesByType(f.id).length > 0).length;
+  const filteredCount = Object.values(filteredCategories).reduce((acc, cat) => acc + cat.formats.length, 0);
   const handleOpenEditor = (formatId: string) => {
     setActiveFormatId(formatId);
     
@@ -166,149 +201,107 @@ export function FormatPromptSettings() {
   };
 
 
+  const handleCreateAll = async () => {
+    const unconfiguredFormats = contentFormats.filter(f => getPromptTemplatesByType(f.id).length === 0);
+    toast.success(`Creating ${unconfiguredFormats.length} templates...`);
+    // Implementation would batch create templates
+  };
+
+  const handleEnhanceAll = async () => {
+    const configuredFormatIds = contentFormats
+      .filter(f => getPromptTemplatesByType(f.id).length > 0)
+      .map(f => f.id);
+    toast.success(`Enhancing ${configuredFormatIds.length} templates...`);
+    // Implementation would batch enhance templates
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setOpenCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Format Prompt Templates</h2>
-            <p className="text-muted-foreground">
-              Customize prompts used for generating different content formats
-            </p>
-          </div>
-        </div>
+        <h2 className="text-2xl font-bold tracking-tight">Prompt Templates</h2>
+        <p className="text-muted-foreground">
+          Customize AI prompts for each content format
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {contentFormats.map((format) => {
-          const existingTemplates = getPromptTemplatesByType(format.id);
-          const hasTemplate = existingTemplates.length > 0;
-          // Get the icon component using the helper function
-          const IconComponent = getFormatIconComponent(format.id);
+      {/* Search & Quick Actions */}
+      <SearchBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        totalFormats={totalFormats}
+        configuredFormats={configuredFormats}
+        filteredCount={filteredCount}
+        onCreateAll={handleCreateAll}
+        onEnhanceAll={handleEnhanceAll}
+      />
+
+      {/* Categories */}
+      <div className="space-y-4">
+        {Object.entries(filteredCategories).map(([categoryId, category]) => {
+          const categoryConfigured = category.formats.filter(f => 
+            getPromptTemplatesByType(f.id).length > 0
+          ).length;
           
           return (
-            <Card key={format.id} className={`cursor-pointer transition-shadow hover:shadow-md ${hasTemplate ? 'border-primary/50' : ''}`}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <IconComponent className="h-5 w-5" />
-                  {format.name}
-                  {hasTemplate && (
-                    <span className="text-xs bg-primary/20 text-primary py-0.5 px-1.5 rounded-full">
-                      Custom
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">{format.description}</p>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => handleOpenEditor(format.id)} 
-                    variant={hasTemplate ? "default" : "outline"} 
-                    size="sm"
-                    className="flex-1"
-                  >
-                    {hasTemplate ? (
-                      <>
-                        <Pencil className="h-3 w-3 mr-1" /> Edit Template
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-3 w-3 mr-1" /> Create Template
-                      </>
-                    )}
-                  </Button>
-                  
-                  {hasTemplate && (
-                    <Button 
-                      onClick={() => handleRefreshWithFeedback(format.id)}
-                      variant="outline" 
-                      size="sm"
-                      disabled={isEnhancing === format.id}
-                      className="px-2"
-                      title={`Refresh ${format.name} template with AI feedback analysis`}
-                    >
-                      {isEnhancing === format.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <CategorySection
+              key={categoryId}
+              title={category.title}
+              description={category.description}
+              isOpen={openCategories.includes(categoryId)}
+              onToggle={() => toggleCategory(categoryId)}
+              configuredCount={categoryConfigured}
+              totalCount={category.formats.length}
+            >
+              {category.formats.map((format) => {
+                const IconComponent = getFormatIconComponent(format.id);
+                return (
+                  <MinimalFormatCard
+                    key={format.id}
+                    format={format}
+                    IconComponent={IconComponent}
+                    onEdit={handleOpenEditor}
+                    onEnhance={handleRefreshWithFeedback}
+                    isEnhancing={isEnhancing === format.id}
+                  />
+                );
+              })}
+            </CategorySection>
           );
         })}
       </div>
+
+      {/* No Results */}
+      {Object.keys(filteredCategories).length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No formats match your search.</p>
+          <Button
+            variant="ghost"
+            onClick={() => setSearchQuery('')}
+            className="mt-2"
+          >
+            Clear search
+          </Button>
+        </div>
+      )}
       
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingTemplate?.id ? 'Edit Template' : 'Create Template'} for {getFormatByIdOrDefault(activeFormatId).name}
-            </DialogTitle>
-            <DialogDescription>
-              Customize how content is generated for this format
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Template Name</Label>
-              <Input 
-                id="name"
-                value={editingTemplate?.name || ''}
-                onChange={(e) => setEditingTemplate(prev => ({...prev!, name: e.target.value}))}
-                placeholder="Enter template name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input 
-                id="description"
-                value={editingTemplate?.description || ''}
-                onChange={(e) => setEditingTemplate(prev => ({...prev!, description: e.target.value}))}
-                placeholder="Brief description of this template"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="promptTemplate">
-                Prompt Template <span className="text-xs text-muted-foreground">(Use {'{topic}'}, {'{content}'}, and {'{keyword}'} as placeholders)</span>
-              </Label>
-              <Textarea
-                id="promptTemplate"
-                rows={8} 
-                value={editingTemplate?.promptTemplate || ''}
-                onChange={(e) => setEditingTemplate(prev => ({...prev!, promptTemplate: e.target.value}))}
-                placeholder="Enter your prompt template..."
-                className="font-mono text-sm"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="structure">
-                Structure Template <span className="text-xs text-muted-foreground">(Optional)</span>
-              </Label>
-              <Textarea 
-                id="structure"
-                rows={5}
-                value={editingTemplate?.structureTemplate || ''}
-                onChange={(e) => setEditingTemplate(prev => ({...prev!, structureTemplate: e.target.value}))}
-                placeholder="# Introduction\n## Main Point\n## Secondary Point\n# Conclusion"
-                className="font-mono text-sm"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveTemplate}>Save Template</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Template Editor */}
+      <TemplateEditor
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editingTemplate={editingTemplate}
+        onTemplateChange={setEditingTemplate}
+        onSave={handleSaveTemplate}
+        activeFormatId={activeFormatId}
+      />
 
       {/* Enhancement Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
@@ -352,7 +345,7 @@ export function FormatPromptSettings() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Current Template</Label>
+                <div className="text-sm font-medium">Current Template</div>
                 <div className="p-3 bg-muted/30 rounded-md border">
                   <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
                     {getPromptTemplatesByType(activeFormatId)[0]?.promptTemplate || 'No template found'}
@@ -361,24 +354,13 @@ export function FormatPromptSettings() {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Enhanced Template</Label>
+                <div className="text-sm font-medium">Enhanced Template</div>
                 <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
                   <pre className="text-xs whitespace-pre-wrap font-mono">
                     {enhancementResult?.enhancedTemplate || 'No enhancement available'}
                   </pre>
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="enhanced-template">Edit Enhanced Template (Optional)</Label>
-              <Textarea
-                id="enhanced-template"
-                rows={8}
-                value={editingTemplate?.promptTemplate || ''}
-                onChange={(e) => setEditingTemplate(prev => ({...prev!, promptTemplate: e.target.value}))}
-                className="font-mono text-sm"
-              />
             </div>
           </div>
           
