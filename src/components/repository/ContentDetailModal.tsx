@@ -305,7 +305,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[80vw] lg:w-[75vw] max-w-6xl h-[95vh] sm:h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
+        <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] max-w-7xl h-[95vh] sm:h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
           <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-4 border-b border-border">
             <DialogTitle className="text-lg sm:text-2xl font-bold text-foreground pr-8 line-clamp-2">
               {content.title}
@@ -344,9 +344,9 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
             </div>
             
             {/* Two-Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-6 pb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 pb-6">
               {/* Left Side - Content Preview Only */}
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Content Preview */}
                 <CollapsibleSection
                   isOpen={isContentPreviewOpen}
@@ -381,8 +381,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                             transition={{ duration: 0.3 }}
                             className="space-y-3"
                           >
-                            <ScrollArea className="h-64 w-full border border-border rounded-lg bg-muted/5">
-                              <div className="p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                            <ScrollArea className="h-72 sm:h-80 w-full border border-border rounded-lg bg-muted/5">
+                              <div className="p-3 sm:p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                                 {content.content || 'No content available'}
                               </div>
                             </ScrollArea>
