@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Loader2, Copy, Check, Wand2, Eye, EyeOff, ArrowRight, Undo2, Redo2, AlertTriangle } from 'lucide-react';
-import AIServiceController from '@/services/aiService/AIServiceController';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { saveSuggestionFeedback } from '@/services/suggestionFeedbackService';
 import { ContentHighlightService, EnhancedSuggestion } from '@/services/contentHighlightService';
 import { ContentSyncService } from '@/services/contentSyncService';
+import { EnhancedContentMatcher } from '@/services/content/enhancedContentMatcher';
 import { supabase } from '@/integrations/supabase/client';
 import { useBatchOperations } from '@/hooks/final-review/useBatchOperations';
 import { useUndoSystem } from '@/hooks/final-review/useUndoSystem';
@@ -59,81 +59,90 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
 
     setIsGenerating(true);
     try {
-      // AIServiceController is already a singleton instance
-      const aiController = AIServiceController;
-      
-      // Enhanced system prompt with context and SERP data
-      const systemPrompt = `You are an expert content optimizer. Analyze the content and provide specific, actionable text replacements to fix: "${checkTitle}".
+      // Create context for the suggestion request
+      const context = {
+        mainKeyword: state.mainKeyword,
+        selectedKeywords: state.selectedKeywords || [],
+        contentLength: state.content.length,
+        wordCount: state.content.split(' ').length,
+        contentType: state.contentType || 'article',
+        targetGoal: 'optimization',
+        serpData: state.serpData,
+        selectedSolution: state.selectedSolution
+      };
 
-      Return your response in this JSON format:
-      [
-        {
-          "id": "suggestion-1",
-          "title": "Brief description of the fix",
-          "replacements": [
-            {
-              "location": {
-                "paragraph": 0,
-                "startIndex": 0,
-                "endIndex": 20,
-                "originalText": "exact text to replace"
-              },
-              "replacementText": "improved text",
-              "reason": "Why this change improves the content",
-              "before": "exact text to replace",
-              "after": "improved text"
-            }
-          ],
-          "impact": "high|medium|low",
-          "category": "seo|readability|compliance|solution"
+      // Use the dedicated content-suggestions edge function
+      const response = await supabase.functions.invoke('content-suggestions', {
+        body: {
+          content: state.content,
+          checkTitle,
+          context
         }
-      ]
-      
-      Context:
-      - Main keyword: ${state.mainKeyword || 'Not specified'}
-      - Selected keywords: ${state.selectedKeywords?.join(', ') || 'None'}
-      - SERP competitors: ${state.serpData ? 'Available for analysis' : 'Not available'}
-      - Solution: ${state.selectedSolution?.name || 'None'}
-      - Content type: ${state.contentType || 'Not specified'}`;
+      });
 
-      const userPrompt = `Issue to fix: "${checkTitle}"
-      
-      Content:
-      ${state.content}
-      
-      ${state.serpData ? `
-      SERP Context:
-      Top competitors are focusing on: ${state.serpData.relatedKeywords?.slice(0, 5).join(', ') || 'N/A'}
-      Search intent: ${state.serpData.searchIntent || 'Informational'}
-      ` : ''}
-      
-      ${state.selectedSolution ? `
-      Solution Context:
-      Name: ${state.selectedSolution.name}
-      Key Features: ${state.selectedSolution.features?.slice(0, 3).join(', ') || 'N/A'}
-      Benefits: ${state.selectedSolution.benefits?.slice(0, 3).join(', ') || 'N/A'}
-      ` : ''}
-      
-      Provide specific text replacements that will fix this issue.`;
-
-      const result = await aiController.generate({
-        input: userPrompt,
-        use_case: 'suggestion_generation' as any,
-        temperature: 0.3,
-        max_tokens: 1500
-      }, systemPrompt, userPrompt);
-
-      if (result?.content) {
-        setSuggestion(result.content);
-        
-        // Parse enhanced suggestions
-        const parsed = ContentHighlightService.parseSuggestions(result.content);
-        setEnhancedSuggestions(parsed);
-        
-        toast.success(`Generated ${parsed.length} specific suggestions`);
-      } else {
-        toast.error('No suggestion generated');
+      if (response.error) {
+        throw new Error(response.error.message || 'Edge function error');
       }
+
+      const { suggestions: rawSuggestions, success } = response.data;
+
+      if (!success || !rawSuggestions || rawSuggestions.length === 0) {
+        toast.error('No suggestions generated');
+        return;
+      }
+
+      // Enhanced matching with the new content matcher
+      const enhancedMatcher = EnhancedContentMatcher.getInstance();
+      const validatedSuggestions = [];
+
+      for (const suggestion of rawSuggestions) {
+        const validatedReplacements = [];
+        
+        for (const replacement of suggestion.replacements || []) {
+          // Use enhanced matching to find and validate the text location
+          const matchResult = enhancedMatcher.findTextInContent(
+            state.content,
+            replacement.before,
+            { exactMatch: false, fuzzyThreshold: 0.8, maxResults: 1 }
+          );
+
+          if (matchResult.found && matchResult.bestMatch) {
+            validatedReplacements.push({
+              ...replacement,
+              location: {
+                ...replacement.location,
+                ...matchResult.bestMatch,
+                confidence: matchResult.bestMatch.confidence
+              }
+            });
+          } else {
+            console.warn(`Could not locate text for replacement:`, replacement.before);
+          }
+        }
+
+        if (validatedReplacements.length > 0) {
+          validatedSuggestions.push({
+            ...suggestion,
+            replacements: validatedReplacements
+          });
+        }
+      }
+
+      // Convert to enhanced suggestions format
+      const enhancedSuggestions: EnhancedSuggestion[] = validatedSuggestions.map(suggestion => ({
+        id: suggestion.id,
+        title: suggestion.title,
+        replacements: suggestion.replacements,
+        impact: suggestion.impact,
+        category: suggestion.category,
+        applied: false
+      }));
+
+      setSuggestion(JSON.stringify(validatedSuggestions, null, 2));
+      setEnhancedSuggestions(enhancedSuggestions);
+      
+      toast.success(`Generated ${enhancedSuggestions.length} validated suggestions`);
+      
     } catch (error: any) {
       console.error('Error generating suggestion:', error);
       toast.error('Failed to generate suggestion: ' + (error.message || 'Unknown error'));
@@ -163,21 +172,32 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
     const originalContent = state.content;
     
     try {
-      const success = await ContentSyncService.applySuggestion(
-        state.content,
-        suggestionId,
-        replacement,
-        (newContent: string) => {
-          // Add to undo history before updating
-          addUndoEntry(
-            originalContent,
-            newContent,
-            `Applied suggestion: ${replacement.reason}`,
-            suggestionId
-          );
-          // Use safe content update with validation and refresh
-          safeUpdateContent(originalContent, newContent, `Applied: ${replacement.reason}`);
-        }
+      // Use enhanced content matcher for precise text replacement
+      const enhancedMatcher = EnhancedContentMatcher.getInstance();
+      const replaceResult = enhancedMatcher.applySmartReplacement(
+        originalContent,
+        replacement.before,
+        replacement.after
+      );
+      
+      if (!replaceResult.success) {
+        toast.error('Could not locate the text to replace. Content may have changed.');
+        return;
+      }
+
+      // Add to undo history before updating
+      addUndoEntry(
+        originalContent,
+        replaceResult.newContent,
+        `Applied suggestion: ${replacement.reason}`,
+        suggestionId
+      );
+
+      // Use safe content update with validation and refresh
+      const success = await safeUpdateContent(
+        originalContent, 
+        replaceResult.newContent, 
+        `Applied: ${replacement.reason}`
       );
 
       if (success) {
@@ -189,8 +209,11 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
               : s
           )
         );
+        
+        toast.success('Suggestion applied successfully');
       }
     } catch (error: any) {
+      console.error('Failed to apply suggestion:', error);
       toast.error('Failed to apply suggestion: ' + error.message);
     } finally {
       setApplyingIds(prev => {
@@ -423,7 +446,7 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
                         <Button
                           size="sm"
                           onClick={() => applySuggestion(suggestion.id, replacement)}
-                          disabled={applyingIds.has(suggestion.id) || ContentSyncService.isSuggestionApplied(suggestion.id)}
+                          disabled={applyingIds.has(suggestion.id) || suggestion.applied}
                           className="bg-green-600 hover:bg-green-700 text-white"
                         >
                           {applyingIds.has(suggestion.id) ? (
@@ -431,7 +454,7 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
                               <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                               Applying...
                             </>
-                          ) : ContentSyncService.isSuggestionApplied(suggestion.id) ? (
+                          ) : suggestion.applied ? (
                             <>
                               <Check className="mr-2 h-3 w-3" />
                               Applied

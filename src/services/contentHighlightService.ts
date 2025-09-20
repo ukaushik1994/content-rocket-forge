@@ -22,6 +22,7 @@ export interface EnhancedSuggestion {
   replacements: SuggestionReplacement[];
   impact: 'high' | 'medium' | 'low';
   category: 'seo' | 'readability' | 'compliance' | 'solution';
+  applied?: boolean;
 }
 
 export class ContentHighlightService {
