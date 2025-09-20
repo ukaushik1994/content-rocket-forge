@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RepositoryFilters } from './RepositoryFilters';
-import { RepositoryGrid } from './RepositoryGrid';
 import { RepositoryList } from './RepositoryList';
-import { RepositoryControls, ViewMode } from './RepositoryControls';
+import { RepositoryControls } from './RepositoryControls';
 import { EmptyState } from './EmptyState';
 import { LoadingState } from './LoadingState';
 import { useContent } from '@/contexts/content';
@@ -30,7 +29,6 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
   } = useContentActions();
   const [filteredItems, setFilteredItems] = useState<ContentItemType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [advancedFilters, setAdvancedFilters] = useState<any>({});
 
   // Filter content based on selected filters
@@ -121,8 +119,6 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
       transition={{ duration: 0.6 }}
     >
       <RepositoryControls
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         onFiltersApply={setAdvancedFilters}
         contentStats={contentStats}
       />
@@ -137,11 +133,6 @@ export const RepositoryContent: React.FC<RepositoryContentProps> = ({
           contentType={'all'}
           status={advancedFilters.status || 'all'}
           searchQuery={searchQuery}
-        />
-      ) : viewMode === 'grid' ? (
-        <RepositoryGrid 
-          items={filteredItems}
-          onOpenDetailView={onOpenDetailView}
         />
       ) : (
         <RepositoryList 
