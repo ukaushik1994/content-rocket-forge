@@ -79,7 +79,7 @@ export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ se
           {selectedItems.length} items selected from research
         </p>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Keywords Section */}
         {counts.keyword > 0 && (
           <div className="space-y-2">
@@ -104,7 +104,7 @@ export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ se
               <HelpCircle className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Questions ({counts.question})</span>
             </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+            <div className="space-y-1 max-h-28 sm:max-h-32 md:max-h-36 overflow-y-auto custom-scrollbar">
               {itemsByType.question.map((item, i) => (
                 <div key={i} className="text-xs text-muted-foreground bg-muted/30 border border-border/50 rounded p-2">
                   {typeof item.content === 'string' ? item.content : String(item.content)}
@@ -138,7 +138,7 @@ export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ se
               <Heading className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Headings ({counts.heading})</span>
             </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+            <div className="space-y-1 max-h-28 sm:max-h-32 md:max-h-36 overflow-y-auto custom-scrollbar">
               {itemsByType.heading.map((item, i) => (
                 <div key={i} className="text-xs text-muted-foreground bg-muted/30 border border-border/50 rounded p-2">
                   {typeof item.content === 'string' ? item.content : String(item.content)}
@@ -155,7 +155,7 @@ export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ se
               <Star className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Content Gaps ({counts.contentGap})</span>
             </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+            <div className="space-y-1 max-h-28 sm:max-h-32 md:max-h-36 overflow-y-auto custom-scrollbar">
               {itemsByType.contentGap.map((item, i) => (
                 <div key={i} className="text-xs text-muted-foreground bg-muted/30 border border-border/50 rounded p-2">
                   {typeof item.content === 'string' ? item.content : String(item.content)}
@@ -172,7 +172,7 @@ export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ se
               <FileText className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Snippets ({counts.snippet})</span>
             </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+            <div className="space-y-1 max-h-28 sm:max-h-32 md:max-h-36 overflow-y-auto custom-scrollbar">
               {itemsByType.snippet.map((item, i) => (
                 <div key={i} className="text-xs text-muted-foreground bg-muted/30 border border-border/50 rounded p-2">
                   {typeof item.content === 'string' ? item.content : String(item.content)}
@@ -189,7 +189,7 @@ export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ se
               <FileSearch className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Top Content ({counts.topRank})</span>
             </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+            <div className="space-y-1 max-h-28 sm:max-h-32 md:max-h-36 overflow-y-auto custom-scrollbar">
               {itemsByType.topRank.map((item, i) => (
                 <div key={i} className="text-xs text-muted-foreground bg-muted/30 border border-border/50 rounded p-2">
                   {typeof item.content === 'string' ? item.content : String(item.content)}
@@ -206,7 +206,7 @@ export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ se
               <FileText className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Multimedia ({counts.multimedia})</span>
             </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+            <div className="space-y-1 max-h-28 sm:max-h-32 md:max-h-36 overflow-y-auto custom-scrollbar">
               {itemsByType.multimedia.map((item, i) => (
                 <div key={i} className="text-xs text-muted-foreground bg-muted/30 border border-border/50 rounded p-2">
                   {typeof item.content === 'string' ? item.content : String(item.content)}

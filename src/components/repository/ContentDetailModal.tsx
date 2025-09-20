@@ -243,8 +243,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[95vh] sm:max-h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
-          <DialogHeader className="flex-shrink-0 px-2 sm:px-0">
+        <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] xl:w-[75vw] max-w-7xl h-[95vh] sm:h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
+          <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-4 border-b border-border">
             <DialogTitle className="text-lg sm:text-2xl font-bold text-foreground pr-8 line-clamp-2">
               {content.title}
             </DialogTitle>
@@ -256,10 +256,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
             </div>
           </DialogHeader>
 
-        <ScrollArea className="h-[calc(90vh-8rem)] flex-1 min-h-0" hideScrollbar>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 pr-2 sm:pr-4 px-2 sm:px-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full" hideScrollbar>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 p-4 sm:p-6">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <div className="xl:col-span-2 space-y-4 sm:space-y-6">
               {/* Description */}
               {content.metadata?.description && (
                 <Card className="bg-muted/5 border-border">
@@ -406,17 +407,17 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                       SERP Analysis
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-6">
                     {content.metadata?.serpSelections?.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Selected SERP Items</h4>
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-muted-foreground">Selected SERP Items</h4>
                         <RepositorySerpDisplay serpSelections={content.metadata.serpSelections} />
                       </div>
                     )}
                     
                     {content.metadata?.documentStructure && (
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Document Structure</h4>
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-muted-foreground">Document Structure</h4>
                         <RepositoryDocumentStructure documentStructure={content.metadata.documentStructure} />
                       </div>
                     )}
@@ -448,226 +449,69 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
             {/* Sidebar */}
             <div className="space-y-4 sm:space-y-6">
-              {/* Content Type & Status */}
-              <Card className="bg-muted/5 border-border">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-2 rounded-lg bg-gradient-to-r ${colorGradient} text-white shadow-lg`}>
-                      <IconComponent className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <Badge className={getStatusColor(content.status)} variant="outline">
-                        {content.status}
-                      </Badge>
-                      <p className="text-xs text-muted-foreground mt-1 capitalize">
-                        {content.content_type.replace('_', ' ')}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Button 
-                      variant="default" 
-                      className="w-full gap-2 bg-primary hover:bg-primary/90"
-                      onClick={handleRepurpose}
-                    >
-                      <Undo className="h-4 w-4" />
-                      Repurpose Content
-                    </Button>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full gap-2">
-                          <MoreVertical className="h-4 w-4" />
-                          More Actions
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={handleEdit}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleDuplicate}>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleDelete} className="text-destructive" disabled={isLoading}>
-                          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Key Metrics */}
+              {/* Content Stats */}
               <Card className="bg-muted/5 border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg text-foreground">Key Metrics</CardTitle>
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    Content Stats
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="text-center p-3 bg-muted/10 rounded-lg border border-border cursor-help">
-                          <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />
-                          <div className="font-semibold text-foreground">{wordCount.toLocaleString()}</div>
-                          <div className="text-xs text-muted-foreground">Words</div>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Total word count in the content</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="text-center p-3 bg-muted/10 rounded-lg border border-border cursor-help">
-                          <Clock className="h-5 w-5 mx-auto mb-1 text-primary" />
-                          <div className="font-semibold text-foreground">{readingTime} min</div>
-                          <div className="text-xs text-muted-foreground">Read Time</div>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Estimated reading time (200 words/min)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  
-                  {/* SEO Score */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border cursor-help">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Star className="h-4 w-4 text-primary" />
-                          <span className="text-xs text-muted-foreground">SEO Score</span>
-                          <Info className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                        <div className="text-xl font-bold text-foreground">
-                          {content.seo_score || content.metadata?.seoScore || 'N/A'}
-                        </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>SEO optimization score based on keywords, structure, and readability</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {/* Additional Metrics */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {(content.metadata as any)?.keywordDensity && (
-                      <div className="text-center p-2 bg-muted/10 rounded-lg border border-border">
-                        <Target className="h-4 w-4 mx-auto mb-1 text-primary" />
-                        <div className="font-semibold text-foreground text-sm">{(content.metadata as any).keywordDensity}%</div>
-                        <div className="text-xs text-muted-foreground">Keyword Density</div>
-                      </div>
-                    )}
-                    {content.metadata?.readabilityScore && (
-                      <div className="text-center p-2 bg-muted/10 rounded-lg border border-border">
-                        <BarChart3 className="h-4 w-4 mx-auto mb-1 text-primary" />
-                        <div className="font-semibold text-foreground text-sm">{content.metadata.readabilityScore}</div>
-                        <div className="text-xs text-muted-foreground">Readability</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Engagement Metrics */}
-                  {((content.metadata as any)?.engagementScore || (content.metadata as any)?.optimizationScore) && (
-                    <div className="p-3 bg-muted/10 rounded-lg border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="h-4 w-4 text-primary" />
-                        <span className="text-xs text-muted-foreground">Optimization</span>
-                      </div>
-                      <div className="text-lg font-bold text-foreground">
-                        {(content.metadata as any)?.optimizationScore || (content.metadata as any)?.engagementScore || 'N/A'}
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
+                      <div className="text-2xl font-bold text-foreground">{wordCount}</div>
+                      <div className="text-xs text-muted-foreground">Words</div>
                     </div>
-                  )}
+                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
+                      <div className="text-2xl font-bold text-foreground">{readingTime}m</div>
+                      <div className="text-xs text-muted-foreground">Read time</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Created</span>
+                      <span className="text-sm text-foreground">
+                        {format(new Date(content.created_at), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Modified</span>
+                      <span className="text-sm text-foreground">
+                        {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Solution Integration */}
+              {/* Solution Badge */}
               {solution && (
                 <Card className="bg-muted/5 border-border">
                   <CardHeader>
                     <CardTitle className="text-lg text-foreground flex items-center gap-2">
                       <Target className="h-5 w-5 text-primary" />
-                      Solution Integration
+                      Solution
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        {solution.logoUrl || solution.logo ? (
-                          <img
-                            src={solution.logoUrl || solution.logo}
-                            alt={solution.name}
-                            className="h-10 w-10 rounded object-contain bg-background/80 border border-border p-1"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded bg-primary/20 grid place-items-center text-sm font-semibold text-primary">
-                            {solution.name?.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <p className="font-medium text-foreground">{solution.name}</p>
-                          {solution.category && (
-                            <p className="text-xs text-muted-foreground">{solution.category}</p>
-                          )}
-                          {solution.description && (
-                            <p className="text-xs text-muted-foreground mt-1">{solution.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Integration Metrics */}
-                      {(content.metadata as any)?.integrationScore && (
-                        <div className="p-2 bg-muted/10 rounded-lg border border-border">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-muted-foreground">Integration Score</span>
-                            <span className="font-semibold text-foreground">{(content.metadata as any).integrationScore}%</span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {(content.metadata as any)?.featuresCovered && (
-                        <div className="p-2 bg-muted/10 rounded-lg border border-border">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-muted-foreground">Features Covered</span>
-                            <span className="font-semibold text-foreground">{(content.metadata as any).featuresCovered}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <SolutionIntegrationBadge metadata={content.metadata} />
                   </CardContent>
                 </Card>
               )}
 
-              {/* Timeline */}
+              {/* Status Badge */}
               <Card className="bg-muted/5 border-border">
                 <CardHeader>
                   <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    Timeline
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                    Status
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Created:</span>
-                      <span className="text-foreground">{format(new Date(content.created_at), 'MMM dd, yyyy')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Updated:</span>
-                      <span className="text-foreground">{format(new Date(content.updated_at), 'MMM dd, yyyy')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Relative:</span>
-                      <span className="text-foreground">{formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}</span>
-                    </div>
-                  </div>
+                  <Badge className={`${getStatusColor(content.status)} text-sm px-3 py-1`}>
+                    {content.status}
+                  </Badge>
                 </CardContent>
               </Card>
 
@@ -677,19 +521,61 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   <CardTitle className="text-lg text-foreground">Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button
-                    onClick={handleEdit}
-                    className="w-full gap-2 bg-primary/20 border-primary/30 text-primary hover:bg-primary/30"
-                    variant="outline"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit Content
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={handleEdit}
+                      className="w-full"
+                      variant="default"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Content
+                    </Button>
+
+                    {repurposedFormats.length > 0 && (
+                      <Button
+                        onClick={handleRepurpose}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        <Layers className="h-4 w-4 mr-2" />
+                        Repurpose Content
+                      </Button>
+                    )}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                          <MoreVertical className="h-4 w-4 mr-2" />
+                          More Actions
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={handleDuplicate}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={handleDelete}
+                          className="text-destructive"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 mr-2" />
+                          )}
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </CardContent>
               </Card>
             </div>
-          </div>
-        </ScrollArea>
+            </div>
+          </ScrollArea>
+        </div>
         </DialogContent>
       </Dialog>
       

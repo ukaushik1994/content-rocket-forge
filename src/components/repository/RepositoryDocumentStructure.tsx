@@ -70,7 +70,7 @@ export const RepositoryDocumentStructure: React.FC<RepositoryDocumentStructurePr
           Heading Structure
         </h4>
         
-        <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+        <div className="space-y-2 max-h-48 sm:max-h-56 md:max-h-64 lg:max-h-72 overflow-y-auto custom-scrollbar">
           {documentStructure.headings.map((heading, index) => (
             <div 
               key={index} 
