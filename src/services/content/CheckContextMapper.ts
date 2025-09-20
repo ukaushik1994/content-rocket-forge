@@ -1,22 +1,15 @@
-/**
- * Strategic Context Mapper for AI Suggestion Generation
- * Analyzes check types and injects relevant strategic context for precise AI suggestions
- */
+import { ContentBuilderState } from '@/contexts/content-builder/types';
 
-import { ContentBuilderState } from '@/contexts/content-builder/types/state-types';
-
-export interface StrategicContext {
-  checkType: CheckType;
-  contextData: Record<string, any>;
+interface StrategicContext {
+  checkType: string;
   promptEnhancement: string;
-  relevantDataPoints: string[];
+  contextualHints: string[];
+  focusAreas: string[];
 }
-
-export type CheckType = 'seo' | 'solution' | 'content' | 'structure' | 'keywords' | 'readability' | 'general';
 
 export class CheckContextMapper {
   private static instance: CheckContextMapper;
-  
+
   static getInstance(): CheckContextMapper {
     if (!CheckContextMapper.instance) {
       CheckContextMapper.instance = new CheckContextMapper();
@@ -24,382 +17,136 @@ export class CheckContextMapper {
     return CheckContextMapper.instance;
   }
 
-  /**
-   * Maps check title to strategic context based on ContentBuilderState
-   */
-  mapCheckToStrategicContext(
-    checkTitle: string, 
-    contentBuilderState: ContentBuilderState
-  ): StrategicContext {
-    const checkType = this.determineCheckType(checkTitle);
+  mapCheckToStrategicContext(checkTitle: string, state: ContentBuilderState): StrategicContext {
+    const lowercaseTitle = checkTitle.toLowerCase();
     
-    switch (checkType) {
-      case 'seo':
-        return this.createSeoContext(checkTitle, contentBuilderState);
-      case 'solution':
-        return this.createSolutionContext(checkTitle, contentBuilderState);
-      case 'keywords':
-        return this.createKeywordContext(checkTitle, contentBuilderState);
-      case 'content':
-        return this.createContentContext(checkTitle, contentBuilderState);
-      case 'structure':
-        return this.createStructureContext(checkTitle, contentBuilderState);
-      case 'readability':
-        return this.createReadabilityContext(checkTitle, contentBuilderState);
-      default:
-        return this.createGeneralContext(checkTitle, contentBuilderState);
+    // Map check titles to strategic contexts
+    if (lowercaseTitle.includes('readability') || lowercaseTitle.includes('reading')) {
+      return this.createReadabilityContext(state);
     }
+    
+    if (lowercaseTitle.includes('seo') || lowercaseTitle.includes('keyword')) {
+      return this.createSEOContext(state);
+    }
+    
+    if (lowercaseTitle.includes('engagement') || lowercaseTitle.includes('hook')) {
+      return this.createEngagementContext(state);
+    }
+    
+    if (lowercaseTitle.includes('structure') || lowercaseTitle.includes('organization')) {
+      return this.createStructureContext(state);
+    }
+    
+    if (lowercaseTitle.includes('clarity') || lowercaseTitle.includes('clear')) {
+      return this.createClarityContext(state);
+    }
+    
+    if (lowercaseTitle.includes('flow') || lowercaseTitle.includes('transition')) {
+      return this.createFlowContext(state);
+    }
+    
+    // Default context for unrecognized checks
+    return this.createGeneralContext(checkTitle, state);
   }
 
-  private determineCheckType(checkTitle: string): CheckType {
-    const title = checkTitle.toLowerCase();
-    
-    if (title.includes('seo') || title.includes('meta') || title.includes('title tag') || 
-        title.includes('description') || title.includes('serp') || title.includes('ranking')) {
-      return 'seo';
-    }
-    
-    if (title.includes('solution') || title.includes('product') || title.includes('feature') || 
-        title.includes('cta') || title.includes('call to action') || title.includes('integration')) {
-      return 'solution';
-    }
-    
-    if (title.includes('keyword') || title.includes('density') || title.includes('semantic') ||
-        title.includes('lsi') || title.includes('topic cluster')) {
-      return 'keywords';
-    }
-    
-    if (title.includes('structure') || title.includes('heading') || title.includes('h1') || 
-        title.includes('outline') || title.includes('section') || title.includes('hierarchy')) {
-      return 'structure';
-    }
-    
-    if (title.includes('readability') || title.includes('sentence') || title.includes('paragraph') ||
-        title.includes('flesch') || title.includes('grade level') || title.includes('clarity')) {
-      return 'readability';
-    }
-    
-    if (title.includes('content') || title.includes('engagement') || title.includes('value') ||
-        title.includes('audience') || title.includes('tone') || title.includes('voice')) {
-      return 'content';
-    }
-    
-    return 'general';
-  }
-
-  private createSeoContext(checkTitle: string, state: ContentBuilderState): StrategicContext {
-    const contextData: Record<string, any> = {
-      mainKeyword: state.mainKeyword,
-      selectedKeywords: state.selectedKeywords,
-      searchedKeywords: state.searchedKeywords,
-      serpData: state.serpData,
-      comprehensiveSerpData: state.comprehensiveSerpData,
-      serpSelections: state.serpSelections,
-      metaTitle: state.metaTitle,
-      metaDescription: state.metaDescription,
-      seoScore: state.seoScore,
-      seoImprovements: state.seoImprovements
+  private createReadabilityContext(state: ContentBuilderState): StrategicContext {
+    return {
+      checkType: 'readability',
+      promptEnhancement: `Focus on improving text readability and accessibility. Consider sentence length, word complexity, and paragraph structure. Target audience reading comprehension level should be appropriate.`,
+      contextualHints: [
+        'Break down complex sentences into simpler ones',
+        'Replace jargon with everyday language',
+        'Vary sentence lengths for better flow',
+        'Use active voice over passive voice'
+      ],
+      focusAreas: ['sentence_structure', 'vocabulary', 'paragraph_length', 'voice']
     };
+  }
 
-    const promptEnhancement = this.createSeoPromptEnhancement(contextData);
+  private createSEOContext(state: ContentBuilderState): StrategicContext {
+    const keyword = state.mainKeyword || '';
+    const keywords = state.selectedKeywords || [];
     
     return {
       checkType: 'seo',
-      contextData,
-      promptEnhancement,
-      relevantDataPoints: [
-        'SERP competitor analysis',
-        'Keyword ranking patterns',
-        'Meta optimization opportunities',
-        'Content-keyword alignment',
-        'Search intent matching'
-      ]
+      promptEnhancement: `Optimize content for search engines while maintaining natural readability. Primary keyword: "${keyword}". Related keywords: ${keywords.join(', ')}. Focus on strategic keyword placement and semantic relevance.`,
+      contextualHints: [
+        'Naturally integrate primary and related keywords',
+        'Improve title tags and headings for SEO',
+        'Enhance meta descriptions and content snippets',
+        'Add semantic keywords and variations'
+      ],
+      focusAreas: ['keyword_optimization', 'semantic_relevance', 'title_optimization', 'meta_content']
     };
   }
 
-  private createSolutionContext(checkTitle: string, state: ContentBuilderState): StrategicContext {
-    const contextData: Record<string, any> = {
-      selectedSolution: state.selectedSolution,
-      solutionIntegrationMetrics: state.solutionIntegrationMetrics,
-      contentType: state.contentType,
-      contentIntent: state.contentIntent,
-      targetAudience: state.selectedSolution?.targetAudience || [],
-      painPoints: state.selectedSolution?.painPoints || [],
-      features: state.selectedSolution?.features || [],
-      useCases: state.selectedSolution?.useCases || []
-    };
-
-    const promptEnhancement = this.createSolutionPromptEnhancement(contextData);
-    
+  private createEngagementContext(state: ContentBuilderState): StrategicContext {
     return {
-      checkType: 'solution',
-      contextData,
-      promptEnhancement,
-      relevantDataPoints: [
-        'Solution-content alignment',
-        'Feature integration opportunities',
-        'Pain point addressing',
-        'Target audience resonance',
-        'Call-to-action effectiveness'
-      ]
+      checkType: 'engagement',
+      promptEnhancement: `Enhance content engagement and reader interest. Focus on compelling hooks, emotional connection, and actionable insights that keep readers engaged throughout the content.`,
+      contextualHints: [
+        'Create stronger opening hooks',
+        'Add compelling examples and stories',
+        'Include actionable tips and insights',
+        'Use engaging questions and calls-to-action'
+      ],
+      focusAreas: ['opening_hooks', 'storytelling', 'actionability', 'reader_connection']
     };
   }
 
-  private createKeywordContext(checkTitle: string, state: ContentBuilderState): StrategicContext {
-    const contextData: Record<string, any> = {
-      mainKeyword: state.mainKeyword,
-      selectedKeywords: state.selectedKeywords,
-      searchedKeywords: state.searchedKeywords,
-      selectedCluster: state.selectedCluster,
-      contentType: state.contentType,
-      serpData: state.serpData
-    };
-
-    const promptEnhancement = this.createKeywordPromptEnhancement(contextData);
-    
-    return {
-      checkType: 'keywords',
-      contextData,
-      promptEnhancement,
-      relevantDataPoints: [
-        'Keyword density analysis',
-        'Semantic keyword opportunities',
-        'LSI keyword integration',
-        'Topic cluster alignment',
-        'Search intent coverage'
-      ]
-    };
-  }
-
-  private createContentContext(checkTitle: string, state: ContentBuilderState): StrategicContext {
-    const contextData: Record<string, any> = {
-      contentType: state.contentType,
-      contentFormat: state.contentFormat,
-      contentIntent: state.contentIntent,
-      selectedSolution: state.selectedSolution,
-      outline: state.outline,
-      outlineSections: state.outlineSections,
-      additionalInstructions: state.additionalInstructions,
-      location: state.location
-    };
-
-    const promptEnhancement = this.createContentPromptEnhancement(contextData);
-    
-    return {
-      checkType: 'content',
-      contextData,
-      promptEnhancement,
-      relevantDataPoints: [
-        'Content strategy alignment',
-        'Audience engagement optimization',
-        'Value proposition clarity',
-        'Content format best practices',
-        'Geographic relevance'
-      ]
-    };
-  }
-
-  private createStructureContext(checkTitle: string, state: ContentBuilderState): StrategicContext {
-    const contextData: Record<string, any> = {
-      outline: state.outline,
-      outlineSections: state.outlineSections,
-      documentStructure: state.documentStructure,
-      contentFormat: state.contentFormat,
-      contentType: state.contentType
-    };
-
-    const promptEnhancement = this.createStructurePromptEnhancement(contextData);
-    
+  private createStructureContext(state: ContentBuilderState): StrategicContext {
     return {
       checkType: 'structure',
-      contextData,
-      promptEnhancement,
-      relevantDataPoints: [
-        'Heading hierarchy optimization',
-        'Section flow improvement',
-        'Content organization',
-        'Readability structure',
-        'Format-specific requirements'
-      ]
+      promptEnhancement: `Improve content organization and logical flow. Focus on clear hierarchy, smooth transitions between sections, and logical information architecture.`,
+      contextualHints: [
+        'Improve heading hierarchy and organization',
+        'Add clear transitions between sections',
+        'Reorganize information for better flow',
+        'Enhance bullet points and list structures'
+      ],
+      focusAreas: ['heading_hierarchy', 'transitions', 'information_flow', 'list_organization']
     };
   }
 
-  private createReadabilityContext(checkTitle: string, state: ContentBuilderState): StrategicContext {
-    const contextData: Record<string, any> = {
-      contentType: state.contentType,
-      selectedSolution: state.selectedSolution?.targetAudience || [],
-      location: state.location,
-      contentFormat: state.contentFormat
-    };
-
-    const promptEnhancement = this.createReadabilityPromptEnhancement(contextData);
-    
+  private createClarityContext(state: ContentBuilderState): StrategicContext {
     return {
-      checkType: 'readability',
-      contextData,
-      promptEnhancement,
-      relevantDataPoints: [
-        'Sentence complexity analysis',
-        'Paragraph length optimization',
-        'Audience-appropriate language',
-        'Content clarity enhancement',
-        'Flow and coherence improvement'
-      ]
+      checkType: 'clarity',
+      promptEnhancement: `Enhance content clarity and comprehension. Focus on precise language, clear explanations, and removing ambiguity or confusion.`,
+      contextualHints: [
+        'Clarify vague or ambiguous statements',
+        'Provide clearer explanations and definitions',
+        'Remove redundant or confusing phrases',
+        'Improve precision in language and terminology'
+      ],
+      focusAreas: ['precision', 'explanations', 'ambiguity_removal', 'terminology']
+    };
+  }
+
+  private createFlowContext(state: ContentBuilderState): StrategicContext {
+    return {
+      checkType: 'flow',
+      promptEnhancement: `Improve content flow and coherence. Focus on smooth transitions, logical progression of ideas, and maintaining reader momentum throughout the piece.`,
+      contextualHints: [
+        'Add smooth transitions between paragraphs',
+        'Improve logical sequence of information',
+        'Enhance connection between ideas',
+        'Create better narrative progression'
+      ],
+      focusAreas: ['transitions', 'logical_progression', 'idea_connection', 'narrative_flow']
     };
   }
 
   private createGeneralContext(checkTitle: string, state: ContentBuilderState): StrategicContext {
-    const contextData: Record<string, any> = {
-      contentType: state.contentType,
-      mainKeyword: state.mainKeyword,
-      selectedSolution: state.selectedSolution,
-      additionalInstructions: state.additionalInstructions
-    };
-
-    const promptEnhancement = `General optimization context for: ${checkTitle}`;
-    
     return {
       checkType: 'general',
-      contextData,
-      promptEnhancement,
-      relevantDataPoints: [
-        'Overall content quality',
-        'General optimization opportunities',
-        'Content effectiveness',
-        'User experience enhancement'
-      ]
+      promptEnhancement: `Improve content quality related to: ${checkTitle}. Focus on enhancing the specific aspect mentioned while maintaining overall content coherence and value.`,
+      contextualHints: [
+        'Address the specific issue mentioned in the check',
+        'Maintain content quality and consistency',
+        'Provide actionable improvements',
+        'Ensure changes align with content goals'
+      ],
+      focusAreas: ['specific_improvement', 'quality_maintenance', 'goal_alignment', 'coherence']
     };
-  }
-
-  // Prompt enhancement creators
-  private createSeoPromptEnhancement(contextData: Record<string, any>): string {
-    const parts = [];
-    
-    if (contextData.mainKeyword) {
-      parts.push(`PRIMARY KEYWORD: "${contextData.mainKeyword}"`);
-    }
-    
-    if (contextData.selectedKeywords?.length) {
-      parts.push(`SECONDARY KEYWORDS: ${contextData.selectedKeywords.join(', ')}`);
-    }
-    
-    if (contextData.comprehensiveSerpData) {
-      parts.push(`SERP ANALYSIS: Top-ranking content patterns analyzed for optimization insights`);
-    }
-    
-    if (contextData.serpSelections?.length) {
-      parts.push(`COMPETITOR INSIGHTS: ${contextData.serpSelections.length} top-performing pages selected for reference`);
-    }
-
-    if (contextData.seoScore) {
-      parts.push(`CURRENT SEO SCORE: ${contextData.seoScore}/100`);
-    }
-
-    return parts.join('\n');
-  }
-
-  private createSolutionPromptEnhancement(contextData: Record<string, any>): string {
-    const parts = [];
-    
-    if (contextData.selectedSolution) {
-      const solution = contextData.selectedSolution;
-      parts.push(`SOLUTION PROFILE:`);
-      parts.push(`- Name: ${solution.name}`);
-      parts.push(`- Category: ${solution.category}`);
-      
-      if (solution.features?.length) {
-        parts.push(`- Key Features: ${solution.features.slice(0, 3).join(', ')}`);
-      }
-      
-      if (solution.painPoints?.length) {
-        parts.push(`- Addresses Pain Points: ${solution.painPoints.slice(0, 3).join(', ')}`);
-      }
-      
-      if (solution.targetAudience?.length) {
-        parts.push(`- Target Audience: ${solution.targetAudience.slice(0, 3).join(', ')}`);
-      }
-    }
-    
-    if (contextData.solutionIntegrationMetrics) {
-      const metrics = contextData.solutionIntegrationMetrics;
-      parts.push(`INTEGRATION METRICS:`);
-      parts.push(`- Current Integration Score: ${metrics.overallScore || 0}/100`);
-      parts.push(`- Feature Mentions: ${metrics.mentions || 0}`);
-      parts.push(`- Pain Points Addressed: ${metrics.painPointsAddressed?.length || 0}`);
-    }
-
-    return parts.join('\n');
-  }
-
-  private createKeywordPromptEnhancement(contextData: Record<string, any>): string {
-    const parts = [];
-    
-    if (contextData.mainKeyword) {
-      parts.push(`PRIMARY FOCUS KEYWORD: "${contextData.mainKeyword}"`);
-    }
-    
-    if (contextData.selectedKeywords?.length) {
-      parts.push(`SEMANTIC KEYWORDS: ${contextData.selectedKeywords.join(', ')}`);
-    }
-    
-    if (contextData.selectedCluster) {
-      parts.push(`TOPIC CLUSTER: "${contextData.selectedCluster.name}" with ${contextData.selectedCluster.keywords?.length || 0} related terms`);
-    }
-
-    return parts.join('\n');
-  }
-
-  private createContentPromptEnhancement(contextData: Record<string, any>): string {
-    const parts = [];
-    
-    if (contextData.contentType && contextData.contentFormat) {
-      parts.push(`CONTENT STRATEGY: ${contextData.contentType} in ${contextData.contentFormat} format`);
-    }
-    
-    if (contextData.contentIntent) {
-      parts.push(`CONTENT INTENT: ${contextData.contentIntent}`);
-    }
-    
-    if (contextData.location) {
-      parts.push(`GEOGRAPHIC FOCUS: ${contextData.location}`);
-    }
-    
-    if (contextData.additionalInstructions) {
-      parts.push(`SPECIAL INSTRUCTIONS: ${contextData.additionalInstructions}`);
-    }
-
-    return parts.join('\n');
-  }
-
-  private createStructurePromptEnhancement(contextData: Record<string, any>): string {
-    const parts = [];
-    
-    if (contextData.outlineSections?.length) {
-      parts.push(`CONTENT OUTLINE: ${contextData.outlineSections.length} main sections planned`);
-    }
-    
-    if (contextData.contentFormat) {
-      parts.push(`FORMAT REQUIREMENTS: Optimized for ${contextData.contentFormat}`);
-    }
-    
-    if (contextData.documentStructure) {
-      parts.push(`DOCUMENT STRUCTURE: Defined hierarchy and organization`);
-    }
-
-    return parts.join('\n');
-  }
-
-  private createReadabilityPromptEnhancement(contextData: Record<string, any>): string {
-    const parts = [];
-    
-    if (contextData.selectedSolution?.length) {
-      parts.push(`TARGET AUDIENCE: ${contextData.selectedSolution.join(', ')}`);
-    }
-    
-    if (contextData.contentType) {
-      parts.push(`CONTENT TYPE: ${contextData.contentType} (requires appropriate reading level)`);
-    }
-
-    return parts.join('\n');
   }
 }

@@ -78,92 +78,36 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
         checkType: strategicContext.checkType
       };
 
-      // Force refresh AI services to detect API keys
-      console.log('🔄 Refreshing AI services...');
-      const AIServiceController = (await import('@/services/aiService/AIServiceController')).default;
-      AIServiceController.clearCache();
-      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for cache clear
+      // Call dedicated content suggestions edge function
+      console.log('🚀 Calling content suggestions service:', { checkTitle, contentLength: state.content.length });
       
-      // Check AI service status
-      const aiStatus = await AIServiceController.getActiveProviders();
-      console.log('🤖 Active AI providers after refresh:', aiStatus);
-      
-      if (aiStatus.length === 0) {
-        console.log('❌ No providers found, attempting manual sync...');
-        // Try to sync API keys from user settings
-        const { autoSyncApiKeys } = await import('@/services/aiService/providerSync');
-        await autoSyncApiKeys();
-        
-        // Check again after sync
-        const aiStatusAfterSync = await AIServiceController.getActiveProviders();
-        console.log('🤖 Active AI providers after sync:', aiStatusAfterSync);
-        
-        if (aiStatusAfterSync.length === 0) {
-          toast.error('No AI providers available. Please configure API keys in settings.');
-          return;
+      const response = await supabase.functions.invoke('content-suggestions', {
+        body: {
+          content: state.content,
+          checkTitle: checkTitle,
+          context: context
         }
-      }
-      
-      // Create enhanced prompt using strategic context
-      const { createContentAnalysisPrompt } = await import('@/services/ai/suggestionPrompts');
-      const userPrompt = createContentAnalysisPrompt(state.content, context, checkTitle);
+      });
 
-      console.log('🚀 AI Service Request:', { checkTitle, contentLength: state.content.length });
-      const response = await AIServiceController.generate('suggestion_generation', undefined, userPrompt);
-      console.log('🔍 AI Service Response:', response);
+      console.log('🔍 Edge Function Response:', response);
 
-      if (!response || !response.content) {
-        console.error('❌ Empty AI response:', response);
-        toast.error('No suggestions generated - AI service returned empty response');
+      if (response.error) {
+        console.error('❌ Edge function error:', response.error);
+        toast.error('Failed to generate suggestions: ' + response.error.message);
         return;
       }
 
-      console.log('📝 Raw AI Content:', response.content);
-
-      // Parse AI response as JSON - handle structured format
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(response.content);
-        console.log('✅ Parsed AI response:', parsedResponse);
-      } catch (error) {
-        console.error('❌ Failed to parse AI response as JSON:', {
-          error: error.message,
-          rawContent: response.content,
-          contentType: typeof response.content,
-          contentLength: response.content?.length
-        });
-        
-        // Try to extract JSON from markdown if it's wrapped
-        const jsonMatch = response.content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-        if (jsonMatch) {
-          try {
-            parsedResponse = JSON.parse(jsonMatch[1]);
-            console.log('✅ Extracted JSON from markdown:', parsedResponse);
-          } catch (innerError) {
-            console.error('❌ Failed to parse extracted JSON:', innerError);
-            toast.error(`Invalid AI response format. Expected JSON object with suggestions array, got: ${response.content.substring(0, 100)}...`);
-            return;
-          }
-        } else {
-          toast.error(`Invalid AI response format. Expected JSON object with suggestions array, got: ${response.content.substring(0, 100)}...`);
-          return;
-        }
-      }
-
-      // Extract suggestions from the structured response
-      let rawSuggestions;
-      if (parsedResponse.suggestions && Array.isArray(parsedResponse.suggestions)) {
-        rawSuggestions = parsedResponse.suggestions;
-        console.log('✅ Extracted suggestions from structured response:', rawSuggestions);
-      } else if (Array.isArray(parsedResponse)) {
-        // Fallback: handle direct array format
-        rawSuggestions = parsedResponse;
-        console.log('✅ Using direct array format:', rawSuggestions);
-      } else {
-        console.error('❌ Invalid response structure:', parsedResponse);
-        toast.error('Invalid AI response: missing suggestions array');
+      if (!response.data || !response.data.suggestions) {
+        console.error('❌ Empty suggestions response:', response.data);
+        toast.error('No suggestions generated - empty response from AI service');
         return;
       }
+
+      console.log('📝 Raw AI Suggestions:', response.data.suggestions);
+
+      // Extract suggestions from the structured response (already parsed)
+      const rawSuggestions = response.data.suggestions;
+      console.log('✅ Using suggestions from edge function:', rawSuggestions);
 
       if (!Array.isArray(rawSuggestions) || rawSuggestions.length === 0) {
         console.log('⚠️ No suggestions in response:', rawSuggestions);

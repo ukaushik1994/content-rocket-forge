@@ -45,3 +45,6 @@ verify_jwt = false
 
 [functions.ai-context-manager]
 verify_jwt = false
+
+[functions.content-suggestions]
+verify_jwt = false
