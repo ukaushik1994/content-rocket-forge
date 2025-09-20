@@ -114,12 +114,14 @@ export const createSerpActions = (
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
       if (!serpData) {
+        // Note: openSettings needs to be passed as parameter or accessed differently in action context
         toast.info("No SERP data available. Add your API key in Settings to get keyword insights, FAQs, and content opportunities.", {
           duration: 6000,
           action: {
             label: "Add API Key",
             onClick: () => {
-              window.location.href = "/settings/api";
+              // Use a custom event to trigger settings opening from the component
+              window.dispatchEvent(new CustomEvent('openSettings', { detail: 'api' }));
             }
           }
         });
@@ -169,7 +171,8 @@ export const createSerpActions = (
         action: {
           label: "Check Settings",
           onClick: () => {
-            window.location.href = "/settings/api";
+            // Use a custom event to trigger settings opening from the component
+            window.dispatchEvent(new CustomEvent('openSettings', { detail: 'api' }));
           }
         }
       });

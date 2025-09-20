@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CheckCircle, AlertCircle, Clock, ChevronDown, Settings, Wifi, WifiOff } from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
 import AIServiceController from '@/services/aiService/AIServiceController';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface ProviderManagerProps {
   selectedProvider: AiProvider;
@@ -23,6 +24,7 @@ export function ProviderManager({
   const [providerStatus, setProviderStatus] = useState<Record<AiProvider, boolean>>({} as Record<AiProvider, boolean>);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const { openSettings } = useSettings();
 
   // Load available providers on mount
   useEffect(() => {
@@ -189,7 +191,7 @@ export function ProviderManager({
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={() => window.location.href = '/settings/api'}
+                  onClick={() => openSettings('api')}
                   className="gap-2"
                 >
                   <Settings className="h-4 w-4" />

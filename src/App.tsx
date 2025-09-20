@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +37,7 @@ import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { SettingsPopup } from "@/components/settings/SettingsPopup";
+import { useSettings } from "@/contexts/SettingsContext";
 
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
@@ -44,11 +45,28 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
+// Global settings bridge component
+const GlobalSettingsBridge = () => {
+  const { openSettings } = useSettings();
+
+  useEffect(() => {
+    const handleGlobalOpenSettings = (event: CustomEvent) => {
+      openSettings(event.detail);
+    };
+
+    window.addEventListener('globalOpenSettings', handleGlobalOpenSettings);
+    return () => window.removeEventListener('globalOpenSettings', handleGlobalOpenSettings);
+  }, [openSettings]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <SettingsProvider>
+          <GlobalSettingsBridge />
           <ContentProvider>
               <TourProvider>
                 <ChatContextBridgeProvider>
@@ -112,5 +130,14 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
+
+// Add global event listener for settings from service layers
+if (typeof window !== 'undefined') {
+  window.addEventListener('openSettings', (event: CustomEvent) => {
+    const tab = event.detail || 'api';
+    // This will be handled by the GlobalSettingsBridge component
+    window.dispatchEvent(new CustomEvent('globalOpenSettings', { detail: tab }));
+  });
+}
 
 export default App;

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getApiKey, testApiKey } from '@/services/apiKeyService';
 import { toast } from 'sonner';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface SerpApiStatus {
   serpApi: {
@@ -39,6 +40,7 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
     serpstack: { configured: false, working: false, testing: false }
   });
   const [isLoading, setIsLoading] = useState(true);
+  const { openSettings } = useSettings();
 
   const checkApiStatus = async () => {
     setIsLoading(true);
@@ -231,7 +233,7 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.location.href = '/settings?tab=api'}
+              onClick={() => openSettings('api')}
             >
               <Settings className="h-4 w-4 mr-1" />
               Settings
@@ -251,7 +253,7 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.location.href = '/settings?tab=api'}
+              onClick={() => openSettings('api')}
             >
               <Settings className="h-4 w-4 mr-1" />
               Fix Issues

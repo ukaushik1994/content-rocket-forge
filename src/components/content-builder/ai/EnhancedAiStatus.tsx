@@ -9,6 +9,7 @@ import {
   Brain
 } from 'lucide-react';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface EnhancedAiStatusProps {
   onStatusChange?: () => void;
@@ -19,6 +20,7 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
 }) => {
   // Use only the AI service status hook
   const aiServiceStatus = useAIServiceStatus();
+  const { openSettings } = useSettings();
 
   const getOverallStatus = () => {
     const workingCount = aiServiceStatus.activeProviders;
@@ -122,7 +124,7 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/settings?tab=api'}
+            onClick={() => openSettings('api')}
           >
             <Settings className="h-4 w-4 mr-1" />
             Configure

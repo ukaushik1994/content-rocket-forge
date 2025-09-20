@@ -244,7 +244,8 @@ export const analyzeKeywordSerp = async (
         action: {
           label: "Add Key",
           onClick: () => {
-            window.location.href = "/settings/api";
+            // Use custom event to trigger settings from service
+            window.dispatchEvent(new CustomEvent('openSettings', { detail: 'api' }));
           }
         }
       });
@@ -317,7 +318,8 @@ export const analyzeKeywordSerp = async (
         action: {
           label: "Check Settings",
           onClick: () => {
-            window.location.href = "/settings/api";
+            // Use custom event to trigger settings from service
+            window.dispatchEvent(new CustomEvent('openSettings', { detail: 'api' }));
           }
         }
       });
@@ -370,7 +372,8 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
       action: {
         label: "Go to Settings",
         onClick: () => {
-          window.location.href = "/settings/api";
+          // Use custom event to trigger settings from service
+          window.dispatchEvent(new CustomEvent('openSettings', { detail: 'api' }));
         }
       }
     });

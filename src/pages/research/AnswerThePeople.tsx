@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 import { analyzeAnswerThePeople, type QuestionData, type AnswerThePeopleResult } from '@/services/answerThePeopleService';
 
 const AnswerThePeople = () => {
@@ -39,6 +40,7 @@ const AnswerThePeople = () => {
   const [activeTab, setActiveTab] = useState<'questions' | 'prepositions' | 'comparisons'>('questions');
   
   const navigate = useNavigate();
+  const { openSettings } = useSettings();
 
   // Animation variants
   const containerVariants = {
@@ -110,7 +112,7 @@ const AnswerThePeople = () => {
         toast.warning('Using enhanced mock data. Add your SERP API key for real insights.', {
           action: {
             label: 'Add API Key',
-            onClick: () => navigate('/settings/api')
+            onClick: () => openSettings('api')
           }
         });
       }

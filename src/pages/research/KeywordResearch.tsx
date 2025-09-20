@@ -19,6 +19,7 @@ import { KeywordClusters } from '@/components/research/keyword/KeywordClusters';
 import { EnhancedEmbeddedKeywordLibrary } from '@/components/research/keyword/EnhancedEmbeddedKeywordLibrary';
 import { SerpDataPopulator } from '@/components/research/keyword/SerpDataPopulator';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const KeywordResearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,6 +31,7 @@ const KeywordResearch = () => {
   const [realTimeData, setRealTimeData] = useState(false);
   const [libraryRefreshTrigger, setLibraryRefreshTrigger] = useState(0);
   const navigate = useNavigate();
+  const { openSettings } = useSettings();
 
   const steps = ['Search', 'SERP Analysis', 'Content Intelligence', 'Content Creation'];
 
@@ -64,7 +66,7 @@ const KeywordResearch = () => {
         toast.warning("⚠️ Using estimated data - add your SERP API key for real-time results", {
           action: {
             label: "Add API Key",
-            onClick: () => window.location.href = "/settings/api"
+            onClick: () => openSettings('api')
           }
         });
         setSerpData(data);

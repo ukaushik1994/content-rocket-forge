@@ -20,6 +20,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -71,6 +72,7 @@ export const EnhancedNotificationsCenter: React.FC<EnhancedNotificationsCenterPr
 }) => {
   const { user } = useAuth();
   const userId = user?.id;
+  const { openSettings } = useSettings();
   
   const [alerts, setAlerts] = useState<EnhancedDashboardAlert[]>([]);
   const [filteredAlerts, setFilteredAlerts] = useState<EnhancedDashboardAlert[]>([]);
@@ -240,7 +242,7 @@ export const EnhancedNotificationsCenter: React.FC<EnhancedNotificationsCenterPr
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => window.open('/settings/notifications', '_blank')}
+            onClick={() => openSettings('notifications')}
             className="h-8 w-8 p-0"
             title="Notification Settings"
           >

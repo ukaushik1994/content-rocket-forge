@@ -20,6 +20,7 @@ import { analyzeKeywordEnhanced } from '@/services/enhancedSerpService';
 import { transformSerpData } from '@/services/serpDataTransformer';
 import EnhancedSerpModal from './EnhancedSerpModal';
 import { toast } from 'sonner';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface SerpAnalysisModalProps {
   isOpen: boolean;
@@ -51,6 +52,7 @@ export function SerpAnalysisModal({
     serpapi: serpData,
     serpstack: null
   });
+  const { openSettings } = useSettings();
   
   // Initialize provider data when modal opens and serpData is available
   React.useEffect(() => {
@@ -136,7 +138,7 @@ export function SerpAnalysisModal({
         duration: 8000,
         action: {
           label: "Check Settings",
-          onClick: () => window.location.href = "/settings/api"
+          onClick: () => openSettings('api')
         }
       });
       return null;

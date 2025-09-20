@@ -9,6 +9,7 @@ import { FileText, Settings, ExternalLink, Plus, Edit3 } from 'lucide-react';
 import { PromptTemplate, getPromptTemplates } from '@/services/userPreferencesService';
 import { contentFormats, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface TemplatePopupProps {
   open: boolean;
@@ -26,6 +27,7 @@ export const TemplatePopup: React.FC<TemplatePopupProps> = ({
   const [templates, setTemplates] = useState<PromptTemplate[]>([]);
   const [groupedTemplates, setGroupedTemplates] = useState<Record<string, PromptTemplate[]>>({});
   const navigate = useNavigate();
+  const { openSettings } = useSettings();
 
   useEffect(() => {
     if (open) {
@@ -55,7 +57,7 @@ export const TemplatePopup: React.FC<TemplatePopupProps> = ({
   };
 
   const handleGoToSettings = () => {
-    navigate('/settings?tab=promptTemplates');
+    openSettings('promptTemplates');
     onOpenChange(false);
   };
 
