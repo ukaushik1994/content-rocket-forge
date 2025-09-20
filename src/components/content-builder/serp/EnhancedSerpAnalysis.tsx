@@ -479,7 +479,11 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
     // Use the context dispatch to handle selection
     dispatch({
       type: 'TOGGLE_SERP_SELECTION',
-      payload: { type: item.type || sectionKey, content: item.content }
+      payload: { 
+        id: `${sectionKey}-${Date.now()}`,
+        type: item.type || sectionKey, 
+        content: item.content 
+      }
     });
   };
 
@@ -487,10 +491,14 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
     console.log('📌 Selecting all items in section:', sectionKey, items.length);
     // Use the context dispatch for all items
     items.forEach(item => {
-      dispatch({
-        type: 'TOGGLE_SERP_SELECTION',
-        payload: { type: item.type || sectionKey, content: item.content }
-      });
+        dispatch({
+          type: 'TOGGLE_SERP_SELECTION',
+          payload: { 
+            id: `${sectionKey}-${item.content?.slice(0,10)}-${Date.now()}`,
+            type: item.type || sectionKey, 
+            content: item.content 
+          }
+        });
     });
   };
 

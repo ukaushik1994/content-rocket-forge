@@ -166,11 +166,7 @@ export const OptimizeAndReviewStep = () => {
         
       </Tabs>
 
-      {/* Modals */}
-      <OptimizationHistoryModal
-        isOpen={showOptimizationHistory}
-        onClose={() => setShowOptimizationHistory(false)}
-      />
+      {/* Modals removed */}
       
     </div>
   );

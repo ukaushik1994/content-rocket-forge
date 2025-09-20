@@ -317,17 +317,6 @@ export const contentBuilderReducer = (
       };
     }
 
-    case 'SAVE_OPTIMIZATION_SELECTIONS':
-      return {
-        ...state,
-        optimizationSelections: action.payload
-      };
-
-    case 'CLEAR_OPTIMIZATION_SELECTIONS':
-      return {
-        ...state,
-        optimizationSelections: null
-      };
       
     default:
       return state;

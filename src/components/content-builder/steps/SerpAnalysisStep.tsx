@@ -182,7 +182,11 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
   const handleToggleSelection = (type: string, content: string) => {
     dispatch({
       type: 'TOGGLE_SERP_SELECTION',
-      payload: { type, content }
+      payload: { 
+        id: `${type}-${Date.now()}`,
+        type, 
+        content 
+      }
     });
   };
 

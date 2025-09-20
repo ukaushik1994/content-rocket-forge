@@ -22,7 +22,13 @@ export const createContentActions = (
   };
   
   const setOutline = (outline: string[]) => {
-    dispatch({ type: 'SET_OUTLINE', payload: outline });
+    // Convert string[] to OutlineSection[] before dispatching
+    const outlineSections: OutlineSection[] = outline.map((title, index) => ({
+      id: `section-${index}`,
+      title,
+      level: 1
+    }));
+    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
   };
   

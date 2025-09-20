@@ -8,6 +8,7 @@ import { AIOutlineGenerator } from './AIOutlineGenerator';
 import { OutlineTable } from './OutlineTable';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
+import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 
 export const ContentOutlineSection = () => {
   const { state, dispatch } = useContentBuilder();
@@ -17,7 +18,13 @@ export const ContentOutlineSection = () => {
   const hasOutline = outline.length > 0;
   
   const handleSaveOutline = (updatedOutline: string[]) => {
-    dispatch({ type: 'SET_OUTLINE', payload: updatedOutline });
+    // Convert string[] to OutlineSection[]
+    const outlineSections: OutlineSection[] = updatedOutline.map((title, index) => ({
+      id: `section-${index}`,
+      title,
+      level: 1
+    }));
+    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
   };
 
   // Group selected items by type for compact display

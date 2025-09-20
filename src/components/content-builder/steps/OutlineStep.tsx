@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { TitleGenerationButton } from './writing/TitleGenerationButton';
 import { Button } from '@/components/ui/button';
+import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 
 export const OutlineStep = () => {
   const { state, dispatch } = useContentBuilder();
@@ -22,7 +23,13 @@ export const OutlineStep = () => {
   }, [outline, dispatch]);
   
   const handleSaveOutline = (updatedOutline: string[]) => {
-    dispatch({ type: 'SET_OUTLINE', payload: updatedOutline });
+    // Convert string[] to OutlineSection[] before dispatching
+    const outlineSections: OutlineSection[] = updatedOutline.map((title, index) => ({
+      id: `section-${index}`,
+      title,
+      level: 1
+    }));
+    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
   };
 
   const hasSerpSelections = serpSelections.some(item => item.selected);

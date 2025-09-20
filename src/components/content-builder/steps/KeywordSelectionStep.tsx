@@ -109,6 +109,7 @@ export const KeywordSelectionStep = () => {
     dispatch({
       type: 'TOGGLE_SERP_SELECTION',
       payload: {
+        id: `${type}-${Date.now()}`,
         type,
         content
       }

@@ -8,6 +8,7 @@ import AIServiceController from '@/services/aiService/AIServiceController';
 import { AIInstructionsInput } from '../AIInstructionsInput';
 import { AIGenerateButton } from '../AIGenerateButton';
 import { AiProviderSelector } from './AiProviderSelector';
+import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { AiProvider } from '@/services/aiService/types';
 import { generateTitleSuggestions } from '@/utils/seo/titles/generateTitleSuggestions';
@@ -177,8 +178,13 @@ export function OutlineGenerator() {
       return;
     }
     
-    // Update the outline in state
-    dispatch({ type: 'SET_OUTLINE', payload: outlineArray });
+    // Convert string[] to OutlineSection[] before dispatching
+    const outlineSections: OutlineSection[] = outlineArray.map((title, index) => ({
+      id: `section-${index}`,
+      title,
+      level: 1
+    }));
+    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
     
     // Generate smart title if none exists
     if (!contentTitle) {

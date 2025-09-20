@@ -181,7 +181,11 @@ export const createSerpActions = (
   const addContentFromSerp = (content: string, type: string) => {
     dispatch({ 
       type: 'TOGGLE_SERP_SELECTION', 
-      payload: { type, content } 
+      payload: { 
+        id: `${type}-${Date.now()}`,
+        type, 
+        content 
+      } 
     });
   };
   
