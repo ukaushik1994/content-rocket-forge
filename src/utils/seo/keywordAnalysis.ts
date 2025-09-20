@@ -13,23 +13,31 @@ export const calculateKeywordUsage = (
   mainKeyword: string,
   selectedKeywords: string[]
 ): KeywordUsage[] => {
-  if (!content) return [];
+  if (!content || !content.trim()) return [];
   
-  // Get word count
-  const words = content.toLowerCase().split(/\s+/);
+  // Get word count - filter empty strings and handle edge cases
+  const words = content.toLowerCase()
+    .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+    .split(/\s+/)
+    .filter(word => word.length > 0); // Remove empty strings
   const wordCount = words.length;
   
   // Combined unique keywords list
   const uniqueKeywords = Array.from(new Set([mainKeyword, ...selectedKeywords]))
-    .filter(Boolean); // Remove empty strings
+    .filter(Boolean) // Remove empty strings
+    .filter(keyword => keyword.trim().length > 0); // Remove whitespace-only strings
+  
+  if (uniqueKeywords.length === 0) return [];
   
   // Calculate usage for each keyword
   return uniqueKeywords.map(keyword => {
-    const keywordLower = keyword.toLowerCase();
+    const keywordLower = keyword.toLowerCase().trim();
     
-    // Count occurrences (including partial word matches)
-    const regex = new RegExp(keywordLower, 'gi');
-    const count = (content.toLowerCase().match(regex) || []).length;
+    // Count occurrences with more precise matching
+    const escapedKeyword = keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'gi');
+    const matches = content.toLowerCase().match(regex);
+    const count = matches ? matches.length : 0;
     
     // Calculate density percentage (rounded to 2 decimal places)
     const densityPercent = wordCount > 0

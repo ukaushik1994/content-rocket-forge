@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useContentAnalysis } from '@/hooks/final-review/useContentAnalysis';
 import { useContentCompliance } from '@/hooks/useContentCompliance';
 import { generateAIChecklistItems } from '@/services/aiContentQualityService';
+import { analyzeEnhancedSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
 import { toast } from 'sonner';
 
 /**
@@ -27,6 +28,7 @@ export const useChecklistItems = () => {
   // State to store checklist items
   const [checklistItems, setChecklistItems] = useState<Array<{title: string, passed: boolean}>>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [localSolutionMetrics, setLocalSolutionMetrics] = useState<any>(null);
 
   // Function to calculate checklist items
   const calculateChecklistItems = useCallback(() => {
@@ -53,22 +55,30 @@ export const useChecklistItems = () => {
       },
       {
         title: 'Solution features are incorporated',
-        passed: !!solutionIntegrationMetrics && solutionIntegrationMetrics.featureIncorporation > 50
+        passed: !!(solutionIntegrationMetrics || localSolutionMetrics) && 
+          ((solutionIntegrationMetrics?.featureIncorporation || localSolutionMetrics?.featureIncorporation || 0) > 50)
       },
       {
         title: 'Solution is positioned effectively',
-        passed: !!solutionIntegrationMetrics && solutionIntegrationMetrics.positioningScore > 70
+        passed: !!(solutionIntegrationMetrics || localSolutionMetrics) && 
+          ((solutionIntegrationMetrics?.positioningScore || localSolutionMetrics?.positioningScore || 0) > 70)
       },
       {
         title: 'Primary keyword has optimal density (0.5% - 3%)',
-        passed: keywordUsage.some(k => k.keyword === mainKeyword && 
-          parseFloat(k.density) >= 0.5 && 
-          parseFloat(k.density) <= 3)
+        passed: keywordUsage.some(k => 
+          k.keyword?.toLowerCase() === mainKeyword?.toLowerCase() && 
+          k.density && 
+          parseFloat(k.density.replace('%', '')) >= 0.5 && 
+          parseFloat(k.density.replace('%', '')) <= 3
+        )
       },
       {
         title: 'Secondary keywords are included in content',
-        passed: selectedKeywords.filter(k => k !== mainKeyword).some(k => 
-          keywordUsage.some(usage => usage.keyword === k && usage.count > 0)
+        passed: selectedKeywords.filter(k => k && k !== mainKeyword).some(k => 
+          keywordUsage.some(usage => 
+            usage.keyword?.toLowerCase() === k?.toLowerCase() && 
+            usage.count > 0
+          )
         )
       }
     ];
@@ -151,6 +161,7 @@ export const useChecklistItems = () => {
     metaDescription, 
     ctaInfo, 
     solutionIntegrationMetrics, 
+    localSolutionMetrics,
     mainKeyword, 
     keywordUsage, 
     selectedKeywords,
@@ -158,9 +169,9 @@ export const useChecklistItems = () => {
     aiQualityResult
   ]);
   
-  // Function to trigger a refresh of checklist items
-  const refreshChecklist = useCallback(async () => {
-    console.log('[useChecklistItems] Refreshing checklist items');
+  // Comprehensive analysis function
+  const runFullAnalysis = useCallback(async () => {
+    console.log('[useChecklistItems] Running comprehensive analysis');
     
     if (!state.content || !mainKeyword) {
       toast.error('Content and main keyword are required for analysis');
@@ -168,30 +179,49 @@ export const useChecklistItems = () => {
     }
 
     try {
-      toast.info('Analyzing content with AI and rules...');
-      // Auto-run compliance analysis when refreshing
-      await runComplianceAnalysis();
-      setRefreshTrigger(prev => prev + 1); // Increment to trigger a refresh
+      toast.info('Running comprehensive content analysis...');
       
-      // Show success message based on what completed
+      // Run solution integration analysis if solution is selected
+      if (state.selectedSolution) {
+        toast.info('Analyzing solution integration...');
+        const solutionMetrics = analyzeEnhancedSolutionIntegration(
+          state.content, 
+          state.selectedSolution
+        );
+        setLocalSolutionMetrics(solutionMetrics);
+        console.log('[useChecklistItems] Solution analysis completed:', solutionMetrics);
+      }
+      
+      // Run compliance analysis (includes AI analysis)
+      await runComplianceAnalysis();
+      
+      // Trigger checklist recalculation
+      setRefreshTrigger(prev => prev + 1);
+      
+      // Show success message
       if (aiQualityResult) {
-        toast.success(`Content analysis complete! AI Grade: ${aiQualityResult.overall.grade}`);
+        toast.success(`Analysis complete! AI Grade: ${aiQualityResult.overall.grade}`);
       } else {
-        toast.success('Content quality checklist updated (rule-based analysis)');
+        toast.success('Content analysis complete!');
       }
     } catch (error) {
-      console.error('[useChecklistItems] Refresh failed:', error);
-      toast.error('Failed to analyze content. Please try again.');
+      console.error('[useChecklistItems] Full analysis failed:', error);
+      toast.error('Analysis failed. Please try again.');
     }
-  }, [runComplianceAnalysis, state.content, mainKeyword]);
+  }, [runComplianceAnalysis, state.content, state.selectedSolution, mainKeyword, aiQualityResult]);
 
-  // Auto-run compliance analysis on load
+  // Function to trigger a refresh of checklist items
+  const refreshChecklist = useCallback(async () => {
+    await runFullAnalysis();
+  }, [runFullAnalysis]);
+
+  // Auto-run full analysis on load
   useEffect(() => {
-    if (state.content && mainKeyword && !complianceResult) {
-      console.log('[useChecklistItems] Auto-running compliance analysis on load');
-      runComplianceAnalysis();
+    if (state.content && mainKeyword && !complianceResult && !localSolutionMetrics) {
+      console.log('[useChecklistItems] Auto-running full analysis on load');
+      runFullAnalysis();
     }
-  }, [state.content, mainKeyword, runComplianceAnalysis, complianceResult]);
+  }, [state.content, mainKeyword, runFullAnalysis, complianceResult, localSolutionMetrics]);
 
   // Calculate items on mount and when dependencies change
   useEffect(() => {
