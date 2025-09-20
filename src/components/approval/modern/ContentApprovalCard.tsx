@@ -215,16 +215,19 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
         </CardHeader>
 
         <CardContent className="relative pt-0 flex-1 flex flex-col">
-          {/* Content Preview */}
-          <div className="flex-1">
+          {/* Content Preview - Fixed Height Section */}
+          <div className="mb-4">
             {content.content && (
-              <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
+              <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed min-h-[4.5rem]">
                 {content.content.replace(/<[^>]*>/g, '').substring(0, 120)}...
               </p>
             )}
+          </div>
 
+          {/* Metadata Sections - Consistent Positioning */}
+          <div className="space-y-3 mb-4">
             {/* SEO Metadata */}
-            <div className="mb-3 p-3 rounded-lg bg-background/40 border border-border/30">
+            <div className="p-3 rounded-lg bg-background/40 border border-border/30">
               <h4 className="text-xs font-semibold text-muted-foreground mb-2">SEO METADATA</h4>
               {(content.metadata?.metaTitle || content.metadata?.metaDescription) ? (
                 <div className="space-y-1 text-xs">
@@ -246,7 +249,7 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
 
             {/* AI Analysis Summary */}
             <motion.div
-              className="mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20"
+              className="p-3 rounded-lg bg-primary/5 border border-primary/20"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
