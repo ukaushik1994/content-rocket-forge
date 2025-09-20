@@ -71,10 +71,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   
   // Collapsible section states
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isContentPreviewOpen, setIsContentPreviewOpen] = useState(true);
   const [isKeywordsOpen, setIsKeywordsOpen] = useState(true);
   const [isSerpAnalysisOpen, setIsSerpAnalysisOpen] = useState(true);
-  const [isDocumentStructureOpen, setIsDocumentStructureOpen] = useState(false);
   const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
   const [isRepurposedOpen, setIsRepurposedOpen] = useState(true);
   
@@ -328,23 +328,35 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    const allOpen = isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isOptimizationOpen && isRepurposedOpen;
+                    const allOpen = isDescriptionOpen && isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isOptimizationOpen && isRepurposedOpen;
+                    setIsDescriptionOpen(!allOpen);
                     setIsContentPreviewOpen(!allOpen);
                     setIsKeywordsOpen(!allOpen);
                     setIsSerpAnalysisOpen(!allOpen);
-                    setIsDocumentStructureOpen(!allOpen);
                     setIsOptimizationOpen(!allOpen);
                     setIsRepurposedOpen(!allOpen);
                   }}
                   className="text-xs h-7 px-2"
                 >
-                  {(isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isOptimizationOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
+                  {(isDescriptionOpen && isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isOptimizationOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 pb-6">
-            {/* Left Column - Content Preview Only */}
-            <div className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-6 pb-6">
+            {/* Main Content */}
+            <div className="xl:col-span-2 space-y-4 sm:space-y-6">
+              {/* Description */}
+              {content.metadata?.description && (
+                <CollapsibleSection
+                  isOpen={isDescriptionOpen}
+                  onToggle={() => setIsDescriptionOpen(!isDescriptionOpen)}
+                  title="Description"
+                  icon={FileText}
+                >
+                  <p className="text-muted-foreground leading-relaxed">{content.metadata.description}</p>
+                </CollapsibleSection>
+              )}
+
               {/* Content Preview */}
               <CollapsibleSection
                 isOpen={isContentPreviewOpen}
@@ -424,71 +436,6 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   </div>
                 )}
               </CollapsibleSection>
-            </div>
-
-            {/* Right Column - Sidebar */}
-            <div className="space-y-4 sm:space-y-6">
-              {/* Content Stats - Integrated */}
-              <Card className="bg-muted/5 border-border">
-                <CardHeader>
-                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-primary" />
-                    Content Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
-                      <div className="text-2xl font-bold text-foreground">{wordCount}</div>
-                      <div className="text-xs text-muted-foreground">Words</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
-                      <div className="text-2xl font-bold text-foreground">{readingTime}m</div>
-                      <div className="text-xs text-muted-foreground">Read time</div>
-                    </div>
-                  </div>
-                  
-                  {/* Status & Solution Integration */}
-                  <div className="space-y-3 pt-2 border-t border-border/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-primary" />
-                        <span className="text-sm text-muted-foreground">Status</span>
-                      </div>
-                      <Badge className={`${getStatusColor(content.status)} text-xs px-2 py-1`}>
-                        {content.status}
-                      </Badge>
-                    </div>
-                    
-                    {solution && (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4 text-primary" />
-                          <span className="text-sm text-muted-foreground">Solution</span>
-                        </div>
-                        <div className="flex-1 ml-2">
-                          <SolutionIntegrationBadge metadata={content.metadata} />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2 pt-2 border-t border-border/20">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Created</span>
-                      <span className="text-sm text-foreground">
-                        {format(new Date(content.created_at), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Modified</span>
-                      <span className="text-sm text-foreground">
-                        {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Keywords & Tags */}
               {(content.keywords?.length > 0 || content.metadata?.tags?.length > 0) && (
@@ -529,8 +476,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 </CollapsibleSection>
               )}
 
-              {/* SERP Analysis - Separated */}
-              {content.metadata?.serpSelections?.length > 0 && (
+              {/* SERP Analysis */}
+              {(content.metadata?.serpSelections?.length > 0 || content.metadata?.documentStructure) && (
                 <CollapsibleSection
                   isOpen={isSerpAnalysisOpen}
                   onToggle={() => setIsSerpAnalysisOpen(!isSerpAnalysisOpen)}
@@ -538,24 +485,20 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   icon={Search}
                   count={content.metadata?.serpSelections?.length || 0}
                 >
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-muted-foreground">Selected SERP Items</h4>
-                    <RepositorySerpDisplay serpSelections={content.metadata.serpSelections} />
-                  </div>
-                </CollapsibleSection>
-              )}
-
-              {/* Document Structure - Separated */}
-              {content.metadata?.documentStructure && (
-                <CollapsibleSection
-                  isOpen={isDocumentStructureOpen}
-                  onToggle={() => setIsDocumentStructureOpen(!isDocumentStructureOpen)}
-                  title="Document Structure"
-                  icon={FileSearch}
-                >
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-muted-foreground">Structural Analysis</h4>
-                    <RepositoryDocumentStructure documentStructure={content.metadata.documentStructure} />
+                  <div className="space-y-6">
+                    {content.metadata?.serpSelections?.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-muted-foreground">Selected SERP Items</h4>
+                        <RepositorySerpDisplay serpSelections={content.metadata.serpSelections} />
+                      </div>
+                    )}
+                    
+                    {content.metadata?.documentStructure && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-muted-foreground">Document Structure</h4>
+                        <RepositoryDocumentStructure documentStructure={content.metadata.documentStructure} />
+                      </div>
+                    )}
                   </div>
                 </CollapsibleSection>
               )}
@@ -585,6 +528,75 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   />
                 </CollapsibleSection>
               )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-4 sm:space-y-6">
+              {/* Content Stats */}
+              <Card className="bg-muted/5 border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    Content Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
+                      <div className="text-2xl font-bold text-foreground">{wordCount}</div>
+                      <div className="text-xs text-muted-foreground">Words</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/10 rounded-lg border border-border/20">
+                      <div className="text-2xl font-bold text-foreground">{readingTime}m</div>
+                      <div className="text-xs text-muted-foreground">Read time</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Created</span>
+                      <span className="text-sm text-foreground">
+                        {format(new Date(content.created_at), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Modified</span>
+                      <span className="text-sm text-foreground">
+                        {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Solution Badge */}
+              {solution && (
+                <Card className="bg-muted/5 border-border">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                      <Target className="h-5 w-5 text-primary" />
+                      Solution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <SolutionIntegrationBadge metadata={content.metadata} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Status Badge */}
+              <Card className="bg-muted/5 border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                    Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge className={`${getStatusColor(content.status)} text-sm px-3 py-1`}>
+                    {content.status}
+                  </Badge>
+                </CardContent>
+              </Card>
 
               {/* Actions */}
               <Card className="bg-muted/5 border-border">
