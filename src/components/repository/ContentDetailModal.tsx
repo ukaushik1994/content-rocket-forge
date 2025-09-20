@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   FileText, 
   BookOpen, 
@@ -31,7 +32,9 @@ import {
   Undo,
   Layers,
   Search,
-  FileSearch
+  FileSearch,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -66,6 +69,14 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const navigate = useNavigate();
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Collapsible section states
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [isContentPreviewOpen, setIsContentPreviewOpen] = useState(true);
+  const [isKeywordsOpen, setIsKeywordsOpen] = useState(true);
+  const [isSerpAnalysisOpen, setIsSerpAnalysisOpen] = useState(true);
+  const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
+  const [isRepurposedOpen, setIsRepurposedOpen] = useState(true);
   
   // Repurposing states
   const [repurposingModalOpen, setRepurposingModalOpen] = useState(false);
@@ -240,6 +251,57 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const readingTime = Math.ceil(wordCount / 200);
   const solution = (content as any).metadata?.solution || (content as any).metadata?.selectedSolution;
 
+  // Collapsible Section Component
+  const CollapsibleSection = ({ 
+    isOpen, 
+    onToggle, 
+    title, 
+    icon: Icon, 
+    count,
+    children,
+    defaultOpen = false 
+  }: { 
+    isOpen: boolean; 
+    onToggle: () => void; 
+    title: string; 
+    icon: any; 
+    count?: number;
+    children: React.ReactNode;
+    defaultOpen?: boolean;
+  }) => (
+    <Card className="bg-muted/5 border-border">
+      <Collapsible open={isOpen} onOpenChange={onToggle}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-muted/10 transition-colors duration-200 rounded-t-lg">
+            <CardTitle className="text-lg text-foreground flex items-center justify-between group">
+              <div className="flex items-center gap-2">
+                <Icon className="h-5 w-5 text-primary" />
+                {title}
+                {count !== undefined && (
+                  <Badge variant="outline" className="text-xs ml-2">
+                    {count}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {isOpen ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                )}
+              </div>
+            </CardTitle>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-up-1 data-[state=open]:slide-in-from-top-1">
+          <CardContent className="pt-0">
+            {children}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onClose}>
@@ -258,117 +320,133 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
         <div className="flex-1 min-h-0 overflow-hidden">
           <ScrollArea className="h-full" hideScrollbar>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 p-4 sm:p-6">
+            <div className="p-4 sm:p-6 pb-2">
+              {/* Quick Controls */}
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Quick actions:</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const allOpen = isDescriptionOpen && isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isOptimizationOpen && isRepurposedOpen;
+                    setIsDescriptionOpen(!allOpen);
+                    setIsContentPreviewOpen(!allOpen);
+                    setIsKeywordsOpen(!allOpen);
+                    setIsSerpAnalysisOpen(!allOpen);
+                    setIsOptimizationOpen(!allOpen);
+                    setIsRepurposedOpen(!allOpen);
+                  }}
+                  className="text-xs h-7 px-2"
+                >
+                  {(isDescriptionOpen && isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isOptimizationOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-6 pb-6">
             {/* Main Content */}
             <div className="xl:col-span-2 space-y-4 sm:space-y-6">
               {/* Description */}
               {content.metadata?.description && (
-                <Card className="bg-muted/5 border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
-                      Description
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground leading-relaxed">{content.metadata.description}</p>
-                  </CardContent>
-                </Card>
+                <CollapsibleSection
+                  isOpen={isDescriptionOpen}
+                  onToggle={() => setIsDescriptionOpen(!isDescriptionOpen)}
+                  title="Description"
+                  icon={FileText}
+                >
+                  <p className="text-muted-foreground leading-relaxed">{content.metadata.description}</p>
+                </CollapsibleSection>
               )}
 
               {/* Content Preview */}
-              <Card className="bg-muted/5 border-border">
-                <CardHeader>
-                  <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                    <Eye className="h-5 w-5 text-primary" />
-                    Content Preview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {content.content_type === 'glossary' && content.metadata ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
-                        <span className="text-sm text-muted-foreground">Terms Progress</span>
-                        <span className="font-bold text-foreground text-lg">
-                          {content.metadata.completedTerms || 0} / {content.metadata.termCount || 0}
-                        </span>
-                      </div>
-                      {content.metadata.domainUrl && (
-                        <div className="p-3 bg-muted/10 rounded-lg border border-border">
-                          <span className="font-medium text-muted-foreground">Domain:</span>
-                          <span className="ml-2 text-foreground">{content.metadata.domainUrl}</span>
-                        </div>
-                      )}
+              <CollapsibleSection
+                isOpen={isContentPreviewOpen}
+                onToggle={() => setIsContentPreviewOpen(!isContentPreviewOpen)}
+                title="Content Preview"
+                icon={Eye}
+              >
+                {content.content_type === 'glossary' && content.metadata ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-lg border border-border">
+                      <span className="text-sm text-muted-foreground">Terms Progress</span>
+                      <span className="font-bold text-foreground text-lg">
+                        {content.metadata.completedTerms || 0} / {content.metadata.termCount || 0}
+                      </span>
                     </div>
-                  ) : (
-                    <div className="prose prose-sm max-w-none">
-                      <AnimatePresence mode="wait">
-                        {isContentExpanded ? (
-                          <motion.div 
-                            key="expanded"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="space-y-3"
+                    {content.metadata.domainUrl && (
+                      <div className="p-3 bg-muted/10 rounded-lg border border-border">
+                        <span className="font-medium text-muted-foreground">Domain:</span>
+                        <span className="ml-2 text-foreground">{content.metadata.domainUrl}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="prose prose-sm max-w-none">
+                    <AnimatePresence mode="wait">
+                      {isContentExpanded ? (
+                        <motion.div 
+                          key="expanded"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-3"
+                        >
+                          <ScrollArea className="h-64 w-full border border-border rounded-lg bg-muted/5">
+                            <div className="p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                              {content.content || 'No content available'}
+                            </div>
+                          </ScrollArea>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-primary hover:text-primary/80"
+                            onClick={() => setIsContentExpanded(false)}
                           >
-                            <ScrollArea className="h-64 w-full border border-border rounded-lg bg-muted/5">
-                              <div className="p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                                {content.content || 'No content available'}
-                              </div>
-                            </ScrollArea>
+                            Show Less
+                          </Button>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="collapsed"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
+                            {content.content ? (
+                              content.content.length > 300 
+                                ? content.content.substring(0, 300) + '...'
+                                : content.content
+                            ) : 'No content available'}
+                          </div>
+                          {content.content && content.content.length > 300 && (
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="text-primary hover:text-primary/80"
-                              onClick={() => setIsContentExpanded(false)}
+                              className="mt-2 text-primary hover:text-primary/80"
+                              onClick={() => setIsContentExpanded(true)}
                             >
-                              Show Less
+                              Show More
                             </Button>
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="collapsed"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
-                              {content.content ? (
-                                content.content.length > 300 
-                                  ? content.content.substring(0, 300) + '...'
-                                  : content.content
-                              ) : 'No content available'}
-                            </div>
-                            {content.content && content.content.length > 300 && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="mt-2 text-primary hover:text-primary/80"
-                                onClick={() => setIsContentExpanded(true)}
-                              >
-                                Show More
-                              </Button>
-                            )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </CollapsibleSection>
 
               {/* Keywords & Tags */}
               {(content.keywords?.length > 0 || content.metadata?.tags?.length > 0) && (
-                <Card className="bg-muted/5 border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                      <Hash className="h-5 w-5 text-primary" />
-                      Keywords & Tags
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <CollapsibleSection
+                  isOpen={isKeywordsOpen}
+                  onToggle={() => setIsKeywordsOpen(!isKeywordsOpen)}
+                  title="Keywords & Tags"
+                  icon={Hash}
+                  count={(content.keywords?.length || 0) + (content.metadata?.tags?.length || 0)}
+                >
+                  <div className="space-y-4">
                     {content.keywords?.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-3">SEO Keywords</h4>
@@ -394,20 +472,20 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                         </div>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </CollapsibleSection>
               )}
 
               {/* SERP Analysis */}
               {(content.metadata?.serpSelections?.length > 0 || content.metadata?.documentStructure) && (
-                <Card className="bg-muted/5 border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                      <Search className="h-5 w-5 text-primary" />
-                      SERP Analysis
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
+                <CollapsibleSection
+                  isOpen={isSerpAnalysisOpen}
+                  onToggle={() => setIsSerpAnalysisOpen(!isSerpAnalysisOpen)}
+                  title="SERP Analysis"
+                  icon={Search}
+                  count={content.metadata?.serpSelections?.length || 0}
+                >
+                  <div className="space-y-6">
                     {content.metadata?.serpSelections?.length > 0 && (
                       <div className="space-y-3">
                         <h4 className="text-sm font-medium text-muted-foreground">Selected SERP Items</h4>
@@ -421,31 +499,36 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                         <RepositoryDocumentStructure documentStructure={content.metadata.documentStructure} />
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </CollapsibleSection>
               )}
 
-                  {/* Optimization Badges */}
-                  <OptimizationBadges metadata={content.metadata} />
+              {/* Optimization Badges */}
+              <CollapsibleSection
+                isOpen={isOptimizationOpen}
+                onToggle={() => setIsOptimizationOpen(!isOptimizationOpen)}
+                title="Optimization"
+                icon={Target}
+              >
+                <OptimizationBadges metadata={content.metadata} />
+              </CollapsibleSection>
 
-                  {/* Repurposed Content Section */}
-                  {repurposedFormats.length > 0 && (
-                    <Card className="bg-muted/5 border-border">
-                      <CardHeader>
-                        <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                          <Layers className="h-5 w-5 text-primary" />
-                          Repurposed Content
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <RepurposedContentIcons
-                          repurposedFormats={repurposedFormats}
-                          onFormatClick={handleRepurposedFormatClick}
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
+              {/* Repurposed Content Section */}
+              {repurposedFormats.length > 0 && (
+                <CollapsibleSection
+                  isOpen={isRepurposedOpen}
+                  onToggle={() => setIsRepurposedOpen(!isRepurposedOpen)}
+                  title="Repurposed Content"
+                  icon={Layers}
+                  count={repurposedFormats.length}
+                >
+                  <RepurposedContentIcons
+                    repurposedFormats={repurposedFormats}
+                    onFormatClick={handleRepurposedFormatClick}
+                  />
+                </CollapsibleSection>
+              )}
+            </div>
 
             {/* Sidebar */}
             <div className="space-y-4 sm:space-y-6">
@@ -572,6 +655,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   </div>
                 </CardContent>
               </Card>
+            </div>
             </div>
             </div>
           </ScrollArea>
