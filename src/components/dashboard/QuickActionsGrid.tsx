@@ -22,12 +22,14 @@ import {
   Shield
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface QuickActionsGridProps {
   navigate: NavigateFunction;
 }
 
 export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) => {
+  const { openSettings } = useSettings();
   const actions = [
     {
       title: "AI Content Creation",
@@ -231,7 +233,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       title: "System Settings",
       description: "Configure your workflow, API integrations, and platform preferences.",
       icon: <Settings className="h-5 w-5 text-slate-400" />,
-      action: () => navigate('/settings'),
+      action: () => openSettings(),
       buttonText: "Open Settings",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-slate-400/30 to-zinc-500/20",

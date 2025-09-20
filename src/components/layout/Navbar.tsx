@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Menu, X, LogOut, UserCircle, User, Settings, Puzzle, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { toast } from 'sonner';
 import NavItems from './NavItems';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -13,6 +14,7 @@ import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { openSettings } = useSettings();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const {
     user,
@@ -92,7 +94,7 @@ const Navbar = () => {
                 <Puzzle className="mr-2 h-4 w-4" />
                 <span>Solutions</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <DropdownMenuItem onClick={() => openSettings()}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>

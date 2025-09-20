@@ -15,7 +15,7 @@ import ContentTypeSelection from "./pages/ContentTypeSelection";
 import ContentApproval from "./pages/ContentApproval";
 import GlossaryBuilder from "./pages/GlossaryBuilder";
 import Solutions from "./pages/Solutions";
-import Settings from "./pages/Settings";
+
 import Analytics from "./pages/Analytics";
 import ContentStrategy from "./pages/research/ContentStrategy";
 import ResearchHub from "./pages/research/ResearchHub";
@@ -35,6 +35,8 @@ import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
 import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
+import { SettingsPopup } from "@/components/settings/SettingsPopup";
 
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
@@ -46,11 +48,13 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <ContentProvider>
-            <TourProvider>
-              <ChatContextBridgeProvider>
+        <SettingsProvider>
+          <ContentProvider>
+              <TourProvider>
+                <ChatContextBridgeProvider>
               <Toaster />
               <Sonner />
+              <SettingsPopup />
               <BrowserRouter>
                 <Routes>
                   <Route path="/landing" element={<Landing />} />
@@ -67,7 +71,7 @@ const App = () => (
                   <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                   <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
                   <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                  
                   <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                   
                    {/* AI Chat routes */}
@@ -103,6 +107,7 @@ const App = () => (
               </ChatContextBridgeProvider>
             </TourProvider>
         </ContentProvider>
+        </SettingsProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

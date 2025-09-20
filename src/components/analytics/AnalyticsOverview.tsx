@@ -15,7 +15,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface AnalyticsData {
   pageViews: number;
@@ -48,6 +48,7 @@ interface SearchConsoleData {
 
 export const AnalyticsOverview = () => {
   const { user } = useAuth();
+  const { openSettings } = useSettings();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
   const [searchConsoleData, setSearchConsoleData] = useState<SearchConsoleData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -156,11 +157,9 @@ export const AnalyticsOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button asChild variant="outline" className="border-amber-500/30 hover:bg-amber-500/10">
-                <Link to="/settings?tab=api">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configure API Keys
-                </Link>
+              <Button variant="outline" className="border-amber-500/30 hover:bg-amber-500/10" onClick={() => openSettings('api')}>
+                <Settings className="h-4 w-4 mr-2" />
+                Configure API Keys
               </Button>
               <Button asChild variant="ghost" size="sm">
                 <a 

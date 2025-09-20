@@ -352,7 +352,7 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
         id: 'configure-ai',
         type: 'button',
         label: 'Configure AI Settings',
-        action: 'navigate:/settings',
+        action: 'open-settings:api',
         variant: 'primary'
       }]
     };

@@ -19,6 +19,9 @@ import { getApiKey } from '@/services/apiKeyService';
 import { migrateExistingAPIKeys } from '@/utils/migrateAIProviders';
 import { useTemplateInitialization } from '@/hooks/useTemplateInitialization';
 import { TemplateStatus } from '@/components/ui/template-indicator';
+import { useNavigate } from 'react-router-dom';
+import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
+import { useSettings } from '@/contexts/SettingsContext';
 interface ContentBuilderProps {
   initialKeyword?: string;
   selectedKeywords?: string[];
@@ -62,6 +65,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
     navigateToStep,
     addSerpSelections
   } = useContentBuilder();
+  const { openSettings } = useSettings();
   const {
     activeStep,
     steps,
@@ -295,7 +299,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
         action: {
           label: "Go to Settings",
           onClick: () => {
-            window.location.href = "/settings/api";
+            openSettings('api');
           }
         }
       });

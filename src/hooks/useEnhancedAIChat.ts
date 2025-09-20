@@ -5,6 +5,7 @@ import { enhancedAIService } from '@/services/enhancedAIService';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { ContextualAction } from '@/services/aiService';
 
 export const useEnhancedAIChat = () => {
@@ -13,6 +14,7 @@ export const useEnhancedAIChat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { openSettings } = useSettings();
 
   const sendMessage = useCallback(async (content: string) => {
     if (!user) {
@@ -79,14 +81,17 @@ export const useEnhancedAIChat = () => {
   const handleAction = useCallback(async (action: string, data?: any) => {
     if (!user || !action) return;
 
-    if (action.startsWith('workflow:')) {
+    if (action.startsWith('open-settings')) {
+      const tab = action.split(':')[1] || 'api';
+      openSettings(tab);
+    } else if (action.startsWith('workflow:')) {
       const workflowAction = action.replace('workflow:', '');
       await handleWorkflowAction(workflowAction, data);
     } else if (action.startsWith('send:')) {
       const message = action.replace('send:', '');
       await sendMessage(message);
     }
-  }, [sendMessage, user]);
+  }, [sendMessage, user, openSettings]);
 
   const handleWorkflowAction = useCallback(async (workflowAction: string, data?: any) => {
     if (!user) return;

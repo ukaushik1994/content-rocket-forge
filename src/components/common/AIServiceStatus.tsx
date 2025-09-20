@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface AIProviderStatus {
   id: string;
@@ -20,6 +21,7 @@ interface AIProviderStatus {
 
 export function AIServiceStatus() {
   const navigate = useNavigate();
+  const { openSettings } = useSettings();
   const [isServiceEnabled, setIsServiceEnabled] = useState(true);
   const [providers, setProviders] = useState<AIProviderStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -189,7 +191,7 @@ export function AIServiceStatus() {
                   variant="outline"
                   size="sm"
                   className="mt-3"
-                  onClick={() => navigate('/settings')}
+                  onClick={() => openSettings('api')}
                 >
                   <Settings className="h-4 w-4 mr-1" />
                   Configure Providers
@@ -254,7 +256,7 @@ export function AIServiceStatus() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => navigate('/settings')}
+                      onClick={() => openSettings('api')}
                       className="h-8 px-2"
                     >
                       <Settings className="h-3 w-3 mr-1" />
