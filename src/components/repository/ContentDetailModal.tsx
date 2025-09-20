@@ -243,23 +243,23 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-2xl font-bold text-foreground pr-8">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl max-h-[95vh] sm:max-h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
+          <DialogHeader className="flex-shrink-0 px-2 sm:px-0">
+            <DialogTitle className="text-lg sm:text-2xl font-bold text-foreground pr-8 line-clamp-2">
               {content.title}
             </DialogTitle>
-            <div className="text-sm text-muted-foreground capitalize">
+            <div className="text-xs sm:text-sm text-muted-foreground capitalize">
               {content.content_type.replace('_', ' ')} • {content.status}
-              <span className="text-xs text-muted-foreground/60 ml-2">
+              <span className="text-xs text-muted-foreground/60 ml-2 hidden sm:inline">
                 Press Esc to close • Enter to expand content
               </span>
             </div>
           </DialogHeader>
 
         <ScrollArea className="h-[calc(90vh-8rem)] flex-1 min-h-0" hideScrollbar>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pr-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 pr-2 sm:pr-4 px-2 sm:px-0">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Description */}
               {content.metadata?.description && (
                 <Card className="bg-muted/5 border-border">
@@ -447,7 +447,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 </div>
 
             {/* Sidebar */}
-            <div className="space-y-4">
+            <div className="space-y-4 sm:space-y-6">
               {/* Content Type & Status */}
               <Card className="bg-muted/5 border-border">
                 <CardContent className="p-4">
