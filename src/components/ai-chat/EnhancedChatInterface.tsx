@@ -114,7 +114,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           <div className="max-w-6xl mx-auto py-6 space-y-8">
             {/* Welcome State */}
             <AnimatePresence mode="wait">
-              {showWelcome && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="sticky top-0 z-10 space-y-6 bg-background/95 backdrop-blur-sm">
+              {showWelcome && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
                   {/* Welcome Hero */}
                   <motion.div className="text-center py-8" initial={{
                   opacity: 0,
