@@ -244,12 +244,12 @@ export class SuggestionGenerator {
 
       // Validate each replacement
       const validReplacements = suggestion.replacements.filter(replacement => {
-        if (!replacement.originalText) return false;
+        if (!replacement.before) return false;
         
-        // Check if the original text exists in content (with some fuzzy matching)
-        const exists = this.findTextInContent(content, replacement.originalText);
+        // Check if the before text exists in content (with some fuzzy matching)
+        const exists = this.findTextInContent(content, replacement.before);
         if (!exists.found) {
-          console.warn(`⚠️ Original text not found in content: "${replacement.originalText}"`);
+          console.warn(`⚠️ Before text not found in content: "${replacement.before}"`);
           return false;
         }
 

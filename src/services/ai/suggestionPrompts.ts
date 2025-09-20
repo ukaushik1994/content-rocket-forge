@@ -16,8 +16,8 @@ export interface SuggestionContext {
 
 export interface SuggestionReplacement {
   id: string;
-  originalText: string;
-  replacementText: string;
+  before: string;
+  after: string;
   reasoning: string;
   location: {
     paragraph: number;
@@ -72,8 +72,8 @@ JSON SCHEMA (follow exactly):
       "replacements": [
         {
           "id": "replacement_id",
-          "originalText": "exact text from content to replace",
-          "replacementText": "improved replacement text",
+          "before": "exact text from content to replace",
+          "after": "improved replacement text",
           "reasoning": "why this specific change improves the content",
           "location": {
             "paragraph": 1,
@@ -146,8 +146,8 @@ ANALYSIS FOCUS:
 5. Strategic alignment (solution integration, audience targeting)
 
 REQUIREMENTS FOR EACH SUGGESTION:
-- Must include exact "originalText" that exists in the content
-- Must provide specific "replacementText" 
+- Must include exact "before" text that exists in the content
+- Must provide specific "after" replacement text 
 - Must include precise location information (paragraph, sentence, character indices)
 - Must explain the reasoning for the improvement
 - Must assess impact and effort realistically

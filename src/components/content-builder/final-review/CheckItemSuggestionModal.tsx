@@ -120,11 +120,11 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
 
       console.log('📝 Raw AI Content:', response.content);
 
-      // Parse AI response as JSON
-      let rawSuggestions;
+      // Parse AI response as JSON - handle structured format
+      let parsedResponse;
       try {
-        rawSuggestions = JSON.parse(response.content);
-        console.log('✅ Parsed suggestions:', rawSuggestions);
+        parsedResponse = JSON.parse(response.content);
+        console.log('✅ Parsed AI response:', parsedResponse);
       } catch (error) {
         console.error('❌ Failed to parse AI response as JSON:', {
           error: error.message,
@@ -134,24 +134,40 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
         });
         
         // Try to extract JSON from markdown if it's wrapped
-        const jsonMatch = response.content.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+        const jsonMatch = response.content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
         if (jsonMatch) {
           try {
-            rawSuggestions = JSON.parse(jsonMatch[1]);
-            console.log('✅ Extracted JSON from markdown:', rawSuggestions);
+            parsedResponse = JSON.parse(jsonMatch[1]);
+            console.log('✅ Extracted JSON from markdown:', parsedResponse);
           } catch (innerError) {
             console.error('❌ Failed to parse extracted JSON:', innerError);
-            toast.error(`Invalid AI response format. Expected JSON array, got: ${response.content.substring(0, 100)}...`);
+            toast.error(`Invalid AI response format. Expected JSON object with suggestions array, got: ${response.content.substring(0, 100)}...`);
             return;
           }
         } else {
-          toast.error(`Invalid AI response format. Expected JSON array, got: ${response.content.substring(0, 100)}...`);
+          toast.error(`Invalid AI response format. Expected JSON object with suggestions array, got: ${response.content.substring(0, 100)}...`);
           return;
         }
       }
 
+      // Extract suggestions from the structured response
+      let rawSuggestions;
+      if (parsedResponse.suggestions && Array.isArray(parsedResponse.suggestions)) {
+        rawSuggestions = parsedResponse.suggestions;
+        console.log('✅ Extracted suggestions from structured response:', rawSuggestions);
+      } else if (Array.isArray(parsedResponse)) {
+        // Fallback: handle direct array format
+        rawSuggestions = parsedResponse;
+        console.log('✅ Using direct array format:', rawSuggestions);
+      } else {
+        console.error('❌ Invalid response structure:', parsedResponse);
+        toast.error('Invalid AI response: missing suggestions array');
+        return;
+      }
+
       if (!Array.isArray(rawSuggestions) || rawSuggestions.length === 0) {
-        toast.error('No suggestions generated');
+        console.log('⚠️ No suggestions in response:', rawSuggestions);
+        toast.error('No suggestions generated - AI returned empty suggestions array');
         return;
       }
 
