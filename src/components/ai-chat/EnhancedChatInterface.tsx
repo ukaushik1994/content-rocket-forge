@@ -11,7 +11,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
 import { Sparkles, Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 interface EnhancedChatInterfaceProps {
   className?: string;
 }
@@ -97,14 +103,113 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   return <div className={`h-full ${className}`}>
       {/* Chat History Sidebar */}
       <AnimatePresence>
-        {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} />}
+        {showSidebar && (
+          <ChatHistorySidebar 
+            conversations={conversations} 
+            activeConversation={activeConversation} 
+            onSelectConversation={selectConversation} 
+            onCreateConversation={() => createConversation()} 
+            onDeleteConversation={deleteConversation} 
+            onToggleSidebar={() => setShowSidebar(false)}
+            onPinConversation={togglePinConversation}
+            onArchiveConversation={toggleArchiveConversation}
+          />
+        )}
       </AnimatePresence>
 
       {/* Main Chat Interface */}
-      <motion.div className={`flex flex-col h-full pt-16 pb-24 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`} initial="hidden" animate="visible" variants={containerVariants}>
+      <motion.div 
+        className={`flex flex-col h-full pt-16 pb-24 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`} 
+        initial="hidden" 
+        animate="visible" 
+        variants={containerVariants}
+      >
       {/* Elegant Header */}
       <div className="fixed top-16 left-0 right-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        
+        <div className={`max-w-6xl mx-auto px-6 py-4 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {!showSidebar && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSidebar(true)}
+                  className="text-muted-foreground hover:text-foreground hover:bg-background/60 mr-2"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              )}
+              <motion.div 
+                className="inline-flex items-center gap-3 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-blue-500/20 border border-border/30">
+                  <Brain className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+                    AI Assistant
+                  </h2>
+                  <p className="text-xs text-muted-foreground">Ready to help with your content strategy</p>
+                </div>
+              </motion.div>
+            </div>
+            <div className="flex items-center gap-3">
+              <motion.div 
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <motion.div 
+                  className="w-2 h-2 rounded-full bg-green-400"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                <span className="text-xs text-success font-medium">Online</span>
+              </motion.div>
+              
+              {/* Chat Actions Menu */}
+              {activeConversation && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => shareConversation(activeConversation)}>
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share Conversation
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportConversation(activeConversation)}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Chat
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        if (activeConversation) {
+                          deleteConversation(activeConversation);
+                        }
+                      }}
+                      disabled={messages.length === 0}
+                      className="text-destructive hover:text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Conversation
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -116,58 +221,45 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             <AnimatePresence mode="wait">
               {showWelcome && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
                   {/* Welcome Hero */}
-                  <motion.div className="text-center py-8" initial={{
-                  opacity: 0,
-                  y: 30
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  duration: 0.8
-                }}>
-                    <motion.div className="p-6 rounded-2xl bg-background/60 backdrop-blur-xl border border-border/50 mx-auto w-fit mb-6" whileHover={{
-                    scale: 1.05
-                  }} transition={{
-                    type: "spring",
-                    stiffness: 300
-                  }}>
+                  <motion.div 
+                    className="text-center py-8"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                  >
+                    <motion.div 
+                      className="p-6 rounded-2xl bg-background/60 backdrop-blur-xl border border-border/50 mx-auto w-fit mb-6"
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
                       <Brain className="h-12 w-12 text-primary" />
                     </motion.div>
-                    <motion.h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent mb-6" initial={{
-                    opacity: 0,
-                    y: 20
-                  }} animate={{
-                    opacity: 1,
-                    y: 0
-                  }} transition={{
-                    delay: 0.2
-                  }}>
+                    <motion.h2 
+                      className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent mb-6"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
                       Welcome to AI Assistant
                     </motion.h2>
-                    <motion.p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed" initial={{
-                    opacity: 0,
-                    y: 20
-                  }} animate={{
-                    opacity: 1,
-                    y: 0
-                  }} transition={{
-                    delay: 0.4
-                  }}>
+                    <motion.p 
+                      className="text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                    >
                       I'm here to help you optimize your content strategy, analyze performance, 
                       and discover new opportunities using your solutions and real data.
                     </motion.p>
                   </motion.div>
 
                   {/* Platform Summary & Quick Actions */}
-                  <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6" initial={{
-                  opacity: 0,
-                  y: 30
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  delay: 0.6
-                }}>
+                  <motion.div 
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
                     <PlatformSummaryCard onAction={handleLegacyAction} />
                     <EnhancedQuickActions onAction={handleLegacyAction} />
                   </motion.div>
