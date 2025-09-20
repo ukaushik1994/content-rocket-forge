@@ -1,115 +1,205 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
-import { Bell } from 'lucide-react';
+import { Bell, Mail, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
 
 export function NotificationSettings() {
+  const [emailExpanded, setEmailExpanded] = useState(true);
+  const [appExpanded, setAppExpanded] = useState(true);
+
   const handleSaveNotifications = (e: React.FormEvent) => {
     e.preventDefault();
     toast.success('Notification preferences saved!');
   };
+
+  // Calculate notification stats
+  const emailNotifications = [
+    { id: 'email-content-published', enabled: true },
+    { id: 'email-ranking-changes', enabled: true },
+    { id: 'email-marketing', enabled: false }
+  ];
   
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
+  const appNotifications = [
+    { id: 'app-comments', enabled: true },
+    { id: 'app-mentions', enabled: true }
+  ];
+
+  const emailEnabled = emailNotifications.filter(n => n.enabled).length;
+  const appEnabled = appNotifications.filter(n => n.enabled).length;
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={cardVariants}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className="glass-panel bg-glass border border-white/10 backdrop-blur-sm">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-neon-purple/20 p-2">
-              <Bell className="h-5 w-5 text-neon-purple" />
-            </div>
-            <div>
-              <CardTitle className="text-gradient">Notification Preferences</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Configure how you want to receive notifications.
-              </CardDescription>
-            </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-lg font-medium mb-2">Notification Preferences</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Configure how you want to receive notifications and stay updated on important events.
+        </p>
+        
+        {/* Progress indicator */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>
+            {emailEnabled + appEnabled} of {emailNotifications.length + appNotifications.length} enabled
+          </span>
+          <div className="flex gap-1">
+            {[...emailNotifications, ...appNotifications].map((notification, index) => (
+              <div
+                key={index}
+                className={`w-1.5 h-1.5 rounded-full ${
+                  notification.enabled ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+            ))}
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSaveNotifications}>
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-gradient">Email Notifications</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-background/30 border border-white/10">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="email-content-published" className="text-foreground font-medium">Content Published</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Receive an email when your content is published.
-                      </p>
-                    </div>
-                    <Switch id="email-content-published" defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-background/30 border border-white/10">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="email-ranking-changes" className="text-foreground font-medium">Ranking Changes</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Receive an email when your content changes position.
-                      </p>
-                    </div>
-                    <Switch id="email-ranking-changes" defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-background/30 border border-white/10">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="email-marketing" className="text-foreground font-medium">Marketing Updates</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Receive marketing and product updates.
-                      </p>
-                    </div>
-                    <Switch id="email-marketing" />
-                  </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSaveNotifications} className="space-y-6">
+        {/* Email Notifications Section */}
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full h-auto p-0 justify-start font-normal hover:bg-transparent"
+            onClick={() => setEmailExpanded(!emailExpanded)}
+          >
+            <div className="flex items-center justify-between w-full py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  {emailExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-medium text-sm">Email Notifications</h3>
                 </div>
               </div>
               
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-gradient">In-App Notifications</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-background/30 border border-white/10">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="app-comments" className="text-foreground font-medium">Comments</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Show notifications for new comments on your content.
-                      </p>
-                    </div>
-                    <Switch id="app-comments" defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-background/30 border border-white/10">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="app-mentions" className="text-foreground font-medium">Mentions</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Show notifications when you're mentioned.
-                      </p>
-                    </div>
-                    <Switch id="app-mentions" defaultChecked />
-                  </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {emailEnabled}/{emailNotifications.length}
+                </span>
+                <div className="flex gap-1">
+                  {emailNotifications.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        i < emailEnabled ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
-              
-              <Button 
-                type="submit" 
-                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-              >
-                Save Notification Settings
-              </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </motion.div>
+          </Button>
+          
+          {emailExpanded && (
+            <div className="space-y-2 pl-6">
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="space-y-0.5">
+                  <Label htmlFor="email-content-published" className="font-medium text-sm">Content Published</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Receive an email when your content is published.
+                  </p>
+                </div>
+                <Switch id="email-content-published" defaultChecked />
+              </div>
+              
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="space-y-0.5">
+                  <Label htmlFor="email-ranking-changes" className="font-medium text-sm">Ranking Changes</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Receive an email when your content changes position.
+                  </p>
+                </div>
+                <Switch id="email-ranking-changes" defaultChecked />
+              </div>
+              
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="space-y-0.5">
+                  <Label htmlFor="email-marketing" className="font-medium text-sm">Marketing Updates</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Receive marketing and product updates.
+                  </p>
+                </div>
+                <Switch id="email-marketing" />
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* In-App Notifications Section */}
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full h-auto p-0 justify-start font-normal hover:bg-transparent"
+            onClick={() => setAppExpanded(!appExpanded)}
+          >
+            <div className="flex items-center justify-between w-full py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  {appExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-medium text-sm">In-App Notifications</h3>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {appEnabled}/{appNotifications.length}
+                </span>
+                <div className="flex gap-1">
+                  {appNotifications.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        i < appEnabled ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Button>
+          
+          {appExpanded && (
+            <div className="space-y-2 pl-6">
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="space-y-0.5">
+                  <Label htmlFor="app-comments" className="font-medium text-sm">Comments</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Show notifications for new comments on your content.
+                  </p>
+                </div>
+                <Switch id="app-comments" defaultChecked />
+              </div>
+              
+              <div className="flex items-center justify-between py-3 px-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="space-y-0.5">
+                  <Label htmlFor="app-mentions" className="font-medium text-sm">Mentions</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Show notifications when you're mentioned.
+                  </p>
+                </div>
+                <Switch id="app-mentions" defaultChecked />
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <Button type="submit" size="sm">
+          Save Notification Settings
+        </Button>
+      </form>
+    </div>
   );
 }
