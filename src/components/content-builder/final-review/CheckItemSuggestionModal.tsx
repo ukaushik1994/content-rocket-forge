@@ -59,7 +59,14 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
 
     setIsGenerating(true);
     try {
-      // Create context for the suggestion request
+      // Import CheckContextMapper for strategic context injection
+      const { CheckContextMapper } = await import('@/services/content/CheckContextMapper');
+      const contextMapper = CheckContextMapper.getInstance();
+      
+      // Generate strategic context based on check type and ContentBuilder state
+      const strategicContext = contextMapper.mapCheckToStrategicContext(checkTitle, state);
+      
+      // Create enhanced context for the suggestion request
       const context = {
         mainKeyword: state.mainKeyword,
         selectedKeywords: state.selectedKeywords || [],
@@ -67,8 +74,8 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
         wordCount: state.content.split(' ').length,
         contentType: state.contentType || 'article',
         targetGoal: 'optimization',
-        serpData: state.serpData,
-        selectedSolution: state.selectedSolution
+        strategicContext: strategicContext.promptEnhancement,
+        checkType: strategicContext.checkType
       };
 
       // Force refresh AI services to detect API keys
@@ -97,20 +104,9 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
         }
       }
       
-      // Create the prompt for AI analysis
-      const userPrompt = `Check Title: ${checkTitle}
-
-Content to analyze:
-${state.content}
-
-Context:
-- Main Keyword: ${context.mainKeyword || 'Not specified'}
-- Secondary Keywords: ${context.selectedKeywords?.join(', ') || 'None'}
-- Content Type: ${context.contentType}
-- Word Count: ${context.wordCount}
-- Target Goal: ${context.targetGoal}
-
-Please analyze this content for the specific issue mentioned in the check title and provide text replacement suggestions to address it.`;
+      // Create enhanced prompt using strategic context
+      const { createContentAnalysisPrompt } = await import('@/services/ai/suggestionPrompts');
+      const userPrompt = createContentAnalysisPrompt(state.content, context, checkTitle);
 
       console.log('🚀 AI Service Request:', { checkTitle, contentLength: state.content.length });
       const response = await AIServiceController.generate('suggestion_generation', undefined, userPrompt);

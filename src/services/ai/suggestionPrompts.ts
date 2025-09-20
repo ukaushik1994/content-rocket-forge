@@ -10,6 +10,8 @@ export interface SuggestionContext {
   wordCount: number;
   contentType?: string;
   targetGoal?: string;
+  strategicContext?: string; // Enhanced strategic context from CheckContextMapper
+  checkType?: string; // Type of check being performed
 }
 
 export interface SuggestionReplacement {
@@ -104,12 +106,13 @@ SUGGESTION_END`;
  */
 export function createContentAnalysisPrompt(
   content: string, 
-  context: SuggestionContext
+  context: SuggestionContext,
+  checkTitle?: string
 ): string {
   // Preprocess content - split into numbered paragraphs and sentences
   const preprocessedContent = preprocessContentForAnalysis(content);
   
-  return `Analyze this content and provide 3-7 specific optimization suggestions with exact text replacements:
+  const basePrompt = `Analyze this content and provide 3-7 specific optimization suggestions with exact text replacements:
 
 CONTENT STRUCTURE:
 ${preprocessedContent}
@@ -119,13 +122,28 @@ OPTIMIZATION CONTEXT:
 - Additional Keywords: ${context.selectedKeywords?.join(', ') || 'None'}
 - Content Length: ${context.contentLength} characters
 - Word Count: ${context.wordCount} words
-- Content Type: ${context.contentType || 'General'}
+- Content Type: ${context.contentType || 'General'}`;
+
+  // Add strategic context if available
+  const strategicSection = context.strategicContext ? `
+
+STRATEGIC CONTEXT (${context.checkType?.toUpperCase() || 'OPTIMIZATION'}):
+${context.strategicContext}` : '';
+
+  // Add check-specific focus if provided
+  const checkFocus = checkTitle ? `
+
+SPECIFIC CHECK FOCUS: "${checkTitle}"
+Focus your analysis specifically on addressing this checklist item with precise, actionable improvements.` : '';
+
+  const analysisSection = `
 
 ANALYSIS FOCUS:
 1. SEO optimization (keyword usage, meta elements, structure)
 2. Readability improvements (sentence flow, paragraph structure)
 3. Content engagement (calls-to-action, value propositions)
 4. Technical improvements (headings, formatting, links)
+5. Strategic alignment (solution integration, audience targeting)
 
 REQUIREMENTS FOR EACH SUGGESTION:
 - Must include exact "originalText" that exists in the content
@@ -133,8 +151,11 @@ REQUIREMENTS FOR EACH SUGGESTION:
 - Must include precise location information (paragraph, sentence, character indices)
 - Must explain the reasoning for the improvement
 - Must assess impact and effort realistically
+- Must address the specific check requirements when provided
 
 Focus on high-impact, implementable changes. Provide exact text matches and replacements.`;
+
+  return basePrompt + strategicSection + checkFocus + analysisSection;
 }
 
 /**
