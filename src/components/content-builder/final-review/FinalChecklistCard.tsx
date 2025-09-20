@@ -1,13 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { SuggestionButton } from './SuggestionButton';
-import { CheckItemSuggestionModal } from './CheckItemSuggestionModal';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface FinalChecklistProps {
   checks: {
@@ -19,42 +15,8 @@ interface FinalChecklistProps {
 }
 
 export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: FinalChecklistProps) => {
-  const [selectedCheck, setSelectedCheck] = useState<string | null>(null);
   const passedChecks = checks.filter(check => check.passed).length;
   const progress = Math.round((passedChecks / checks.length) * 100);
-
-  const handleSuggestionClick = (checkTitle: string) => {
-    setSelectedCheck(checkTitle);
-  };
-
-  const { toast } = useToast();
-
-  const handleFeedback = async (suggestion: string, helpful: boolean) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('feedback').insert({
-          user_id: user.id,
-          message: suggestion,
-          sentiment: helpful ? 'positive' : 'negative',
-          type: 'suggestion',
-          status: 'unread'
-        });
-        
-        toast({
-          title: 'Feedback saved',
-          description: 'Thank you for helping us improve our suggestions!'
-        });
-      }
-    } catch (error) {
-      console.error('Error saving feedback:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save feedback',
-        variant: 'destructive'
-      });
-    }
-  };
   
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -145,22 +107,10 @@ export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: 
                   {check.title}
                 </span>
               </div>
-              
-              {!check.passed && (
-                <SuggestionButton 
-                  onClick={() => handleSuggestionClick(check.title)}
-                />
-              )}
             </motion.div>
           ))}
         </motion.div>
       </CardContent>
-
-      <CheckItemSuggestionModal
-        isOpen={!!selectedCheck}
-        onClose={() => setSelectedCheck(null)}
-        checkTitle={selectedCheck || ''}
-      />
     </Card>
   );
 };
