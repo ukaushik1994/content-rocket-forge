@@ -210,9 +210,9 @@ export const AIReportModal: React.FC<AIReportModalProps> = ({
                   {/* Score Breakdown */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { label: 'SEO Score', score: analysisResult.scores.seo, icon: Search },
-                      { label: 'Readability', score: analysisResult.scores.readability, icon: Eye },
-                      { label: 'Quality', score: analysisResult.scores.quality, icon: Star },
+                      { label: 'SEO Score', score: analysisResult.scores?.seo || 0, icon: Search },
+                      { label: 'Readability', score: analysisResult.scores?.readability || 0, icon: Eye },
+                      { label: 'Quality', score: analysisResult.scores?.quality || 0, icon: Star },
                     ].map((item) => (
                       <Card key={item.label}>
                         <CardContent className="pt-6">
