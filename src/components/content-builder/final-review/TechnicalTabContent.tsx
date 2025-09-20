@@ -1,7 +1,9 @@
 
 import React from 'react';
 import { DocumentStructureAnalysis } from './technical/DocumentStructureAnalysis';
-import { SelectedSerpItemsCard } from '@/components/content-builder/outline/SelectedSerpItemsCard';
+import { MetaInformationReview } from './technical/MetaInformationReview';
+import { SerpDataAnalysis } from './technical/SerpDataAnalysis';
+import { TechnicalValidationCard } from './technical/TechnicalValidationCard';
 import { DocumentStructure } from '@/contexts/content-builder/types';
 import { SerpAnalysisResult } from '@/types/serp';
 import { motion } from 'framer-motion';
@@ -42,13 +44,32 @@ export const TechnicalTabContent = ({
       animate="show"
       className="space-y-6"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div variants={item}>
-          <DocumentStructureAnalysis documentStructure={documentStructure} />
-        </motion.div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main technical area */}
+        <div className="lg:col-span-2 space-y-6">
+          <motion.div variants={item}>
+            <DocumentStructureAnalysis documentStructure={documentStructure} />
+          </motion.div>
+          
+          <motion.div variants={item}>
+            <MetaInformationReview metaTitle={metaTitle} metaDescription={metaDescription} />
+          </motion.div>
+          
+          {serpData && Object.keys(serpData).length > 0 && (
+            <motion.div variants={item}>
+              <SerpDataAnalysis serpData={serpData} />
+            </motion.div>
+          )}
+        </div>
         
-        <motion.div variants={item}>
-          <SelectedSerpItemsCard />
+        {/* Side panel */}
+        <motion.div variants={item} className="space-y-6">
+          <TechnicalValidationCard 
+            documentStructure={documentStructure}
+            metaTitle={metaTitle}
+            metaDescription={metaDescription}
+            serpData={serpData}
+          />
         </motion.div>
       </div>
     </motion.div>
