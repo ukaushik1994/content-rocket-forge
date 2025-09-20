@@ -223,8 +223,8 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               </p>
             )}
 
-            {/* SEO Metadata - Always reserve space */}
-            <div className="mb-4 p-3 rounded-lg bg-background/40 border border-border/30 h-20">
+            {/* SEO Metadata */}
+            <div className="mb-3 p-3 rounded-lg bg-background/40 border border-border/30">
               <h4 className="text-xs font-semibold text-muted-foreground mb-2">SEO METADATA</h4>
               {(content.metadata?.metaTitle || content.metadata?.metaDescription) ? (
                 <div className="space-y-1 text-xs">
@@ -234,7 +234,7 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
                     </p>
                   )}
                   {content.metadata.metaDescription && (
-                    <p className="text-foreground/80 line-clamp-2">
+                    <p className="text-foreground/80 line-clamp-1">
                       <span className="text-muted-foreground">Desc:</span> {content.metadata.metaDescription}
                     </p>
                   )}
@@ -244,9 +244,9 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               )}
             </div>
 
-            {/* AI Analysis Summary - Always reserve space */}
+            {/* AI Analysis Summary */}
             <motion.div
-              className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20 h-16"
+              className="mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
@@ -269,7 +269,7 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-between h-full">
+                <div className="flex items-center justify-between">
                   <h4 className="text-xs font-semibold text-muted-foreground/60">AI ANALYSIS</h4>
                   <span className="text-xs text-muted-foreground/60 italic">Not analyzed</span>
                 </div>
