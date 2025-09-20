@@ -88,7 +88,8 @@ export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
             action: {
               label: "Add Key",
               onClick: () => {
-                window.location.href = "/content-builder?step=2&showApiSetup=true";
+                // Dispatch custom event to trigger settings popup with API tab
+                window.dispatchEvent(new CustomEvent('openSettings', { detail: { tab: 'api' } }));
               }
             }
           });

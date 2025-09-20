@@ -377,7 +377,10 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           </Badge>
         </div>
         <Button
-          onClick={() => window.open('/ai-settings', '_blank')}
+          onClick={() => {
+            // Dispatch custom event to trigger settings popup
+            window.dispatchEvent(new CustomEvent('openSettings', { detail: { tab: 'api' } }));
+          }}
           variant="ghost"
           size="sm"
           className="w-full text-white/60 hover:text-white hover:bg-white/10 text-xs"
