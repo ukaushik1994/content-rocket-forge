@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, X, LogOut, UserCircle, User, MessageSquarePlus, Settings, Puzzle, Bot } from 'lucide-react';
+import { Menu, X, LogOut, UserCircle, User, Settings, Puzzle, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import NavItems from './NavItems';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { useFeedback } from '@/contexts/FeedbackContext';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 
 const Navbar = () => {
@@ -19,7 +18,6 @@ const Navbar = () => {
     user,
     signOut
   } = useAuth();
-  const { openFeedback } = useFeedback();
   
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -98,10 +96,6 @@ const Navbar = () => {
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={openFeedback}>
-                <MessageSquarePlus className="mr-2 h-4 w-4" />
-                <span>Feedback</span>
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sign Out</span>
@@ -128,20 +122,7 @@ const Navbar = () => {
             <nav className="flex flex-col space-y-4">
               <NavItems />
               
-              {/* Mobile menu buttons - keep text versions for better usability on mobile */}
-              <div className="flex gap-2 pt-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 items-center justify-center gap-2"
-                  onClick={() => {
-                    openFeedback();
-                    setShowMobileMenu(false);
-                  }}
-                >
-                  <MessageSquarePlus className="h-4 w-4" />
-                  Feedback
-                </Button>
-              </div>
+              {/* Mobile menu buttons removed */}
               
               <Button variant="ghost" className="flex items-center justify-start gap-3 px-4 py-2 w-full rounded-md hover:bg-accent/50" onClick={handleSignOut}>
                 <LogOut className="h-5 w-5" />

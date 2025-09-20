@@ -64,9 +64,6 @@ export const NotificationsCenter: React.FC<{ open: boolean; onClose: () => void;
           <Button variant="ghost" size="sm" onClick={handleMarkAllRead} className="h-7 px-2 text-xs">
             <CheckCheck className="h-3.5 w-3.5 mr-1" /> Mark all read
           </Button>
-          <Button variant="outline" size="sm" onClick={() => document.dispatchEvent(new CustomEvent('open-feedback'))} className="h-7 px-2 text-xs">
-            Send feedback
-          </Button>
           <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7">
             <X className="h-4 w-4" />
           </Button>
