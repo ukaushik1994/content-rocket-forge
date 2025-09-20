@@ -54,12 +54,15 @@ export const analyzeContentQualityWithAI = async (
   const prompt = buildContentQualityPrompt(content, state);
   
   try {
+    console.log('🎯 Calling AI service for content quality analysis with use_case: strategy');
     const response = await AIServiceController.generate({
       input: prompt,
       use_case: 'strategy',
       temperature: 0.3,
       max_tokens: 2000
     });
+    
+    console.log('🔍 AI response received:', response ? 'Success' : 'No response');
 
     if (!response || !response.content) {
       throw new Error('No response from AI service');
