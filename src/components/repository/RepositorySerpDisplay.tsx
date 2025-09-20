@@ -9,14 +9,8 @@ interface RepositorySerpDisplayProps {
 }
 
 export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ serpSelections }) => {
-  console.log('RepositorySerpDisplay - Received serpSelections:', serpSelections);
-  console.log('RepositorySerpDisplay - serpSelections type:', typeof serpSelections);
-  console.log('RepositorySerpDisplay - serpSelections array?:', Array.isArray(serpSelections));
-  
   // Filter only selected items
   const selectedItems = serpSelections.filter(item => item.selected);
-  console.log('RepositorySerpDisplay - Filtered selected items:', selectedItems);
-  console.log('RepositorySerpDisplay - Selected items count:', selectedItems.length);
   
   if (selectedItems.length === 0) {
     return null;

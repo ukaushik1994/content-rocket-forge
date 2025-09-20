@@ -29,7 +29,9 @@ import {
   Loader2,
   Info,
   Undo,
-  Layers
+  Layers,
+  Search,
+  FileSearch
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -46,6 +48,8 @@ import { RepurposedContentViewer } from './RepurposedContentViewer';
 import { ContentRepurposingModal } from './ContentRepurposingModal';
 import { useRepurposedContentData } from '@/components/content-repurposing/hooks/repurposing/useRepurposedContentData';
 import { repurposedContentService } from '@/services/repurposedContentService';
+import { RepositorySerpDisplay } from './RepositorySerpDisplay';
+import { RepositoryDocumentStructure } from './RepositoryDocumentStructure';
 
 interface ContentDetailModalProps {
   content: ContentItemType | null;
@@ -387,6 +391,33 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                             </Badge>
                           ))}
                         </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* SERP Analysis */}
+              {(content.metadata?.serpSelections?.length > 0 || content.metadata?.documentStructure) && (
+                <Card className="bg-muted/5 border-border">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                      <Search className="h-5 w-5 text-primary" />
+                      SERP Analysis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {content.metadata?.serpSelections?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Selected SERP Items</h4>
+                        <RepositorySerpDisplay serpSelections={content.metadata.serpSelections} />
+                      </div>
+                    )}
+                    
+                    {content.metadata?.documentStructure && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Document Structure</h4>
+                        <RepositoryDocumentStructure documentStructure={content.metadata.documentStructure} />
                       </div>
                     )}
                   </CardContent>
