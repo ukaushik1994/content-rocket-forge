@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -51,6 +52,9 @@ export const SettingsPopup = () => {
             <Settings className="h-5 w-5" />
             Settings
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Configure your profile, API keys, notifications, and prompt templates
+          </DialogDescription>
         </DialogHeader>
         
         <div className="flex h-[calc(80vh-80px)]">
