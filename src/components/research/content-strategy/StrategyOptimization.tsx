@@ -17,6 +17,7 @@ interface StrategyOptimizationProps {
 export const StrategyOptimization = ({ strategy, serpMetrics, goals }: StrategyOptimizationProps) => {
   const [optimizations, setOptimizations] = useState<any[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [autoOptimize, setAutoOptimize] = useState(false);
   const { updateStrategy, pipelineItems, calendarItems, insights } = useContentStrategy();
 
   useEffect(() => {
@@ -248,7 +249,7 @@ export const StrategyOptimization = ({ strategy, serpMetrics, goals }: StrategyO
                   size="sm"
                 >
                   <Zap className="h-4 w-4 mr-2" />
-                  Apply All
+                  Auto-Optimize
                 </Button>
               )}
             </div>

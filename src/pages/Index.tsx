@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar';
 import { EnhancedWelcomeSection } from '@/components/dashboard/EnhancedWelcomeSection';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
+import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 import { GrandTourProvider } from '@/contexts/GrandTourContext';
 import { GrandAppTour } from '@/components/tour/GrandAppTour';
 import { GrandTourTrigger } from '@/components/tour/GrandTourTrigger';
@@ -13,6 +14,7 @@ import { Container } from '@/components/ui/Container';
 import { DashboardFooter } from '@/components/layout/DashboardFooter';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 const Index = () => {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const navigate = useNavigate();
   const {
     user
@@ -131,7 +133,7 @@ const Index = () => {
             <motion.div className="space-y-16" initial="hidden" animate={isLoaded ? "visible" : "hidden"} variants={containerVariants}>
               {/* Enhanced Welcome/Hero Section */}
               <motion.section variants={sectionVariants}>
-                <EnhancedWelcomeSection navigate={navigate} />
+                <EnhancedWelcomeSection setFeedbackOpen={setFeedbackOpen} navigate={navigate} />
               </motion.section>
               
               {/* Quick Actions */}
@@ -149,6 +151,8 @@ const Index = () => {
         
         {/* Grand Tour Components */}
         <GrandAppTour />
+        
+        <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
         
         {/* Dashboard Footer */}
         <DashboardFooter />

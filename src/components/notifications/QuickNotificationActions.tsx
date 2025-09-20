@@ -101,6 +101,9 @@ export const QuickNotificationActions: React.FC<QuickNotificationActionsProps> =
           toast.info('Content scheduled for publishing');
           break;
           
+        case 'view_feedback':
+          toast.info('Feedback panel opened');
+          break;
           
         default:
           console.log('Action not implemented:', action.action);
