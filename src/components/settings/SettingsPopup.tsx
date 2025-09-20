@@ -38,7 +38,7 @@ export const SettingsPopup = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={closeSettings}>
-      <DialogContent className="max-w-2xl max-h-[80vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[80vh] p-0 overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
