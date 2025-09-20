@@ -89,21 +89,46 @@ Context:
 
 Please analyze this content for the specific issue mentioned in the check title and provide text replacement suggestions to address it.`;
 
+      console.log('🚀 AI Service Request:', { checkTitle, contentLength: state.content.length });
       const response = await AIServiceController.generate('suggestion_generation', undefined, userPrompt);
+      console.log('🔍 AI Service Response:', response);
 
       if (!response || !response.content) {
-        toast.error('No suggestions generated');
+        console.error('❌ Empty AI response:', response);
+        toast.error('No suggestions generated - AI service returned empty response');
         return;
       }
+
+      console.log('📝 Raw AI Content:', response.content);
 
       // Parse AI response as JSON
       let rawSuggestions;
       try {
         rawSuggestions = JSON.parse(response.content);
+        console.log('✅ Parsed suggestions:', rawSuggestions);
       } catch (error) {
-        console.error('Failed to parse AI response as JSON:', response.content);
-        toast.error('Invalid AI response format');
-        return;
+        console.error('❌ Failed to parse AI response as JSON:', {
+          error: error.message,
+          rawContent: response.content,
+          contentType: typeof response.content,
+          contentLength: response.content?.length
+        });
+        
+        // Try to extract JSON from markdown if it's wrapped
+        const jsonMatch = response.content.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+        if (jsonMatch) {
+          try {
+            rawSuggestions = JSON.parse(jsonMatch[1]);
+            console.log('✅ Extracted JSON from markdown:', rawSuggestions);
+          } catch (innerError) {
+            console.error('❌ Failed to parse extracted JSON:', innerError);
+            toast.error(`Invalid AI response format. Expected JSON array, got: ${response.content.substring(0, 100)}...`);
+            return;
+          }
+        } else {
+          toast.error(`Invalid AI response format. Expected JSON array, got: ${response.content.substring(0, 100)}...`);
+          return;
+        }
       }
 
       if (!Array.isArray(rawSuggestions) || rawSuggestions.length === 0) {
@@ -303,11 +328,16 @@ Please analyze this content for the specific issue mentioned in the check title 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Wand2 className="h-5 w-5 text-purple-400" />
-            AI Content Optimizer: {checkTitle}
+      <DialogContent className="glass-panel max-w-6xl max-h-[90vh] overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl border-white/10">
+        <DialogHeader className="pb-4 border-b border-white/10">
+          <DialogTitle className="flex items-center gap-3 text-xl">
+            <div className="p-2 rounded-xl bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30">
+              <Wand2 className="h-5 w-5 text-purple-400" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-white">AI Content Optimizer</span>
+              <span className="text-sm text-white/70 font-normal">{checkTitle}</span>
+            </div>
             {hasRecentErrors && (
               <Badge variant="destructive" className="ml-2">
                 <AlertTriangle className="h-3 w-3 mr-1" />
@@ -317,36 +347,41 @@ Please analyze this content for the specific issue mentioned in the check title 
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 space-y-4 overflow-y-auto">
-          <Button 
-            onClick={generateSuggestion}
-            disabled={isGenerating}
-            className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing Content & Generating Suggestions...
-              </>
-            ) : (
-              <>
-                <Wand2 className="mr-2 h-4 w-4" />
-                Generate Smart Suggestions
-              </>
-            )}
-          </Button>
+        <div className="flex-1 space-y-6 overflow-y-auto">
+          <div className="p-4 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 rounded-xl border border-purple-500/20 backdrop-blur-sm">
+            <Button 
+              onClick={generateSuggestion}
+              disabled={isGenerating}
+              className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 shadow-lg border-0"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing Content & Generating Smart Suggestions...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Generate AI Optimization Suggestions
+                </>
+              )}
+            </Button>
+          </div>
 
           {/* Enhanced Suggestions Display */}
           {enhancedSuggestions.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-white">Smart Text Replacements</h4>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-background/40 rounded-xl border border-white/10 backdrop-blur-sm">
+                <h4 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-400 to-indigo-400"></div>
+                  Smart Text Replacements
+                </h4>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-purple-500/20 text-purple-300">
+                  <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/30">
                     {enhancedSuggestions.length} suggestions
                   </Badge>
                   {selectedSuggestions.size > 0 && (
-                    <Badge className="bg-green-500/20 text-green-300">
+                    <Badge className="bg-green-500/20 text-green-300 border border-green-500/30">
                       {selectedSuggestions.size} selected
                     </Badge>
                   )}
@@ -354,14 +389,14 @@ Please analyze this content for the specific issue mentioned in the check title 
               </div>
 
               {/* Batch Operations */}
-              <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+              <div className="flex items-center justify-between p-4 bg-background/40 rounded-xl border border-white/10 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => undo(setContent)}
                     disabled={!canUndo}
-                    className="text-white/70 hover:text-white"
+                    className="text-white/70 hover:text-white border-white/20 hover:bg-white/10"
                   >
                     <Undo2 className="h-4 w-4 mr-1" />
                     Undo
@@ -371,7 +406,7 @@ Please analyze this content for the specific issue mentioned in the check title 
                     size="sm"
                     onClick={() => redo(setContent)}
                     disabled={!canRedo}
-                    className="text-white/70 hover:text-white"
+                    className="text-white/70 hover:text-white border-white/20 hover:bg-white/10"
                   >
                     <Redo2 className="h-4 w-4 mr-1" />
                     Redo
@@ -384,7 +419,7 @@ Please analyze this content for the specific issue mentioned in the check title 
                         variant="outline"
                         size="sm"
                         onClick={clearSelection}
-                        className="text-white/70 hover:text-white"
+                        className="text-white/70 hover:text-white border-white/20 hover:bg-white/10"
                       >
                         Clear Selection
                       </Button>
@@ -392,7 +427,7 @@ Please analyze this content for the specific issue mentioned in the check title 
                         size="sm"
                         onClick={handleBatchApply}
                         disabled={isApplyingBatch}
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg"
                       >
                         {isApplyingBatch ? (
                           <>
@@ -409,28 +444,40 @@ Please analyze this content for the specific issue mentioned in the check title 
               </div>
 
               {enhancedSuggestions.map((suggestion) => (
-                <div key={suggestion.id} className="bg-glass border border-white/10 rounded-lg p-4 space-y-3">
+                <div key={suggestion.id} className="bg-background/40 backdrop-blur-sm border border-white/10 rounded-xl p-5 space-y-4 shadow-lg">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <Checkbox
                         checked={selectedSuggestions.has(suggestion.id)}
                         onCheckedChange={() => toggleSuggestionSelection(suggestion.id)}
-                        className="border-white/20"
+                        className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
                       />
-                      <h5 className="font-medium text-white">{suggestion.title}</h5>
-                      <Badge variant={suggestion.impact === 'high' ? 'destructive' : suggestion.impact === 'medium' ? 'default' : 'secondary'}>
-                        {suggestion.impact} impact
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {suggestion.category}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <h5 className="font-medium text-white text-sm">{suggestion.title}</h5>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={suggestion.impact === 'high' ? 'destructive' : suggestion.impact === 'medium' ? 'default' : 'secondary'}
+                            className="text-xs px-2 py-0.5"
+                          >
+                            {suggestion.impact} impact
+                          </Badge>
+                          <Badge variant="outline" className="text-xs px-2 py-0.5 border-white/20 text-white/70">
+                            {suggestion.category}
+                          </Badge>
+                          {suggestion.applied && (
+                            <Badge className="text-xs px-2 py-0.5 bg-green-500/20 text-green-300 border border-green-500/30">
+                              Applied
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => togglePreview(suggestion.id)}
-                        className="text-white/70 hover:text-white"
+                        className="text-white/70 hover:text-white hover:bg-white/10"
                       >
                         {showPreview === suggestion.id ? (
                           <EyeOff className="h-4 w-4" />
@@ -442,32 +489,35 @@ Please analyze this content for the specific issue mentioned in the check title 
                   </div>
 
                   {suggestion.replacements.map((replacement, idx) => (
-                    <div key={idx} className="space-y-2">
-                      <div className="text-sm text-white/80 mb-2">{replacement.reason}</div>
+                    <div key={idx} className="space-y-3">
+                      <div className="text-sm text-white/80 p-2 bg-white/5 rounded-lg border-l-2 border-purple-500/50">
+                        <span className="font-medium text-purple-300">Reason:</span> {replacement.reason}
+                      </div>
                       
                       {/* Before/After Preview */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
-                          <div className="text-xs text-red-400 mb-1">BEFORE</div>
-                          <div className="text-sm text-white/90 font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 backdrop-blur-sm">
+                          <div className="text-xs font-semibold text-red-400 mb-2 uppercase tracking-wide">Before</div>
+                          <div className="text-sm text-white/90 font-mono leading-relaxed">
                             "{replacement.before}"
                           </div>
                         </div>
-                        <div className="bg-green-500/10 border border-green-500/20 rounded p-3">
-                          <div className="text-xs text-green-400 mb-1">AFTER</div>
-                          <div className="text-sm text-white/90 font-mono">
+                        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 backdrop-blur-sm">
+                          <div className="text-xs font-semibold text-green-400 mb-2 uppercase tracking-wide">After</div>
+                          <div className="text-sm text-white/90 font-mono leading-relaxed">
                             "{replacement.after}"
                           </div>
+                          <ArrowRight className="h-4 w-4 text-green-400 mt-2" />
                         </div>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex gap-3 pt-3">
                         <Button
                           size="sm"
                           onClick={() => applySuggestion(suggestion.id, replacement)}
                           disabled={applyingIds.has(suggestion.id) || suggestion.applied}
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md border-0"
                         >
                           {applyingIds.has(suggestion.id) ? (
                             <>
@@ -482,7 +532,7 @@ Please analyze this content for the specific issue mentioned in the check title 
                           ) : (
                             <>
                               <ArrowRight className="mr-2 h-3 w-3" />
-                              Apply This Fix
+                              Apply Change
                             </>
                           )}
                         </Button>
@@ -490,12 +540,18 @@ Please analyze this content for the specific issue mentioned in the check title 
                           variant="outline"
                           size="sm"
                           onClick={() => copyToClipboard(replacement.after, idx)}
-                          className="text-white/70 hover:text-white"
+                          className="text-white/70 hover:text-white border-white/30 hover:bg-white/10 backdrop-blur-sm"
                         >
                           {copiedIndex === idx ? (
-                            <Check className="h-3 w-3 text-green-400" />
+                            <>
+                              <Check className="mr-1 h-3 w-3 text-green-400" />
+                              Copied
+                            </>
                           ) : (
-                            <Copy className="h-3 w-3" />
+                            <>
+                              <Copy className="mr-1 h-3 w-3" />
+                              Copy Text
+                            </>
                           )}
                         </Button>
                       </div>
@@ -509,14 +565,17 @@ Please analyze this content for the specific issue mentioned in the check title 
           {/* Raw suggestion fallback */}
           {suggestion && enhancedSuggestions.length === 0 && (
             <div className="space-y-4">
-              <div className="bg-glass border border-white/10 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium text-white">AI Analysis</h4>
+              <div className="bg-background/40 backdrop-blur-sm border border-white/10 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-white flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                    Raw AI Analysis
+                  </h4>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => copyToClipboard(suggestion, 0)}
-                    className="text-white/70 hover:text-white"
+                    className="text-white/70 hover:text-white hover:bg-white/10"
                   >
                     {copiedIndex === 0 ? (
                       <Check className="h-4 w-4 text-green-400" />
@@ -525,7 +584,7 @@ Please analyze this content for the specific issue mentioned in the check title 
                     )}
                   </Button>
                 </div>
-                <div className="text-sm text-white/80 whitespace-pre-wrap bg-black/20 rounded p-3 max-h-64 overflow-y-auto">
+                <div className="text-sm text-white/80 whitespace-pre-wrap bg-black/20 rounded-lg p-4 max-h-64 overflow-y-auto border border-white/5">
                   {suggestion}
                 </div>
               </div>
@@ -533,17 +592,17 @@ Please analyze this content for the specific issue mentioned in the check title 
           )}
         </div>
 
-        <DialogFooter className="pt-4 border-t border-white/10">
+        <DialogFooter className="pt-6 border-t border-white/10 bg-background/60 backdrop-blur-sm">
           <div className="flex items-center justify-between w-full">
-            <div className="text-xs text-white/60">
+            <div className="text-xs text-white/60 px-3 py-2 bg-white/5 rounded-lg">
               Applied {ContentSyncService.getAppliedCount()} suggestions in this session
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleFeedback('helpful')}
-                className="text-green-400 border-green-400 hover:bg-green-400/10"
+                className="text-green-400 border-green-400/30 hover:bg-green-400/10 backdrop-blur-sm"
               >
                 👍 Helpful
               </Button>
@@ -551,7 +610,7 @@ Please analyze this content for the specific issue mentioned in the check title 
                 variant="outline"
                 size="sm"
                 onClick={() => handleFeedback('not_helpful')}
-                className="text-red-400 border-red-400 hover:bg-red-400/10"
+                className="text-red-400 border-red-400/30 hover:bg-red-400/10 backdrop-blur-sm"
               >
                 👎 Not Helpful
               </Button>
