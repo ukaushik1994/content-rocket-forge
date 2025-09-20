@@ -363,10 +363,10 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
             </motion.div>
           ) : (
             <motion.div 
-              className={`${
+              className={`grid gap-6 ${
                 viewMode === 'grid' 
-                  ? 'columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6' 
-                  : 'grid grid-cols-1 gap-6'
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr' 
+                  : 'grid-cols-1'
               }`}
               layout
             >
@@ -379,7 +379,6 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className={viewMode === 'grid' ? 'break-inside-avoid mb-6' : ''}
                   >
                     <ContentApprovalCard
                       content={item}

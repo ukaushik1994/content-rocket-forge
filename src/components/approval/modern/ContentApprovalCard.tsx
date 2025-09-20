@@ -118,8 +118,9 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
       onHoverEnd={() => setIsHovered(false)}
       whileHover={{ scale: 1.02, y: -2 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="h-full"
     >
-      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group">
+      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full flex flex-col">
         {/* Animated Background Gradient */}
         <motion.div
           className={`absolute inset-0 bg-gradient-to-br ${statusInfo.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
@@ -213,60 +214,71 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
           </div>
         </CardHeader>
 
-        <CardContent className="relative pt-0">
+        <CardContent className="relative pt-0 flex-1 flex flex-col">
           {/* Content Preview */}
-          {content.content && (
-            <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
-              {content.content.replace(/<[^>]*>/g, '').substring(0, 120)}...
-            </p>
-          )}
+          <div className="flex-1">
+            {content.content && (
+              <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
+                {content.content.replace(/<[^>]*>/g, '').substring(0, 120)}...
+              </p>
+            )}
 
-          {/* SEO Metadata */}
-          {(content.metadata?.metaTitle || content.metadata?.metaDescription) && (
-            <div className="mb-4 p-3 rounded-lg bg-background/40 border border-border/30">
+            {/* SEO Metadata - Always reserve space */}
+            <div className="mb-4 p-3 rounded-lg bg-background/40 border border-border/30 h-20">
               <h4 className="text-xs font-semibold text-muted-foreground mb-2">SEO METADATA</h4>
-              <div className="space-y-1 text-xs">
-                {content.metadata.metaTitle && (
-                  <p className="text-foreground/80 line-clamp-1">
-                    <span className="text-muted-foreground">Title:</span> {content.metadata.metaTitle}
-                  </p>
-                )}
-                {content.metadata.metaDescription && (
-                  <p className="text-foreground/80 line-clamp-2">
-                    <span className="text-muted-foreground">Desc:</span> {content.metadata.metaDescription}
-                  </p>
-                )}
-              </div>
+              {(content.metadata?.metaTitle || content.metadata?.metaDescription) ? (
+                <div className="space-y-1 text-xs">
+                  {content.metadata.metaTitle && (
+                    <p className="text-foreground/80 line-clamp-1">
+                      <span className="text-muted-foreground">Title:</span> {content.metadata.metaTitle}
+                    </p>
+                  )}
+                  {content.metadata.metaDescription && (
+                    <p className="text-foreground/80 line-clamp-2">
+                      <span className="text-muted-foreground">Desc:</span> {content.metadata.metaDescription}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/60 italic">No SEO metadata defined</p>
+              )}
             </div>
-          )}
 
-          {/* AI Analysis Summary */}
-          {aiScore !== undefined && (
+            {/* AI Analysis Summary - Always reserve space */}
             <motion.div
-              className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20"
+              className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20 h-16"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-primary">AI ANALYSIS</h4>
-                <span className={`text-xs font-bold ${getScoreTextSoftClass(aiScore)}`}>
-                  {aiLabel}
-                </span>
-              </div>
-              <div className="w-full bg-background/40 rounded-full h-2">
-                <motion.div
-                  className={`h-2 rounded-full ${getProgressBgClass(aiScore)}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${aiScore}%` }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                />
-              </div>
+              {aiScore !== undefined ? (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold text-primary">AI ANALYSIS</h4>
+                    <span className={`text-xs font-bold ${getScoreTextSoftClass(aiScore)}`}>
+                      {aiLabel}
+                    </span>
+                  </div>
+                  <div className="w-full bg-background/40 rounded-full h-2">
+                    <motion.div
+                      className={`h-2 rounded-full ${getProgressBgClass(aiScore)}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${aiScore}%` }}
+                      transition={{ duration: 1, delay: 0.5 }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-between h-full">
+                  <h4 className="text-xs font-semibold text-muted-foreground/60">AI ANALYSIS</h4>
+                  <span className="text-xs text-muted-foreground/60 italic">Not analyzed</span>
+                </div>
+              )}
             </motion.div>
-          )}
+          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 flex-wrap">
+          {/* Action Buttons - Fixed at bottom */}
+          <div className="flex gap-2 flex-wrap mt-auto">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
