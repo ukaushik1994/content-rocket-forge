@@ -6,7 +6,6 @@ import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
 import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
-import { OptimizationHistoryModal } from '../final-review/OptimizationHistoryModal';
 
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';

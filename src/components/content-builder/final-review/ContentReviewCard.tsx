@@ -10,7 +10,7 @@ import { Eye, Edit, FileText, Save, Wand, Sparkles, CheckCircle, Loader2, Badge 
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useContentOptimizer } from './optimization/useContentOptimizer';
+
 
 interface ContentReviewCardProps {
   content: string;
@@ -26,13 +26,11 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
   // Enhanced button states
   const [hasOptimized, setHasOptimized] = useState(false);
   
-  // Use the real content optimizer hook
-  const {
-    isAnalyzing,
-    analyzeContent,
-    getTotalSuggestionCount,
-    analysisError
-  } = useContentOptimizer(editedContent);
+  // Remove optimization functionality
+  const isAnalyzing = false;
+  const analyzeContent = () => {};
+  const getTotalSuggestionCount = () => 0;
+  const analysisError = null;
 
   // Handle content changes
   const handleContentChange = (newContent: string) => {

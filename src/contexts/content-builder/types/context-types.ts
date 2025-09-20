@@ -46,17 +46,6 @@ export interface ContentBuilderContextType {
   // SEO Actions
   analyzeSeo: (content: string) => Promise<void>;
   applySeoImprovement: (id: string) => void;
-  skipOptimizationStep: () => void;
-
-  // Optimization Selection Actions
-  saveOptimizationSelections: (suggestions: string[], highlights: string[]) => Promise<void>;
-  getOptimizationSelections: () => { suggestions: string[]; highlights: string[] } | null;
-  clearOptimizationSelections: () => void;
-  applyOptimizationChanges: (selectedHighlights: string[], content: string) => Promise<string>;
-  
-  // Compliance Fix Actions
-  applyComplianceFixes: (selectedViolations: any[], content: string) => Promise<{ fixedContent: string; appliedFixes: string[] }>;
-  previewComplianceFixes: (selectedViolations: any[], content: string) => Promise<string | null>;
 
   // Advanced Content Actions
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;

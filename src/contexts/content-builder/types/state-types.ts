@@ -57,7 +57,7 @@ export interface ContentBuilderState {
   // SEO
   seoScore: number;
   seoImprovements: SeoImprovement[];
-  optimizationSkipped: boolean; // New field to track if optimization was skipped
+  optimizationSkipped: boolean;
   
   // Selected Cluster
   selectedCluster: ContentCluster | null;
@@ -87,11 +87,5 @@ export interface ContentBuilderState {
       title: string;
       description: string;
     };
-  } | null;
-
-  // Optimization Selections
-  optimizationSelections: {
-    suggestions: string[];
-    highlights: string[];
   } | null;
 }

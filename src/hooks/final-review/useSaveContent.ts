@@ -6,7 +6,7 @@ import { SaveContentParams } from '@/contexts/content-builder/types/content-type
 import { useContent } from '@/contexts/content';
 import { supabase } from '@/integrations/supabase/client';
 import { ComprehensiveSerpData, SerpMetrics, CompetitorAnalysis, RankingOpportunities, SerpSelectionStats } from '@/types/serp-metrics';
-import { useMetadataCapture } from './useMetadataCapture';
+
 
 /**
  * Hook for managing content saving and publishing functionality
@@ -17,7 +17,7 @@ export const useSaveContent = () => {
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
   const { refreshContent } = useContent();
   const navigate = useNavigate();
-  const { captureOptimizationMetadata } = useMetadataCapture();
+  // Remove optimization metadata functionality
 
   // Helper function to extract comprehensive SERP data
   const extractComprehensiveSerpData = (): ComprehensiveSerpData | null => {
@@ -129,8 +129,8 @@ export const useSaveContent = () => {
       // Extract comprehensive SERP data
       const comprehensiveSerpData = extractComprehensiveSerpData();
       
-      // Capture optimization metadata
-      const optimizationMetadata = await captureOptimizationMetadata(state.content);
+      // Remove optimization metadata
+      const optimizationMetadata = null;
       
       // Prepare content for saving with extended metadata
       const saveParams: SaveContentParams = {
@@ -372,8 +372,8 @@ export const useSaveContent = () => {
       // Extract comprehensive SERP data
       const comprehensiveSerpData = extractComprehensiveSerpData();
       
-      // Capture optimization metadata
-      const optimizationMetadata = await captureOptimizationMetadata(state.content);
+      // Remove optimization metadata
+      const optimizationMetadata = null;
       
       // Prepare content for publishing with extended metadata
       const publishParams: SaveContentParams = {
