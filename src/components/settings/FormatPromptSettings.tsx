@@ -21,7 +21,6 @@ import {
 import { logActivity } from '@/services/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
 import { enhancePromptWithFeedback, EnhancementResult, getRecentApprovalFeedback, FeedbackData } from '@/services/promptEnhancementService';
-import { FeedbackStatsDialog } from './FeedbackStatsDialog';
 
 export function FormatPromptSettings() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -30,7 +29,6 @@ export function FormatPromptSettings() {
   const [isEnhancing, setIsEnhancing] = useState<string | null>(null);
   const [enhancementResult, setEnhancementResult] = useState<EnhancementResult | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [feedbackStatsOpen, setFeedbackStatsOpen] = useState(false);
   const [currentFeedback, setCurrentFeedback] = useState<FeedbackData[]>([]);
   const { user } = useAuth();
   const handleOpenEditor = (formatId: string) => {
@@ -167,16 +165,6 @@ export function FormatPromptSettings() {
     }
   };
 
-  const handleViewFeedbackStats = async (formatId?: string) => {
-    try {
-      const feedback = await getRecentApprovalFeedback(30);
-      setCurrentFeedback(feedback);
-      setFeedbackStatsOpen(true);
-    } catch (error) {
-      console.error('Error fetching feedback stats:', error);
-      toast.error('Failed to load feedback statistics');
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -188,15 +176,6 @@ export function FormatPromptSettings() {
               Customize prompts used for generating different content formats
             </p>
           </div>
-          <Button 
-            onClick={() => handleViewFeedbackStats()}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <BarChart3 className="h-4 w-4" />
-            View Feedback Stats
-          </Button>
         </div>
       </div>
 
@@ -414,13 +393,6 @@ export function FormatPromptSettings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Feedback Stats Dialog */}
-      <FeedbackStatsDialog 
-        open={feedbackStatsOpen}
-        onOpenChange={setFeedbackStatsOpen}
-        feedback={currentFeedback}
-      />
     </div>
   );
 }

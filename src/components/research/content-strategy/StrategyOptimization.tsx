@@ -17,7 +17,6 @@ interface StrategyOptimizationProps {
 export const StrategyOptimization = ({ strategy, serpMetrics, goals }: StrategyOptimizationProps) => {
   const [optimizations, setOptimizations] = useState<any[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
-  const [autoOptimize, setAutoOptimize] = useState(false);
   const { updateStrategy, pipelineItems, calendarItems, insights } = useContentStrategy();
 
   useEffect(() => {

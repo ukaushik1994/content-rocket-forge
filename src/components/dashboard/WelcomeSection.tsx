@@ -1,14 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { RocketIcon, MessageCircle, Sparkles, BarChart3 } from 'lucide-react';
+import { RocketIcon, Sparkles, BarChart3 } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
 interface WelcomeSectionProps {
-  setFeedbackOpen: (open: boolean) => void;
   navigate: NavigateFunction;
 }
 export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
-  setFeedbackOpen,
   navigate
 }) => {
   return <div className="relative overflow-hidden rounded-xl p-6 md:p-8 glass-panel shadow-lg border border-white/10 backdrop-blur-xl">
@@ -167,23 +165,6 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
               </Button>
             </motion.div>
             
-            <motion.div variants={{
-            hidden: {
-              opacity: 0,
-              y: 20
-            },
-            show: {
-              opacity: 1,
-              y: 0
-            }
-          }}>
-              <Button variant="ghost" className="hover:bg-white/5 transition-all duration-300" onClick={() => setFeedbackOpen(true)}>
-                <span className="relative z-10 flex items-center">
-                  Feedback
-                  <MessageCircle className="ml-2 h-4 w-4" />
-                </span>
-              </Button>
-            </motion.div>
           </motion.div>
         </motion.div>
         
