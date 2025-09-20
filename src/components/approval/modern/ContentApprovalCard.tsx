@@ -16,8 +16,7 @@ import {
   Calendar,
   User,
   Zap,
-  Loader2,
-  BarChart3
+  Loader2
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -27,7 +26,6 @@ import { getScoreLabel, getScoreTextSoftClass, getProgressBgClass } from '@/lib/
 interface ContentApprovalCardProps {
   content: ContentItemType;
   onView: (content: ContentItemType) => void;
-  onViewReport?: (content: ContentItemType) => void;
   onApprove?: (id: string) => void;
   onReject?: (id: string, reason: string) => void;
   onRequestChanges?: (id: string, reason: string) => void;
@@ -87,7 +85,6 @@ const statusConfig = {
 export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
   content,
   onView,
-  onViewReport,
   onApprove,
   onReject,
   onRequestChanges,
@@ -300,25 +297,6 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               </Tooltip>
             </TooltipProvider>
             
-            {onViewReport && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onViewReport(content)}
-                      className="bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary"
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <span className="text-xs">View AI Report</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
             
             {onAnalyzeAI && (
               <TooltipProvider>

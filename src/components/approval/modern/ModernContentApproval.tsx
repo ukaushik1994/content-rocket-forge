@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentApprovalHero } from './ContentApprovalHero';
 import { ContentApprovalCard } from './ContentApprovalCard';
-import { AIReportModal } from './AIReportModal';
 import { ReviewEditorModal } from './ReviewEditorModal';
 import { AssignReviewerDialog } from './AssignReviewerDialog';
 import { ApprovalHistoryDialog } from './ApprovalHistoryDialog';
@@ -37,8 +36,6 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewContent, setReviewContent] = useState<ContentItemType | null>(null);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportContent, setReportContent] = useState<ContentItemType | null>(null);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [analyzingItems, setAnalyzingItems] = useState<Set<string>>(new Set());
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
@@ -208,10 +205,6 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     setShowReviewModal(true);
   };
 
-  const handleViewReport = (content: ContentItemType) => {
-    setReportContent(content);
-    setShowReportModal(true);
-  };
 
   const handleApprove = async (id: string, comments?: string) => {
     try {
@@ -383,7 +376,6 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                     <ContentApprovalCard
                       content={item}
                       onView={handleViewContent}
-                      onViewReport={handleViewReport}
                       onApprove={handleApprove}
                       onReject={handleReject}
                       onRequestChanges={handleRequestChanges}
@@ -409,12 +401,6 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         content={reviewContent}
       />
 
-      {/* AI Report Modal */}
-      <AIReportModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        content={reportContent}
-      />
 
       {/* Assign Reviewer */}
       <AssignReviewerDialog
