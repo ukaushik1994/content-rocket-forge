@@ -1,5 +1,5 @@
 import React from 'react';
-import { EnhancedTechnicalTabContent } from '../technical/EnhancedTechnicalTabContent';
+import { TechnicalTabContent as SimpleTechnicalTabContent } from '../TechnicalTabContent';
 import { DocumentStructure } from '@/contexts/content-builder/types';
 import { SerpAnalysisResult } from '@/types/serp';
 
@@ -17,7 +17,7 @@ export const TechnicalTabContent = ({
   serpData
 }: TechnicalTabContentProps) => {
   return (
-    <EnhancedTechnicalTabContent
+    <SimpleTechnicalTabContent
       documentStructure={documentStructure}
       metaTitle={metaTitle}
       metaDescription={metaDescription}
