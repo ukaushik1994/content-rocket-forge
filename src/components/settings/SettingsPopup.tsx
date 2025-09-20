@@ -10,12 +10,19 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { ApiSettings } from './api/ApiSettings';
 import { NotificationSettings } from './NotificationSettings';
 import { FormatPromptSettings } from './FormatPromptSettings';
-import { Settings, Zap, Bell, MessageSquare } from 'lucide-react';
+import { ProfileSettingsTab } from './ProfileSettingsTab';
+import { Settings, Zap, Bell, MessageSquare, User } from 'lucide-react';
 
 export const SettingsPopup = () => {
   const { isOpen, activeTab, closeSettings, setActiveTab } = useSettings();
 
   const tabs = [
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: <User className="h-4 w-4" />,
+      component: <ProfileSettingsTab />
+    },
     {
       id: 'api',
       label: 'API Keys',

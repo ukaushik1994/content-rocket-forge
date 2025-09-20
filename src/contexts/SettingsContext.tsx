@@ -20,14 +20,14 @@ export const useSettings = () => {
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('api');
+  const [activeTab, setActiveTab] = useState('profile');
 
   // Sync with URL parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const settingsTab = urlParams.get('settingsTab');
     
-    if (settingsTab && ['api', 'notifications', 'promptTemplates'].includes(settingsTab)) {
+    if (settingsTab && ['profile', 'api', 'notifications', 'promptTemplates'].includes(settingsTab)) {
       setActiveTab(settingsTab);
       setIsOpen(true);
     }
@@ -43,7 +43,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [activeTab, isOpen]);
 
-  const openSettings = (tab: string = 'api') => {
+  const openSettings = (tab: string = 'profile') => {
     setActiveTab(tab);
     setIsOpen(true);
   };
