@@ -71,8 +71,31 @@ export const CheckItemSuggestionModal = ({ isOpen, onClose, checkTitle }: CheckI
         selectedSolution: state.selectedSolution
       };
 
-      // Use AIServiceController with suggestion_generation use case
+      // Force refresh AI services to detect API keys
+      console.log('🔄 Refreshing AI services...');
       const AIServiceController = (await import('@/services/aiService/AIServiceController')).default;
+      AIServiceController.clearCache();
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for cache clear
+      
+      // Check AI service status
+      const aiStatus = await AIServiceController.getActiveProviders();
+      console.log('🤖 Active AI providers after refresh:', aiStatus);
+      
+      if (aiStatus.length === 0) {
+        console.log('❌ No providers found, attempting manual sync...');
+        // Try to sync API keys from user settings
+        const { autoSyncApiKeys } = await import('@/services/aiService/providerSync');
+        await autoSyncApiKeys();
+        
+        // Check again after sync
+        const aiStatusAfterSync = await AIServiceController.getActiveProviders();
+        console.log('🤖 Active AI providers after sync:', aiStatusAfterSync);
+        
+        if (aiStatusAfterSync.length === 0) {
+          toast.error('No AI providers available. Please configure API keys in settings.');
+          return;
+        }
+      }
       
       // Create the prompt for AI analysis
       const userPrompt = `Check Title: ${checkTitle}
