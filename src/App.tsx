@@ -35,7 +35,7 @@ import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
 import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
-import { FeedbackProvider } from "./contexts/FeedbackContext";
+
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -47,7 +47,6 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <ContentProvider>
-          <FeedbackProvider>
             <TourProvider>
               <ChatContextBridgeProvider>
               <Toaster />
@@ -103,7 +102,6 @@ const App = () => (
               </BrowserRouter>
               </ChatContextBridgeProvider>
             </TourProvider>
-          </FeedbackProvider>
         </ContentProvider>
       </AuthProvider>
     </TooltipProvider>

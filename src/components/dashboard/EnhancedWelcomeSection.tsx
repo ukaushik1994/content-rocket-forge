@@ -7,7 +7,7 @@ import { GrandTourTrigger } from '@/components/tour/GrandTourTrigger';
 import { modules, ModuleData } from './ModuleCarouselData';
 
 interface EnhancedWelcomeSectionProps {
-  setFeedbackOpen: (open: boolean) => void;
+  setFeedbackOpen?: (open: boolean) => void;
   navigate: NavigateFunction;
 }
 

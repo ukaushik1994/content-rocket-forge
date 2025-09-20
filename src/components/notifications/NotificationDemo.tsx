@@ -101,7 +101,7 @@ export const NotificationDemo: React.FC = () => {
         },
         {
           label: 'Smart Action Executed',
-          action: () => notifications.aiAnalytics?.notifySmartActionTriggered('Auto-optimize keywords', 'Updated 25 keywords with improved targeting'),
+          action: () => notifications.aiAnalytics?.notifySmartActionTriggered('Smart keyword optimization', 'Updated 25 keywords with improved targeting'),
         },
         {
           label: 'Performance Alert (Up)',

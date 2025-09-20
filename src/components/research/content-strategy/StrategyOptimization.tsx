@@ -249,7 +249,7 @@ export const StrategyOptimization = ({ strategy, serpMetrics, goals }: StrategyO
                   size="sm"
                 >
                   <Zap className="h-4 w-4 mr-2" />
-                  Auto-Optimize
+                  Apply All
                 </Button>
               )}
             </div>
