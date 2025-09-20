@@ -6,6 +6,7 @@ import { MetaInformationCard } from '../MetaInformationCard';
 import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
 import { motion } from 'framer-motion';
 import { useChecklistItems } from '../hooks/useChecklistItems';
+import { useContentCompliance } from '@/hooks/useContentCompliance';
 
 interface OverviewTabProps {
   content: string;
@@ -38,6 +39,7 @@ export const OverviewTab = ({
   onAnalyze
 }: OverviewTabProps) => {
   const { refreshChecklist } = useChecklistItems();
+  const { isAnalyzing: isChecklistAnalyzing } = useContentCompliance();
   
   const container = {
     hidden: { opacity: 0 },
@@ -72,7 +74,7 @@ export const OverviewTab = ({
         <motion.div variants={item}>
           <FinalChecklistCard 
             checks={checklistItems}
-            isRefreshing={false}
+            isRefreshing={isChecklistAnalyzing}
             onRefresh={refreshChecklist}
           />
         </motion.div>

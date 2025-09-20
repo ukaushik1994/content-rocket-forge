@@ -3,6 +3,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useState, useCallback, useEffect } from 'react';
 import { useContentAnalysis } from '@/hooks/final-review/useContentAnalysis';
 import { useContentCompliance } from '@/hooks/useContentCompliance';
+import { toast } from 'sonner';
 
 /**
  * Custom hook to generate and manage the checklist items for the final review
@@ -139,11 +140,22 @@ export const useChecklistItems = () => {
   // Function to trigger a refresh of checklist items
   const refreshChecklist = useCallback(async () => {
     console.log('[useChecklistItems] Refreshing checklist items');
-    // Auto-run compliance analysis when refreshing
-    if (state.content && mainKeyword) {
-      await runComplianceAnalysis();
+    
+    if (!state.content || !mainKeyword) {
+      toast.error('Content and main keyword are required for analysis');
+      return;
     }
-    setRefreshTrigger(prev => prev + 1); // Increment to trigger a refresh
+
+    try {
+      toast.info('Analyzing content with AI...');
+      // Auto-run compliance analysis when refreshing
+      await runComplianceAnalysis();
+      setRefreshTrigger(prev => prev + 1); // Increment to trigger a refresh
+      toast.success('Content quality checklist updated');
+    } catch (error) {
+      console.error('[useChecklistItems] Refresh failed:', error);
+      toast.error('Failed to analyze content. Please try again.');
+    }
   }, [runComplianceAnalysis, state.content, mainKeyword]);
 
   // Auto-run compliance analysis on load
