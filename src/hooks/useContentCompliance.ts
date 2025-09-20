@@ -6,6 +6,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { analyzeContentCompliance } from '@/services/contentComplianceService';
+import { analyzeContentQualityWithAI, AIContentQualityResult } from '@/services/aiContentQualityService';
 import { 
   ComplianceAnalysisResult, 
   ComplianceAnalysisOptions,
@@ -17,6 +18,7 @@ export interface UseContentComplianceReturn {
   isAnalyzing: boolean;
   analysisError: string | null;
   complianceResult: ComplianceAnalysisResult | null;
+  aiQualityResult: AIContentQualityResult | null;
   
   // Analysis functions
   runComplianceAnalysis: (options?: ComplianceAnalysisOptions) => Promise<void>;
@@ -40,6 +42,7 @@ export const useContentCompliance = (): UseContentComplianceReturn => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [complianceResult, setComplianceResult] = useState<ComplianceAnalysisResult | null>(null);
+  const [aiQualityResult, setAiQualityResult] = useState<AIContentQualityResult | null>(null);
 
   /**
    * Run compliance analysis on current content
@@ -59,9 +62,19 @@ export const useContentCompliance = (): UseContentComplianceReturn => {
     setAnalysisError(null);
 
     try {
-      // Run compliance analysis
-      const result = analyzeContentCompliance(state.content, state, options);
-      setComplianceResult(result);
+      // Run rule-based compliance analysis
+      const complianceResult = analyzeContentCompliance(state.content, state, options);
+      setComplianceResult(complianceResult);
+      
+      // Run AI-powered quality analysis
+      try {
+        const aiResult = await analyzeContentQualityWithAI(state.content, state);
+        setAiQualityResult(aiResult);
+        console.log('✅ AI content quality analysis completed:', aiResult.overall.grade);
+      } catch (aiError) {
+        console.warn('AI quality analysis failed, continuing with rule-based analysis only:', aiError);
+        // Don't fail the entire analysis if AI fails
+      }
     } catch (error) {
       console.error('Compliance analysis failed:', error);
       setAnalysisError(
@@ -79,6 +92,7 @@ export const useContentCompliance = (): UseContentComplianceReturn => {
    */
   const clearAnalysis = useCallback(() => {
     setComplianceResult(null);
+    setAiQualityResult(null);
     setAnalysisError(null);
   }, []);
 
@@ -143,6 +157,7 @@ export const useContentCompliance = (): UseContentComplianceReturn => {
     isAnalyzing,
     analysisError,
     complianceResult,
+    aiQualityResult,
     
     // Analysis functions
     runComplianceAnalysis,

@@ -3,6 +3,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useState, useCallback, useEffect } from 'react';
 import { useContentAnalysis } from '@/hooks/final-review/useContentAnalysis';
 import { useContentCompliance } from '@/hooks/useContentCompliance';
+import { generateAIChecklistItems } from '@/services/aiContentQualityService';
 import { toast } from 'sonner';
 
 /**
@@ -21,7 +22,7 @@ export const useChecklistItems = () => {
 
   // Get content analysis data directly instead of via useFinalReview
   const { keywordUsage, ctaInfo } = useContentAnalysis();
-  const { complianceResult, runComplianceAnalysis } = useContentCompliance();
+  const { complianceResult, aiQualityResult, runComplianceAnalysis } = useContentCompliance();
   
   // State to store checklist items
   const [checklistItems, setChecklistItems] = useState<Array<{title: string, passed: boolean}>>([]);
@@ -122,6 +123,25 @@ export const useChecklistItems = () => {
         });
       }
     }
+
+    // Add AI-powered quality checks if available
+    if (aiQualityResult) {
+      const aiItems = generateAIChecklistItems(aiQualityResult);
+      
+      // Add separator for AI checks
+      items.push({
+        title: `AI Quality Analysis (Grade: ${aiQualityResult.overall.grade})`,
+        passed: aiQualityResult.overall.score >= 70
+      });
+      
+      // Add AI-generated items with proper formatting
+      aiItems.forEach(aiItem => {
+        items.push({
+          title: aiItem.label,
+          passed: aiItem.passed
+        });
+      });
+    }
     
     setChecklistItems(items);
     return items;
@@ -134,7 +154,8 @@ export const useChecklistItems = () => {
     mainKeyword, 
     keywordUsage, 
     selectedKeywords,
-    complianceResult
+    complianceResult,
+    aiQualityResult
   ]);
   
   // Function to trigger a refresh of checklist items
@@ -147,11 +168,17 @@ export const useChecklistItems = () => {
     }
 
     try {
-      toast.info('Analyzing content with AI...');
+      toast.info('Analyzing content with AI and rules...');
       // Auto-run compliance analysis when refreshing
       await runComplianceAnalysis();
       setRefreshTrigger(prev => prev + 1); // Increment to trigger a refresh
-      toast.success('Content quality checklist updated');
+      
+      // Show success message based on what completed
+      if (aiQualityResult) {
+        toast.success(`Content analysis complete! AI Grade: ${aiQualityResult.overall.grade}`);
+      } else {
+        toast.success('Content quality checklist updated (rule-based analysis)');
+      }
     } catch (error) {
       console.error('[useChecklistItems] Refresh failed:', error);
       toast.error('Failed to analyze content. Please try again.');
