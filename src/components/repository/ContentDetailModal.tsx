@@ -319,7 +319,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
           </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full" hideScrollbar>
+          <ScrollArea className="h-full">
             <div className="p-4 sm:p-6 pb-2">
               {/* Quick Controls */}
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/50">
@@ -381,11 +381,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                             transition={{ duration: 0.3 }}
                             className="space-y-3"
                           >
-                            <ScrollArea className="h-72 sm:h-80 w-full border border-border rounded-lg bg-muted/5">
+                            <div className="w-full border border-border rounded-lg bg-muted/5 max-h-80 overflow-y-auto">
                               <div className="p-3 sm:p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                                 {content.content || 'No content available'}
                               </div>
-                            </ScrollArea>
+                            </div>
                             <Button 
                               variant="ghost" 
                               size="sm" 
