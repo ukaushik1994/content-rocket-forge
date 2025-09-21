@@ -95,7 +95,7 @@ export const ProposalStatusBadge = ({ proposalId, showDetails = false, size = 's
       <Badge 
         variant="outline" 
         className={`${size === 'sm' ? 'text-xs' : 'text-sm'} ${config.className}`}
-        title={showDetails ? `In Calendar: ${statusInfo.in_calendar ? 'Yes' : 'No'} | Content Created: ${statusInfo.in_content_repository ? 'Yes' : 'No'}` : undefined}
+        title={showDetails ? `In Calendar: ${statusInfo.inCalendar ? 'Yes' : 'No'} | Content Created: ${statusInfo.inContentRepository ? 'Yes' : 'No'}` : undefined}
       >
         <Icon className={`${size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} mr-1`} />
         {config.label}
@@ -103,12 +103,12 @@ export const ProposalStatusBadge = ({ proposalId, showDetails = false, size = 's
       
       {showDetails && (
         <>
-          {statusInfo.in_calendar && (
+          {statusInfo.inCalendar && (
             <Badge variant="outline" className="text-xs text-purple-400 bg-purple-500/10 border-purple-400/30">
               📅 In Calendar
             </Badge>
           )}
-          {statusInfo.in_content_repository && (
+          {statusInfo.inContentRepository && (
             <Badge variant="outline" className="text-xs text-green-400 bg-green-500/10 border-green-400/30">
               📝 Content Created
             </Badge>

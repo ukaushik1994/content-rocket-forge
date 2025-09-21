@@ -5,12 +5,14 @@ export type ProposalStatus = 'available' | 'scheduled' | 'in_progress' | 'comple
 
 export interface ProposalStatusInfo {
   status: ProposalStatus;
-  scheduled_at?: string;
-  completed_at?: string;
-  in_calendar: boolean;
-  in_content_repository: boolean;
-  calendar_item_id?: string;
-  content_item_id?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  scheduledAt?: string;
+  completedAt?: string;
+  archivedAt?: string;
+  inCalendar: boolean;
+  inContentRepository: boolean;
+  notes?: string;
 }
 
 class ProposalStatusService {
@@ -48,12 +50,14 @@ class ProposalStatusService {
 
       return {
         status: proposal.status as ProposalStatus,
-        scheduled_at: proposal.scheduled_at,
-        completed_at: proposal.completed_at,
-        in_calendar: !!calendarItem,
-        in_content_repository: !!contentItem,
-        calendar_item_id: calendarItem?.id,
-        content_item_id: contentItem?.id
+        scheduledAt: proposal.scheduled_at,
+        completedAt: proposal.completed_at,
+        inCalendar: !!calendarItem,
+        inContentRepository: !!contentItem,
+        createdAt: null,
+        updatedAt: null,
+        archivedAt: null,
+        notes: null
       };
     } catch (error) {
       console.error('Error getting proposal status:', error);
@@ -70,7 +74,7 @@ class ProposalStatusService {
       // Get all proposal data
       const { data: proposals, error } = await supabase
         .from('ai_strategy_proposals')
-        .select('id, status, scheduled_at, completed_at')
+        .select('id, status, scheduled_at, completed_at, created_at, updated_at')
         .in('id', proposalIds)
         .eq('user_id', user.id);
 
@@ -98,14 +102,17 @@ class ProposalStatusService {
           item.metadata && JSON.stringify(item.metadata).includes(`"proposal_id":"${proposal.id}"`)
         );
 
+        // Use the database status which is now updated by triggers
         statusMap[proposal.id] = {
           status: proposal.status as ProposalStatus,
-          scheduled_at: proposal.scheduled_at,
-          completed_at: proposal.completed_at,
-          in_calendar: !!calendarItem,
-          in_content_repository: !!contentItem,
-          calendar_item_id: calendarItem?.id,
-          content_item_id: contentItem?.id
+          createdAt: proposal.created_at,
+          updatedAt: proposal.updated_at,
+          scheduledAt: proposal.scheduled_at,
+          completedAt: proposal.completed_at,
+          archivedAt: null,
+          inCalendar: !!calendarItem,
+          inContentRepository: !!contentItem,
+          notes: null
         };
       }
 

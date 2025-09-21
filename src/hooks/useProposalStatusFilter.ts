@@ -65,22 +65,36 @@ export const useProposalStatusFilter = (proposals: any[]) => {
   }, [proposals]);
 
   // Filter proposals based on selected statuses
-  const filteredProposals = useMemo(() => {
+  const filteredProposals = useMemo(async () => {
     if (selectedStatuses.length === 0) {
       return proposals;
     }
 
-    return proposals.filter((proposal) => {
-      // If proposal has no ID, treat as available
-      if (!proposal.id) {
-        return selectedStatuses.includes('available');
-      }
+    // Get real status for each proposal
+    const proposalIds = proposals
+      .map(p => p.id)
+      .filter(Boolean);
+    
+    if (proposalIds.length === 0) {
+      return proposals.filter(() => selectedStatuses.includes('available'));
+    }
 
-      // This is a simplified check - in a real implementation,
-      // you'd want to batch check all statuses for performance
-      const status = 'available'; // Default status for proposals without explicit status
-      return selectedStatuses.includes(status);
-    });
+    try {
+      const statusInfo = await proposalStatusService.getBulkProposalStatus(proposalIds);
+      
+      return proposals.filter((proposal) => {
+        if (!proposal.id) {
+          return selectedStatuses.includes('available');
+        }
+        
+        const proposalStatus = statusInfo[proposal.id];
+        const status = proposalStatus?.status || 'available';
+        return selectedStatuses.includes(status);
+      });
+    } catch (error) {
+      console.error('Error filtering proposals:', error);
+      return proposals;
+    }
   }, [proposals, selectedStatuses]);
 
   const handleStatusToggle = (status: ProposalStatus) => {

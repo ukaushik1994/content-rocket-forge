@@ -16,7 +16,7 @@ import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationMod
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
 import { ProposalStatusFilter } from './ProposalStatusFilter';
-import { useProposalStatusFilter } from '@/hooks/useProposalStatusFilter';
+import { useProposalStatusFilterFixed } from '@/hooks/useProposalStatusFilterFixed';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
 
@@ -63,7 +63,7 @@ export const ContentStrategyEngine = ({
     filteredProposals: statusFilteredProposals,
     handleStatusToggle,
     clearFilters
-  } = useProposalStatusFilter(allProposals);
+  } = useProposalStatusFilterFixed(allProposals);
   const [loading, setLoading] = useState(false);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
   const [generating, setGenerating] = useState(false);

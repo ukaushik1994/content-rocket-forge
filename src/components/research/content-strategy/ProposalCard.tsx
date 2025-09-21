@@ -61,8 +61,14 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
     }
 
     try {
+      // CRITICAL: Use actual proposal ID, not fake one
+      if (!proposal.id) {
+        toast.error('Cannot schedule proposal without valid ID');
+        return;
+      }
+
       const proposalData = {
-        proposal_id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
+        proposal_id: proposal.id, // Use real proposal ID
         title: proposal.title,
         description: proposal.description,
         primary_keyword: proposal.primary_keyword,
