@@ -86,10 +86,6 @@ const Navbar = () => {
                 <span className="text-xs text-muted-foreground">{userEmail}</span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/profile')}>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/solutions')}>
                 <Puzzle className="mr-2 h-4 w-4" />
                 <span>Solutions</span>
