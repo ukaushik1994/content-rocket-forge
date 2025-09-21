@@ -9,42 +9,41 @@ import { useContent } from '@/contexts/content';
 import { useApproval } from '../context/ApprovalContext';
 import { toast } from 'sonner';
 import { useSmartApprovalRecommendation } from '@/hooks/approval/useSmartApprovalRecommendation';
-
 interface ReviewEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
   content: ContentItemType | null;
 }
-
 export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
   isOpen,
   onClose,
-  content,
+  content
 }) => {
   const [editedTitle, setEditedTitle] = useState(content?.title || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
-  const { 
+  const {
     updateContentItem,
     approveContent,
     rejectContent,
     requestChanges,
     submitForReview
   } = useContent();
-  const { improveContentWithAI, isImproving } = useApproval();
-
+  const {
+    improveContentWithAI,
+    isImproving
+  } = useApproval();
   const mainKeyword = (content?.metadata?.mainKeyword || content?.keywords?.[0] || '').toString().trim();
-  
-  const { recommendation } = useSmartApprovalRecommendation({
+  const {
+    recommendation
+  } = useSmartApprovalRecommendation({
     content,
     editedContent: content?.content || '',
     editedTitle,
     mainKeyword,
-    notes: approvalNotes,
+    notes: approvalNotes
   });
-
   if (!content) return null;
-
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
@@ -59,7 +58,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       setIsSubmitting(false);
     }
   };
-
   const handleImprove = async () => {
     try {
       const improvedContent = await improveContentWithAI(content);
@@ -71,7 +69,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       console.error(error);
     }
   };
-
   const handleApprove = async () => {
     if (!content) return;
     setIsSubmitting(true);
@@ -85,7 +82,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       setIsSubmitting(false);
     }
   };
-
   const handleReject = async () => {
     if (!content || !approvalNotes.trim()) {
       toast.error('Please provide a reason for rejection');
@@ -102,7 +98,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       setIsSubmitting(false);
     }
   };
-
   const handleRequestChanges = async () => {
     if (!content || !approvalNotes.trim()) {
       toast.error('Please provide specific change requests');
@@ -119,7 +114,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       setIsSubmitting(false);
     }
   };
-
   const handleSubmitForReview = async () => {
     if (!content) return;
     setIsSubmitting(true);
@@ -133,62 +127,26 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       setIsSubmitting(false);
     }
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+  return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 border-none overflow-hidden rounded-lg">
         <div className="h-full bg-background flex">
           
           {/* Minimal Header */}
           <div className="flex-1 flex flex-col">
-            <div className="flex-shrink-0 border-b border-border bg-card/50 p-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Review & Edit</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onClose}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            
 
             {/* Content Editor - 70% width */}
             <div className="flex-1 overflow-y-auto">
-              <ContentApprovalEditor 
-                content={content} 
-                hideToolsToggle={true}
-                defaultShowSidebar={false}
-              />
+              <ContentApprovalEditor content={content} hideToolsToggle={true} defaultShowSidebar={false} />
             </div>
           </div>
 
           {/* Compact Editing Sidebar - 30% width */}
-          <CompactEditingSidebar
-            content={content}
-            editedTitle={editedTitle}
-            onTitleChange={setEditedTitle}
-            onSave={handleSave}
-            onImprove={handleImprove}
-            isSubmitting={isSubmitting}
-            isImproving={isImproving}
-              recommendation={recommendation}
-              approvalNotes={approvalNotes}
-              setApprovalNotes={setApprovalNotes}
-              onApprove={handleApprove}
-              onRequestChanges={handleRequestChanges}
-              onReject={handleReject}
-              onSubmitForReview={handleSubmitForReview}
-              onTitleSelect={(title: string) => setEditedTitle(title)}
-              onSectionRegenerated={(updatedContent: string) => {
-                // Update content logic would go here
-                console.log('Section regenerated:', updatedContent);
-              }}
-            />
+          <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
+          // Update content logic would go here
+          console.log('Section regenerated:', updatedContent);
+        }} />
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
