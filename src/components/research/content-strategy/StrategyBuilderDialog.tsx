@@ -15,7 +15,7 @@ import { ConfirmationDialog } from './dialog/ConfirmationDialog';
 import { ContentBuilderProvider, useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { EnhancedSolution } from '@/contexts/content-builder/types';
 import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
-import { SaveStep } from '@/components/content-builder/steps/save/SaveStep';
+import { StrategyContextInitializer } from './dialog/StrategyContextInitializer';
 
 interface StrategyBuilderDialogProps {
   open: boolean;
@@ -31,61 +31,6 @@ const STEPS = [
   { id: 4, title: 'Save Content', icon: Save, description: 'Save to repository' }
 ];
 
-// Content initialization component to set up context
-function StrategyContentInit({ proposal }: { proposal: any }) {
-  const { 
-    setMainKeyword, 
-    setContentTitle, 
-    setMetaTitle, 
-    setMetaDescription,
-    setContentType,
-    setContentFormat,
-    setContentIntent,
-    analyzeKeyword,
-    state
-  } = useContentBuilder();
-  
-  // Immediate initialization without delays to prevent race conditions
-  useEffect(() => {
-    if (!proposal) return;
-    
-    const initializeStrategy = async () => {
-      try {
-        console.log('[StrategyInit] Initializing with proposal:', proposal);
-        
-        // Initialize content builder context with strategy data IMMEDIATELY
-        if (proposal.primary_keyword) {
-          console.log('[StrategyInit] Setting mainKeyword:', proposal.primary_keyword);
-          setMainKeyword(proposal.primary_keyword);
-        }
-        
-        if (proposal.title) {
-          setContentTitle(proposal.title);
-          setMetaTitle(proposal.title);
-        }
-        
-        // Set default content settings optimized for strategy content
-        setContentType('blog');
-        setContentFormat('long-form');
-        setContentIntent('inform');
-        
-        // Set enhanced meta description with strategy context
-        const description = proposal.description || 
-          `A comprehensive guide about ${proposal.primary_keyword || 'your topic'}. ` +
-          `Discover strategies, insights, and solutions to help you succeed.`;
-        setMetaDescription(description);
-        
-      } catch (error) {
-        console.error('[StrategyInit] Failed to initialize strategy:', error);
-        // Don't throw - allow dialog to continue with partial initialization
-      }
-    };
-    
-    initializeStrategy();
-  }, [proposal, setMainKeyword, setContentTitle, setMetaTitle, setMetaDescription, setContentType, setContentFormat, setContentIntent]);
-  
-  return null;
-}
 
 export function StrategyBuilderDialog({ open, onOpenChange, proposal }: StrategyBuilderDialogProps) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -118,15 +63,35 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
       mainKeyword: !!state.mainKeyword,
       outlineLength: state.outline.length,
       serpSelectionsLength: state.serpSelections.length,
-      hasContent: !!state.content
+      hasContent: !!state.content,
+      proposalData: {
+        hasProposal: !!proposal,
+        primaryKeyword: proposal?.primary_keyword,
+        title: proposal?.title
+      }
     });
     
     switch (step) {
       case 0: return true; // Always can access solution selection
       case 1: return !!state.selectedSolution || !!proposal; // Need solution selected OR have proposal for SERP analysis  
-      case 2: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword); // Need solution/proposal and keyword for outline generation
-      case 3: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (state.outline.length > 0 || state.serpSelections.length > 0); // Need solution/proposal, keyword and some content structure
-      case 4: return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (!!state.content || state.outline.length > 0); // Need solution/proposal, keyword and generated content or outline
+      case 2: 
+        // For outline generation: need solution/proposal AND keyword (from state or proposal)
+        const hasRequiredSolution = !!state.selectedSolution || !!proposal;
+        const hasRequiredKeyword = !!state.mainKeyword || !!proposal?.primary_keyword;
+        console.log('Step 2 validation:', { hasRequiredSolution, hasRequiredKeyword });
+        return hasRequiredSolution && hasRequiredKeyword;
+      case 3: 
+        // For content generation: need outline OR serp selections
+        const hasContentStructure = state.outline.length > 0 || state.serpSelections.length > 0;
+        const baseRequirements = (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword);
+        console.log('Step 3 validation:', { baseRequirements, hasContentStructure });
+        return baseRequirements && hasContentStructure;
+      case 4: 
+        // For saving: need generated content OR at least an outline
+        const hasSaveableContent = !!state.content || state.outline.length > 0;
+        const saveBaseRequirements = (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword);
+        console.log('Step 4 validation:', { saveBaseRequirements, hasSaveableContent });
+        return saveBaseRequirements && hasSaveableContent;
       default: return false;
     }
   };
@@ -137,9 +102,18 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     
     switch (step) {
       case 1: return hasSolution ? 'Ready for SERP analysis' : 'Please select a solution first';
-      case 2: return hasKeyword ? 'Ready to generate outline' : hasSolution ? 'Primary keyword will be set automatically' : 'Select a solution first';
-      case 3: return (state.outline.length > 0 || state.serpSelections.length > 0) ? 'Ready to generate content' : 'Complete outline generation first';
-      case 4: return (state.content || state.outline.length > 0) ? 'Ready to save content' : 'Generate content first';
+      case 2: 
+        if (!hasSolution) return 'Select a solution first';
+        if (!hasKeyword) return 'Primary keyword will be set from proposal automatically';
+        return 'Ready to generate outline';
+      case 3: 
+        const hasContentStructure = state.outline.length > 0 || state.serpSelections.length > 0;
+        if (!hasSolution || !hasKeyword) return 'Complete previous steps first';
+        return hasContentStructure ? 'Ready to generate content' : 'Complete outline generation or SERP analysis first';
+      case 4: 
+        const hasSaveableContent = !!state.content || state.outline.length > 0;
+        if (!hasSolution || !hasKeyword) return 'Complete setup steps first';
+        return hasSaveableContent ? 'Ready to save content' : 'Generate content first';
       default: return 'Step available';
     }
   };
@@ -182,7 +156,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-7xl h-[90vh] flex flex-col bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-border/50 sm:max-w-[95vw] lg:max-w-6xl xl:max-w-7xl">
         <ContentBuilderProvider>
-          <StrategyContentInit proposal={proposal} />
+          <StrategyContextInitializer proposal={proposal}>
           
           {/* Interactive Background Effects */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -331,72 +305,73 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                         handleClose={handleClose}
                       />
                     </StepValidationWrapper>
-                  </LoadingStateWrapper>
-                </div>
-              </div>
-            </motion.div>
+                      </LoadingStateWrapper>
+                    </div>
+                  </div>
+                </motion.div>
 
-            {/* Enhanced Navigation Footer */}
-            <motion.div 
-              className="flex-shrink-0 flex justify-between items-center pt-6 mt-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2 }}
-            >
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={currentStep === 0}
-                  className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+                {/* Enhanced Navigation Footer */}
+                <motion.div 
+                  className="flex-shrink-0 flex justify-between items-center pt-6 mt-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.2 }}
                 >
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
-              </motion.div>
-
-              <div className="flex gap-3">
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button 
-                    variant="outline" 
-                    onClick={handleClose}
-                    className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    Cancel
-                  </Button>
-                </motion.div>
-                
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {currentStep < STEPS.length - 1 ? (
-                    <Button 
-                      onClick={handleNext}
-                      className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 shadow-lg"
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevious}
+                      disabled={currentStep === 0}
+                      className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
                     >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-2" />
+                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      Previous
                     </Button>
-                  ) : (
-                    <Button 
-                      onClick={handleClose}
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-500/90 hover:to-emerald-500/90 shadow-lg"
+                  </motion.div>
+
+                  <div className="flex gap-3">
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      Complete
-                    </Button>
-                  )}
+                      <Button 
+                        variant="outline" 
+                        onClick={handleClose}
+                        className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
+                      >
+                        Cancel
+                      </Button>
+                    </motion.div>
+                    
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {currentStep < STEPS.length - 1 ? (
+                        <Button 
+                          onClick={handleNext}
+                          className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 shadow-lg"
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={handleClose}
+                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-500/90 hover:to-emerald-500/90 shadow-lg"
+                        >
+                          Complete
+                        </Button>
+                      )}
+                    </motion.div>
+                  </div>
                 </motion.div>
               </div>
-            </motion.div>
-          </div>
-        </ContentBuilderProvider>
+            </StrategyContextInitializer>
+          </ContentBuilderProvider>
       </DialogContent>
       
       {/* Exit Confirmation Dialog */}

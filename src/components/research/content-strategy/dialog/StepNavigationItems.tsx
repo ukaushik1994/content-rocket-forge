@@ -22,10 +22,16 @@ export function StepNavigationItems({ currentStep, onStepClick, steps }: StepNav
   const canProceedToStep = (step: number): boolean => {
     switch (step) {
       case 0: return true; // Always can access solution selection
-      case 1: return !!state.selectedSolution; // Need solution selected
-      case 2: return !!state.selectedSolution && state.serpSelections.some(item => item.selected); // Need solution and SERP selections
-      case 3: return !!state.selectedSolution && state.outline.length > 0; // Need solution and outline
-      case 4: return !!state.selectedSolution && !!state.content && state.content.length > 100; // Need everything
+      case 1: return !!state.selectedSolution; // Need solution selected OR have proposal 
+      case 2: 
+        // For outline generation: need solution AND keyword (mainKeyword should be set from proposal or manual selection)
+        return !!state.selectedSolution && !!state.mainKeyword;
+      case 3: 
+        // For content generation: need outline OR serp selections
+        return !!state.selectedSolution && !!state.mainKeyword && (state.outline.length > 0 || state.serpSelections.length > 0);
+      case 4: 
+        // For saving: need generated content OR at least an outline
+        return !!state.selectedSolution && !!state.mainKeyword && (!!state.content || state.outline.length > 0);
       default: return false;
     }
   };

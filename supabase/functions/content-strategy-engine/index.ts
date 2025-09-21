@@ -943,7 +943,7 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
           messages: [
             {
               role: 'system',
-              content: `You are a content strategist. Generate 5-8 strategic content proposals based on keyword research and SERP data. Return ONLY a JSON object with this structure: {"proposals": [{"title": "proposal title", "description": "brief description", "keywords": ["keyword1", "keyword2"], "content_type": "blog|article|guide|case_study", "priority": "high|medium|low", "estimated_effort": "1-2 weeks|2-4 weeks|1+ months"}]}`
+              content: `You are a content strategist. Generate exactly 6 strategic content proposals based on keyword research and SERP data. Return ONLY a JSON object with this structure: {"proposals": [{"title": "proposal title", "description": "brief description", "keywords": ["keyword1", "keyword2"], "content_type": "blog|article|guide|case_study", "priority": "high|medium|low", "estimated_effort": "1-2 weeks|2-4 weeks|1+ months"}]}`
             },
             {
               role: 'user',
@@ -953,7 +953,7 @@ Company Context: ${JSON.stringify(companyInfo || {})}
 Solutions: ${JSON.stringify((solutions || []).map(s => s.title || s.name).slice(0, 10))}
 Keyword Data: ${JSON.stringify(enriched.slice(0, 8))}
 
-Create 5-8 strategic content proposals that leverage these keywords and align with the company's solutions. Return ONLY the JSON object.`
+Create exactly 6 strategic content proposals that leverage these keywords and align with the company's solutions. Focus on delivering the most valuable opportunities. Return ONLY the JSON object.`
             }
           ]
         }
@@ -999,7 +999,7 @@ Create 5-8 strategic content proposals that leverage these keywords and align wi
   let proposals: any[] = [];
   try { 
     const parsed = JSON.parse(stratText);
-    proposals = parsed.proposals || [];
+    proposals = proposals.slice(0, 6); // Ensure exactly 6 proposals
     console.log('✅ Parsed proposals successfully:', proposals.length, 'proposals');
   } catch (jsonError) { 
     console.error('❌ Failed to parse strategy JSON:', jsonError);
