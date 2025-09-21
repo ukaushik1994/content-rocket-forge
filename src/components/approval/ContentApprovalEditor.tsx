@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
-import { FileText, CheckCircle, Wand, History, ThumbsUp, AlertCircle, Search, PanelRight, Clock, CheckCircle2, AlertCircle as AlertIcon, RotateCcw } from 'lucide-react';
+import { FileText, CheckCircle, Wand, History, ThumbsUp, AlertCircle, Search, PanelRight, Clock, CheckCircle2, AlertCircle as AlertIcon, RotateCcw, X, Edit3, Globe, Zap, ChevronDown, ChevronRight } from 'lucide-react';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -15,9 +15,11 @@ import { motion } from 'framer-motion';
 import { saveApprovalSafetyCopy, getApprovalSafetyCopy, clearApprovalSafetyCopy, type SafetyCopy } from '@/services/smart-actions/safetyCopy';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
+import { CollapsibleSidebarContent } from './CollapsibleSidebarContent';
 
 import { StatusBadge } from './StatusBadge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -444,48 +446,42 @@ useEffect(() => {
           </CardFooter>
         </Card>
         
-        {/* Enhanced Sidebar with Timeline */}
-        {showSidebar && <motion.div initial={{
-        opacity: 0,
-        width: 0
-      }} animate={{
-        opacity: 1,
-        width: 'auto'
-      }} exit={{
-        opacity: 0,
-        width: 0
-      }} className="w-80 space-y-4">
-            <div className="space-y-4">
-              <TitleSidebarTile content={content} value={editedTitle} onChange={setEditedTitle} mainKeyword={mainKeyword} />
-              <ApprovalMetadata content={content} compact />
-            </div>
-
-            <Tabs defaultValue={activeSidebarTab} onValueChange={setActiveSidebarTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-2">
-                <TabsTrigger value="titles" className="text-xs">
-                  <Wand className="h-4 w-4 mr-1" />
-                  Titles
-                </TabsTrigger>
-                <TabsTrigger value="sections" className="text-xs">
-                  <Wand className="h-4 w-4 mr-1" />
-                  Sections
-                </TabsTrigger>
-              </TabsList>
-              
-              
-              
-              <TabsContent value="titles" className="mt-4">
-                <ApprovalAITitleSuggestions content={content} onSelectTitle={handleTitleSelect} />
-              </TabsContent>
-              
-              <TabsContent value="sections" className="mt-4">
-                <SectionRegenerationTool content={content} onSectionRegenerated={handleSectionRegenerated} />
-              </TabsContent>
-            </Tabs>
-          </motion.div>}
-      </div>
-      <div className="mt-6">
-        <ApprovalTimeline contentId={content.id} />
+        {/* Collapsible Right Sidebar */}
+        {showSidebar && <motion.div 
+          initial={{ opacity: 0, width: 0 }} 
+          animate={{ opacity: 1, width: 'auto' }} 
+          exit={{ opacity: 0, width: 0 }} 
+          className="w-80"
+        >
+          <Card className="border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">
+                  Content Tools
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSidebar(false)}
+                  className="h-6 w-6 p-0 text-white/60 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="p-0">
+              <CollapsibleSidebarContent
+                content={content}
+                editedTitle={editedTitle}
+                onTitleChange={setEditedTitle}
+                onTitleSelect={handleTitleSelect}
+                onSectionRegenerated={handleSectionRegenerated}
+                mainKeyword={mainKeyword}
+              />
+            </CardContent>
+          </Card>
+        </motion.div>}
       </div>
     </motion.div>;
 };
