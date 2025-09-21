@@ -160,6 +160,19 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
       const system = 'You edit only the provided text. Follow the action strictly and keep meaning. Output plain text without quotes.';
       const instructionText = userInstruction.trim() ? `\nSpecific instructions: ${userInstruction.trim()}` : '';
       const user = `Action: ${action}${instructionText}\nText:\n${selectedText}`;
+      
+      // Save user instructions for future prompt enhancement
+      if (userInstruction && userInstruction.trim()) {
+        const { saveUserInstruction } = await import('@/services/userInstructionsService');
+        await saveUserInstruction(
+          userInstruction,
+          'inline_editing',
+          undefined, // Format type not applicable for inline editing
+          undefined, // No specific content ID for inline editing
+          undefined // No session ID for inline editing
+        );
+      }
+      
       const result = await AIServiceController.generate('content_generation', system, user, { maxTokens: 400, temperature: 0.2 });
       const improved = (result && (result.content || result)) as string;
       if (improved && improved.trim()) {

@@ -520,6 +520,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_training_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          model_type: string
+          status: string
+          training_data: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model_type: string
+          status: string
+          training_data?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model_type?: string
+          status?: string
+          training_data?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_workflow_states: {
         Row: {
           conversation_id: string | null
@@ -3840,6 +3876,48 @@ export type Database = {
           source_type?: string
           trend_direction?: string | null
           usage_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_content_instructions: {
+        Row: {
+          applied_count: number
+          content_id: string | null
+          created_at: string
+          effectiveness_score: number | null
+          format_type: string | null
+          id: string
+          instruction_text: string
+          session_id: string | null
+          updated_at: string
+          use_case: string
+          user_id: string
+        }
+        Insert: {
+          applied_count?: number
+          content_id?: string | null
+          created_at?: string
+          effectiveness_score?: number | null
+          format_type?: string | null
+          id?: string
+          instruction_text: string
+          session_id?: string | null
+          updated_at?: string
+          use_case?: string
+          user_id: string
+        }
+        Update: {
+          applied_count?: number
+          content_id?: string | null
+          created_at?: string
+          effectiveness_score?: number | null
+          format_type?: string | null
+          id?: string
+          instruction_text?: string
+          session_id?: string | null
+          updated_at?: string
+          use_case?: string
           user_id?: string
         }
         Relationships: []

@@ -100,13 +100,30 @@ Requirements:
 - Include a compelling introduction and conclusion
 - Optimize for readability and SEO`;
 
-      // Use AI service to generate content
-      const response = await AIServiceController.generate({
-        input: prompt,
-        use_case: 'content_generation',
-        temperature: 0.7,
-        max_tokens: 4000
-      });
+      // Save user instructions if provided
+      if (state.additionalInstructions && state.additionalInstructions.trim()) {
+        const { saveUserInstruction } = await import('@/services/userInstructionsService');
+        await saveUserInstruction(
+          state.additionalInstructions,
+          'content_generation',
+          'blog', // Could be made configurable based on content type
+          undefined, // No specific content ID at generation time
+          crypto.randomUUID() // Generate session ID for this generation
+        );
+      }
+
+      // Use AI service with enhanced prompting system
+      const response = await AIServiceController.generate(
+        'content_generation',
+        undefined, // Let AI service generate enhanced system prompt
+        prompt,
+        {
+          formatType: 'blog',
+          userInstructions: state.additionalInstructions,
+          temperature: 0.7,
+          maxTokens: 4000
+        }
+      );
 
       if (response?.content) {
         dispatch({ type: 'SET_CONTENT', payload: response.content });

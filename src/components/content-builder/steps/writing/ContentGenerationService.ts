@@ -18,7 +18,8 @@ export const generateContent = async (
   serpSelections: SerpSelection[],
   wordCountLimit?: number,
   setIsGenerating?: (value: boolean) => void,
-  setContent?: (content: string) => void
+  setContent?: (content: string) => void,
+  formatType: string = 'blog'
 ): Promise<boolean> => {
   if (!mainKeyword) {
     toast.error("Please set a main keyword first");
@@ -45,18 +46,22 @@ export const generateContent = async (
       wordCountLimit
     });
     
-    // Use centralized AI service controller
-    console.log('🚀 Generating content with AI Service Controller');
-    const result = await AIServiceController.generate({
-      input: prompt,
-      use_case: 'content_generation',
-      temperature: 0.7,
-      max_tokens: 4000
-    });
+    // Generate content using AI service with enhanced prompting
+    const response = await AIServiceController.generate(
+      'content_generation',
+      undefined, // Let AI service generate enhanced system prompt
+      prompt,
+      {
+        formatType,
+        userInstructions: additionalInstructions,
+        temperature: 0.7,
+        maxTokens: wordCountLimit ? Math.max(wordCountLimit * 2, 2000) : 4000
+      }
+    );
     
-    if (result?.content) {
+    if (response?.content) {
       // Use the AI-generated content
-      const generatedContent = result.content;
+      const generatedContent = response.content;
       
       // If content doesn't start with the title as an H1, add it
       let finalContent = generatedContent;
