@@ -826,7 +826,15 @@ export const ContentStrategyEngine = ({
           )}
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="space-y-4">
+          {/* Status Filter */}
+          <ProposalStatusFilter
+            statusCounts={statusCounts}
+            selectedStatuses={selectedStatuses}
+            onStatusToggle={handleStatusToggle}
+            onClearFilters={clearFilters}
+          />
+          
+          <Tabs defaultValue="all" className="space-y-4 mt-4">
             <TabsList className="bg-white/10 border-white/20">
               <TabsTrigger value="all" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70">
                 All Proposals

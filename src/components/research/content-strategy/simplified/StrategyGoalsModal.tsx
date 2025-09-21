@@ -26,6 +26,9 @@ interface ValidationErrors {
 
 export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, onOpenChange }) => {
   const { user } = useAuth();
+  
+  // Use optional chaining to safely access context - fallback if provider not available
+  const contentStrategy = useContentStrategy();
   const {
     currentStrategy,
     createStrategy,
@@ -34,7 +37,7 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
     saveInsight,
     loading,
     generateGoalBasedProposals
-  } = useContentStrategy();
+  } = contentStrategy || {};
   
   const [goals, setGoals] = useState({
     monthlyTraffic: '',
@@ -112,18 +115,25 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
     
     setIsGenerating(true);
     try {
+      if (!analyzeSERP) {
+        toast.error("SERP analysis service not available");
+        return;
+      }
+      
       const data = await analyzeSERP(goals.mainKeyword);
       setSerpMetrics(data);
 
       // Save the insight to database
-      await saveInsight({
-        keyword: goals.mainKeyword,
-        search_volume: data.searchVolume,
-        keyword_difficulty: data.keywordDifficulty,
-        competition_score: data.competitionScore,
-        serp_data: data,
-        opportunity_score: Math.floor((100 - data.keywordDifficulty) * (data.searchVolume / 10000))
-      });
+      if (saveInsight) {
+        await saveInsight({
+          keyword: goals.mainKeyword,
+          search_volume: data.searchVolume,
+          keyword_difficulty: data.keywordDifficulty,
+          competition_score: data.competitionScore,
+          serp_data: data,
+          opportunity_score: Math.floor((100 - data.keywordDifficulty) * (data.searchVolume / 10000))
+        });
+      }
       toast.success("Keyword analyzed successfully!");
     } catch (error) {
       console.error('SERP analysis error:', error);
@@ -154,9 +164,9 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
         main_keyword: goals.mainKeyword || null
       };
       
-      if (currentStrategy) {
+      if (currentStrategy && updateStrategy) {
         await updateStrategy(currentStrategy.id, strategyData);
-      } else {
+      } else if (createStrategy) {
         await createStrategy(strategyData);
       }
 
