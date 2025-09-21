@@ -224,6 +224,58 @@ export class NotificationHelper {
     });
   }
 
+  // Calendar & Scheduling notifications
+  async notifyContentScheduled(contentTitle: string, scheduledDate: string, contentType: string = 'content') {
+    await pushEnhancedAlert({
+      userId: this.userId,
+      title: 'Content Scheduled',
+      message: `"${contentTitle}" has been added to your calendar for ${scheduledDate}`,
+      module: 'research_analysis',
+      priority: 'medium',
+      notificationType: 'success',
+      actionButtons: [
+        {
+          id: 'view_calendar',
+          label: 'View Calendar',
+          action: 'navigate',
+          variant: 'primary',
+          url: '/research/calendar'
+        }
+      ],
+      previewData: { contentTitle, scheduledDate, contentType },
+      expiresIn: 168 // 7 days
+    });
+  }
+
+  async notifyBulkContentScheduled(itemCount: number, startDate: string, endDate: string) {
+    await pushEnhancedAlert({
+      userId: this.userId,
+      title: 'Content Schedule Updated',
+      message: `${itemCount} content pieces have been scheduled from ${startDate} to ${endDate}`,
+      module: 'research_analysis',
+      priority: 'high',
+      notificationType: 'achievement',
+      actionButtons: [
+        {
+          id: 'view_calendar',
+          label: 'View Schedule',
+          action: 'navigate',
+          variant: 'primary',
+          url: '/research/calendar'
+        },
+        {
+          id: 'view_strategy',
+          label: 'Back to Strategy',
+          action: 'navigate',
+          variant: 'secondary',
+          url: '/research/content-strategy'
+        }
+      ],
+      previewData: { itemCount, startDate, endDate },
+      expiresIn: 168 // 7 days
+    });
+  }
+
   // Collaboration notifications
   async notifyMentioned(mentionedBy: string, contentTitle: string, contentId: string) {
     await pushEnhancedAlert({

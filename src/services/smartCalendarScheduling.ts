@@ -276,8 +276,21 @@ class SmartCalendarSchedulingService {
 
       console.log('🎉 Auto-scheduling completed:', result);
 
-      // Show user feedback
+      // Send bulk scheduling notification
       if (scheduledCount > 0) {
+        try {
+          const { createNotificationHelper } = await import('@/utils/notificationHelpers');
+          const notificationHelper = createNotificationHelper(user.id);
+          
+          const firstDate = format(optimalSchedule[0]?.scheduledDate || new Date(), 'MMM dd');
+          const lastDate = format(optimalSchedule[optimalSchedule.length - 1]?.scheduledDate || new Date(), 'MMM dd');
+          
+          await notificationHelper.notifyBulkContentScheduled(scheduledCount, firstDate, lastDate);
+        } catch (notificationError) {
+          console.error('Failed to send bulk scheduling notification:', notificationError);
+        }
+
+        // Show user feedback
         toast.success(`Auto-scheduled ${scheduledCount} content pieces to calendar`, {
           description: errorCount > 0 ? `${errorCount} items failed to schedule` : 'All items scheduled successfully'
         });

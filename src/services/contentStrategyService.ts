@@ -263,6 +263,24 @@ class ContentStrategyService {
       .single();
     
     if (error) throw error;
+
+    // Send notification for single calendar item creation
+    if (item.user_id) {
+      try {
+        const { createNotificationHelper } = await import('@/utils/notificationHelpers');
+        const notificationHelper = createNotificationHelper(item.user_id);
+        
+        const scheduledDate = new Date(item.scheduled_date!).toLocaleDateString();
+        await notificationHelper.notifyContentScheduled(
+          item.title!,
+          scheduledDate,
+          item.content_type || 'content'
+        );
+      } catch (notificationError) {
+        console.error('Failed to send calendar notification:', notificationError);
+      }
+    }
+
     return {
       ...data,
       tags: jsonToStringArray(data.tags)
