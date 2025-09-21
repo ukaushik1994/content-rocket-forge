@@ -49,14 +49,26 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   const titleIncludesKeyword = mainKeyword && editedTitle.toLowerCase().includes(mainKeyword.toLowerCase());
 
   return (
-    <div className="w-full md:w-2/5 lg:w-80 bg-card border-l border-border h-full flex flex-col">
+    <div className="w-full md:w-2/5 lg:w-80 bg-card/20 backdrop-blur-md border-l border-white/10 h-full flex flex-col">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Title Display Summary */}
         <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-white/10">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Content Overview</h3>
-            <StatusBadge status={content.approval_status} showIcon={true} />
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={onSave}
+                disabled={isSubmitting}
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/80"
+                title={isSubmitting ? 'Saving...' : 'Save Draft'}
+              >
+                <History className="h-3 w-3" />
+              </Button>
+              <StatusBadge status={content.approval_status} showIcon={true} />
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -139,46 +151,21 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
           mainKeyword={(content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim()}
         />
 
-        {/* Action Buttons */}
-        <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg border border-white/10">
-          <Button 
-            onClick={onSave}
-            disabled={isSubmitting}
-            variant="outline"
-            className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white/80"
-            size="sm"
-          >
-            <History className="h-4 w-4 mr-2" />
-            {isSubmitting ? 'Saving...' : 'Save Draft'}
-          </Button>
-          
-          <Button 
-            onClick={onImprove}
-            disabled={isImproving}
-            variant="outline"
-            className="w-full"
-            size="sm"
-          >
-            <Wand className="h-4 w-4 mr-2" />
-            {isImproving ? 'Improving...' : 'Improve'}
-          </Button>
-
-          {/* Smart Action Bar */}
-          {onApprove && onRequestChanges && onReject && onSubmitForReview && (
-            <div className="pt-2 border-t border-white/10">
-              <SmartActionBar
-                context={{ approvalStatus: content.approval_status, contentId: content.id }}
-                disabled={isSubmitting}
-                hasNotes={Boolean(approvalNotes?.trim())}
-                recommendation={recommendation}
-                onApprove={onApprove}
-                onRequestChanges={onRequestChanges}
-                onReject={onReject}
-                onSubmitForReview={onSubmitForReview}
-              />
-            </div>
-          )}
-        </div>
+        {/* Smart Action Bar */}
+        {onApprove && onRequestChanges && onReject && onSubmitForReview && (
+          <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/20 to-gray-900/20 rounded-lg border border-white/10">
+            <SmartActionBar
+              context={{ approvalStatus: content.approval_status, contentId: content.id }}
+              disabled={isSubmitting}
+              hasNotes={Boolean(approvalNotes?.trim())}
+              recommendation={recommendation}
+              onApprove={onApprove}
+              onRequestChanges={onRequestChanges}
+              onReject={onReject}
+              onSubmitForReview={onSubmitForReview}
+            />
+          </div>
+        )}
 
       </div>
     </div>
