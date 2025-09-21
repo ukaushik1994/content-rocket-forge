@@ -136,7 +136,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[85vw] h-[95vh] max-w-[85vw] max-h-[95vh] p-0 border-none overflow-hidden rounded-lg">
+      <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 border-none overflow-hidden rounded-lg">
         <div className="h-full bg-background flex">
           
           {/* Minimal Header */}
@@ -156,7 +156,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             </div>
 
             {/* Content Editor - 70% width */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 overflow-y-auto">
               <ContentApprovalEditor 
                 content={content} 
                 hideToolsToggle={true}
