@@ -19,7 +19,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
-import { FloatingToolsPanel } from './FloatingToolsPanel';
 
 import { StatusBadge } from './StatusBadge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -394,16 +393,6 @@ useEffect(() => {
             </div>
           </CardFooter>
         </Card>
-        
-        {/* Floating Tools Panel */}
-        <FloatingToolsPanel
-          content={content}
-          editedTitle={editedTitle}
-          onTitleChange={(e) => setEditedTitle(e.target.value)}
-          onTitleSelect={handleTitleSelect}
-          onSectionRegenerated={handleSectionRegenerated}
-          mainKeyword={mainKeyword}
-        />
       </motion.div>
     );
   };

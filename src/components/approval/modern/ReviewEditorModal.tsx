@@ -174,13 +174,18 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             onImprove={handleImprove}
             isSubmitting={isSubmitting}
             isImproving={isImproving}
-            recommendation={recommendation}
-            approvalNotes={approvalNotes}
-            onApprove={handleApprove}
-            onRequestChanges={handleRequestChanges}
-            onReject={handleReject}
-            onSubmitForReview={handleSubmitForReview}
-          />
+              recommendation={recommendation}
+              approvalNotes={approvalNotes}
+              onApprove={handleApprove}
+              onRequestChanges={handleRequestChanges}
+              onReject={handleReject}
+              onSubmitForReview={handleSubmitForReview}
+              onTitleSelect={(title: string) => setEditedTitle(title)}
+              onSectionRegenerated={(updatedContent: string) => {
+                // Update content logic would go here
+                console.log('Section regenerated:', updatedContent);
+              }}
+            />
         </div>
       </DialogContent>
     </Dialog>

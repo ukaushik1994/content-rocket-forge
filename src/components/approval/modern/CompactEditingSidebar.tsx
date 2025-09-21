@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Save, Wand, CheckCircle2, AlertCircle, History } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
+import { SidebarToolsGrid } from './SidebarToolsGrid';
 
 interface CompactEditingSidebarProps {
   content: ContentItemType;
@@ -22,6 +23,9 @@ interface CompactEditingSidebarProps {
   onRequestChanges?: () => void;
   onReject?: () => void;
   onSubmitForReview?: () => void;
+  // Tools grid props
+  onTitleSelect: (title: string) => void;
+  onSectionRegenerated: (updatedContent: string) => void;
 }
 
 export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
@@ -37,7 +41,9 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   onApprove,
   onRequestChanges,
   onReject,
-  onSubmitForReview
+  onSubmitForReview,
+  onTitleSelect,
+  onSectionRegenerated
 }) => {
   const mainKeyword = (content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim();
   const titleIncludesKeyword = mainKeyword && editedTitle.toLowerCase().includes(mainKeyword.toLowerCase());
@@ -122,6 +128,16 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Content Tools Grid */}
+        <SidebarToolsGrid
+          content={content}
+          editedTitle={editedTitle}
+          onTitleChange={(e) => onTitleChange(e.target.value)}
+          onTitleSelect={onTitleSelect}
+          onSectionRegenerated={onSectionRegenerated}
+          mainKeyword={(content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim()}
+        />
 
       </div>
 
