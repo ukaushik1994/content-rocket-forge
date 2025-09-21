@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Wand2, Sparkles, MoveHorizontal, FileText, RotateCcw, Loader2 } from 'lucide-react';
+import { Type, Minimize2, Maximize2, CheckSquare, RotateCcw, Loader2 } from 'lucide-react';
 import AIServiceController from '@/services/aiService/AIServiceController';
 
 interface InlineAiEditorProps {
@@ -201,7 +201,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
       {selection && toolbarPos && (
         <div
           ref={toolbarRef}
-          className="absolute z-10 flex flex-wrap items-center gap-1 bg-white/30 border border-white/20 rounded-md px-2 py-1 backdrop-blur-sm max-w-[92vw] shadow-lg animate-enter"
+          className="absolute z-10 flex flex-wrap items-center gap-1 glass-card rounded-lg px-2 py-1 max-w-[92vw] shadow-xl ring-1 ring-white/10 animate-enter"
           style={{
             left: toolbarPos.left,
             top: toolbarPos.top,
@@ -220,16 +220,16 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
             disabled={isProcessing || disabled}
           />
           <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('rephrase')} aria-label="Rephrase text">
-            <Sparkles className="h-3 w-3 text-neon-purple" />
+            <Type className="h-3 w-3 text-primary" />
           </Button>
           <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('shorten')} aria-label="Shorten text">
-            <MoveHorizontal className="h-3 w-3" />
+            <Minimize2 className="h-3 w-3" />
           </Button>
           <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('expand')} aria-label="Expand text">
-            <Wand2 className="h-3 w-3" />
+            <Maximize2 className="h-3 w-3" />
           </Button>
           <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('fix')} aria-label="Fix text">
-            <FileText className="h-3 w-3" />
+            <CheckSquare className="h-3 w-3" />
           </Button>
           <Button size="sm" variant="ghost" disabled={!lastEdit || isProcessing || disabled} onClick={revertLastEdit} aria-label="Revert last change">
             <RotateCcw className="h-3 w-3" />
