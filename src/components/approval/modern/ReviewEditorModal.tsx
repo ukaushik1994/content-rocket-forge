@@ -252,7 +252,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
                   exit={{ x: "100%", opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
-                  <div className="w-80 h-full bg-background/95 backdrop-blur-sm border-l border-border/50 shadow-2xl overflow-y-auto">
+                  <div className="w-64 h-full bg-background/95 backdrop-blur-sm border-l border-border/50 shadow-2xl overflow-y-auto">
                     <CollapsibleSidebarContent
                       content={content}
                       editedTitle={editedTitle}
