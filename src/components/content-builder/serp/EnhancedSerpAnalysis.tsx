@@ -197,10 +197,9 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
             volume_api: false,
             serp_api: false
           },
-          related_keywords: (serpDataEntry.keywords || []).map((kw, index) => ({
-            title: typeof kw === 'string' ? kw : kw.keyword || kw.title,
-            volume: typeof kw === 'object' ? kw.volume : undefined
-          })),
+          related_keywords: (serpDataEntry.keywords || []).map((kw, index) => 
+            typeof kw === 'string' ? kw : kw.keyword || kw.title || ''
+          ).filter(Boolean),
           dataQuality: 'proposal',
           recommendations: serpDataEntry.recommendations || [`Leverage the identified entities and topics for comprehensive coverage of "${targetKeyword}"`],
           isMockData: serpDataEntry.isMockData !== false
