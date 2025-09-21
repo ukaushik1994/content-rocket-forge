@@ -336,7 +336,7 @@ class AIServiceController {
     useCaseOrRequest: string | AIGenerateRequest,
     systemPrompt?: string,
     userPrompt?: string,
-    options?: { temperature?: number; maxTokens?: number }
+    options?: { temperature?: number; maxTokens?: number; formatType?: string; userInstructions?: string }
   ): Promise<any> {
     // Handle both old and new signatures
     let request: AIGenerateRequest;
@@ -375,7 +375,7 @@ class AIServiceController {
       try {
         console.log(`🎯 Attempting to use ${provider.provider} for ${request.use_case}`);
         
-        const result = await this.callProvider(provider, request, systemPrompt);
+        const result = await this.callProvider(provider, request, systemPrompt, options?.formatType, options?.userInstructions);
         
         if (result && result.content) {
           console.log(`✅ Successfully generated content using ${provider.provider}`);
@@ -410,9 +410,19 @@ class AIServiceController {
   /**
    * Call a specific provider using the unified enhanced-ai-chat function
    */
-  private async callProvider(provider: AIProvider, request: AIGenerateRequest, customSystemPrompt?: string): Promise<any> {
+  private async callProvider(
+    provider: AIProvider, 
+    request: AIGenerateRequest, 
+    customSystemPrompt?: string,
+    formatType?: string,
+    userInstructions?: string
+  ): Promise<any> {
     try {
-      const systemPrompt = customSystemPrompt || this.getSystemPrompt(request.use_case);
+      const systemPrompt = customSystemPrompt || await this.getEnhancedSystemPrompt(
+        request.use_case, 
+        userInstructions, 
+        formatType
+      );
       
       // Get decrypted API keys from new unified service
       const { getApiKey } = await import('@/services/apiKeys/crud');
@@ -523,7 +533,97 @@ class AIServiceController {
   }
 
   /**
-   * Get system prompt for specific use case
+   * Get enhanced system prompt combining hardcoded base + template-based prompts + user instructions
+   */
+  private async getEnhancedSystemPrompt(
+    useCase: string, 
+    userInstructions?: string,
+    formatType?: string
+  ): Promise<string> {
+    // Base hardcoded prompts - essential AI identity and behavior
+    const basePrompts = {
+      title_generation: "You are an expert content creator. Generate compelling, SEO-friendly titles that capture attention and accurately represent the content topic.",
+      outline_generation: "You are an expert content strategist. Create detailed, well-structured outlines that provide a clear framework for comprehensive content creation.",
+      content_generation: "You are an expert content writer. Create high-quality, engaging, and informative content that provides value to readers and follows SEO best practices.",
+      repurpose: "You are an expert content repurposing specialist. Transform the given content into the requested format while maintaining key information and adapting the tone appropriately.",
+      chat: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user queries.",
+      strategy: "You are an expert content strategist. Analyze the given information and provide strategic recommendations for content creation and marketing.",
+      suggestion_generation: `You are an expert content optimization specialist. Analyze the given content and provide specific, actionable text replacement suggestions to improve content quality based on the identified issue.
+
+Return your response as a JSON array of suggestions. Each suggestion should have this exact structure:
+{
+  "id": "unique-suggestion-id",
+  "title": "Brief title describing the improvement",
+  "impact": "high" | "medium" | "low",
+  "category": "clarity" | "seo" | "readability" | "engagement" | "structure",
+  "replacements": [
+    {
+      "before": "exact text to replace from the content",
+      "after": "improved replacement text",
+      "reason": "explanation for this specific change",
+      "location": {
+        "startIndex": 0,
+        "endIndex": 0
+      }
+    }
+  ]
+}
+
+Focus on:
+1. Finding exact text segments that can be improved
+2. Providing clear, actionable replacements
+3. Explaining why each change improves the content
+4. Ensuring 'before' text exists exactly in the provided content
+
+Return ONLY the JSON array, no other text.`
+    };
+
+    let enhancedPrompt = basePrompts[useCase as keyof typeof basePrompts] || basePrompts.chat;
+
+    // Add template-based detailed instructions for content generation
+    if (useCase === 'content_generation') {
+      try {
+        // Import template service to avoid circular dependencies
+        const { getPromptTemplatesByType } = await import('@/services/userPreferencesService');
+        
+        // Try to get template for specific format type (e.g., 'blog', 'social-twitter')
+        const templates = formatType ? getPromptTemplatesByType(formatType) : [];
+        
+        if (templates.length > 0) {
+          // Use the first template for the format type
+          const template = templates[0];
+          console.log(`🎯 Using enhanced template prompt for ${formatType}: ${template.name}`);
+          
+          enhancedPrompt += `\n\nDETAILED CONTENT CREATION INSTRUCTIONS:\n${template.promptTemplate}`;
+          
+          if (template.structureTemplate) {
+            enhancedPrompt += `\n\nSTRUCTURE TEMPLATE:\n${template.structureTemplate}`;
+          }
+        } else {
+          // Fallback to default blog template if no specific format template exists
+          const allTemplates = getPromptTemplatesByType('blog');
+          if (allTemplates.length > 0) {
+            const defaultTemplate = allTemplates[0];
+            console.log(`🎯 Using fallback blog template: ${defaultTemplate.name}`);
+            enhancedPrompt += `\n\nDETAILED CONTENT CREATION INSTRUCTIONS:\n${defaultTemplate.promptTemplate}`;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load prompt templates, using base prompt:', error);
+      }
+    }
+
+    // Add user-specific instructions if provided
+    if (userInstructions && userInstructions.trim()) {
+      enhancedPrompt += `\n\nUSER-SPECIFIC INSTRUCTIONS:\n${userInstructions.trim()}`;
+      console.log('📝 Added user instructions to prompt');
+    }
+
+    return enhancedPrompt;
+  }
+
+  /**
+   * Get system prompt for specific use case (legacy method for backward compatibility)
    */
   private getSystemPrompt(useCase: string): string {
     const prompts = {
