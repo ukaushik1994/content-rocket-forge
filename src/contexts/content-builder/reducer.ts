@@ -299,6 +299,12 @@ export const contentBuilderReducer = (
         location: action.payload
       };
 
+    case 'SET_STRATEGY_SOURCE':
+      return {
+        ...state,
+        strategySource: action.payload
+      };
+
     case 'LOAD_PRELOADED_DATA': {
       const { mainKeyword, selectedKeywords, location, serpData, step, strategySource } = action.payload;
       return {
