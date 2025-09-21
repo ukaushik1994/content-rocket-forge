@@ -92,11 +92,12 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
   };
   
   return (
-    <div className="border-white/10 bg-black/20 backdrop-blur-lg overflow-hidden">
-      <div className="px-3 py-2 border-b border-white/10 bg-white/5">
+    <div className="border-border/50 bg-background/80 backdrop-blur-lg overflow-hidden">
+      <div className="px-3 py-2 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <Wand2 className="h-3 w-3 text-neon-purple" />
+          <Wand2 className="h-3 w-3 text-primary" />
           <h3 className="text-xs font-medium">Section Tools</h3>
+          <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded ml-auto">⌘3</kbd>
         </div>
       </div>
       
@@ -107,10 +108,10 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
             value={selectedSection} 
             onValueChange={setSelectedSection}
           >
-            <SelectTrigger id="section" className="h-7 text-xs bg-white/5 border-white/10">
+            <SelectTrigger id="section" className="h-7 text-xs">
               <SelectValue placeholder="Select section" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-white/10">
+            <SelectContent>
               {sections.map(section => (
                 <SelectItem key={section.index} value={section.title} className="text-xs">
                   {section.title}
@@ -123,7 +124,7 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
         <div className="space-y-1">
           <Label className="text-xs">Tone</Label>
           <Tabs defaultValue="professional" value={tone} onValueChange={setTone}>
-            <TabsList className="grid grid-cols-3 bg-white/5 h-6">
+            <TabsList className="grid grid-cols-3 h-6">
               <TabsTrigger value="professional" className="text-xs h-5">Pro</TabsTrigger>
               <TabsTrigger value="conversational" className="text-xs h-5">Conv</TabsTrigger>
               <TabsTrigger value="persuasive" className="text-xs h-5">Pers</TabsTrigger>
@@ -132,7 +133,7 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
         </div>
         
         <Button 
-          className="w-full h-7 text-xs bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+          className="w-full h-7 text-xs"
           onClick={handleRegenerate}
           disabled={isRegenerating || !selectedSection}
         >

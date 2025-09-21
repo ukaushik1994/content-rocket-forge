@@ -388,7 +388,7 @@ export function FloatingToolsPanel({
   );
 
   const SectionsPopoverContent = () => (
-    <PopoverContent className="w-72 p-0 bg-black/95 backdrop-blur-xl border border-white/20">
+    <PopoverContent className="w-72 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
       <SectionRegenerationTool 
         content={content} 
         onSectionRegenerated={onSectionRegenerated}
@@ -397,11 +397,12 @@ export function FloatingToolsPanel({
   );
 
   const TimelinePopoverContent = () => (
-    <PopoverContent className="w-64 p-0 bg-black/95 backdrop-blur-xl border border-white/20">
+    <PopoverContent className="w-64 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
       <div className="p-3">
-        <div className="flex items-center gap-2 mb-3">
-          <Clock className="h-3 w-3 text-blue-400" />
-          <h3 className="text-xs font-medium text-white">Timeline</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="h-3 w-3 text-primary" />
+          <h3 className="text-xs font-medium">Timeline</h3>
+          <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded ml-auto">⌘4</kbd>
         </div>
         <ApprovalTimeline contentId={content.id} />
       </div>

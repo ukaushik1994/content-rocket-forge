@@ -392,18 +392,28 @@ useEffect(() => {
               </TabsList>
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="h-[65vh]">
+                <motion.div 
+                  className="h-[70vh]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
                   <InlineAiEditor value={editedContent} onChange={handleContentChange} onAiApplied={prev => {
                   setUndoContent(prev);
                   setTimeout(() => setUndoContent(null), 5000);
                 }} />
-                </div>
+                </motion.div>
               </TabsContent>
               
               <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="h-[65vh] p-4 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base max-w-none text-white/90 prose-sm">
+                <motion.div 
+                  className="h-[70vh] p-4 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-lg prose-h2:text-base prose-h3:text-sm max-w-none text-white/90 prose-sm leading-relaxed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
                   {editedContent.split('\n\n').map((paragraph, idx) => paragraph.startsWith('# ') ? <h1 key={idx}>{paragraph.substring(2)}</h1> : paragraph.startsWith('## ') ? <h2 key={idx}>{paragraph.substring(3)}</h2> : paragraph.startsWith('### ') ? <h3 key={idx}>{paragraph.substring(4)}</h3> : paragraph ? <p key={idx}>{paragraph}</p> : <br key={idx} />)}
-                </div>
+                </motion.div>
               </TabsContent>
             </Tabs>
           </CardContent>
