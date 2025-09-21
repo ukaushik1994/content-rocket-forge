@@ -999,7 +999,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
   let proposals: any[] = [];
   try { 
     const parsed = JSON.parse(stratText);
-    proposals = proposals.slice(0, 6); // Ensure exactly 6 proposals
+    proposals = parsed.slice(0, 6); // Ensure exactly 6 proposals
     console.log('✅ Parsed proposals successfully:', proposals.length, 'proposals');
   } catch (jsonError) { 
     console.error('❌ Failed to parse strategy JSON:', jsonError);

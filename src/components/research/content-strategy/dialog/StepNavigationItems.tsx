@@ -14,24 +14,25 @@ interface StepNavigationItemsProps {
     icon: React.ComponentType<any>;
     description: string;
   }>;
+  proposal?: any;
 }
 
-export function StepNavigationItems({ currentStep, onStepClick, steps }: StepNavigationItemsProps) {
+export function StepNavigationItems({ currentStep, onStepClick, steps, proposal }: StepNavigationItemsProps) {
   const { state } = useContentBuilder();
   
   const canProceedToStep = (step: number): boolean => {
     switch (step) {
       case 0: return true; // Always can access solution selection
-      case 1: return !!state.selectedSolution; // Need solution selected OR have proposal 
+      case 1: return !!state.selectedSolution || !!proposal; // Need solution selected OR have proposal 
       case 2: 
         // For outline generation: need solution AND keyword (mainKeyword should be set from proposal or manual selection)
-        return !!state.selectedSolution && !!state.mainKeyword;
+        return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword);
       case 3: 
         // For content generation: need outline OR serp selections
-        return !!state.selectedSolution && !!state.mainKeyword && (state.outline.length > 0 || state.serpSelections.length > 0);
+        return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (state.outline.length > 0 || state.serpSelections.length > 0);
       case 4: 
         // For saving: need generated content OR at least an outline
-        return !!state.selectedSolution && !!state.mainKeyword && (!!state.content || state.outline.length > 0);
+        return (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword) && (!!state.content || state.outline.length > 0);
       default: return false;
     }
   };

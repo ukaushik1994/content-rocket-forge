@@ -38,6 +38,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
       case 'quick_win': return 'text-green-400 bg-green-500/10 border-green-400/30';
       case 'high_return': return 'text-blue-400 bg-blue-500/10 border-blue-400/30';
       case 'evergreen': return 'text-purple-400 bg-purple-500/10 border-purple-400/30';
+      case 'low_priority': return 'text-gray-400 bg-gray-500/10 border-gray-400/30';
       default: return 'text-white/80 bg-white/10 border-white/20';
     }
   };
@@ -47,6 +48,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
       case 'quick_win': return 'Quick Win';
       case 'high_return': return 'High Return';
       case 'evergreen': return 'Evergreen';
+      case 'low_priority': return 'Low Priority';
       default: return 'Standard';
     }
   };

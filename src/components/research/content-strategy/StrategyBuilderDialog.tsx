@@ -273,6 +273,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                   currentStep={currentStep} 
                   onStepClick={setCurrentStep}
                   steps={STEPS}
+                  proposal={proposal}
                 />
               </div>
             </motion.div>
