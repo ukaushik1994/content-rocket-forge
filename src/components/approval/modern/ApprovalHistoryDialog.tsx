@@ -14,35 +14,27 @@ interface ApprovalHistoryDialogProps {
 
 export const ApprovalHistoryDialog: React.FC<ApprovalHistoryDialogProps> = ({ open, onClose, contentTitle, history }) => {
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Approval History{contentTitle ? ` — ${contentTitle}` : ''}</DialogTitle>
-        </DialogHeader>
-
-        <ScrollArea className="max-h-[60vh] pr-2">
-          <div className="space-y-3">
-            {history.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No approval history found.</p>
-            ) : (
-              history.map((h) => (
-                <div key={h.id} className="p-3 rounded-lg border border-border/50 bg-background/50">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-sm font-medium">{h.action}</div>
-                    <div className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(h.created_at), { addSuffix: true })}</div>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {h.from_status && <Badge variant="outline">{h.from_status}</Badge>}
-                    {h.to_status && <span className="mx-1">→</span>}
-                    {h.to_status && <Badge variant="outline">{h.to_status}</Badge>}
-                  </div>
-                  {h.notes && <p className="mt-2 text-sm text-foreground/80">{h.notes}</p>}
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+    <div className="max-h-48 overflow-y-auto">
+      <div className="space-y-2">
+        {history.length === 0 ? (
+          <p className="text-xs text-muted-foreground px-1">No history found.</p>
+        ) : (
+          history.slice(0, 5).map((h) => (
+            <div key={h.id} className="p-2 rounded border border-border/30 bg-background/30">
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-xs font-medium">{h.action}</div>
+                <div className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(h.created_at), { addSuffix: true })}</div>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                {h.from_status && <Badge variant="outline" className="text-[9px] px-1 py-0">{h.from_status}</Badge>}
+                {h.to_status && <span className="mx-1">→</span>}
+                {h.to_status && <Badge variant="outline" className="text-[9px] px-1 py-0">{h.to_status}</Badge>}
+              </div>
+              {h.notes && <p className="mt-1 text-[10px] text-foreground/70 truncate">{h.notes}</p>}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 };

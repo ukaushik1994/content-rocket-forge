@@ -369,15 +369,15 @@ useEffect(() => {
       
       {/* Main Editor - Full Width */}
       <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full">
-          <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
+          <CardHeader className="sticky top-0 z-10 pb-1 border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
+                <CardTitle className="text-xs font-medium text-white/80">Generated Content</CardTitle>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
               </div>
               <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10">
-                    <Wand className="h-4 w-4 text-neon-purple" />
+                  <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 h-6 text-xs">
+                    <Wand className="h-3 w-3 text-neon-purple" />
                     {isImproving ? 'Improving...' : 'Improve with AI'}
                   </Button>
               </div>
@@ -386,13 +386,13 @@ useEffect(() => {
           
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-2 mx-4 my-2 bg-card/60 h-7 rounded-md">
-                <TabsTrigger value="edit" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
-                <TabsTrigger value="preview" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
+              <TabsList className="grid grid-cols-2 mx-2 my-1 bg-card/60 h-6 rounded-md">
+                <TabsTrigger value="edit" className="h-6 px-2 text-[10px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
+                <TabsTrigger value="preview" className="h-6 px-2 text-[10px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
               </TabsList>
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="h-[60vh]">
+                <div className="h-[65vh]">
                   <InlineAiEditor value={editedContent} onChange={handleContentChange} onAiApplied={prev => {
                   setUndoContent(prev);
                   setTimeout(() => setUndoContent(null), 5000);
@@ -401,7 +401,7 @@ useEffect(() => {
               </TabsContent>
               
               <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="h-[60vh] p-6 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
+                <div className="h-[65vh] p-4 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base max-w-none text-white/90 prose-sm">
                   {editedContent.split('\n\n').map((paragraph, idx) => paragraph.startsWith('# ') ? <h1 key={idx}>{paragraph.substring(2)}</h1> : paragraph.startsWith('## ') ? <h2 key={idx}>{paragraph.substring(3)}</h2> : paragraph.startsWith('### ') ? <h3 key={idx}>{paragraph.substring(4)}</h3> : paragraph ? <p key={idx}>{paragraph}</p> : <br key={idx} />)}
                 </div>
               </TabsContent>
@@ -409,7 +409,7 @@ useEffect(() => {
           </CardContent>
           
           {/* Last saved + undo */}
-          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10">
+          <div className="px-3 py-1 text-[10px] text-white/60 flex items-center justify-between border-t border-white/10">
             <div>{lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}</div>
             {undoContent && <button className="text-primary hover:underline" onClick={() => {
             setEditedContent(undoContent);

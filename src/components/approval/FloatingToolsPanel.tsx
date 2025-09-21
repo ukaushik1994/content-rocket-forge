@@ -362,7 +362,7 @@ export function FloatingToolsPanel({
                 ) : (
                   <AlertCircle className="h-3 w-3 text-warning" />
                 )}
-                <span className="text-xs text-muted-foreground">Meta Title Present</span>
+                 <span className="text-xs text-muted-foreground">Meta Title Present</span>
               </div>
               <div className="flex items-center gap-2">
                 {seoMetrics.hasMetaDescription ? (
@@ -388,56 +388,22 @@ export function FloatingToolsPanel({
   );
 
   const SectionsPopoverContent = () => (
-    <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" />
-            Section Tools
-          </h3>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              {sectionsMetrics.count} sections
-            </Badge>
-            <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded">⌘3</kbd>
-          </div>
-        </div>
-        
-        <div className="text-xs text-muted-foreground mb-3">
-          {sectionsMetrics.wordCount} words • {sectionsMetrics.status === 'good' ? 'Well structured' : 'Needs more content'}
-        </div>
-        
-        <ScrollArea className="h-60">
-          <SectionRegenerationTool
-            content={content}
-            onSectionRegenerated={onSectionRegenerated}
-          />
-        </ScrollArea>
-      </div>
+    <PopoverContent className="w-72 p-0 bg-black/95 backdrop-blur-xl border border-white/20">
+      <SectionRegenerationTool 
+        content={content} 
+        onSectionRegenerated={onSectionRegenerated}
+      />
     </PopoverContent>
   );
 
   const TimelinePopoverContent = () => (
-    <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <Clock className="h-4 w-4 text-primary" />
-            Approval Timeline
-          </h3>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs capitalize">
-              {timelineMetrics.status}
-            </Badge>
-            <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded">⌘4</kbd>
-          </div>
+    <PopoverContent className="w-64 p-0 bg-black/95 backdrop-blur-xl border border-white/20">
+      <div className="p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <Clock className="h-3 w-3 text-blue-400" />
+          <h3 className="text-xs font-medium text-white">Timeline</h3>
         </div>
-        
-        <ScrollArea className="h-60">
-          <ApprovalTimeline 
-            contentId={content.id}
-          />
-        </ScrollArea>
+        <ApprovalTimeline contentId={content.id} />
       </div>
     </PopoverContent>
   );
