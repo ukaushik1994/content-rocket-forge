@@ -28,14 +28,14 @@ interface SectionState {
   timeline: boolean;
 }
 
-export const CollapsibleSidebarContent: React.FC<CollapsibleSidebarContentProps> = ({
+export const CollapsibleSidebarContent = ({
   content,
   editedTitle,
   onTitleChange,
   onTitleSelect,
   onSectionRegenerated,
   mainKeyword
-}) => {
+}: CollapsibleSidebarContentProps) => {
   const [openSections, setOpenSections] = useState<SectionState>({
     title: true,
     seo: false,
