@@ -382,23 +382,6 @@ useEffect(() => {
               </button>}
           </div>
           
-          <CardFooter className="border-t border-white/10 p-4">
-            <div className="w-full space-y-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2 text-white/80">
-                  {content.approval_status === 'pending_review' || content.approval_status === 'in_review' ? 'Review Notes & Feedback' : 'Notes'}
-                </h4>
-                <Textarea placeholder={content.approval_status === 'pending_review' || content.approval_status === 'in_review' ? "Provide feedback, suggestions, or reasons for your decision..." : "Add any notes about this content..."} value={approvalNotes} onChange={e => setApprovalNotes(e.target.value)} className="min-h-[100px] bg-gray-800/30 border-white/10 focus-visible:ring-neon-purple/50" />
-              </div>
-              
-              <Alert className="border-amber-600/30 bg-amber-600/10">
-                <FileText className="h-4 w-4 text-amber-500" />
-                <AlertDescription className="text-amber-200">
-                  {content.approval_status === 'pending_review' || content.approval_status === 'in_review' ? 'Review the content carefully before making your decision. Your feedback will be sent to the content author.' : 'Review and update the content before proceeding. Changes will be saved automatically.'}
-                </AlertDescription>
-              </Alert>
-            </div>
-          </CardFooter>
         </Card>
       </motion.div>
     );

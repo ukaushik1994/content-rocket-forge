@@ -176,6 +176,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             isImproving={isImproving}
               recommendation={recommendation}
               approvalNotes={approvalNotes}
+              setApprovalNotes={setApprovalNotes}
               onApprove={handleApprove}
               onRequestChanges={handleRequestChanges}
               onReject={handleReject}

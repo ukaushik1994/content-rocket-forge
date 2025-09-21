@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Save, Wand, CheckCircle2, AlertCircle, History } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Save, Wand, CheckCircle2, AlertCircle, History, MessageSquare, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
 import { SidebarToolsGrid } from './SidebarToolsGrid';
@@ -19,6 +20,7 @@ interface CompactEditingSidebarProps {
   // SmartActionBar props
   recommendation?: any;
   approvalNotes?: string;
+  setApprovalNotes?: (notes: string) => void;
   onApprove?: () => void;
   onRequestChanges?: () => void;
   onReject?: () => void;
@@ -38,6 +40,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   isImproving,
   recommendation,
   approvalNotes,
+  setApprovalNotes,
   onApprove,
   onRequestChanges,
   onReject,
@@ -45,8 +48,44 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   onTitleSelect,
   onSectionRegenerated
 }) => {
+  const [notesExpanded, setNotesExpanded] = useState(Boolean(approvalNotes?.trim()));
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'typing' | 'saving'>('saved');
+  
   const mainKeyword = (content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim();
   const titleIncludesKeyword = mainKeyword && editedTitle.toLowerCase().includes(mainKeyword.toLowerCase());
+
+  // Auto-save notes with debounce
+  useEffect(() => {
+    if (!setApprovalNotes || !approvalNotes) return;
+    
+    setSaveStatus('typing');
+    const timer = setTimeout(() => {
+      setSaveStatus('saved');
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [approvalNotes, setApprovalNotes]);
+
+  // Auto-expand when notes are added
+  useEffect(() => {
+    if (approvalNotes?.trim() && !notesExpanded) {
+      setNotesExpanded(true);
+    }
+  }, [approvalNotes]);
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (setApprovalNotes) {
+      setApprovalNotes(e.target.value);
+      setSaveStatus('typing');
+    }
+  };
+
+  const getNotesPlaceholder = () => {
+    if (content.approval_status === 'pending_review' || content.approval_status === 'in_review') {
+      return "Provide feedback, suggestions, or reasons for your decision...";
+    }
+    return "Add any notes about this content...";
+  };
 
   return (
     <div className="w-full md:w-2/5 lg:w-80 bg-card/20 backdrop-blur-md border-l border-white/10 h-full flex flex-col">
@@ -150,6 +189,67 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
           onSectionRegenerated={onSectionRegenerated}
           mainKeyword={(content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim()}
         />
+
+        {/* Notes Section */}
+        {setApprovalNotes && (
+          <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg border border-white/10">
+            <div 
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setNotesExpanded(!notesExpanded)}
+            >
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-white/70" />
+                <h3 className="text-sm font-medium text-white/80">
+                  {content.approval_status === 'pending_review' || content.approval_status === 'in_review' 
+                    ? 'Review Notes' : 'Notes'}
+                </h3>
+                {approvalNotes?.trim() && (
+                  <Badge variant="secondary" className="h-4 text-xs bg-neon-purple/20 text-neon-purple border-neon-purple/30">
+                    {approvalNotes.length}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {saveStatus === 'typing' && (
+                  <span className="text-xs text-amber-400">typing...</span>
+                )}
+                {saveStatus === 'saved' && approvalNotes?.trim() && (
+                  <span className="text-xs text-green-400">saved</span>
+                )}
+                {notesExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-white/50" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-white/50" />
+                )}
+              </div>
+            </div>
+            
+            {notesExpanded && (
+              <div className="space-y-2">
+                <Textarea
+                  value={approvalNotes || ''}
+                  onChange={handleNotesChange}
+                  placeholder={getNotesPlaceholder()}
+                  className="min-h-[80px] bg-gray-900/40 border-white/10 focus-visible:ring-neon-purple/50 text-white/90 placeholder:text-white/40 resize-none"
+                  onFocus={() => setNotesExpanded(true)}
+                />
+                <div className="flex items-center justify-between text-xs text-white/50">
+                  <span>{approvalNotes?.length || 0} characters</span>
+                  {approvalNotes?.trim() && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setApprovalNotes?.('')}
+                      className="h-5 px-2 text-xs text-white/50 hover:text-white/70"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Smart Action Bar */}
         {onApprove && onRequestChanges && onReject && onSubmitForReview && (
