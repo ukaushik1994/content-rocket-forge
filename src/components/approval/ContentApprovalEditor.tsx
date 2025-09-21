@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
-import { FileText, CheckCircle, Wand, History, ThumbsUp, AlertCircle, Search, PanelRight, Clock, CheckCircle2, AlertCircle as AlertIcon, RotateCcw, X, Edit3, Globe, Zap, ChevronDown, ChevronRight } from 'lucide-react';
+import { FileText, CheckCircle, Wand, History, ThumbsUp, AlertCircle, Search, Clock, CheckCircle2, AlertCircle as AlertIcon, RotateCcw, Edit3, Globe, Zap, ChevronDown, ChevronRight } from 'lucide-react';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,7 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
-import { CollapsibleSidebarContent } from './CollapsibleSidebarContent';
+import { FloatingToolsPanel } from './FloatingToolsPanel';
 
 import { StatusBadge } from './StatusBadge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -41,8 +41,6 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
   const [editedContent, setEditedContent] = useState(content.content);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [activeTab, setActiveTab] = useState('edit');
-  const [showSidebar, setShowSidebar] = useState(defaultShowSidebar);
-  const [activeSidebarTab, setActiveSidebarTab] = useState('sections');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(content.title);
   const [titleOpen, setTitleOpen] = useState(false);
@@ -295,13 +293,14 @@ useEffect(() => {
   const handleSectionRegenerated = (updatedContent: string) => {
     setEditedContent(updatedContent);
   };
-  return <motion.div className="space-y-6" initial={{
-    opacity: 0
-  }} animate={{
-    opacity: 1
-  }} transition={{
-    duration: 0.3
-  }}>
+  return (
+    <motion.div className="space-y-6" initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} transition={{
+      duration: 0.3
+    }}>
       {safetyCopy && (
         <Alert className="mb-3 border-amber-600/30 bg-amber-600/10 animate-fade-in">
           <FileText className="h-4 w-4 text-amber-500" />
@@ -368,9 +367,8 @@ useEffect(() => {
         </CardContent>
       </Card>
       
-      <div className="flex gap-6">
-        {/* Main Editor */}
-        <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl flex-1">
+      {/* Main Editor - Full Width */}
+      <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full">
           <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -378,16 +376,10 @@ useEffect(() => {
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
               </div>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10">
-                  <Wand className="h-4 w-4 text-neon-purple" />
-                  {isImproving ? 'Improving...' : 'Improve with AI'}
-                </Button>
-                {!hideToolsToggle && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowSidebar(!showSidebar)} className={`flex items-center gap-1 ${showSidebar ? 'text-neon-blue' : 'text-white/70'} hover:text-white hover:bg-white/10`}>
-                    <PanelRight className="h-4 w-4" />
-                    {showSidebar ? 'Hide Tools' : 'Show Tools'}
+                  <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10">
+                    <Wand className="h-4 w-4 text-neon-purple" />
+                    {isImproving ? 'Improving...' : 'Improve with AI'}
                   </Button>
-                )}
               </div>
             </div>
           </CardHeader>
@@ -446,42 +438,15 @@ useEffect(() => {
           </CardFooter>
         </Card>
         
-        {/* Collapsible Right Sidebar */}
-        {showSidebar && <motion.div 
-          initial={{ opacity: 0, width: 0 }} 
-          animate={{ opacity: 1, width: 'auto' }} 
-          exit={{ opacity: 0, width: 0 }} 
-          className="w-80"
-        >
-          <Card className="border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">
-                  Content Tools
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSidebar(false)}
-                  className="h-6 w-6 p-0 text-white/60 hover:text-white"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="p-0">
-              <CollapsibleSidebarContent
-                content={content}
-                editedTitle={editedTitle}
-                onTitleChange={setEditedTitle}
-                onTitleSelect={handleTitleSelect}
-                onSectionRegenerated={handleSectionRegenerated}
-                mainKeyword={mainKeyword}
-              />
-            </CardContent>
-          </Card>
-        </motion.div>}
-      </div>
-    </motion.div>;
-};
+        {/* Floating Tools Panel */}
+        <FloatingToolsPanel
+          content={content}
+          editedTitle={editedTitle}
+          onTitleChange={(e) => setEditedTitle(e.target.value)}
+          onTitleSelect={handleTitleSelect}
+          onSectionRegenerated={handleSectionRegenerated}
+          mainKeyword={mainKeyword}
+        />
+      </motion.div>
+    );
+  };
