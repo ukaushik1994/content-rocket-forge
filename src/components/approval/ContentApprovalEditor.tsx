@@ -324,56 +324,87 @@ useEffect(() => {
         </Alert>
       )}
       
-      {/* Main Editor - Full Width */}
-      <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full">
-          <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
+      {/* Main Editor - Optimized Full Width */}
+      <Card className="relative border-border/50 bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-sm shadow-lg w-full">
+          <CardHeader className="sticky top-0 z-10 pb-3 border-b border-border/30 bg-card/95 backdrop-blur-md">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
-              </div>
-              <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10">
-                    <Wand className="h-4 w-4 text-neon-purple" />
-                    {isImproving ? 'Improving...' : 'Improve with AI'}
-                  </Button>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-base font-semibold text-foreground">Content Editor</CardTitle>
+                <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-primary/10 text-primary border border-primary/20">
+                  Enhanced
+                </Badge>
               </div>
             </div>
           </CardHeader>
           
           <CardContent className="p-0">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-2 mx-4 my-2 bg-card/60 h-7 rounded-md">
-                <TabsTrigger value="edit" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
-                <TabsTrigger value="preview" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-2 mx-4 mt-3 mb-1 bg-muted/50 h-9 rounded-lg p-1">
+                <TabsTrigger 
+                  value="edit" 
+                  className="h-7 px-3 text-sm font-medium rounded-md transition-all duration-200 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                >
+                  Edit Content
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="preview" 
+                  className="h-7 px-3 text-sm font-medium rounded-md transition-all duration-200 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                >
+                  Preview
+                </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="h-[60vh]">
-                  <InlineAiEditor value={editedContent} onChange={handleContentChange} onAiApplied={prev => {
-                  setUndoContent(prev);
-                  setTimeout(() => setUndoContent(null), 5000);
-                }} />
+              <TabsContent value="edit" className="mt-2 focus-visible:outline-none focus-visible:ring-0">
+                <div className="h-[75vh] border-t border-border/20">
+                  <InlineAiEditor 
+                    value={editedContent} 
+                    onChange={handleContentChange} 
+                    onAiApplied={prev => {
+                      setUndoContent(prev);
+                      setTimeout(() => setUndoContent(null), 5000);
+                    }} 
+                  />
                 </div>
               </TabsContent>
               
-              <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="h-[60vh] p-6 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
-                  {editedContent.split('\n\n').map((paragraph, idx) => paragraph.startsWith('# ') ? <h1 key={idx}>{paragraph.substring(2)}</h1> : paragraph.startsWith('## ') ? <h2 key={idx}>{paragraph.substring(3)}</h2> : paragraph.startsWith('### ') ? <h3 key={idx}>{paragraph.substring(4)}</h3> : paragraph ? <p key={idx}>{paragraph}</p> : <br key={idx} />)}
+              <TabsContent value="preview" className="mt-2 focus-visible:outline-none focus-visible:ring-0">
+                <div className="h-[75vh] p-6 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-foreground/90 border-t border-border/20">
+                  {editedContent.split('\n\n').map((paragraph, idx) => 
+                    paragraph.startsWith('# ') ? (
+                      <h1 key={idx} className="gradient-text">{paragraph.substring(2)}</h1>
+                    ) : paragraph.startsWith('## ') ? (
+                      <h2 key={idx}>{paragraph.substring(3)}</h2>
+                    ) : paragraph.startsWith('### ') ? (
+                      <h3 key={idx}>{paragraph.substring(4)}</h3>
+                    ) : paragraph ? (
+                      <p key={idx} className="leading-relaxed">{paragraph}</p>
+                    ) : (
+                      <br key={idx} />
+                    )
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
           </CardContent>
           
-          {/* Last saved + undo */}
-          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10">
-            <div>{lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}</div>
-            {undoContent && <button className="text-primary hover:underline" onClick={() => {
-            setEditedContent(undoContent);
-            setUndoContent(null);
-          }}>
-                <span className="inline-flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Undo</span>
-              </button>}
+          {/* Status Bar */}
+          <div className="px-4 py-2.5 text-xs text-muted-foreground flex items-center justify-between border-t border-border/30 bg-muted/20">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+              {lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : 'Auto-saving changes...'}
+            </div>
+            {undoContent && (
+              <button 
+                className="text-primary hover:text-primary/80 transition-colors duration-200 flex items-center gap-1" 
+                onClick={() => {
+                  setEditedContent(undoContent);
+                  setUndoContent(null);
+                }}
+              >
+                <RotateCcw className="h-3 w-3" />
+                <span>Undo AI change</span>
+              </button>
+            )}
           </div>
           
           <CardFooter className="border-t border-white/10 p-4">
@@ -395,15 +426,6 @@ useEffect(() => {
           </CardFooter>
         </Card>
         
-        {/* Floating Tools Panel */}
-        <FloatingToolsPanel
-          content={content}
-          editedTitle={editedTitle}
-          onTitleChange={(e) => setEditedTitle(e.target.value)}
-          onTitleSelect={handleTitleSelect}
-          onSectionRegenerated={handleSectionRegenerated}
-          mainKeyword={mainKeyword}
-        />
       </motion.div>
     );
   };
