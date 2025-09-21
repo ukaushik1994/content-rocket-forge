@@ -323,33 +323,31 @@ useEffect(() => {
         </Alert>
       )}
       {/* Compact Title Card */}
-      <Card className="border-gray-700/50 bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm shadow-lg">
+      <Card className="border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-medium bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Title ({editedTitle.length}/60)
-                </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-white/70">Title ({editedTitle.length}/60)</label>
                 {mainKeyword && <div className={`text-[10px] ${editedTitle.toLowerCase().includes(mainKeyword.toLowerCase()) ? 'text-green-400' : 'text-amber-400'}`}>
                     {editedTitle.toLowerCase().includes(mainKeyword.toLowerCase()) ? <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Keyword included</span> : <span className="inline-flex items-center gap-1"><AlertIcon className="h-3 w-3" /> Add keyword</span>}
                   </div>}
               </div>
-              <div className="space-y-2">
-                <div className="text-sm text-white/90 truncate font-medium" title={editedTitle}>{editedTitle}</div>
-                <div className="text-[11px] text-white/60">Edit the title from the right sidebar.</div>
+              <div className="space-y-1">
+                <div className="text-sm text-white/90 truncate" title={editedTitle}>{editedTitle}</div>
+                <div className="text-[11px] text-muted-foreground">Edit the title from the right sidebar.</div>
               </div>
-              <div className="flex flex-wrap items-center gap-2 mt-3">
+              <div className="flex flex-wrap items-center gap-2 mt-2">
                 <StatusBadge status={content.approval_status} showIcon={true} />
                 {content.keywords?.length > 0 && <div className="flex flex-wrap gap-1">
-                    {content.keywords.map((keyword, i) => <Badge key={i} variant="secondary" className="text-xs bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 transition-all duration-200">
+                    {content.keywords.map((keyword, i) => <Badge key={i} variant="secondary" className="text-xs bg-neon-purple/20 text-neon-purple border border-neon-purple/30">
                         {keyword}
                       </Badge>)}
                   </div>}
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleSave} disabled={isSubmitting} className="bg-gray-800/50 border-gray-600/50 hover:bg-gray-700/50 text-white/80 hover:text-white transition-all duration-200">
+              <Button variant="outline" onClick={handleSave} disabled={isSubmitting} className="bg-white/5 border-white/10 hover:bg-white/10 text-white/80">
                 <History className="mr-2 h-4 w-4" />
                 Save Draft
               </Button>
@@ -370,24 +368,20 @@ useEffect(() => {
       
       <div className="flex gap-6">
         {/* Main Editor */}
-        <Card className="relative border-gray-700/50 bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm shadow-xl flex-1">
-          <CardHeader className="sticky top-0 z-10 pb-3 border-b border-gray-700/50 bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-md">
+        <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl flex-1">
+          <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-sm font-medium bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Generated Content
-                </CardTitle>
-                <span className="text-[10px] px-2 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border border-blue-500/30 font-medium">
-                  Enhanced Editor
-                </span>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
               </div>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-blue-500/20 border border-transparent hover:border-purple-500/30 transition-all duration-200">
-                  <Wand className="h-4 w-4 text-purple-400" />
+                <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10">
+                  <Wand className="h-4 w-4 text-neon-purple" />
                   {isImproving ? 'Improving...' : 'Improve with AI'}
                 </Button>
                 {!hideToolsToggle && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowSidebar(!showSidebar)} className={`flex items-center gap-1 ${showSidebar ? 'text-blue-400 bg-blue-500/20 border-blue-500/30' : 'text-white/70 border-transparent'} hover:text-white hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-purple-500/20 border hover:border-blue-500/30 transition-all duration-200`}>
+                  <Button variant="ghost" size="sm" onClick={() => setShowSidebar(!showSidebar)} className={`flex items-center gap-1 ${showSidebar ? 'text-neon-blue' : 'text-white/70'} hover:text-white hover:bg-white/10`}>
                     <PanelRight className="h-4 w-4" />
                     {showSidebar ? 'Hide Tools' : 'Show Tools'}
                   </Button>
@@ -398,13 +392,9 @@ useEffect(() => {
           
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-2 mx-4 my-3 bg-gray-800/60 border border-gray-700/50 h-8 rounded-lg">
-                <TabsTrigger value="edit" className="h-7 px-3 text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/30 data-[state=active]:to-blue-500/30 data-[state=active]:text-white data-[state=active]:border data-[state=active]:border-purple-500/50 text-white/70 transition-all duration-200">
-                  Edit
-                </TabsTrigger>
-                <TabsTrigger value="preview" className="h-7 px-3 text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/30 data-[state=active]:to-blue-500/30 data-[state=active]:text-white data-[state=active]:border data-[state=active]:border-purple-500/50 text-white/70 transition-all duration-200">
-                  Preview
-                </TabsTrigger>
+              <TabsList className="grid grid-cols-2 mx-4 my-2 bg-card/60 h-7 rounded-md">
+                <TabsTrigger value="edit" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
+                <TabsTrigger value="preview" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
               </TabsList>
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
@@ -425,12 +415,9 @@ useEffect(() => {
           </CardContent>
           
           {/* Last saved + undo */}
-          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-gray-700/50 bg-gray-800/30">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}
-            </div>
-            {undoContent && <button className="text-blue-400 hover:text-blue-300 hover:underline transition-colors duration-200" onClick={() => {
+          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10">
+            <div>{lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}</div>
+            {undoContent && <button className="text-primary hover:underline" onClick={() => {
             setEditedContent(undoContent);
             setUndoContent(null);
           }}>
@@ -438,23 +425,18 @@ useEffect(() => {
               </button>}
           </div>
           
-          <CardFooter className="border-t border-gray-700/50 p-4 bg-gradient-to-br from-gray-800/40 to-gray-900/40">
+          <CardFooter className="border-t border-white/10 p-4">
             <div className="w-full space-y-4">
               <div>
-                <h4 className="text-sm font-medium mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                <h4 className="text-sm font-medium mb-2 text-white/80">
                   {content.approval_status === 'pending_review' || content.approval_status === 'in_review' ? 'Review Notes & Feedback' : 'Notes'}
                 </h4>
-                <Textarea 
-                  placeholder={content.approval_status === 'pending_review' || content.approval_status === 'in_review' ? "Provide feedback, suggestions, or reasons for your decision..." : "Add any notes about this content..."} 
-                  value={approvalNotes} 
-                  onChange={e => setApprovalNotes(e.target.value)} 
-                  className="min-h-[100px] bg-gray-800/60 border-gray-600/50 focus-visible:ring-purple-500/50 focus-visible:border-purple-500/50 text-white placeholder:text-white/40 transition-all duration-200" 
-                />
+                <Textarea placeholder={content.approval_status === 'pending_review' || content.approval_status === 'in_review' ? "Provide feedback, suggestions, or reasons for your decision..." : "Add any notes about this content..."} value={approvalNotes} onChange={e => setApprovalNotes(e.target.value)} className="min-h-[100px] bg-gray-800/30 border-white/10 focus-visible:ring-neon-purple/50" />
               </div>
               
-              <Alert className="border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10 backdrop-blur-sm">
-                <FileText className="h-4 w-4 text-amber-400" />
-                <AlertDescription className="text-amber-100">
+              <Alert className="border-amber-600/30 bg-amber-600/10">
+                <FileText className="h-4 w-4 text-amber-500" />
+                <AlertDescription className="text-amber-200">
                   {content.approval_status === 'pending_review' || content.approval_status === 'in_review' ? 'Review the content carefully before making your decision. Your feedback will be sent to the content author.' : 'Review and update the content before proceeding. Changes will be saved automatically.'}
                 </AlertDescription>
               </Alert>
@@ -463,50 +445,47 @@ useEffect(() => {
         </Card>
         
         {/* Enhanced Sidebar with Timeline */}
-        {showSidebar && <motion.div 
-          initial={{ opacity: 0, width: 0 }} 
-          animate={{ opacity: 1, width: 'auto' }} 
-          exit={{ opacity: 0, width: 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="w-80 space-y-4"
-        >
+        {showSidebar && <motion.div initial={{
+        opacity: 0,
+        width: 0
+      }} animate={{
+        opacity: 1,
+        width: 'auto'
+      }} exit={{
+        opacity: 0,
+        width: 0
+      }} className="w-80 space-y-4">
             <div className="space-y-4">
-              <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 border border-gray-700/50 rounded-lg p-1 backdrop-blur-sm">
-                <TitleSidebarTile content={content} value={editedTitle} onChange={setEditedTitle} mainKeyword={mainKeyword} />
-              </div>
-              <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 border border-gray-700/50 rounded-lg p-1 backdrop-blur-sm">
-                <ApprovalMetadata content={content} compact />
-              </div>
+              <TitleSidebarTile content={content} value={editedTitle} onChange={setEditedTitle} mainKeyword={mainKeyword} />
+              <ApprovalMetadata content={content} compact />
             </div>
 
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 border border-gray-700/50 rounded-lg backdrop-blur-sm">
-              <Tabs defaultValue={activeSidebarTab} onValueChange={setActiveSidebarTab} className="w-full">
-                <TabsList className="w-full grid grid-cols-2 m-2 bg-gray-800/60 border border-gray-700/50">
-                  <TabsTrigger value="titles" className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/30 data-[state=active]:to-blue-500/30 data-[state=active]:text-white transition-all duration-200">
-                    <Wand className="h-4 w-4 mr-1" />
-                    Titles
-                  </TabsTrigger>
-                  <TabsTrigger value="sections" className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/30 data-[state=active]:to-blue-500/30 data-[state=active]:text-white transition-all duration-200">
-                    <Wand className="h-4 w-4 mr-1" />
-                    Sections
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="titles" className="m-4 mt-2">
-                  <ApprovalAITitleSuggestions content={content} onSelectTitle={handleTitleSelect} />
-                </TabsContent>
-                
-                <TabsContent value="sections" className="m-4 mt-2">
-                  <SectionRegenerationTool content={content} onSectionRegenerated={handleSectionRegenerated} />
-                </TabsContent>
-              </Tabs>
-            </div>
+            <Tabs defaultValue={activeSidebarTab} onValueChange={setActiveSidebarTab} className="w-full">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="titles" className="text-xs">
+                  <Wand className="h-4 w-4 mr-1" />
+                  Titles
+                </TabsTrigger>
+                <TabsTrigger value="sections" className="text-xs">
+                  <Wand className="h-4 w-4 mr-1" />
+                  Sections
+                </TabsTrigger>
+              </TabsList>
+              
+              
+              
+              <TabsContent value="titles" className="mt-4">
+                <ApprovalAITitleSuggestions content={content} onSelectTitle={handleTitleSelect} />
+              </TabsContent>
+              
+              <TabsContent value="sections" className="mt-4">
+                <SectionRegenerationTool content={content} onSectionRegenerated={handleSectionRegenerated} />
+              </TabsContent>
+            </Tabs>
           </motion.div>}
       </div>
       <div className="mt-6">
-        <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 border border-gray-700/50 rounded-lg backdrop-blur-sm p-1">
-          <ApprovalTimeline contentId={content.id} />
-        </div>
+        <ApprovalTimeline contentId={content.id} />
       </div>
     </motion.div>;
 };
