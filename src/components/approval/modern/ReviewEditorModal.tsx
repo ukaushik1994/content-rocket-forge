@@ -23,20 +23,20 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       <DialogContent className="w-screen h-screen max-w-none max-h-none p-0 border-none overflow-hidden">
         <div className="h-full bg-background flex flex-col">
           
-          {/* Compact Header */}
-          <div className="flex-shrink-0 border-b border-border bg-card/50 p-3">
+          {/* Header */}
+          <div className="flex-shrink-0 border-b border-border bg-card/50 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Review & Edit</h2>
-                <p className="text-xs text-muted-foreground line-clamp-1">{content.title}</p>
+                <h2 className="text-2xl font-bold">Review & Edit</h2>
+                <p className="text-muted-foreground line-clamp-1">{content.title}</p>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="h-7 w-7 p-0"
+                className="h-8 w-8 p-0"
               >
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>

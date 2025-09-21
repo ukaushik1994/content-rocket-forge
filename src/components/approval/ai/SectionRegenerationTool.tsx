@@ -92,28 +92,27 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
   };
   
   return (
-    <div className="border-border/50 bg-background/80 backdrop-blur-lg overflow-hidden">
-      <div className="px-3 py-2 border-b border-border/50">
+    <Card className="border-white/10 bg-black/20 backdrop-blur-lg overflow-hidden">
+      <div className="px-4 py-3 border-b border-white/10 bg-white/5">
         <div className="flex items-center gap-2">
-          <Wand2 className="h-3 w-3 text-primary" />
-          <h3 className="text-xs font-medium">Section Tools</h3>
-          <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded ml-auto">⌘3</kbd>
+          <Wand2 className="h-4 w-4 text-neon-purple" />
+          <h3 className="text-sm font-medium">Section Regeneration</h3>
         </div>
       </div>
       
-      <div className="p-3 space-y-3">
-        <div className="space-y-1">
-          <Label htmlFor="section" className="text-xs">Section</Label>
+      <CardContent className="p-4 space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="section">Select section to regenerate</Label>
           <Select 
             value={selectedSection} 
             onValueChange={setSelectedSection}
           >
-            <SelectTrigger id="section" className="h-7 text-xs">
+            <SelectTrigger id="section" className="bg-white/5 border-white/10">
               <SelectValue placeholder="Select section" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-gray-900 border-white/10">
               {sections.map(section => (
-                <SelectItem key={section.index} value={section.title} className="text-xs">
+                <SelectItem key={section.index} value={section.title}>
                   {section.title}
                 </SelectItem>
               ))}
@@ -121,35 +120,35 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
           </Select>
         </div>
         
-        <div className="space-y-1">
-          <Label className="text-xs">Tone</Label>
+        <div className="space-y-2">
+          <Label>Content tone</Label>
           <Tabs defaultValue="professional" value={tone} onValueChange={setTone}>
-            <TabsList className="grid grid-cols-3 h-6">
-              <TabsTrigger value="professional" className="text-xs h-5">Pro</TabsTrigger>
-              <TabsTrigger value="conversational" className="text-xs h-5">Conv</TabsTrigger>
-              <TabsTrigger value="persuasive" className="text-xs h-5">Pers</TabsTrigger>
+            <TabsList className="grid grid-cols-3 bg-white/5">
+              <TabsTrigger value="professional">Professional</TabsTrigger>
+              <TabsTrigger value="conversational">Conversational</TabsTrigger>
+              <TabsTrigger value="persuasive">Persuasive</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
         
         <Button 
-          className="w-full h-7 text-xs"
+          className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
           onClick={handleRegenerate}
           disabled={isRegenerating || !selectedSection}
         >
           {isRegenerating ? (
             <>
-              <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Regenerating...
             </>
           ) : (
             <>
-              <Wand2 className="mr-1 h-3 w-3" />
-              Regenerate
+              <Wand2 className="mr-2 h-4 w-4" />
+              Regenerate Section
             </>
           )}
         </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
