@@ -191,9 +191,9 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
               Related Keywords
             </div>
             <div className="flex flex-wrap gap-1">
-              {proposal.related_keywords.slice(0, 3).map((keyword: string, index: number) => (
+              {proposal.related_keywords.slice(0, 3).map((keyword: any, index: number) => (
                 <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
-                  {keyword}
+                  {typeof keyword === 'string' ? keyword : keyword.keyword || keyword}
                 </Badge>
               ))}
               {proposal.related_keywords.length > 3 && (
