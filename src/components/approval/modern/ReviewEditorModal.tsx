@@ -136,14 +136,22 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 overflow-hidden glass-card">
-        <div className="h-full flex backdrop-blur-xl">
+      <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 border-none overflow-hidden rounded-lg">
+        <div className="h-full bg-background flex">
           
           {/* Minimal Header */}
           <div className="flex-1 flex flex-col">
-            <div className="flex-shrink-0 border-b border-border/30 bg-card/30 backdrop-blur-sm p-4">
-              <div className="flex items-center">
-                <h2 className="text-lg font-semibold text-foreground/90">Review & Edit</h2>
+            <div className="flex-shrink-0 border-b border-border bg-card/50 p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Review & Edit</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
