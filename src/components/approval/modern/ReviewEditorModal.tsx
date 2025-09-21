@@ -166,17 +166,16 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
           </div>
 
           {/* Compact Editing Sidebar - 30% width */}
-            <CompactEditingSidebar
-              content={content}
-              editedTitle={editedTitle}
-              onTitleChange={setEditedTitle}
-              onSave={handleSave}
-              onImprove={handleImprove}
-              isSubmitting={isSubmitting}
-              isImproving={isImproving}
+          <CompactEditingSidebar
+            content={content}
+            editedTitle={editedTitle}
+            onTitleChange={setEditedTitle}
+            onSave={handleSave}
+            onImprove={handleImprove}
+            isSubmitting={isSubmitting}
+            isImproving={isImproving}
               recommendation={recommendation}
               approvalNotes={approvalNotes}
-              onNotesChange={setApprovalNotes}
               onApprove={handleApprove}
               onRequestChanges={handleRequestChanges}
               onReject={handleReject}
