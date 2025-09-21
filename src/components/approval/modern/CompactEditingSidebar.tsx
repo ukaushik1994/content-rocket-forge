@@ -49,11 +49,11 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   const titleIncludesKeyword = mainKeyword && editedTitle.toLowerCase().includes(mainKeyword.toLowerCase());
 
   return (
-    <div className="w-full md:w-2/5 lg:w-80 bg-card border-l border-border h-full flex flex-col">
+    <div className="w-full md:w-2/5 lg:w-80 glass-card border-l border-border/30 h-full flex flex-col backdrop-blur-xl">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Title Display Summary */}
-        <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-white/10">
+        <div className="space-y-3 p-4 glass-card bg-card/40 backdrop-blur-sm ring-1 ring-white/5">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Content Overview</h3>
             <StatusBadge status={content.approval_status} showIcon={true} />
@@ -140,12 +140,12 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
         />
 
         {/* Action Buttons */}
-        <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg border border-white/10">
+        <div className="space-y-3 p-4 glass-card bg-card/40 backdrop-blur-sm ring-1 ring-white/5">
           <Button 
             onClick={onSave}
             disabled={isSubmitting}
             variant="outline"
-            className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white/80"
+            className="w-full bg-card/30 border-border/30 hover:bg-card/50 backdrop-blur-sm"
             size="sm"
           >
             <History className="h-4 w-4 mr-2" />
@@ -156,7 +156,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
             onClick={onImprove}
             disabled={isImproving}
             variant="outline"
-            className="w-full"
+            className="w-full bg-card/30 border-border/30 hover:bg-card/50 backdrop-blur-sm"
             size="sm"
           >
             <Wand className="h-4 w-4 mr-2" />
@@ -165,7 +165,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
 
           {/* Smart Action Bar */}
           {onApprove && onRequestChanges && onReject && onSubmitForReview && (
-            <div className="pt-2 border-t border-white/10">
+            <div className="pt-2 border-t border-border/20">
               <SmartActionBar
                 context={{ approvalStatus: content.approval_status, contentId: content.id }}
                 disabled={isSubmitting}
