@@ -7,7 +7,7 @@ import { useQuery, useQueryClient, QueryClient } from '@tanstack/react-query';
 import { getCohort } from '@/services/experiments/ab';
 
 interface Params {
-  content: ContentItemType;
+  content: ContentItemType | null;
   editedContent?: string;
   editedTitle?: string;
   mainKeyword?: string;
@@ -15,6 +15,16 @@ interface Params {
 }
 
 function buildInputs({ content, editedContent, editedTitle, mainKeyword, notes }: Params) {
+  if (!content) {
+    return {
+      approvalStatus: 'draft',
+      title: editedTitle ?? '',
+      body: editedContent ?? '',
+      keyword: mainKeyword ?? '',
+      notes: notes ?? '',
+    };
+  }
+  
   return {
     approvalStatus: content.approval_status,
     title: editedTitle ?? content.title,
@@ -29,12 +39,22 @@ function buildQueryKey(contentId: string) {
 }
 
 export function useSmartApprovalRecommendation(params: Params) {
-  const inputs = useMemo(() => buildInputs(params), [params.content.approval_status, params.content.title, params.content.content, params.editedTitle, params.editedContent, params.mainKeyword, params.notes, params.content.metadata, params.content.keywords]);
+  const inputs = useMemo(() => buildInputs(params), [
+    params.content?.approval_status, 
+    params.content?.title, 
+    params.content?.content, 
+    params.editedTitle, 
+    params.editedContent, 
+    params.mainKeyword, 
+    params.notes, 
+    params.content?.metadata, 
+    params.content?.keywords
+  ]);
   const loggedForContentRef = useRef<string | null>(null);
   const cohort = getCohort('smartActions');
 
   const query = useQuery<SmartRecommendation>({
-    queryKey: buildQueryKey(params.content.id),
+    queryKey: buildQueryKey(params.content?.id || 'unknown'),
     queryFn: async () => {
       const rec = await getSmartRecommendation({
         approvalStatus: inputs.approvalStatus,
@@ -45,13 +65,14 @@ export function useSmartApprovalRecommendation(params: Params) {
       });
       return rec;
     },
+    enabled: !!params.content,
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
   // Log once per content id
   useEffect(() => {
     const rec = query.data;
-    if (!rec) return;
+    if (!rec || !params.content) return;
     if (loggedForContentRef.current === params.content.id) return;
     loggedForContentRef.current = params.content.id;
     (async () => {
@@ -67,17 +88,21 @@ export function useSmartApprovalRecommendation(params: Params) {
         // noop
       }
     })();
-  }, [query.data, params.content.id, cohort]);
+  }, [query.data, params.content?.id, cohort]);
 
   const queryClient = useQueryClient();
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: buildQueryKey(params.content.id) });
+    if (params.content) {
+      await queryClient.invalidateQueries({ queryKey: buildQueryKey(params.content.id) });
+    }
   };
 
   return { recommendation: query.data ?? null, isLoading: query.isLoading, error: (query.error as Error | null)?.message ?? null, refresh };
 }
 
 export async function prefetchSmartRecommendation(queryClient: QueryClient, params: Params) {
+  if (!params.content) return;
+  
   const inputs = buildInputs(params);
   const key = buildQueryKey(params.content.id);
   await queryClient.prefetchQuery({
