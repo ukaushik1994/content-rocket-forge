@@ -66,29 +66,97 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
   };
 
   const handleRemove = async () => {
+    if (!calendarItem?.id) {
+      console.error('❌ No calendar item ID provided for deletion');
+      toast.error('Cannot delete: Invalid calendar item');
+      return;
+    }
+
     try {
       setLoading(true);
+      console.log('🗑️ Starting calendar item deletion:', {
+        calendarItemId: calendarItem.id,
+        hasProposal,
+        proposalId: calendarItem.proposal_id,
+        reason: removeReason || 'User requested removal'
+      });
+
+      // Get current user for authentication check
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('❌ Authentication failed:', authError);
+        toast.error('You must be logged in to delete calendar items');
+        return;
+      }
+
+      console.log('✅ User authenticated:', user.id);
       
       if (hasProposal) {
+        console.log('🔄 Deleting calendar item with proposal restoration...');
         await calendarActionsService.removeCalendarItemAndRestoreProposal(
           calendarItem.id,
           removeReason || 'User requested removal'
         );
       } else {
-        // Just delete the calendar item if no proposal linked
-        const { supabase } = await import('@/integrations/supabase/client');
-        await supabase
+        console.log('🗑️ Deleting calendar item without proposal...');
+        
+        // Verify ownership before deletion
+        const { data: itemCheck, error: checkError } = await supabase
+          .from('content_calendar')
+          .select('user_id, title')
+          .eq('id', calendarItem.id)
+          .single();
+
+        if (checkError) {
+          console.error('❌ Failed to verify calendar item ownership:', checkError);
+          toast.error('Failed to verify item ownership');
+          return;
+        }
+
+        if (itemCheck.user_id !== user.id) {
+          console.error('❌ User does not own this calendar item:', {
+            itemUserId: itemCheck.user_id,
+            currentUserId: user.id
+          });
+          toast.error('You do not have permission to delete this item');
+          return;
+        }
+
+        // Delete the calendar item
+        const { error: deleteError } = await supabase
           .from('content_calendar')
           .delete()
-          .eq('id', calendarItem.id);
-        toast.success('Calendar item removed');
+          .eq('id', calendarItem.id)
+          .eq('user_id', user.id); // Double check with RLS
+
+        if (deleteError) {
+          console.error('❌ Failed to delete calendar item:', deleteError);
+          toast.error(`Failed to delete calendar item: ${deleteError.message}`);
+          return;
+        }
+
+        console.log('✅ Calendar item deleted successfully:', calendarItem.id);
+        toast.success('Calendar item removed successfully');
       }
       
       setRemoveDialogOpen(false);
       setRemoveReason('');
+      
+      // Refresh data
+      console.log('🔄 Refreshing calendar data...');
       onRefresh?.();
-    } catch (error) {
-      // Error handling is done in the service
+      
+    } catch (error: any) {
+      console.error('❌ Error in calendar item deletion:', {
+        error: error.message || error,
+        calendarItemId: calendarItem.id,
+        hasProposal,
+        stack: error.stack
+      });
+      
+      toast.error(error.message || 'Failed to delete calendar item');
     } finally {
       setLoading(false);
     }

@@ -104,16 +104,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
     setDialogOpen(true);
   };
 
-  const handleDeleteItem = async (itemId: string) => {
-    if (window.confirm('Are you sure you want to delete this calendar item?')) {
-      try {
-        await deleteCalendarItem(itemId);
-        toast.success('Calendar item deleted');
-      } catch (error) {
-        toast.error('Failed to delete calendar item');
-      }
-    }
-  };
+  // Removed duplicate handleDeleteItem - all deletions now go through CalendarItemActions component
 
   const handleSaveItem = async (formData: any) => {
     try {
@@ -318,15 +309,14 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                               >
                                 <Edit className="h-3 w-3" />
                               </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteItem(item.id);
-                                }}
-                                className="hover:text-red-400"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
+                               {/* Add CalendarItemActions for delete functionality */}
+                               <div onClick={(e) => e.stopPropagation()}>
+                                 <CalendarItemActions 
+                                   calendarItem={item}
+                                   onRefresh={refreshData}
+                                   compact={true}
+                                 />
+                               </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 mt-1">

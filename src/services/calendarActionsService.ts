@@ -56,10 +56,21 @@ class CalendarActionsService {
   // Remove calendar item and restore proposal to available
   async removeCalendarItemAndRestoreProposal(calendarItemId: string, reason?: string): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      console.log('🔄 Starting calendar item removal with proposal restoration:', {
+        calendarItemId,
+        reason: reason || 'User requested removal'
+      });
 
-      // Get current calendar item
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('❌ User not authenticated for calendar item removal');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('✅ User authenticated:', user.id);
+
+      // Get current calendar item with detailed logging
+      console.log('📋 Fetching calendar item details...');
       const { data: currentItem, error: fetchError } = await supabase
         .from('content_calendar')
         .select('*')
@@ -67,33 +78,83 @@ class CalendarActionsService {
         .eq('user_id', user.id)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('❌ Failed to fetch calendar item:', fetchError);
+        throw new Error(`Failed to fetch calendar item: ${fetchError.message}`);
+      }
+
+      if (!currentItem) {
+        console.error('❌ Calendar item not found or access denied:', calendarItemId);
+        throw new Error('Calendar item not found or you do not have permission to delete it');
+      }
+
+      console.log('✅ Calendar item found:', {
+        id: currentItem.id,
+        title: currentItem.title,
+        proposalId: currentItem.proposal_id,
+        userId: currentItem.user_id
+      });
 
       const proposalId = currentItem.proposal_id;
       
       // Delete the calendar item (this will automatically restore proposal status via trigger)
+      console.log('🗑️ Deleting calendar item...');
       const { error: deleteError } = await supabase
         .from('content_calendar')
         .delete()
         .eq('id', calendarItemId)
         .eq('user_id', user.id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('❌ Failed to delete calendar item:', deleteError);
+        throw new Error(`Failed to delete calendar item: ${deleteError.message}`);
+      }
+
+      console.log('✅ Calendar item deleted successfully');
+
+      // Verify proposal was restored (if there was one)
+      if (proposalId) {
+        console.log('🔍 Verifying proposal restoration...');
+        const { data: restoredProposal, error: proposalError } = await supabase
+          .from('ai_strategy_proposals')
+          .select('status')
+          .eq('id', proposalId)
+          .single();
+
+        if (proposalError) {
+          console.warn('⚠️ Could not verify proposal restoration:', proposalError);
+        } else {
+          console.log('✅ Proposal status after deletion:', restoredProposal.status);
+        }
+      }
 
       // Send notification about removal and restoration
-      await this.notifyCalendarAction('removed_and_restored', {
-        title: currentItem.title,
-        scheduledDate: format(new Date(currentItem.scheduled_date), 'MMM dd, yyyy'),
-        reason: reason || 'User requested removal',
-        proposalId,
-        userId: user.id
-      });
+      try {
+        await this.notifyCalendarAction('removed_and_restored', {
+          title: currentItem.title,
+          scheduledDate: format(new Date(currentItem.scheduled_date), 'MMM dd, yyyy'),
+          reason: reason || 'User requested removal',
+          proposalId,
+          userId: user.id
+        });
+      } catch (notificationError) {
+        console.warn('⚠️ Failed to send notification:', notificationError);
+        // Don't throw here, deletion was successful
+      }
 
-      toast.success('Calendar item removed and proposal restored to available');
-      console.log('✅ Calendar item removed and proposal restored:', calendarItemId, proposalId);
-    } catch (error) {
-      console.error('❌ Error removing calendar item:', error);
-      toast.error('Failed to remove calendar item');
+      const successMessage = proposalId 
+        ? 'Calendar item removed and proposal restored to available'
+        : 'Calendar item removed successfully';
+      
+      toast.success(successMessage);
+      console.log('✅ Calendar item removal completed:', { calendarItemId, proposalId });
+    } catch (error: any) {
+      console.error('❌ Error removing calendar item:', {
+        error: error.message || error,
+        calendarItemId,
+        stack: error.stack
+      });
+      toast.error(error.message || 'Failed to remove calendar item');
       throw error;
     }
   }
