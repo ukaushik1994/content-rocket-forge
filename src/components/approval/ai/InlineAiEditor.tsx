@@ -201,7 +201,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
       {selection && toolbarPos && (
         <div
           ref={toolbarRef}
-          className="absolute z-10 flex flex-wrap items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 backdrop-blur-sm max-w-[92vw] shadow-lg animate-enter"
+          className="absolute z-10 flex flex-wrap items-center gap-1 bg-white/30 border border-white/20 rounded-md px-2 py-1 backdrop-blur-sm max-w-[92vw] shadow-lg animate-enter"
           style={{
             left: toolbarPos.left,
             top: toolbarPos.top,
@@ -211,7 +211,6 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
                 : 'translate(-50%, 8px)'
           }}
         >
-          <span className="text-[11px] text-white/70 mr-1">AI Assist:</span>
           <Input
             value={userInstruction}
             onChange={(e) => setUserInstruction(e.target.value)}
@@ -220,20 +219,20 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
             className="h-8 w-44 text-xs"
             disabled={isProcessing || disabled}
           />
-          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('rephrase')}>
-            <Sparkles className="h-3 w-3 mr-1 text-neon-purple" /> Rephrase
+          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('rephrase')} aria-label="Rephrase text">
+            <Sparkles className="h-3 w-3 text-neon-purple" />
           </Button>
-          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('shorten')}>
-            <MoveHorizontal className="h-3 w-3 mr-1" /> Shorten
+          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('shorten')} aria-label="Shorten text">
+            <MoveHorizontal className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('expand')}>
-            <Wand2 className="h-3 w-3 mr-1" /> Expand
+          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('expand')} aria-label="Expand text">
+            <Wand2 className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('fix')}>
-            <FileText className="h-3 w-3 mr-1" /> Fix
+          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('fix')} aria-label="Fix text">
+            <FileText className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="ghost" disabled={!lastEdit || isProcessing || disabled} onClick={revertLastEdit}>
-            <RotateCcw className="h-3 w-3 mr-1" /> Revert
+          <Button size="sm" variant="ghost" disabled={!lastEdit || isProcessing || disabled} onClick={revertLastEdit} aria-label="Revert last change">
+            <RotateCcw className="h-3 w-3" />
           </Button>
           {isProcessing && <Loader2 className="h-3 w-3 ml-1 animate-spin" />}
         </div>
