@@ -9,7 +9,7 @@ import { Target, Sparkles, TrendingUp, Search, CheckCircle2, AlertCircle, ArrowR
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { SerpMetricsDisplay } from '../SerpMetricsDisplay';
-import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { StrategyGenerationProgress } from '../StrategyGenerationProgress';
 
@@ -28,7 +28,7 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
   const { user } = useAuth();
   
   // Use optional chaining to safely access context - fallback if provider not available
-  const contentStrategy = useContentStrategy();
+  const contentStrategy = useContentStrategyOptional();
   const {
     currentStrategy,
     createStrategy,
