@@ -106,6 +106,9 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
           calendarItem.id,
           removeReason || 'User requested removal'
         );
+        
+        // Add success message for proposal restoration
+        toast.success('Calendar item removed and proposal restored to available');
       } else {
         console.log('🗑️ Deleting calendar item without proposal...');
         
@@ -158,9 +161,17 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
       setRemoveDialogOpen(false);
       setRemoveReason('');
       
-      // Refresh data
+      // Refresh data with enhanced logging
       console.log('🔄 Refreshing calendar data...');
-      onRefresh?.();
+      if (hasProposal) {
+        console.log('🔄 Triggering proposal status refresh after restoration...');
+        setTimeout(() => {
+          console.log('🔄 Delayed refresh for proposal status synchronization');
+          onRefresh?.();
+        }, 1500); // Allow database trigger to complete
+      } else {
+        onRefresh?.();
+      }
       
     } catch (error: any) {
       console.error('❌ Error in calendar item deletion:', {

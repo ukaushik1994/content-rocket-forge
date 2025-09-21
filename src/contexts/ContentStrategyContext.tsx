@@ -34,6 +34,7 @@ interface ContentStrategyContextType {
   setAiProposals: (proposals: any[] | ((prev: any[]) => any[])) => void;
   selectedProposals: Record<string, boolean>;
   setSelectedProposals: (selected: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => void;
+  refreshProposalStatus: () => Promise<void>;
 
   // Strategy management
   createStrategy: (strategy: Partial<ContentStrategy>) => Promise<void>;
@@ -86,6 +87,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       setPipelineItems([]);
       setContentItems([]);
       setInsights([]);
+      setAiProposals([]);
       setLoading(false);
       return;
     }
@@ -107,16 +109,20 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       setTimeout(async () => {
         try {
           setLoadingCalendar(true);
-          const [calendarData, pipelineData, insightsData] = await Promise.all([
+          const { aiStrategyService } = await import('@/services/aiStrategyService');
+          
+          const [calendarData, pipelineData, insightsData, proposalsData] = await Promise.all([
             contentStrategyService.getCalendarItems(),
             contentStrategyService.getPipelineItems(),
-            contentStrategyService.getInsights()
+            contentStrategyService.getInsights(),
+            aiStrategyService.getAllProposals()
           ]);
 
           setCalendarItems(calendarData);
           setPipelineItems(pipelineData);
           setContentItems([]); // TODO: Load from content service when available
           setInsights(insightsData);
+          setAiProposals(proposalsData);
         } catch (error: any) {
           console.error('Error loading secondary data:', error);
         } finally {
@@ -226,7 +232,20 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     try {
       await contentStrategyService.deleteCalendarItem(id);
       setCalendarItems(prev => prev.filter(item => item.id !== id));
-      toast.success('Calendar item deleted');
+      
+      // Refresh proposal status after calendar deletion
+      setTimeout(async () => {
+        try {
+          const { aiStrategyService } = await import('@/services/aiStrategyService');
+          const updatedProposals = await aiStrategyService.getAllProposals();
+          setAiProposals(updatedProposals);
+          console.log('✅ Proposals refreshed after calendar item deletion');
+        } catch (error) {
+          console.error('Failed to refresh proposals after deletion:', error);
+        }
+      }, 1000); // Small delay to allow database trigger to complete
+      
+      toast.success('Calendar item deleted - proposals updated');
     } catch (error: any) {
       console.error('Error deleting calendar item:', error);
       toast.error('Failed to delete calendar item');
@@ -326,6 +345,20 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     await loadData();
   }, [loadData]);
 
+  const refreshProposalStatus = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      console.log('🔄 Refreshing proposal status...');
+      const { aiStrategyService } = await import('@/services/aiStrategyService');
+      const updatedProposals = await aiStrategyService.getAllProposals();
+      setAiProposals(updatedProposals);
+      console.log('✅ Proposal status refreshed');
+    } catch (error) {
+      console.error('Failed to refresh proposal status:', error);
+    }
+  }, [user]);
+
   return (
     <ContentStrategyContext.Provider
       value={{
@@ -369,6 +402,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
         
         // Data refresh
         refreshData,
+        refreshProposalStatus,
       }}
     >
       {children}

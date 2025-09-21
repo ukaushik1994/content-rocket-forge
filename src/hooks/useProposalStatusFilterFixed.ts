@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { proposalStatusService, type ProposalStatus } from '@/services/proposalStatusService';
 
-export const useProposalStatusFilterFixed = (proposals: any[]) => {
+export const useProposalStatusFilterFixed = (proposals: any[], calendarItems: any[] = []) => {
   const [selectedStatuses, setSelectedStatuses] = useState<ProposalStatus[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<ProposalStatus, number>>({
     available: 0,
@@ -13,9 +13,10 @@ export const useProposalStatusFilterFixed = (proposals: any[]) => {
   const [filteredProposals, setFilteredProposals] = useState<any[]>(proposals);
   const [loading, setLoading] = useState(false);
 
-  // Update status counts and filtering when proposals change
+  // Update status counts and filtering when proposals OR calendar items change
   useEffect(() => {
     const updateStatusData = async () => {
+      console.log('🔄 Updating proposal status data, proposals count:', proposals.length, 'calendar items:', calendarItems.length);
       if (proposals.length === 0) {
         setStatusCounts({
           available: 0,
@@ -109,7 +110,7 @@ export const useProposalStatusFilterFixed = (proposals: any[]) => {
     };
 
     updateStatusData();
-  }, [proposals, selectedStatuses]);
+  }, [proposals, selectedStatuses, calendarItems]); // Added calendarItems dependency
 
   const handleStatusToggle = (status: ProposalStatus) => {
     setSelectedStatuses(prev => 

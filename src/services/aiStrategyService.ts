@@ -133,6 +133,45 @@ class AIStrategyService {
     }
   }
 
+  async getAllProposals(): Promise<StrategyProposal[]> {
+    try {
+      console.log('📊 Getting all AI proposals from database');
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not authenticated');
+
+      const { data: proposals, error } = await supabase
+        .from('ai_strategy_proposals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Database error fetching proposals:', error);
+        throw error;
+      }
+      
+      console.log('✅ Retrieved proposals:', proposals?.length || 0);
+      
+      // Transform to match expected format
+      return (proposals || []).map(proposal => ({
+        id: proposal.id,
+        title: proposal.title,
+        description: proposal.description || '',
+        primary_keyword: proposal.primary_keyword,
+        keywords: proposal.related_keywords || [],
+        priority_tag: proposal.priority_tag || 'evergreen',
+        estimated_impressions: proposal.estimated_impressions || 0,
+        serp_data: proposal.serp_data || {},
+        content_type: proposal.content_type || 'blog',
+        suggested_outline: proposal.content_suggestions || []
+      })) as StrategyProposal[];
+    } catch (error) {
+      console.error('Failed to fetch AI proposals:', error);
+      return [];
+    }
+  }
+
   async getStrategySessions(): Promise<StrategySession[]> {
     const strategies = await this.getStrategies();
     
