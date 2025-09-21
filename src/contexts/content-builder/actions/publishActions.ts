@@ -35,6 +35,9 @@ export const createPublishActions = (
         return null;
       }
 
+      // Get proposal_id from strategy source or metadata
+      const proposalId = state.strategySource?.proposal_id || (content.metadata as any)?.source_proposal_id || (content.metadata as any)?.proposal_id;
+
       // Prepare content data for database
       const contentData = {
         title: content.title,
@@ -51,7 +54,7 @@ export const createPublishActions = (
           outline: content.outline || [],
           serpSelections: content.serpSelections || [],
           serpData: content.serpData,
-          source_proposal_id: (content.metadata as any)?.source_proposal_id, // Track proposal source
+          proposal_id: proposalId, // Use proposal_id (not source_proposal_id) for trigger compatibility
           ...(content.metadata || {}) // Include any additional metadata passed in
         }
       };
@@ -92,9 +95,8 @@ export const createPublishActions = (
       }
 
       // Auto-sync proposal keywords if content originated from a proposal
-      if ((content.metadata as any)?.source_proposal_id) {
+      if (proposalId) {
         try {
-          const proposalId = (content.metadata as any).source_proposal_id;
           
           // Get proposal data to sync its keywords
           const { data: proposal } = await supabase
@@ -139,17 +141,8 @@ export const createPublishActions = (
       toast.success('Content saved as draft successfully');
       
       // Auto-track completion if content was created from a proposal
-      if ((content.metadata as any)?.source_proposal_id) {
-        try {
-          await import('@/services/contentCompletionTracking').then(module => {
-            module.contentCompletionTracking.markContentCompleted(
-              (content.metadata as any).source_proposal_id,
-              data.id
-            );
-          });
-        } catch (error) {
-          console.error('Error tracking proposal completion:', error);
-        }
+      if (proposalId) {
+        console.log('Content created from proposal, will be auto-completed by database trigger');
       }
       
       // Set saving state to false
@@ -190,6 +183,9 @@ export const createPublishActions = (
         return null;
       }
 
+      // Get proposal_id from strategy source or metadata
+      const proposalId = state.strategySource?.proposal_id || (content.metadata as any)?.source_proposal_id || (content.metadata as any)?.proposal_id;
+
       // Prepare content data for database
       const contentData = {
         title: content.title,
@@ -206,7 +202,7 @@ export const createPublishActions = (
           outline: content.outline || [],
           serpSelections: content.serpSelections || [],
           serpData: content.serpData,
-          source_proposal_id: (content.metadata as any)?.source_proposal_id, // Track proposal source
+          proposal_id: proposalId, // Use proposal_id (not source_proposal_id) for trigger compatibility
           ...(content.metadata || {}) // Include any additional metadata passed in
         }
       };
@@ -247,9 +243,8 @@ export const createPublishActions = (
       }
 
       // Auto-sync proposal keywords if content originated from a proposal
-      if ((content.metadata as any)?.source_proposal_id) {
+      if (proposalId) {
         try {
-          const proposalId = (content.metadata as any).source_proposal_id;
           
           // Get proposal data to sync its keywords
           const { data: proposal } = await supabase
@@ -294,17 +289,8 @@ export const createPublishActions = (
       toast.success('Content published successfully');
       
       // Auto-track completion if content was created from a proposal
-      if ((content.metadata as any)?.source_proposal_id) {
-        try {
-          await import('@/services/contentCompletionTracking').then(module => {
-            module.contentCompletionTracking.markContentCompleted(
-              (content.metadata as any).source_proposal_id,
-              data.id
-            );
-          });
-        } catch (error) {
-          console.error('Error tracking proposal completion:', error);
-        }
+      if (proposalId) {
+        console.log('Content published from proposal, will be auto-completed by database trigger');
       }
       
       // Set saving state to false
