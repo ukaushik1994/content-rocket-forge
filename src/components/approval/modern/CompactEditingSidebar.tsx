@@ -3,7 +3,9 @@ import { ContentItemType } from '@/contexts/content/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Save, Wand, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Save, Wand, CheckCircle2, AlertCircle, History } from 'lucide-react';
+import { StatusBadge } from '../StatusBadge';
+import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
 
 interface CompactEditingSidebarProps {
   content: ContentItemType;
@@ -13,6 +15,13 @@ interface CompactEditingSidebarProps {
   onImprove: () => void;
   isSubmitting: boolean;
   isImproving: boolean;
+  // SmartActionBar props
+  recommendation?: any;
+  approvalNotes?: string;
+  onApprove?: () => void;
+  onRequestChanges?: () => void;
+  onReject?: () => void;
+  onSubmitForReview?: () => void;
 }
 
 export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
@@ -22,7 +31,13 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   onSave,
   onImprove,
   isSubmitting,
-  isImproving
+  isImproving,
+  recommendation,
+  approvalNotes,
+  onApprove,
+  onRequestChanges,
+  onReject,
+  onSubmitForReview
 }) => {
   const mainKeyword = (content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim();
   const titleIncludesKeyword = mainKeyword && editedTitle.toLowerCase().includes(mainKeyword.toLowerCase());
@@ -31,6 +46,52 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
     <div className="w-full md:w-2/5 lg:w-80 bg-card border-l border-border h-full flex flex-col">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Title Display Summary */}
+        <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-white/10">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">Content Overview</h3>
+            <StatusBadge status={content.approval_status} showIcon={true} />
+          </div>
+          
+          <div className="space-y-2">
+            <div className="text-sm text-white/90 truncate" title={editedTitle}>
+              {editedTitle}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {editedTitle.length}/60 characters
+            </div>
+            {mainKeyword && (
+              <div className={`flex items-center gap-1 text-xs ${titleIncludesKeyword ? 'text-green-400' : 'text-amber-400'}`}>
+                {titleIncludesKeyword ? (
+                  <>
+                    <CheckCircle2 className="h-3 w-3" />
+                    Keyword included
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-3 w-3" />
+                    Add keyword: "{mainKeyword}"
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Keywords Display */}
+          {content.keywords && content.keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {content.keywords.map((keyword, i) => (
+                <Badge 
+                  key={i} 
+                  variant="secondary" 
+                  className="text-xs bg-neon-purple/20 text-neon-purple border border-neon-purple/30"
+                >
+                  {keyword}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
         {/* Title Editing */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -62,36 +123,6 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
           )}
         </div>
 
-        {/* Keywords */}
-        {content.keywords && content.keywords.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Keywords</label>
-            <div className="flex flex-wrap gap-1">
-              {content.keywords.map((keyword, index) => (
-                <Badge 
-                  key={index} 
-                  variant="secondary" 
-                  className="text-xs"
-                >
-                  {keyword}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Status */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Status</label>
-          <Badge variant={
-            content.approval_status === 'approved' ? 'default' :
-            content.approval_status === 'rejected' ? 'destructive' :
-            content.approval_status === 'needs_changes' ? 'secondary' :
-            'outline'
-          }>
-            {content.approval_status?.replace('_', ' ').toUpperCase()}
-          </Badge>
-        </div>
       </div>
 
       {/* Fixed Action Buttons at Bottom */}
@@ -100,11 +131,12 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
           <Button 
             onClick={onSave}
             disabled={isSubmitting}
-            className="w-full"
+            variant="outline"
+            className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white/80"
             size="sm"
           >
-            <Save className="h-4 w-4 mr-2" />
-            {isSubmitting ? 'Saving...' : 'Save'}
+            <History className="h-4 w-4 mr-2" />
+            {isSubmitting ? 'Saving...' : 'Save Draft'}
           </Button>
           
           <Button 
@@ -117,6 +149,22 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
             <Wand className="h-4 w-4 mr-2" />
             {isImproving ? 'Improving...' : 'Improve'}
           </Button>
+
+          {/* Smart Action Bar */}
+          {onApprove && onRequestChanges && onReject && onSubmitForReview && (
+            <div className="pt-2 border-t border-white/10">
+              <SmartActionBar
+                context={{ approvalStatus: content.approval_status, contentId: content.id }}
+                disabled={isSubmitting}
+                hasNotes={Boolean(approvalNotes?.trim())}
+                recommendation={recommendation}
+                onApprove={onApprove}
+                onRequestChanges={onRequestChanges}
+                onReject={onReject}
+                onSubmitForReview={onSubmitForReview}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

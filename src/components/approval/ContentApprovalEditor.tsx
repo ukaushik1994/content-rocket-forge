@@ -323,49 +323,6 @@ useEffect(() => {
           </div>
         </Alert>
       )}
-      {/* Compact Title Card */}
-      <Card className="border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-medium text-white/70">Title ({editedTitle.length}/60)</label>
-                {mainKeyword && <div className={`text-[10px] ${editedTitle.toLowerCase().includes(mainKeyword.toLowerCase()) ? 'text-green-400' : 'text-amber-400'}`}>
-                    {editedTitle.toLowerCase().includes(mainKeyword.toLowerCase()) ? <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Keyword included</span> : <span className="inline-flex items-center gap-1"><AlertIcon className="h-3 w-3" /> Add keyword</span>}
-                  </div>}
-              </div>
-              <div className="space-y-1">
-                <div className="text-sm text-white/90 truncate" title={editedTitle}>{editedTitle}</div>
-                <div className="text-[11px] text-muted-foreground">Edit the title from the right sidebar.</div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                <StatusBadge status={content.approval_status} showIcon={true} />
-                {content.keywords?.length > 0 && <div className="flex flex-wrap gap-1">
-                    {content.keywords.map((keyword, i) => <Badge key={i} variant="secondary" className="text-xs bg-neon-purple/20 text-neon-purple border border-neon-purple/30">
-                        {keyword}
-                      </Badge>)}
-                  </div>}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleSave} disabled={isSubmitting} className="bg-white/5 border-white/10 hover:bg-white/10 text-white/80">
-                <History className="mr-2 h-4 w-4" />
-                Save Draft
-              </Button>
-<SmartActionBar
-  context={{ approvalStatus: content.approval_status, contentId: content.id }}
-  disabled={isSubmitting}
-  hasNotes={Boolean(approvalNotes.trim())}
-  recommendation={recommendation}
-  onApprove={handleApprove}
-  onRequestChanges={handleRequestChanges}
-  onReject={handleReject}
-  onSubmitForReview={handleSubmitForReview}
-/>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
       
       {/* Main Editor - Full Width */}
       <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full">

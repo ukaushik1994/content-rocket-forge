@@ -8,6 +8,7 @@ import { CompactEditingSidebar } from './CompactEditingSidebar';
 import { useContent } from '@/contexts/content';
 import { useApproval } from '../context/ApprovalContext';
 import { toast } from 'sonner';
+import { useSmartApprovalRecommendation } from '@/hooks/approval/useSmartApprovalRecommendation';
 
 interface ReviewEditorModalProps {
   isOpen: boolean;
@@ -22,8 +23,25 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
 }) => {
   const [editedTitle, setEditedTitle] = useState(content?.title || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { updateContentItem } = useContent();
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const { 
+    updateContentItem,
+    approveContent,
+    rejectContent,
+    requestChanges,
+    submitForReview
+  } = useContent();
   const { improveContentWithAI, isImproving } = useApproval();
+
+  const mainKeyword = (content?.metadata?.mainKeyword || content?.keywords?.[0] || '').toString().trim();
+  
+  const { recommendation } = useSmartApprovalRecommendation({
+    content,
+    editedContent: content?.content || '',
+    editedTitle,
+    mainKeyword,
+    notes: approvalNotes,
+  });
 
   if (!content) return null;
 
@@ -51,6 +69,68 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
     } catch (error) {
       toast.error('Failed to improve content');
       console.error(error);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!content) return;
+    setIsSubmitting(true);
+    try {
+      await approveContent(content.id, approvalNotes || undefined);
+      toast.success('Content approved successfully');
+    } catch (error) {
+      toast.error('Failed to approve content');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!content || !approvalNotes.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await rejectContent(content.id, approvalNotes);
+      toast.success('Content rejected with feedback');
+    } catch (error) {
+      toast.error('Failed to reject content');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRequestChanges = async () => {
+    if (!content || !approvalNotes.trim()) {
+      toast.error('Please provide specific change requests');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await requestChanges(content.id, approvalNotes);
+      toast.success('Change request sent');
+    } catch (error) {
+      toast.error('Failed to request changes');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitForReview = async () => {
+    if (!content) return;
+    setIsSubmitting(true);
+    try {
+      await submitForReview(content.id, approvalNotes || undefined);
+      toast.success('Content submitted for review');
+    } catch (error) {
+      toast.error('Failed to submit for review');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -94,6 +174,12 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             onImprove={handleImprove}
             isSubmitting={isSubmitting}
             isImproving={isImproving}
+            recommendation={recommendation}
+            approvalNotes={approvalNotes}
+            onApprove={handleApprove}
+            onRequestChanges={handleRequestChanges}
+            onReject={handleReject}
+            onSubmitForReview={handleSubmitForReview}
           />
         </div>
       </DialogContent>
