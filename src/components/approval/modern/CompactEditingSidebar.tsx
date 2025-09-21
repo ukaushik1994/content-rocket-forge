@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Save, Wand, CheckCircle2, AlertCircle, History } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
+import { SmartRecommendation } from '@/services/smart-actions/types';
+import { FloatingNotesWidget } from './FloatingNotesWidget';
 import { SidebarToolsGrid } from './SidebarToolsGrid';
 
 interface CompactEditingSidebarProps {
@@ -16,14 +18,13 @@ interface CompactEditingSidebarProps {
   onImprove: () => void;
   isSubmitting: boolean;
   isImproving: boolean;
-  // SmartActionBar props
-  recommendation?: any;
-  approvalNotes?: string;
-  onApprove?: () => void;
-  onRequestChanges?: () => void;
-  onReject?: () => void;
-  onSubmitForReview?: () => void;
-  // Tools grid props
+  recommendation?: SmartRecommendation | null;
+  approvalNotes: string;
+  onNotesChange: (notes: string) => void;
+  onApprove: () => void;
+  onRequestChanges: () => void;
+  onReject: () => void;
+  onSubmitForReview: () => void;
   onTitleSelect: (title: string) => void;
   onSectionRegenerated: (updatedContent: string) => void;
 }
@@ -38,6 +39,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   isImproving,
   recommendation,
   approvalNotes,
+  onNotesChange,
   onApprove,
   onRequestChanges,
   onReject,
@@ -179,6 +181,13 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Floating Notes Widget */}
+        <FloatingNotesWidget 
+          approvalNotes={approvalNotes}
+          onNotesChange={onNotesChange}
+          approvalStatus={content.approval_status}
+        />
 
       </div>
     </div>
