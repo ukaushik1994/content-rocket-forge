@@ -92,7 +92,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Title Display Summary */}
-        <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-white/10">
+        <div className="mt-8 space-y-3 p-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-white/10">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Content Overview</h3>
             <div className="flex items-center gap-2">
