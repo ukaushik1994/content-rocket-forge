@@ -468,6 +468,7 @@ export type Database = {
       }
       ai_strategy_proposals: {
         Row: {
+          completed_at: string | null
           content_suggestions: string[] | null
           content_type: string | null
           created_at: string
@@ -478,13 +479,16 @@ export type Database = {
           priority_tag: string | null
           proposal_data: Json | null
           related_keywords: string[] | null
+          scheduled_at: string | null
           serp_data: Json | null
+          status: string
           strategy_session_id: string | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          completed_at?: string | null
           content_suggestions?: string[] | null
           content_type?: string | null
           created_at?: string
@@ -495,13 +499,16 @@ export type Database = {
           priority_tag?: string | null
           proposal_data?: Json | null
           related_keywords?: string[] | null
+          scheduled_at?: string | null
           serp_data?: Json | null
+          status?: string
           strategy_session_id?: string | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          completed_at?: string | null
           content_suggestions?: string[] | null
           content_type?: string | null
           created_at?: string
@@ -512,7 +519,9 @@ export type Database = {
           priority_tag?: string | null
           proposal_data?: Json | null
           related_keywords?: string[] | null
+          scheduled_at?: string | null
           serp_data?: Json | null
+          status?: string
           strategy_session_id?: string | null
           title?: string
           updated_at?: string
@@ -1429,6 +1438,7 @@ export type Database = {
           notes: string | null
           priority: string
           proposal_data: Json | null
+          proposal_id: string | null
           scheduled_date: string
           source_proposal_id: string | null
           status: string
@@ -1448,6 +1458,7 @@ export type Database = {
           notes?: string | null
           priority?: string
           proposal_data?: Json | null
+          proposal_id?: string | null
           scheduled_date: string
           source_proposal_id?: string | null
           status?: string
@@ -1467,6 +1478,7 @@ export type Database = {
           notes?: string | null
           priority?: string
           proposal_data?: Json | null
+          proposal_id?: string | null
           scheduled_date?: string
           source_proposal_id?: string | null
           status?: string
@@ -1482,6 +1494,13 @@ export type Database = {
             columns: ["content_id"]
             isOneToOne: false
             referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_calendar_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "ai_strategy_proposals"
             referencedColumns: ["id"]
           },
           {

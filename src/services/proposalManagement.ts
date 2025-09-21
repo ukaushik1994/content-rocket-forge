@@ -35,7 +35,7 @@ class ProposalManagementService {
     }
   }
 
-  // Schedule proposal to calendar with metadata preservation
+  // Schedule proposal to calendar with enhanced status management
   async scheduleProposalToCalendar(
     proposalData: ProposalScheduleData,
     scheduledDate: string,
@@ -46,7 +46,7 @@ class ProposalManagementService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Create calendar item with full proposal data in notes
+      // Create calendar item with proposal_id link for automatic status updates
       const calendarItemData = {
         user_id: user.id,
         title: proposalData.title,
@@ -56,6 +56,7 @@ class ProposalManagementService {
         priority: priority,
         estimated_hours: estimatedHours,
         tags: [proposalData.primary_keyword, ...(proposalData.related_keywords?.slice(0, 2) || [])],
+        proposal_id: proposalData.proposal_id, // New: Direct link for automatic status updates
         notes: JSON.stringify({
           source_proposal_id: proposalData.proposal_id,
           tracking_status: 'scheduled',
@@ -83,7 +84,7 @@ class ProposalManagementService {
     }
   }
 
-  // Check for overdue calendar items and restore proposals
+  // Check for overdue calendar items and restore proposals (enhanced with notifications)
   async checkAndRestoreOverdueProposals(): Promise<void> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -103,31 +104,35 @@ class ProposalManagementService {
       if (error) throw error;
 
       let restoredCount = 0;
+      const restoredProposals: any[] = [];
 
       for (const item of overdueItems || []) {
         try {
+          const proposalId = item.proposal_id;
           const notes = item.notes ? JSON.parse(item.notes) : {};
           const proposalData = notes.proposal_data;
           
-          if (notes.source_proposal_id && proposalData) {
+          if (proposalId) {
             // Check if content was actually created
             const contentExists = await this.checkContentExistsForProposal(
-              notes.source_proposal_id, 
-              proposalData.title,
-              proposalData.primary_keyword
+              proposalId, 
+              proposalData?.title || item.title,
+              proposalData?.primary_keyword
             );
 
             if (!contentExists) {
-              // Restore proposal to pipeline
-              await this.restoreProposalToPipeline(proposalData);
-              
-              // Delete the overdue calendar item
+              // Delete the overdue calendar item (this will automatically restore proposal status via trigger)
               await supabase
                 .from('content_calendar')
                 .delete()
                 .eq('id', item.id);
 
               restoredCount++;
+              restoredProposals.push({
+                id: proposalId,
+                title: proposalData?.title || item.title,
+                scheduled_date: item.scheduled_date
+              });
             }
           }
         } catch (parseError) {
@@ -135,8 +140,10 @@ class ProposalManagementService {
         }
       }
 
+      // Send notification if proposals were restored
       if (restoredCount > 0) {
-        toast.info(`📋 Restored ${restoredCount} overdue proposal${restoredCount > 1 ? 's' : ''} back to pipeline`);
+        await this.notifyProposalsRestored(user.id, restoredProposals);
+        toast.info(`📋 Restored ${restoredCount} overdue proposal${restoredCount > 1 ? 's' : ''} back to available`);
       }
     } catch (error) {
       console.error('❌ Error checking overdue proposals:', error);
@@ -176,8 +183,8 @@ class ProposalManagementService {
     }
   }
 
-  // Check if content exists for a proposal
-  private async checkContentExistsForProposal(
+  // Enhanced content existence check with status marking
+  async checkContentExistsForProposal(
     proposalId: string, 
     title?: string, 
     keyword?: string
@@ -189,12 +196,14 @@ class ProposalManagementService {
       // Check by proposal ID in metadata
       const { data: byProposalId } = await supabase
         .from('content_items')
-        .select('id')
+        .select('id, metadata')
         .eq('user_id', user.id)
         .like('metadata', `%${proposalId}%`)
         .limit(1);
 
       if (byProposalId && byProposalId.length > 0) {
+        // Mark proposal as completed since content exists
+        await this.markProposalAsCompleted(proposalId);
         return true;
       }
 
@@ -208,6 +217,7 @@ class ProposalManagementService {
           .limit(1);
 
         if (byTitle && byTitle.length > 0) {
+          await this.markProposalAsCompleted(proposalId);
           return true;
         }
       }
@@ -221,6 +231,7 @@ class ProposalManagementService {
           .limit(1);
 
         if (byKeyword && byKeyword.length > 0) {
+          await this.markProposalAsCompleted(proposalId);
           return true;
         }
       }
@@ -229,6 +240,24 @@ class ProposalManagementService {
     } catch (error) {
       console.error('❌ Error checking content existence:', error);
       return false;
+    }
+  }
+
+  // Mark proposal as completed when content is created
+  async markProposalAsCompleted(proposalId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('ai_strategy_proposals')
+        .update({ 
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', proposalId);
+
+      if (error) throw error;
+      console.log('✅ Proposal marked as completed:', proposalId);
+    } catch (error) {
+      console.error('❌ Error marking proposal as completed:', error);
     }
   }
 
@@ -265,6 +294,30 @@ class ProposalManagementService {
       console.error('❌ Error fetching calendar items with proposals:', error);
       return [];
     }
+  }
+
+  // Send notification when proposals are restored from overdue calendar items
+  private async notifyProposalsRestored(userId: string, restoredProposals: any[]): Promise<void> {
+    try {
+      const { createNotificationHelper } = await import('@/utils/notificationHelpers');
+      const notificationHelper = createNotificationHelper(userId);
+      
+      await notificationHelper.notifyProposalsRestored(restoredProposals);
+    } catch (error) {
+      console.error('Failed to send proposal restoration notification:', error);
+    }
+  }
+
+  // Postpone calendar item to new date
+  async postponeCalendarItem(calendarItemId: string, newDate: string): Promise<void> {
+    const { calendarActionsService } = await import('@/services/calendarActionsService');
+    return calendarActionsService.postponeCalendarItem(calendarItemId, newDate);
+  }
+
+  // Remove calendar item and restore proposal
+  async removeCalendarItemAndRestoreProposal(calendarItemId: string): Promise<void> {
+    const { calendarActionsService } = await import('@/services/calendarActionsService');
+    return calendarActionsService.removeCalendarItemAndRestoreProposal(calendarItemId);
   }
 }
 
