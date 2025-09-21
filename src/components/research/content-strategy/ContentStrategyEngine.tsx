@@ -15,6 +15,8 @@ import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
+import { ProposalStatusFilter } from './ProposalStatusFilter';
+import { useProposalStatusFilter } from '@/hooks/useProposalStatusFilter';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
 
@@ -53,6 +55,15 @@ export const ContentStrategyEngine = ({
   const [allProposals, setAllProposals] = useState<any[]>([]);
   const [completedProposalIds, setCompletedProposalIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>(selectedProposals || {});
+  
+  // Proposal status filtering - moved after allProposals definition
+  const {
+    selectedStatuses,
+    statusCounts,
+    filteredProposals: statusFilteredProposals,
+    handleStatusToggle,
+    clearFilters
+  } = useProposalStatusFilter(allProposals);
   const [loading, setLoading] = useState(false);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
   const [generating, setGenerating] = useState(false);

@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { proposalManagement } from '@/services/proposalManagement';
 import { StrategyBuilderDialog } from '../StrategyBuilderDialog';
 import { CalendarLoadingSkeleton } from '../components/CalendarLoadingSkeleton';
+import { CalendarItemActions } from './CalendarItemActions';
 
 interface EditorialCalendarProps {
   goals: any;
@@ -415,12 +416,14 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                             size="sm"
                           />
                         )}
+                        <CalendarItemActions 
+                          calendarItem={item}
+                          onRefresh={refreshData}
+                          compact={true}
+                        />
                         <Badge variant="outline" className={getStatusColor(item.status)}>
                           {item.status}
                         </Badge>
-                        <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   );

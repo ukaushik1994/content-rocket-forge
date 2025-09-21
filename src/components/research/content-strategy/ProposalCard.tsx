@@ -11,6 +11,7 @@ import { TrendingUp, Send, Target, BarChart3, Calendar, CheckCircle2, CalendarPl
 import { proposalManagement } from '@/services/proposalManagement';
 import { toast } from 'sonner';
 import { OpportunityDetailModal } from './OpportunityDetailModal';
+import { ProposalStatusBadge } from './ProposalStatusBadge';
 
 interface ProposalCardProps {
   proposal: any;
@@ -139,13 +140,20 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             </CardDescription>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge 
             variant="outline" 
             className={`text-xs w-fit ${getPriorityColor(proposal.priority_tag || 'evergreen')}`}
           >
             {getPriorityLabel(proposal.priority_tag || 'evergreen')}
           </Badge>
+          {proposal.id && (
+            <ProposalStatusBadge 
+              proposalId={proposal.id} 
+              showDetails={false}
+              size="sm"
+            />
+          )}
           {showHistoricalBadge && (
             <Badge variant="outline" className="text-xs text-orange-400 bg-orange-500/10 border-orange-400/30">
               Historical
