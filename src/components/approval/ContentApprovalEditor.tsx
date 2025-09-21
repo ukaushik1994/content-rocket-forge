@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
 import { FileText, CheckCircle, Wand, History, ThumbsUp, AlertCircle, Search, Clock, CheckCircle2, AlertCircle as AlertIcon, RotateCcw, Edit3, Globe, Zap, ChevronDown, ChevronRight } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -331,7 +332,17 @@ useEffect(() => {
                 <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                  <ToggleGroup type="single" value={activeTab} onValueChange={setActiveTab} size="sm" className="bg-card/60 p-0.5 rounded-md">
+                    <ToggleGroupItem value="edit" className="h-6 px-2 text-[11px] data-[state=on]:bg-neon-purple/20 data-[state=on]:text-neon-purple">
+                      <Edit3 className="h-3 w-3 mr-1" />
+                      Edit
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="preview" className="h-6 px-2 text-[11px] data-[state=on]:bg-neon-purple/20 data-[state=on]:text-neon-purple">
+                      <Globe className="h-3 w-3 mr-1" />
+                      Preview
+                    </ToggleGroupItem>
+                  </ToggleGroup>
                   <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10">
                     <Wand className="h-4 w-4 text-neon-purple" />
                     {isImproving ? 'Improving...' : 'Improve with AI'}
@@ -342,10 +353,6 @@ useEffect(() => {
           
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-2 mx-4 my-2 bg-card/60 h-7 rounded-md">
-                <TabsTrigger value="edit" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
-                <TabsTrigger value="preview" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
-              </TabsList>
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                 <div className="h-[60vh]">
