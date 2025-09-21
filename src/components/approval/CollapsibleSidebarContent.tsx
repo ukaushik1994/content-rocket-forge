@@ -92,7 +92,18 @@ export const CollapsibleSidebarContent = ({
   const seoStatus = getSEOStatus();
 
   return (
-    <div className="space-y-1 p-1">{/* Removed Expand/Collapse All section */}
+    <div className="space-y-1">
+      {/* Expand/Collapse All */}
+      <div className="px-3 py-2 border-b border-white/10">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleExpandAll}
+          className="w-full justify-start h-6 text-xs text-white/60 hover:text-white hover:bg-white/5"
+        >
+          {expandAll ? 'Collapse All' : 'Expand All'}
+        </Button>
+      </div>
 
       {/* Title Section */}
       <Collapsible
@@ -102,33 +113,39 @@ export const CollapsibleSidebarContent = ({
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
-            className="w-full justify-between p-1.5 h-8 hover:bg-muted/30 transition-colors rounded-sm"
+            className="w-full justify-between p-3 h-auto hover:bg-white/5"
           >
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <Edit3 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs font-medium text-foreground truncate">Title</span>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <Edit3 className="h-4 w-4 text-neon-purple" />
+              <span className="text-sm font-medium text-white/90">Title</span>
               <Badge 
                 variant="secondary" 
                 className={cn(
-                  "text-[10px] h-3.5 px-1 flex-shrink-0 font-medium",
-                  titleStatus.color === 'text-green-400' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
-                  titleStatus.color === 'text-amber-400' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                  'bg-red-500/20 text-red-300 border-red-500/30'
+                  "text-xs h-5 px-2",
+                  titleStatus.color === 'text-green-400' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                  titleStatus.color === 'text-amber-400' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                  'bg-red-500/10 text-red-400 border-red-500/20'
                 )}
               >
-                {editedTitle ? `${editedTitle.length}` : '0'}
+                <titleStatus.icon className="h-3 w-3 mr-1" />
+                {titleStatus.text}
               </Badge>
+            </div>
+            <div className="flex items-center gap-1">
+              {!openSections.title && (
+                <span className="text-xs text-white/40 truncate max-w-[100px]">
+                  {editedTitle || 'No title'}
+                </span>
+              )}
               {openSections.title ? (
-                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
+                <ChevronDown className="h-4 w-4 text-white/40" />
               ) : (
-                <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />
+                <ChevronRight className="h-4 w-4 text-white/40" />
               )}
             </div>
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="px-1.5 pb-1">
+        <CollapsibleContent className="px-3 pb-3">
           <TitleSidebarTile 
             content={content} 
             value={editedTitle} 
@@ -146,33 +163,39 @@ export const CollapsibleSidebarContent = ({
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
-            className="w-full justify-between p-1.5 h-8 hover:bg-muted/30 transition-colors rounded-sm"
+            className="w-full justify-between p-3 h-auto hover:bg-white/5"
           >
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <Globe className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs font-medium text-foreground truncate">SEO</span>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-neon-blue" />
+              <span className="text-sm font-medium text-white/90">SEO Metadata</span>
               <Badge 
                 variant="secondary" 
                 className={cn(
-                  "text-[10px] h-3.5 px-1 flex-shrink-0 font-medium",
-                  seoStatus.color === 'text-green-400' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
-                  seoStatus.color === 'text-amber-400' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                  'bg-red-500/20 text-red-300 border-red-500/30'
+                  "text-xs h-5 px-2",
+                  seoStatus.color === 'text-green-400' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                  seoStatus.color === 'text-amber-400' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                  'bg-red-500/10 text-red-400 border-red-500/20'
                 )}
               >
-                {seoStatus.text === 'Ready' ? '✓' : '!'}
+                <seoStatus.icon className="h-3 w-3 mr-1" />
+                {seoStatus.text}
               </Badge>
+            </div>
+            <div className="flex items-center gap-1">
+              {!openSections.seo && (
+                <span className="text-xs text-white/40">
+                  {content.metadata?.metaTitle ? 'Set' : 'Missing'}
+                </span>
+              )}
               {openSections.seo ? (
-                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
+                <ChevronDown className="h-4 w-4 text-white/40" />
               ) : (
-                <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />
+                <ChevronRight className="h-4 w-4 text-white/40" />
               )}
             </div>
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="px-1.5 pb-1">
+        <CollapsibleContent className="px-3 pb-3">
           <ApprovalMetadata content={content} compact />
         </CollapsibleContent>
       </Collapsible>
@@ -185,25 +208,24 @@ export const CollapsibleSidebarContent = ({
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
-            className="w-full justify-between p-1.5 h-8 hover:bg-muted/30 transition-colors rounded-sm"
+            className="w-full justify-between p-3 h-auto hover:bg-white/5"
           >
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <Star className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs font-medium text-foreground truncate">Ideas</span>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Badge variant="secondary" className="text-[10px] h-3.5 px-1 bg-violet-500/20 text-violet-300 border-violet-500/30 flex-shrink-0 font-medium">
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-yellow-400" />
+              <span className="text-sm font-medium text-white/90">Title Ideas</span>
+              <Badge variant="secondary" className="text-xs h-5 px-2 bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
+                <Zap className="h-3 w-3 mr-1" />
                 AI
               </Badge>
-              {openSections.suggestions ? (
-                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
-              ) : (
-                <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />
-              )}
             </div>
+            {openSections.suggestions ? (
+              <ChevronDown className="h-4 w-4 text-white/40" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-white/40" />
+            )}
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="px-1.5 pb-1">
+        <CollapsibleContent className="px-3 pb-3">
           <ApprovalAITitleSuggestions content={content} onSelectTitle={onTitleSelect} />
         </CollapsibleContent>
       </Collapsible>
@@ -216,25 +238,24 @@ export const CollapsibleSidebarContent = ({
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
-            className="w-full justify-between p-1.5 h-8 hover:bg-muted/30 transition-colors rounded-sm"
+            className="w-full justify-between p-3 h-auto hover:bg-white/5"
           >
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <Zap className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs font-medium text-foreground truncate">Tools</span>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Badge variant="secondary" className="text-[10px] h-3.5 px-1 bg-blue-500/20 text-blue-300 border-blue-500/30 flex-shrink-0 font-medium">
-                4
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-neon-purple" />
+              <span className="text-sm font-medium text-white/90">Section Tools</span>
+              <Badge variant="secondary" className="text-xs h-5 px-2 bg-neon-purple/10 text-neon-purple border-neon-purple/20">
+                <Zap className="h-3 w-3 mr-1" />
+                AI
               </Badge>
-              {openSections.sections ? (
-                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
-              ) : (
-                <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />
-              )}
             </div>
+            {openSections.sections ? (
+              <ChevronDown className="h-4 w-4 text-white/40" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-white/40" />
+            )}
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="px-1.5 pb-1">
+        <CollapsibleContent className="px-3 pb-3">
           <SectionRegenerationTool content={content} onSectionRegenerated={onSectionRegenerated} />
         </CollapsibleContent>
       </Collapsible>
@@ -247,25 +268,24 @@ export const CollapsibleSidebarContent = ({
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
-            className="w-full justify-between p-1.5 h-8 hover:bg-muted/30 transition-colors rounded-sm"
+            className="w-full justify-between p-3 h-auto hover:bg-white/5"
           >
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <History className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs font-medium text-foreground truncate">History</span>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Badge variant="secondary" className="text-[10px] h-3.5 px-1 bg-slate-500/20 text-slate-300 border-slate-500/30 flex-shrink-0 font-medium">
-                3
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-blue-400" />
+              <span className="text-sm font-medium text-white/90">History</span>
+              <Badge variant="secondary" className="text-xs h-5 px-2 bg-blue-500/10 text-blue-400 border-blue-500/20">
+                <Clock className="h-3 w-3 mr-1" />
+                Timeline
               </Badge>
-              {openSections.timeline ? (
-                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
-              ) : (
-                <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />
-              )}
             </div>
+            {openSections.timeline ? (
+              <ChevronDown className="h-4 w-4 text-white/40" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-white/40" />
+            )}
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="px-1.5 pb-1">
+        <CollapsibleContent className="px-3 pb-3">
           <ApprovalTimeline contentId={content.id} />
         </CollapsibleContent>
       </Collapsible>
