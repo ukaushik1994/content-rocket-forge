@@ -82,12 +82,15 @@ export function useSmartApprovalRecommendation(params: Params) {
   useEffect(() => {
     const rec = query.data;
     if (!rec || !params.content) return;
-    if (loggedForContentRef.current === params.content.id) return;
-    loggedForContentRef.current = params.content.id;
+    
+    const contentId = params.content.id; // Capture ID before async
+    if (loggedForContentRef.current === contentId) return;
+    loggedForContentRef.current = contentId;
+    
     (async () => {
       try {
         await logApprovalRecommendation({
-          contentId: params.content!.id,
+          contentId: contentId, // Use captured ID
           action: rec.action,
           confidence: rec.confidence,
           reasoning: rec.reasoning,
