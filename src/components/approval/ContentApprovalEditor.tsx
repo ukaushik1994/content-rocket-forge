@@ -325,7 +325,7 @@ useEffect(() => {
       )}
       
       {/* Main Editor - Full Width */}
-      <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full">
+      <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full flex flex-col h-full">
           <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -351,11 +351,11 @@ useEffect(() => {
             </div>
           </CardHeader>
           
-          <CardContent className="p-0">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <CardContent className="p-0 flex-1 flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               
-              <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="h-[60vh]">
+              <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0 flex-1">
+                <div className="h-full">
                   <InlineAiEditor value={editedContent} onChange={handleContentChange} onAiApplied={prev => {
                   setUndoContent(prev);
                   setTimeout(() => setUndoContent(null), 5000);
@@ -363,8 +363,8 @@ useEffect(() => {
                 </div>
               </TabsContent>
               
-              <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="h-[60vh] p-6 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
+              <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0 flex-1">
+                <div className="h-full p-6 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
                   {editedContent.split('\n\n').map((paragraph, idx) => paragraph.startsWith('# ') ? <h1 key={idx}>{paragraph.substring(2)}</h1> : paragraph.startsWith('## ') ? <h2 key={idx}>{paragraph.substring(3)}</h2> : paragraph.startsWith('### ') ? <h3 key={idx}>{paragraph.substring(4)}</h3> : paragraph ? <p key={idx}>{paragraph}</p> : <br key={idx} />)}
                 </div>
               </TabsContent>
@@ -372,7 +372,7 @@ useEffect(() => {
           </CardContent>
           
           {/* Last saved + undo */}
-          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10">
+          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10 mt-auto">
             <div>{lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}</div>
             {undoContent && <button className="text-primary hover:underline" onClick={() => {
             setEditedContent(undoContent);
