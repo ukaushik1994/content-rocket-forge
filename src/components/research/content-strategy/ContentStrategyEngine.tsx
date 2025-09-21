@@ -710,7 +710,7 @@ export const ContentStrategyEngine = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="text-white">
-                    <div className="text-lg font-semibold">Content Clusters</div>
+                    <div className="text-lg font-semibold">AI Proposals</div>
                     <div className="text-sm text-white/60">
                       {allProposals.length} active proposals • {selectedCount} selected 
                       {completedProposalIds.length > 0 && ` • ${completedProposalIds.length} completed`}
@@ -792,7 +792,7 @@ export const ContentStrategyEngine = ({
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  {proposals.length > 0 ? 'Strategy Proposals' : 'Content Clusters'}
+                  {proposals.length > 0 ? 'Strategy Proposals' : 'AI Proposals'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -800,7 +800,7 @@ export const ContentStrategyEngine = ({
                    {allProposals.length > 0 ? allProposals.length : clusters.length}
                  </div>
                  <p className="text-xs text-white/60 mt-1">
-                   Available content clusters
+                   Available AI proposals
                  </p>
               </CardContent>
             </Card>
@@ -898,7 +898,7 @@ export const ContentStrategyEngine = ({
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Lightbulb className="h-5 w-5" />
-            Content Clusters
+            AI Proposals
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1008,7 +1008,7 @@ export const ContentStrategyEngine = ({
                 <div className="space-y-4">
                   <Lightbulb className="h-12 w-12 text-white/40 mx-auto" />
                   <div>
-                    <h3 className="text-lg font-semibold text-white">No Content Clusters Yet</h3>
+                    <h3 className="text-lg font-semibold text-white">No AI Proposals Yet</h3>
                     <p className="text-white/60">
                       Generate your first AI strategy to get started
                     </p>
