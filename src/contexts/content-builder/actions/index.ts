@@ -23,6 +23,11 @@ export const createContentBuilderActions = (
   const publishActions = createPublishActions(state, dispatch);
   const seoActions = createSeoActions(state, dispatch);
 
+  // Add setStrategySource action
+  const setStrategySource = (source: { proposal_id: string; priority_tag: string; estimated_impressions: number; meta_suggestions?: { title: string; description: string } } | null) => {
+    dispatch({ type: 'SET_STRATEGY_SOURCE', payload: source });
+  };
+
   // Merge all action groups and return
   return {
     ...keywordActions,
@@ -30,7 +35,8 @@ export const createContentBuilderActions = (
     ...serpActions,
     ...navigationActions,
     ...publishActions,
-    ...seoActions
+    ...seoActions,
+    setStrategySource
   };
 };
 

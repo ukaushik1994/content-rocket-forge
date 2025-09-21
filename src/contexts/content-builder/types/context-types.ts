@@ -52,4 +52,5 @@ export interface ContentBuilderContextType {
   saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;
   setAdditionalInstructions: (instructions: string) => void;
   setSelectedSolution: (solution: EnhancedSolution | null) => void;
+  setStrategySource: (source: { proposal_id: string; priority_tag: string; estimated_impressions: number; meta_suggestions?: { title: string; description: string } } | null) => void;
 }

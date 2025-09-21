@@ -12,7 +12,11 @@ import { Button } from '@/components/ui/button';
 import { useSaveStep } from './useSaveStep';
 import { toast } from 'sonner';
 
-export const SaveStep = () => {
+interface SaveStepProps {
+  onSaveComplete?: (contentId: string) => Promise<void>;
+}
+
+export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
   const { state } = useContentBuilder();
   const { content, mainKeyword } = state;
   const navigate = useNavigate();
@@ -34,16 +38,23 @@ export const SaveStep = () => {
     saveCompleted
   } = useSaveStep();
   
-  // Set a flag in session storage when saving and navigating to content library
+  // Set a flag in session storage when saving and handle completion callback
   useEffect(() => {
     if (saveCompleted) {
       console.log('[SaveStep] Save completed, setting session storage flag');
       // Use consistent flag names across the app
       sessionStorage.setItem('content_draft_saved', 'true');
       sessionStorage.setItem('content_save_timestamp', Date.now().toString());
-      toast.success('Content saved successfully! Navigating to content library...');
+      
+      // Call the completion callback if provided (we'll need to get contentId from the save operation)
+      if (onSaveComplete) {
+        // For now, we'll call it without contentId - this can be improved later
+        onSaveComplete('');
+      } else {
+        toast.success('Content saved successfully! Navigating to content library...');
+      }
     }
-  }, [saveCompleted]);
+  }, [saveCompleted, onSaveComplete]);
   
   // Validate that we have content before showing the form
   if (!content || content.trim().length === 0) {
