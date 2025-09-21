@@ -703,47 +703,6 @@ export const ContentStrategyEngine = ({
           </Card>
         </motion.div>}
 
-      {/* Selection Summary & Actions */}
-      {allProposals.length > 0 && <div className="mb-6">
-          <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="text-white">
-                    <div className="text-lg font-semibold">AI Proposals</div>
-                    <div className="text-sm text-white/60">
-                      {allProposals.length} active proposals • {selectedCount} selected 
-                      {completedProposalIds.length > 0 && ` • ${completedProposalIds.length} completed`}
-                    </div>
-                  </div>
-                  {selectedCount > 0 && <div className="flex items-center gap-2 text-sm">
-                      <Badge className="bg-green-500/20 text-green-400 border-green-400/30">
-                        Est. Traffic: {estimatedTraffic.toLocaleString()}
-                      </Badge>
-                    </div>}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button onClick={refreshCompletedProposals} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10" title="Refresh completion status">
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                  <Button onClick={handleSelectAllProposals} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10">
-                    Select All
-                  </Button>
-                  <Button onClick={handleClearSelection} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10">
-                    Clear
-                  </Button>
-                  {selectedCount > 0 && <Button onClick={handleScheduleSelected} className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0">
-                      <Calendar className="h-4 w-4" />
-                      Add to Calendar ({selectedCount})
-                    </Button>}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>}
-
-      {/* Content Clusters Summary */}
-      {allProposals.length > 0 && <ContentClustersSummary totalProposals={allProposals.length + completedProposalIds.length} selectedCount={selectedCount} completedCount={completedProposalIds.length} estimatedTraffic={estimatedTraffic} />}
 
       {/* Enhanced Header */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-green-500/10 border border-white/10 p-6 mb-6">
@@ -777,22 +736,14 @@ export const ContentStrategyEngine = ({
 
 
       {/* Strategy Proposals or Clusters Display */}
-      {/* Strategy Overview */}
-      {(clusters.length > 0 || proposals.length > 0) && <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.1
-      }}>
+      {/* Strategy Overview - Simplified */}
+      {(clusters.length > 0 || proposals.length > 0) && <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <motion.div initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} transition={{delay: 0.1}}>
             <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-white/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  {proposals.length > 0 ? 'Strategy Proposals' : 'AI Proposals'}
+                  Total AI Proposals
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -800,26 +751,18 @@ export const ContentStrategyEngine = ({
                    {allProposals.length > 0 ? allProposals.length : clusters.length}
                  </div>
                  <p className="text-xs text-white/60 mt-1">
-                   Available AI proposals
+                   Available proposals
                  </p>
               </CardContent>
             </Card>
           </motion.div>
 
-          <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.2
-      }}>
+          <motion.div initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} transition={{delay: 0.2}}>
             <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-white/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
-                  {proposals.length > 0 ? 'Est. Monthly Impressions' : 'Est. Monthly Traffic'}
+                  Estimated Monthly Traffic
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -832,92 +775,56 @@ export const ContentStrategyEngine = ({
               }, 0).toLocaleString() : clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()}
                  </div>
                 <p className="text-xs text-white/60 mt-1">
-                  Potential reach
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.3
-      }}>
-            <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-white/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  {proposals.length > 0 ? 'Related Keywords' : 'Suggested Assets'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white">
-                  {proposals.length > 0 ? proposals.reduce((sum, p) => sum + (p.related_keywords?.length || 0), 0) : clusters.reduce((sum, c) => sum + Object.values(c.suggested_assets).reduce((a: number, b: number) => a + b, 0), 0)}
-                </div>
-                <p className="text-xs text-white/60 mt-1">
-                  Total opportunities
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.4
-      }}>
-            <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-white/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-white/80 flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  {proposals.length > 0 ? 'Quick Wins' : 'Avg Timeline'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white">
-                  {proposals.length > 0 ? proposals.filter(p => p.priority_tag === 'quick_win').length : `${Math.round(clusters.reduce((sum, c) => sum + c.timeframe_weeks, 0) / Math.max(clusters.length, 1))}w`}
-                </div>
-                <p className="text-xs text-white/60 mt-1">
-                  {proposals.length > 0 ? 'High-impact options' : 'Average duration'}
+                  Potential impressions
                 </p>
               </CardContent>
             </Card>
           </motion.div>
         </div>}
 
-      {/* Content Clusters or Proposals */}
+      {/* AI Proposals with Simplified Tabs */}
       <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
-            AI Proposals
+        <CardHeader className="pb-4">
+          <CardTitle className="text-white flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5" />
+              AI Proposals
+            </div>
+            {/* Bulk Actions Toolbar */}
+            {allProposals.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Button onClick={handleSelectAllProposals} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10">
+                  Select All
+                </Button>
+                <Button onClick={handleClearSelection} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10">
+                  Clear
+                </Button>
+                {selectedCount > 0 && (
+                  <Button onClick={handleScheduleSelected} size="sm" className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0">
+                    <Calendar className="h-4 w-4" />
+                    Add to Calendar ({selectedCount})
+                  </Button>
+                )}
+              </div>
+            )}
           </CardTitle>
+          {allProposals.length > 0 && selectedCount > 0 && (
+            <div className="text-sm text-white/60">
+              {allProposals.length} total • {selectedCount} selected • Est. Traffic: {estimatedTraffic.toLocaleString()}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="all" className="space-y-4">
             <TabsList className="bg-white/10 border-white/20">
               <TabsTrigger value="all" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70">
-                {proposals.length > 0 ? 'All Proposals' : 'All Clusters'}
+                All Proposals
               </TabsTrigger>
               <TabsTrigger value="selected" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-300 text-white/70">
                 Selected ({Object.values(selected).filter(Boolean).length})
               </TabsTrigger>
-              <TabsTrigger value="quick_win" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70">
-                Quick Wins ({getFilteredProposals('quick_win').length})
-              </TabsTrigger>
-              <TabsTrigger value="high_return" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70">
-                High Return ({getFilteredProposals('high_return').length})
-              </TabsTrigger>
-              <TabsTrigger value="evergreen" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70">
-                Evergreen ({getFilteredProposals('evergreen').length})
+              <TabsTrigger value="quick_wins" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70">
+                Quick Wins ({getFilteredProposals('quick_win').length + getFilteredProposals('high_return').length + getFilteredProposals('evergreen').length})
               </TabsTrigger>
             </TabsList>
 
@@ -1085,11 +992,15 @@ export const ContentStrategyEngine = ({
             )}
           </TabsContent>
 
-          {['quick_win', 'high_return', 'evergreen'].map(tag => (
-            <TabsContent key={tag} value={tag} className="space-y-4">
+          <TabsContent value="quick_wins" className="space-y-4">
+            {(getFilteredProposals('quick_win').length + getFilteredProposals('high_return').length + getFilteredProposals('evergreen').length) > 0 ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {getPaginatedProposals(tag).map((proposal, idx) => {
+                  {[
+                    ...getPaginatedProposals('quick_win'),
+                    ...getPaginatedProposals('high_return'),
+                    ...getPaginatedProposals('evergreen')
+                  ].map((proposal, idx) => {
                     const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
                     return (
                       <ProposalCard 
@@ -1108,55 +1019,29 @@ export const ContentStrategyEngine = ({
                     );
                   })}
                 </div>
-                
-                {/* Show More Button for Priority Tabs */}
-                {hasMoreProposals(tag) && (
-                  <div className="flex justify-center mt-8">
-                    <Button 
-                      onClick={() => showMoreProposals(tag)} 
-                      variant="outline" 
-                      className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Show More ({getFilteredProposals(tag).length - displayCounts[tag]} remaining)
-                    </Button>
-                  </div>
-                )}
-                
-                {getFilteredProposals(tag).length === 0 && (
-                  <Card className="p-8 text-center bg-white/5 border-white/20">
-                    <div className="space-y-4">
-                      <div className="flex justify-center">
-                        {tag === 'quick_win' && <Target className="h-12 w-12 text-green-400/40" />}
-                        {tag === 'high_return' && <TrendingUp className="h-12 w-12 text-blue-400/40" />}
-                        {tag === 'evergreen' && <BarChart3 className="h-12 w-12 text-purple-400/40" />}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-2">
-                          {tag === 'quick_win' && 'No Quick Wins Found'}
-                          {tag === 'high_return' && 'No High Return Opportunities'}
-                          {tag === 'evergreen' && 'No Evergreen Content'}
-                        </h3>
-                        <p className="text-white/60 text-sm max-w-md mx-auto">
-                          {tag === 'quick_win' && 'No low-competition, high-opportunity keywords found. Try generating more proposals or adjusting your strategy.'}
-                          {tag === 'high_return' && 'No high-volume opportunities identified. Consider broadening your keyword targets or generating more proposals.'}
-                          {tag === 'evergreen' && 'No steady, long-term content opportunities found. Generate more proposals to find consistent performers.'}
-                        </p>
-                      </div>
-                      <Button 
-                        onClick={generateBlueprint} 
-                        disabled={generating}
-                        variant="outline" 
-                        className="mt-4 bg-white/10 border-white/20 text-white hover:bg-white/20"
-                      >
-                        {generating ? 'Generating...' : 'Generate More Proposals'}
-                      </Button>
-                    </div>
-                  </Card>
-                )}
               </>
-            </TabsContent>
-          ))}
+            ) : (
+              <Card className="p-8 text-center bg-white/5 border-white/20">
+                <div className="space-y-4">
+                  <Target className="h-12 w-12 text-green-400/40 mx-auto" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">No Quick Win Opportunities Yet</h3>
+                    <p className="text-white/60 text-sm max-w-md mx-auto">
+                      Generate more proposals to find high-impact, low-competition opportunities.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={generateBlueprint} 
+                    disabled={generating}
+                    variant="outline" 
+                    className="mt-4 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    {generating ? 'Generating...' : 'Generate Proposals'}
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
         </CardContent>
       </Card>
