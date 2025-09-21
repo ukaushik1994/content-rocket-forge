@@ -17,7 +17,8 @@ import {
   Trash2, 
   ArrowRight, 
   Clock,
-  AlertTriangle 
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
 import { calendarActionsService } from '@/services/calendarActionsService';
 import { toast } from 'sonner';
@@ -32,9 +33,11 @@ interface CalendarItemActionsProps {
 export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }: CalendarItemActionsProps) => {
   const [postponeDialogOpen, setPostponeDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [postponeDate, setPostponeDate] = useState('');
   const [postponeReason, setPostponeReason] = useState('');
   const [removeReason, setRemoveReason] = useState('');
+  const [restoreReason, setRestoreReason] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Debug log on component mount
@@ -72,7 +75,7 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
     }
   };
 
-  const handleRemove = async () => {
+  const handleRemoveOnly = async () => {
     if (!calendarItem?.id) {
       console.error('❌ No calendar item ID provided for deletion');
       toast.error('Cannot delete: Invalid calendar item');
@@ -81,10 +84,8 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
 
     try {
       setLoading(true);
-      console.log('🗑️ Starting calendar item deletion:', {
+      console.log('🗑️ Starting calendar item deletion (remove only):', {
         calendarItemId: calendarItem.id,
-        hasProposal,
-        proposalId: calendarItem.proposal_id,
         reason: removeReason || 'User requested removal'
       });
 
@@ -100,60 +101,50 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
 
       console.log('✅ User authenticated:', user.id);
       
-      if (hasProposal) {
-        console.log('🔄 Deleting calendar item with proposal restoration...');
-        await calendarActionsService.removeCalendarItemAndRestoreProposal(
-          calendarItem.id,
-          removeReason || 'User requested removal'
-        );
-      } else {
-        console.log('🗑️ Deleting calendar item without proposal...');
-        
-        // Verify ownership before deletion
-        const { data: itemCheck, error: checkError } = await supabase
-          .from('content_calendar')
-          .select('user_id, title')
-          .eq('id', calendarItem.id)
-          .maybeSingle();
+      // Verify ownership before deletion
+      const { data: itemCheck, error: checkError } = await supabase
+        .from('content_calendar')
+        .select('user_id, title')
+        .eq('id', calendarItem.id)
+        .maybeSingle();
 
-        if (checkError) {
-          console.error('❌ Failed to verify calendar item ownership:', checkError);
-          toast.error(`Database error: ${checkError.message}`);
-          return;
-        }
-
-        if (!itemCheck) {
-          console.error('❌ Calendar item not found:', calendarItem.id);
-          toast.error('Calendar item not found - it may have already been deleted');
-          onRefresh?.(); // Refresh to sync UI
-          return;
-        }
-
-        if (itemCheck.user_id !== user.id) {
-          console.error('❌ User does not own this calendar item:', {
-            itemUserId: itemCheck.user_id,
-            currentUserId: user.id
-          });
-          toast.error('You do not have permission to delete this item');
-          return;
-        }
-
-        // Delete the calendar item
-        const { error: deleteError } = await supabase
-          .from('content_calendar')
-          .delete()
-          .eq('id', calendarItem.id)
-          .eq('user_id', user.id); // Double check with RLS
-
-        if (deleteError) {
-          console.error('❌ Failed to delete calendar item:', deleteError);
-          toast.error(`Failed to delete calendar item: ${deleteError.message}`);
-          return;
-        }
-
-        console.log('✅ Calendar item deleted successfully:', calendarItem.id);
-        toast.success('Calendar item removed successfully');
+      if (checkError) {
+        console.error('❌ Failed to verify calendar item ownership:', checkError);
+        toast.error(`Database error: ${checkError.message}`);
+        return;
       }
+
+      if (!itemCheck) {
+        console.error('❌ Calendar item not found:', calendarItem.id);
+        toast.error('Calendar item not found - it may have already been deleted');
+        onRefresh?.(); // Refresh to sync UI
+        return;
+      }
+
+      if (itemCheck.user_id !== user.id) {
+        console.error('❌ User does not own this calendar item:', {
+          itemUserId: itemCheck.user_id,
+          currentUserId: user.id
+        });
+        toast.error('You do not have permission to delete this item');
+        return;
+      }
+
+      // Delete the calendar item
+      const { error: deleteError } = await supabase
+        .from('content_calendar')
+        .delete()
+        .eq('id', calendarItem.id)
+        .eq('user_id', user.id); // Double check with RLS
+
+      if (deleteError) {
+        console.error('❌ Failed to delete calendar item:', deleteError);
+        toast.error(`Failed to delete calendar item: ${deleteError.message}`);
+        return;
+      }
+
+      console.log('✅ Calendar item deleted successfully:', calendarItem.id);
+      toast.success('Calendar item removed successfully');
       
       setRemoveDialogOpen(false);
       setRemoveReason('');
@@ -166,11 +157,50 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
       console.error('❌ Error in calendar item deletion:', {
         error: error.message || error,
         calendarItemId: calendarItem.id,
-        hasProposal,
         stack: error.stack
       });
       
       toast.error(error.message || 'Failed to delete calendar item');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveAndRestore = async () => {
+    if (!calendarItem?.id) {
+      console.error('❌ No calendar item ID provided for removal');
+      toast.error('Cannot remove: Invalid calendar item');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('🔄 Starting calendar item removal with proposal restoration:', {
+        calendarItemId: calendarItem.id,
+        proposalId: calendarItem.proposal_id,
+        reason: restoreReason || 'User requested removal and restoration'
+      });
+
+      await calendarActionsService.removeCalendarItemAndRestoreProposal(
+        calendarItem.id,
+        restoreReason || 'User requested removal and restoration'
+      );
+      
+      setRestoreDialogOpen(false);
+      setRestoreReason('');
+      
+      // Refresh data
+      console.log('🔄 Refreshing calendar data...');
+      onRefresh?.();
+      
+    } catch (error: any) {
+      console.error('❌ Error in calendar item removal and restoration:', {
+        error: error.message || error,
+        calendarItemId: calendarItem.id,
+        stack: error.stack
+      });
+      
+      toast.error(error.message || 'Failed to remove calendar item and restore proposal');
     } finally {
       setLoading(false);
     }
@@ -215,8 +245,17 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
                 className="text-red-400 focus:text-red-400"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Remove {hasProposal && '& Restore'}
+                Remove
               </DropdownMenuItem>
+              {hasProposal && (
+                <DropdownMenuItem 
+                  onClick={() => setRestoreDialogOpen(true)}
+                  className="text-green-400 focus:text-green-400"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Remove & Restore
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -224,6 +263,7 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
         {/* Dialogs */}
         {renderPostponeDialog()}
         {renderRemoveDialog()}
+        {renderRestoreDialog()}
       </>
     );
   }
@@ -256,13 +296,26 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
           className="gap-2 bg-red-500/20 border-red-400/30 text-red-400 hover:bg-red-500/30"
         >
           <Trash2 className="h-4 w-4" />
-          Remove {hasProposal && '& Restore'}
+          Remove
         </Button>
+        
+        {hasProposal && (
+          <Button
+            onClick={() => setRestoreDialogOpen(true)}
+            size="sm"
+            variant="outline"
+            className="gap-2 bg-green-500/20 border-green-400/30 text-green-400 hover:bg-green-500/30"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Remove & Restore
+          </Button>
+        )}
       </div>
 
       {/* Dialogs */}
       {renderPostponeDialog()}
       {renderRemoveDialog()}
+      {renderRestoreDialog()}
     </>
   );
 
@@ -346,7 +399,7 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
         <DialogContent className="bg-gray-900 border-white/20 text-white">
           <DialogHeader>
             <DialogTitle className="text-red-400">
-              Remove Calendar Item {hasProposal && '& Restore Proposal'}
+              Remove Calendar Item
             </DialogTitle>
           </DialogHeader>
           
@@ -357,8 +410,8 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
                 {hasProposal && (
                   <>
                     <br />
-                    <span className="text-green-400">
-                      ✓ The associated proposal will be restored to "Available" status.
+                    <span className="text-yellow-400">
+                      ⚠️ The associated proposal will remain scheduled.
                     </span>
                   </>
                 )}
@@ -382,11 +435,61 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
               Cancel
             </Button>
             <Button 
-              onClick={handleRemove} 
+              onClick={handleRemoveOnly} 
               disabled={loading}
               className="bg-red-500/20 hover:bg-red-500/30 border-red-400/30 text-red-400"
             >
-              {loading ? 'Removing...' : `Remove ${hasProposal ? '& Restore' : ''}`}
+              {loading ? 'Removing...' : 'Remove'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  function renderRestoreDialog() {
+    return (
+      <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
+        <DialogContent className="bg-gray-900 border-white/20 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-green-400">
+              Remove Calendar Item & Restore Proposal
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-3 bg-green-500/10 border border-green-400/30 rounded-lg">
+              <p className="text-sm text-white/80">
+                This will remove "{calendarItem.title}" from your calendar.
+                <br />
+                <span className="text-green-400">
+                  ✓ The associated proposal will be restored to "Available" status.
+                </span>
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="restore_reason" className="text-white">Reason (Optional)</Label>
+              <Textarea
+                id="restore_reason"
+                value={restoreReason}
+                onChange={(e) => setRestoreReason(e.target.value)}
+                placeholder="Why are you removing this calendar item and restoring the proposal?"
+                className="bg-white/10 border-white/20 text-white"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRestoreDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleRemoveAndRestore} 
+              disabled={loading}
+              className="bg-green-500/20 hover:bg-green-500/30 border-green-400/30 text-green-400"
+            >
+              {loading ? 'Removing & Restoring...' : 'Remove & Restore'}
             </Button>
           </DialogFooter>
         </DialogContent>
