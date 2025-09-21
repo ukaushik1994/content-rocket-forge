@@ -36,7 +36,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
   // Handle responsive sidebar state
   useEffect(() => {
     const checkScreenSize = () => {
-      setSidebarCollapsed(window.innerWidth < 1024);
+      setSidebarCollapsed(window.innerWidth < 1200);
     };
     
     // Only run on client side
@@ -208,7 +208,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                      className="lg:hidden h-8 w-8 p-0"
+                      className="xl:hidden h-8 w-8 p-0 hover:bg-muted/50 transition-colors"
                       title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
                     >
                       {sidebarCollapsed ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
@@ -246,13 +246,13 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             <AnimatePresence mode="wait">
               {!sidebarCollapsed && (
                 <motion.div
-                  className="lg:relative absolute right-0 top-0 h-full z-20 lg:z-auto"
+                  className="xl:relative absolute right-0 top-0 h-full z-20 xl:z-auto"
                   initial={{ x: "100%", opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: "100%", opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-                  <div className="w-64 h-full bg-background/95 backdrop-blur-sm border-l border-border/50 shadow-2xl overflow-y-auto">
+                  <div className="w-48 h-full bg-background/95 backdrop-blur-sm border-l border-border/50 shadow-2xl overflow-y-auto">
                     <CollapsibleSidebarContent
                       content={content}
                       editedTitle={editedTitle}
@@ -269,10 +269,11 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             {/* Mobile overlay when sidebar is open */}
             {!sidebarCollapsed && (
               <motion.div
-                className="lg:hidden absolute inset-0 bg-background/80 backdrop-blur-sm z-10"
+                className="xl:hidden absolute inset-0 bg-background/60 backdrop-blur-sm z-10"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
                 onClick={() => setSidebarCollapsed(true)}
               />
             )}
