@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { X, Minimize2, Maximize2, ChevronDown, ChevronUp } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { ContentApprovalEditor } from '@/components/approval/ContentApprovalEditor';
-import { CompactEditingSidebar } from './CompactEditingSidebar';
+import { CollapsibleSidebarContent } from '../CollapsibleSidebarContent';
 import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
 import { useContent } from '@/contexts/content';
 import { useApproval } from '../context/ApprovalContext';
@@ -152,6 +152,16 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
     }
   };
 
+  const handleTitleSelect = (title: string) => {
+    setEditedTitle(title);
+    toast.success('Title updated from AI suggestion');
+  };
+
+  const handleSectionRegenerated = (content: string) => {
+    setEditedContent(content);
+    toast.success('Content section regenerated with AI');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] sm:w-[90vw] lg:w-[85vw] xl:w-[75vw] h-[95vh] sm:h-[90vh] lg:h-[85vh] p-0 border-none overflow-hidden max-w-none max-h-none">
@@ -242,15 +252,16 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
                   exit={{ x: "100%", opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
-                  <CompactEditingSidebar
-                    content={content}
-                    editedTitle={editedTitle}
-                    onTitleChange={setEditedTitle}
-                    onSave={handleSave}
-                    onImprove={handleImprove}
-                    isSubmitting={isSubmitting}
-                    isImproving={isImproving}
-                  />
+                  <div className="w-80 h-full bg-background/95 backdrop-blur-sm border-l border-border/50 shadow-2xl overflow-y-auto">
+                    <CollapsibleSidebarContent
+                      content={content}
+                      editedTitle={editedTitle}
+                      onTitleChange={setEditedTitle}
+                      onTitleSelect={handleTitleSelect}
+                      onSectionRegenerated={handleSectionRegenerated}
+                      mainKeyword={mainKeyword}
+                    />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
