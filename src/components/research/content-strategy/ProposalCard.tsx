@@ -89,7 +89,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
   return (
     <>
       <Card 
-        className={`relative overflow-hidden border transition-all duration-300 cursor-pointer ${
+        className={`relative overflow-hidden border transition-all duration-300 cursor-pointer h-full flex flex-col ${
           isSelected 
             ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/50 shadow-lg shadow-blue-500/20'
             : 'bg-white/5 border-white/10 hover:bg-white/10'
@@ -157,7 +157,7 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
         {/* Primary Keyword */}
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-purple-400" />

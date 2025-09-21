@@ -864,7 +864,7 @@ export const ContentStrategyEngine = ({
                   {getPaginatedProposals('all').map((proposal, idx) => {
                     const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
                     return (
-                      <motion.div key={proposal.primary_keyword || idx} initial={{
+                      <motion.div key={proposal.primary_keyword || idx} className="h-full" initial={{
                         opacity: 0,
                         y: 20
                       }} animate={{
