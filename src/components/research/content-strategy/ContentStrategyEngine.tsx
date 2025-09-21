@@ -775,20 +775,6 @@ export const ContentStrategyEngine = ({
         </div>
       </div>
 
-      {/* Content Clusters Grid - Show ALL proposals as tiles */}
-      {allProposals.length > 0 && <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-white">All Content Clusters</h3>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-white/80 border-white/20">
-                {allProposals.length} proposals
-              </Badge>
-              {loadingHistorical && <RefreshCw className="h-4 w-4 text-white/60 animate-spin" />}
-            </div>
-          </div>
-          
-          
-        </div>}
 
       {/* Strategy Proposals or Clusters Display */}
       {/* Strategy Overview */}

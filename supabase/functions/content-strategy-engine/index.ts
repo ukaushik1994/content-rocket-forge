@@ -1039,6 +1039,7 @@ Create 5-8 strategic content proposals that leverage these keywords and align wi
     return { 
       ...p, 
       keywords: kws, 
+      primary_keyword: kws.length > 0 ? kws[0] : p.title.toLowerCase(),
       serp_data: serpMap, 
       estimated_impressions: Math.round(estImpr),
       priority_tag: classification.priority_tag,
