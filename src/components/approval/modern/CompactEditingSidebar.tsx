@@ -28,7 +28,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
 
   return (
     <TooltipProvider>
-      <div className="w-80 lg:w-80 w-full max-w-80 bg-gradient-to-br from-card/95 to-card/80 border-l border-border/50 backdrop-blur-md shadow-lg">
+      <div className="w-full sm:w-80 lg:w-80 max-w-80 bg-gradient-to-br from-card/95 to-card/80 border-l border-border/50 backdrop-blur-md shadow-lg">
         <div className="p-6 space-y-6 h-full overflow-y-auto">
           {/* Title Display Section */}
           <div className="space-y-4">
