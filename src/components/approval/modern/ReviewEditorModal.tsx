@@ -139,9 +139,9 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-screen min-h-screen max-w-none max-h-none p-0 border-none overflow-hidden">
+      <DialogContent className="w-[95vw] sm:w-[85vw] lg:w-[70vw] h-[90vh] sm:h-[80vh] lg:h-[70vh] p-0 border-none overflow-hidden max-w-none max-h-none">
         <motion.div 
-          className="min-h-screen bg-background flex flex-col relative"
+          className="h-full bg-background flex flex-col relative"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
@@ -248,7 +248,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
 
           {/* Responsive Notes Section at Bottom */}
           <motion.div 
-            className="border-t border-border/50 bg-card/95 backdrop-blur-sm z-30 max-h-[30vh] sm:max-h-[40vh] flex flex-col"
+            className="border-t border-border/50 bg-card/95 backdrop-blur-sm z-30 max-h-[35%] sm:max-h-[40%] flex flex-col flex-shrink-0"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.3 }}
