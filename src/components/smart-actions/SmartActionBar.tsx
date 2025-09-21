@@ -79,24 +79,26 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
     : 'Submit for Review';
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
       {/* AI Recommendation CTA */}
       {canFollow && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             onClick={followRecommendation}
             disabled={disabledFollow}
             aria-label={recommendation ? `Follow AI: ${recommendation.action.replace('_',' ')} at ${recommendation.confidence}% confidence` : 'Follow AI recommendation'}
             variant="secondary"
-            className="inline-flex items-center"
+            size="sm"
+            className="inline-flex items-center text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
           >
-            <Zap className="mr-2 h-4 w-4" aria-hidden="true" />
-            Follow AI ({recommendation?.confidence}% )
+            <Zap className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Follow AI ({recommendation?.confidence}%)</span>
+            <span className="sm:hidden">AI ({recommendation?.confidence}%)</span>
           </Button>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Why this recommendation?">
-                <Info className="h-4 w-4" aria-hidden="true" />
+              <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0" aria-label="Why this recommendation?">
+                <Info className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 text-sm">
@@ -121,57 +123,69 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
         </div>
       )}
 
-      {/* Primary actions (unchanged behavior) */}
-      {available.includes('submit_for_review') && (
-        <Button
-          onClick={() => openConfirm('submit_for_review', recommendation?.action === 'submit_for_review')}
-          disabled={!!disabled}
-          aria-label="Submit content for review"
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <CheckCircle className="mr-2 h-4 w-4" aria-hidden="true" />
-          Submit for Review
-        </Button>
-      )}
+      {/* Primary actions (responsive layout) */}
+      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+        {available.includes('submit_for_review') && (
+          <Button
+            onClick={() => openConfirm('submit_for_review', recommendation?.action === 'submit_for_review')}
+            disabled={!!disabled}
+            aria-label="Submit content for review"
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+          >
+            <CheckCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Submit for Review</span>
+            <span className="sm:hidden">Submit</span>
+          </Button>
+        )}
 
-      {available.includes('approve') && (
-        <Button
-          onClick={() => openConfirm('approve', recommendation?.action === 'approve')}
-          disabled={!!disabled}
-          aria-label="Approve and publish content"
-          className="bg-green-600 hover:bg-green-700 text-white"
-        >
-          <CheckCircle className="mr-2 h-4 w-4" aria-hidden="true" />
-          Approve & Publish
-        </Button>
-      )}
-      {available.includes('request_changes') && (
-        <Button
-          onClick={() => openConfirm('request_changes', recommendation?.action === 'request_changes')}
-          disabled={!!disabled || !hasNotes}
-          aria-label="Request changes from author"
-          variant="outline"
-          className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20"
-        >
-          Request Changes
-        </Button>
-      )}
-      {available.includes('reject') && (
-        <Button
-          onClick={() => openConfirm('reject', recommendation?.action === 'reject')}
-          disabled={!!disabled || !hasNotes}
-          variant="destructive"
-          className="bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20"
-        >
-          Reject
-        </Button>
-      )}
+        {available.includes('approve') && (
+          <Button
+            onClick={() => openConfirm('approve', recommendation?.action === 'approve')}
+            disabled={!!disabled}
+            aria-label="Approve and publish content"
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+          >
+            <CheckCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Approve & Publish</span>
+            <span className="sm:hidden">Approve</span>
+          </Button>
+        )}
+        
+        {available.includes('request_changes') && (
+          <Button
+            onClick={() => openConfirm('request_changes', recommendation?.action === 'request_changes')}
+            disabled={!!disabled || !hasNotes}
+            aria-label="Request changes from author"
+            variant="outline"
+            size="sm"
+            className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+          >
+            <span className="hidden sm:inline">Request Changes</span>
+            <span className="sm:hidden">Changes</span>
+          </Button>
+        )}
+        
+        {available.includes('reject') && (
+          <Button
+            onClick={() => openConfirm('reject', recommendation?.action === 'reject')}
+            disabled={!!disabled || !hasNotes}
+            variant="destructive"
+            size="sm"
+            className="bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+          >
+            <span className="hidden sm:inline">Reject</span>
+            <span className="sm:hidden">Reject</span>
+          </Button>
+        )}
+      </div>
 
-      {/* In-app Help */}
+      {/* Help button */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Smart Actions help">
-            <HelpCircle className="h-4 w-4" aria-hidden="true" />
+          <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0 flex-shrink-0" aria-label="Smart Actions help">
+            <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 text-sm">

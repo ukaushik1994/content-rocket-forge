@@ -139,9 +139,9 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none p-0 border-none overflow-hidden">
+      <DialogContent className="w-screen min-h-screen max-w-none max-h-none p-0 border-none overflow-hidden">
         <motion.div 
-          className="h-full bg-background flex flex-col relative"
+          className="min-h-screen bg-background flex flex-col relative"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
@@ -149,10 +149,10 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
         >
           
           {/* Main Layout Container */}
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden min-h-0">
             
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 min-h-0">
               {/* Enhanced Header */}
               <motion.div 
                 className="flex-shrink-0 border-b border-border/50 bg-gradient-to-r from-card/80 to-card/60 backdrop-blur-sm"
@@ -246,17 +246,17 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             )}
           </div>
 
-          {/* Fixed Notes Section at Bottom */}
+          {/* Responsive Notes Section at Bottom */}
           <motion.div 
-            className="flex-shrink-0 border-t border-border/50 bg-card/95 backdrop-blur-sm z-30"
+            className="border-t border-border/50 bg-card/95 backdrop-blur-sm z-30 max-h-[30vh] sm:max-h-[40vh] flex flex-col"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.3 }}
           >
-            <div className="w-full">
+            <div className="w-full flex flex-col min-h-0">
               {/* Notes Header */}
-              <div className="flex items-center justify-between px-6 py-3 border-b border-border/30">
-                <h4 className="text-sm font-medium text-foreground/90">
+              <div className="flex items-center justify-between px-4 sm:px-6 py-2 sm:py-3 border-b border-border/30 flex-shrink-0">
+                <h4 className="text-xs sm:text-sm font-medium text-foreground/90">
                   {content.approval_status === 'pending_review' || content.approval_status === 'in_review' 
                     ? 'Review Notes & Feedback' 
                     : 'Notes'}
@@ -267,7 +267,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
                   onClick={() => setNotesCollapsed(!notesCollapsed)}
                   className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                 >
-                  {notesCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  {notesCollapsed ? <ChevronUp className="h-3 w-3 sm:h-4 sm:w-4" /> : <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />}
                 </Button>
               </div>
 
@@ -279,46 +279,53 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
+                    className="overflow-hidden flex-1 min-h-0"
                   >
-                    <div className="p-6 space-y-4">
-                      {/* Notes Textarea */}
-                      <Textarea 
-                        placeholder={
-                          content.approval_status === 'pending_review' || content.approval_status === 'in_review' 
-                            ? "Provide feedback, suggestions, or reasons for your decision..." 
-                            : "Add any notes about this content..."
-                        }
-                        value={approvalNotes} 
-                        onChange={(e) => setApprovalNotes(e.target.value)} 
-                        className="min-h-[100px] bg-muted/30 border-border/50 focus-visible:ring-primary/50 resize-none" 
-                      />
+                    <div className="flex flex-col h-full min-h-0">
+                      {/* Scrollable Content Area */}
+                      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4 min-h-0">
+                        {/* Notes Textarea */}
+                        <div className="flex-shrink-0">
+                          <Textarea 
+                            placeholder={
+                              content.approval_status === 'pending_review' || content.approval_status === 'in_review' 
+                                ? "Provide feedback, suggestions, or reasons for your decision..." 
+                                : "Add any notes about this content..."
+                            }
+                            value={approvalNotes} 
+                            onChange={(e) => setApprovalNotes(e.target.value)} 
+                            className="min-h-[80px] sm:min-h-[100px] max-h-[120px] sm:max-h-[140px] bg-muted/30 border-border/50 focus-visible:ring-primary/50 resize-none text-sm" 
+                          />
+                        </div>
+                        
+                        {/* Smart Recommendation Alert */}
+                        {recommendation && (
+                          <Alert className="border-amber-600/30 bg-amber-600/10 flex-shrink-0">
+                            <AlertDescription className="text-amber-200 text-xs sm:text-sm">
+                              <strong>Smart Recommendation:</strong> {recommendation.action === 'approve' ? '✅ Ready to approve' : recommendation.action === 'request_changes' ? '📝 Consider requesting changes' : '❌ May need rejection'}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
                       
-                      {/* Smart Recommendation Alert */}
-                      {recommendation && (
-                        <Alert className="border-amber-600/30 bg-amber-600/10">
-                          <AlertDescription className="text-amber-200 text-sm">
-                            <strong>Smart Recommendation:</strong> {recommendation.action === 'approve' ? '✅ Ready to approve' : recommendation.action === 'request_changes' ? '📝 Consider requesting changes' : '❌ May need rejection'}
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      {/* Action Bar */}
-                      <SmartActionBar 
-                        context={{
-                          contentId: content.id,
-                          approvalStatus: content.approval_status,
-                          isSubmitting: isSubmitting,
-                          hasNotes: !!approvalNotes.trim(),
-                        }}
-                        recommendation={recommendation}
-                        disabled={isSubmitting}
-                        hasNotes={!!approvalNotes.trim()}
-                        onApprove={handleApprove}
-                        onReject={handleReject}
-                        onRequestChanges={handleRequestChanges}
-                        onSubmitForReview={handleSubmitForReview}
-                      />
+                      {/* Fixed Action Bar at Bottom */}
+                      <div className="flex-shrink-0 p-4 sm:p-6 pt-0 sm:pt-0 border-t border-border/20 bg-card/80 backdrop-blur-sm">
+                        <SmartActionBar 
+                          context={{
+                            contentId: content.id,
+                            approvalStatus: content.approval_status,
+                            isSubmitting: isSubmitting,
+                            hasNotes: !!approvalNotes.trim(),
+                          }}
+                          recommendation={recommendation}
+                          disabled={isSubmitting}
+                          hasNotes={!!approvalNotes.trim()}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                          onRequestChanges={handleRequestChanges}
+                          onSubmitForReview={handleSubmitForReview}
+                        />
+                      </div>
                     </div>
                   </motion.div>
                 )}
