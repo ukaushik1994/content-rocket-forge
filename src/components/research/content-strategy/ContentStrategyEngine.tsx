@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RefreshCw, Send, TrendingUp, Calendar, Target, BarChart3, Lightbulb, Trash2, Eye, FileText, AlertCircle } from 'lucide-react';
+import { RefreshCw, Send, TrendingUp, Calendar, Target, BarChart3, Lightbulb, Trash2, Eye, FileText, AlertCircle, TreePine } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { aiStrategyService } from '@/services/aiStrategyService';
@@ -824,7 +824,13 @@ export const ContentStrategyEngine = ({
                 Selected ({Object.values(selected).filter(Boolean).length})
               </TabsTrigger>
               <TabsTrigger value="quick_wins" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70">
-                Quick Wins ({getFilteredProposals('quick_win').length + getFilteredProposals('high_return').length + getFilteredProposals('evergreen').length})
+                Quick Wins ({getFilteredProposals('quick_win').length})
+              </TabsTrigger>
+              <TabsTrigger value="high_return" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70">
+                High Return ({getFilteredProposals('high_return').length})
+              </TabsTrigger>
+              <TabsTrigger value="evergreen" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70">
+                Evergreen ({getFilteredProposals('evergreen').length})
               </TabsTrigger>
             </TabsList>
 
@@ -993,14 +999,10 @@ export const ContentStrategyEngine = ({
           </TabsContent>
 
           <TabsContent value="quick_wins" className="space-y-4">
-            {(getFilteredProposals('quick_win').length + getFilteredProposals('high_return').length + getFilteredProposals('evergreen').length) > 0 ? (
+            {getFilteredProposals('quick_win').length > 0 ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[
-                    ...getPaginatedProposals('quick_win'),
-                    ...getPaginatedProposals('high_return'),
-                    ...getPaginatedProposals('evergreen')
-                  ].map((proposal, idx) => {
+                  {getPaginatedProposals('quick_win').map((proposal, idx) => {
                     const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
                     return (
                       <ProposalCard 
@@ -1019,6 +1021,20 @@ export const ContentStrategyEngine = ({
                     );
                   })}
                 </div>
+                
+                {/* Show More Button */}
+                {hasMoreProposals('quick_win') && (
+                  <div className="flex justify-center mt-8">
+                    <Button 
+                      onClick={() => showMoreProposals('quick_win')} 
+                      variant="outline" 
+                      className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Show More ({getFilteredProposals('quick_win').length - displayCounts.quick_win} remaining)
+                    </Button>
+                  </div>
+                )}
               </>
             ) : (
               <Card className="p-8 text-center bg-white/5 border-white/20">
@@ -1027,7 +1043,129 @@ export const ContentStrategyEngine = ({
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2">No Quick Win Opportunities Yet</h3>
                     <p className="text-white/60 text-sm max-w-md mx-auto">
-                      Generate more proposals to find high-impact, low-competition opportunities.
+                      Low-difficulty keywords (KD &lt; 30) with moderate search volume (1K-10K). Can rank quickly in 1-3 months.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={generateBlueprint} 
+                    disabled={generating}
+                    variant="outline" 
+                    className="mt-4 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    {generating ? 'Generating...' : 'Generate Proposals'}
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="high_return" className="space-y-4">
+            {getFilteredProposals('high_return').length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {getPaginatedProposals('high_return').map((proposal, idx) => {
+                    const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
+                    return (
+                      <ProposalCard 
+                        key={proposal.primary_keyword || idx} 
+                        proposal={proposal} 
+                        index={originalIndex} 
+                        isSelected={selected[originalIndex] || false} 
+                        onSelectionChange={(index, isSelected) => {
+                          const newSelected = { ...selected, [index]: isSelected };
+                          setSelected(newSelected);
+                          setTimeout(() => setSelectedProposals(newSelected), 50);
+                        }} 
+                        onSendToBuilder={sendProposalToContentBuilder}
+                        isNew={isProposalNew(proposal)}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {/* Show More Button */}
+                {hasMoreProposals('high_return') && (
+                  <div className="flex justify-center mt-8">
+                    <Button 
+                      onClick={() => showMoreProposals('high_return')} 
+                      variant="outline" 
+                      className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Show More ({getFilteredProposals('high_return').length - displayCounts.high_return} remaining)
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <Card className="p-8 text-center bg-white/5 border-white/20">
+                <div className="space-y-4">
+                  <TrendingUp className="h-12 w-12 text-blue-400/40 mx-auto" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">No High Return Opportunities Yet</h3>
+                    <p className="text-white/60 text-sm max-w-md mx-auto">
+                      High search volume keywords (10K+) with strong ROI potential. Higher competition is acceptable for these valuable opportunities.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={generateBlueprint} 
+                    disabled={generating}
+                    variant="outline" 
+                    className="mt-4 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    {generating ? 'Generating...' : 'Generate Proposals'}
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="evergreen" className="space-y-4">
+            {getFilteredProposals('evergreen').length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {getPaginatedProposals('evergreen').map((proposal, idx) => {
+                    const originalIndex = allProposals.findIndex(p => p.primary_keyword === proposal.primary_keyword);
+                    return (
+                      <ProposalCard 
+                        key={proposal.primary_keyword || idx} 
+                        proposal={proposal} 
+                        index={originalIndex} 
+                        isSelected={selected[originalIndex] || false} 
+                        onSelectionChange={(index, isSelected) => {
+                          const newSelected = { ...selected, [index]: isSelected };
+                          setSelected(newSelected);
+                          setTimeout(() => setSelectedProposals(newSelected), 50);
+                        }} 
+                        onSendToBuilder={sendProposalToContentBuilder}
+                        isNew={isProposalNew(proposal)}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {/* Show More Button */}
+                {hasMoreProposals('evergreen') && (
+                  <div className="flex justify-center mt-8">
+                    <Button 
+                      onClick={() => showMoreProposals('evergreen')} 
+                      variant="outline" 
+                      className="gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 px-8 py-3"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Show More ({getFilteredProposals('evergreen').length - displayCounts.evergreen} remaining)
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <Card className="p-8 text-center bg-white/5 border-white/20">
+                <div className="space-y-4">
+                  <TreePine className="h-12 w-12 text-purple-400/40 mx-auto" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">No Evergreen Content Yet</h3>
+                    <p className="text-white/60 text-sm max-w-md mx-auto">
+                      Timeless topics with consistent search interest year-round. Build foundational content that drives long-term organic growth.
                     </p>
                   </div>
                   <Button 
