@@ -338,21 +338,36 @@ useEffect(() => {
           </CardHeader>
           
           <CardContent className="p-0">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-2 mx-4 mt-3 mb-1 bg-muted/50 h-9 rounded-lg p-1">
-                <TabsTrigger 
-                  value="edit" 
-                  className="h-7 px-3 text-sm font-medium rounded-md transition-all duration-200 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-sm"
+            <div className="flex justify-center mx-4 mt-2 mb-1">
+              <div className="inline-flex bg-muted/50 rounded-md p-0.5 h-7">
+                <Button
+                  variant={activeTab === 'edit' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('edit')}
+                  className={`h-6 px-3 text-xs font-medium rounded-sm transition-all duration-200 ${
+                    activeTab === 'edit' 
+                      ? 'bg-primary/20 text-primary shadow-sm' 
+                      : 'hover:bg-muted/80 text-muted-foreground'
+                  }`}
                 >
-                  Edit Content
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="preview" 
-                  className="h-7 px-3 text-sm font-medium rounded-md transition-all duration-200 data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                  Edit
+                </Button>
+                <Button
+                  variant={activeTab === 'preview' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('preview')}
+                  className={`h-6 px-3 text-xs font-medium rounded-sm transition-all duration-200 ${
+                    activeTab === 'preview' 
+                      ? 'bg-primary/20 text-primary shadow-sm' 
+                      : 'hover:bg-muted/80 text-muted-foreground'
+                  }`}
                 >
                   Preview
-                </TabsTrigger>
-              </TabsList>
+                </Button>
+              </div>
+            </div>
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               
               <TabsContent value="edit" className="mt-2 focus-visible:outline-none focus-visible:ring-0">
                 <div className="h-[75vh] border-t border-border/20">
