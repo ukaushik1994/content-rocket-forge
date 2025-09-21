@@ -47,8 +47,7 @@ export const ContentStrategyEngine = ({
     aiProposals,
     setAiProposals,
     selectedProposals,
-    setSelectedProposals,
-    calendarItems
+    setSelectedProposals
   } = ctx;
   const [clusters, setClusters] = useState<ContentCluster[]>([]);
   const [proposals, setProposals] = useState<any[]>(aiProposals || []);
@@ -64,7 +63,7 @@ export const ContentStrategyEngine = ({
     filteredProposals: statusFilteredProposals,
     handleStatusToggle,
     clearFilters
-  } = useProposalStatusFilterFixed(allProposals, calendarItems);
+  } = useProposalStatusFilterFixed(allProposals);
   const [loading, setLoading] = useState(false);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
   const [generating, setGenerating] = useState(false);

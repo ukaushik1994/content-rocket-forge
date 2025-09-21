@@ -23,7 +23,7 @@ interface EditorialCalendarProps {
 }
 
 export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
-  const { calendarItems, pipelineItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading, loadingCalendar, refreshData, refreshProposalStatus } = useContentStrategy();
+  const { calendarItems, pipelineItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading, loadingCalendar, refreshData } = useContentStrategy();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -104,10 +104,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
     setDialogOpen(true);
   };
 
-  const handleRefresh = async () => {
-    await refreshData();
-    await refreshProposalStatus();
-  };
+  // Removed duplicate handleDeleteItem - all deletions now go through CalendarItemActions component
 
   const handleSaveItem = async (formData: any) => {
     try {
@@ -313,13 +310,13 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                                 <Edit className="h-3 w-3" />
                               </button>
                                {/* Add CalendarItemActions for delete functionality */}
-                                <div onClick={(e) => e.stopPropagation()}>
-                                  <CalendarItemActions 
-                                    calendarItem={item}
-                                    onRefresh={handleRefresh}
-                                    compact={true}
-                                  />
-                                </div>
+                               <div onClick={(e) => e.stopPropagation()}>
+                                 <CalendarItemActions 
+                                   calendarItem={item}
+                                   onRefresh={refreshData}
+                                   compact={true}
+                                 />
+                               </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
@@ -409,11 +406,11 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                             size="sm"
                           />
                         )}
-                         <CalendarItemActions 
-                           calendarItem={item}
-                           onRefresh={handleRefresh}
-                           compact={true}
-                         />
+                        <CalendarItemActions 
+                          calendarItem={item}
+                          onRefresh={refreshData}
+                          compact={true}
+                        />
                         <Badge variant="outline" className={getStatusColor(item.status)}>
                           {item.status}
                         </Badge>
