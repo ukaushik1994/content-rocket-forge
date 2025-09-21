@@ -139,11 +139,8 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
           mainKeyword={(content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim()}
         />
 
-      </div>
-
-      {/* Fixed Action Buttons at Bottom */}
-      <div className="flex-shrink-0 p-6 pt-4 border-t bg-card/80 backdrop-blur-sm">
-        <div className="space-y-3">
+        {/* Action Buttons */}
+        <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/30 to-gray-900/30 rounded-lg border border-white/10">
           <Button 
             onClick={onSave}
             disabled={isSubmitting}
@@ -182,6 +179,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
             </div>
           )}
         </div>
+
       </div>
     </div>
   );
