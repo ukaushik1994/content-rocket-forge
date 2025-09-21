@@ -56,7 +56,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none p-0 border-none overflow-hidden">
+      <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 border-none overflow-hidden rounded-lg">
         <div className="h-full bg-background flex">
           
           {/* Minimal Header */}

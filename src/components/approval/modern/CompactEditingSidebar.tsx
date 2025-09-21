@@ -52,7 +52,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   };
 
   return (
-    <div className="w-80 bg-card border-l border-border h-full flex flex-col">
+    <div className="w-full md:w-2/5 lg:w-80 bg-card border-l border-border h-full flex flex-col">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Title Editing */}
