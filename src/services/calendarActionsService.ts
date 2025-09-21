@@ -15,9 +15,17 @@ class CalendarActionsService {
         .select('*')
         .eq('id', calendarItemId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('❌ Failed to fetch calendar item for postponement:', fetchError);
+        throw new Error(`Failed to fetch calendar item: ${fetchError.message}`);
+      }
+
+      if (!currentItem) {
+        console.error('❌ Calendar item not found for postponement:', calendarItemId);
+        throw new Error('Calendar item not found - it may have been deleted');
+      }
 
       // Update the scheduled date
       const { error: updateError } = await supabase
@@ -76,7 +84,7 @@ class CalendarActionsService {
         .select('*')
         .eq('id', calendarItemId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (fetchError) {
         console.error('❌ Failed to fetch calendar item:', fetchError);
@@ -85,7 +93,7 @@ class CalendarActionsService {
 
       if (!currentItem) {
         console.error('❌ Calendar item not found or access denied:', calendarItemId);
-        throw new Error('Calendar item not found or you do not have permission to delete it');
+        throw new Error('Calendar item not found - it may have already been deleted');
       }
 
       console.log('✅ Calendar item found:', {

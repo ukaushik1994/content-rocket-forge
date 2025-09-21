@@ -37,6 +37,13 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
   const [removeReason, setRemoveReason] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Debug log on component mount
+  console.log('🔧 CalendarItemActions mounted for item:', {
+    id: calendarItem?.id,
+    title: calendarItem?.title,
+    proposal_id: calendarItem?.proposal_id
+  });
+
   const isOverdue = calendarActionsService.isCalendarItemOverdue(calendarItem.scheduled_date);
   const hasProposal = !!calendarItem.proposal_id;
 
@@ -107,11 +114,18 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
           .from('content_calendar')
           .select('user_id, title')
           .eq('id', calendarItem.id)
-          .single();
+          .maybeSingle();
 
         if (checkError) {
           console.error('❌ Failed to verify calendar item ownership:', checkError);
-          toast.error('Failed to verify item ownership');
+          toast.error(`Database error: ${checkError.message}`);
+          return;
+        }
+
+        if (!itemCheck) {
+          console.error('❌ Calendar item not found:', calendarItem.id);
+          toast.error('Calendar item not found - it may have already been deleted');
+          onRefresh?.(); // Refresh to sync UI
           return;
         }
 
