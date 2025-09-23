@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { MessageInput } from './MessageInput';
 import { ChatHeader } from './ChatHeader';
-import { QuickActionsPanel } from './QuickActionsPanel';
+
 
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -27,7 +27,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
   activeConversation
 }, ref) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [showQuickActions, setShowQuickActions] = useState(true);
   const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
   
@@ -54,13 +53,8 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Show/hide quick actions based on messages
-  useEffect(() => {
-    setShowQuickActions(messages.length === 0);
-  }, [messages.length]);
 
   const handleSendMessage = async (message: string) => {
-    setShowQuickActions(false);
     await sendMessage(message);
   };
 
@@ -71,9 +65,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     handleAction(action.action, action.data);
   };
 
-  const handleQuickAction = (action: string, data?: any) => {
-    handleAction(action, data);
-  };
 
 
   const containerVariants = {
@@ -94,10 +85,7 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     >
       {/* Header */}
       <ChatHeader 
-        onClearConversation={() => {
-          onClearConversation();
-          setShowQuickActions(true);
-        }}
+        onClearConversation={onClearConversation}
         onToggleSidebar={onToggleSidebar}
         sidebarOpen={sidebarOpen}
         hasMessages={messages.length > 0}
@@ -109,19 +97,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
         <div className="flex-1 flex flex-col">
           <ScrollArea className="flex-1 px-4 py-2">
           <div className="max-w-6xl mx-auto space-y-6">
-            {/* Welcome State */}
-            <AnimatePresence mode="wait">
-              {showQuickActions && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <QuickActionsPanel onAction={handleQuickAction} />
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {/* Messages */}
             {messages.length > 0 && (

@@ -84,7 +84,8 @@ class EnhancedAIService {
           context,
           solutions: context?.solutions,
           analytics: context?.analytics,
-          workflowContext: this.workflowContext
+          workflowContext: this.workflowContext,
+          serpData: serpAnalysisResult
         }
       });
 
@@ -797,24 +798,6 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
     });
     
     return hasSerpTrigger || hasKeywordPattern;
-    const questionPatterns = [
-      'what.*keyword', 'how.*rank', 'best.*keyword', 
-      'analyze.*keyword', 'research.*keyword', 'find.*keyword'
-    ];
-    
-    const hasKeywordTrigger = serpTriggers.some(trigger => message.toLowerCase().includes(trigger));
-    const hasQuestionPattern = questionPatterns.some(pattern => 
-      new RegExp(pattern).test(message.toLowerCase())
-    );
-    
-    console.log('🔍 SERP Detection:', { 
-      message: message.substring(0, 100), 
-      hasKeywordTrigger, 
-      hasQuestionPattern,
-      triggered: hasKeywordTrigger || hasQuestionPattern 
-    });
-    
-    return hasKeywordTrigger || hasQuestionPattern;
   }
 
   /**
