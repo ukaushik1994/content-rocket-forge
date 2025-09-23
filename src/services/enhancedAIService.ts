@@ -764,10 +764,29 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
     const serpTriggers = [
       'keyword', 'seo', 'search', 'rank', 'serp', 
       'competitors', 'competition', 'analyze', 'research',
-      'trending', 'volume', 'difficulty', 'opportunities'
+      'trending', 'volume', 'difficulty', 'opportunities',
+      'content gap', 'ranking', 'organic', 'backlink'
     ];
     
-    return serpTriggers.some(trigger => lowerMessage.includes(trigger));
+    // Also trigger on questions about keywords or content strategy
+    const questionPatterns = [
+      'what.*keyword', 'how.*rank', 'best.*keyword', 
+      'analyze.*keyword', 'research.*keyword', 'find.*keyword'
+    ];
+    
+    const hasKeywordTrigger = serpTriggers.some(trigger => lowerMessage.includes(trigger));
+    const hasQuestionPattern = questionPatterns.some(pattern => 
+      new RegExp(pattern).test(lowerMessage)
+    );
+    
+    console.log('🔍 SERP Detection:', { 
+      message: message.substring(0, 100), 
+      hasKeywordTrigger, 
+      hasQuestionPattern,
+      triggered: hasKeywordTrigger || hasQuestionPattern 
+    });
+    
+    return hasKeywordTrigger || hasQuestionPattern;
   }
 
   /**
@@ -786,42 +805,67 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
 
       console.log(`🔍 Performing SERP analysis for keyword: "${mainKeyword}"`);
 
-      // Get API key for SERP analysis
+      // Get API key for SERP analysis (optional for mock data)
       const { getApiKey } = await import('@/services/apiKeys/crud');
-      let apiKey;
+      let hasRealApiKey = false;
       try {
-        apiKey = await getApiKey('serp'); // Try 'serp' first, fallback to 'serpapi' if needed
-        if (!apiKey) {
-          console.log('No SerpAPI key available, skipping SERP analysis');
-          return null;
-        }
+        const apiKey = await getApiKey('serp') || await getApiKey('serpapi') || await getApiKey('serpstack');
+        hasRealApiKey = !!apiKey;
       } catch (error) {
-        console.log('No SerpAPI key available, skipping SERP analysis');
-        return null;
+        console.log('No SerpAPI keys available, will use mock data');
       }
 
-      // Call SERP-AI edge function
+      console.log(`📊 SERP Analysis Mode: ${hasRealApiKey ? 'Real API' : 'Mock Data'}`);
+
+      // Call SERP-AI edge function (works with or without API keys)
       const { data, error } = await supabase.functions.invoke('serp-ai', {
         body: {
           keyword: mainKeyword,
           location: 'United States',
-          language: 'en'
+          language: 'en',
+          userId // Pass userId for logging
         }
       });
 
       if (error) {
-        console.error('SERP analysis error:', error);
+        console.error('❌ SERP analysis error:', error);
         return null;
       }
 
-      console.log('✅ SERP analysis completed for keyword:', mainKeyword);
-      return {
+      console.log('✅ SERP analysis completed for keyword:', mainKeyword, data?.provider || 'unknown');
+      
+      // Store context for smart suggestions
+      const serpAnalysisResult = {
         keyword: mainKeyword,
-        data, // Store the data from the edge function
+        serpData: data, // Store the complete SERP data
+        searchVolume: data?.searchVolume || 0,
+        keywordDifficulty: data?.keywordDifficulty || 0,
+        contentGaps: data?.contentGaps || [],
+        questions: data?.questions || [],
+        topResults: data?.topResults || [],
+        provider: data?.provider || 'unknown',
         timestamp: new Date().toISOString()
       };
+
+      // Save to conversation context for smart suggestions
+      try {
+        await supabase
+          .from('serp_conversation_context')
+          .upsert({
+            user_id: userId,
+            context_type: 'serp_analysis',
+            keywords: [mainKeyword],
+            last_serp_analysis: serpAnalysisResult,
+            context_data: { serpData: data },
+            created_at: new Date().toISOString()
+          });
+      } catch (contextError) {
+        console.warn('Failed to save SERP context:', contextError);
+      }
+
+      return serpAnalysisResult;
     } catch (error) {
-      console.error('Error performing SERP analysis:', error);
+      console.error('❌ Error performing SERP analysis:', error);
       return null;
     }
   }
