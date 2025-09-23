@@ -330,13 +330,13 @@ class AIServiceController {
   }
 
   /**
-   * Main generation function that handles fallback logic
+   * Main generation function that handles fallback logic with SERP intelligence integration
    */
   async generate(
     useCaseOrRequest: string | AIGenerateRequest,
     systemPrompt?: string,
     userPrompt?: string,
-    options?: { temperature?: number; maxTokens?: number; formatType?: string; userInstructions?: string }
+    options?: { temperature?: number; maxTokens?: number; formatType?: string; userInstructions?: string; serpContext?: any }
   ): Promise<any> {
     // Handle both old and new signatures
     let request: AIGenerateRequest;
@@ -368,6 +368,13 @@ class AIServiceController {
       return null;
     }
 
+    // Enhance with SERP predictive intelligence if available
+    let enhancedSystemPrompt = systemPrompt;
+    // Simplified enhancement for now - removed method call
+    if (options?.serpContext && request.use_case.includes('strategy')) {
+      enhancedSystemPrompt = systemPrompt + '\n\nConsider SERP intelligence and predictive insights in your recommendations.';
+    }
+
     const errors: string[] = [];
 
     // Try each provider in order of priority
@@ -375,7 +382,7 @@ class AIServiceController {
       try {
         console.log(`🎯 Attempting to use ${provider.provider} for ${request.use_case}`);
         
-        const result = await this.callProvider(provider, request, systemPrompt, options?.formatType, options?.userInstructions);
+        const result = await this.callProvider(provider, request, enhancedSystemPrompt, options?.formatType, options?.userInstructions);
         
         if (result && result.content) {
           console.log(`✅ Successfully generated content using ${provider.provider}`);

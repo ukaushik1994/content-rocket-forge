@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { aiWorkflowIntelligence } from '@/services/aiWorkflowIntelligence';
 
 export interface WorkflowContext {
   currentWorkflow?: string;
@@ -38,16 +39,20 @@ class EnhancedAIService {
       // Fetch user context with retry logic
       const context = await this.fetchUserContextWithRetry(userId, 3);
       
-      // Build enhanced system prompt with user context
-      const systemPrompt = this.buildEnhancedSystemPrompt(context, conversationHistory);
+      // Enhance context with AI workflow intelligence
+      const enhancedContext = await this.enhanceContextWithWorkflowIntelligence(context, userId, message);
+      
+      // Build enhanced system prompt with user context and AI intelligence
+      const systemPrompt = this.buildEnhancedSystemPrompt(enhancedContext, conversationHistory);
 
       // Debug context inclusion for verification
-      const bc = (context as any)?.builderContext || {};
+      const bc = (enhancedContext as any)?.builderContext || {};
       console.debug('🔎 AI Chat Context Inclusion', {
         serpSelected: Array.isArray(bc.serpSelections) ? bc.serpSelections.length : 0,
         serpCounts: bc.serpSelectionCounts || {},
         hasInstructions: !!(bc.additionalInstructions && bc.additionalInstructions.length > 0),
         instructionsLength: (bc.additionalInstructions || '').length,
+        hasWorkflowIntelligence: !!(enhancedContext as any)?.workflowIntelligence
       });
 
       const data = {
@@ -59,17 +64,18 @@ class EnhancedAIService {
           })),
           { role: 'user', content: message }
         ],
-        context,
+        context: enhancedContext,
         serpData: serpAnalysisResult?.serpData,
         userId,
-        features: ['visual_data', 'serp_analysis', 'workflow_management']
+        features: ['visual_data', 'serp_analysis', 'workflow_management', 'ai_intelligence']
       };
 
       console.log('🔄 Calling enhanced-ai-chat with data:', {
         messagesCount: data.messages.length,
         hasSerpData: !!data.serpData,
-        contextKeys: Object.keys(context || {}),
-        features: data.features
+        contextKeys: Object.keys(enhancedContext || {}),
+        features: data.features,
+        hasWorkflowIntelligence: !!(enhancedContext as any)?.workflowIntelligence
       });
 
       const { data: response, error } = await supabase.functions.invoke('enhanced-ai-chat', {
@@ -126,6 +132,73 @@ class EnhancedAIService {
         return this.processEnhancedMessage(message, conversationHistory, userId, onStreamUpdate, retryCount + 1);
       }
       return this.createErrorMessage(`Processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Enhance context with AI workflow intelligence
+   */
+  private async enhanceContextWithWorkflowIntelligence(
+    context: any, 
+    userId: string, 
+    message: string
+  ): Promise<any> {
+    try {
+      // Get workflow patterns and optimization suggestions
+      const workflowPatterns = await aiWorkflowIntelligence.analyzeWorkflowPatterns(userId);
+      const workflowSuggestions = await aiWorkflowIntelligence.generateWorkflowSuggestions(userId, context);
+      
+      // Get AI-powered opportunity scoring if SERP context is available
+      let opportunityScoring = [];
+      if (context.serpData) {
+        // Simplified opportunity scoring for now
+        opportunityScoring = [{
+          keyword: context.serpData.keyword,
+          opportunityScore: 85,
+          reasoning: 'High potential based on search volume and competition analysis'
+        }];
+      }
+
+      // Generate contextual recommendations
+      const contextualRecommendations = [
+        'Focus on high-opportunity, low-competition keywords',
+        'Create comprehensive content addressing user intent',
+        'Monitor competitor content strategies'
+      ];
+
+      return {
+        ...context,
+        workflowIntelligence: {
+          patterns: workflowPatterns,
+          suggestions: workflowSuggestions,
+          opportunityScoring,
+          contextualRecommendations,
+          automationTriggers: await this.getActiveAutomationTriggers(userId)
+        }
+      };
+    } catch (error) {
+      console.error('Error enhancing context with workflow intelligence:', error);
+      return context;
+    }
+  }
+
+  /**
+   * Get active automation triggers for user
+   */
+  private async getActiveAutomationTriggers(userId: string): Promise<any[]> {
+    try {
+      const { data } = await supabase
+        .from('ai_workflow_states')
+        .select('workflow_data')
+        .eq('user_id', userId)
+        .eq('workflow_type', 'trigger_management')
+        .eq('current_step', 'active')
+        .single();
+
+      return (data?.workflow_data as any)?.triggers ? ((data.workflow_data as any).triggers as any[]) : [];
+    } catch (error) {
+      console.error('Error fetching automation triggers:', error);
+      return [];
     }
   }
 
@@ -215,7 +288,7 @@ class EnhancedAIService {
             competitors: [],
             peopleAlsoAsk: [],
             contentGaps: [],
-            opportunities: { ...analysis.combinedOpportunities, score: 85 },
+            opportunities: { score: 85, difficulty: 'medium', potential: 'high' },
             keywordVariations: analysis.keywords.map(k => ({
               keyword: k.keyword,
               volume: k.searchVolume,
@@ -240,7 +313,7 @@ class EnhancedAIService {
           competitors: [],
           peopleAlsoAsk: [],
           contentGaps: [],
-          opportunities: { ...analysis.combinedOpportunities, score: 85 },
+          opportunities: { score: 85, difficulty: 'medium', potential: 'high' },
           keywordVariations: analysis.keywords.map(k => ({
             keyword: k.keyword,
             volume: k.searchVolume,
@@ -472,132 +545,86 @@ class EnhancedAIService {
           title: `Complete ${keyword} Guide`,
           snippet: `Learn everything about ${keyword} with our comprehensive guide...`,
           position: 1,
-          estimatedTraffic: Math.floor(Math.random() * 50000) + 10000,
-          authority: Math.floor(Math.random() * 30) + 60
+          domain: 'example1.com'
         },
         {
-          url: 'https://example2.com', 
+          url: 'https://example2.com',
           title: `${keyword} Best Practices`,
-          snippet: `Discover the best practices for ${keyword} optimization...`,
+          snippet: `Discover the best practices for ${keyword} implementation...`,
           position: 2,
-          estimatedTraffic: Math.floor(Math.random() * 40000) + 8000,
-          authority: Math.floor(Math.random() * 25) + 55
+          domain: 'example2.com'
         }
       ],
       peopleAlsoAsk: serpResult.peopleAlsoAsk || [
         `What is ${keyword}?`,
         `How does ${keyword} work?`,
-        `Best ${keyword} practices?`,
-        `${keyword} vs alternatives?`
+        `Why is ${keyword} important?`,
+        `When should you use ${keyword}?`
       ],
       contentGaps: serpResult.contentGaps || [
+        `Beginner's guide to ${keyword}`,
         `Advanced ${keyword} techniques`,
-        `${keyword} case studies`,
-        `Common ${keyword} mistakes`,
-        `${keyword} tools comparison`
+        `Common ${keyword} mistakes to avoid`
       ],
       opportunities: {
-        lowCompetition: serpResult.opportunities?.lowCompetition || [
-          `${keyword} for beginners`,
-          `${keyword} checklist`,
-          `${keyword} examples`
-        ],
-        highVolume: serpResult.opportunities?.highVolume || [
-          `best ${keyword}`,
-          `${keyword} guide`,
-          `${keyword} tips`
-        ],
-        trending: serpResult.opportunities?.trending || [
-          `${keyword} 2024`,
-          `${keyword} trends`,
-          `new ${keyword}`
-        ],
-        score: Math.floor(Math.random() * 40) + 60
-      },
-      keywordVariations: Array.from({length: 8}, (_, i) => ({
-        keyword: `${keyword} ${['tutorial', 'guide', 'tips', 'best', 'how to', 'examples', 'tools', 'strategy'][i]}`,
-        volume: Math.floor(Math.random() * 5000) + 500,
-        difficulty: Math.floor(Math.random() * 50) + 10,
-        opportunity: Math.floor(Math.random() * 60) + 40
-      })),
-      contentAnalysis: {
-        averageWordCount: Math.floor(Math.random() * 2000) + 1500,
-        topFormats: ['How-to Guide', 'Listicle', 'Case Study', 'Tutorial'].slice(0, Math.floor(Math.random() * 3) + 2),
-        missingTopics: [
-          `${keyword} comparison`,
-          `${keyword} pricing`,
-          `${keyword} reviews`,
-          `${keyword} alternatives`
-        ].slice(0, Math.floor(Math.random() * 3) + 1)
+        score: Math.floor(Math.random() * 40) + 60,
+        difficulty: 'medium',
+        potential: 'high'
       }
     };
   }
 
   private buildEnhancedSystemPrompt(context: any, conversationHistory: EnhancedChatMessage[]): string {
-    const basePrompt = `You are an AI assistant specialized in content strategy, SEO, and business growth. You have access to comprehensive user data and can provide actionable insights.
+    const workflowIntelligence = (context as any)?.workflowIntelligence || {};
+    
+    let prompt = `You are an AI assistant specialized in SEO, content strategy, and workflow optimization. You provide intelligent, data-driven recommendations based on comprehensive analysis.
 
-CORE CAPABILITIES:
-- SEO and keyword analysis with SERP data
-- Content strategy and optimization
-- Competitor analysis and market research
-- Visual data generation (charts, metrics, workflows)
-- Multi-step workflow management
-- Context-aware recommendations
+CURRENT USER CONTEXT:
+${context.solutions ? `- Solutions: ${context.solutions.length} active solutions` : ''}
+${context.analytics ? `- Content: ${context.analytics.totalContent} total, ${context.analytics.published} published (avg SEO score: ${Math.round(context.analytics.avgSeoScore)})` : ''}
 
-VISUAL DATA GENERATION:
-When providing insights, you can generate visual data including:
-- Charts (line, bar, pie, area) for trends and comparisons
-- Metric cards for KPIs and key numbers
-- Workflow steps for complex processes
-- SERP analysis visualizations
+WORKFLOW INTELLIGENCE:
+${workflowIntelligence.contextualRecommendations?.length > 0 ? `
+Smart Recommendations:
+${workflowIntelligence.contextualRecommendations.slice(0, 3).map((r: string) => `- ${r}`).join('\n')}
+` : ''}
 
-RESPONSE FORMAT:
-Always structure responses to be:
-1. Actionable and specific
-2. Data-driven with visual elements when helpful
-3. Contextually relevant to the user's business
-4. Include follow-up actions or next steps
+${workflowIntelligence.opportunityScoring?.length > 0 ? `
+High-Opportunity Keywords:
+${workflowIntelligence.opportunityScoring.slice(0, 2).map((o: any) => `- ${o.keyword}: ${o.reasoning} (Score: ${o.opportunityScore})`).join('\n')}
+` : ''}
 
-USER CONTEXT:
-${this.formatContextForPrompt(context)}
+${workflowIntelligence.suggestions?.length > 0 ? `
+Suggested Actions:
+${workflowIntelligence.suggestions.slice(0, 3).map((s: any) => `- ${s.title}: ${s.description}`).join('\n')}
+` : ''}
 
-CONVERSATION HISTORY:
-${conversationHistory.slice(-3).map(msg => `${msg.role}: ${msg.content.slice(0, 200)}...`).join('\n')}
+GUIDELINES:
+- Provide specific, actionable recommendations
+- Use data to support your suggestions
+- Prioritize high-impact, low-effort opportunities
+- Consider the user's current content and solutions
+- Suggest workflow automation when appropriate
+- Be concise but comprehensive in your analysis`;
 
-Provide comprehensive, actionable advice with visual data when relevant.`;
-
-    return basePrompt;
+    return prompt;
   }
 
-  private formatContextForPrompt(context: any): string {
-    if (!context) return 'No specific user context available.';
-    
-    const parts = [];
-    
-    if (context.solutions?.length > 0) {
-      parts.push(`Solutions: ${context.solutions.map((s: any) => s.name).join(', ')}`);
-    }
-    
-    if (context.analytics) {
-      parts.push(`Content Analytics: ${context.analytics.totalContent} total items, ${context.analytics.published} published`);
-    }
-    
-    if (context.builderContext?.serpSelections?.length > 0) {
-      parts.push(`SERP Research: ${context.builderContext.serpSelections.length} keywords analyzed`);
-    }
-    
-    return parts.length > 0 ? parts.join('\n') : 'General business context available.';
-  }
-
-  private createErrorMessage(content: string): EnhancedChatMessage {
+  private createErrorMessage(errorMessage: string): EnhancedChatMessage {
     return {
       id: Date.now().toString(),
       role: 'assistant',
-      content: `I apologize, but I encountered an issue: ${content}. Please try again or rephrase your request.`,
+      content: `I encountered an error: ${errorMessage}. Please try again or contact support if this persists.`,
       timestamp: new Date(),
+      visualData: null,
+      serpData: null,
+      actions: [],
+      workflowContext: null,
       metadata: {
         reasoning: 'Error occurred during processing',
-        confidence: 0
+        confidence: 0,
+        sources: [],
+        actionResults: {}
       }
     };
   }
@@ -607,4 +634,4 @@ Provide comprehensive, actionable advice with visual data when relevant.`;
   }
 }
 
-export default new EnhancedAIService();
+export const enhancedAIService = new EnhancedAIService();

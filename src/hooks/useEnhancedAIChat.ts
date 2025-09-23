@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
-import enhancedAIService from '@/services/enhancedAIService';
+import { enhancedAIService } from '@/services/enhancedAIService';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';

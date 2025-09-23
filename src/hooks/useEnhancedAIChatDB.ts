@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
-import enhancedAIService from '@/services/enhancedAIService';
+import { enhancedAIService } from '@/services/enhancedAIService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
