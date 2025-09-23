@@ -62,6 +62,7 @@ export interface EnhancedChatMessage {
   content: string;
   timestamp: Date;
   visualData?: VisualData;
+  serpData?: any[]; // Added SERP data support
   actions?: ContextualAction[];
   progressIndicator?: ProgressState;
   workflowContext?: {

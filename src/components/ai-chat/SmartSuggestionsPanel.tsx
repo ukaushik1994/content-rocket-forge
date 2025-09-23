@@ -20,24 +20,14 @@ import {
   Brain,
   Sparkles
 } from 'lucide-react';
-import { useSmartSuggestions } from '@/hooks/useSmartSuggestions';
-
-interface SmartSuggestion {
-  id: string;
-  type: 'keyword' | 'content' | 'optimization' | 'strategy' | 'competitive';
-  title: string;
-  description: string;
-  action: string;
-  data?: any;
-  priority: 'high' | 'medium' | 'low';
-  confidence: number;
-}
+import { useSerpSmartSuggestions } from '@/hooks/useSerpSmartSuggestions';
+import type { SerpSmartSuggestion } from '@/hooks/useSerpSmartSuggestions';
 
 interface SmartSuggestionsPanelProps {
   serpData?: any[];
   userContext?: any;
   conversationHistory?: any[];
-  onApplySuggestion?: (suggestion: SmartSuggestion) => void;
+  onApplySuggestion?: (suggestion: SerpSmartSuggestion) => void;
   className?: string;
 }
 
@@ -56,8 +46,8 @@ const priorityColors = {
 } as const;
 
 const SuggestionCard: React.FC<{
-  suggestion: SmartSuggestion;
-  onApply: (suggestion: SmartSuggestion) => void;
+  suggestion: SerpSmartSuggestion;
+  onApply: (suggestion: SerpSmartSuggestion) => void;
   onDismiss: (id: string) => void;
   index: number;
 }> = ({ suggestion, onApply, onDismiss, index }) => {
@@ -152,13 +142,13 @@ export const SmartSuggestionsPanel: React.FC<SmartSuggestionsPanelProps> = ({
     refreshSuggestions,
     dismissSuggestion,
     applySuggestion
-  } = useSmartSuggestions({
+  } = useSerpSmartSuggestions({
     serpData,
     userContext,
     conversationHistory
   });
 
-  const handleApplySuggestion = (suggestion: SmartSuggestion) => {
+  const handleApplySuggestion = (suggestion: SerpSmartSuggestion) => {
     applySuggestion(suggestion);
     onApplySuggestion?.(suggestion);
   };
@@ -178,7 +168,7 @@ export const SmartSuggestionsPanel: React.FC<SmartSuggestionsPanelProps> = ({
               <div key={i} className="animate-pulse">
                 <div className="h-20 bg-muted rounded-lg"></div>
               </div>
-            ))
+            ))}
           </div>
         </CardContent>
       </Card>
