@@ -3195,6 +3195,59 @@ export type Database = {
           },
         ]
       }
+      serp_alerts: {
+        Row: {
+          alert_data: Json | null
+          alert_type: string
+          config_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_read: boolean
+          message: string
+          severity: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_data?: Json | null
+          alert_type: string
+          config_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          severity?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_data?: Json | null
+          alert_type?: string
+          config_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          severity?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serp_alerts_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "serp_monitoring_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       serp_analysis_history: {
         Row: {
           analysis_data: Json
@@ -3304,6 +3357,95 @@ export type Database = {
           workflow_state?: Json | null
         }
         Relationships: []
+      }
+      serp_monitoring_configs: {
+        Row: {
+          alert_thresholds: Json | null
+          check_frequency: number
+          created_at: string
+          id: string
+          is_active: boolean
+          keyword: string
+          language: string | null
+          location: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_thresholds?: Json | null
+          check_frequency?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keyword: string
+          language?: string | null
+          location?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_thresholds?: Json | null
+          check_frequency?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keyword?: string
+          language?: string | null
+          location?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      serp_monitoring_history: {
+        Row: {
+          check_timestamp: string
+          config_id: string
+          created_at: string
+          featured_snippet_changes: Json | null
+          id: string
+          keyword: string
+          lost_competitors: Json | null
+          new_competitors: Json | null
+          position_changes: Json | null
+          serp_data: Json
+          user_id: string
+        }
+        Insert: {
+          check_timestamp?: string
+          config_id: string
+          created_at?: string
+          featured_snippet_changes?: Json | null
+          id?: string
+          keyword: string
+          lost_competitors?: Json | null
+          new_competitors?: Json | null
+          position_changes?: Json | null
+          serp_data?: Json
+          user_id: string
+        }
+        Update: {
+          check_timestamp?: string
+          config_id?: string
+          created_at?: string
+          featured_snippet_changes?: Json | null
+          id?: string
+          keyword?: string
+          lost_competitors?: Json | null
+          new_competitors?: Json | null
+          position_changes?: Json | null
+          serp_data?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serp_monitoring_history_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "serp_monitoring_configs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       serp_usage_logs: {
         Row: {
@@ -4314,6 +4456,10 @@ export type Database = {
         Returns: undefined
       }
       cleanup_expired_serp_history: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_serp_monitoring: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

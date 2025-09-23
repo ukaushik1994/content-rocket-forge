@@ -48,3 +48,6 @@ verify_jwt = false
 
 [functions.complete-proposal]
 verify_jwt = true
+
+[functions.serp-monitor]
+verify_jwt = false
