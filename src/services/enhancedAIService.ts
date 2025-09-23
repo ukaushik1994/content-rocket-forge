@@ -3,6 +3,7 @@ import { ContextualAction } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 
 export interface WorkflowContext {
   currentWorkflow?: string;
@@ -857,24 +858,24 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
         type: 'serp_analysis',
         serpData: {
           keyword,
-          searchVolume: serpData.keywordData?.search_volume || Math.floor(Math.random() * 10000) + 1000,
-          difficulty: serpData.keywordData?.keyword_difficulty || Math.floor(Math.random() * 100),
-          cpc: serpData.keywordData?.cpc || (Math.random() * 5).toFixed(2),
-          competition: serpData.keywordData?.competition || ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
-          trends: serpData.trends || Array.from({length: 12}, () => Math.floor(Math.random() * 100)),
-          relatedKeywords: serpData.related_searches?.slice(0, 5) || [`${keyword} tips`, `${keyword} guide`, `best ${keyword}`],
-          competitors: serpData.organic_results?.slice(0, 5).map((result: any, index: number) => ({
+          searchVolume: serpData.searchVolume || Math.floor(Math.random() * 10000) + 1000,
+          difficulty: serpData.keywordDifficulty || Math.floor(Math.random() * 100),
+          cpc: (Math.random() * 5).toFixed(2),
+          competition: serpData.competitionScore ? (serpData.competitionScore > 70 ? 'high' : serpData.competitionScore > 40 ? 'medium' : 'low') : ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
+          trends: Array.from({length: 12}, () => Math.floor(Math.random() * 100)),
+          relatedKeywords: serpData.relatedSearches?.slice(0, 5).map(r => r.query) || [`${keyword} tips`, `${keyword} guide`, `best ${keyword}`],
+          competitors: serpData.topResults?.slice(0, 5).map((result, index) => ({
             url: result.link || `competitor${index + 1}.com`,
             title: result.title || `${keyword} Resource ${index + 1}`,
             snippet: result.snippet || `Learn about ${keyword}`,
             position: result.position || index + 1
           })) || [],
-          peopleAlsoAsk: serpData.people_also_ask?.slice(0, 4) || [],
-          contentGaps: serpData.content_gaps || [],
+          peopleAlsoAsk: serpData.peopleAlsoAsk?.slice(0, 4).map(q => q.question) || [],
+          contentGaps: serpData.contentGaps || [],
           opportunities: {
-            lowCompetition: serpData.related_searches?.filter((k: string) => Math.random() > 0.7).slice(0, 3) || [],
-            highVolume: serpData.related_searches?.filter((k: string) => Math.random() > 0.8).slice(0, 2) || [],
-            trending: serpData.related_searches?.filter((k: string) => Math.random() > 0.6).slice(0, 3) || []
+            lowCompetition: serpData.relatedSearches?.filter((k) => Math.random() > 0.7).slice(0, 3).map(r => r.query) || [],
+            highVolume: serpData.relatedSearches?.filter((k) => Math.random() > 0.8).slice(0, 2).map(r => r.query) || [],
+            trending: serpData.relatedSearches?.filter((k) => Math.random() > 0.6).slice(0, 3).map(r => r.query) || []
           }
         }
       };
