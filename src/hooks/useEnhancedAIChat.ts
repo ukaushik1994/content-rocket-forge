@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
-import { enhancedAIService } from '@/services/enhancedAIService';
+import enhancedAIService from '@/services/enhancedAIService';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -93,6 +93,9 @@ export const useEnhancedAIChat = () => {
     } else if (['create-content-strategy', 'analyze-competitors', 'explore-related-keywords'].includes(action)) {
       // Handle SERP-specific actions
       await handleSerpAction(action, data);
+    } else if (action === 'optimize-content-gaps') {
+      // Handle content gap optimization
+      await handleSerpAction(action, data);
     }
   }, [sendMessage, user, openSettings]);
 
@@ -102,25 +105,37 @@ export const useEnhancedAIChat = () => {
     // Generate contextual message based on SERP action
     const serpActionMessages = {
       'create-content-strategy': `Based on the SERP analysis for "${data?.keyword || 'the analyzed keyword'}", create a comprehensive content strategy. Include:
-        - Content gaps to exploit
-        - Optimal content formats and lengths
-        - Target keywords and semantic variations
-        - Competition analysis and differentiation opportunities
-        - Content calendar suggestions with priority ranking`,
+        - Content gaps to exploit based on competitor analysis
+        - Optimal content formats and lengths (current average: ${data?.contentAnalysis?.averageWordCount || 'unknown'} words)
+        - Target keywords and semantic variations from ${data?.keywordVariations?.length || 0} opportunities
+        - Competition analysis with ${data?.competitors?.length || 0} top competitors
+        - Content calendar suggestions with priority ranking
+        - Specific recommendations to outrank competitors with ${data?.difficulty}% difficulty`,
       
       'analyze-competitors': `Provide a detailed competitor analysis for "${data?.keyword || 'the analyzed keyword'}". Focus on:
-        - Top ranking competitors and their content strategies
+        - Analysis of ${data?.competitors?.length || 0} top ranking competitors and their content strategies
+        - Traffic estimates and domain authority insights: ${data?.competitors?.map((c: any) => `${c.domain} (${c.estimatedTraffic} visits, ${c.authority} DA)`).join(', ')}
         - Content gaps and opportunities they're missing
         - Their backlink and authority analysis
-        - Weaknesses we can exploit
-        - Specific recommendations to outrank them`,
+        - Weaknesses we can exploit based on opportunity scores
+        - Specific recommendations to outrank them with actionable tactics`,
       
       'explore-related-keywords': `Expand the keyword research for "${data?.keyword || 'the analyzed keyword'}". Show me:
-        - Related long-tail keywords with high opportunity
+        - Analysis of ${data?.relatedKeywords?.length || 0} related keywords
+        - Long-tail keyword opportunities from ${data?.keywordVariations?.length || 0} variations
         - Semantic keyword clusters and topics
-        - Question-based keywords and "People Also Ask" opportunities
-        - Trending keywords in this niche
-        - Low competition, high volume opportunities`
+        - Question-based keywords from "People Also Ask": ${data?.peopleAlsoAsk?.slice(0, 3).join(', ')}
+        - Low competition opportunities: ${data?.opportunities?.lowCompetition?.length || 0} keywords
+        - High volume opportunities: ${data?.opportunities?.highVolume?.length || 0} keywords
+        - Trending keywords: ${data?.opportunities?.trending?.length || 0} keywords`,
+      
+      'optimize-content-gaps': `Create a content gap optimization strategy for "${data?.keyword || 'the analyzed keyword'}". Focus on:
+        - ${data?.contentGaps?.length || 0} identified content gaps in the current SERP
+        - Missing topics analysis: ${data?.missingTopics?.slice(0, 5).join(', ')}
+        - Content length optimization (current average: ${data?.averageWordCount || 'unknown'} words)
+        - Format recommendations based on competitor analysis
+        - Priority ranking of content opportunities
+        - Specific action plan to fill these gaps and outrank competitors`
     };
 
     const message = serpActionMessages[action as keyof typeof serpActionMessages] || 
