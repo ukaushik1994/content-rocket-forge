@@ -5,11 +5,15 @@ import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { MessageInput } from './MessageInput';
 import { ChatHeader } from './ChatHeader';
 import { QuickActionsPanel } from './QuickActionsPanel';
+import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
+import { WorkflowManager } from './WorkflowManager';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { ContextualAction } from '@/services/aiService';
 import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
+import { useSerpSmartSuggestions } from '@/hooks/useSerpSmartSuggestions';
+import { serpWorkflowOrchestrator } from '@/services/serpWorkflowOrchestrator';
 
 interface ChatInterfaceProps {
   onClearConversation: () => void;
@@ -26,6 +30,7 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
 }, ref) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showQuickActions, setShowQuickActions] = useState(true);
+  const [activeWorkflows, setActiveWorkflows] = useState([]);
   const { toast } = useToast();
   
   const {
@@ -35,6 +40,12 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
     sendMessage,
     handleAction
   } = useEnhancedAIChat();
+
+  const { suggestions, isLoading: suggestionsLoading } = useSerpSmartSuggestions({ 
+    conversationHistory: messages, 
+    userContext: {},
+    serpData: []
+  });
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -60,6 +71,44 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
 
   const handleQuickAction = (action: string, data?: any) => {
     handleAction(action, data);
+  };
+
+  const handleSuggestionClick = (suggestion: any) => {
+    handleAction(suggestion.action, suggestion.data);
+  };
+
+  // Transform suggestions to match SmartSuggestion interface
+  const transformedSuggestions = suggestions.map(suggestion => ({
+    ...suggestion,
+    type: suggestion.type === 'optimization' ? 'opportunity' : 
+          suggestion.type === 'strategy' ? 'trend' :
+          suggestion.type === 'competitive' ? 'opportunity' :
+          suggestion.type as 'keyword' | 'content' | 'trend' | 'opportunity'
+  }));
+
+  const handleWorkflowAction = async (workflowAction: string, data?: any) => {
+    try {
+      // Handle workflow actions using available methods
+      if (workflowAction === 'pause') {
+        await serpWorkflowOrchestrator.pauseWorkflow(data?.workflowId);
+      } else if (workflowAction === 'resume') {
+        await serpWorkflowOrchestrator.resumeWorkflow(data?.workflowId);
+      } else if (workflowAction === 'execute') {
+        await serpWorkflowOrchestrator.executeWorkflow(data?.workflowType, data?.params);
+      }
+      
+      // Refresh workflows by checking status
+      const workflowStatuses = await Promise.all(
+        activeWorkflows.map(w => serpWorkflowOrchestrator.getWorkflowStatus(w.id))
+      );
+      setActiveWorkflows(workflowStatuses.filter(Boolean));
+    } catch (error) {
+      toast({
+        title: "Workflow Error",
+        description: "Failed to execute workflow action",
+        variant: "destructive"
+      });
+    }
   };
 
   const containerVariants = {
@@ -90,9 +139,10 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-0 relative">
+      <div className="flex-1 flex gap-4 min-h-0 relative">
         {/* Messages Area */}
-        <ScrollArea className="flex-1 px-4 py-2">
+        <div className="flex-1 flex flex-col">
+          <ScrollArea className="flex-1 px-4 py-2">
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Welcome State */}
             <AnimatePresence mode="wait">
@@ -160,22 +210,41 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
 
             <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
+          </ScrollArea>
 
-        {/* Input Area */}
-        <div className="border-t border-white/10 bg-background/80 backdrop-blur-sm">
-          <div className="max-w-6xl mx-auto px-4 py-4">
-            <MessageInput
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-              placeholder={
-                messages.length === 0 
-                  ? "Ask me anything about your content performance, start keyword research, or get platform insights..."
-                  : "Continue the conversation..."
-              }
-            />
+          {/* Input Area */}
+          <div className="border-t border-white/10 bg-background/80 backdrop-blur-sm">
+            <div className="max-w-6xl mx-auto px-4 py-4">
+              <MessageInput
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                placeholder={
+                  messages.length === 0 
+                    ? "Ask me anything about your content performance, start keyword research, or get platform insights..."
+                    : "Continue the conversation..."
+                }
+              />
+            </div>
           </div>
         </div>
+
+        {/* Right Sidebar - Smart Suggestions & Workflows */}
+        {!sidebarOpen && (
+          <div className="w-80 space-y-4 p-4 border-l border-border/50">
+            <SmartSuggestionsPanel
+              suggestions={transformedSuggestions}
+              onSuggestionClick={handleSuggestionClick}
+              isLoading={suggestionsLoading}
+            />
+            
+            {activeWorkflows.length > 0 && (
+              <WorkflowManager
+                workflows={activeWorkflows}
+                onWorkflowAction={handleWorkflowAction}
+              />
+            )}
+          </div>
+        )}
       </div>
     </motion.div>
   );

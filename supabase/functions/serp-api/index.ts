@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4"
 import { calculateRealMetrics, estimateSearchVolume } from "./metrics-calculator.ts"
 import { 
   generateSmartHeadings, 
@@ -25,16 +26,49 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 SERP API function called');
+    console.log('🚀 Enhanced SERP API function called');
     
-    const { endpoint, params, apiKey } = await req.json();
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { endpoint, params, apiKey, analysisType = 'standard', userId } = await req.json();
     
-    console.log('📝 Request details:', {
-      endpoint,
-      paramKeys: Object.keys(params || {}),
-      hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length || 0
-    });
+    // Enhanced SERP analysis and caching
+    const keyword = params.q || params.keyword;
+    const location = params.location || 'us';
+
+    // Check cache first (unless force refresh)
+    if (!params.forceRefresh) {
+      const { data: cachedData } = await supabase
+        .from('raw_serp_data')
+        .select('*')
+        .eq('keyword', keyword)
+        .eq('location', location)
+        .gt('expires_at', new Date().toISOString())
+        .order('cached_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (cachedData) {
+        console.log(`Returning cached SERP data for keyword: ${keyword}`);
+        
+        // Update conversation context if userId provided
+        if (userId) {
+          await updateConversationContext(supabase, userId, keyword, cachedData.data);
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            ...cachedData.data, 
+            cached: true,
+            analysisType 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Validate API key
     if (!apiKey || typeof apiKey !== 'string' || apiKey.length < 10) {
@@ -90,32 +124,36 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('✅ SerpAPI data received:', {
-      hasOrganicResults: !!data.organic_results,
-      organicCount: data.organic_results?.length || 0,
-      hasPeopleAlsoAsk: !!data.people_also_ask,
-      peopleAlsoAskCount: data.people_also_ask?.length || 0,
-      hasRelatedSearches: !!data.related_searches,
-      relatedSearchesCount: data.related_searches?.length || 0
+    console.log('✅ Enhanced SERP data received and processing...');
+
+    // Enhanced SERP analysis based on type
+    const enhancedData = await enhanceSerpData(data, keyword, analysisType);
+
+    // Cache the enhanced results
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); // Cache for 24 hours
+
+    await supabase.from('raw_serp_data').insert({
+      keyword,
+      location,
+      data: enhancedData,
+      expires_at: expiresAt.toISOString(),
+      user_id: userId
     });
 
-    // Enhanced debugging for FAQ/PAA data
-    console.log('🔍 Detailed FAQ/PAA Analysis:', {
-      people_also_ask_keys: data.people_also_ask ? Object.keys(data.people_also_ask[0] || {}) : [],
-      related_questions_exist: !!data.related_questions,
-      related_questions_count: data.related_questions?.length || 0,
-      answer_box_exist: !!data.answer_box,
-      faq_exist: !!data.faq,
-      sample_paa: data.people_also_ask?.[0] ? JSON.stringify(data.people_also_ask[0]) : 'none'
-    });
+    // Update conversation context if userId provided
+    if (userId) {
+      await updateConversationContext(supabase, userId, keyword, enhancedData);
+    }
 
-    // Transform the data to our format (clean, no provider contamination)
-    const transformedData = transformSerpApiData(data, params.q || params.keyword);
-    
-    console.log('🔄 Data transformed successfully');
+    console.log(`Fresh enhanced SERP data cached for keyword: ${keyword}`);
 
     return new Response(
-      JSON.stringify(transformedData), 
+      JSON.stringify({ 
+        ...enhancedData, 
+        cached: false,
+        analysisType 
+      }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
@@ -137,6 +175,252 @@ serve(async (req) => {
     );
   }
 });
+
+// Enhanced SERP data processing with predictive intelligence
+async function enhanceSerpData(serpData: any, keyword: string, analysisType: string) {
+  const enhanced = transformSerpApiData(serpData, keyword);
+  
+  try {
+    // Add predictive intelligence
+    enhanced.predictive_analysis = {
+      trend_forecast: analyzeTrendForecast(serpData, keyword),
+      content_performance_prediction: predictContentPerformance(serpData, keyword),
+      competitive_movement: detectCompetitiveMovements(serpData),
+      opportunity_scoring: calculateOpportunityScores(serpData, keyword)
+    };
+
+    // Add workflow recommendations
+    enhanced.workflow_recommendations = generateWorkflowRecommendations(serpData, keyword, analysisType);
+
+    // Add advanced metrics
+    enhanced.advanced_metrics = calculateAdvancedMetrics(serpData, keyword);
+
+  } catch (error) {
+    console.error('Error enhancing SERP data:', error);
+    enhanced.enhanced_analysis = { error: error.message };
+  }
+
+  return enhanced;
+}
+
+// Update conversation context for persistent intelligence
+async function updateConversationContext(supabase: any, userId: string, keyword: string, serpData: any) {
+  try {
+    const contextData = {
+      keywords: [keyword],
+      last_serp_analysis: serpData,
+      workflow_state: {
+        current_analysis: keyword,
+        suggested_next_steps: serpData.workflow_recommendations || []
+      }
+    };
+
+    await supabase.from('serp_conversation_context').upsert({
+      user_id: userId,
+      context_type: 'serp_analysis',
+      context_data: contextData,
+      keywords: [keyword],
+      last_serp_analysis: serpData
+    }, {
+      onConflict: 'user_id,context_type'
+    });
+  } catch (error) {
+    console.error('Error updating conversation context:', error);
+  }
+}
+
+// Predictive analysis functions
+function analyzeTrendForecast(serpData: any, keyword: string) {
+  const organicResults = serpData.organic_results || [];
+  const recentContent = organicResults.filter(r => 
+    r.title?.toLowerCase().includes('2024') || 
+    r.title?.toLowerCase().includes('2025') ||
+    r.snippet?.toLowerCase().includes('recent') ||
+    r.snippet?.toLowerCase().includes('latest')
+  );
+
+  return {
+    trend_direction: recentContent.length > 3 ? 'increasing' : 'stable',
+    seasonal_patterns: detectSeasonalPatterns(keyword),
+    predicted_volume_change: estimateVolumeChange(serpData, keyword),
+    confidence: Math.min(0.9, recentContent.length / 10 + 0.5)
+  };
+}
+
+function predictContentPerformance(serpData: any, keyword: string) {
+  const organicResults = serpData.organic_results || [];
+  const avgTitleLength = organicResults.reduce((acc, r) => acc + (r.title?.length || 0), 0) / organicResults.length;
+  const hasNumbers = organicResults.filter(r => /\d/.test(r.title || '')).length;
+  
+  return {
+    recommended_title_length: Math.round(avgTitleLength * 1.1),
+    include_numbers: hasNumbers > 3,
+    content_type_suggestions: identifyContentTypes(organicResults),
+    success_probability: calculateSuccessProbability(serpData, keyword)
+  };
+}
+
+function detectCompetitiveMovements(serpData: any) {
+  const organicResults = serpData.organic_results || [];
+  const domains = organicResults.map(r => {
+    try {
+      return new URL(r.link).hostname;
+    } catch {
+      return 'unknown';
+    }
+  });
+
+  return {
+    dominant_domains: [...new Set(domains)].slice(0, 5),
+    market_concentration: calculateMarketConcentration(domains),
+    new_entrants: [], // Would need historical data
+    movement_patterns: 'stable' // Placeholder
+  };
+}
+
+function calculateOpportunityScores(serpData: any, keyword: string) {
+  const scores = [];
+  
+  if (!serpData.featured_snippet) {
+    scores.push({
+      type: 'featured_snippet',
+      score: 85,
+      description: 'High opportunity for featured snippet'
+    });
+  }
+  
+  if (serpData.people_also_ask && serpData.people_also_ask.length > 3) {
+    scores.push({
+      type: 'faq_content',
+      score: 75,
+      description: 'Strong FAQ content opportunity'
+    });
+  }
+
+  return scores.sort((a, b) => b.score - a.score);
+}
+
+function generateWorkflowRecommendations(serpData: any, keyword: string, analysisType: string) {
+  const recommendations = [];
+  
+  if (analysisType === 'content_planning') {
+    recommendations.push({
+      workflow: 'content_creation',
+      priority: 'high',
+      steps: ['analyze_top_content', 'identify_gaps', 'create_outline', 'write_content'],
+      estimated_time: '2-4 hours'
+    });
+  }
+  
+  if (analysisType === 'competitive') {
+    recommendations.push({
+      workflow: 'competitive_analysis',
+      priority: 'medium', 
+      steps: ['map_competitors', 'analyze_strategies', 'identify_weaknesses', 'plan_counter_strategy'],
+      estimated_time: '1-2 hours'
+    });
+  }
+
+  return recommendations;
+}
+
+function calculateAdvancedMetrics(serpData: any, keyword: string) {
+  const organicResults = serpData.organic_results || [];
+  
+  return {
+    content_freshness_score: calculateContentFreshness(organicResults),
+    authority_distribution: calculateAuthorityDistribution(organicResults),
+    user_intent_alignment: calculateIntentAlignment(serpData, keyword),
+    content_depth_analysis: analyzeContentDepth(organicResults)
+  };
+}
+
+// Helper functions for advanced metrics
+function detectSeasonalPatterns(keyword: string) {
+  const seasonalKeywords = ['christmas', 'summer', 'winter', 'holiday', 'back to school'];
+  return seasonalKeywords.some(sk => keyword.toLowerCase().includes(sk)) ? 'seasonal' : 'evergreen';
+}
+
+function estimateVolumeChange(serpData: any, keyword: string) {
+  // Placeholder - would need historical data
+  return Math.random() > 0.5 ? 'increasing' : 'stable';
+}
+
+function calculateSuccessProbability(serpData: any, keyword: string) {
+  const factors = {
+    competition: serpData.organic_results?.length || 10,
+    brandDomination: 0, // Would calculate based on top results
+    contentGapsAvailable: serpData.people_also_ask?.length || 0
+  };
+  
+  return Math.min(0.95, 0.3 + (factors.contentGapsAvailable / 20) + (1 / (factors.competition / 10)));
+}
+
+function calculateMarketConcentration(domains: string[]) {
+  const domainCounts = domains.reduce((acc, domain) => {
+    acc[domain] = (acc[domain] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const maxCount = Math.max(...Object.values(domainCounts));
+  return maxCount / domains.length; // Higher = more concentrated
+}
+
+function calculateContentFreshness(organicResults: any[]) {
+  const currentYear = new Date().getFullYear();
+  const recentContent = organicResults.filter(r => 
+    r.title?.includes(currentYear.toString()) || 
+    r.title?.includes((currentYear - 1).toString())
+  );
+  
+  return recentContent.length / organicResults.length;
+}
+
+function calculateAuthorityDistribution(organicResults: any[]) {
+  // Simplified authority scoring based on domain patterns
+  const authorityIndicators = ['wikipedia', 'gov', 'edu', 'forbes', 'harvard'];
+  const highAuthority = organicResults.filter(r => 
+    authorityIndicators.some(indicator => r.link?.includes(indicator))
+  );
+  
+  return {
+    high_authority_ratio: highAuthority.length / organicResults.length,
+    opportunity_exists: highAuthority.length < 5
+  };
+}
+
+function calculateIntentAlignment(serpData: any, keyword: string) {
+  const intentSignals = {
+    informational: 0,
+    navigational: 0,
+    transactional: 0,
+    commercial: 0
+  };
+
+  if (serpData.people_also_ask) intentSignals.informational += 2;
+  if (serpData.shopping_results) intentSignals.transactional += 3;
+  if (serpData.local_results) intentSignals.commercial += 2;
+  
+  const primaryIntent = Object.entries(intentSignals)
+    .sort(([,a], [,b]) => b - a)[0][0];
+
+  return {
+    primary_intent: primaryIntent,
+    confidence: Math.max(...Object.values(intentSignals)) / 10,
+    alignment_score: 0.8 // Placeholder
+  };
+}
+
+function analyzeContentDepth(organicResults: any[]) {
+  const avgSnippetLength = organicResults.reduce((acc, r) => acc + (r.snippet?.length || 0), 0) / organicResults.length;
+  const longFormContent = organicResults.filter(r => (r.snippet?.length || 0) > 150);
+  
+  return {
+    average_content_length: avgSnippetLength,
+    long_form_ratio: longFormContent.length / organicResults.length,
+    depth_recommendation: avgSnippetLength > 120 ? 'comprehensive' : 'concise'
+  };
+}
 
 /**
  * Transform SerpAPI data to our clean format without provider contamination

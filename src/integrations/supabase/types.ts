@@ -3222,6 +3222,45 @@ export type Database = {
         }
         Relationships: []
       }
+      serp_conversation_context: {
+        Row: {
+          context_data: Json
+          context_type: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          keywords: string[] | null
+          last_serp_analysis: Json | null
+          updated_at: string
+          user_id: string
+          workflow_state: Json | null
+        }
+        Insert: {
+          context_data?: Json
+          context_type: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          keywords?: string[] | null
+          last_serp_analysis?: Json | null
+          updated_at?: string
+          user_id: string
+          workflow_state?: Json | null
+        }
+        Update: {
+          context_data?: Json
+          context_type?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          keywords?: string[] | null
+          last_serp_analysis?: Json | null
+          updated_at?: string
+          user_id?: string
+          workflow_state?: Json | null
+        }
+        Relationships: []
+      }
       serp_usage_logs: {
         Row: {
           created_at: string
@@ -3249,6 +3288,51 @@ export type Database = {
           provider?: string
           success?: boolean
           user_id?: string
+        }
+        Relationships: []
+      }
+      serp_workflow_states: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          progress: Json
+          results: Json | null
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+          workflow_id: string
+          workflow_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          progress?: Json
+          results?: Json | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          workflow_id: string
+          workflow_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          progress?: Json
+          results?: Json | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workflow_id?: string
+          workflow_type?: string
         }
         Relationships: []
       }

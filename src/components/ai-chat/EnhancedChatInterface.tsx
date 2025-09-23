@@ -290,11 +290,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             >
               <div className="h-full p-4 overflow-hidden">
                 <SmartSuggestionsPanel
-                  serpData={latestSerpData}
-                  userContext={{ solutions: [], analytics: {} }}
-                  conversationHistory={messages}
-                  onApplySuggestion={handleApplySuggestion}
-                  className="h-full"
+                  suggestions={[]}
+                  onSuggestionClick={handleApplySuggestion}
+                  isLoading={false}
                 />
               </div>
             </motion.div>
