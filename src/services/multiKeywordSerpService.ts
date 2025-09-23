@@ -143,6 +143,7 @@ async function getCombinedOpportunities(keywords: string[]) {
     lowCompetition: keywords.map(k => `${k} tutorial`),
     highVolume: keywords.map(k => `best ${k}`),
     trending: keywords.map(k => `${k} 2024`),
+    score: 78
   };
 }
 

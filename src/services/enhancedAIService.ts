@@ -240,7 +240,7 @@ class EnhancedAIService {
           competitors: [],
           peopleAlsoAsk: [],
           contentGaps: [],
-          opportunities: analysis.combinedOpportunities,
+          opportunities: { ...analysis.combinedOpportunities, score: 85 },
           keywordVariations: analysis.keywords.map(k => ({
             keyword: k.keyword,
             volume: k.searchVolume,

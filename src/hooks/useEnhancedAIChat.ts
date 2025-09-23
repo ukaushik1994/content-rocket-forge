@@ -148,11 +148,9 @@ export const useEnhancedAIChat = () => {
   const handleWorkflowAction = useCallback(async (workflowAction: string, data?: any) => {
     if (!user) return;
 
-    // Update workflow context in service
-    enhancedAIService.updateWorkflowContext({
-      currentWorkflow: workflowAction,
-      stepData: { ...enhancedAIService.getWorkflowContext().stepData, ...data }
-    });
+    // Update workflow state in service
+    const currentState = await enhancedAIService.getWorkflowState(user.id, workflowAction);
+    const updatedData = { ...currentState?.workflowData, ...data };
 
     // Update workflow state in database
     await enhancedAIService.updateWorkflowState(

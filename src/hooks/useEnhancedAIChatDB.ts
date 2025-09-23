@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
-import { enhancedAIService } from '@/services/enhancedAIService';
+import enhancedAIService from '@/services/enhancedAIService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -412,11 +412,9 @@ export const useEnhancedAIChatDB = () => {
 
     console.log('🔄 Executing workflow action:', workflowAction);
 
-    // Update workflow context in service
-    enhancedAIService.updateWorkflowContext({
-      currentWorkflow: workflowAction,
-      stepData: { ...enhancedAIService.getWorkflowContext().stepData, ...data }
-    });
+    // Update workflow state in service
+    const currentState = await enhancedAIService.getWorkflowState(user.id, workflowAction);
+    const updatedData = { ...currentState?.workflowData, ...data };
 
     // Update workflow state with progress tracking
     await enhancedAIService.updateWorkflowState(
