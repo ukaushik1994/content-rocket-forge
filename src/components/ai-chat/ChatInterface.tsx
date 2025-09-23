@@ -7,7 +7,7 @@ import { ChatHeader } from './ChatHeader';
 import { QuickActionsPanel } from './QuickActionsPanel';
 import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
 import { WorkflowManager } from './WorkflowManager';
-import { SerpTestPanel } from './SerpTestPanel';
+
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -285,8 +285,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
                 onWorkflowAction={handleWorkflowAction}
               />
             )}
-            
-            <SerpTestPanel />
             
             {serpData.length > 0 && (
               <div className="p-4 border rounded-lg bg-muted/50">

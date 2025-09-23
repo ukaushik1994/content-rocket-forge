@@ -3,9 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { VisualDataRenderer } from './VisualDataRenderer';
-import { VisualSerpRenderer } from './VisualSerpRenderer';
-import { AdvancedSerpAnalytics } from './AdvancedSerpAnalytics';
-import SerpWorkflowTrigger from './SerpWorkflowTrigger';
+import { SerpVisualData } from './SerpVisualData';
 import { ModernActionButtons } from './ModernActionButtons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
@@ -86,36 +84,20 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             ))}
           </div>
 
-          {/* Visual Data */}
-          {message.visualData && !isUser && (
-            <div className="mt-4">
-              {message.visualData.type === 'serp_analysis' && message.visualData.serpData ? (
-                <>
-                  <AdvancedSerpAnalytics 
-                    serpData={Array.isArray(message.visualData.serpData) ? message.visualData.serpData : [message.visualData.serpData]}
-                    onActionTaken={(action, data) => onAction({ id: `serp-${Date.now()}`, type: 'button', label: action, action, data })}
-                    conversationHistory={[message.content]}
-                  />
-                  <div className="mt-6 pt-4 border-t border-border">
-                    <SerpWorkflowTrigger 
-                      serpData={Array.isArray(message.visualData.serpData) ? message.visualData.serpData : [message.visualData.serpData]}
-                      onWorkflowStart={(workflowId) => {
-                        onAction({ 
-                          id: `workflow-${Date.now()}`, 
-                          type: 'button', 
-                          label: 'Workflow Started', 
-                          action: 'workflow-created',
-                          data: { workflowId }
-                        });
-                      }}
-                    />
-                  </div>
-                </>
-              ) : (
-                <VisualDataRenderer visualData={message.visualData} />
-              )}
-            </div>
-          )}
+        {/* Visual Data Rendering */}
+        {message.visualData && (
+          <div className="mt-4">
+            {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
+              <SerpVisualData serpData={message.visualData.serpData} />
+            )}
+            {message.visualData.type === 'chart' && message.visualData.chartConfig && (
+              <VisualDataRenderer visualData={message.visualData} />
+            )}
+            {(message.visualData.type === 'metrics' || message.visualData.type === 'workflow' || message.visualData.type === 'summary') && (
+              <VisualDataRenderer visualData={message.visualData} />
+            )}
+          </div>
+        )}
         </Card>
 
         {/* Action Buttons */}
