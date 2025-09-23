@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Monitor, BarChart3, Zap, TrendingUp } from 'lucide-react';
 import { SerpMonitoringDashboard } from '@/components/serp/SerpMonitoringDashboard';
-import { SerpPerformanceAnalytics } from '@/components/serp/SerpPerformanceAnalytics';
+import { SerpMetricsOverview } from '@/components/serp/SerpMetricsOverview';
 import { MarketingIntegrationsPanel } from '@/components/serp/MarketingIntegrationsPanel';
 import { AIWorkflowIntelligence } from '@/components/serp/AIWorkflowIntelligence';
 
@@ -116,7 +116,7 @@ const SerpIntelligence = () => {
                   </TabsContent>
 
                   <TabsContent value="performance" className="mt-0 animate-fade-in">
-                    <SerpPerformanceAnalytics />
+                    <SerpMetricsOverview />
                   </TabsContent>
 
                   <TabsContent value="ai-insights" className="mt-0 animate-fade-in">

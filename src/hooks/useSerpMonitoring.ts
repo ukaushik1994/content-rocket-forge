@@ -18,6 +18,14 @@ interface SerpMonitoringMetrics {
   };
 }
 
+type SerpErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
+
+interface SerpMonitoringError {
+  type: SerpErrorType;
+  message: string;
+  actionable?: boolean;
+}
+
 interface SerpApiCall {
   id: string;
   provider: 'serp' | 'serpstack';
@@ -49,6 +57,7 @@ export function useSerpMonitoring() {
   
   const [recentCalls, setRecentCalls] = useState<SerpApiCall[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<SerpMonitoringError | null>(null);
 
   // Log API call for monitoring
   const logApiCall = useCallback(async (call: Omit<SerpApiCall, 'id' | 'timestamp'>) => {
@@ -149,82 +158,118 @@ export function useSerpMonitoring() {
     return stats;
   };
 
-  // Load initial data or demo data
+  // Load initial data with proper error handling
   useEffect(() => {
     const loadData = async () => {
-      try {
-        // Try to load real data from database
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          // Load real monitoring data
-          const { data: usageLogs } = await supabase
-            .from('serp_usage_logs')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(50);
+      setIsLoading(true);
+      setError(null);
 
-          if (usageLogs && usageLogs.length > 0) {
-            // Convert database logs to SerpApiCall format
-            const apiCalls: SerpApiCall[] = usageLogs.map(log => {
-              const metadata = log.metadata as any || {};
-              return {
-                id: log.id,
-                provider: log.provider as 'serp' | 'serpstack',
-                endpoint: log.operation,
-                keyword: metadata.keyword || 'Unknown',
-                responseTime: metadata.response_time || 0,
-                status: log.success ? 'success' : 'error',
-                timestamp: new Date(log.created_at),
-                error: metadata.error
-              };
-            });
-            
-            setRecentCalls(apiCalls);
-          }
-        }
+      try {
+        // Check authentication first
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        // If no real data, load demo data for preview
-        if (!user || recentCalls.length === 0) {
-          const demoData = generateDemoData();
-          setRecentCalls(demoData);
+        if (authError || !user) {
+          setError({
+            type: 'no-auth',
+            message: 'Please sign in to view SERP monitoring data',
+            actionable: true
+          });
+          setIsLoading(false);
+          return;
         }
+
+        // Check if API keys are configured
+        const { data: apiKeys, error: apiError } = await supabase
+          .from('api_keys')
+          .select('service, is_active')
+          .in('service', ['serp', 'serpstack'])
+          .eq('is_active', true);
+
+        if (apiError) {
+          setError({
+            type: 'database-error',
+            message: 'Failed to check API key configuration',
+            actionable: false
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (!apiKeys || apiKeys.length === 0) {
+          setError({
+            type: 'no-api-keys',
+            message: 'No SERP API keys configured. Add your API keys in Settings to start monitoring.',
+            actionable: true
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Try to load real monitoring data
+        const { data: usageLogs, error: dataError } = await supabase
+          .from('serp_usage_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (dataError) {
+          setError({
+            type: 'database-error',
+            message: 'Failed to load monitoring data from database',
+            actionable: false
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (!usageLogs || usageLogs.length === 0) {
+          setError({
+            type: 'no-data',
+            message: 'No SERP monitoring data available yet. Start using SERP APIs to see monitoring data.',
+            actionable: false
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Convert database logs to SerpApiCall format
+        const apiCalls: SerpApiCall[] = usageLogs.map(log => {
+          const metadata = log.metadata as any || {};
+          return {
+            id: log.id,
+            provider: log.provider as 'serp' | 'serpstack',
+            endpoint: log.operation,
+            keyword: metadata.keyword || 'Unknown',
+            responseTime: metadata.response_time || 0,
+            status: log.success ? 'success' : 'error',
+            timestamp: new Date(log.created_at),
+            error: metadata.error
+          };
+        });
         
+        setRecentCalls(apiCalls);
         await refreshMetrics();
+        
       } catch (error) {
-        console.warn('Loading demo data for SERP monitoring:', error);
-        // Fallback to demo data
-        const demoData = generateDemoData();
-        setRecentCalls(demoData);
-        await refreshMetrics();
+        console.error('Error loading SERP monitoring data:', error);
+        setError({
+          type: 'api-error',
+          message: 'An unexpected error occurred while loading monitoring data',
+          actionable: false
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     loadData();
   }, []);
 
-  // Generate demo data for preview/testing
-  const generateDemoData = (): SerpApiCall[] => {
-    const keywords = ['content marketing', 'seo tools', 'digital marketing', 'social media', 'email marketing'];
-    const providers: ('serp' | 'serpstack')[] = ['serp', 'serpstack'];
-    const endpoints = ['keyword_analysis', 'serp_check', 'competitor_analysis'];
-    
-    return Array.from({ length: 25 }, (_, i) => ({
-      id: `demo-${i}`,
-      provider: providers[Math.floor(Math.random() * providers.length)],
-      endpoint: endpoints[Math.floor(Math.random() * endpoints.length)],
-      keyword: keywords[Math.floor(Math.random() * keywords.length)],
-      responseTime: Math.floor(Math.random() * 2000) + 500,
-      status: Math.random() > 0.15 ? 'success' : 'error' as const,
-      timestamp: new Date(Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)),
-      error: Math.random() > 0.8 ? 'API timeout' : undefined
-    }));
-  };
-
   return {
     metrics,
     recentCalls,
     isLoading,
+    error,
     logApiCall,
     refreshMetrics
   };
