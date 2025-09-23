@@ -19,7 +19,7 @@ interface SerpIntelligence {
   suggestedAnalysis: string[];
 }
 
-// SERP Query Intelligence Patterns
+// SERP Query Intelligence Patterns - Enhanced
 const SERP_QUERY_PATTERNS: SerpQueryPattern[] = [
   {
     pattern: /(?:what'?s trending|trend\w*|popular|hot topics?)\s+(?:with|for|in)?\s*(.+)/i,
@@ -46,12 +46,6 @@ const SERP_QUERY_PATTERNS: SerpQueryPattern[] = [
     priority: 9
   },
   {
-    pattern: /(?:market insights?|audience interests?|market research)\s+(?:for|in|about)\s+(.+)/i,
-    type: 'market_research',
-    extractKeywords: (match) => [match[1].trim()],
-    priority: 8
-  },
-  {
     pattern: /(?:analyze|analysis of|research)\s+(?:the )?keyword\s+["\']?(.+?)["\']?(?:\s|$)/i,
     type: 'keyword_analysis',
     extractKeywords: (match) => [match[1].trim()],
@@ -62,6 +56,25 @@ const SERP_QUERY_PATTERNS: SerpQueryPattern[] = [
     type: 'keyword_analysis',
     extractKeywords: (match) => [match[1].trim()],
     priority: 9
+  },
+  // Enhanced patterns for better detection
+  {
+    pattern: /(?:analyze|research|data for|insights on)\s+["\']?([^"'\n]+?)["\']?/i,
+    type: 'keyword_analysis',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 7
+  },
+  {
+    pattern: /(?:how to rank|ranking for|optimize for)\s+["\']?([^"'\n]+?)["\']?/i,
+    type: 'seo',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 8
+  },
+  {
+    pattern: /(?:keyword|search term|query)\s+["\']?([^"'\n]+?)["\']?/i,
+    type: 'keyword_analysis',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 6
   }
 ];
 
@@ -85,6 +98,7 @@ interface EnhancedRequest {
   solutions?: any[];
   analytics?: any;
   workflowContext?: any;
+  serpData?: any; // Add SERP data from frontend
   apiKeys?: {
     openrouter?: string;
     anthropic?: string;
@@ -108,6 +122,7 @@ serve(async (req) => {
       solutions, 
       analytics, 
       workflowContext,
+      serpData,
       context,
       apiKeys 
     }: EnhancedRequest & { context?: any } = body;
@@ -152,29 +167,37 @@ serve(async (req) => {
     let serpResults: any[] = [];
     let serpContext = '';
     
-    // Get the latest user message for SERP analysis
-    const latestUserMessage = messages.filter(m => m.role === 'user').pop();
-    if (latestUserMessage?.content) {
-      console.log('🔍 Analyzing query for SERP intelligence...');
-      const serpIntelligence = analyzeSerpIntent(latestUserMessage.content);
-      
-      if (serpIntelligence.shouldTriggerSerp && serpIntelligence.keywords.length > 0) {
-        console.log('🚀 SERP intelligence triggered:', serpIntelligence);
+    // Check if SERP data was passed from frontend first
+    if (serpData) {
+      console.log('📊 Using SERP data from frontend:', Object.keys(serpData));
+      serpResults = [{ data: serpData, keyword: serpData.keyword || 'unknown', analysisType: 'frontend' }];
+      serpContext = generateSerpContext(serpResults);
+      console.log('✅ Using frontend SERP data');
+    } else {
+      // Fallback to real-time SERP analysis
+      const latestUserMessage = messages.filter(m => m.role === 'user').pop();
+      if (latestUserMessage?.content) {
+        console.log('🔍 Analyzing query for SERP intelligence...');
+        const serpIntelligence = analyzeSerpIntent(latestUserMessage.content);
         
-        try {
-          // Execute SERP analysis for detected keywords
-          serpResults = await executeSerpAnalysis(
-            serpIntelligence.keywords.slice(0, 3), // Limit to 3 keywords for performance
-            serpIntelligence.queryType
-          );
+        if (serpIntelligence.shouldTriggerSerp && serpIntelligence.keywords.length > 0) {
+          console.log('🚀 SERP intelligence triggered:', serpIntelligence);
           
-          if (serpResults.length > 0) {
-            serpContext = generateSerpContext(serpResults);
-            console.log('✅ SERP context generated successfully');
+          try {
+            // Execute SERP analysis for detected keywords
+            serpResults = await executeSerpAnalysis(
+              serpIntelligence.keywords.slice(0, 3), // Limit to 3 keywords for performance
+              serpIntelligence.queryType
+            );
+            
+            if (serpResults.length > 0) {
+              serpContext = generateSerpContext(serpResults);
+              console.log('✅ SERP context generated successfully');
+            }
+          } catch (serpError) {
+            console.error('❌ SERP analysis failed:', serpError);
+            // Continue without SERP data rather than failing the entire request
           }
-        } catch (serpError) {
-          console.error('❌ SERP analysis failed:', serpError);
-          // Continue without SERP data rather than failing the entire request
         }
       }
     }
@@ -694,32 +717,70 @@ function generateSerpContext(results: any[]): string {
   let context = '\n\n🔍 REAL-TIME SERP DATA ANALYSIS:\n';
   
   results.forEach((result, index) => {
-    context += `\n📊 KEYWORD: "${result.keyword}" (${result.analysisType})\n`;
-    context += `- Search Volume: ${result.data.searchVolume?.toLocaleString() || 'N/A'}\n`;
-    context += `- Keyword Difficulty: ${result.data.keywordDifficulty || 'N/A'}%\n`;
-    context += `- Competition Score: ${result.data.competitionScore || 'N/A'}%\n`;
+    const data = result.data;
+    const keyword = result.keyword || data.keyword || 'unknown';
     
-    if (result.data.contentGaps && result.data.contentGaps.length > 0) {
-      context += `- Top Content Gaps: ${result.data.contentGaps.slice(0, 3).map((gap: any) => gap.topic).join(', ')}\n`;
+    context += `\n📊 KEYWORD: "${keyword}" (${result.analysisType})\n`;
+    
+    // Handle different data structures (frontend vs API)
+    if (data.searchVolume || data.search_volume) {
+      context += `- Search Volume: ${(data.searchVolume || data.search_volume)?.toLocaleString() || 'N/A'}\n`;
     }
     
-    if (result.data.questions && result.data.questions.length > 0) {
-      context += `- Popular Questions: ${result.data.questions.slice(0, 2).map((q: any) => q.question).join('; ')}\n`;
+    if (data.keywordDifficulty || data.keyword_difficulty || data.difficulty) {
+      context += `- Keyword Difficulty: ${data.keywordDifficulty || data.keyword_difficulty || data.difficulty || 'N/A'}%\n`;
     }
     
-    if (result.data.entities && result.data.entities.length > 0) {
-      context += `- Key Entities: ${result.data.entities.slice(0, 3).map((e: any) => e.name).join(', ')}\n`;
+    if (data.competitionScore || data.competition_score || data.cpc) {
+      context += `- Competition Score: ${data.competitionScore || data.competition_score || data.cpc || 'N/A'}%\n`;
+    }
+    
+    // Content gaps from different sources
+    const contentGaps = data.contentGaps || data.content_gaps || data.questions || [];
+    if (contentGaps && contentGaps.length > 0) {
+      const gaps = Array.isArray(contentGaps) ? contentGaps : Object.values(contentGaps);
+      context += `- Top Content Gaps: ${gaps.slice(0, 3).map((gap: any) => 
+        gap.topic || gap.question || gap.title || gap
+      ).join(', ')}\n`;
+    }
+    
+    // Questions from People Also Ask
+    const questions = data.questions || data.peopleAlsoAsk || data.people_also_ask || [];
+    if (questions && questions.length > 0) {
+      const qs = Array.isArray(questions) ? questions : Object.values(questions);
+      context += `- Popular Questions: ${qs.slice(0, 2).map((q: any) => 
+        q.question || q.title || q
+      ).join('; ')}\n`;
+    }
+    
+    // Entities and related keywords
+    const entities = data.entities || data.related_keywords || data.keywords || [];
+    if (entities && entities.length > 0) {
+      const ents = Array.isArray(entities) ? entities : Object.values(entities);
+      context += `- Key Topics: ${ents.slice(0, 3).map((e: any) => 
+        e.name || e.keyword || e.query || e
+      ).join(', ')}\n`;
+    }
+    
+    // Top competitors
+    const competitors = data.competitors || data.topResults || data.organic_results || [];
+    if (competitors && competitors.length > 0) {
+      const comps = Array.isArray(competitors) ? competitors : Object.values(competitors);
+      context += `- Top Competitors: ${comps.slice(0, 3).map((c: any) => 
+        c.domain || c.title || c.name || c.url || c
+      ).join(', ')}\n`;
     }
     
     if (index < results.length - 1) context += '\n';
   });
 
-  context += '\n✨ INTEGRATION INSTRUCTIONS:';
-  context += '\n- Use this REAL SERP data in your response';
-  context += '\n- Generate relevant visual charts and metrics using $$VISUAL_DATA$$ format';
-  context += '\n- Provide actionable insights based on this data';
-  context += '\n- Create follow-up action buttons for deeper analysis using $$ACTIONS$$ format';
-  context += '\n- Include SERP visualization components when relevant';
+  context += '\n✨ AI RESPONSE INSTRUCTIONS:';
+  context += '\n- Use this REAL SERP data to create actionable insights';
+  context += '\n- Generate visual charts and metrics using $$VISUAL_DATA$$ format';
+  context += '\n- Include specific data points and numbers from the analysis';
+  context += '\n- Create follow-up action buttons using $$ACTIONS$$ format';
+  context += '\n- When displaying SERP data, use the serp_analysis visual type';
+  context += '\n- Make recommendations based on the actual keyword metrics and competition';
   
   return context;
 }

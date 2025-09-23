@@ -774,26 +774,32 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
       'competitor analysis',
       'search data',
       'organic results',
-      'ranking analysis'
+      'ranking analysis',
+      'analyze', 'research', 'insights', 'data for', 'optimize for', 'ranking for'
     ];
     
-    // Extract potential keywords from the message
+    // Enhanced pattern matching for better detection
     const keywordPatterns = [
-      /analyze\s+(?:keyword\s+)?["']([^"']+)["']/i,
+      /analyze\s+(?:the\s+)?keyword\s+["']?([^"'\n]+?)["']?/i,
+      /keyword\s+analysis\s+(?:for|of)\s+["']?([^"'\n]+?)["']?/i,
+      /(?:serp|search)\s+(?:data|results)\s+(?:for|about)\s+["']?([^"'\n]+?)["']?/i,
+      /research\s+["']?([^"'\n]+?)["']?\s+keyword/i,
+      /(?:analyze|research|insights)\s+["']?([^"'\n]{3,30})["']?/i,
+      /(?:data|analysis)\s+(?:for|about|on)\s+["']?([^"'\n]{3,30})["']?/i,
       /search\s+(?:volume|data)\s+(?:for\s+)?["']?([^"'\s,]+)["']?/i,
       /keyword\s+["']([^"']+)["']/i
     ];
     
     const hasSerpTrigger = serpTriggers.some(trigger => 
-      message.toLowerCase().includes(trigger)
+      message.toLowerCase().includes(trigger.toLowerCase())
     );
     
     const hasKeywordPattern = keywordPatterns.some(pattern => pattern.test(message));
     
-    console.log('🔍 SERP Detection:', { 
-      message: message.substring(0, 100) + '...', 
-      hasSerpTrigger,
-      hasKeywordPattern,
+    console.log('🔍 SERP Detection Check:', { 
+      message: message.substring(0, 100), 
+      hasTrigger: hasSerpTrigger, 
+      hasPattern: hasKeywordPattern,
       shouldTrigger: hasSerpTrigger || hasKeywordPattern
     });
     
