@@ -1,5 +1,5 @@
 
-import React, { forwardRef, useRef, useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { MessageInput } from './MessageInput';
@@ -22,7 +22,7 @@ interface ChatInterfaceProps {
   activeConversation: string | null;
 }
 
-export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
+export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps>(({
   onClearConversation,
   onToggleSidebar,
   sidebarOpen,
@@ -41,10 +41,19 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
     handleAction
   } = useEnhancedAIChat();
 
+  // Extract SERP data from recent messages for smart suggestions
+  const serpData = React.useMemo(() => {
+    const recentMessages = messages.slice(-5); // Check last 5 messages
+    const serpMessages = recentMessages.filter(msg => 
+      msg.visualData?.serpData || msg.visualData?.type === 'serp_analysis'
+    );
+    return serpMessages.length > 0 ? [serpMessages[serpMessages.length - 1].visualData.serpData] : [];
+  }, [messages]);
+
   const { suggestions, isLoading: suggestionsLoading } = useSerpSmartSuggestions({ 
     conversationHistory: messages, 
     userContext: {},
-    serpData: []
+    serpData: serpData // Use extracted SERP data
   });
 
   // Auto-scroll to bottom when new messages arrive
@@ -242,6 +251,18 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
                 workflows={activeWorkflows}
                 onWorkflowAction={handleWorkflowAction}
               />
+            )}
+            
+            {serpData.length > 0 && (
+              <div className="p-4 border rounded-lg bg-muted/50">
+                <h3 className="text-sm font-semibold mb-2">SERP Analytics</h3>
+                <p className="text-xs text-muted-foreground">
+                  Keyword: {serpData[0]?.keyword}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Analysis available in chat above
+                </p>
+              </div>
             )}
           </div>
         )}

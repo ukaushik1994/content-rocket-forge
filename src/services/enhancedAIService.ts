@@ -27,6 +27,13 @@ class EnhancedAIService {
 
       console.log('🤖 Processing enhanced message with AIServiceController:', { message, userId, retryCount });
 
+      // Detect if this is a SERP-related query and trigger analysis
+      let serpAnalysisResult = null;
+      if (this.shouldTriggerSerpAnalysis(message)) {
+        console.log('🔍 Triggering SERP analysis for message:', message);
+        serpAnalysisResult = await this.performSerpAnalysis(message, userId);
+      }
+
       // Fetch user context with retry logic
       const context = await this.fetchUserContextWithRetry(userId, 3);
       
@@ -101,6 +108,15 @@ class EnhancedAIService {
 
       // Parse response for structured data
       const parsedResponse = this.parseAIResponse(result.content);
+
+      // Add SERP data to visual data if we have analysis results
+      if (serpAnalysisResult) {
+        parsedResponse.visualData = {
+          ...parsedResponse.visualData,
+          serpData: serpAnalysisResult,
+          type: 'serp_analysis'
+        };
+      }
 
       // Generate contextual actions based on the conversation
       const contextualActions = this.generateSmartActions(
@@ -681,6 +697,82 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
       .split(/\s+/)
       .filter(word => word.length > 3 && !commonWords.includes(word))
       .slice(0, 10);
+  }
+
+  /**
+   * Detect if message should trigger SERP analysis
+   */
+  private shouldTriggerSerpAnalysis(message: string): boolean {
+    const lowerMessage = message.toLowerCase();
+    const serpTriggers = [
+      'keyword', 'seo', 'search', 'rank', 'serp', 
+      'competitors', 'competition', 'analyze', 'research',
+      'trending', 'volume', 'difficulty', 'opportunities'
+    ];
+    
+    return serpTriggers.some(trigger => lowerMessage.includes(trigger));
+  }
+
+  /**
+   * Perform SERP analysis based on user message
+   */
+  private async performSerpAnalysis(message: string, userId: string): Promise<any> {
+    try {
+      // Extract potential keywords from message
+      const keywords = this.extractKeywords(message);
+      const mainKeyword = keywords[0];
+      
+      if (!mainKeyword) {
+        console.log('No keywords found in message for SERP analysis');
+        return null;
+      }
+
+      console.log(`🔍 Performing SERP analysis for keyword: "${mainKeyword}"`);
+
+      // Get API key for SERP analysis
+      const { getApiKey } = await import('@/services/apiKeys/crud');
+      let apiKey;
+      try {
+        apiKey = await getApiKey('serp'); // Try 'serp' first, fallback to 'serpapi' if needed
+        if (!apiKey) {
+          console.log('No SerpAPI key available, skipping SERP analysis');
+          return null;
+        }
+      } catch (error) {
+        console.log('No SerpAPI key available, skipping SERP analysis');
+        return null;
+      }
+
+      // Call SERP API through edge function
+      const { data, error } = await supabase.functions.invoke('serp-api', {
+        body: {
+          endpoint: 'search',
+          params: {
+            q: mainKeyword,
+            location: 'us',
+            engine: 'google'
+          },
+          apiKey,
+          analysisType: 'enhanced',
+          userId
+        }
+      });
+
+      if (error) {
+        console.error('SERP API error:', error);
+        return null;
+      }
+
+      console.log('✅ SERP analysis completed for keyword:', mainKeyword);
+      return {
+        keyword: mainKeyword,
+        analysisData: data,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error performing SERP analysis:', error);
+      return null;
+    }
   }
 }
 

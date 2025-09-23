@@ -42,10 +42,11 @@ export interface ProgressState {
 }
 
 export interface VisualData {
-  type: 'chart' | 'metrics' | 'workflow' | 'summary';
+  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis';
   chartConfig?: ChartConfiguration;
   metrics?: MetricCard[];
   workflowStep?: WorkflowStep;
+  serpData?: any; // Add SERP data support
   summary?: {
     title: string;
     items: Array<{

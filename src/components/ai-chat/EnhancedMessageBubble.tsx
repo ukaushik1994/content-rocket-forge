@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { VisualDataRenderer } from './VisualDataRenderer';
 import { VisualSerpRenderer } from './VisualSerpRenderer';
+import { AdvancedSerpAnalytics } from './AdvancedSerpAnalytics';
 import { ModernActionButtons } from './ModernActionButtons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
@@ -87,7 +88,15 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {/* Visual Data */}
           {message.visualData && !isUser && (
             <div className="mt-4">
-              <VisualDataRenderer visualData={message.visualData} />
+              {message.visualData.type === 'serp_analysis' && message.visualData.serpData ? (
+                <AdvancedSerpAnalytics 
+                  serpData={[message.visualData.serpData.analysisData]}
+                  onActionTaken={(action, data) => onAction({ id: `serp-${Date.now()}`, type: 'button', label: action, action, data })}
+                  conversationHistory={[message.content]}
+                />
+              ) : (
+                <VisualDataRenderer visualData={message.visualData} />
+              )}
             </div>
           )}
         </Card>
