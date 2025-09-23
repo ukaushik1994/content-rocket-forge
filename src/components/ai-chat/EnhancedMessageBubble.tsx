@@ -24,6 +24,36 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
 }) => {
   const isUser = message.role === 'user';
 
+  // Helper function to generate prompts for SERP actions
+  const getActionPrompt = (action: string, data: any): string => {
+    switch (action) {
+      case 'create-content-strategy':
+        return `Create a comprehensive content strategy for "${data.keyword}" based on the SERP analysis. Include:
+        - Content brief targeting ${data.searchVolume?.toLocaleString()} monthly searches
+        - Strategy to compete against difficulty level ${data.difficulty}%
+        - Content gaps to address: ${data.contentGaps?.join(', ') || 'competitive analysis needed'}
+        - Opportunities in: ${Object.entries(data.opportunities || {}).map(([key, values]) => `${key} (${Array.isArray(values) ? values.length : 0} keywords)`).join(', ')}`;
+        
+      case 'analyze-competitors':
+        return `Analyze the top competitors for "${data.keyword}" and provide actionable insights:
+        - Competitor analysis for: ${data.competitors?.map(c => c.title).join(', ')}
+        - Search volume context: ${data.searchVolume?.toLocaleString()} monthly searches
+        - Competition level: ${data.difficulty}% difficulty
+        - Provide content gaps, backlink opportunities, and competitive advantages to pursue`;
+        
+      case 'explore-related-keywords':
+        return `Expand keyword research for "${data.keyword}" with related opportunities:
+        - Base keyword: ${data.searchVolume?.toLocaleString()} monthly searches
+        - Related keywords to analyze: ${data.relatedKeywords?.join(', ')}
+        - Low competition opportunities: ${data.opportunities?.lowCompetition?.join(', ')}
+        - High volume opportunities: ${data.opportunities?.highVolume?.join(', ')}
+        - Trending keywords: ${data.opportunities?.trending?.join(', ')}`;
+        
+      default:
+        return `Help me with ${action} for keyword "${data.keyword}"`;
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -88,7 +118,21 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         {message.visualData && (
           <div className="mt-4">
             {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
-              <SerpVisualData serpData={message.visualData.serpData} />
+              <SerpVisualData 
+                serpData={message.visualData.serpData} 
+                onActionClick={(action, data) => {
+                  // Convert to contextual action and trigger
+                  onAction({
+                    id: `serp-action-${Date.now()}`,
+                    type: 'button',
+                    label: action,
+                    action: 'send_message',
+                    data: { 
+                      message: getActionPrompt(action, data)
+                    }
+                  });
+                }}
+              />
             )}
             {message.visualData.type === 'chart' && message.visualData.chartConfig && (
               <VisualDataRenderer visualData={message.visualData} />

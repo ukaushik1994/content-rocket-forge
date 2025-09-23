@@ -5,16 +5,12 @@ import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { MessageInput } from './MessageInput';
 import { ChatHeader } from './ChatHeader';
 import { QuickActionsPanel } from './QuickActionsPanel';
-import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
-import { WorkflowManager } from './WorkflowManager';
 
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { ContextualAction } from '@/services/aiService';
 import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
-import { useSerpSmartSuggestions } from '@/hooks/useSerpSmartSuggestions';
-import { useSerpWorkflowIntegration } from '@/hooks/useSerpWorkflowIntegration';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ChatInterfaceProps {
@@ -52,20 +48,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     getUser();
   }, []);
 
-  // Extract SERP data from recent messages for smart suggestions
-  const serpData = React.useMemo(() => {
-    const recentMessages = messages.slice(-5); // Check last 5 messages
-    const serpMessages = recentMessages.filter(msg => 
-      msg.visualData?.serpData || msg.visualData?.type === 'serp_analysis'
-    );
-    return serpMessages.length > 0 ? [serpMessages[serpMessages.length - 1].visualData.serpData] : [];
-  }, [messages]);
-
-  const { suggestions, isLoading: suggestionsLoading, dismissSuggestion } = useSerpSmartSuggestions({ 
-    conversationHistory: messages, 
-    userContext: {},
-    serpData: serpData // Use extracted SERP data
-  });
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -93,65 +75,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     handleAction(action, data);
   };
 
-  const handleSuggestionClick = async (suggestion: any) => {
-    try {
-      // Handle different suggestion actions with more specific prompts
-      switch (suggestion.action) {
-        case 'create-content-for-keyword':
-          await handleSendMessage(`Create comprehensive SEO content for "${suggestion.data?.keyword}" (${suggestion.data?.searchVolume?.toLocaleString()} monthly searches, ${suggestion.data?.difficulty}% difficulty). Include H1, H2 structure, meta description, and target keyword optimization.`);
-          break;
-        case 'generate-content-strategy':
-          await handleSendMessage(`Create a detailed content strategy for "${suggestion.data?.keyword}". Focus on these content gaps: ${suggestion.data?.contentGaps?.map(g => g.topic).join(', ')}. Include content calendar, topics, and SEO recommendations.`);
-          break;
-        case 'create-faq-content':
-          await handleSendMessage(`Generate comprehensive FAQ content for "${suggestion.data?.keyword}". Answer these popular questions: ${suggestion.data?.questions?.slice(0, 5).join(' | ')}. Structure for SEO with schema markup.`);
-          break;
-        case 'suggest-longtail-keywords':
-          await handleSendMessage(`Suggest long-tail keyword alternatives for "${suggestion.data?.keyword}" (currently ${suggestion.data?.difficulty}% difficulty). Find easier-to-rank variations with good search volume.`);
-          break;
-        case 'optimize-for-featured-snippet':
-          await handleSendMessage(`Help me optimize content for featured snippets for "${suggestion.data?.keyword}". Analyze current featured snippets and create optimized content structure.`);
-          break;
-        default:
-          await handleSendMessage(`Analyze and help with: ${suggestion.title} - ${suggestion.description}`);
-      }
-      dismissSuggestion(suggestion.id);
-    } catch (error) {
-      console.error('Error handling suggestion:', error);
-      toast({
-        title: "Suggestion Error",
-        description: "Failed to process suggestion",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Transform suggestions to match SmartSuggestion interface
-  // Don't transform suggestions - let SmartSuggestionsPanel handle original types
-  // Use the new workflow integration hook
-  const { 
-    workflows: activeWorkflows, 
-    createWorkflow, 
-    executeWorkflowAction 
-  } = useSerpWorkflowIntegration({ 
-    serpData, 
-    userId: user?.id 
-  });
-
-  // Transform suggestions to match interface
-  const transformedSuggestions = suggestions;
-
-  const handleWorkflowAction = async (workflowAction: string, data?: any) => {
-    try {
-      await executeWorkflowAction(workflowAction, data?.workflowId, data);
-    } catch (error) {
-      toast({
-        title: "Workflow Error",
-        description: "Failed to execute workflow action",
-        variant: "destructive"
-      });
-    }
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -270,35 +193,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
           </div>
         </div>
 
-        {/* Right Sidebar - Smart Suggestions & Workflows */}
-        {!sidebarOpen && (
-          <div className="w-80 space-y-4 p-4 border-l border-border/50">
-            <SmartSuggestionsPanel
-              suggestions={transformedSuggestions}
-              onSuggestionClick={handleSuggestionClick}
-              isLoading={suggestionsLoading}
-            />
-            
-            {activeWorkflows.length > 0 && (
-              <WorkflowManager
-                workflows={activeWorkflows}
-                onWorkflowAction={handleWorkflowAction}
-              />
-            )}
-            
-            {serpData.length > 0 && (
-              <div className="p-4 border rounded-lg bg-muted/50">
-                <h3 className="text-sm font-semibold mb-2">SERP Analytics</h3>
-                <p className="text-xs text-muted-foreground">
-                  Keyword: {serpData[0]?.keyword}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Analysis available in chat above
-                </p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </motion.div>
   );

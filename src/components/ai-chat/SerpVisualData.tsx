@@ -28,9 +28,10 @@ interface SerpDataProps {
       trending: string[];
     };
   };
+  onActionClick?: (action: string, data?: any) => void;
 }
 
-export const SerpVisualData: React.FC<SerpDataProps> = ({ serpData }) => {
+export const SerpVisualData: React.FC<SerpDataProps> = ({ serpData, onActionClick }) => {
   const { keyword, searchVolume, difficulty, cpc, competition, trends, relatedKeywords, competitors, peopleAlsoAsk, opportunities } = serpData;
 
   // Format trends data for chart
@@ -258,20 +259,51 @@ export const SerpVisualData: React.FC<SerpDataProps> = ({ serpData }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-3 pt-4">
-        <Button variant="default" className="flex items-center gap-2">
-          <Target className="h-4 w-4" />
-          Create Content Strategy
-        </Button>
-        <Button variant="outline" className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4" />
-          Analyze Competitors
-        </Button>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Search className="h-4 w-4" />
-          Explore Related Keywords
-        </Button>
-      </div>
+      {onActionClick && (
+        <div className="flex flex-wrap gap-3 pt-4">
+          <Button 
+            variant="default" 
+            className="flex items-center gap-2"
+            onClick={() => onActionClick('create-content-strategy', { 
+              keyword, 
+              searchVolume, 
+              difficulty, 
+              contentGaps: serpData.contentGaps, 
+              competitors: competitors.slice(0, 3),
+              opportunities 
+            })}
+          >
+            <Target className="h-4 w-4" />
+            Create Content Strategy
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => onActionClick('analyze-competitors', { 
+              keyword, 
+              competitors: competitors.slice(0, 5),
+              searchVolume,
+              difficulty 
+            })}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Analyze Competitors
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => onActionClick('explore-related-keywords', { 
+              keyword, 
+              relatedKeywords, 
+              opportunities,
+              searchVolume 
+            })}
+          >
+            <Search className="h-4 w-4" />
+            Explore Related Keywords
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
