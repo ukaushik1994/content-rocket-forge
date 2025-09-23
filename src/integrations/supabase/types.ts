@@ -3195,6 +3195,47 @@ export type Database = {
           },
         ]
       }
+      serp_analysis_history: {
+        Row: {
+          analysis_data: Json
+          created_at: string
+          expires_at: string | null
+          id: string
+          keyword: string
+          location: string | null
+          user_id: string
+          workflow_id: string | null
+        }
+        Insert: {
+          analysis_data?: Json
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          keyword: string
+          location?: string | null
+          user_id: string
+          workflow_id?: string | null
+        }
+        Update: {
+          analysis_data?: Json
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          keyword?: string
+          location?: string | null
+          user_id?: string
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serp_analysis_history_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       serp_cache: {
         Row: {
           created_at: string | null
@@ -4214,6 +4255,51 @@ export type Database = {
         }
         Relationships: []
       }
+      workflows: {
+        Row: {
+          completed_at: string | null
+          context: Json
+          created_at: string
+          current_step_index: number
+          id: string
+          started_at: string
+          status: string
+          steps: Json
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          context?: Json
+          created_at?: string
+          current_step_index?: number
+          id?: string
+          started_at?: string
+          status?: string
+          steps?: Json
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          context?: Json
+          created_at?: string
+          current_step_index?: number
+          id?: string
+          started_at?: string
+          status?: string
+          steps?: Json
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -4224,6 +4310,10 @@ export type Database = {
         Returns: undefined
       }
       cleanup_expired_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_serp_history: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

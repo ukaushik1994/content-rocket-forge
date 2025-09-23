@@ -128,33 +128,75 @@ export interface EnhancedSerpResult {
 }
 
 /**
- * Analyze keyword using enhanced SERP API with comprehensive data extraction
+ * Enhanced retry logic with exponential backoff
+ */
+async function retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Don't retry on authentication or quota errors
+      if (error instanceof Error && (
+        error.message.includes('Invalid API key') ||
+        error.message.includes('quota') ||
+        error.message.includes('limit')
+      )) {
+        throw error;
+      }
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt - 1);
+      console.log(`⏳ Retry attempt ${attempt}/${maxRetries} in ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+}
+
+/**
+ * Analyze keyword using enhanced SERP API with comprehensive data extraction and error resilience
  */
 export async function analyzeKeywordEnhanced(
   keyword: string,
   location: string = 'us',
   forceRefresh: boolean = false
 ): Promise<EnhancedSerpResult | null> {
-  try {
+  return await retryWithBackoff(async () => {
     console.log(`🔍 Enhanced SERP analysis for keyword: ${keyword}`);
     
     // Check cache first (if not forcing refresh)
     if (!forceRefresh) {
-      const { data: cachedData } = await supabase
-        .from('serp_cache')
-        .select('payload, created_at')
-        .eq('keyword', keyword)
-        .eq('geo', location)
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // 24h cache
-        .maybeSingle();
-      
-      if (cachedData && cachedData.payload) {
-        console.log('✅ Using cached enhanced SERP data');
-        return cachedData.payload as unknown as EnhancedSerpResult;
+      try {
+        const { data: cachedData } = await supabase
+          .from('serp_cache')
+          .select('payload, created_at')
+          .eq('keyword', keyword)
+          .eq('geo', location)
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // 24h cache
+          .maybeSingle();
+        
+        if (cachedData && cachedData.payload) {
+          console.log('✅ Using cached enhanced SERP data');
+          return cachedData.payload as unknown as EnhancedSerpResult;
+        }
+      } catch (cacheError) {
+        console.warn('⚠️ Cache lookup failed, proceeding with fresh analysis:', cacheError);
       }
     }
     
-    // Get API key for SERP analysis
+    // Get API key for SERP analysis with fallback
     console.log('🔑 Retrieving SERP API key...');
     const apiKey = await getApiKey('serp');
     
@@ -165,8 +207,12 @@ export async function analyzeKeywordEnhanced(
     
     console.log('✅ SERP API key retrieved successfully');
     
-    // Make API call to enhanced SERP function
-    const { data, error } = await supabase.functions.invoke('serp-api', {
+    // Make API call to enhanced SERP function with timeout
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('SERP API request timeout')), 30000)
+    );
+    
+    const apiPromise = supabase.functions.invoke('serp-api', {
       body: {
         endpoint: 'analyze',
         apiKey: apiKey,
@@ -180,6 +226,8 @@ export async function analyzeKeywordEnhanced(
       }
     });
     
+    const { data, error } = await Promise.race([apiPromise, timeoutPromise]) as any;
+    
     if (error) {
       console.error('Enhanced SERP API error:', error);
       
@@ -188,6 +236,8 @@ export async function analyzeKeywordEnhanced(
         throw new Error('Invalid SERP API key. Please check your API key configuration.');
       } else if (error.message?.includes('quota') || error.message?.includes('limit')) {
         throw new Error('SERP API quota exceeded. Please check your API usage.');
+      } else if (error.message?.includes('timeout')) {
+        throw new Error('SERP API request timed out. Please try again.');
       } else {
         throw new Error(`SERP API error: ${error.message || 'Unknown error'}`);
       }
@@ -199,31 +249,23 @@ export async function analyzeKeywordEnhanced(
     }
     
     // Cache the result
-    await supabase
-      .from('serp_cache')
-      .upsert({
-        keyword,
-        geo: location,
-        payload: data,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+    try {
+      await supabase
+        .from('serp_cache')
+        .upsert({
+          keyword,
+          geo: location,
+          payload: data,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+    } catch (cacheError) {
+      console.warn('⚠️ Failed to cache SERP data:', cacheError);
+    }
 
-    
     console.log('✅ Enhanced SERP analysis complete');
     return data as EnhancedSerpResult;
-    
-  } catch (error: any) {
-    console.error('Error in enhanced SERP analysis:', error);
-    
-    // Re-throw meaningful errors for user feedback
-    if (error.message?.includes('API key') || error.message?.includes('quota') || error.message?.includes('SERP')) {
-      throw error;
-    }
-    
-    // Generic fallback error
-    throw new Error('Failed to analyze keyword. Please try again or check your API configuration.');
-  }
+  });
 }
 
 /**

@@ -2,124 +2,219 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface WorkflowStep {
   id: string;
-  name: string;
+  title: string;
   description: string;
+  estimatedTime: number; // minutes
   completed: boolean;
   data?: any;
-  estimatedTime?: number;
 }
 
 export interface WorkflowChain {
   id: string;
-  name: string;
-  description: string;
-  steps: WorkflowStep[];
+  userId: string;
+  title: string;
+  type: string;
+  status: 'active' | 'paused' | 'completed' | 'cancelled';
   currentStepIndex: number;
+  steps: WorkflowStep[];
+  context: any;
   startedAt: Date;
   completedAt?: Date;
-  status: 'pending' | 'active' | 'completed' | 'paused' | 'failed';
 }
 
-export interface WorkflowTemplate {
+interface WorkflowTemplate {
   id: string;
-  name: string;
-  description: string;
-  estimatedTime: number;
-  steps: Omit<WorkflowStep, 'completed'>[];
+  title: string;
+  type: string;
+  steps: Omit<WorkflowStep, 'completed' | 'data'>[];
+  defaultContext?: any;
 }
 
 export class WorkflowChainService {
-  private static readonly WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
+  private static templates: WorkflowTemplate[] = [
     {
-      id: 'keyword-research-to-content',
-      name: 'Keyword Research to Content Strategy',
-      description: 'Complete workflow from keyword analysis to content creation plan',
-      estimatedTime: 15,
+      id: 'serp-keyword-analysis',
+      title: 'SERP Keyword Analysis',
+      type: 'serp_analysis',
       steps: [
-        { id: 'keyword-analysis', name: 'Keyword Analysis', description: 'Analyze target keywords and competition', estimatedTime: 3 },
-        { id: 'competitor-research', name: 'Competitor Research', description: 'Research top competitors and their strategies', estimatedTime: 4 },
-        { id: 'content-gaps', name: 'Content Gap Analysis', description: 'Identify content opportunities', estimatedTime: 3 },
-        { id: 'content-strategy', name: 'Content Strategy', description: 'Create comprehensive content plan', estimatedTime: 5 }
+        {
+          id: 'keyword-research',
+          title: 'Keyword Research',
+          description: 'Identify primary and related keywords for analysis',
+          estimatedTime: 5
+        },
+        {
+          id: 'competitor-analysis',
+          title: 'Competitor Analysis', 
+          description: 'Analyze top-ranking competitors and their strategies',
+          estimatedTime: 10
+        },
+        {
+          id: 'content-gap-analysis',
+          title: 'Content Gap Analysis',
+          description: 'Identify content opportunities and gaps',
+          estimatedTime: 8
+        },
+        {
+          id: 'optimization-recommendations',
+          title: 'Optimization Recommendations',
+          description: 'Generate actionable optimization suggestions',
+          estimatedTime: 7
+        }
       ]
     },
     {
-      id: 'serp-competitive-analysis',
-      name: 'SERP Competitive Analysis',
-      description: 'Deep dive into SERP competitors and opportunities',
-      estimatedTime: 10,
+      id: 'content-optimization',
+      title: 'Content Optimization Workflow',
+      type: 'content_optimization',
       steps: [
-        { id: 'serp-extraction', name: 'SERP Data Extraction', description: 'Extract and process SERP data', estimatedTime: 2 },
-        { id: 'competitor-analysis', name: 'Competitor Analysis', description: 'Analyze competitor performance', estimatedTime: 4 },
-        { id: 'opportunity-mapping', name: 'Opportunity Mapping', description: 'Map optimization opportunities', estimatedTime: 4 }
+        {
+          id: 'content-audit',
+          title: 'Content Audit',
+          description: 'Analyze existing content performance and structure',
+          estimatedTime: 12
+        },
+        {
+          id: 'seo-optimization',
+          title: 'SEO Optimization',
+          description: 'Optimize content for target keywords and search intent',
+          estimatedTime: 15
+        },
+        {
+          id: 'readability-enhancement',
+          title: 'Readability Enhancement',
+          description: 'Improve content readability and user engagement',
+          estimatedTime: 10
+        },
+        {
+          id: 'final-review',
+          title: 'Final Review & Publishing',
+          description: 'Review optimized content and prepare for publication',
+          estimatedTime: 8
+        }
       ]
     }
   ];
-
-  static getTemplates(): WorkflowTemplate[] {
-    return this.WORKFLOW_TEMPLATES;
-  }
 
   static async createWorkflowFromTemplate(
     userId: string, 
     templateId: string, 
     customData?: any
   ): Promise<WorkflowChain> {
-    const template = this.WORKFLOW_TEMPLATES.find(t => t.id === templateId);
+    const template = this.templates.find(t => t.id === templateId);
     if (!template) {
-      throw new Error(`Workflow template ${templateId} not found`);
+      throw new Error(`Template ${templateId} not found`);
     }
 
     const workflow: WorkflowChain = {
-      id: `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: template.name,
-      description: template.description,
-      steps: template.steps.map(step => ({ ...step, completed: false })),
+      id: crypto.randomUUID(),
+      userId,
+      title: template.title,
+      type: template.type,
+      status: 'active',
       currentStepIndex: 0,
-      startedAt: new Date(),
-      status: 'active'
+      steps: template.steps.map(step => ({
+        ...step,
+        completed: false
+      })),
+      context: { ...template.defaultContext, ...customData },
+      startedAt: new Date()
     };
 
-    // Save to database
     await this.saveWorkflow(userId, workflow);
     return workflow;
   }
 
   static async saveWorkflow(userId: string, workflow: WorkflowChain): Promise<void> {
     try {
-      // Store in localStorage for now since we don't have the workflow table
-      localStorage.setItem(`workflow_${workflow.id}`, JSON.stringify(workflow));
-      localStorage.setItem(`user_workflows_${userId}`, JSON.stringify(
-        [...(this.getUserWorkflowsFromStorage(userId)), workflow.id]
-      ));
+      const { error } = await supabase
+        .from('workflows')
+        .upsert({
+          id: workflow.id,
+          user_id: userId,
+          title: workflow.title,
+          type: workflow.type,
+          status: workflow.status,
+          current_step_index: workflow.currentStepIndex,
+          steps: workflow.steps as any,
+          context: workflow.context as any,
+          started_at: workflow.startedAt.toISOString(),
+          completed_at: workflow.completedAt?.toISOString()
+        });
+
+      if (error) {
+        console.error('Error saving workflow:', error);
+        throw new Error(`Failed to save workflow: ${error.message}`);
+      }
+
+      console.log('✅ Workflow saved successfully');
     } catch (error) {
-      console.error('Workflow save error:', error);
+      console.error('Error in saveWorkflow:', error);
+      throw error;
     }
   }
 
-  private static getUserWorkflowsFromStorage(userId: string): string[] {
+  static async getUserWorkflows(userId: string): Promise<WorkflowChain[]> {
     try {
-      const stored = localStorage.getItem(`user_workflows_${userId}`);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
+      const { data, error } = await supabase
+        .from('workflows')
+        .select('*')
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching workflows:', error);
+        throw new Error(`Failed to fetch workflows: ${error.message}`);
+      }
+
+      return (data || []).map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        title: row.title,
+        type: row.type,
+        status: row.status as 'active' | 'paused' | 'completed' | 'cancelled',
+        currentStepIndex: row.current_step_index,
+        steps: (row.steps as unknown) as WorkflowStep[],
+        context: row.context,
+        startedAt: new Date(row.started_at),
+        completedAt: row.completed_at ? new Date(row.completed_at) : undefined
+      }));
+    } catch (error) {
+      console.error('Error in getUserWorkflows:', error);
       return [];
     }
   }
 
   static async getWorkflow(userId: string, workflowId: string): Promise<WorkflowChain | null> {
     try {
-      const stored = localStorage.getItem(`workflow_${workflowId}`);
-      if (stored) {
-        const workflow = JSON.parse(stored);
-        // Convert date strings back to Date objects
-        workflow.startedAt = new Date(workflow.startedAt);
-        if (workflow.completedAt) {
-          workflow.completedAt = new Date(workflow.completedAt);
-        }
-        return workflow;
+      const { data, error } = await supabase
+        .from('workflows')
+        .select('*')
+        .eq('id', workflowId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching workflow:', error);
+        return null;
       }
-      return null;
+
+      if (!data) return null;
+
+      return {
+        id: data.id,
+        userId: data.user_id,
+        title: data.title,
+        type: data.type,
+        status: data.status as 'active' | 'paused' | 'completed' | 'cancelled',
+        currentStepIndex: data.current_step_index,
+        steps: (data.steps as unknown) as WorkflowStep[],
+        context: data.context,
+        startedAt: new Date(data.started_at),
+        completedAt: data.completed_at ? new Date(data.completed_at) : undefined
+      };
     } catch (error) {
-      console.error('Error fetching workflow:', error);
+      console.error('Error in getWorkflow:', error);
       return null;
     }
   }
@@ -147,22 +242,27 @@ export class WorkflowChainService {
     return workflow;
   }
 
-  static async getUserWorkflows(userId: string): Promise<WorkflowChain[]> {
+  static async deleteWorkflow(userId: string, workflowId: string): Promise<boolean> {
     try {
-      const workflowIds = this.getUserWorkflowsFromStorage(userId);
-      const workflows: WorkflowChain[] = [];
-      
-      for (const workflowId of workflowIds) {
-        const workflow = await this.getWorkflow(userId, workflowId);
-        if (workflow) {
-          workflows.push(workflow);
-        }
+      const { error } = await supabase
+        .from('workflows')
+        .delete()
+        .eq('id', workflowId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error deleting workflow:', error);
+        return false;
       }
-      
-      return workflows.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
+
+      return true;
     } catch (error) {
-      console.error('Error fetching workflows:', error);
-      return [];
+      console.error('Error in deleteWorkflow:', error);
+      return false;
     }
+  }
+
+  static getTemplates(): WorkflowTemplate[] {
+    return this.templates;
   }
 }

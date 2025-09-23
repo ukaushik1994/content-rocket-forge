@@ -40,7 +40,7 @@ export const WorkflowProgress: React.FC<WorkflowProgressProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            {workflow.name}
+            {workflow.title}
           </CardTitle>
           <Badge variant={workflow.status === 'completed' ? 'default' : 'secondary'}>
             {workflow.status}
@@ -83,7 +83,7 @@ export const WorkflowProgress: React.FC<WorkflowProgressProps> = ({
                         ? 'text-green-700'
                         : 'text-muted-foreground'
                     }`}>
-                      {step.name}
+                      {step.title}
                     </h4>
                     {step.estimatedTime && (
                       <Badge variant="outline" className="text-xs">

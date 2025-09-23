@@ -10,8 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
-import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
-import { Sparkles, Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
+import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 interface EnhancedChatInterfaceProps {
   className?: string;
@@ -22,7 +21,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true); // Show sidebar by default
-  const [showSuggestions, setShowSuggestions] = useState(true);
 
   const {
     conversations,
@@ -64,17 +62,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     await sendMessage(message);
   };
 
-  // Extract SERP data from latest AI message for suggestions
-  const latestSerpData = messages
-    .filter(m => m.role === 'assistant' && m.serpData)
-    .pop()?.serpData || [];
-
-  // Handle suggestion application
-  const handleApplySuggestion = (suggestion: any) => {
-    // Convert suggestion to a user message
-    const suggestionMessage = `Apply suggestion: ${suggestion.title} - ${suggestion.description}`;
-    handleSendMessage(suggestionMessage);
-  };
   const containerVariants = {
     hidden: {
       opacity: 0
@@ -278,26 +265,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </div>
         </motion.div>
 
-        {/* Smart Suggestions Sidebar */}
-        <AnimatePresence>
-          {showSuggestions && messages.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, x: 300 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 300 }}
-              transition={{ duration: 0.3 }}
-              className="w-80 border-l border-border/50 bg-background/80 backdrop-blur-xl fixed right-0 top-16 bottom-0 z-40"
-            >
-              <div className="h-full p-4 overflow-hidden">
-                <SmartSuggestionsPanel
-                  suggestions={[]}
-                  onSuggestionClick={handleApplySuggestion}
-                  isLoading={false}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </div>;
 };
