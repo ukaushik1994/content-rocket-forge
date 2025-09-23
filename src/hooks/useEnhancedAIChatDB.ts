@@ -269,6 +269,15 @@ export const useEnhancedAIChatDB = () => {
       setMessages(prev => [...prev, aiResponse]);
       await saveMessage(aiResponse, conversationId);
 
+      // Show workflow progress if this was part of a workflow
+      if (aiResponse.workflowContext?.currentWorkflow) {
+        toast({
+          title: "Workflow Progress",
+          description: `${aiResponse.workflowContext.currentWorkflow.replace(/-/g, ' ')} workflow updated`,
+          duration: 1500
+        });
+      }
+
       // Update conversation title if it's the first exchange
       if (messages.length === 0) {
         const title = content.slice(0, 50) + (content.length > 50 ? '...' : '');
@@ -401,13 +410,15 @@ export const useEnhancedAIChatDB = () => {
   const handleWorkflowAction = useCallback(async (workflowAction: string, data?: any) => {
     if (!user) return;
 
+    console.log('🔄 Executing workflow action:', workflowAction);
+
     // Update workflow context in service
     enhancedAIService.updateWorkflowContext({
       currentWorkflow: workflowAction,
       stepData: { ...enhancedAIService.getWorkflowContext().stepData, ...data }
     });
 
-    // Update workflow state in database
+    // Update workflow state with progress tracking
     await enhancedAIService.updateWorkflowState(
       user.id,
       workflowAction,
@@ -415,26 +426,50 @@ export const useEnhancedAIChatDB = () => {
       data || {}
     );
 
+    // Show progress indicator
+    toast({
+      title: "Workflow Started",
+      description: `Starting ${workflowAction.replace(/-/g, ' ')} workflow...`,
+      duration: 2000
+    });
+
     // Send contextual messages based on workflow action
-    switch (workflowAction) {
-      case 'keyword-optimization':
-        await sendMessage('Analyze my current content and solutions to find high-impact keyword opportunities. Show me visual data on keyword gaps and optimization potential.');
-        break;
-      case 'content-creation':
-        await sendMessage('Based on my solutions and target audience, help me create a high-performing content strategy with specific recommendations and metrics.');
-        break;
-      case 'performance-analysis':
-        await sendMessage('Show me a comprehensive performance analysis of my content with charts, metrics, and actionable optimization recommendations.');
-        break;
-      case 'solution-integration':
-        await sendMessage('Analyze how well my current content integrates with my solutions and show me specific opportunities to improve solution visibility and conversion.');
-        break;
-      default:
-        if (data?.workflow) {
-          await sendMessage(`Execute the ${data.workflow} workflow and provide detailed insights with visual data.`);
-        }
+    const workflowMessages = {
+      'keyword-optimization': 'Analyze my current content and solutions to find high-impact keyword opportunities. Show me visual data on keyword gaps and optimization potential with charts and metrics.',
+      'content-creation': 'Based on my solutions and target audience, help me create a high-performing content strategy with specific recommendations, visual metrics, and actionable next steps.',
+      'performance-analysis': 'Show me a comprehensive performance analysis of my content with interactive charts, key metrics, trend analysis, and actionable optimization recommendations.',
+      'solution-integration': 'Analyze how well my current content integrates with my solutions and show me specific opportunities to improve solution visibility and conversion with data visualization.',
+      'performance-deep-dive': 'Provide a detailed deep-dive analysis of my content performance including visual charts, trend analysis, top performers, and specific optimization opportunities.',
+      'content-optimization': 'Analyze my low-performing content and show optimization recommendations with before/after projections and visual improvement metrics.'
+    };
+
+    const message = workflowMessages[workflowAction as keyof typeof workflowMessages] || 
+                    (data?.workflow ? `Execute the ${data.workflow} workflow and provide detailed insights with visual data and actionable recommendations.` : 
+                    `Help me with ${workflowAction.replace(/-/g, ' ')} and provide visual insights and actionable recommendations.`);
+
+    console.log('💬 Sending workflow message:', message);
+    
+    try {
+      await sendMessage(message);
+      
+      // Update workflow progress
+      setTimeout(async () => {
+        await enhancedAIService.updateWorkflowState(
+          user.id,
+          workflowAction,
+          'processing',
+          { ...data, startedAt: Date.now() }
+        );
+      }, 1000);
+    } catch (error) {
+      console.error('❌ Workflow action failed:', error);
+      toast({
+        title: "Workflow Error",
+        description: `Failed to execute ${workflowAction}: ${error.message}`,
+        variant: "destructive"
+      });
     }
-  }, [sendMessage, user]);
+  }, [sendMessage, user, toast]);
 
   // Pin/Unpin conversation
   const togglePinConversation = useCallback(async (conversationId: string) => {

@@ -3,6 +3,7 @@ import { ContextualAction } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
+
 export interface WorkflowContext {
   currentWorkflow?: string;
   stepData?: Record<string, any>;
@@ -173,6 +174,19 @@ class EnhancedAIService {
 
   async updateWorkflowState(userId: string, workflowType: string, currentStep: string, data: any) {
     try {
+      // Store workflow state in localStorage as fallback until DB table is ready
+      const workflowState = {
+        userId,
+        workflowType,
+        currentStep,
+        workflowData: data,
+        status: 'active',
+        timestamp: Date.now()
+      };
+      
+      localStorage.setItem(`workflow_${userId}_${workflowType}`, JSON.stringify(workflowState));
+      
+      // Also try to store in database if table exists
       const { error } = await supabase
         .from('ai_workflow_states')
         .upsert({
@@ -182,12 +196,74 @@ class EnhancedAIService {
           workflow_data: data
         });
 
-      if (error) {
+      if (error && !error.message.includes('does not exist')) {
         console.error('Error updating workflow state:', error);
       }
     } catch (error) {
       console.error('Error updating workflow state:', error);
+      // Fallback to localStorage only
+      const workflowState = {
+        userId,
+        workflowType, 
+        currentStep,
+        workflowData: data,
+        status: 'active',
+        timestamp: Date.now()
+      };
+      localStorage.setItem(`workflow_${userId}_${workflowType}`, JSON.stringify(workflowState));
     }
+  }
+
+  private calculateWorkflowProgress(workflowType: string, currentStep: string): number {
+    const workflowSteps: Record<string, string[]> = {
+      'keyword-optimization': ['analysis', 'research', 'implementation', 'validation'],
+      'content-creation': ['planning', 'outline', 'writing', 'optimization', 'review'],
+      'performance-analysis': ['data-collection', 'analysis', 'insights', 'recommendations'],
+      'solution-integration': ['assessment', 'integration', 'testing', 'optimization']
+    };
+
+    const steps = workflowSteps[workflowType] || ['start', 'process', 'complete'];
+    const currentIndex = steps.indexOf(currentStep);
+    
+    if (currentIndex === -1) return 0;
+    return Math.round(((currentIndex + 1) / steps.length) * 100);
+  }
+
+  async getWorkflowState(userId: string, workflowType: string) {
+    try {
+      // Try database first
+      const { data, error } = await supabase
+        .from('ai_workflow_states')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('workflow_type', workflowType)
+        .single();
+
+      if (!error && data) {
+        return {
+          currentStep: data.current_step,
+          workflowData: data.workflow_data,
+          progress: this.calculateWorkflowProgress(workflowType, data.current_step),
+          status: 'active' // Default since status column may not exist yet
+        };
+      }
+    } catch (error) {
+      console.warn('Database workflow state not available, using localStorage');
+    }
+
+    // Fallback to localStorage
+    const stored = localStorage.getItem(`workflow_${userId}_${workflowType}`);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        currentStep: parsed.currentStep,
+        workflowData: parsed.workflowData,
+        progress: this.calculateWorkflowProgress(workflowType, parsed.currentStep),
+        status: parsed.status || 'active'
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -201,7 +277,7 @@ class EnhancedAIService {
 
     let systemPrompt = `You are an intelligent AI assistant with enhanced capabilities. You can provide structured responses with actions and visual data.
 
-RESPONSE FORMAT: You can optionally include structured data in your responses using JSON blocks:
+RESPONSE FORMAT: You can optionally include structured data in your responses using delimiter format:
 - Actions: $$ACTIONS$$ [{"id": "action-id", "type": "button", "label": "Action Label", "action": "navigate:/path"}] $$ACTIONS$$
 - Visual Data: $$VISUAL_DATA$$ {"type": "metrics", "metrics": [{"id": "1", "title": "Title", "value": "Value"}]} $$VISUAL_DATA$$
 
@@ -464,13 +540,14 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
   }
 
   private extractKeywords(text: string): string[] {
-    // Simple keyword extraction - can be enhanced with NLP
-    const words = text.toLowerCase().split(/\s+/);
-    const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'about', 'how', 'what', 'when', 'where', 'why', 'can', 'could', 'should', 'would', 'will', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'a', 'an', 'blog', 'post', 'content', 'create', 'write', 'article'];
+    // Simple keyword extraction - remove common words and get potential keywords
+    const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'must', 'shall', 'a', 'an', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'her', 'its', 'our', 'their'];
     
-    return words
+    return text.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
       .filter(word => word.length > 3 && !commonWords.includes(word))
-      .slice(0, 10); // Take top 10 potential keywords
+      .slice(0, 10);
   }
 }
 
