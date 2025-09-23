@@ -2,9 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Search, Target, Users, BarChart3, Eye, MessageCircle, Trophy, Zap, TrendingDown } from 'lucide-react';
+import { TrendingUp, Search, Target, Users, BarChart3, Eye, MessageCircle, Trophy, Zap, TrendingDown, Download, Save, Share } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SerpExportButtons } from '@/components/serp/SerpExportButtons';
+import { SerpLoadingSkeleton } from '@/components/serp/SerpLoadingSkeleton';
 
 interface SerpDataProps {
   serpData: {
@@ -55,6 +57,11 @@ interface SerpDataProps {
 export const SerpVisualData: React.FC<SerpDataProps> = ({ serpData, onActionClick, compareKeywords }) => {
   const { keyword, searchVolume, difficulty, cpc, competition, trends, relatedKeywords, competitors, peopleAlsoAsk, opportunities, keywordVariations, contentAnalysis } = serpData;
   const [activeChart, setActiveChart] = useState<'trends' | 'competitors' | 'opportunities'>('trends');
+  const [isLoading, setIsLoading] = useState(false);
+
+  if (isLoading) {
+    return <SerpLoadingSkeleton />;
+  }
 
   // Format trends data for chart
   const trendData = trends.map((value, index) => ({
@@ -640,13 +647,26 @@ export const SerpVisualData: React.FC<SerpDataProps> = ({ serpData, onActionClic
                 opportunities,
                 averageWordCount: contentAnalysis?.averageWordCount
               })}
-            >
-              <Zap className="h-4 w-4" />
-              Optimize Content Gaps
-            </Button>
-          )}
-        </motion.div>
-      )}
-    </div>
-  );
-};
+             >
+               <Zap className="h-4 w-4" />
+               Optimize Content Gaps
+             </Button>
+           )}
+         </motion.div>
+       )}
+
+       {/* Export and Save Options */}
+       <SerpExportButtons 
+         serpData={serpData}
+         onSave={() => {
+           // Save analysis to user's history
+           localStorage.setItem(`serp-analysis-${keyword}-${Date.now()}`, JSON.stringify(serpData));
+           onActionClick?.('save-analysis', { keyword, serpData });
+         }}
+         onShare={() => {
+           onActionClick?.('share-analysis', { keyword, serpData });
+         }}
+       />
+     </div>
+   );
+ };

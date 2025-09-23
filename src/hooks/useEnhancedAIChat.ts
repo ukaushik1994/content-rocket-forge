@@ -148,33 +148,33 @@ export const useEnhancedAIChat = () => {
   const handleWorkflowAction = useCallback(async (workflowAction: string, data?: any) => {
     if (!user) return;
 
-    // Update workflow state in service
-    const currentState = await enhancedAIService.getWorkflowState(user.id, workflowAction);
-    const updatedData = { ...currentState?.workflowData, ...data };
-
-    // Update workflow state in database
-    await enhancedAIService.updateWorkflowState(
-      user.id,
-      workflowAction,
-      'initiated',
-      data || {}
-    );
-
-    // Send contextual messages based on workflow action with real data context
-    // Use AIServiceController for workflow-specific messages
-    const workflowMessages = {
-      'keyword-optimization': 'Analyze my current content and solutions to find high-impact keyword opportunities. Show me visual data on keyword gaps and optimization potential.',
-      'content-creation': 'Based on my solutions and target audience, help me create a high-performing content strategy with specific recommendations and metrics.',
-      'performance-analysis': 'Show me a comprehensive performance analysis of my content with charts, metrics, and actionable optimization recommendations.',
-      'solution-integration': 'Analyze how well my current content integrates with my solutions and show me specific opportunities to improve solution visibility and conversion.'
-    };
-
-    const message = workflowMessages[workflowAction as keyof typeof workflowMessages] || 
-                   (data?.workflow ? `Execute the ${data.workflow} workflow and provide detailed insights with visual data.` : 
-                   `Help me with ${workflowAction}`);
-
-    // Use AIServiceController instead of sendMessage to ensure centralized AI handling
     try {
+      // Update workflow state in service
+      const currentState = await enhancedAIService.getWorkflowState(user.id, workflowAction);
+      const updatedData = { ...currentState?.workflowData, ...data };
+
+      // Update workflow state in database
+      await enhancedAIService.updateWorkflowState(
+        user.id,
+        workflowAction,
+        'initiated',
+        data || {}
+      );
+
+      // Send contextual messages based on workflow action with real data context
+      // Use AIServiceController for workflow-specific messages
+      const workflowMessages = {
+        'keyword-optimization': 'Analyze my current content and solutions to find high-impact keyword opportunities. Show me visual data on keyword gaps and optimization potential.',
+        'content-creation': 'Based on my solutions and target audience, help me create a high-performing content strategy with specific recommendations and metrics.',
+        'performance-analysis': 'Show me a comprehensive performance analysis of my content with charts, metrics, and actionable optimization recommendations.',
+        'solution-integration': 'Analyze how well my current content integrates with my solutions and show me specific opportunities to improve solution visibility and conversion.'
+      };
+
+      const message = workflowMessages[workflowAction as keyof typeof workflowMessages] || 
+                     (data?.workflow ? `Execute the ${data.workflow} workflow and provide detailed insights with visual data.` : 
+                     `Help me with ${workflowAction}`);
+
+      // Use AIServiceController instead of sendMessage to ensure centralized AI handling
       const result = await AIServiceController.generate({
         input: message,
         use_case: 'chat'
@@ -189,16 +189,18 @@ export const useEnhancedAIChat = () => {
         };
         setMessages(prev => [...prev, aiMessage]);
       }
-    } catch (error) {
-      console.error('Workflow action failed:', error);
-    }
-  }, [sendMessage, user]);
+      } catch (error) {
+        console.error('Workflow action failed:', error);
+      }
+    }, [user]);
 
   return {
     messages,
     isLoading,
     isTyping,
     sendMessage,
-    handleAction
+    handleAction,
+    handleSerpAction,
+    handleWorkflowAction
   };
 };
