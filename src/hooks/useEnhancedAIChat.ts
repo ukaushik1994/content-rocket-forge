@@ -90,8 +90,45 @@ export const useEnhancedAIChat = () => {
     } else if (action.startsWith('send:')) {
       const message = action.replace('send:', '');
       await sendMessage(message);
+    } else if (['create-content-strategy', 'analyze-competitors', 'explore-related-keywords'].includes(action)) {
+      // Handle SERP-specific actions
+      await handleSerpAction(action, data);
     }
   }, [sendMessage, user, openSettings]);
+
+  const handleSerpAction = useCallback(async (action: string, data?: any) => {
+    if (!user) return;
+
+    // Generate contextual message based on SERP action
+    const serpActionMessages = {
+      'create-content-strategy': `Based on the SERP analysis for "${data?.keyword || 'the analyzed keyword'}", create a comprehensive content strategy. Include:
+        - Content gaps to exploit
+        - Optimal content formats and lengths
+        - Target keywords and semantic variations
+        - Competition analysis and differentiation opportunities
+        - Content calendar suggestions with priority ranking`,
+      
+      'analyze-competitors': `Provide a detailed competitor analysis for "${data?.keyword || 'the analyzed keyword'}". Focus on:
+        - Top ranking competitors and their content strategies
+        - Content gaps and opportunities they're missing
+        - Their backlink and authority analysis
+        - Weaknesses we can exploit
+        - Specific recommendations to outrank them`,
+      
+      'explore-related-keywords': `Expand the keyword research for "${data?.keyword || 'the analyzed keyword'}". Show me:
+        - Related long-tail keywords with high opportunity
+        - Semantic keyword clusters and topics
+        - Question-based keywords and "People Also Ask" opportunities
+        - Trending keywords in this niche
+        - Low competition, high volume opportunities`
+    };
+
+    const message = serpActionMessages[action as keyof typeof serpActionMessages] || 
+                   `Provide detailed insights for ${action} based on the SERP data for ${data?.keyword || 'the keyword'}`;
+
+    // Send the contextual message as a new AI request
+    await sendMessage(message);
+  }, [sendMessage, user]);
 
   const handleWorkflowAction = useCallback(async (workflowAction: string, data?: any) => {
     if (!user) return;
