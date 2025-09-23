@@ -17,17 +17,18 @@ class EnhancedAIService {
     message: string, 
     conversationHistory: EnhancedChatMessage[],
     userId?: string,
-    onStreamUpdate?: (content: string) => void
+    onStreamUpdate?: (content: string) => void,
+    retryCount: number = 0
   ): Promise<EnhancedChatMessage> {
     try {
       if (!userId) {
         return this.createErrorMessage('User authentication required');
       }
 
-      console.log('🤖 Processing enhanced message with AIServiceController:', { message, userId });
+      console.log('🤖 Processing enhanced message with AIServiceController:', { message, userId, retryCount });
 
-      // Fetch user context (solutions, analytics, workflow state)
-      const context = await this.fetchUserContext(userId);
+      // Fetch user context with retry logic
+      const context = await this.fetchUserContextWithRetry(userId, 3);
       
       // Build enhanced system prompt with user context
       const systemPrompt = this.buildEnhancedSystemPrompt(context, conversationHistory);
@@ -147,27 +148,76 @@ class EnhancedAIService {
       return enhancedMessage;
     } catch (error) {
       console.error('Error in processEnhancedMessage:', error);
-      return this.createErrorMessage(error.message || 'Failed to process message. Please check your AI configuration in Settings.');
+      
+      // Implement retry logic for transient errors
+      if (retryCount < 2 && this.isRetryableError(error)) {
+        console.log(`🔄 Retrying request (attempt ${retryCount + 1}/3)...`);
+        await this.delay(1000 * (retryCount + 1)); // Exponential backoff
+        return this.processEnhancedMessage(message, conversationHistory, userId, onStreamUpdate, retryCount + 1);
+      }
+      
+      return this.createEnhancedErrorMessage(error, retryCount);
     }
   }
 
-  private async fetchUserContext(userId: string) {
-    try {
-      const response = await supabase.functions.invoke('ai-context-manager', {
-        body: {
-          userId,
-          contextType: 'all'
+  private async fetchUserContextWithRetry(userId: string, maxRetries: number = 3): Promise<any> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await supabase.functions.invoke('ai-context-manager', {
+          body: {
+            userId,
+            contextType: 'all'
+          }
+        });
+
+        if (response.error) {
+          console.error(`Context fetch attempt ${attempt} failed:`, response.error);
+          if (attempt === maxRetries) {
+            return this.getFallbackContext(userId);
+          }
+          await this.delay(500 * attempt);
+          continue;
         }
-      });
 
-      if (response.error) {
-        console.error('Error fetching context:', response.error);
-        return {};
+        return response.data;
+      } catch (error) {
+        console.error(`Context fetch attempt ${attempt} error:`, error);
+        if (attempt === maxRetries) {
+          return this.getFallbackContext(userId);
+        }
+        await this.delay(500 * attempt);
       }
+    }
+    return this.getFallbackContext(userId);
+  }
 
-      return response.data;
+  private async getFallbackContext(userId: string): Promise<any> {
+    console.log('🔄 Using fallback context for user:', userId);
+    
+    // Try to get basic user data directly from database
+    try {
+      const { data: solutions } = await supabase
+        .from('solutions')
+        .select('name, description, features, painPoints, targetAudience')
+        .eq('user_id', userId)
+        .limit(5);
+
+      const { data: contentItems } = await supabase
+        .from('content_items')
+        .select('title, content_type, seo_score, approval_status')
+        .eq('user_id', userId)
+        .limit(10);
+
+      return {
+        solutions: solutions || [],
+        analytics: {
+          totalContent: contentItems?.length || 0,
+          published: contentItems?.filter(c => c.approval_status === 'approved').length || 0,
+          avgSeoScore: contentItems?.reduce((acc, c) => acc + (c.seo_score || 0), 0) / (contentItems?.length || 1) || 0
+        }
+      };
     } catch (error) {
-      console.error('Error fetching user context:', error);
+      console.error('Fallback context failed:', error);
       return {};
     }
   }
@@ -432,6 +482,89 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
         variant: 'primary'
       }]
     };
+  }
+
+  private createEnhancedErrorMessage(error: any, retryCount: number): EnhancedChatMessage {
+    const errorType = this.getErrorType(error);
+    let content = '';
+    let actions: any[] = [];
+
+    switch (errorType) {
+      case 'network':
+        content = `🌐 Network connection issue detected. ${retryCount > 0 ? `Tried ${retryCount + 1} times.` : ''} Please check your internet connection and try again.`;
+        actions = [
+          { id: 'retry-message', label: 'Retry', action: 'retry', variant: 'primary' },
+          { id: 'check-connection', label: 'Check Connection', action: 'navigate:/settings/connection', variant: 'outline' }
+        ];
+        break;
+      case 'api_key':
+        content = `🔑 API key issue detected. Please check your API key configuration in Settings.`;
+        actions = [
+          { id: 'configure-keys', label: 'Configure API Keys', action: 'navigate:/settings/api', variant: 'primary' },
+          { id: 'test-connection', label: 'Test Connection', action: 'test-api-keys', variant: 'outline' }
+        ];
+        break;
+      case 'quota':
+        content = `📊 API quota exceeded. Consider upgrading your plan or try again later.`;
+        actions = [
+          { id: 'view-usage', label: 'View Usage', action: 'navigate:/settings/usage', variant: 'primary' },
+          { id: 'upgrade-plan', label: 'Upgrade Plan', action: 'navigate:/settings/billing', variant: 'outline' }
+        ];
+        break;
+      case 'rate_limit':
+        content = `⏰ Rate limit reached. Please wait a moment before trying again.`;
+        actions = [
+          { id: 'retry-later', label: 'Retry in 1 minute', action: 'retry-delayed', variant: 'primary' }
+        ];
+        break;
+      default:
+        content = `❌ An unexpected error occurred: ${error?.message || 'Unknown error'}. ${retryCount > 0 ? `Attempted ${retryCount + 1} times.` : ''}`;
+        actions = [
+          { id: 'retry-message', label: 'Retry', action: 'retry', variant: 'primary' },
+          { id: 'get-help', label: 'Get Help', action: 'navigate:/support', variant: 'outline' }
+        ];
+    }
+
+    return {
+      id: `error-${Date.now()}`,
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+      actions
+    };
+  }
+
+  private getErrorType(error: any): string {
+    const errorMsg = error?.message?.toLowerCase() || '';
+    
+    if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('connection')) {
+      return 'network';
+    }
+    if (errorMsg.includes('api key') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized')) {
+      return 'api_key';
+    }
+    if (errorMsg.includes('quota') || errorMsg.includes('billing') || errorMsg.includes('exceeded')) {
+      return 'quota';
+    }
+    if (errorMsg.includes('rate limit') || errorMsg.includes('too many requests')) {
+      return 'rate_limit';
+    }
+    
+    return 'unknown';
+  }
+
+  private isRetryableError(error: any): boolean {
+    const errorMsg = error?.message?.toLowerCase() || '';
+    return errorMsg.includes('network') || 
+           errorMsg.includes('timeout') || 
+           errorMsg.includes('connection') ||
+           errorMsg.includes('503') ||
+           errorMsg.includes('502') ||
+           errorMsg.includes('rate limit');
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   updateWorkflowContext(context: Partial<WorkflowContext>) {
