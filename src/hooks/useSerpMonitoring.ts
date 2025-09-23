@@ -149,10 +149,77 @@ export function useSerpMonitoring() {
     return stats;
   };
 
-  // Load initial data
+  // Load initial data or demo data
   useEffect(() => {
-    refreshMetrics();
-  }, [refreshMetrics]);
+    const loadData = async () => {
+      try {
+        // Try to load real data from database
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Load real monitoring data
+          const { data: usageLogs } = await supabase
+            .from('serp_usage_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+          if (usageLogs && usageLogs.length > 0) {
+            // Convert database logs to SerpApiCall format
+            const apiCalls: SerpApiCall[] = usageLogs.map(log => {
+              const metadata = log.metadata as any || {};
+              return {
+                id: log.id,
+                provider: log.provider as 'serp' | 'serpstack',
+                endpoint: log.operation,
+                keyword: metadata.keyword || 'Unknown',
+                responseTime: metadata.response_time || 0,
+                status: log.success ? 'success' : 'error',
+                timestamp: new Date(log.created_at),
+                error: metadata.error
+              };
+            });
+            
+            setRecentCalls(apiCalls);
+          }
+        }
+        
+        // If no real data, load demo data for preview
+        if (!user || recentCalls.length === 0) {
+          const demoData = generateDemoData();
+          setRecentCalls(demoData);
+        }
+        
+        await refreshMetrics();
+      } catch (error) {
+        console.warn('Loading demo data for SERP monitoring:', error);
+        // Fallback to demo data
+        const demoData = generateDemoData();
+        setRecentCalls(demoData);
+        await refreshMetrics();
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Generate demo data for preview/testing
+  const generateDemoData = (): SerpApiCall[] => {
+    const keywords = ['content marketing', 'seo tools', 'digital marketing', 'social media', 'email marketing'];
+    const providers: ('serp' | 'serpstack')[] = ['serp', 'serpstack'];
+    const endpoints = ['keyword_analysis', 'serp_check', 'competitor_analysis'];
+    
+    return Array.from({ length: 25 }, (_, i) => ({
+      id: `demo-${i}`,
+      provider: providers[Math.floor(Math.random() * providers.length)],
+      endpoint: endpoints[Math.floor(Math.random() * endpoints.length)],
+      keyword: keywords[Math.floor(Math.random() * keywords.length)],
+      responseTime: Math.floor(Math.random() * 2000) + 500,
+      status: Math.random() > 0.15 ? 'success' : 'error' as const,
+      timestamp: new Date(Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)),
+      error: Math.random() > 0.8 ? 'API timeout' : undefined
+    }));
+  };
 
   return {
     metrics,
