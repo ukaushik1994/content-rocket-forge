@@ -285,11 +285,16 @@ export class AIWorkflowIntelligence {
         .eq('current_step', 'active')
         .single();
 
-      if (!triggerData?.workflow_data?.triggers) {
+      if (!triggerData?.workflow_data) {
         return executedTriggers;
       }
 
-      const triggers = (triggerData.workflow_data as any)?.triggers as WorkflowTrigger[];
+      const workflowData = triggerData.workflow_data as any;
+      if (!workflowData.triggers) {
+        return executedTriggers;
+      }
+
+      const triggers = workflowData.triggers as WorkflowTrigger[];
 
       // Check each trigger condition
       for (const trigger of triggers) {
