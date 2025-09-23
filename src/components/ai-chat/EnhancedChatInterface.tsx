@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
+import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
 import { Sparkles, Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 interface EnhancedChatInterfaceProps {
@@ -21,6 +22,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true); // Show sidebar by default
+  const [showSuggestions, setShowSuggestions] = useState(true);
 
   const {
     conversations,
@@ -60,6 +62,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   }, [messages.length]);
   const handleSendMessage = async (message: string) => {
     await sendMessage(message);
+  };
+
+  // Extract SERP data from latest AI message for suggestions
+  const latestSerpData = messages
+    .filter(m => m.role === 'assistant' && m.serpData)
+    .pop()?.serpData || [];
+
+  // Handle suggestion application
+  const handleApplySuggestion = (suggestion: any) => {
+    // Convert suggestion to a user message
+    const suggestionMessage = `Apply suggestion: ${suggestion.title} - ${suggestion.description}`;
+    handleSendMessage(suggestionMessage);
   };
   const containerVariants = {
     hidden: {
@@ -101,7 +115,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       </AnimatePresence>
 
       {/* Main Chat Interface */}
-      <motion.div className={`flex flex-col h-full pt-16 pb-24 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`} initial="hidden" animate="visible" variants={containerVariants}>
+      <div className={`flex transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
+        <motion.div className="flex-1 flex flex-col h-full pt-16 pb-24" initial="hidden" animate="visible" variants={containerVariants}>
       {/* Elegant Header */}
       <div className="fixed top-16 left-0 right-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className={`max-w-6xl mx-auto px-6 py-4 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
@@ -260,7 +275,31 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             <EnhancedMessageInput onSendMessage={handleSendMessage} isLoading={isLoading} placeholder={messages.length === 0 ? "Ask me about your content performance, start optimization workflows, or get strategic insights..." : "Continue the conversation..."} />
           </div>
         </div>
+        </div>
+        </motion.div>
+
+        {/* Smart Suggestions Sidebar */}
+        <AnimatePresence>
+          {showSuggestions && messages.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, x: 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 300 }}
+              transition={{ duration: 0.3 }}
+              className="w-80 border-l border-border/50 bg-background/80 backdrop-blur-xl fixed right-0 top-16 bottom-0 z-40"
+            >
+              <div className="h-full p-4 overflow-hidden">
+                <SmartSuggestionsPanel
+                  serpData={latestSerpData}
+                  userContext={{ solutions: [], analytics: {} }}
+                  conversationHistory={messages}
+                  onApplySuggestion={handleApplySuggestion}
+                  className="h-full"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      </motion.div>
     </div>;
 };

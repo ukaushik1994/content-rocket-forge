@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { VisualDataRenderer } from './VisualDataRenderer';
+import { VisualSerpRenderer } from './VisualSerpRenderer';
 import { ModernActionButtons } from './ModernActionButtons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';

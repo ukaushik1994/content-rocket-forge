@@ -3,6 +3,68 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
+// SERP Intelligence Integration
+interface SerpQueryPattern {
+  pattern: RegExp;
+  type: 'trend' | 'competitive' | 'content_gap' | 'seo' | 'market_research' | 'keyword_analysis';
+  extractKeywords: (match: RegExpMatchArray) => string[];
+  priority: number;
+}
+
+interface SerpIntelligence {
+  shouldTriggerSerp: boolean;
+  queryType: string;
+  keywords: string[];
+  priority: number;
+  suggestedAnalysis: string[];
+}
+
+// SERP Query Intelligence Patterns
+const SERP_QUERY_PATTERNS: SerpQueryPattern[] = [
+  {
+    pattern: /(?:what'?s trending|trend\w*|popular|hot topics?)\s+(?:with|for|in)?\s*(.+)/i,
+    type: 'trend',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 9
+  },
+  {
+    pattern: /(?:who'?s ranking|competitors?|competition)\s+(?:for|with)\s+(.+)/i,
+    type: 'competitive',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 8
+  },
+  {
+    pattern: /(?:content gap|content opportunities?|missing content)\s+(?:for|in|about)\s+(.+)/i,
+    type: 'content_gap',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 9
+  },
+  {
+    pattern: /(?:keyword difficulty|search volume|seo (?:difficulty|analysis))\s+(?:for|of)\s+(.+)/i,
+    type: 'seo',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 9
+  },
+  {
+    pattern: /(?:market insights?|audience interests?|market research)\s+(?:for|in|about)\s+(.+)/i,
+    type: 'market_research',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 8
+  },
+  {
+    pattern: /(?:analyze|analysis of|research)\s+(?:the )?keyword\s+["\']?(.+?)["\']?(?:\s|$)/i,
+    type: 'keyword_analysis',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 8
+  },
+  {
+    pattern: /serp (?:data|analysis|research)\s+(?:for|about)\s+(.+)/i,
+    type: 'keyword_analysis',
+    extractKeywords: (match) => [match[1].trim()],
+    priority: 9
+  }
+];
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -86,6 +148,37 @@ serve(async (req) => {
     console.log(`🧠 Anthropic key found: ${!!anthropicKey}, model: ${anthropicKey?.model}`);
     console.log(`🤖 OpenAI key found: ${!!openaiKey}, model: ${openaiKey?.model}`);
 
+    // SERP Intelligence Integration
+    let serpResults: any[] = [];
+    let serpContext = '';
+    
+    // Get the latest user message for SERP analysis
+    const latestUserMessage = messages.filter(m => m.role === 'user').pop();
+    if (latestUserMessage?.content) {
+      console.log('🔍 Analyzing query for SERP intelligence...');
+      const serpIntelligence = analyzeSerpIntent(latestUserMessage.content);
+      
+      if (serpIntelligence.shouldTriggerSerp && serpIntelligence.keywords.length > 0) {
+        console.log('🚀 SERP intelligence triggered:', serpIntelligence);
+        
+        try {
+          // Execute SERP analysis for detected keywords
+          serpResults = await executeSerpAnalysis(
+            serpIntelligence.keywords.slice(0, 3), // Limit to 3 keywords for performance
+            serpIntelligence.queryType
+          );
+          
+          if (serpResults.length > 0) {
+            serpContext = generateSerpContext(serpResults);
+            console.log('✅ SERP context generated successfully');
+          }
+        } catch (serpError) {
+          console.error('❌ SERP analysis failed:', serpError);
+          // Continue without SERP data rather than failing the entire request
+        }
+      }
+    }
+
     // Build enhanced context for AI
     let contextPrompt = `You are an intelligent content marketing assistant for a comprehensive content platform. 
     
@@ -141,15 +234,23 @@ AVAILABLE USER CONTEXT:`;
       }
     }
 
+    // Add SERP context if available
+    if (serpContext) {
+      contextPrompt += serpContext;
+    }
+
     contextPrompt += `\n\nWhen responding:
 1. Always include specific action buttons and visual data using delimiter format
 2. For data visualizations, include chart specifications when relevant
 3. For workflows, provide step-by-step guidance with interactive elements
 4. Make recommendations based on the user's actual solutions and data
+5. If SERP data is provided, integrate it naturally into your response and create relevant visualizations
 
 IMPORTANT: When user requests performance analysis, keyword optimization, or content insights, you must generate real visualizations and action buttons.
 
 CRITICAL: For performance analysis requests, ALWAYS generate visual data using the provided analytics.
+
+SERP INTEGRATION: If real-time SERP data is provided above, use it to create actionable insights, visualizations, and strategy recommendations.
 
 RESPONSE FORMAT EXAMPLES:
 
@@ -244,6 +345,12 @@ Response guidelines:
     parsedResponse.model = modelUsed;
     parsedResponse.provider = provider;
     parsedResponse.usage = usage;
+    
+    // Add SERP data to response if available
+    if (serpResults.length > 0) {
+      parsedResponse.serpData = serpResults;
+      console.log(`📊 Added SERP data for ${serpResults.length} keywords to response`);
+    }
     
     return new Response(JSON.stringify(parsedResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -457,4 +564,162 @@ function parseAIResponse(message: string) {
     visualData,
     workflowContext: null
   };
+}
+
+// SERP Intelligence Functions
+function analyzeSerpIntent(query: string): SerpIntelligence {
+  console.log('🧠 Analyzing query for SERP intent:', query);
+  
+  let bestMatch: { pattern: SerpQueryPattern; match: RegExpMatchArray } | null = null;
+  let highestPriority = 0;
+
+  for (const pattern of SERP_QUERY_PATTERNS) {
+    const match = query.match(pattern.pattern);
+    if (match && pattern.priority > highestPriority) {
+      bestMatch = { pattern, match };
+      highestPriority = pattern.priority;
+    }
+  }
+
+  if (bestMatch) {
+    const keywords = bestMatch.pattern.extractKeywords(bestMatch.match);
+    const cleanKeywords = keywords
+      .filter(k => k && k.trim().length > 0)
+      .map(k => k.replace(/['"]/g, '').trim())
+      .filter(k => k.length > 1);
+
+    console.log('✅ SERP intent detected:', {
+      type: bestMatch.pattern.type,
+      keywords: cleanKeywords,
+      priority: highestPriority
+    });
+
+    return {
+      shouldTriggerSerp: true,
+      queryType: bestMatch.pattern.type,
+      keywords: cleanKeywords,
+      priority: highestPriority,
+      suggestedAnalysis: getSuggestedAnalysis(bestMatch.pattern.type)
+    };
+  }
+
+  console.log('❌ No SERP intent detected');
+  return {
+    shouldTriggerSerp: false,
+    queryType: 'general',
+    keywords: [],
+    priority: 0,
+    suggestedAnalysis: []
+  };
+}
+
+function getSuggestedAnalysis(queryType: string): string[] {
+  const analysisMap: Record<string, string[]> = {
+    'trend': ['search_volume', 'trending_topics', 'seasonal_patterns'],
+    'competitive': ['competitor_analysis', 'ranking_positions', 'content_gaps'],
+    'content_gap': ['missing_content', 'opportunity_analysis', 'topic_clusters'],
+    'seo': ['keyword_difficulty', 'search_volume', 'ranking_factors'],
+    'market_research': ['audience_insights', 'search_trends', 'related_topics'],
+    'keyword_analysis': ['keyword_metrics', 'serp_features', 'competition_analysis']
+  };
+
+  return analysisMap[queryType] || ['basic_analysis'];
+}
+
+async function executeSerpAnalysis(keywords: string[], analysisType: string): Promise<any[]> {
+  console.log('🚀 Executing SERP analysis for keywords:', keywords);
+  
+  const results: any[] = [];
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  
+  // Get SERP API key from secrets
+  const serpApiKey = Deno.env.get('SERP_API_KEY');
+  if (!serpApiKey) {
+    console.warn('⚠️ No SERP API key available');
+    return [];
+  }
+  
+  // Limit concurrent requests
+  const maxConcurrent = 2;
+  for (let i = 0; i < keywords.length; i += maxConcurrent) {
+    const batch = keywords.slice(i, i + maxConcurrent);
+    
+    const batchPromises = batch.map(async (keyword) => {
+      try {
+        // Call SERP API function
+        const { data, error } = await supabase.functions.invoke('serp-api', {
+          body: {
+            endpoint: 'analyze',
+            apiKey: serpApiKey,
+            params: {
+              q: keyword,
+              location: 'us',
+              num: 10,
+              device: 'desktop',
+              engine: 'google'
+            }
+          }
+        });
+
+        if (error) {
+          console.error(`Error analyzing keyword "${keyword}":`, error);
+          return null;
+        }
+
+        if (data) {
+          return {
+            keyword,
+            data,
+            analysisType
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error(`Error analyzing keyword "${keyword}":`, error);
+        return null;
+      }
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults.filter(r => r !== null));
+  }
+
+  console.log(`✅ SERP analysis complete. Retrieved data for ${results.length}/${keywords.length} keywords`);
+  return results;
+}
+
+function generateSerpContext(results: any[]): string {
+  if (results.length === 0) return '';
+
+  let context = '\n\n🔍 REAL-TIME SERP DATA ANALYSIS:\n';
+  
+  results.forEach((result, index) => {
+    context += `\n📊 KEYWORD: "${result.keyword}" (${result.analysisType})\n`;
+    context += `- Search Volume: ${result.data.searchVolume?.toLocaleString() || 'N/A'}\n`;
+    context += `- Keyword Difficulty: ${result.data.keywordDifficulty || 'N/A'}%\n`;
+    context += `- Competition Score: ${result.data.competitionScore || 'N/A'}%\n`;
+    
+    if (result.data.contentGaps && result.data.contentGaps.length > 0) {
+      context += `- Top Content Gaps: ${result.data.contentGaps.slice(0, 3).map((gap: any) => gap.topic).join(', ')}\n`;
+    }
+    
+    if (result.data.questions && result.data.questions.length > 0) {
+      context += `- Popular Questions: ${result.data.questions.slice(0, 2).map((q: any) => q.question).join('; ')}\n`;
+    }
+    
+    if (result.data.entities && result.data.entities.length > 0) {
+      context += `- Key Entities: ${result.data.entities.slice(0, 3).map((e: any) => e.name).join(', ')}\n`;
+    }
+    
+    if (index < results.length - 1) context += '\n';
+  });
+
+  context += '\n✨ INTEGRATION INSTRUCTIONS:';
+  context += '\n- Use this REAL SERP data in your response';
+  context += '\n- Generate relevant visual charts and metrics using $$VISUAL_DATA$$ format';
+  context += '\n- Provide actionable insights based on this data';
+  context += '\n- Create follow-up action buttons for deeper analysis using $$ACTIONS$$ format';
+  context += '\n- Include SERP visualization components when relevant';
+  
+  return context;
 }
