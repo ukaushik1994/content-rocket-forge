@@ -19,6 +19,7 @@ import Solutions from "./pages/Solutions";
 import Analytics from "./pages/Analytics";
 import ContentStrategy from "./pages/research/ContentStrategy";
 import ResearchHub from "./pages/research/ResearchHub";
+import SerpIntelligence from "./pages/research/SerpIntelligence";
 import TopicClusters from "./pages/research/TopicClusters";
 
 import ContentGapsPage from "./pages/research/ContentGaps";
@@ -100,12 +101,13 @@ const App = () => (
                    {/* Enterprise Hub route */}
                    <Route path="/enterprise" element={<ProtectedRoute><EnterpriseHubPage /></ProtectedRoute>} />
                   
-                  {/* Research routes */}
-                  <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
-                   <Route path="/research/research-hub" element={<ProtectedRoute><ResearchHub /></ProtectedRoute>} />
-                   <Route path="/research/keyword-research" element={<Navigate to="/research/research-hub#keyword-intelligence" replace />} />
-                   <Route path="/research/answer-the-people" element={<Navigate to="/research/research-hub#people-questions" replace />} />
-                  <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
+                   {/* Research routes */}
+                   <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
+                    <Route path="/research/research-hub" element={<ProtectedRoute><ResearchHub /></ProtectedRoute>} />
+                    <Route path="/research/serp-intelligence" element={<ProtectedRoute><SerpIntelligence /></ProtectedRoute>} />
+                    <Route path="/research/keyword-research" element={<Navigate to="/research/research-hub#keyword-intelligence" replace />} />
+                    <Route path="/research/answer-the-people" element={<Navigate to="/research/research-hub#people-questions" replace />} />
+                   <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
                   
                    <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
                    <Route path="/research/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />

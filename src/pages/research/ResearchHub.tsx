@@ -3,9 +3,10 @@ import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
-import { Search, FileSearch, Users } from 'lucide-react';
+import { Search, FileSearch, Users, Brain } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/button';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { ResearchHubHero } from '@/components/research/research-hub/ResearchHubHero';
 import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/SimpleAIServiceIndicator';
@@ -25,7 +26,7 @@ const ResearchHub = () => {
   const getInitialTab = () => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
-      if (['keyword-intelligence', 'content-gaps', 'people-questions'].includes(hash)) {
+      if (['keyword-intelligence', 'content-gaps', 'people-questions', 'serp-intelligence'].includes(hash)) {
         return hash;
       }
       return localStorage.getItem('researchHubActiveTab') || 'keyword-intelligence';
@@ -100,6 +101,13 @@ const ResearchHub = () => {
                         <Users className="h-4 w-4" />
                         People Questions
                       </TabsTrigger>
+                      <TabsTrigger 
+                        value="serp-intelligence" 
+                        className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                      >
+                        <Brain className="h-4 w-4" />
+                        SERP Intelligence
+                      </TabsTrigger>
                     </TabsList>
                   </div>
 
@@ -114,6 +122,19 @@ const ResearchHub = () => {
 
                      <TabsContent value="people-questions" className="mt-0 animate-fade-in">
                        <PeopleQuestionsTab />
+                     </TabsContent>
+
+                     <TabsContent value="serp-intelligence" className="mt-0 animate-fade-in">
+                       <div className="text-center py-8">
+                         <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                         <h3 className="text-lg font-medium mb-2">SERP Intelligence Platform</h3>
+                         <p className="text-muted-foreground mb-4">
+                           Access advanced SERP monitoring, AI insights, and marketing integrations
+                         </p>
+                         <Button onClick={() => window.open('/research/serp-intelligence', '_blank')}>
+                           Launch SERP Intelligence
+                         </Button>
+                       </div>
                      </TabsContent>
                    </div>
                  </div>
