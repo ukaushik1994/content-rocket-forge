@@ -300,38 +300,91 @@ export const useEnhancedAIChatDB = () => {
   }, [messages, toast, user, activeConversation, createConversation, saveMessage]);
 
   const handleAction = useCallback(async (action: ContextualAction) => {
-    console.log('Handling action:', action);
+    console.log('🎬 Handling action:', action);
     
-    // Handle based on action string property for backward compatibility
-    const actionString = action.action;
-    
-    if (actionString.startsWith('workflow:')) {
-      const workflowAction = actionString.replace('workflow:', '');
-      await handleWorkflowAction(workflowAction, action.data);
-    } else if (actionString.startsWith('send:')) {
-      const message = actionString.replace('send:', '');
-      await sendMessage(message);
-    } else {
-      // Handle new action types based on action string patterns
-      switch (actionString) {
-        case 'navigate-content-builder':
-          window.location.href = '/content-builder';
-          break;
-        case 'navigate-analytics':
-          window.location.href = '/analytics';
-          break;
-        case 'navigate-keyword-research':
-          window.location.href = '/keyword-research';
-          break;
-        case 'navigate-strategy':
-          window.location.href = '/strategy';
-          break;
-        default:
-          console.warn('Unknown action:', actionString);
-          break;
+    try {
+      const actionString = action.action;
+      console.log('🎯 Action string:', actionString);
+      
+      // Log action execution for debugging
+      toast({
+        title: "Action Executed",
+        description: `Processing: ${action.label || actionString}`,
+        duration: 1000
+      });
+      
+      if (actionString.startsWith('workflow:')) {
+        const workflowAction = actionString.replace('workflow:', '');
+        console.log('⚙️ Executing workflow:', workflowAction);
+        await handleWorkflowAction(workflowAction, action.data);
+      } else if (actionString.startsWith('send:')) {
+        const message = actionString.replace('send:', '');
+        console.log('💬 Sending message:', message);
+        await sendMessage(message);
+      } else if (actionString.startsWith('navigate:')) {
+        const path = actionString.replace('navigate:', '');
+        console.log('🧭 Navigating to:', path);
+        // Use React Router navigation instead of window.location
+        window.history.pushState({}, '', path);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      } else {
+        // Handle action types based on patterns
+        switch (actionString) {
+          case 'create-blog-post':
+            console.log('📝 Creating blog post');
+            window.history.pushState({}, '', '/content-builder?type=blog-post');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            break;
+          case 'create-landing-page':
+            console.log('🏗️ Creating landing page');
+            window.history.pushState({}, '', '/content-builder?type=landing-page');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            break;
+          case 'keyword-research':
+            console.log('🔍 Opening keyword research');
+            window.history.pushState({}, '', '/research');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            break;
+          case 'content-strategy':
+            console.log('📊 Opening content strategy');
+            window.history.pushState({}, '', '/strategies');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            break;
+          case 'navigate-content-builder':
+            window.history.pushState({}, '', '/content-builder');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            break;
+          case 'navigate-analytics':
+            window.history.pushState({}, '', '/analytics');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            break;
+          case 'navigate-keyword-research':
+            window.history.pushState({}, '', '/research');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            break;
+          case 'navigate-strategy':
+            window.history.pushState({}, '', '/strategies');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            break;
+          default:
+            console.warn('❓ Unknown action:', actionString);
+            toast({
+              title: "Unknown Action",
+              description: `Action "${actionString}" not recognized`,
+              variant: "destructive"
+            });
+            break;
+        }
       }
+    } catch (error) {
+      console.error('❌ Error handling action:', error);
+      toast({
+        title: "Action Failed",
+        description: `Failed to execute action: ${error.message}`,
+        variant: "destructive"
+      });
     }
-  }, [sendMessage, user]);
+  }, [sendMessage, user, toast]);
 
   const handleLegacyAction = useCallback(async (action: string, data?: any) => {
     if (!user || !action) return;

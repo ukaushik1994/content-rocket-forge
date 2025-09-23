@@ -142,7 +142,7 @@ AVAILABLE USER CONTEXT:`;
     }
 
     contextPrompt += `\n\nWhen responding:
-1. Always include specific action buttons using this JSON format in your response
+1. Always include specific action buttons and visual data using delimiter format
 2. For data visualizations, include chart specifications when relevant
 3. For workflows, provide step-by-step guidance with interactive elements
 4. Make recommendations based on the user's actual solutions and data
@@ -151,58 +151,17 @@ IMPORTANT: When user requests performance analysis, keyword optimization, or con
 
 CRITICAL: For performance analysis requests, ALWAYS generate visual data using the provided analytics.
 
-EXAMPLE FOR PERFORMANCE ANALYSIS:
-\`\`\`json
-{
-  "actions": [
-    {
-      "id": "deep-dive-analysis",
-      "label": "Deep Dive Analysis",
-      "type": "workflow",
-      "data": { "workflow": "performance-deep-dive" }
-    },
-    {
-      "id": "optimize-content",
-      "label": "Optimize Low Performers",
-      "type": "workflow", 
-      "data": { "workflow": "content-optimization" }
-    }
-  ],
-  "visualData": {
-    "type": "chart",
-    "chartConfig": {
-      "type": "line",
-      "data": [/* use analytics.weeklyData */],
-      "categories": ["content", "published", "seoScore"],
-      "colors": ["#8b5cf6", "#06b6d4", "#10b981"],
-      "height": 300
-    }
-  }
-}
-\`\`\`
+RESPONSE FORMAT EXAMPLES:
 
-EXAMPLE FOR METRICS DISPLAY:
-\`\`\`json
-{
-  "visualData": {
-    "type": "metrics",
-    "metrics": [
-      {
-        "id": "total-content",
-        "title": "Total Content",
-        "value": "${finalAnalytics.totalContent || 0}",
-        "icon": "filetext"
-      },
-      {
-        "id": "seo-score",
-        "title": "Avg SEO Score", 
-        "value": "${finalAnalytics.avgSeoScore || 0}%",
-        "change": { "value": 5, "type": "increase", "period": "vs last month" }
-      }
-    ]
-  }
-}
-\`\`\`
+For actions, use: $$ACTIONS$$ [{"id": "action-id", "label": "Action Label", "type": "button", "action": "workflow:performance-analysis", "data": {}}] $$ACTIONS$$
+
+For visual data with charts:
+$$VISUAL_DATA$$ {"type": "chart", "chartConfig": {"type": "line", "data": [{"name": "Week 1", "content": ${finalAnalytics?.weeklyData?.[0]?.content || 10}, "published": ${finalAnalytics?.weeklyData?.[0]?.published || 5}, "seoScore": ${finalAnalytics?.weeklyData?.[0]?.seoScore || 75}}, {"name": "Week 2", "content": ${finalAnalytics?.weeklyData?.[1]?.content || 12}, "published": ${finalAnalytics?.weeklyData?.[1]?.published || 8}, "seoScore": ${finalAnalytics?.weeklyData?.[1]?.seoScore || 80}}], "categories": ["content", "published", "seoScore"], "colors": ["#8b5cf6", "#06b6d4", "#10b981"], "height": 300}} $$VISUAL_DATA$$
+
+For metrics display:
+$$VISUAL_DATA$$ {"type": "metrics", "metrics": [{"id": "total-content", "title": "Total Content", "value": "${finalAnalytics?.totalContent || 0}", "icon": "FileText"}, {"id": "seo-score", "title": "Avg SEO Score", "value": "${finalAnalytics?.avgSeoScore || 0}%", "change": {"value": 5, "type": "increase", "period": "vs last month"}}]} $$VISUAL_DATA$$
+
+For performance analysis requests, ALWAYS include both metrics AND charts using real user data.
 
 Response guidelines:
 - Always generate contextual action buttons based on user's data
@@ -438,34 +397,64 @@ function calculateCost(provider: string, model: string, promptTokens: number, co
 }
 
 function parseAIResponse(message: string) {
-  // Extract JSON blocks from AI response for actions and visual data
-  const actionRegex = /```json\n(.*?)\n```/gs;
-  const matches = [...message.matchAll(actionRegex)];
-  
+  console.log('🔍 Parsing AI response for structured data...');
   let actions = [];
   let visualData = null;
   let cleanMessage = message;
 
-  matches.forEach(match => {
-    try {
-      const parsed = JSON.parse(match[1]);
-      if (parsed.actions) {
-        actions = parsed.actions;
-      }
-      if (parsed.visualData) {
-        visualData = parsed.visualData;
-      }
-      // Remove the JSON block from the message
-      cleanMessage = cleanMessage.replace(match[0], '');
-    } catch (e) {
-      console.error('Failed to parse AI JSON:', e);
+  try {
+    // Extract actions using delimiter format
+    const actionsMatch = message.match(/\$\$ACTIONS\$\$(.*?)\$\$ACTIONS\$\$/s);
+    if (actionsMatch) {
+      console.log('📋 Found actions data:', actionsMatch[1]);
+      actions = JSON.parse(actionsMatch[1].trim());
+      cleanMessage = cleanMessage.replace(/\$\$ACTIONS\$\$.*?\$\$ACTIONS\$\$/s, '');
     }
+
+    // Extract visual data using delimiter format
+    const visualMatch = message.match(/\$\$VISUAL_DATA\$\$(.*?)\$\$VISUAL_DATA\$\$/s);
+    if (visualMatch) {
+      console.log('📊 Found visual data:', visualMatch[1]);
+      visualData = JSON.parse(visualMatch[1].trim());
+      cleanMessage = cleanMessage.replace(/\$\$VISUAL_DATA\$\$.*?\$\$VISUAL_DATA\$\$/s, '');
+    }
+
+    // Fallback: try to extract JSON blocks for backward compatibility
+    if (!actions.length && !visualData) {
+      const jsonRegex = /```json\n(.*?)\n```/gs;
+      const matches = [...message.matchAll(jsonRegex)];
+      
+      matches.forEach(match => {
+        try {
+          const parsed = JSON.parse(match[1]);
+          if (parsed.actions && !actions.length) {
+            actions = parsed.actions;
+            console.log('📋 Extracted actions from JSON block:', actions);
+          }
+          if (parsed.visualData && !visualData) {
+            visualData = parsed.visualData;
+            console.log('📊 Extracted visual data from JSON block:', visualData);
+          }
+          cleanMessage = cleanMessage.replace(match[0], '');
+        } catch (e) {
+          console.warn('Failed to parse JSON block:', e);
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error parsing AI response:', error);
+  }
+
+  console.log('✅ Parsed response:', { 
+    hasActions: actions.length > 0, 
+    hasVisualData: !!visualData,
+    messageLength: cleanMessage.trim().length
   });
 
   return {
     message: cleanMessage.trim(),
     actions,
     visualData,
-    workflowContext: null // Will be populated by workflow engine
+    workflowContext: null
   };
 }
