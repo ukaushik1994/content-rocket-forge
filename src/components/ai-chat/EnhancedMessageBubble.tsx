@@ -90,7 +90,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             <div className="mt-4">
               {message.visualData.type === 'serp_analysis' && message.visualData.serpData ? (
                 <AdvancedSerpAnalytics 
-                  serpData={[message.visualData.serpData.analysisData]}
+                  serpData={Array.isArray(message.visualData.serpData) ? message.visualData.serpData : [message.visualData.serpData]}
                   onActionTaken={(action, data) => onAction({ id: `serp-${Date.now()}`, type: 'button', label: action, action, data })}
                   conversationHistory={[message.content]}
                 />
