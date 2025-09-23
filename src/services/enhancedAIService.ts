@@ -800,8 +800,8 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
         return null;
       }
 
-      // Call SERP analysis edge function
-      const { data, error } = await supabase.functions.invoke('serp-analysis', {
+      // Call SERP-AI edge function
+      const { data, error } = await supabase.functions.invoke('serp-ai', {
         body: {
           keyword: mainKeyword,
           location: 'United States',
@@ -817,7 +817,7 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
       console.log('✅ SERP analysis completed for keyword:', mainKeyword);
       return {
         keyword: mainKeyword,
-        ...data, // Spread the data directly from the edge function
+        data, // Store the data from the edge function
         timestamp: new Date().toISOString()
       };
     } catch (error) {

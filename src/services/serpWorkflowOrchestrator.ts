@@ -98,6 +98,28 @@ export class SerpWorkflowOrchestrator {
       nextActions: this.generateInitialActions(type, keywords)
     };
 
+    // Store workflow in database if userId is provided
+    if (options.userId) {
+      try {
+        await supabase
+          .from('ai_workflow_states')
+          .insert({
+            id: workflowId,
+            user_id: options.userId,
+            workflow_type: type,
+            current_step: 'initializing',
+            workflow_data: {
+              keywords,
+              status: 'pending',
+              progress: 0,
+              metadata: workflow.metadata
+            }
+          });
+      } catch (error) {
+        console.error('Failed to store workflow in database:', error);
+      }
+    }
+
     this.workflows.set(workflowId, workflow);
     
     if (options.automated !== false) {

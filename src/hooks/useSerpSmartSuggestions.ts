@@ -13,7 +13,7 @@ export interface SerpSmartSuggestion {
 }
 
 interface UseSerpSmartSuggestionsProps {
-  serpData?: SerpQueryResult[];
+  serpData?: any[]; // Accept any array of SERP data
   userContext?: any;
   conversationHistory?: any[];
 }
@@ -42,8 +42,9 @@ export function useSerpSmartSuggestions({
     // SERP-based suggestions
     if (serpData && serpData.length > 0) {
       serpData.forEach((result, index) => {
-        const data = result.data;
-        const keyword = result.keyword;
+        // Handle different data structures from various sources
+        const data = result.data || result;
+        const keyword = result.keyword || data.keyword || `keyword-${index}`;
 
         // High volume, low difficulty opportunity
         if (data.searchVolume && data.searchVolume > 5000 && 

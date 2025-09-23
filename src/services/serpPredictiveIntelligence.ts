@@ -102,7 +102,7 @@ export class SerpPredictiveIntelligence {
         const { data: historicalData } = await supabase
           .from('serp_cache')
           .select('payload, created_at')
-          .eq('keyword', keyword)
+          .eq('keyword', keyword.toLowerCase())
           .order('created_at', { ascending: false })
           .limit(10);
 

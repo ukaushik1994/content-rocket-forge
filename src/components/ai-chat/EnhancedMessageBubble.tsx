@@ -5,6 +5,7 @@ import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { VisualDataRenderer } from './VisualDataRenderer';
 import { VisualSerpRenderer } from './VisualSerpRenderer';
 import { AdvancedSerpAnalytics } from './AdvancedSerpAnalytics';
+import SerpWorkflowTrigger from './SerpWorkflowTrigger';
 import { ModernActionButtons } from './ModernActionButtons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
@@ -89,11 +90,27 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {message.visualData && !isUser && (
             <div className="mt-4">
               {message.visualData.type === 'serp_analysis' && message.visualData.serpData ? (
-                <AdvancedSerpAnalytics 
-                  serpData={Array.isArray(message.visualData.serpData) ? message.visualData.serpData : [message.visualData.serpData]}
-                  onActionTaken={(action, data) => onAction({ id: `serp-${Date.now()}`, type: 'button', label: action, action, data })}
-                  conversationHistory={[message.content]}
-                />
+                <>
+                  <AdvancedSerpAnalytics 
+                    serpData={Array.isArray(message.visualData.serpData) ? message.visualData.serpData : [message.visualData.serpData]}
+                    onActionTaken={(action, data) => onAction({ id: `serp-${Date.now()}`, type: 'button', label: action, action, data })}
+                    conversationHistory={[message.content]}
+                  />
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <SerpWorkflowTrigger 
+                      serpData={Array.isArray(message.visualData.serpData) ? message.visualData.serpData : [message.visualData.serpData]}
+                      onWorkflowStart={(workflowId) => {
+                        onAction({ 
+                          id: `workflow-${Date.now()}`, 
+                          type: 'button', 
+                          label: 'Workflow Started', 
+                          action: 'workflow-created',
+                          data: { workflowId }
+                        });
+                      }}
+                    />
+                  </div>
+                </>
               ) : (
                 <VisualDataRenderer visualData={message.visualData} />
               )}
