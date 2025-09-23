@@ -7,12 +7,13 @@ import { motion } from 'framer-motion';
 
 interface SmartSuggestion {
   id: string;
-  type: 'keyword' | 'content' | 'trend' | 'opportunity';
+  type: 'keyword' | 'content' | 'optimization' | 'strategy' | 'competitive';
   title: string;
   description: string;
   priority: 'high' | 'medium' | 'low';
   action: string;
   data?: any;
+  confidence?: number;
 }
 
 interface SmartSuggestionsPanelProps {
@@ -30,9 +31,10 @@ export const SmartSuggestionsPanel: React.FC<SmartSuggestionsPanelProps> = ({
     switch (type) {
       case 'keyword': return <Search className="h-4 w-4" />;
       case 'content': return <Lightbulb className="h-4 w-4" />;
-      case 'trend': return <TrendingUp className="h-4 w-4" />;
-      case 'opportunity': return <Target className="h-4 w-4" />;
-      default: return <Zap className="h-4 w-4" />;
+      case 'optimization': return <Target className="h-4 w-4" />;
+      case 'strategy': return <TrendingUp className="h-4 w-4" />;
+      case 'competitive': return <Zap className="h-4 w-4" />;
+      default: return <Lightbulb className="h-4 w-4" />;
     }
   };
 

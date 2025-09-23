@@ -13,7 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ContextualAction } from '@/services/aiService';
 import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
 import { useSerpSmartSuggestions } from '@/hooks/useSerpSmartSuggestions';
-import { serpWorkflowOrchestrator } from '@/services/serpWorkflowOrchestrator';
+import { useSerpWorkflowIntegration } from '@/hooks/useSerpWorkflowIntegration';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChatInterfaceProps {
   onClearConversation: () => void;
@@ -30,7 +31,7 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
 }, ref) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showQuickActions, setShowQuickActions] = useState(true);
-  const [activeWorkflows, setActiveWorkflows] = useState([]);
+  const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
   
   const {
@@ -41,6 +42,15 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     handleAction
   } = useEnhancedAIChat();
 
+  // Get current user
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
+
   // Extract SERP data from recent messages for smart suggestions
   const serpData = React.useMemo(() => {
     const recentMessages = messages.slice(-5); // Check last 5 messages
@@ -50,7 +60,7 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     return serpMessages.length > 0 ? [serpMessages[serpMessages.length - 1].visualData.serpData] : [];
   }, [messages]);
 
-  const { suggestions, isLoading: suggestionsLoading } = useSerpSmartSuggestions({ 
+  const { suggestions, isLoading: suggestionsLoading, dismissSuggestion } = useSerpSmartSuggestions({ 
     conversationHistory: messages, 
     userContext: {},
     serpData: serpData // Use extracted SERP data
@@ -82,35 +92,57 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     handleAction(action, data);
   };
 
-  const handleSuggestionClick = (suggestion: any) => {
-    handleAction(suggestion.action, suggestion.data);
+  const handleSuggestionClick = async (suggestion: any) => {
+    try {
+      // Handle different suggestion actions with more specific prompts
+      switch (suggestion.action) {
+        case 'create-content-for-keyword':
+          await handleSendMessage(`Create comprehensive SEO content for "${suggestion.data?.keyword}" (${suggestion.data?.searchVolume?.toLocaleString()} monthly searches, ${suggestion.data?.difficulty}% difficulty). Include H1, H2 structure, meta description, and target keyword optimization.`);
+          break;
+        case 'generate-content-strategy':
+          await handleSendMessage(`Create a detailed content strategy for "${suggestion.data?.keyword}". Focus on these content gaps: ${suggestion.data?.contentGaps?.map(g => g.topic).join(', ')}. Include content calendar, topics, and SEO recommendations.`);
+          break;
+        case 'create-faq-content':
+          await handleSendMessage(`Generate comprehensive FAQ content for "${suggestion.data?.keyword}". Answer these popular questions: ${suggestion.data?.questions?.slice(0, 5).join(' | ')}. Structure for SEO with schema markup.`);
+          break;
+        case 'suggest-longtail-keywords':
+          await handleSendMessage(`Suggest long-tail keyword alternatives for "${suggestion.data?.keyword}" (currently ${suggestion.data?.difficulty}% difficulty). Find easier-to-rank variations with good search volume.`);
+          break;
+        case 'optimize-for-featured-snippet':
+          await handleSendMessage(`Help me optimize content for featured snippets for "${suggestion.data?.keyword}". Analyze current featured snippets and create optimized content structure.`);
+          break;
+        default:
+          await handleSendMessage(`Analyze and help with: ${suggestion.title} - ${suggestion.description}`);
+      }
+      dismissSuggestion(suggestion.id);
+    } catch (error) {
+      console.error('Error handling suggestion:', error);
+      toast({
+        title: "Suggestion Error",
+        description: "Failed to process suggestion",
+        variant: "destructive"
+      });
+    }
   };
 
   // Transform suggestions to match SmartSuggestion interface
-  const transformedSuggestions = suggestions.map(suggestion => ({
-    ...suggestion,
-    type: suggestion.type === 'optimization' ? 'opportunity' : 
-          suggestion.type === 'strategy' ? 'trend' :
-          suggestion.type === 'competitive' ? 'opportunity' :
-          suggestion.type as 'keyword' | 'content' | 'trend' | 'opportunity'
-  }));
+  // Don't transform suggestions - let SmartSuggestionsPanel handle original types
+  // Use the new workflow integration hook
+  const { 
+    workflows: activeWorkflows, 
+    createWorkflow, 
+    executeWorkflowAction 
+  } = useSerpWorkflowIntegration({ 
+    serpData, 
+    userId: user?.id 
+  });
+
+  // Transform suggestions to match interface
+  const transformedSuggestions = suggestions;
 
   const handleWorkflowAction = async (workflowAction: string, data?: any) => {
     try {
-      // Handle workflow actions using available methods
-      if (workflowAction === 'pause') {
-        await serpWorkflowOrchestrator.pauseWorkflow(data?.workflowId);
-      } else if (workflowAction === 'resume') {
-        await serpWorkflowOrchestrator.resumeWorkflow(data?.workflowId);
-      } else if (workflowAction === 'execute') {
-        await serpWorkflowOrchestrator.executeWorkflow(data?.workflowType, data?.params);
-      }
-      
-      // Refresh workflows by checking status
-      const workflowStatuses = await Promise.all(
-        activeWorkflows.map(w => serpWorkflowOrchestrator.getWorkflowStatus(w.id))
-      );
-      setActiveWorkflows(workflowStatuses.filter(Boolean));
+      await executeWorkflowAction(workflowAction, data?.workflowId, data);
     } catch (error) {
       toast({
         title: "Workflow Error",
