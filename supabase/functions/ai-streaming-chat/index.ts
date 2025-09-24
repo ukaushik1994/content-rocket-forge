@@ -54,9 +54,10 @@ serve(async (req) => {
       }
     } catch (error) {
       console.error('Error processing message:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       socket.send(JSON.stringify({
         type: 'error',
-        message: error.message,
+        message: errorMessage,
         timestamp: new Date().toISOString()
       }));
     }
@@ -149,9 +150,10 @@ async function handleChatRequest(socket: WebSocket, data: any) {
 
   } catch (error) {
     console.error('Chat request failed:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     socket.send(JSON.stringify({
       type: 'error',
-      message: error.message,
+      message: errorMessage,
       timestamp: new Date().toISOString()
     }));
   }

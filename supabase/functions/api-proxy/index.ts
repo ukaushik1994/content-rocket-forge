@@ -387,7 +387,7 @@ function transformSerpApiData(data: any, keyword: string) {
 
 // Enhanced extraction functions for SerpAPI
 function extractSerpApiPeopleAlsoAsk(data: any) {
-  const questions = [];
+  const questions: Array<{question: string, answer?: string, source?: string, priority?: string}> = [];
   
   console.log('🔍 Extracting enhanced People Also Ask from SerpAPI data...');
   
@@ -600,7 +600,7 @@ function extractSerpApiEntities(data: any, keyword: string) {
   if (data.featured_snippet && data.featured_snippet.snippet) {
     const snippetText = data.featured_snippet.snippet.toLowerCase();
     const entityTerms = snippetText.match(/\b[A-Z][a-z]{3,}\b/g) || [];
-    entityTerms.forEach(term => {
+    entityTerms.forEach((term: any) => {
       const cleanTerm = term.toLowerCase();
       if (!entities.has(cleanTerm) && !cleanTerm.includes(keyword.toLowerCase())) {
         entities.set(cleanTerm, {
@@ -745,7 +745,7 @@ function generateSerpApiContentGaps(data: any, organicResults: any[], keyword: s
 }
 
 function extractSerpApiTopStories(data: any) {
-  const stories = [];
+  const stories: any[] = [];
   
   if (data.top_stories && Array.isArray(data.top_stories)) {
     data.top_stories.forEach((story: any) => {
@@ -798,7 +798,7 @@ function extractSerpApiMultimedia(data: any) {
 
 // New enhanced extraction functions for SerpAPI
 function extractSerpApiLocalBusinessData(data: any) {
-  const localData = [];
+  const localData: any[] = [];
   
   if (data.local_results && Array.isArray(data.local_results)) {
     data.local_results.forEach((business: any) => {
@@ -820,7 +820,7 @@ function extractSerpApiLocalBusinessData(data: any) {
 }
 
 function extractSerpApiShoppingData(data: any) {
-  const shoppingData = [];
+  const shoppingData: any[] = [];
   
   if (data.shopping_results && Array.isArray(data.shopping_results)) {
     data.shopping_results.forEach((product: any) => {
@@ -1178,10 +1178,10 @@ function transformSerpstackData(data: any, keyword: string) {
   const multimedia = extractSerpstackMultimedia(data);
   
   // Generate advanced insights
-  const insights = generateSerpstackInsights(data, organicResults, peopleAlsoAsk, keyword);
+  const insights = generateSerpApiInsights(data, organicResults, peopleAlsoAsk, keyword);
   
   // Calculate data quality
-  const dataQualityScore = calculateSerpstackDataQuality(data);
+  const dataQualityScore = calculateSerpApiDataQuality(data);
   
   return {
     keyword,
@@ -1250,7 +1250,7 @@ function transformSerpstackData(data: any, keyword: string) {
 
 // Enhanced extraction functions for Serpstack
 function extractSerpstackPeopleAlsoAsk(data: any) {
-  const questions = [];
+  const questions: Array<{question: string, answer?: string, source?: string, priority?: string}> = [];
   
   console.log('🔍 Extracting comprehensive People Also Ask from Serpstack data...');
   
@@ -1453,7 +1453,7 @@ function extractSerpstackFeaturedSnippets(data: any) {
 
 // New enhanced extraction functions for Serpstack
 function extractSerpstackLocalBusinessData(data: any) {
-  const localData = [];
+  const localData: any[] = [];
   
   if (data.local_results && Array.isArray(data.local_results)) {
     data.local_results.forEach((business: any) => {
@@ -1475,7 +1475,7 @@ function extractSerpstackLocalBusinessData(data: any) {
 }
 
 function extractSerpstackShoppingData(data: any) {
-  const shoppingData = [];
+  const shoppingData: any[] = [];
   
   if (data.shopping_results && Array.isArray(data.shopping_results)) {
     data.shopping_results.forEach((product: any) => {
@@ -1673,7 +1673,7 @@ function generateSerpstackContentGaps(organicResults: any[], keyword: string, da
   organicResults.forEach(result => {
     if (result.snippet) {
       const words = result.snippet.toLowerCase().split(/\s+/);
-      words.forEach(word => {
+      words.forEach((word: any) => {
         if (word.length > 5 && !word.includes(keyword.toLowerCase())) {
           themes.add(word);
         }

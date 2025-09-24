@@ -113,7 +113,7 @@ serve(async (req) => {
         prompt_tokens: usage.prompt_tokens || 0,
         completion_tokens: usage.completion_tokens || 0,
         total_tokens: usage.total_tokens || 0,
-        cost_estimate: calculateCost(provider, modelUsed, usage.prompt_tokens || 0, usage.completion_tokens || 0),
+        cost_estimate: calculateCost(provider || 'unknown', modelUsed || 'unknown', usage.prompt_tokens || 0, usage.completion_tokens || 0),
         request_type: 'chat',
         success: true
       });
