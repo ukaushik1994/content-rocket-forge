@@ -25,7 +25,7 @@ import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useSerpServiceStatus } from '@/hooks/useSerpServiceStatus';
-import { EmptyDataState } from '@/components/ui/empty-state';
+import { EmptyDataState } from '@/components/content-builder/serp/EmptyDataState';
 
 type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
@@ -146,27 +146,24 @@ export const AIWorkflowIntelligence = () => {
 
     return (
       <EmptyDataState
-        icon={errorType === 'no-auth' ? User : errorType === 'no-api-keys' ? Key : AlertTriangle}
+        variant={errorType === 'no-auth' ? 'api-error' : errorType === 'no-api-keys' ? 'api-error' : 'api-error'}
         title="AI Workflow Intelligence Unavailable"
         description={error}
-        action={action}
+        actionLabel={action.label}
+        onAction={action.onClick}
       />
     );
   }
 
-  if (!insights && recommendations.length === 0) {
     return (
       <EmptyDataState
-        icon={Brain}
+        variant="no-data"
         title="No AI Insights Available"
         description="No workflow intelligence data available to display"
-        action={{
-          label: 'Refresh',
-          onClick: loadInsights
-        }}
+        actionLabel="Refresh"
+        onAction={loadInsights}
       />
     );
-  }
 
   return (
     <motion.div 

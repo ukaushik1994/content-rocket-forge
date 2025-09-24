@@ -28,7 +28,7 @@ import { marketingIntegrationHooks } from '@/services/marketingIntegrationHooks'
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { EmptyDataState } from '@/components/ui/empty-state';
+import { EmptyDataState } from '@/components/content-builder/serp/EmptyDataState';
 
 type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
@@ -415,13 +415,16 @@ export const MarketingIntegrationsPanel = () => {
 
     return (
       <EmptyDataState
-        icon={errorType === 'no-auth' ? User : AlertCircle}
+        variant={errorType === 'no-auth' ? 'api-error' : 'api-error'}
         title="Marketing Integrations Unavailable"
         description={error}
-        action={action}
+        actionLabel={action.label}
+        onAction={action.onClick}
       />
     );
   }
+
+  return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}

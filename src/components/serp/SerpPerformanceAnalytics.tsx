@@ -36,7 +36,7 @@ import { serpPerformanceMonitoring } from '@/services/serpPerformanceMonitoring'
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useSerpServiceStatus } from '@/hooks/useSerpServiceStatus';
-import { EmptyDataState } from '@/components/ui/empty-state';
+import { EmptyDataState } from '@/components/content-builder/serp/EmptyDataState';
 
 type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
@@ -140,27 +140,24 @@ export const SerpPerformanceAnalytics = () => {
 
     return (
       <EmptyDataState
-        icon={errorType === 'no-auth' ? User : errorType === 'no-api-keys' ? Key : AlertTriangle}
+        variant={errorType === 'no-auth' ? 'api-error' : errorType === 'no-api-keys' ? 'api-error' : 'api-error'}
         title="Performance Analytics Unavailable"
         description={error}
-        action={action}
+        actionLabel={action.label}
+        onAction={action.onClick}
       />
     );
   }
 
-  if (!metrics) {
     return (
       <EmptyDataState
-        icon={Database}
+        variant="no-data"
         title="No Performance Data"
         description="No performance metrics available to display"
-        action={{
-          label: 'Refresh',
-          onClick: loadMetrics
-        }}
+        actionLabel="Refresh"
+        onAction={loadMetrics}
       />
     );
-  }
 
   return (
     <motion.div 
