@@ -24,10 +24,6 @@ interface EnhancedChatInterfaceProps {
 export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   className = ""
 }) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [showWelcome, setShowWelcome] = useState(true);
-  const [showSidebar, setShowSidebar] = useState(true); // Show sidebar by default
-
   const {
     conversations,
     activeConversation,
@@ -49,11 +45,15 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     shareConversation,
     searchConversations,
     clearSearch
+  } = useEnhancedAIChatDB();
+
   const [showWelcome, setShowWelcome] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: 'smooth'
