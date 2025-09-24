@@ -216,7 +216,7 @@ AVAILABLE USER CONTEXT:`;
 
     if (finalSolutions && finalSolutions.length > 0) {
       contextPrompt += `\n\nUSER'S SOLUTIONS:`;
-      finalSolutions.forEach(solution => {
+      finalSolutions.forEach((solution: any) => {
         contextPrompt += `\n- ${solution.name}: ${solution.features?.join(', ') || 'No features listed'}`;
         if (solution.painPoints?.length > 0) {
           contextPrompt += `\n  Pain Points: ${solution.painPoints.join(', ')}`;
@@ -308,7 +308,8 @@ Response guidelines:
         usage = result.usage;
         console.log('✅ OpenRouter request successful');
       } catch (error) {
-        console.error('❌ OpenRouter failed:', error.message);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        console.error('❌ OpenRouter failed:', errorMessage);
         console.error('📋 OpenRouter error details:', error);
       }
     } else {
@@ -334,7 +335,7 @@ Response guidelines:
       console.log('🔄 Falling back to OpenAI');
       try {
         const apiKey = openaiKey?.api_key || Deno.env.get('OPENAI_API_KEY');
-        const result = await callOpenAI(apiKey, openaiKey?.model || 'gpt-4o-mini', messages, contextPrompt);
+        const result = await callOpenAI(apiKey || '', openaiKey?.model || 'gpt-4o-mini', messages, contextPrompt);
         aiResponse = result.response;
         modelUsed = result.model;
         provider = 'openai';
@@ -357,14 +358,14 @@ Response guidelines:
         prompt_tokens: usage.prompt_tokens || 0,
         completion_tokens: usage.completion_tokens || 0,
         total_tokens: usage.total_tokens || 0,
-        cost_estimate: calculateCost(provider, modelUsed, usage.prompt_tokens || 0, usage.completion_tokens || 0),
+        cost_estimate: calculateCost(provider || 'unknown', modelUsed || 'unknown', usage.prompt_tokens || 0, usage.completion_tokens || 0),
         request_type: 'enhanced_chat',
         success: true
       });
     }
 
     // Parse final response for structured elements
-    const parsedResponse = parseAIResponse(aiResponse);
+    const parsedResponse: any = parseAIResponse(aiResponse);
     parsedResponse.model = modelUsed;
     parsedResponse.provider = provider;
     parsedResponse.usage = usage;
@@ -528,8 +529,8 @@ function calculateCost(provider: string, model: string, promptTokens: number, co
 
 function parseAIResponse(message: string) {
   console.log('🔍 Parsing AI response for structured data...');
-  let actions = [];
-  let visualData = null;
+  let actions: any[] = [];
+  let visualData: any = null;
   let cleanMessage = message;
 
   try {

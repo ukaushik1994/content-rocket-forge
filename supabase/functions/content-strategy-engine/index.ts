@@ -148,7 +148,7 @@ function validateBusinessContext(proposal: any, companyInfo: any, solutions: any
       ...(s.category || '').toLowerCase().split(' ')
     ]).filter(term => term.length > 2);
     
-    const proposalText = `${proposal.title} ${proposal.description} ${proposal.keywords?.map(k => k.keyword).join(' ')}`.toLowerCase();
+    const proposalText = `${proposal.title} ${proposal.description} ${proposal.keywords?.map((k: any) => k.keyword).join(' ')}`.toLowerCase();
     
     const matches = solutionTerms.filter(term => proposalText.includes(term));
     if (matches.length > 0) {
@@ -243,7 +243,7 @@ function classifyProposal(
   const businessValidation = validateBusinessContext(
     { keywords, intent: primaryIntent }, 
     companyInfo, 
-    solutions
+    solutions || []
   );
   
   // Enhanced classification rules with explicit logic for all categories
@@ -273,7 +273,8 @@ function classifyProposal(
   // Evergreen: Explicit criteria for steady, long-term opportunities
   else if (totalVolume >= CLASSIFICATION_THRESHOLDS.EVERGREEN.MIN_VOLUME &&
            avgDifficulty <= 60 && // Reasonable difficulty
-           businessValidation.strategicValue !== 'low' &&
+           (businessValidation.strategicValue === 'medium' ||
+            businessValidation.strategicValue === 'high') &&
            opportunityScore > 1) {
     priorityTag = 'evergreen';
   }
@@ -369,8 +370,9 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error('Content Strategy Engine error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -747,7 +749,7 @@ async function generateAIStrategy(supabase: any, payload: any) {
       apiKey: openaiApiKey,
       params: {
         model: 'gpt-4.1-mini-2025-04-14', // More efficient model
-        max_completion_tokens: 1000, // Reduce token usage
+        max_completion_tokens: 1500, // Reduce token usage
         messages: [
           {
             role: 'system',
@@ -764,8 +766,7 @@ Goals: ${JSON.stringify(goals)}
 
 Return ONLY the JSON object with diverse, unique keywords that don't overlap with excluded ones.`
           }
-        ],
-        max_completion_tokens: 1500
+        ]
       }
     }
   });
@@ -950,7 +951,7 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
               content: `Based on this keyword research with SERP metrics, create strategic content proposals:
 
 Company Context: ${JSON.stringify(companyInfo || {})}
-Solutions: ${JSON.stringify((solutions || []).map(s => s.title || s.name).slice(0, 10))}
+Solutions: ${JSON.stringify((solutions || []).map((s: any) => s.title || s.name).slice(0, 10))}
 Keyword Data: ${JSON.stringify(enriched.slice(0, 8))}
 
 Create exactly 6 strategic content proposals that leverage these keywords and align with the company's solutions. Focus on delivering the most valuable opportunities. Return ONLY the JSON object.`
@@ -1014,7 +1015,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     // Debug SERP data availability for this proposal
     console.log(`🔍 SERP data check for proposal "${p.title}":`, {
       keywords_count: kws.length,
-      serp_data_available: kws.map(k => ({
+      serp_data_available: kws.map((k: any) => ({
         keyword: k.keyword,
         has_data: !!serpMap[k.keyword],
         volume: serpMap[k.keyword]?.searchVolume || 0,
