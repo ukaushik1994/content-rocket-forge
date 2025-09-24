@@ -21,17 +21,62 @@ serve(async (req) => {
 
     console.log(`🔍 Fetching context for user: ${userId}, type: ${contextType}`);
 
-    // Fetch comprehensive user context
+    // Fetch comprehensive user context - ALL platform data
     const [
       solutionsResult,
       contentResult,
       calendarResult,
-      pipelineResult
+      pipelineResult,
+      approvalsResult,
+      strategiesResult,
+      proposalsResult,
+      companyInfoResult,
+      brandGuidelinesResult,
+      competitorsResult,
+      aiAnalysesResult,
+      workflowStatesResult,
+      contextSnapshotsResult,
+      conversationsResult
     ] = await Promise.all([
-      supabase.from('solutions').select('*').eq('user_id', userId).limit(5),
-      supabase.from('content_items').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
-      supabase.from('content_calendar').select('*').eq('user_id', userId).limit(10),
-      supabase.from('content_pipeline').select('*').eq('user_id', userId).limit(10)
+      // Existing data
+      supabase.from('solutions').select('*').eq('user_id', userId),
+      supabase.from('content_items').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20),
+      supabase.from('content_calendar').select('*').eq('user_id', userId).limit(15),
+      supabase.from('content_pipeline').select('*').eq('user_id', userId).limit(15),
+      
+      // Content approval ecosystem
+      supabase.from('content_approvals')
+        .select(`
+          *,
+          content_items!inner(id, title, user_id)
+        `)
+        .eq('content_items.user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      
+      // Strategy ecosystem
+      supabase.from('ai_strategies').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
+      supabase.from('ai_strategy_proposals').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(15),
+      
+      // Company & Brand context
+      supabase.from('company_info').select('*').eq('user_id', userId).limit(5),
+      supabase.from('brand_guidelines').select('*').eq('user_id', userId).limit(5),
+      supabase.from('company_competitors').select('*').eq('user_id', userId).limit(10),
+      
+      // AI insights & analyses
+      supabase.from('content_ai_analyses')
+        .select(`
+          *,
+          content_items!inner(id, title, user_id)
+        `)
+        .eq('content_items.user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      
+      // AI workflow context
+      supabase.from('ai_workflow_states').select('*').eq('user_id', userId).limit(5),
+      supabase.from('ai_context_snapshots').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+      supabase.from('ai_conversations').select('*').eq('user_id', userId).order('updated_at', { ascending: false }).limit(10)
     ]);
 
     const contentItems = contentResult.data || [];
@@ -66,10 +111,33 @@ serve(async (req) => {
     }
 
     const context = {
+      // Core content data
       solutions,
       contentItems,
       calendarItems: calendarResult.data || [],
       pipelineItems: pipelineResult.data || [],
+      
+      // Approval ecosystem
+      contentApprovals: approvalsResult.data || [],
+      
+      // Strategy ecosystem  
+      aiStrategies: strategiesResult.data || [],
+      strategyProposals: proposalsResult.data || [],
+      
+      // Company & Brand context
+      companyInfo: companyInfoResult.data || [],
+      brandGuidelines: brandGuidelinesResult.data || [],
+      competitors: competitorsResult.data || [],
+      
+      // AI insights & analyses
+      contentAnalyses: aiAnalysesResult.data || [],
+      
+      // AI workflow context
+      workflowStates: workflowStatesResult.data || [],
+      contextSnapshots: contextSnapshotsResult.data || [],
+      conversations: conversationsResult.data || [],
+      
+      // Analytics
       analytics: {
         totalContent,
         published,
@@ -83,7 +151,10 @@ serve(async (req) => {
         pipelineByStage: (pipelineResult.data || []).reduce((acc, item) => {
           acc[item.stage] = (acc[item.stage] || 0) + 1;
           return acc;
-        }, {} as Record<string, number>)
+        }, {} as Record<string, number>),
+        totalStrategies: (strategiesResult.data || []).length,
+        totalProposals: (proposalsResult.data || []).length,
+        totalApprovals: (approvalsResult.data || []).length
       }
     };
 
@@ -98,12 +169,36 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Error in ai-context-manager:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: errorMessage,
+      // Core content data  
       solutions: [],
       contentItems: [],
       calendarItems: [],
       pipelineItems: [],
+      
+      // Approval ecosystem
+      contentApprovals: [],
+      
+      // Strategy ecosystem
+      aiStrategies: [],
+      strategyProposals: [],
+      
+      // Company & Brand context
+      companyInfo: [],
+      brandGuidelines: [],
+      competitors: [],
+      
+      // AI insights & analyses
+      contentAnalyses: [],
+      
+      // AI workflow context
+      workflowStates: [],
+      contextSnapshots: [],
+      conversations: [],
+      
+      // Analytics
       analytics: {
         totalContent: 0,
         published: 0,
@@ -111,7 +206,10 @@ serve(async (req) => {
         avgSeoScore: 0,
         weeklyData: [],
         contentByType: {},
-        pipelineByStage: {}
+        pipelineByStage: {},
+        totalStrategies: 0,
+        totalProposals: 0,
+        totalApprovals: 0
       }
     }), {
       status: 500,
