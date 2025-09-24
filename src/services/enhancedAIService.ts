@@ -5,6 +5,7 @@ import AIServiceController from '@/services/aiService/AIServiceController';
 import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { aiWorkflowIntelligence } from '@/services/aiWorkflowIntelligence';
+import { getApiKey } from '@/services/apiKeys/crud';
 
 export interface WorkflowContext {
   currentWorkflow?: string;
@@ -61,6 +62,31 @@ class EnhancedAIService {
         hasWorkflowIntelligence: !!(enhancedContext as any)?.workflowIntelligence
       });
 
+      // Retrieve actual API keys for the edge function
+      console.log('🔑 Retrieving API keys for edge function...');
+      const apiKeys: Record<string, string> = {};
+      
+      // Try to get API keys for all supported providers
+      const providers = ['openrouter', 'openai', 'anthropic', 'gemini', 'mistral'];
+      for (const provider of providers) {
+        try {
+          const key = await getApiKey(provider as any);
+          if (key) {
+            apiKeys[provider] = key;
+            console.log(`✅ Retrieved ${provider} API key`);
+          }
+        } catch (error) {
+          console.log(`❌ Failed to retrieve ${provider} API key:`, error);
+        }
+      }
+
+      if (Object.keys(apiKeys).length === 0) {
+        console.error('❌ No API keys retrieved, edge function will fail');
+        return this.createErrorMessage('No API keys available. Please configure at least one AI provider in Settings.');
+      }
+
+      console.log(`🔑 Retrieved ${Object.keys(apiKeys).length} API keys:`, Object.keys(apiKeys));
+
       const data = {
         messages: [
           { role: 'system', content: systemPrompt },
@@ -73,7 +99,8 @@ class EnhancedAIService {
         context: enhancedContext,
         serpData: serpAnalysisResult?.serpData,
         userId,
-        features: ['visual_data', 'serp_analysis', 'workflow_management', 'ai_intelligence']
+        features: ['visual_data', 'serp_analysis', 'workflow_management', 'ai_intelligence'],
+        apiKeys
       };
 
       console.log('🔄 Calling enhanced-ai-chat with data:', {
