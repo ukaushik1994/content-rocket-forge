@@ -16,16 +16,26 @@ import {
   Zap,
   BarChart3,
   Clock,
-  Users
+  Users,
+  Key,
+  User
 } from 'lucide-react';
 import { aiWorkflowIntelligence } from '@/services/aiWorkflowIntelligence';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { useSerpServiceStatus } from '@/hooks/useSerpServiceStatus';
+import { EmptyDataState } from '@/components/ui/empty-state';
+
+type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
 export const AIWorkflowIntelligence = () => {
   const [insights, setInsights] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<ErrorType | null>(null);
+  const serpStatus = useSerpServiceStatus();
 
   useEffect(() => {
     loadInsights();
@@ -34,79 +44,46 @@ export const AIWorkflowIntelligence = () => {
   const loadInsights = async () => {
     try {
       setLoading(true);
+      setError(null);
+      setErrorType(null);
+
+      // Check authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('Authentication required to view AI workflow intelligence');
+        setErrorType('no-auth');
+        return;
+      }
+
+      // Check API keys
+      if (!serpStatus.hasProviders) {
+        setError('No SERP API keys configured');
+        setErrorType('no-api-keys');
+        return;
+      }
+
       const [insightsData, recommendationsData] = await Promise.all([
         aiWorkflowIntelligence.analyzeWorkflowPatterns(),
         aiWorkflowIntelligence.generateWorkflowSuggestions()
       ]);
       
+      if (!insightsData && (!recommendationsData || recommendationsData.length === 0)) {
+        setError('No AI workflow data available');
+        setErrorType('no-data');
+        return;
+      }
+
       setInsights(insightsData);
       setRecommendations(recommendationsData || []);
     } catch (error) {
       console.error('Error loading AI insights:', error);
+      setError('Failed to load AI workflow intelligence');
+      setErrorType('api-error');
     } finally {
       setLoading(false);
     }
   };
 
-  const opportunityData = [
-    { name: 'Week 1', opportunities: 12, converted: 8, score: 85 },
-    { name: 'Week 2', opportunities: 18, converted: 14, score: 92 },
-    { name: 'Week 3', opportunities: 25, converted: 19, score: 88 },
-    { name: 'Week 4', opportunities: 32, converted: 28, score: 94 }
-  ];
-
-  const workflowMetrics = [
-    { name: 'Mon', efficiency: 78, automation: 65, insights: 23 },
-    { name: 'Tue', efficiency: 82, automation: 71, insights: 31 },
-    { name: 'Wed', efficiency: 85, automation: 75, insights: 28 },
-    { name: 'Thu', efficiency: 88, automation: 78, insights: 35 },
-    { name: 'Fri', efficiency: 92, automation: 82, insights: 42 },
-    { name: 'Sat', efficiency: 89, automation: 80, insights: 38 },
-    { name: 'Sun', efficiency: 91, automation: 84, insights: 45 }
-  ];
-
-  const mockRecommendations = [
-    {
-      id: '1',
-      type: 'content_optimization',
-      title: 'Optimize Content for Featured Snippets',
-      description: 'Your content has 73% potential to rank for featured snippets with structural improvements',
-      impact: 'high',
-      effort: 'medium',
-      timeframe: '2-3 weeks',
-      metrics: { potential_traffic: '+1,247 visitors/month', confidence: 87 }
-    },
-    {
-      id: '2',
-      type: 'keyword_expansion',
-      title: 'Target Long-tail Keywords',
-      description: 'AI identified 18 low-competition keywords with high conversion potential',
-      impact: 'high',
-      effort: 'low',
-      timeframe: '1-2 weeks',
-      metrics: { potential_traffic: '+892 visitors/month', confidence: 94 }
-    },
-    {
-      id: '3',
-      type: 'content_gaps',
-      title: 'Fill Content Gaps in Competitor Analysis',
-      description: 'Competitors are ranking for 12 topics you haven\'t covered yet',
-      impact: 'medium',
-      effort: 'high',
-      timeframe: '4-6 weeks',
-      metrics: { potential_traffic: '+2,156 visitors/month', confidence: 78 }
-    },
-    {
-      id: '4',
-      type: 'workflow_automation',
-      title: 'Automate SERP Monitoring Alerts',
-      description: 'Set up intelligent alerts for ranking changes and new opportunities',
-      impact: 'medium',
-      effort: 'low',
-      timeframe: '1 week',
-      metrics: { time_saved: '4 hours/week', confidence: 96 }
-    }
-  ];
 
   const getImpactColor = (impact) => {
     switch (impact) {
@@ -137,6 +114,60 @@ export const AIWorkflowIntelligence = () => {
     );
   }
 
+  // Handle error states
+  if (error) {
+    const getErrorAction = () => {
+      switch (errorType) {
+        case 'no-auth':
+          return {
+            label: 'Sign In',
+            onClick: () => window.location.href = '/auth'
+          };
+        case 'no-api-keys':
+          return {
+            label: 'Configure API Keys',
+            onClick: () => window.location.href = '/settings/api-keys'
+          };
+        case 'api-error':
+        case 'database-error':
+          return {
+            label: 'Retry',
+            onClick: loadInsights
+          };
+        default:
+          return {
+            label: 'Refresh',
+            onClick: loadInsights
+          };
+      }
+    };
+
+    const action = getErrorAction();
+
+    return (
+      <EmptyDataState
+        icon={errorType === 'no-auth' ? User : errorType === 'no-api-keys' ? Key : AlertTriangle}
+        title="AI Workflow Intelligence Unavailable"
+        description={error}
+        action={action}
+      />
+    );
+  }
+
+  if (!insights && recommendations.length === 0) {
+    return (
+      <EmptyDataState
+        icon={Brain}
+        title="No AI Insights Available"
+        description="No workflow intelligence data available to display"
+        action={{
+          label: 'Refresh',
+          onClick: loadInsights
+        }}
+      />
+    );
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -163,10 +194,10 @@ export const AIWorkflowIntelligence = () => {
             <Brain className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">847</div>
+            <div className="text-2xl font-bold">{insights?.insightsGenerated || 0}</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              23% increase this week
+              {insights?.insightsTrend || 'No trend data'}
             </div>
           </CardContent>
         </Card>
@@ -177,10 +208,10 @@ export const AIWorkflowIntelligence = () => {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">92%</div>
+            <div className="text-2xl font-bold">{insights?.workflowEfficiency || 0}%</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              14% improvement
+              {insights?.efficiencyTrend || 'No trend data'}
             </div>
           </CardContent>
         </Card>
@@ -191,10 +222,10 @@ export const AIWorkflowIntelligence = () => {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">84%</div>
+            <div className="text-2xl font-bold">{insights?.automationRate || 0}%</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="h-3 w-3 mr-1 text-blue-500" />
-              Tasks automated
+              {insights?.automationTrend || 'No automation data'}
             </div>
           </CardContent>
         </Card>
@@ -205,10 +236,10 @@ export const AIWorkflowIntelligence = () => {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94</div>
+            <div className="text-2xl font-bold">{insights?.opportunityScore || 0}</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
-              Excellent potential
+              {insights?.opportunityScore >= 90 ? 'Excellent' : insights?.opportunityScore >= 70 ? 'Good' : 'Limited'} potential
             </div>
           </CardContent>
         </Card>
@@ -225,7 +256,7 @@ export const AIWorkflowIntelligence = () => {
 
         <TabsContent value="recommendations">
           <div className="space-y-4">
-            {mockRecommendations.map((rec, index) => {
+            {recommendations.length > 0 ? recommendations.map((rec, index) => {
               const TypeIcon = getTypeIcon(rec.type);
               return (
                 <motion.div
@@ -298,7 +329,13 @@ export const AIWorkflowIntelligence = () => {
                   </Card>
                 </motion.div>
               );
-            })}
+            }) : (
+              <div className="text-center py-12">
+                <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-2">No AI recommendations available</p>
+                <p className="text-sm text-muted-foreground">Start using SERP intelligence to generate AI-powered insights</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -310,30 +347,36 @@ export const AIWorkflowIntelligence = () => {
                 <CardDescription>AI-identified opportunities and conversion rates</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <AreaChart data={opportunityData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area 
-                      type="monotone" 
-                      dataKey="opportunities" 
-                      stackId="1"
-                      stroke="hsl(var(--primary))" 
-                      fill="hsl(var(--primary))" 
-                      fillOpacity={0.3}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="converted" 
-                      stackId="2"
-                      stroke="hsl(var(--secondary))" 
-                      fill="hsl(var(--secondary))" 
-                      fillOpacity={0.3}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {insights?.opportunityData && insights.opportunityData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <AreaChart data={insights.opportunityData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Area 
+                        type="monotone" 
+                        dataKey="opportunities" 
+                        stackId="1"
+                        stroke="hsl(var(--primary))" 
+                        fill="hsl(var(--primary))" 
+                        fillOpacity={0.3}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="converted" 
+                        stackId="2"
+                        stroke="hsl(var(--secondary))" 
+                        fill="hsl(var(--secondary))" 
+                        fillOpacity={0.3}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                    No opportunity data available
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -343,25 +386,27 @@ export const AIWorkflowIntelligence = () => {
                 <CardDescription>High-potential opportunities ready for action</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {[
-                  { title: 'Featured Snippet Opportunity', score: 94, type: 'Content' },
-                  { title: 'Long-tail Keyword Gap', score: 87, type: 'Keywords' },
-                  { title: 'Competitor Weakness', score: 82, type: 'Competitive' },
-                  { title: 'Trending Topic Match', score: 78, type: 'Trending' }
-                ].map((opp, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm">{opp.title}</p>
-                      <Badge variant="outline" className="text-xs">{opp.type}</Badge>
-                    </div>
-                    <div className="text-right space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <Progress value={opp.score} className="w-16 h-2" />
-                        <span className="text-sm font-medium">{opp.score}</span>
+                {insights?.currentOpportunities && insights.currentOpportunities.length > 0 ? (
+                  insights.currentOpportunities.map((opp, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium text-sm">{opp.title}</p>
+                        <Badge variant="outline" className="text-xs">{opp.type}</Badge>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Progress value={opp.score} className="w-16 h-2" />
+                          <span className="text-sm font-medium">{opp.score}</span>
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Target className="h-8 w-8 mx-auto mb-2" />
+                    <p className="text-sm">No opportunities identified yet</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </div>
@@ -376,27 +421,29 @@ export const AIWorkflowIntelligence = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { name: 'SERP Position Alerts', status: 'active', triggers: 247, success: 98.2 },
-                    { name: 'Keyword Opportunity Detection', status: 'active', triggers: 156, success: 94.7 },
-                    { name: 'Content Gap Analysis', status: 'active', triggers: 89, success: 91.3 },
-                    { name: 'Competitor Monitoring', status: 'paused', triggers: 0, success: 0 }
-                  ].map((rule, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className={`h-3 w-3 rounded-full ${rule.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`} />
-                        <div>
-                          <p className="font-medium">{rule.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {rule.triggers} triggers • {rule.success}% success rate
-                          </p>
+                  {insights?.automationRules && insights.automationRules.length > 0 ? (
+                    insights.automationRules.map((rule, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className={`h-3 w-3 rounded-full ${rule.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          <div>
+                            <p className="font-medium">{rule.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {rule.triggers} triggers • {rule.success}% success rate
+                            </p>
+                          </div>
                         </div>
+                        <Badge variant={rule.status === 'active' ? 'default' : 'secondary'}>
+                          {rule.status}
+                        </Badge>
                       </div>
-                      <Badge variant={rule.status === 'active' ? 'default' : 'secondary'}>
-                        {rule.status}
-                      </Badge>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Zap className="h-8 w-8 mx-auto mb-2" />
+                      <p className="text-sm">No automation rules configured</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -410,18 +457,19 @@ export const AIWorkflowIntelligence = () => {
               <CardDescription>Workflow efficiency and automation metrics over time</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={workflowMetrics}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="efficiency" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    name="Efficiency %"
+              {insights?.workflowMetrics && insights.workflowMetrics.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={insights.workflowMetrics}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="efficiency" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      name="Efficiency %"
                   />
                   <Line 
                     type="monotone" 
@@ -437,8 +485,13 @@ export const AIWorkflowIntelligence = () => {
                     strokeWidth={2}
                     name="Insights Generated"
                   />
-                </LineChart>
-              </ResponsiveContainer>
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No workflow analytics data available
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

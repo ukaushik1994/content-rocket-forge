@@ -28,15 +28,25 @@ import {
   AlertTriangle,
   CheckCircle,
   RefreshCw,
-  Database
+  Database,
+  Key,
+  User
 } from 'lucide-react';
 import { serpPerformanceMonitoring } from '@/services/serpPerformanceMonitoring';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useSerpServiceStatus } from '@/hooks/useSerpServiceStatus';
+import { EmptyDataState } from '@/components/ui/empty-state';
+
+type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
 export const SerpPerformanceAnalytics = () => {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<ErrorType | null>(null);
+  const serpStatus = useSerpServiceStatus();
 
   useEffect(() => {
     loadMetrics();
@@ -45,10 +55,38 @@ export const SerpPerformanceAnalytics = () => {
   const loadMetrics = async () => {
     try {
       setLoading(true);
+      setError(null);
+      setErrorType(null);
+
+      // Check authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('Authentication required to view performance metrics');
+        setErrorType('no-auth');
+        return;
+      }
+
+      // Check API keys
+      if (!serpStatus.hasProviders) {
+        setError('No SERP API keys configured');
+        setErrorType('no-api-keys');
+        return;
+      }
+
+      // Load real metrics
       const data = await serpPerformanceMonitoring.getPerformanceMetrics();
+      
+      if (!data || Object.keys(data).length === 0) {
+        setError('No performance data available');
+        setErrorType('no-data');
+        return;
+      }
+
       setMetrics(data);
     } catch (error) {
       console.error('Error loading performance metrics:', error);
+      setError('Failed to load performance metrics');
+      setErrorType('api-error');
     } finally {
       setLoading(false);
     }
@@ -70,27 +108,59 @@ export const SerpPerformanceAnalytics = () => {
     );
   }
 
-  const performanceData = [
-    { name: 'Mon', responseTime: 120, cacheHits: 85, apiCalls: 150 },
-    { name: 'Tue', responseTime: 98, cacheHits: 92, apiCalls: 180 },
-    { name: 'Wed', responseTime: 145, cacheHits: 78, apiCalls: 220 },
-    { name: 'Thu', responseTime: 110, cacheHits: 88, apiCalls: 190 },
-    { name: 'Fri', responseTime: 95, cacheHits: 94, apiCalls: 240 },
-    { name: 'Sat', responseTime: 85, cacheHits: 96, apiCalls: 160 },
-    { name: 'Sun', responseTime: 75, cacheHits: 98, apiCalls: 120 }
-  ];
+  // Handle error states
+  if (error) {
+    const getErrorAction = () => {
+      switch (errorType) {
+        case 'no-auth':
+          return {
+            label: 'Sign In',
+            onClick: () => window.location.href = '/auth'
+          };
+        case 'no-api-keys':
+          return {
+            label: 'Configure API Keys',
+            onClick: () => window.location.href = '/settings/api-keys'
+          };
+        case 'api-error':
+        case 'database-error':
+          return {
+            label: 'Retry',
+            onClick: loadMetrics
+          };
+        default:
+          return {
+            label: 'Refresh',
+            onClick: loadMetrics
+          };
+      }
+    };
 
-  const cacheDistribution = [
-    { name: 'Cache Hits', value: 87, color: 'hsl(var(--primary))' },
-    { name: 'Cache Misses', value: 13, color: 'hsl(var(--muted))' }
-  ];
+    const action = getErrorAction();
 
-  const apiUsageData = [
-    { name: '6h', calls: 45, errors: 2 },
-    { name: '12h', calls: 89, errors: 1 },
-    { name: '18h', calls: 123, errors: 3 },
-    { name: '24h', calls: 156, errors: 0 }
-  ];
+    return (
+      <EmptyDataState
+        icon={errorType === 'no-auth' ? User : errorType === 'no-api-keys' ? Key : AlertTriangle}
+        title="Performance Analytics Unavailable"
+        description={error}
+        action={action}
+      />
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <EmptyDataState
+        icon={Database}
+        title="No Performance Data"
+        description="No performance metrics available to display"
+        action={{
+          label: 'Refresh',
+          onClick: loadMetrics
+        }}
+      />
+    );
+  }
 
   return (
     <motion.div 
@@ -123,10 +193,10 @@ export const SerpPerformanceAnalytics = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">98ms</div>
+            <div className="text-2xl font-bold">{metrics.avgResponseTime || 0}ms</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingDown className="h-3 w-3 mr-1 text-green-500" />
-              12% faster than yesterday
+              {metrics.responseTimeTrend || 'No trend data'}
             </div>
           </CardContent>
         </Card>
@@ -137,10 +207,10 @@ export const SerpPerformanceAnalytics = () => {
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94.2%</div>
+            <div className="text-2xl font-bold">{metrics.cacheHitRate || 0}%</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              2.1% improvement
+              {metrics.cacheHitTrend || 'No trend data'}
             </div>
           </CardContent>
         </Card>
@@ -151,10 +221,10 @@ export const SerpPerformanceAnalytics = () => {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,247</div>
+            <div className="text-2xl font-bold">{metrics.apiCallsToday || 0}</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="h-3 w-3 mr-1 text-blue-500" />
-              23% increase
+              {metrics.apiCallsTrend || 'No trend data'}
             </div>
           </CardContent>
         </Card>
@@ -165,10 +235,10 @@ export const SerpPerformanceAnalytics = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">99.8%</div>
+            <div className="text-2xl font-bold">{metrics.successRate || 0}%</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
-              Excellent performance
+              {metrics.successRate >= 95 ? 'Excellent' : metrics.successRate >= 85 ? 'Good' : 'Needs attention'}
             </div>
           </CardContent>
         </Card>
@@ -190,21 +260,27 @@ export const SerpPerformanceAnalytics = () => {
               <CardDescription>Average response time over the last 7 days</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={performanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area 
-                    type="monotone" 
-                    dataKey="responseTime" 
-                    stroke="hsl(var(--primary))" 
-                    fill="hsl(var(--primary))" 
-                    fillOpacity={0.3}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {metrics.performanceData && metrics.performanceData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={metrics.performanceData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Area 
+                      type="monotone" 
+                      dataKey="responseTime" 
+                      stroke="hsl(var(--primary))" 
+                      fill="hsl(var(--primary))" 
+                      fillOpacity={0.3}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No performance data available
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -217,22 +293,28 @@ export const SerpPerformanceAnalytics = () => {
                 <CardDescription>Current cache performance breakdown</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={cacheDistribution}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
-                    >
-                      {cacheDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                {metrics.cacheDistribution && metrics.cacheDistribution.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={metrics.cacheDistribution}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="value"
+                      >
+                        {metrics.cacheDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                    No cache data available
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -242,20 +324,26 @@ export const SerpPerformanceAnalytics = () => {
                 <CardDescription>Cache hit rate over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="cacheHits" 
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {metrics.performanceData && metrics.performanceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={metrics.performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line 
+                        type="monotone" 
+                        dataKey="cacheHits" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                    No cache trend data available
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -268,16 +356,22 @@ export const SerpPerformanceAnalytics = () => {
               <CardDescription>API calls and error rates over the last 24 hours</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={apiUsageData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="calls" fill="hsl(var(--primary))" />
-                  <Bar dataKey="errors" fill="hsl(var(--destructive))" />
-                </BarChart>
-              </ResponsiveContainer>
+              {metrics.apiUsageData && metrics.apiUsageData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={metrics.apiUsageData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="calls" fill="hsl(var(--primary))" />
+                    <Bar dataKey="errors" fill="hsl(var(--destructive))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No API usage data available
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -290,38 +384,50 @@ export const SerpPerformanceAnalytics = () => {
                 <CardDescription>Current system performance indicators</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">API Response Health</span>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Excellent
-                    </Badge>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">API Response Health</span>
+                      <Badge variant="secondary" className={
+                        metrics.apiHealth >= 95 ? "bg-green-100 text-green-800" : 
+                        metrics.apiHealth >= 85 ? "bg-yellow-100 text-yellow-800" : 
+                        "bg-red-100 text-red-800"
+                      }>
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        {metrics.apiHealth >= 95 ? 'Excellent' : metrics.apiHealth >= 85 ? 'Good' : 'Poor'}
+                      </Badge>
+                    </div>
+                    <Progress value={metrics.apiHealth || 0} className="h-2" />
                   </div>
-                  <Progress value={98} className="h-2" />
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Cache Efficiency</span>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Optimal
-                    </Badge>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Cache Efficiency</span>
+                      <Badge variant="secondary" className={
+                        metrics.cacheEfficiency >= 90 ? "bg-green-100 text-green-800" : 
+                        metrics.cacheEfficiency >= 70 ? "bg-yellow-100 text-yellow-800" : 
+                        "bg-red-100 text-red-800"
+                      }>
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        {metrics.cacheEfficiency >= 90 ? 'Optimal' : metrics.cacheEfficiency >= 70 ? 'Good' : 'Poor'}
+                      </Badge>
+                    </div>
+                    <Progress value={metrics.cacheEfficiency || 0} className="h-2" />
                   </div>
-                  <Progress value={94} className="h-2" />
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Data Freshness</span>
-                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Good
-                    </Badge>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Data Freshness</span>
+                      <Badge variant="secondary" className={
+                        metrics.dataFreshness >= 90 ? "bg-green-100 text-green-800" : 
+                        metrics.dataFreshness >= 70 ? "bg-yellow-100 text-yellow-800" : 
+                        "bg-red-100 text-red-800"
+                      }>
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        {metrics.dataFreshness >= 90 ? 'Excellent' : metrics.dataFreshness >= 70 ? 'Good' : 'Stale'}
+                      </Badge>
+                    </div>
+                    <Progress value={metrics.dataFreshness || 0} className="h-2" />
                   </div>
-                  <Progress value={87} className="h-2" />
-                </div>
               </CardContent>
             </Card>
 
@@ -331,29 +437,22 @@ export const SerpPerformanceAnalytics = () => {
                 <CardDescription>AI-powered optimization suggestions</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-1" />
-                  <div>
-                    <p className="text-sm font-medium">Cache optimization enabled</p>
-                    <p className="text-xs text-muted-foreground">94.2% hit rate achieved</p>
+                {metrics.recommendations && metrics.recommendations.length > 0 ? (
+                  metrics.recommendations.map((rec, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-1" />
+                      <div>
+                        <p className="text-sm font-medium">{rec.title}</p>
+                        <p className="text-xs text-muted-foreground">{rec.description}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <p className="text-sm">No recommendations available</p>
+                    <p className="text-xs">Performance metrics look good!</p>
                   </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <TrendingUp className="h-4 w-4 text-blue-500 mt-1" />
-                  <div>
-                    <p className="text-sm font-medium">Consider peak hour scaling</p>
-                    <p className="text-xs text-muted-foreground">API usage increased 23% today</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <AlertTriangle className="h-4 w-4 text-yellow-500 mt-1" />
-                  <div>
-                    <p className="text-sm font-medium">Monitor data freshness</p>
-                    <p className="text-xs text-muted-foreground">Some results older than 24h</p>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

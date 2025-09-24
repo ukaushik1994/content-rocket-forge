@@ -20,17 +20,26 @@ import {
   AlertCircle,
   ExternalLink,
   Webhook,
-  Clock
+  Clock,
+  Key,
+  User
 } from 'lucide-react';
 import { marketingIntegrationHooks } from '@/services/marketingIntegrationHooks';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { EmptyDataState } from '@/components/ui/empty-state';
+
+type ErrorType = 'no-auth' | 'no-api-keys' | 'api-error' | 'database-error' | 'no-data';
 
 export const MarketingIntegrationsPanel = () => {
   const { toast } = useToast();
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeIntegrations, setActiveIntegrations] = useState(new Set());
+  const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<ErrorType | null>(null);
+  const [stats, setStats] = useState({ eventsToday: 0, successRate: 0 });
 
   useEffect(() => {
     loadIntegrations();
@@ -39,14 +48,38 @@ export const MarketingIntegrationsPanel = () => {
   const loadIntegrations = async () => {
     try {
       setLoading(true);
+      setError(null);
+      setErrorType(null);
+
+      // Check authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('Authentication required to view marketing integrations');
+        setErrorType('no-auth');
+        return;
+      }
+
       const data = await marketingIntegrationHooks.getIntegrations();
-      setIntegrations(data || []);
+      
+      if (!data || data.length === 0) {
+        setError('No integration data available');
+        setErrorType('no-data');
+        return;
+      }
+
+      setIntegrations(data);
       
       // Set active integrations
-      const active = new Set(data?.filter(i => i.enabled).map(i => i.id) || []);
+      const active = new Set(data.filter(i => i.enabled).map(i => i.id));
       setActiveIntegrations(active);
+
+      // Load real stats
+      const statsData = await marketingIntegrationHooks.getIntegrationStats();
+      setStats(statsData || { eventsToday: 0, successRate: 0 });
     } catch (error) {
       console.error('Error loading integrations:', error);
+      setError('Failed to load marketing integrations');
+      setErrorType('api-error');
     } finally {
       setLoading(false);
     }
@@ -345,7 +378,50 @@ export const MarketingIntegrationsPanel = () => {
     );
   };
 
-  return (
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin">
+          <Zap className="h-8 w-8" />
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error states
+  if (error) {
+    const getErrorAction = () => {
+      switch (errorType) {
+        case 'no-auth':
+          return {
+            label: 'Sign In',
+            onClick: () => window.location.href = '/auth'
+          };
+        case 'api-error':
+        case 'database-error':
+          return {
+            label: 'Retry',
+            onClick: loadIntegrations
+          };
+        default:
+          return {
+            label: 'Refresh',
+            onClick: loadIntegrations
+          };
+      }
+    };
+
+    const action = getErrorAction();
+
+    return (
+      <EmptyDataState
+        icon={errorType === 'no-auth' ? User : AlertCircle}
+        title="Marketing Integrations Unavailable"
+        description={error}
+        action={action}
+      />
+    );
+  }
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -381,7 +457,7 @@ export const MarketingIntegrationsPanel = () => {
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">1,247</p>
+                <p className="text-2xl font-bold">{stats.eventsToday || 0}</p>
                 <p className="text-xs text-muted-foreground">Events Sent Today</p>
               </div>
             </div>
@@ -393,7 +469,7 @@ export const MarketingIntegrationsPanel = () => {
             <div className="flex items-center space-x-2">
               <Zap className="h-4 w-4 text-yellow-500" />
               <div>
-                <p className="text-2xl font-bold">98.5%</p>
+                <p className="text-2xl font-bold">{stats.successRate || 0}%</p>
                 <p className="text-xs text-muted-foreground">Success Rate</p>
               </div>
             </div>
@@ -446,30 +522,31 @@ export const MarketingIntegrationsPanel = () => {
               <CardDescription>Recent webhook deliveries and API calls</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  { time: '2 minutes ago', integration: 'Slack', action: 'SERP alert sent', status: 'success' },
-                  { time: '15 minutes ago', integration: 'Google Sheets', action: 'Data export', status: 'success' },
-                  { time: '1 hour ago', integration: 'HubSpot', action: 'Lead scoring update', status: 'success' },
-                  { time: '2 hours ago', integration: 'Zapier', action: 'Workflow triggered', status: 'failed' },
-                ].map((log, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`h-2 w-2 rounded-full ${log.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`} />
-                      <div>
-                        <p className="text-sm font-medium">{log.integration}</p>
-                        <p className="text-xs text-muted-foreground">{log.action}</p>
+              {integrations.length > 0 ? (
+                <div className="space-y-4">
+                  {integrations.slice(0, 4).map((integration, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <div>
+                          <p className="text-sm font-medium">{integration.name}</p>
+                          <p className="text-xs text-muted-foreground">Recent activity</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Active</p>
+                        <Badge variant="secondary" className="text-xs">success</Badge>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{log.time}</p>
-                      <Badge variant={log.status === 'success' ? 'secondary' : 'destructive'} className="text-xs">
-                        {log.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-8 w-8 mx-auto mb-2" />
+                  <p className="text-sm">No activity logs available</p>
+                  <p className="text-xs">Enable integrations to see activity</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
