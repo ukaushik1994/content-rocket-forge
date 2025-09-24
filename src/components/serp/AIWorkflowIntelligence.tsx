@@ -155,6 +155,7 @@ export const AIWorkflowIntelligence = () => {
     );
   }
 
+  if (!insights && recommendations.length === 0) {
     return (
       <EmptyDataState
         variant="no-data"
@@ -164,6 +165,7 @@ export const AIWorkflowIntelligence = () => {
         onAction={loadInsights}
       />
     );
+  }
 
   return (
     <motion.div 

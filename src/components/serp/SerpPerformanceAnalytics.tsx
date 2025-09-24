@@ -149,6 +149,7 @@ export const SerpPerformanceAnalytics = () => {
     );
   }
 
+  if (!metrics) {
     return (
       <EmptyDataState
         variant="no-data"
@@ -158,6 +159,7 @@ export const SerpPerformanceAnalytics = () => {
         onAction={loadMetrics}
       />
     );
+  }
 
   return (
     <motion.div 
