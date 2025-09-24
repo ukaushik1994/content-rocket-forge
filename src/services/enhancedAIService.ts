@@ -134,13 +134,15 @@ class EnhancedAIService {
         return this.createErrorMessage(`AI service error: ${error.message}. Please check your API key configuration in Settings.`);
       }
 
-      if (!response?.content) {
+      // Handle both old (content) and new (message) response formats for backward compatibility
+      const responseContent = response?.message || response?.content;
+      if (!responseContent) {
         console.error('No content in enhanced AI response:', response);
         return this.createErrorMessage('No response content received');
       }
 
       console.log('✅ Enhanced AI Response received:', {
-        hasContent: !!response.content,
+        hasContent: !!responseContent,
         hasVisualData: !!response.visualData,
         hasSerpData: !!response.serpData,
         hasActions: !!response.actions
@@ -150,7 +152,7 @@ class EnhancedAIService {
       const enhancedMessage: EnhancedChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: response.content,
+        content: responseContent,
         timestamp: new Date(),
         visualData: response.visualData || serpAnalysisResult?.visualData,
         serpData: response.serpData || serpAnalysisResult?.serpData,
