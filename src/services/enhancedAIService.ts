@@ -27,6 +27,12 @@ class EnhancedAIService {
         return this.createErrorMessage('User authentication required');
       }
 
+      // Check for API key configuration before making any calls
+      const apiKeyStatus = await this.checkApiKeyConfiguration();
+      if (!apiKeyStatus.hasAnyKey) {
+        return this.createApiKeyConfigurationMessage(apiKeyStatus);
+      }
+
       console.log('🤖 Processing enhanced message with AIServiceController:', { message, userId, retryCount });
 
       // Detect if this is a SERP-related query and trigger analysis
@@ -84,12 +90,21 @@ class EnhancedAIService {
 
       if (error) {
         console.error('Enhanced AI Chat Error:', error);
+        
+        // Check if it's an API key related error
+        if (error.message?.includes('API key') || error.message?.includes('non-2xx status code')) {
+          const apiKeyStatus = await this.checkApiKeyConfiguration();
+          if (!apiKeyStatus.hasAnyKey) {
+            return this.createApiKeyConfigurationMessage(apiKeyStatus);
+          }
+        }
+        
         if (retryCount < 2) {
           console.log(`🔄 Retrying enhanced message processing (attempt ${retryCount + 1})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
           return this.processEnhancedMessage(message, conversationHistory, userId, onStreamUpdate, retryCount + 1);
         }
-        return this.createErrorMessage(`AI service error: ${error.message}`);
+        return this.createErrorMessage(`AI service error: ${error.message}. Please check your API key configuration in Settings.`);
       }
 
       if (!response?.content) {
@@ -126,12 +141,21 @@ class EnhancedAIService {
 
     } catch (error) {
       console.error('Error in processEnhancedMessage:', error);
+      
+      // Check if it's an API key related error
+      if (error instanceof Error && (error.message?.includes('API key') || error.message?.includes('non-2xx status code'))) {
+        const apiKeyStatus = await this.checkApiKeyConfiguration();
+        if (!apiKeyStatus.hasAnyKey) {
+          return this.createApiKeyConfigurationMessage(apiKeyStatus);
+        }
+      }
+      
       if (retryCount < 2) {
         console.log(`🔄 Retrying enhanced message processing (attempt ${retryCount + 1})`);
         await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
         return this.processEnhancedMessage(message, conversationHistory, userId, onStreamUpdate, retryCount + 1);
       }
-      return this.createErrorMessage(`Processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return this.createErrorMessage(`Processing error: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your API key configuration in Settings.`);
     }
   }
 
@@ -608,6 +632,98 @@ GUIDELINES:
 - Be concise but comprehensive in your analysis`;
 
     return prompt;
+  }
+
+  /**
+   * Check API key configuration status
+   */
+  private async checkApiKeyConfiguration(): Promise<{
+    hasAnyKey: boolean;
+    availableProviders: string[];
+    missingProviders: string[];
+  }> {
+    try {
+      const { getAllApiKeysStatusSimple } = await import('@/services/apiKeys/crud');
+      const apiKeysStatus = await getAllApiKeysStatusSimple();
+      
+      const availableProviders = Object.entries(apiKeysStatus)
+        .filter(([, hasKey]) => hasKey)
+        .map(([provider]) => provider);
+        
+      const missingProviders = Object.entries(apiKeysStatus)
+        .filter(([, hasKey]) => !hasKey)
+        .map(([provider]) => provider);
+      
+      const hasAnyKey = availableProviders.length > 0;
+      
+      console.log('API Key Status Check:', { hasAnyKey, availableProviders, missingProviders });
+      
+      return {
+        hasAnyKey,
+        availableProviders,
+        missingProviders
+      };
+    } catch (error) {
+      console.error('Error checking API key configuration:', error);
+      return {
+        hasAnyKey: false,
+        availableProviders: [],
+        missingProviders: ['openrouter', 'openai', 'anthropic', 'gemini']
+      };
+    }
+  }
+
+  /**
+   * Create a helpful message when no API keys are configured
+   */
+  private createApiKeyConfigurationMessage(status: {
+    hasAnyKey: boolean;
+    availableProviders: string[];
+    missingProviders: string[];
+  }): EnhancedChatMessage {
+    const content = `To start using AI chat, you need to configure at least one AI provider API key.
+
+**Available Providers:**
+- **OpenRouter** (Recommended): Access to multiple AI models with one key
+- **OpenAI**: GPT models (GPT-4, GPT-3.5-turbo)
+- **Anthropic**: Claude models
+- **Google**: Gemini models
+
+**How to configure:**
+1. Go to Settings → AI Service Hub → Provider Management
+2. Add your API key for any supported provider
+3. Test the connection to ensure it's working
+
+Once configured, you'll be able to chat with AI assistants, analyze content, perform keyword research, and much more!`;
+
+    return {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+      visualData: null,
+      serpData: null,
+      actions: [
+        {
+          id: 'configure-api-keys',
+          type: 'button',
+          action: 'navigate_to_settings',
+          label: 'Configure API Keys',
+          data: { section: 'ai-settings' }
+        }
+      ],
+      workflowContext: null,
+      metadata: {
+        reasoning: 'API key configuration required',
+        confidence: 1,
+        sources: [],
+        actionResults: {
+          apiKeyRequired: true,
+          availableProviders: status.availableProviders,
+          missingProviders: status.missingProviders
+        }
+      }
+    };
   }
 
   private createErrorMessage(errorMessage: string): EnhancedChatMessage {

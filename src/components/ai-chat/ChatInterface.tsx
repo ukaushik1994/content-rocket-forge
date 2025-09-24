@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ContextualAction } from '@/services/aiService';
 import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
 import { supabase } from '@/integrations/supabase/client';
+import { ApiKeyStatusIndicator } from './ApiKeyStatusIndicator';
 
 interface ChatInterfaceProps {
   onClearConversation: () => void;
@@ -90,6 +91,13 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
         sidebarOpen={sidebarOpen}
         hasMessages={messages.length > 0}
       />
+
+      {/* API Key Status Indicator */}
+      {messages.length === 0 && (
+        <div className="px-4 pb-4">
+          <ApiKeyStatusIndicator />
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex gap-4 min-h-0 relative">

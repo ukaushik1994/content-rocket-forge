@@ -81,21 +81,34 @@ export const useEnhancedAIChat = () => {
   const handleAction = useCallback(async (action: string, data?: any) => {
     if (!user || !action) return;
 
-    if (action.startsWith('open-settings')) {
-      const tab = action.split(':')[1] || 'api';
-      openSettings(tab);
-    } else if (action.startsWith('workflow:')) {
-      const workflowAction = action.replace('workflow:', '');
-      await handleWorkflowAction(workflowAction, data);
-    } else if (action.startsWith('send:')) {
-      const message = action.replace('send:', '');
-      await sendMessage(message);
-    } else if (['create-content-strategy', 'analyze-competitors', 'explore-related-keywords'].includes(action)) {
-      // Handle SERP-specific actions
-      await handleSerpAction(action, data);
-    } else if (action === 'optimize-content-gaps') {
-      // Handle content gap optimization
-      await handleSerpAction(action, data);
+    switch (action) {
+      case 'navigate_to_settings':
+        console.log('Navigating to settings...', data);
+        window.location.href = '/settings';
+        break;
+      case 'open_settings':
+        console.log('Opening settings...');
+        window.location.href = '/settings';
+        break;
+      case 'optimize-content-gaps':
+        // Handle content gap optimization
+        await handleSerpAction(action, data);
+        break;
+      default:
+        if (action.startsWith('open-settings')) {
+          const tab = action.split(':')[1] || 'api';
+          openSettings(tab);
+        } else if (action.startsWith('workflow:')) {
+          const workflowAction = action.replace('workflow:', '');
+          await handleWorkflowAction(workflowAction, data);
+        } else if (action.startsWith('send:')) {
+          const message = action.replace('send:', '');
+          await sendMessage(message);
+        } else if (['create-content-strategy', 'analyze-competitors', 'explore-related-keywords'].includes(action)) {
+          // Handle SERP-specific actions
+          await handleSerpAction(action, data);
+        }
+        break;
     }
   }, [sendMessage, user, openSettings]);
 
