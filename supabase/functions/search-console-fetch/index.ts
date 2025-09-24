@@ -116,7 +116,15 @@ serve(async (req) => {
     // Process the search console data
     const rows = searchData.rows || [];
     
-    let processedData = {
+    let processedData: {
+      impressions: number;
+      clicks: number;
+      ctr: number;
+      averagePosition: number;
+      topQueries: any[];
+      topPages: any[];
+      lastUpdated: string;
+    } = {
       impressions: 0,
       clicks: 0,
       ctr: 0,
@@ -127,13 +135,13 @@ serve(async (req) => {
     };
 
     if (rows.length > 0) {
-      const totalImpressions = rows.reduce((sum, row) => sum + row.impressions, 0);
-      const totalClicks = rows.reduce((sum, row) => sum + row.clicks, 0);
-      const weightedPosition = rows.reduce((sum, row) => sum + (row.position * row.impressions), 0);
+      const totalImpressions = rows.reduce((sum: number, row: any) => sum + row.impressions, 0);
+      const totalClicks = rows.reduce((sum: number, row: any) => sum + row.clicks, 0);
+      const weightedPosition = rows.reduce((sum: number, row: any) => sum + (row.position * row.impressions), 0);
 
       // Group by query for top queries
       const queryMap = new Map();
-      rows.forEach(row => {
+      rows.forEach((row: any) => {
         const query = row.keys[0];
         if (!queryMap.has(query)) {
           queryMap.set(query, { query, clicks: 0, impressions: 0 });
@@ -189,7 +197,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in search-console-fetch function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

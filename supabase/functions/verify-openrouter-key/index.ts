@@ -62,7 +62,7 @@ serve(async (req) => {
     try {
       requestHeaders["Authorization"] = `Bearer ${sanitizedKey}`;
     } catch (error) {
-      console.error(`❌ Failed to construct Authorization header: ${error.message}`);
+      console.error(`❌ Failed to construct Authorization header: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return new Response(JSON.stringify({
         success: false,
         error: "Invalid API key format for authorization"

@@ -81,7 +81,7 @@ async function testSerpProvider(apiKey: string, usePica: boolean) {
       }
     } catch (error) {
       return createErrorResponse(
-        `Error testing Pica API: ${error.message}`, 
+        `Error testing Pica API: ${error instanceof Error ? error.message : 'Unknown error'}`, 
         500, 
         'serp', 
         'test'
@@ -377,13 +377,14 @@ function transformSerpApiResponse(data: any, keyword: string) {
 
 // Simplified extraction functions for serp-proxy
 function extractPeopleAlsoAskQuestions(data: any) {
-  const questions = [];
+  const questions: Array<{question: string; priority: number; source: string; answer?: string}> = [];
   
   // Try from people_also_ask
   if (data.people_also_ask && Array.isArray(data.people_also_ask)) {
     data.people_also_ask.forEach((item: any) => {
       questions.push({
         question: item.question || '',
+        priority: 1,
         source: item.link || 'Google Search',
         answer: item.snippet || item.answer || ''
       });
@@ -395,6 +396,7 @@ function extractPeopleAlsoAskQuestions(data: any) {
     data.related_questions.forEach((item: any) => {
       questions.push({
         question: item.question || '',
+        priority: 2,
         source: item.link || 'Google Search',
         answer: item.snippet || item.answer || ''
       });

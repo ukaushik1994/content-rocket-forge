@@ -105,7 +105,7 @@ serve(async (req) => {
         default: ['Analytics', 'Conversion Rate', 'User Experience', 'A/B Testing', 'ROI']
       };
       
-      const topicTermsList = topicTerms[topic] || topicTerms.default;
+      const topicTermsList = topicTerms[topic as keyof typeof topicTerms] || topicTerms.default;
       
       return new Response(JSON.stringify({ terms: topicTermsList }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -119,7 +119,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in glossary-generator function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

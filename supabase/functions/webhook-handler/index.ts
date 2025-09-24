@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
               return {
                 webhook_id: webhook.id,
                 url: webhook.url,
-                error: error.message,
+                error: error instanceof Error ? error.message : 'Unknown error',
                 success: false
               };
             }

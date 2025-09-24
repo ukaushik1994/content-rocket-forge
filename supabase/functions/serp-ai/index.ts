@@ -40,7 +40,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('SERP-AI error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -226,7 +226,7 @@ async function handleWorkflowExecution(workflowId: string, userId: string, supab
   } catch (error) {
     console.error('Workflow execution error:', error)
     return new Response(
-      JSON.stringify({ error: 'Workflow execution failed', details: error.message }),
+      JSON.stringify({ error: 'Workflow execution failed', details: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

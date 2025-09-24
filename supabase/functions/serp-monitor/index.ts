@@ -104,7 +104,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in serp-monitor function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -193,7 +193,7 @@ async function runAllUserChecks(supabaseClient: any, userId: string): Promise<nu
     for (let i = 0; i < configs.length; i += batchSize) {
       const batch = configs.slice(i, i + batchSize);
       
-      const batchPromises = batch.map(config => runMonitoringCheck(supabaseClient, config));
+      const batchPromises = batch.map((config: any) => runMonitoringCheck(supabaseClient, config));
       const results = await Promise.all(batchPromises);
       
       completedChecks += results.filter(success => success).length;
@@ -234,7 +234,7 @@ async function runScheduledMonitoring(supabaseClient: any): Promise<number> {
 
     // Filter configs that need checking based on frequency
     const now = new Date();
-    const configsDue = configs.filter(config => {
+    const configsDue = configs.filter((config: any) => {
       const lastCheck = config.serp_monitoring_history?.[0]?.check_timestamp;
       if (!lastCheck) return true; // Never checked before
       
@@ -253,7 +253,7 @@ async function runScheduledMonitoring(supabaseClient: any): Promise<number> {
     for (let i = 0; i < configsDue.length; i += batchSize) {
       const batch = configsDue.slice(i, i + batchSize);
       
-      const batchPromises = batch.map(config => runMonitoringCheck(supabaseClient, config));
+      const batchPromises = batch.map((config: any) => runMonitoringCheck(supabaseClient, config));
       const results = await Promise.all(batchPromises);
       
       completedChecks += results.filter(success => success).length;

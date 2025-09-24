@@ -146,7 +146,7 @@ serve(async (req) => {
         avgSessionDuration: parseInt(totals[3] || '0'),
         newUsers: parseInt(totals[4] || '0'),
         returningUsers: parseInt(totals[5] || '0') - parseInt(totals[4] || '0'),
-        demographics: rows.reduce((acc, row) => {
+        demographics: rows.reduce((acc: any, row: any) => {
           const device = row.dimensions[0];
           const sessions = parseInt(row.metrics[0].values[1] || '0');
           if (device === 'desktop') acc.desktop += sessions;
@@ -191,7 +191,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in google-analytics-fetch function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -29,7 +29,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in opportunity-hunter:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -109,7 +109,7 @@ async function scanForOpportunities(userId: string, strategiesData?: any) {
         ]
 
         for (const query of relatedQueries.slice(0, 5)) {
-          if (await isViableOpportunity(query, userSettings, existingContent)) {
+          if (await isViableOpportunity(query, userSettings, existingContent || [])) {
             const opportunity = await createOpportunityRecord(userId, strategy.id, query, serpData, userSettings)
             if (opportunity) {
               opportunities.push(opportunity)

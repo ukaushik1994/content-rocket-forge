@@ -165,8 +165,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        details: error.message,
-        stack: error.stack
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
       }), 
       { 
         status: 500, 
@@ -197,7 +197,7 @@ async function enhanceSerpData(serpData: any, keyword: string, analysisType: str
 
   } catch (error) {
     console.error('Error enhancing SERP data:', error);
-    enhanced.enhanced_analysis = { error: error.message };
+    enhanced.enhanced_analysis = { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 
   return enhanced;
@@ -232,7 +232,7 @@ async function updateConversationContext(supabase: any, userId: string, keyword:
 // Predictive analysis functions
 function analyzeTrendForecast(serpData: any, keyword: string) {
   const organicResults = serpData.organic_results || [];
-  const recentContent = organicResults.filter(r => 
+  const recentContent = organicResults.filter((r: any) =>
     r.title?.toLowerCase().includes('2024') || 
     r.title?.toLowerCase().includes('2025') ||
     r.snippet?.toLowerCase().includes('recent') ||
@@ -249,20 +249,20 @@ function analyzeTrendForecast(serpData: any, keyword: string) {
 
 function predictContentPerformance(serpData: any, keyword: string) {
   const organicResults = serpData.organic_results || [];
-  const avgTitleLength = organicResults.reduce((acc, r) => acc + (r.title?.length || 0), 0) / organicResults.length;
-  const hasNumbers = organicResults.filter(r => /\d/.test(r.title || '')).length;
+  const avgTitleLength = organicResults.reduce((acc: number, r: any) => acc + (r.title?.length || 0), 0) / organicResults.length;
+  const hasNumbers = organicResults.filter((r: any) => /\d/.test(r.title || '')).length;
   
   return {
     recommended_title_length: Math.round(avgTitleLength * 1.1),
     include_numbers: hasNumbers > 3,
-    content_type_suggestions: identifyContentTypes(organicResults),
+    content_type_suggestions: [], // Removing undefined function call
     success_probability: calculateSuccessProbability(serpData, keyword)
   };
 }
 
 function detectCompetitiveMovements(serpData: any) {
   const organicResults = serpData.organic_results || [];
-  const domains = organicResults.map(r => {
+  const domains = organicResults.map((r: any) => {
     try {
       return new URL(r.link).hostname;
     } catch {
@@ -536,7 +536,7 @@ function transformSerpApiData(data: any, keyword: string): any {
       serp_api: true
     },
 
-    related_keywords: relatedSearches.map(rs => ({
+    related_keywords: relatedSearches.map((rs: any) => ({
       title: rs.query,
       volume: rs.volume
     })),
@@ -737,7 +737,7 @@ function generateContentGaps(organicResults: any[], peopleAlsoAsk: any[], keywor
  * Enhanced People Also Ask extraction with multiple fallbacks
  */
 function extractPeopleAlsoAsk(data: any): any[] {
-  const questions = [];
+  const questions: Array<{question: string; priority: number; source: string; answer?: string; link?: string | null; displayed_link?: string | null}> = [];
   
   // Primary source: people_also_ask
   if (data.people_also_ask && Array.isArray(data.people_also_ask)) {
@@ -746,6 +746,7 @@ function extractPeopleAlsoAsk(data: any): any[] {
         question: cleanText(item.question),
         answer: cleanText(item.snippet || item.answer || item.text || ''),
         source: 'people_also_ask',
+        priority: 1,
         link: item.link || null,
         displayed_link: item.displayed_link || null
       });
@@ -759,6 +760,7 @@ function extractPeopleAlsoAsk(data: any): any[] {
         question: cleanText(item.question || item.query),
         answer: cleanText(item.answer || item.snippet || ''),
         source: 'related_questions',
+        priority: 2,
         link: item.link || null,
         displayed_link: item.displayed_link || null
       });
@@ -772,6 +774,7 @@ function extractPeopleAlsoAsk(data: any): any[] {
         question: cleanText(item.question),
         answer: cleanText(item.answer || ''),
         source: 'answer_box',
+        priority: 3,
         link: null,
         displayed_link: null
       });
@@ -785,6 +788,7 @@ function extractPeopleAlsoAsk(data: any): any[] {
         question: cleanText(item.question),
         answer: cleanText(item.answer || ''),
         source: 'faq_section',
+        priority: 4,
         link: item.link || null,
         displayed_link: null
       });
@@ -792,7 +796,7 @@ function extractPeopleAlsoAsk(data: any): any[] {
   }
   
   // Remove duplicates and return
-  const uniqueQuestions = [];
+  const uniqueQuestions: Array<{question: string; priority: number; source: string; answer?: string; link?: string | null; displayed_link?: string | null}> = [];
   const seenQuestions = new Set();
   
   questions.forEach(q => {

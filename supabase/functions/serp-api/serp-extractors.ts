@@ -169,7 +169,7 @@ function analyzeContentTypes(titles: string[], snippetText: string): {
  * Analyze gaps in question coverage
  */
 function analyzeQuestionGaps(peopleAlsoAsk: any[], snippetText: string, keyword: string): any[] {
-  const gaps = [];
+  const gaps: Array<{type: string; opportunity: string; priority: number; topic?: string; description?: string; recommendation?: string; content?: string; source?: string}> = [];
   const coveredTopics = new Set();
   
   // Extract topics from existing PAA questions
@@ -191,6 +191,8 @@ function analyzeQuestionGaps(peopleAlsoAsk: any[], snippetText: string, keyword:
   commonQuestions.forEach(({ pattern, question }) => {
     if (!coveredTopics.has(pattern) && !snippetText.includes(pattern)) {
       gaps.push({
+        type: 'question_gap',
+        priority: 2,
         topic: question,
         description: `Common question about ${pattern} not addressed`,
         recommendation: `Address the ${pattern} aspect of ${keyword}`,
@@ -311,7 +313,7 @@ export function extractComprehensiveEntities(data: any, keyword: string): any[] 
  * Extract entities from organic results
  */
 function extractEntitiesFromOrganic(organicResults: any[], keyword: string): any[] {
-  const entities = [];
+  const entities: Array<{type: string; name: string; relevance: number}> = [];
   
   organicResults.slice(0, 5).forEach((result: any) => {
     if (result.title) {
@@ -327,7 +329,7 @@ function extractEntitiesFromOrganic(organicResults: any[], keyword: string): any
  * Extract entities from text with context
  */
 function extractEntitiesFromText(text: string, keyword: string, source: string): any[] {
-  const entities = [];
+  const entities: Array<{type: string; name: string; relevance: number; importance?: number; description?: string; source?: string}> = [];
   const words = text.split(/\s+/)
     .filter(word => word.length > 4)
     .filter(word => !['the', 'and', 'but', 'for', 'are', 'this', 'that', 'with', 'from', 'have', 'been'].includes(word.toLowerCase()));
@@ -342,6 +344,7 @@ function extractEntitiesFromText(text: string, keyword: string, source: string):
     entities.push({
       name: word,
       type: 'text_entity',
+      relevance: 0.8,
       importance: 4,
       description: `Entity from ${source}: ${word}`,
       source: source

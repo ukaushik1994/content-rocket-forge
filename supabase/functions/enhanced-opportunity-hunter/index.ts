@@ -29,7 +29,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in enhanced-opportunity-hunter:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -326,7 +326,7 @@ function getFormatReason(format: string, intent: string) {
     'article': `The ${intent} search intent suggests users are in research mode, requiring an in-depth article format.`
   }
   
-  return reasons[format] || reasons['blog']
+  return reasons[format as keyof typeof reasons] || reasons['blog']
 }
 
 async function analyzeCompetitors(opportunityId: string) {
