@@ -2421,6 +2421,54 @@ export type Database = {
           },
         ]
       }
+      intelligent_workflows: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          solution_integrations: Json | null
+          status: string
+          success_metrics: Json | null
+          template_metadata: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+          workflow_data: Json
+          workflow_type: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          solution_integrations?: Json | null
+          status?: string
+          success_metrics?: Json | null
+          template_metadata?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+          workflow_data?: Json
+          workflow_type?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          solution_integrations?: Json | null
+          status?: string
+          success_metrics?: Json | null
+          template_metadata?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workflow_data?: Json
+          workflow_type?: string
+        }
+        Relationships: []
+      }
       keyword_usage_log: {
         Row: {
           content_id: string | null
@@ -4394,6 +4442,193 @@ export type Database = {
           trigger_type?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      workflow_executions: {
+        Row: {
+          ai_model: string | null
+          ai_provider: string | null
+          completed_at: string | null
+          created_at: string
+          error_details: Json | null
+          execution_name: string | null
+          id: string
+          input_context: Json | null
+          output_results: Json | null
+          performance_metrics: Json | null
+          progress: Json
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          workflow_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          ai_provider?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          execution_name?: string | null
+          id?: string
+          input_context?: Json | null
+          output_results?: Json | null
+          performance_metrics?: Json | null
+          progress?: Json
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          workflow_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          ai_provider?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          execution_name?: string | null
+          id?: string
+          input_context?: Json | null
+          output_results?: Json | null
+          performance_metrics?: Json | null
+          progress?: Json
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_executions_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "intelligent_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_steps_log: {
+        Row: {
+          ai_prompt: string | null
+          ai_response: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          execution_id: string
+          execution_time_ms: number | null
+          id: string
+          input_data: Json | null
+          output_data: Json | null
+          retry_count: number | null
+          solution_id: string | null
+          started_at: string | null
+          status: string
+          step_index: number
+          step_name: string
+          step_type: string
+        }
+        Insert: {
+          ai_prompt?: string | null
+          ai_response?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          execution_id: string
+          execution_time_ms?: number | null
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          retry_count?: number | null
+          solution_id?: string | null
+          started_at?: string | null
+          status?: string
+          step_index: number
+          step_name: string
+          step_type: string
+        }
+        Update: {
+          ai_prompt?: string | null
+          ai_response?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          execution_id?: string
+          execution_time_ms?: number | null
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          retry_count?: number | null
+          solution_id?: string | null
+          started_at?: string | null
+          status?: string
+          step_index?: number
+          step_name?: string
+          step_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_steps_log_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          difficulty_level: string | null
+          estimated_duration: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          required_solutions: Json | null
+          success_rate: number | null
+          tags: Json | null
+          template_data: Json
+          updated_at: string
+          use_count: number | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          difficulty_level?: string | null
+          estimated_duration?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          required_solutions?: Json | null
+          success_rate?: number | null
+          tags?: Json | null
+          template_data?: Json
+          updated_at?: string
+          use_count?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          difficulty_level?: string | null
+          estimated_duration?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          required_solutions?: Json | null
+          success_rate?: number | null
+          tags?: Json | null
+          template_data?: Json
+          updated_at?: string
+          use_count?: number | null
         }
         Relationships: []
       }

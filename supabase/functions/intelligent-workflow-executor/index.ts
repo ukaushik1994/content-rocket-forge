@@ -1,0 +1,418 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface WorkflowExecutionRequest {
+  workflowId?: string;
+  templateId?: string;
+  customWorkflow?: any;
+  inputContext?: any;
+  executionName?: string;
+}
+
+interface WorkflowStep {
+  name: string;
+  type: 'ai_task' | 'solution_integration' | 'data_processing' | 'user_input';
+  description: string;
+  aiPrompt?: string;
+  solutionId?: string;
+  inputMapping?: any;
+  outputMapping?: any;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization required' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Get user from auth header
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authorization' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body: WorkflowExecutionRequest = await req.json();
+    
+    // Get workflow definition (from ID, template, or custom)
+    let workflowData: any;
+    let workflowId: string;
+    
+    if (body.workflowId) {
+      // Load existing workflow
+      const { data: workflow, error } = await supabase
+        .from('intelligent_workflows')
+        .select('*')
+        .eq('id', body.workflowId)
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error || !workflow) {
+        return new Response(JSON.stringify({ error: 'Workflow not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      workflowData = workflow.workflow_data;
+      workflowId = workflow.id;
+    } else if (body.templateId) {
+      // Load template and create new workflow
+      const { data: template, error } = await supabase
+        .from('workflow_templates')
+        .select('*')
+        .eq('id', body.templateId)
+        .single();
+        
+      if (error || !template) {
+        return new Response(JSON.stringify({ error: 'Template not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      // Create workflow from template
+      const { data: newWorkflow, error: createError } = await supabase
+        .from('intelligent_workflows')
+        .insert({
+          user_id: user.id,
+          title: `${template.name} - ${new Date().toLocaleDateString()}`,
+          description: `Workflow created from template: ${template.name}`,
+          workflow_type: 'template',
+          category: template.category,
+          status: 'active',
+          workflow_data: template.template_data,
+          template_metadata: { source_template_id: template.id }
+        })
+        .select()
+        .single();
+        
+      if (createError || !newWorkflow) {
+        return new Response(JSON.stringify({ error: 'Failed to create workflow' }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      workflowData = template.template_data;
+      workflowId = newWorkflow.id;
+      
+      // Update template usage count
+      await supabase
+        .from('workflow_templates')
+        .update({ use_count: template.use_count + 1 })
+        .eq('id', template.id);
+        
+    } else if (body.customWorkflow) {
+      // Create ad-hoc workflow
+      const { data: newWorkflow, error: createError } = await supabase
+        .from('intelligent_workflows')
+        .insert({
+          user_id: user.id,
+          title: body.executionName || 'Custom Workflow',
+          description: 'AI-generated custom workflow',
+          workflow_type: 'ai_generated',
+          category: 'general',
+          status: 'active',
+          workflow_data: body.customWorkflow
+        })
+        .select()
+        .single();
+        
+      if (createError || !newWorkflow) {
+        return new Response(JSON.stringify({ error: 'Failed to create workflow' }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      workflowData = body.customWorkflow;
+      workflowId = newWorkflow.id;
+    } else {
+      return new Response(JSON.stringify({ error: 'No workflow specified' }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const steps: WorkflowStep[] = workflowData.steps || [];
+    
+    if (!steps.length) {
+      return new Response(JSON.stringify({ error: 'No steps defined in workflow' }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Create execution record
+    const { data: execution, error: execError } = await supabase
+      .from('workflow_executions')
+      .insert({
+        workflow_id: workflowId,
+        user_id: user.id,
+        execution_name: body.executionName,
+        status: 'running',
+        progress: {
+          current_step: 0,
+          total_steps: steps.length,
+          completed_steps: []
+        },
+        input_context: body.inputContext || {},
+        ai_provider: 'lovable-gateway',
+        ai_model: 'google/gemini-2.5-flash',
+        started_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+      
+    if (execError || !execution) {
+      return new Response(JSON.stringify({ error: 'Failed to create execution' }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`Starting workflow execution ${execution.id} with ${steps.length} steps`);
+
+    // Execute steps sequentially
+    const results: any[] = [];
+    let currentContext = { ...body.inputContext };
+    
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const stepStartTime = Date.now();
+      
+      console.log(`Executing step ${i + 1}/${steps.length}: ${step.name}`);
+      
+      // Log step start
+      const { data: stepLog } = await supabase
+        .from('workflow_steps_log')
+        .insert({
+          execution_id: execution.id,
+          step_index: i,
+          step_name: step.name,
+          step_type: step.type,
+          status: 'running',
+          input_data: currentContext,
+          ai_prompt: step.aiPrompt,
+          solution_id: step.solutionId,
+          started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      let stepResult: any;
+      let stepError: string | null = null;
+
+      try {
+        switch (step.type) {
+          case 'ai_task':
+            stepResult = await executeAITask(step, currentContext);
+            break;
+          case 'solution_integration':
+            stepResult = await executeSolutionIntegration(step, currentContext);
+            break;
+          case 'data_processing':
+            stepResult = await executeDataProcessing(step, currentContext);
+            break;
+          case 'user_input':
+            // For now, treat as completed - in a real implementation, this would pause for user input
+            stepResult = { status: 'completed', message: 'User input required' };
+            break;
+          default:
+            throw new Error(`Unknown step type: ${step.type}`);
+        }
+
+        // Update context with step results
+        currentContext = { ...currentContext, [`step_${i}_output`]: stepResult };
+        results.push(stepResult);
+
+      } catch (error) {
+        stepError = error instanceof Error ? error.message : 'Unknown error';
+        stepResult = { error: stepError };
+        console.error(`Step ${i + 1} failed:`, error);
+      }
+
+      const executionTime = Date.now() - stepStartTime;
+      
+      // Update step log
+      if (stepLog) {
+        await supabase
+          .from('workflow_steps_log')
+          .update({
+            status: stepError ? 'failed' : 'completed',
+            output_data: stepResult,
+            error_message: stepError,
+            execution_time_ms: executionTime,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', stepLog.id);
+      }
+
+      // Update execution progress
+      await supabase
+        .from('workflow_executions')
+        .update({
+          progress: {
+            current_step: i + 1,
+            total_steps: steps.length,
+            completed_steps: [...Array(i + 1)].map((_, idx) => idx)
+          }
+        })
+        .eq('id', execution.id);
+
+      // If step failed and no error handling defined, stop execution
+      if (stepError) {
+        await supabase
+          .from('workflow_executions')
+          .update({
+            status: 'failed',
+            error_details: { failed_step: i, error: stepError },
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', execution.id);
+          
+        return new Response(JSON.stringify({
+          error: `Workflow failed at step ${i + 1}: ${stepError}`,
+          executionId: execution.id,
+          results: results.slice(0, i)
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Mark execution as completed
+    await supabase
+      .from('workflow_executions')
+      .update({
+        status: 'completed',
+        output_results: {
+          final_context: currentContext,
+          step_results: results
+        },
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', execution.id);
+
+    console.log(`Workflow execution ${execution.id} completed successfully`);
+
+    return new Response(JSON.stringify({
+      executionId: execution.id,
+      status: 'completed',
+      results: results,
+      finalContext: currentContext
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  } catch (error) {
+    console.error("Error in workflow execution:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
+
+async function executeAITask(step: WorkflowStep, context: any): Promise<any> {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  
+  if (!apiKey) {
+    throw new Error("AI service unavailable");
+  }
+
+  const prompt = step.aiPrompt || step.description;
+  const contextualPrompt = `
+Context: ${JSON.stringify(context, null, 2)}
+
+Task: ${prompt}
+
+Please provide a structured response that can be used by subsequent workflow steps.
+`;
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "system",
+          content: "You are an intelligent workflow assistant. Provide structured, actionable responses that can be used in automated workflows.",
+        },
+        {
+          role: "user",
+          content: contextualPrompt,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`AI task failed: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const aiResponse = data.choices?.[0]?.message?.content;
+
+  if (!aiResponse) {
+    throw new Error("No response from AI");
+  }
+
+  return {
+    type: 'ai_response',
+    content: aiResponse,
+    step_name: step.name
+  };
+}
+
+async function executeSolutionIntegration(step: WorkflowStep, context: any): Promise<any> {
+  // Placeholder for solution integration logic
+  // In a real implementation, this would call specific solution APIs
+  return {
+    type: 'solution_integration',
+    solution_id: step.solutionId,
+    status: 'completed',
+    message: `Integrated with solution: ${step.solutionId}`,
+    step_name: step.name
+  };
+}
+
+async function executeDataProcessing(step: WorkflowStep, context: any): Promise<any> {
+  // Placeholder for data processing logic
+  return {
+    type: 'data_processing',
+    processed_data: context,
+    status: 'completed',
+    message: 'Data processing completed',
+    step_name: step.name
+  };
+}

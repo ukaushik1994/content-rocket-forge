@@ -51,3 +51,6 @@ verify_jwt = true
 
 [functions.serp-monitor]
 verify_jwt = false
+
+[functions.intelligent-workflow-executor]
+verify_jwt = true
