@@ -364,9 +364,11 @@ export function WorkflowIntegrationPanel({ onWorkflowResult }: WorkflowIntegrati
                 </div>
                 <div>
                   <strong>Progress:</strong>
-                  <div className="mt-1">
-                    {executionDetails.progress.current_step}/{executionDetails.progress.total_steps} steps
-                  </div>
+                   <div className="mt-1">
+                     {typeof executionDetails.progress === 'object' && executionDetails.progress && !Array.isArray(executionDetails.progress) ? 
+                       `${(executionDetails.progress as any).current_step || 0}/${(executionDetails.progress as any).total_steps || 0} steps` : 
+                       'N/A'}
+                   </div>
                 </div>
               </div>
               
