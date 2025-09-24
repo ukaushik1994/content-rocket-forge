@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
-import { EnhancedMessageInput } from './EnhancedMessageInput';
+import { ContextAwareMessageInput } from './ContextAwareMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
 import { ChatHistorySidebar } from './ChatHistorySidebar';
+import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
+import { SolutionSuggestions } from './SolutionSuggestions';
 import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -259,7 +261,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         {/* Input Area */}
         <div className={`fixed bottom-0 right-0 z-50 border-t border-border/50 bg-background/80 backdrop-blur-xl transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'}`}>
           <div className="max-w-6xl mx-auto px-6 py-4">
-            <EnhancedMessageInput onSendMessage={handleSendMessage} isLoading={isLoading} placeholder={messages.length === 0 ? "Ask me about your content performance, start optimization workflows, or get strategic insights..." : "Continue the conversation..."} />
+            <ContextAwareMessageInput onSendMessage={handleSendMessage} isLoading={isLoading} placeholder={messages.length === 0 ? "Ask me about your solutions like GLConnect, SQL Connect, People Analytics..." : "Continue the conversation..."} />
           </div>
         </div>
         </div>

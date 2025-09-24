@@ -390,17 +390,30 @@ class EnhancedAIService {
   private async fetchUserContextWithRetry(userId: string, maxRetries: number = 3): Promise<any> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`📊 Fetching user context (attempt ${attempt}/${maxRetries})`);
+        console.log(`📊 Fetching comprehensive user context (attempt ${attempt}/${maxRetries})`);
         
-        const integrationService = new AISolutionIntegrationService();
-        const response = { data: {} }; // Simplified for now
-        
-        console.log('✅ Context fetch successful:', {
-          hasData: !!response.data,
-          keys: response.data ? Object.keys(response.data) : []
+        // Call the ai-context-manager function for comprehensive context
+        const { data: contextResponse, error } = await supabase.functions.invoke('ai-context-manager', {
+          body: { 
+            userId,
+            contextType: 'comprehensive' 
+          }
         });
         
-        return response.data;
+        if (error) {
+          console.error(`Context manager error (attempt ${attempt}):`, error);
+          throw error;
+        }
+        
+        console.log('✅ Comprehensive context fetch successful:', {
+          hasData: !!contextResponse,
+          keys: contextResponse ? Object.keys(contextResponse) : [],
+          solutionsCount: contextResponse?.solutions?.length || 0,
+          contentCount: contextResponse?.content?.length || 0,
+          strategiesCount: contextResponse?.strategies?.length || 0
+        });
+        
+        return contextResponse || {};
       } catch (error) {
         console.error(`Context fetch attempt ${attempt} error:`, error);
         if (attempt === maxRetries) {
@@ -627,10 +640,44 @@ class EnhancedAIService {
     };
   }
 
-  private buildEnhancedSystemPrompt(context: any, conversationHistory: EnhancedChatMessage[]): string {
-    const workflowIntelligence = (context as any)?.workflowIntelligence || {};
-    
-    let prompt = `You are an AI assistant specialized in SEO, content strategy, and workflow optimization. You provide intelligent, data-driven recommendations based on comprehensive analysis.
+  private buildEnhancedSystemPrompt(context: any, conversationHistory: any[]): string {
+    const basePrompt = `You are an intelligent content marketing AI assistant with deep expertise in SEO, content strategy, and business solutions.
+
+## Your Capabilities:
+- Advanced content analysis and optimization
+- SERP analysis and competitive intelligence  
+- Solution integration and positioning
+- Visual data creation (charts, metrics, workflows)
+- Strategic recommendations with actionable insights
+- Fuzzy search and solution intelligence
+
+## User's Business Context:
+${this.formatContextForPrompt(context)}
+
+## Solution Intelligence:
+${this.formatSolutionIntelligence(context?.solutions)}
+
+## Conversation Context:
+Recent conversation: ${conversationHistory.slice(-3).map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')}
+
+## Response Requirements:
+1. **Always be contextually aware** - Reference specific solutions, content, and strategies from the user's data
+2. **Use fuzzy matching** - If user mentions "GLConnect", "SQL Connect", etc., match to actual solution names like "GL Connect", "SQL Connect"
+3. **Provide actionable insights** - Include specific metrics, recommendations, and next steps
+4. **Create visual data** when relevant - Use charts for analytics, workflows for processes
+5. **Include contextual actions** - Suggest relevant buttons/actions based on the conversation
+6. **Be solution-focused** - Always consider how your recommendations tie to their business solutions
+7. **Cross-reference solutions** - When discussing one solution, mention related/complementary solutions
+
+## Response Format:
+Provide comprehensive, data-driven responses that reference specific information from the user's context. When appropriate, include visual data structures for charts, metrics, or workflow steps. Always recognize solution names even with variations (GLConnect = GL Connect).`;
+
+    return basePrompt;
+  }
+
+  /**
+   * Format context for AI prompt
+   */
 
 CURRENT USER CONTEXT:
 ${context.solutions ? `- Solutions: ${context.solutions.length} active solutions` : ''}
