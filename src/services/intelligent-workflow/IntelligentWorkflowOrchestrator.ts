@@ -5,6 +5,7 @@ import { SmartTaskDecomposer, TaskBreakdown } from './SmartTaskDecomposer';
 import { SolutionAwareWorkflowEngine } from './SolutionAwareWorkflowEngine';
 
 export interface IntelligentWorkflowStep extends WorkflowStep {
+  category?: string; // Add category for solution alignment
   aiCapabilities?: {
     requiresAI: boolean;
     aiProvider?: string;

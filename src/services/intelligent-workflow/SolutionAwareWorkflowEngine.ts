@@ -274,7 +274,20 @@ export class SolutionAwareWorkflowEngine {
       throw new Error(`Solution ${solutionId} not found`);
     }
 
-    const solution = solutionData as Solution;
+    // Map database result to Solution type with proper type handling
+    const solution: Solution = {
+      id: solutionData.id,
+      name: solutionData.name,
+      description: solutionData.description || '',
+      features: this.convertJsonToStringArray(solutionData.features),
+      useCases: this.convertJsonToStringArray(solutionData.use_cases),
+      painPoints: this.convertJsonToStringArray(solutionData.pain_points),
+      targetAudience: this.convertJsonToStringArray(solutionData.target_audience),
+      category: solutionData.category || 'General',
+      logoUrl: solutionData.logo_url || null,
+      externalUrl: solutionData.external_url || null,
+      resources: this.convertJsonToResourceArray(solutionData.resources)
+    };
 
     // Execute solution-specific logic
     switch (solution.category) {
@@ -656,5 +669,27 @@ export class SolutionAwareWorkflowEngine {
       performanceScore: Math.min(performanceScore, 100),
       recommendations
     };
+  }
+
+  /**
+   * Convert Json array to string array safely
+   */
+  private static convertJsonToStringArray(jsonData: any): string[] {
+    if (!jsonData) return [];
+    if (Array.isArray(jsonData)) {
+      return jsonData.map(item => typeof item === 'string' ? item : String(item));
+    }
+    return [];
+  }
+
+  /**
+   * Convert Json array to SolutionResource array safely
+   */
+  private static convertJsonToResourceArray(jsonData: any): any[] {
+    if (!jsonData) return [];
+    if (Array.isArray(jsonData)) {
+      return jsonData.filter(item => item && typeof item === 'object');
+    }
+    return [];
   }
 }
