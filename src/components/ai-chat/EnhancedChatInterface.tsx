@@ -7,6 +7,10 @@ import { PlatformSummaryCard } from './PlatformSummaryCard';
 import { ChatHistorySidebar } from './ChatHistorySidebar';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
 import { SolutionSuggestions } from './SolutionSuggestions';
+import { SolutionContextCard } from './SolutionContextCard';
+import { SolutionRecommendations } from './SolutionRecommendations';
+import { SolutionWorkflowTemplates } from './SolutionWorkflowTemplates';
+import { ContextDisplayIndicator } from './ContextDisplayIndicator';
 import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -45,9 +49,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     shareConversation,
     searchConversations,
     clearSearch
-  } = useEnhancedAIChatDB();
-
-  // Auto-scroll to bottom when new messages arrive
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [contextSources, setContextSources] = useState<any[]>([]);
+  const [showContextIndicator, setShowContextIndicator] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: 'smooth'
@@ -261,7 +267,23 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         {/* Input Area */}
         <div className={`fixed bottom-0 right-0 z-50 border-t border-border/50 bg-background/80 backdrop-blur-xl transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'}`}>
           <div className="max-w-6xl mx-auto px-6 py-4">
-            <ContextAwareMessageInput onSendMessage={handleSendMessage} isLoading={isLoading} placeholder={messages.length === 0 ? "Ask me about your solutions like GLConnect, SQL Connect, People Analytics..." : "Continue the conversation..."} />
+            {/* Context Indicator */}
+            {showContextIndicator && (
+              <div className="mb-3">
+                <ContextDisplayIndicator
+                  sources={contextSources}
+                  isActive={showContextIndicator}
+                  overallConfidence={88}
+                  variant="compact"
+                />
+              </div>
+            )}
+            
+            <ContextAwareMessageInput 
+              onSendMessage={handleSendMessage} 
+              isLoading={isLoading} 
+              placeholder={messages.length === 0 ? "Ask me about your solutions like GLConnect, SQL Connect, People Analytics..." : "Continue the conversation..."} 
+            />
           </div>
         </div>
         </div>
