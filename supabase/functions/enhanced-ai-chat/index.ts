@@ -86,6 +86,153 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// PHASE 2: Intelligent Search & Understanding Utilities
+interface SolutionMatch {
+  solution: any;
+  score: number;
+  matchType: 'exact' | 'fuzzy' | 'partial' | 'keyword';
+}
+
+/**
+ * PHASE 2: Fuzzy search for solution names - handles GLConnect -> GL Connect
+ */
+function findSolutionByName(query: string, solutions: any[]): SolutionMatch[] {
+  if (!solutions || solutions.length === 0) return [];
+  
+  const normalizedQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const matches: SolutionMatch[] = [];
+  
+  for (const solution of solutions) {
+    const solutionName = (solution.name || '').toLowerCase();
+    const normalizedName = solutionName.replace(/[^a-z0-9]/g, '');
+    
+    // Exact match
+    if (solutionName === query.toLowerCase()) {
+      matches.push({ solution, score: 100, matchType: 'exact' });
+      continue;
+    }
+    
+    // Fuzzy match (handles GLConnect -> GL Connect)
+    if (normalizedName === normalizedQuery) {
+      matches.push({ solution, score: 95, matchType: 'fuzzy' });
+      continue;
+    }
+    
+    // Partial match
+    if (solutionName.includes(query.toLowerCase()) || normalizedName.includes(normalizedQuery)) {
+      matches.push({ solution, score: 80, matchType: 'partial' });
+      continue;
+    }
+    
+    // Keyword match in description or features
+    const description = (solution.description || '').toLowerCase();
+    const features = Array.isArray(solution.features) ? solution.features.join(' ').toLowerCase() : '';
+    
+    if (description.includes(query.toLowerCase()) || features.includes(query.toLowerCase())) {
+      matches.push({ solution, score: 60, matchType: 'keyword' });
+    }
+  }
+  
+  return matches.sort((a, b) => b.score - a.score);
+}
+
+/**
+ * PHASE 2: Detect solution-specific queries
+ */
+function detectSolutionQuery(message: string, solutions: any[]): { matches: SolutionMatch[]; queryType: string } {
+  const lowerMessage = message.toLowerCase();
+  
+  // Direct solution name queries
+  const directQueries = [
+    /what is ([a-z0-9\s]+)\??/i,
+    /tell me about ([a-z0-9\s]+)/i,
+    /describe ([a-z0-9\s]+)/i,
+    /explain ([a-z0-9\s]+)/i,
+    /how does ([a-z0-9\s]+) work/i,
+    /([a-z0-9\s]+) features/i,
+    /([a-z0-9\s]+) capabilities/i
+  ];
+  
+  for (const pattern of directQueries) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      const matches = findSolutionByName(match[1].trim(), solutions);
+      if (matches.length > 0) {
+        return { matches, queryType: 'solution_inquiry' };
+      }
+    }
+  }
+  
+  // General solution queries
+  if (lowerMessage.includes('solution') || lowerMessage.includes('product') || lowerMessage.includes('tool')) {
+    const allMatches: SolutionMatch[] = [];
+    for (const solution of solutions) {
+      allMatches.push({ solution, score: 50, matchType: 'keyword' });
+    }
+    return { matches: allMatches, queryType: 'general_solutions' };
+  }
+  
+  return { matches: [], queryType: 'none' };
+}
+
+/**
+ * PHASE 2: Generate enhanced solution context
+ */
+function generateSolutionContext(solutions: any[], solutionMatches: SolutionMatch[]): string {
+  let context = '\n\nSOLUTION INTELLIGENCE:';
+  
+  if (solutionMatches.length > 0) {
+    context += '\n\nRELEVANT SOLUTIONS (High Priority):';
+    for (const match of solutionMatches.slice(0, 3)) {
+      const solution = match.solution;
+      context += `\n\n**${solution.name}** (Match: ${match.matchType}, Score: ${match.score}%)`;
+      context += `\n- Description: ${solution.description || 'No description available'}`;
+      
+      if (solution.features && Array.isArray(solution.features)) {
+        context += `\n- Key Features: ${solution.features.slice(0, 5).join(', ')}`;
+      }
+      
+      if (solution.painPoints && Array.isArray(solution.painPoints)) {
+        context += `\n- Addresses: ${solution.painPoints.slice(0, 3).join(', ')}`;
+      }
+      
+      if (solution.targetAudience && Array.isArray(solution.targetAudience)) {
+        context += `\n- Target Audience: ${solution.targetAudience.slice(0, 3).join(', ')}`;
+      }
+      
+      if (solution.category) {
+        context += `\n- Category: ${solution.category}`;
+      }
+      
+      if (solution.useCases && Array.isArray(solution.useCases)) {
+        context += `\n- Use Cases: ${solution.useCases.slice(0, 3).join(', ')}`;
+      }
+    }
+  }
+  
+  // Add comprehensive solution portfolio context
+  if (solutions.length > 0) {
+    context += '\n\nCOMPLETE SOLUTION PORTFOLIO:';
+    
+    // Group by category
+    const categories = solutions.reduce((acc: any, solution: any) => {
+      const category = solution.category || 'Uncategorized';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(solution);
+      return acc;
+    }, {});
+    
+    for (const [category, categorySolutions] of Object.entries(categories)) {
+      context += `\n\n${category} Solutions:`;
+      for (const solution of (categorySolutions as any[]).slice(0, 5)) {
+        context += `\n  • ${solution.name}: ${(solution.description || '').substring(0, 100)}${solution.description && solution.description.length > 100 ? '...' : ''}`;
+      }
+    }
+  }
+  
+  return context;
+}
+
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -127,15 +274,75 @@ serve(async (req) => {
       apiKeys 
     }: EnhancedRequest & { context?: any } = body;
     
-    // Handle nested context data from frontend
-    const contextData = context || {};
-    const finalSolutions = solutions || contextData.solutions || [];
-    const finalAnalytics = analytics || contextData.analytics || {};
-    const finalWorkflowContext = workflowContext || contextData.workflowContext || {};
-    
     console.log('🚀 Processing enhanced AI chat request');
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // PHASE 2: AI Context Integration - Get comprehensive context first
+    console.log('📊 Fetching comprehensive user context...');
+    let comprehensiveContext: any = {};
+    try {
+      const { data: contextData, error: contextError } = await supabase.functions.invoke('ai-context-manager', {
+        body: { userId, contextType: 'enhanced_chat' }
+      });
+      
+      if (contextError) {
+        console.error('❌ Context manager error:', contextError);
+      } else {
+        comprehensiveContext = contextData || {};
+        console.log('✅ Comprehensive context fetched:', {
+          solutions: comprehensiveContext.solutions?.length || 0,
+          contentItems: comprehensiveContext.contentItems?.length || 0,
+          strategies: comprehensiveContext.aiStrategies?.length || 0,
+          companyInfo: comprehensiveContext.companyInfo?.length || 0,
+          brandGuidelines: comprehensiveContext.brandGuidelines?.length || 0,
+          competitors: comprehensiveContext.competitors?.length || 0
+        });
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch comprehensive context:', error);
+    }
+
+    // PHASE 2: Merge comprehensive context with frontend context
+    const contextData = context || {};
+    const finalSolutions = comprehensiveContext.solutions || solutions || contextData.solutions || [];
+    const finalAnalytics = comprehensiveContext.analytics || analytics || contextData.analytics || {};
+    const finalWorkflowContext = workflowContext || contextData.workflowContext || {};
+    
+    // PHASE 2: Add comprehensive context data
+    const comprehensiveData = {
+      contentItems: comprehensiveContext.contentItems || [],
+      calendarItems: comprehensiveContext.calendarItems || [],
+      pipelineItems: comprehensiveContext.pipelineItems || [],
+      contentApprovals: comprehensiveContext.contentApprovals || [],
+      aiStrategies: comprehensiveContext.aiStrategies || [],
+      strategyProposals: comprehensiveContext.strategyProposals || [],
+      companyInfo: comprehensiveContext.companyInfo || [],
+      brandGuidelines: comprehensiveContext.brandGuidelines || [],
+      competitors: comprehensiveContext.competitors || [],
+      contentAnalyses: comprehensiveContext.contentAnalyses || [],
+      workflowStates: comprehensiveContext.workflowStates || [],
+      contextSnapshots: comprehensiveContext.contextSnapshots || [],
+      conversations: comprehensiveContext.conversations || []
+    };
+
+    // PHASE 2: Intelligent Solution Detection & Search
+    const latestUserMessage = messages.filter(m => m.role === 'user').pop();
+    let solutionMatches: SolutionMatch[] = [];
+    let queryType = 'none';
+    
+    if (latestUserMessage?.content) {
+      const detection = detectSolutionQuery(latestUserMessage.content, finalSolutions);
+      solutionMatches = detection.matches;
+      queryType = detection.queryType;
+      
+      console.log('🔍 Solution Query Detection:', {
+        query: latestUserMessage.content,
+        queryType,
+        matches: solutionMatches.length,
+        topMatch: solutionMatches[0]?.solution?.name
+      });
+    }
 
     // Use API keys passed from frontend (already decrypted)
     console.log('🔑 Processing API keys from request:', Object.keys(apiKeys || {}));
@@ -203,8 +410,14 @@ serve(async (req) => {
     }
 
     // Build enhanced context for AI
-    let contextPrompt = `You are an intelligent content marketing assistant for a comprehensive content platform. 
-    
+    let contextPrompt = `You are an intelligent content marketing assistant for a comprehensive content platform with deep knowledge of the user's complete business ecosystem.
+
+CRITICAL PHASE 2 CAPABILITIES:
+- You have access to ALL user data: solutions, content, strategies, company info, brand guidelines, competitors
+- You can intelligently search and understand solution relationships (e.g., GLConnect = GL Connect)
+- You provide context-aware responses with specific solution insights
+- You generate actionable workflows based on comprehensive user context
+
 IMPORTANT GUIDELINES:
 - Never suggest navigation to other pages - handle everything in the chat
 - Always provide actionable buttons and workflows
@@ -212,40 +425,108 @@ IMPORTANT GUIDELINES:
 - Create visual elements and interactive experiences
 - Focus on helping users optimize their content strategy
 
-AVAILABLE USER CONTEXT:`;
+COMPREHENSIVE USER CONTEXT:`;
 
+    // PHASE 2: Enhanced Solution Context with Intelligent Search
     if (finalSolutions && finalSolutions.length > 0) {
-      contextPrompt += `\n\nUSER'S SOLUTIONS:`;
-      finalSolutions.forEach((solution: any) => {
-        contextPrompt += `\n- ${solution.name}: ${solution.features?.join(', ') || 'No features listed'}`;
-        if (solution.painPoints?.length > 0) {
-          contextPrompt += `\n  Pain Points: ${solution.painPoints.join(', ')}`;
+      contextPrompt += generateSolutionContext(finalSolutions, solutionMatches);
+      
+      if (solutionMatches.length > 0) {
+        contextPrompt += `\n\nSOLUTION QUERY CONTEXT:`;
+        contextPrompt += `\n- Query Type: ${queryType}`;
+        contextPrompt += `\n- Top Match: ${solutionMatches[0].solution.name} (${solutionMatches[0].score}% confidence)`;
+        contextPrompt += `\n- When user asks about solutions, provide comprehensive details including features, use cases, integrations, and strategic value`;
+      }
+    }
+
+    // PHASE 2: Comprehensive Data Context
+    if (comprehensiveData.companyInfo && comprehensiveData.companyInfo.length > 0) {
+      contextPrompt += `\n\nCOMPANY PROFILE:`;
+      for (const company of comprehensiveData.companyInfo.slice(0, 2)) {
+        contextPrompt += `\n- ${company.name || 'Company'}: ${company.description || 'No description'}`;
+        if (company.industry) contextPrompt += `\n  Industry: ${company.industry}`;
+        if (company.mission) contextPrompt += `\n  Mission: ${company.mission}`;
+        if (company.values && Array.isArray(company.values)) {
+          contextPrompt += `\n  Values: ${company.values.slice(0, 3).join(', ')}`;
         }
-        if (solution.targetAudience?.length > 0) {
-          contextPrompt += `\n  Target Audience: ${solution.targetAudience.join(', ')}`;
+      }
+    }
+
+    if (comprehensiveData.brandGuidelines && comprehensiveData.brandGuidelines.length > 0) {
+      contextPrompt += `\n\nBRAND GUIDELINES:`;
+      for (const brand of comprehensiveData.brandGuidelines.slice(0, 1)) {
+        if (brand.tone && Array.isArray(brand.tone)) {
+          contextPrompt += `\n- Brand Tone: ${brand.tone.slice(0, 3).join(', ')}`;
         }
-      });
+        if (brand.targetAudience) contextPrompt += `\n- Target Audience: ${brand.targetAudience}`;
+        if (brand.brandPersonality) contextPrompt += `\n- Brand Personality: ${brand.brandPersonality}`;
+        if (brand.keywords && Array.isArray(brand.keywords)) {
+          contextPrompt += `\n- Brand Keywords: ${brand.keywords.slice(0, 5).join(', ')}`;
+        }
+      }
+    }
+
+    if (comprehensiveData.competitors && comprehensiveData.competitors.length > 0) {
+      contextPrompt += `\n\nCOMPETITIVE LANDSCAPE:`;
+      for (const competitor of comprehensiveData.competitors.slice(0, 3)) {
+        contextPrompt += `\n- ${competitor.name}: ${competitor.description || 'No description'}`;
+        if (competitor.marketPosition) contextPrompt += ` (${competitor.marketPosition})`;
+        if (competitor.strengths && Array.isArray(competitor.strengths)) {
+          contextPrompt += `\n  Strengths: ${competitor.strengths.slice(0, 2).join(', ')}`;
+        }
+      }
+    }
+
+    if (comprehensiveData.aiStrategies && comprehensiveData.aiStrategies.length > 0) {
+      contextPrompt += `\n\nACTIVE CONTENT STRATEGIES:`;
+      for (const strategy of comprehensiveData.aiStrategies.slice(0, 3)) {
+        contextPrompt += `\n- ${strategy.title || 'Strategy'}: ${strategy.description || 'No description'}`;
+        if (strategy.keywords && Array.isArray(strategy.keywords)) {
+          contextPrompt += `\n  Keywords: ${strategy.keywords.slice(0, 5).join(', ')}`;
+        }
+      }
+    }
+
+    if (comprehensiveData.strategyProposals && comprehensiveData.strategyProposals.length > 0) {
+      const availableProposals = comprehensiveData.strategyProposals.filter((p: any) => p.status === 'available');
+      if (availableProposals.length > 0) {
+        contextPrompt += `\n\nCONTENT OPPORTUNITIES:`;
+        for (const proposal of availableProposals.slice(0, 5)) {
+          contextPrompt += `\n- ${proposal.title}: ${proposal.primaryKeyword || 'No keyword'} (Priority: ${proposal.priorityTag || 'medium'})`;
+          if (proposal.estimatedImpressions) {
+            contextPrompt += ` [Est. ${proposal.estimatedImpressions} impressions]`;
+          }
+        }
+      }
     }
 
     if (finalAnalytics && typeof finalAnalytics === 'object' && Object.keys(finalAnalytics).length > 0) {
-      contextPrompt += `\n\nCURRENT ANALYTICS:`;
-      contextPrompt += `\n- Content pieces: ${finalAnalytics?.totalContent || 0}`;
-      contextPrompt += `\n- Published: ${finalAnalytics?.published || 0}`;
-      contextPrompt += `\n- In review: ${finalAnalytics?.inReview || 0}`;
-      contextPrompt += `\n- Average SEO Score: ${finalAnalytics?.avgSeoScore || 0}%`;
-      contextPrompt += `\n- Weekly performance data available: ${finalAnalytics?.weeklyData ? 'Yes' : 'No'}`;
+      contextPrompt += `\n\nPERFORMANCE ANALYTICS:`;
+      contextPrompt += `\n- Content Portfolio: ${finalAnalytics?.totalContent || 0} pieces (${finalAnalytics?.published || 0} published, ${finalAnalytics?.inReview || 0} in review)`;
+      contextPrompt += `\n- SEO Performance: ${finalAnalytics?.avgSeoScore || 0}% average score`;
+      contextPrompt += `\n- Strategy Performance: ${finalAnalytics?.totalStrategies || 0} strategies, ${finalAnalytics?.totalProposals || 0} proposals, ${finalAnalytics?.totalApprovals || 0} approvals`;
       
-      // Safe JSON stringification with fallbacks
-      try {
-        contextPrompt += `\n- Content by type: ${JSON.stringify(finalAnalytics?.contentByType || {})}`;
-      } catch (e) {
-        contextPrompt += `\n- Content by type: Not available`;
+      if (finalAnalytics?.weeklyData && Array.isArray(finalAnalytics.weeklyData)) {
+        const recentWeek = finalAnalytics.weeklyData[finalAnalytics.weeklyData.length - 1];
+        if (recentWeek) {
+          contextPrompt += `\n- Recent Week: ${recentWeek.content || 0} content, ${recentWeek.published || 0} published, ${recentWeek.seoScore || 0}% SEO`;
+        }
       }
       
       try {
-        contextPrompt += `\n- Pipeline by stage: ${JSON.stringify(finalAnalytics?.pipelineByStage || {})}`;
+        if (finalAnalytics?.contentByType && Object.keys(finalAnalytics.contentByType).length > 0) {
+          contextPrompt += `\n- Content Distribution: ${JSON.stringify(finalAnalytics.contentByType)}`;
+        }
       } catch (e) {
-        contextPrompt += `\n- Pipeline by stage: Not available`;
+        // Ignore JSON errors
+      }
+    }
+
+    if (comprehensiveData.contentItems && comprehensiveData.contentItems.length > 0) {
+      contextPrompt += `\n\nCONTENT LIBRARY: ${comprehensiveData.contentItems.length} items available`;
+      const recentContent = comprehensiveData.contentItems.slice(0, 3);
+      for (const item of recentContent) {
+        contextPrompt += `\n- ${item.title || 'Untitled'} (${item.contentType || 'unknown'}) - ${item.status || 'draft'}`;
       }
     }
 
@@ -253,7 +534,7 @@ AVAILABLE USER CONTEXT:`;
       try {
         contextPrompt += `\n\nWORKFLOW CONTEXT: ${JSON.stringify(finalWorkflowContext)}`;
       } catch (e) {
-        contextPrompt += `\n\nWORKFLOW CONTEXT: Context available but not serializable`;
+        contextPrompt += `\n\nWORKFLOW CONTEXT: Active workflow state available`;
       }
     }
 
