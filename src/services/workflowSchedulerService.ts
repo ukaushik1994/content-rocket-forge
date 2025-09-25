@@ -1,4 +1,9 @@
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
+
+// Use direct Supabase client to avoid TypeScript issues with new table
+const supabaseUrl = 'https://iqiundzzcepmuykcnfbc.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA';
+const directSupabase = createClient(supabaseUrl, supabaseKey);
 
 export interface ScheduledWorkflow {
   id: string;
@@ -37,7 +42,7 @@ export class WorkflowSchedulerService {
   ): Promise<ScheduledWorkflow> {
     const nextRun = this.calculateNextRun(options.scheduleExpression);
     
-    const { data, error } = await (supabase as any)
+    const { data, error } = await directSupabase
       .from('workflow_schedules')
       .insert({
         user_id: userId,
@@ -73,7 +78,7 @@ export class WorkflowSchedulerService {
    * Get scheduled workflows for a user
    */
   static async getUserScheduledWorkflows(userId: string): Promise<ScheduledWorkflow[]> {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await directSupabase
       .from('workflow_schedules')
       .select('*')
       .eq('user_id', userId)
@@ -113,7 +118,7 @@ export class WorkflowSchedulerService {
       updates.timezone = options.timezone;
     }
 
-    const { error } = await (supabase as any)
+    const { error } = await directSupabase
       .from('workflow_schedules')
       .update(updates)
       .eq('id', scheduleId);
@@ -125,7 +130,7 @@ export class WorkflowSchedulerService {
    * Cancel a scheduled workflow
    */
   static async cancelSchedule(scheduleId: string): Promise<void> {
-    const { error } = await (supabase as any)
+    const { error } = await directSupabase
       .from('workflow_schedules')
       .update({ is_active: false })
       .eq('id', scheduleId);
@@ -224,7 +229,7 @@ export class WorkflowSchedulerService {
   static async getWorkflowsDueForExecution(): Promise<ScheduledWorkflow[]> {
     const now = new Date().toISOString();
     
-    const { data, error } = await (supabase as any)
+    const { data, error } = await directSupabase
       .from('workflow_schedules')
       .select('*')
       .eq('is_active', true)
@@ -250,7 +255,7 @@ export class WorkflowSchedulerService {
    */
   static async markWorkflowExecuted(scheduleId: string): Promise<void> {
     // Get current schedule
-    const { data: schedule, error: fetchError } = await (supabase as any)
+    const { data: schedule, error: fetchError } = await directSupabase
       .from('workflow_schedules')
       .select('*')
       .eq('id', scheduleId)
@@ -262,7 +267,7 @@ export class WorkflowSchedulerService {
     const nextRun = this.calculateNextRun(schedule.schedule_expression);
 
     // Update schedule
-    const { error } = await (supabase as any)
+    const { error } = await directSupabase
       .from('workflow_schedules')
       .update({
         last_run: new Date().toISOString(),

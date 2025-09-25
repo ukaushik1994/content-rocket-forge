@@ -233,9 +233,9 @@ export const PerformanceDashboard: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-sm">{Math.round(time)}ms</span>
                         <Badge 
-                          variant={time > 2000 ? 'destructive' : 'secondary'}
+                          variant={time > 1000 ? 'destructive' : 'secondary'}
                         >
-                          {time > 2000 ? 'Slow' : 'Fast'}
+                          {time > 1000 ? 'Slow' : 'Fast'}
                         </Badge>
                       </div>
                     </div>
