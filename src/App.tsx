@@ -44,6 +44,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { PWAManager } from "@/components/pwa/PWAManager";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <SettingsPopup />
+              <PWAManager />
               <BrowserRouter>
                 <Routes>
                   <Route path="/landing" element={<Landing />} />
