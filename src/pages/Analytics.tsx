@@ -33,13 +33,11 @@ import {
   Globe,
   Filter,
   Search,
-  Loader2,
-  TestTube
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { WorkflowAnalyticsTab } from '@/components/analytics/WorkflowAnalyticsTab';
-
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -408,7 +406,7 @@ const Analytics = () => {
               {/* Tabs Section */}
               <motion.div variants={itemVariants}>
                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                   <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-5 gap-2">
+                   <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-4 gap-2">
                     <TabsTrigger 
                       value="overview" 
                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
@@ -431,15 +429,8 @@ const Analytics = () => {
                        Performance
                      </TabsTrigger>
                      <TabsTrigger 
-                       value="abtesting" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
-                     >
-                       <TestTube className="h-4 w-4" />
-                       A/B Testing
-                     </TabsTrigger>
-                     <TabsTrigger 
                        value="workflows" 
-                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                      >
                        <Zap className="h-4 w-4" />
                        Workflows
@@ -684,9 +675,6 @@ const Analytics = () => {
                           </CardContent>
                         </Card>
                       </motion.div>
-                    </TabsContent>
-
-                    <TabsContent value="abtesting" className="space-y-6">
                     </TabsContent>
 
                     <TabsContent value="workflows" className="space-y-6">
