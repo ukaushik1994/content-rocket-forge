@@ -47,6 +47,7 @@ export class WorkflowErrorRecovery {
   };
 
   private static circuitBreakers = new Map<string, CircuitBreakerState>();
+  private static cache = new Map<string, any>();
 
   /**
    * Execute workflow with advanced error recovery
@@ -112,13 +113,13 @@ export class WorkflowErrorRecovery {
           await this.logRecoveryAttempts(executionId, attempts);
           
           // Attempt graceful degradation
-          const degradedResult = await this.attemptGracefulDegradation(
+          const degradedResult = await this.attemptGracefulDegradation<T>(
             executionId, 
             lastError, 
             context
           );
           
-          if (degradedResult) {
+          if (degradedResult !== null) {
             console.log('🔄 Graceful degradation successful');
             return degradedResult;
           }
@@ -148,22 +149,22 @@ export class WorkflowErrorRecovery {
   ): Promise<T | null> {
     try {
       // Strategy 1: Use cached results if available
-      const cachedResult = await this.getCachedResult(executionId, context);
-      if (cachedResult) {
+      const cachedResult = await this.getCachedResult<T>(executionId, context);
+      if (cachedResult !== null) {
         console.log('🎯 Using cached result for graceful degradation');
         return cachedResult;
       }
 
       // Strategy 2: Use simplified workflow version
-      const simplifiedResult = await this.executeSimplifiedWorkflow(executionId, context);
-      if (simplifiedResult) {
+      const simplifiedResult = await this.executeSimplifiedWorkflow<T>(executionId, context);
+      if (simplifiedResult !== null) {
         console.log('🎯 Using simplified workflow for graceful degradation');
         return simplifiedResult;
       }
 
       // Strategy 3: Return partial results if available
-      const partialResult = await this.getPartialResults(executionId, context);
-      if (partialResult) {
+      const partialResult = await this.getPartialResults<T>(executionId, context);
+      if (partialResult !== null) {
         console.log('🎯 Using partial results for graceful degradation');
         return partialResult;
       }
@@ -359,8 +360,8 @@ export class WorkflowErrorRecovery {
         .eq('status', 'completed')
         .limit(1);
 
-      if (data && data.length > 0) {
-        return data[0].output_results;
+      if (data && data.length > 0 && data[0].output_results) {
+        return data[0].output_results as T;
       }
     } catch (error) {
       console.error('Failed to get cached result:', error);
@@ -370,7 +371,6 @@ export class WorkflowErrorRecovery {
 
   private static async executeSimplifiedWorkflow<T>(executionId: string, context?: any): Promise<T | null> {
     // Implement simplified version of workflows
-    // This would contain fallback logic for each workflow type
     try {
       // Example: Simple keyword analysis fallback
       if (context?.workflowType === 'keyword_analysis') {
@@ -378,7 +378,7 @@ export class WorkflowErrorRecovery {
           keywords: context?.input?.keyword ? [context.input.keyword] : [],
           analysis: 'Simplified analysis due to service limitations',
           suggestions: []
-        } as any;
+        } as T;
       }
 
       // Example: Simple content creation fallback
@@ -386,7 +386,7 @@ export class WorkflowErrorRecovery {
         return {
           content: `Content outline for: ${context?.input?.topic || 'your topic'}`,
           suggestions: ['Add more details', 'Include examples', 'Optimize for SEO']
-        } as any;
+        } as T;
       }
 
       return null;
@@ -406,7 +406,7 @@ export class WorkflowErrorRecovery {
         .single();
 
       if (data?.output_results) {
-        return data.output_results;
+        return data.output_results as T;
       }
     } catch (error) {
       console.error('Failed to get partial results:', error);
@@ -419,14 +419,21 @@ export class WorkflowErrorRecovery {
     attempts: RecoveryAttempt[]
   ): Promise<void> {
     try {
+      // Log to action_analytics table with proper JSON serialization
       await supabase
-        .from('workflow_recovery_logs')
+        .from('action_analytics')
         .insert({
-          execution_id: executionId,
-          attempts: attempts,
-          total_attempts: attempts.length,
+          user_id: executionId,
+          action_type: 'workflow_recovery',
+          action_id: `recovery_${Date.now()}`,
+          action_label: 'Recovery Attempt',
           success: attempts[attempts.length - 1]?.success || false,
-          final_strategy: attempts[attempts.length - 1]?.recovery_strategy
+          interaction_data: {
+            attempts_count: attempts.length,
+            final_strategy: attempts[attempts.length - 1]?.recovery_strategy || 'unknown',
+            total_execution_time: attempts.reduce((sum, a) => sum + a.execution_time, 0)
+          },
+          created_at: new Date().toISOString()
         });
     } catch (error) {
       console.error('Failed to log recovery attempts:', error);
@@ -438,22 +445,30 @@ export class WorkflowErrorRecovery {
    */
   static async getRecoveryStats(userId: string): Promise<any> {
     try {
+      // Use action_analytics to get recovery-related stats
       const { data } = await supabase
-        .from('workflow_recovery_logs')
-        .select(`
-          *,
-          workflow_executions!inner (
-            user_id
-          )
-        `)
-        .eq('workflow_executions.user_id', userId)
+        .from('action_analytics')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('action_type', 'workflow_recovery')
         .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
-      if (!data) return null;
+      if (!data || data.length === 0) {
+        return {
+          totalRecoveries: 0,
+          successfulRecoveries: 0,
+          recoveryRate: 0,
+          avgAttempts: 0
+        };
+      }
 
       const totalRecoveries = data.length;
       const successfulRecoveries = data.filter(log => log.success).length;
-      const avgAttempts = data.reduce((sum, log) => sum + log.total_attempts, 0) / totalRecoveries;
+      const avgAttempts = data.reduce((sum, log) => {
+        const interactionData = log.interaction_data as any;
+        const attempts = interactionData?.attempts_count || 1;
+        return sum + attempts;
+      }, 0) / totalRecoveries;
 
       return {
         totalRecoveries,
@@ -463,7 +478,12 @@ export class WorkflowErrorRecovery {
       };
     } catch (error) {
       console.error('Failed to get recovery stats:', error);
-      return null;
+      return {
+        totalRecoveries: 0,
+        successfulRecoveries: 0,
+        recoveryRate: 0,
+        avgAttempts: 0
+      };
     }
   }
 }

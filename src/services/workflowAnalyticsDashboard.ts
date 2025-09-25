@@ -229,20 +229,21 @@ export class WorkflowAnalyticsDashboard {
       .select('*')
       .eq('user_id', userId);
     
-    return data || [];
+    return (data || []) as IntelligentWorkflow[];
   }
 
   private static async getPerformanceData(userId: string, startDate: string): Promise<any> {
+    // Use existing action_analytics table instead of non-existent workflow_performance_logs
     const { data } = await supabase
-      .from('workflow_performance_logs')
+      .from('action_analytics')
       .select('*')
       .eq('user_id', userId)
-      .gte('tracked_at', startDate);
+      .gte('created_at', startDate);
     
     return data || [];
   }
 
-  private static calculatePerformanceMetrics(executions: WorkflowExecution[], recoveryStats: any): PerformanceMetrics {
+  private static calculatePerformanceMetrics(executions: any[], recoveryStats: any): PerformanceMetrics {
     const total = executions.length;
     if (total === 0) {
       return {
@@ -274,7 +275,7 @@ export class WorkflowAnalyticsDashboard {
     };
   }
 
-  private static calculateUsageMetrics(executions: WorkflowExecution[], workflows: IntelligentWorkflow[]): UsageMetrics {
+  private static calculateUsageMetrics(executions: any[], workflows: IntelligentWorkflow[]): UsageMetrics {
     const now = new Date();
     const thisMonth = executions.filter(e => {
       const created = new Date(e.created_at);

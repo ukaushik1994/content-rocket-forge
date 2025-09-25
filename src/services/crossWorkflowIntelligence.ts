@@ -69,20 +69,27 @@ export class CrossWorkflowIntelligence {
         return this.getDefaultPatterns();
       }
 
+      // Convert database types to TypeScript types
+      const typedExecutions = executions.map(e => ({
+        ...e,
+        status: e.status as WorkflowExecution['status']
+      }));
+
       // Group workflows by time windows to identify sequences
       const patterns: WorkflowPattern[] = [];
       const timeWindow = 24 * 60 * 60 * 1000; // 24 hours
 
-      for (let i = 0; i < executions.length - 1; i++) {
-        const current = executions[i];
-        const next = executions[i + 1];
+      for (let i = 0; i < typedExecutions.length - 1; i++) {
+        const current = typedExecutions[i];
+        const next = typedExecutions[i + 1];
         
         if (!current.completed_at || !next.completed_at) continue;
         
         const timeDiff = new Date(current.completed_at).getTime() - new Date(next.completed_at).getTime();
         
         if (Math.abs(timeDiff) <= timeWindow) {
-          const pattern = this.createPattern([current, next]);
+        // Convert database types to TypeScript types with proper casting
+        const pattern = this.createPattern([current as unknown as WorkflowExecution, next as unknown as WorkflowExecution]);
           if (pattern) patterns.push(pattern);
         }
       }
@@ -214,7 +221,13 @@ export class CrossWorkflowIntelligence {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    return data || [];
+    if (!data) return [];
+
+    // Convert database types to TypeScript types
+    return data.map(e => ({
+      ...e,
+      status: e.status as WorkflowExecution['status']
+    })) as WorkflowExecution[];
   }
 
   private static async getWorkflowRelationships(workflowId: string): Promise<WorkflowRelationship[]> {
@@ -296,9 +309,9 @@ export class CrossWorkflowIntelligence {
   ): WorkflowSuggestion[] {
     const suggestions: WorkflowSuggestion[] = [];
 
-    // Based on workflow type and results
-    switch (workflow.workflow_type) {
-      case 'keyword_optimization':
+    // Based on workflow category instead of workflow_type enum
+    switch (workflow.category) {
+      case 'seo':
         if (results?.keywords?.length > 0) {
           suggestions.push({
             id: 'content_creation_follow_up',
@@ -312,7 +325,7 @@ export class CrossWorkflowIntelligence {
         }
         break;
 
-      case 'content_creation':
+      case 'content':
         suggestions.push({
           id: 'seo_optimization_follow_up',
           workflow_type: 'seo_optimization',
@@ -324,7 +337,7 @@ export class CrossWorkflowIntelligence {
         });
         break;
 
-      case 'competitor_analysis':
+      case 'analysis':
         suggestions.push({
           id: 'strategy_development_follow_up',
           workflow_type: 'strategy_development',
