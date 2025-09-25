@@ -141,7 +141,7 @@ Return JSON:
 
       const response = await AIServiceController.generate({
         input: prompt,
-        use_case: 'analysis',
+        use_case: 'strategy',
         temperature: 0.3,
         max_tokens: 1000
       });
@@ -203,7 +203,7 @@ Return JSON array:
 
       const response = await AIServiceController.generate({
         input: prompt,
-        use_case: 'analysis',
+        use_case: 'strategy',
         temperature: 0.2,
         max_tokens: 800
       });
@@ -260,7 +260,7 @@ Return JSON array:
 
       const response = await AIServiceController.generate({
         input: prompt,
-        use_case: 'analysis',
+        use_case: 'strategy',
         temperature: 0.4,
         max_tokens: 1200
       });
@@ -316,8 +316,10 @@ Return JSON array:
           const deviation = ((current - expected) / expected) * 100;
           
           if (Math.abs(deviation) > thresholdPercent) {
-            const severity = Math.abs(deviation) > 75 ? 'critical' : 
-                           Math.abs(deviation) > 50 ? 'high' : 'medium';
+            const severity: 'low' | 'medium' | 'high' | 'critical' = 
+                           Math.abs(deviation) > 75 ? 'critical' : 
+                           Math.abs(deviation) > 50 ? 'high' : 
+                           Math.abs(deviation) > 25 ? 'medium' : 'low';
             
             anomalies.push({
               id: `anomaly-${key}-${Date.now()}`,
@@ -384,7 +386,7 @@ Return JSON:
 
       const response = await AIServiceController.generate({
         input: prompt,
-        use_case: 'analysis',
+        use_case: 'strategy',
         temperature: 0.3,
         max_tokens: 1500
       });

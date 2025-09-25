@@ -152,7 +152,7 @@ Return JSON only:
     try {
       const response = await AIServiceController.generate({
         input: prompt,
-        use_case: 'analysis',
+        use_case: 'strategy',
         temperature: 0.2,
         max_tokens: 800
       });
@@ -190,7 +190,7 @@ Return JSON only:
     try {
       const response = await AIServiceController.generate({
         input: prompt,
-        use_case: 'analysis',
+        use_case: 'strategy',
         temperature: 0.3,
         max_tokens: 600
       });
@@ -238,7 +238,7 @@ Return JSON array:
     try {
       const response = await AIServiceController.generate({
         input: prompt,
-        use_case: 'optimization',
+        use_case: 'suggestion_generation',
         temperature: 0.4,
         max_tokens: 1000
       });
