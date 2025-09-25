@@ -10,7 +10,7 @@ export interface CacheConfig {
 
 export interface CacheEntry<T = any> {
   key: string;
-  data: T;
+  data: T | string; // Allow string for compressed data
   timestamp: number;
   ttl: number;
   accessCount: number;
@@ -56,7 +56,7 @@ class UnifiedCacheService {
     if (memoryEntry && this.isValidEntry(memoryEntry)) {
       this.updateAccessStats(memoryEntry);
       this.stats.hits++;
-      return this.decompressData(memoryEntry.data, memoryEntry.compressed);
+      return this.decompressData<T>(memoryEntry.data, memoryEntry.compressed);
     }
 
     // Try localStorage
@@ -69,7 +69,7 @@ class UnifiedCacheService {
           this.stats.hits++;
           // Promote to memory cache
           this.memoryCache.set(namespacedKey, entry);
-          return this.decompressData(entry.data, entry.compressed);
+          return this.decompressData<T>(entry.data, entry.compressed);
         }
       }
     } catch (error) {
@@ -78,14 +78,14 @@ class UnifiedCacheService {
 
     // Try IndexedDB
     try {
-      const dbEntry = await indexedDB.getOfflineData(namespacedKey);
+      const dbEntry = await indexedDB.getItem<CacheEntry>(namespacedKey);
       if (dbEntry && this.isValidEntry(dbEntry)) {
         this.updateAccessStats(dbEntry);
         this.stats.hits++;
         // Promote to memory and localStorage
         this.memoryCache.set(namespacedKey, dbEntry);
         this.saveToLocalStorage(namespacedKey, dbEntry);
-        return this.decompressData(dbEntry.data, dbEntry.compressed);
+        return this.decompressData<T>(dbEntry.data, dbEntry.compressed);
       }
     } catch (error) {
       console.warn('Error reading from IndexedDB cache:', error);
@@ -125,7 +125,7 @@ class UnifiedCacheService {
 
     // Store in IndexedDB (larger items)
     try {
-      await indexedDB.saveData(namespacedKey, entry);
+      await indexedDB.setItem(namespacedKey, entry, ttl);
     } catch (error) {
       console.warn('Error saving to IndexedDB cache:', error);
     }
@@ -155,7 +155,7 @@ class UnifiedCacheService {
 
     // Remove from IndexedDB
     try {
-      await indexedDB.deleteData('cache', namespacedKey);
+      await indexedDB.removeItem(namespacedKey);
       deleted = true;
     } catch (error) {
       console.warn('Error removing from IndexedDB cache:', error);
@@ -201,7 +201,7 @@ class UnifiedCacheService {
 
     // Clear IndexedDB
     try {
-      await indexedDB.clearStore('cache');
+      await indexedDB.clearAll();
     } catch (error) {
       console.warn('Error clearing IndexedDB cache:', error);
     }
@@ -282,6 +282,7 @@ class UnifiedCacheService {
       try {
         return JSON.parse(data) as T;
       } catch {
+        // If parsing fails, return original data
         return data as T;
       }
     }
