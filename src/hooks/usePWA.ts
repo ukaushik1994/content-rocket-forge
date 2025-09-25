@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react';
 import { indexedDB } from '@/utils/indexedDB';
 import { backgroundSyncService } from '@/services/backgroundSyncService';
+import { pwaUpdateService } from '@/services/pwaUpdateService';
 
 export interface PWAStatus {
   isInstalled: boolean;
   isOnline: boolean;
+  updateAvailable: boolean;
   syncPending: number;
   storageUsed: number;
+  cacheSize: number;
 }
 
 export interface PWAControls {
+  checkForUpdates: () => Promise<void>;
+  applyUpdate: () => Promise<void>;
   syncNow: () => Promise<void>;
+  clearCache: () => Promise<void>;
   clearOfflineData: () => Promise<void>;
+  requestPersistentStorage: () => Promise<boolean>;
 }
 
 /**
@@ -21,8 +28,10 @@ export const usePWA = () => {
   const [status, setStatus] = useState<PWAStatus>({
     isInstalled: false,
     isOnline: navigator.onLine,
+    updateAvailable: false,
     syncPending: 0,
-    storageUsed: 0
+    storageUsed: 0,
+    cacheSize: 0
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -50,15 +59,21 @@ export const usePWA = () => {
         // Get sync status
         const syncStatus = await backgroundSyncService.getSyncStatus();
 
+        // Get update info
+        const updateInfo = pwaUpdateService.getUpdateInfo();
+
         // Get storage info
+        const storageEstimate = await pwaUpdateService.getStorageEstimate();
         const offlineStorage = await indexedDB.getStorageInfo();
 
         if (mounted) {
           setStatus({
             isInstalled,
             isOnline: navigator.onLine,
+            updateAvailable: updateInfo.isUpdateAvailable,
             syncPending: syncStatus.pendingCount,
-            storageUsed: offlineStorage?.offlineDataCount || 0
+            storageUsed: storageEstimate?.usage || 0,
+            cacheSize: storageEstimate?.quota || 0
           });
         }
       } catch (error) {
@@ -86,6 +101,15 @@ export const usePWA = () => {
       }
     };
 
+    // Setup PWA update listener
+    const unsubscribeUpdate = pwaUpdateService.onUpdate((type, info) => {
+      if (mounted && type === 'update-available') {
+        setStatus(prev => ({ 
+          ...prev, 
+          updateAvailable: info?.isUpdateAvailable || false 
+        }));
+      }
+    });
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -101,11 +125,20 @@ export const usePWA = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      unsubscribeUpdate();
       clearInterval(statusInterval);
     };
   }, []);
 
   const controls: PWAControls = {
+    checkForUpdates: async () => {
+      await pwaUpdateService.checkForUpdates();
+    },
+
+    applyUpdate: async () => {
+      await pwaUpdateService.applyUpdate();
+    },
+
     syncNow: async () => {
       await backgroundSyncService.forcSync();
       // Update sync status
@@ -113,14 +146,29 @@ export const usePWA = () => {
       setStatus(prev => ({ ...prev, syncPending: syncStatus.pendingCount }));
     },
 
+    clearCache: async () => {
+      await pwaUpdateService.clearCaches();
+      // Update storage info
+      const storageEstimate = await pwaUpdateService.getStorageEstimate();
+      setStatus(prev => ({ 
+        ...prev, 
+        storageUsed: storageEstimate?.usage || 0,
+        cacheSize: storageEstimate?.quota || 0
+      }));
+    },
+
     clearOfflineData: async () => {
       await indexedDB.clearAll();
       // Update storage info
-      const offlineStorage = await indexedDB.getStorageInfo();
+      const storageEstimate = await pwaUpdateService.getStorageEstimate();
       setStatus(prev => ({ 
         ...prev, 
-        storageUsed: offlineStorage?.offlineDataCount || 0
+        storageUsed: storageEstimate?.usage || 0
       }));
+    },
+
+    requestPersistentStorage: async () => {
+      return await pwaUpdateService.requestPersistentStorage();
     }
   };
 

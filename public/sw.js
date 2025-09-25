@@ -83,6 +83,15 @@ self.addEventListener('activate', (event) => {
     ])
   );
   
+  // Notify clients about update
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'SW_UPDATED',
+        version: CACHE_VERSION
+      });
+    });
+  });
 });
 
 // Enhanced fetch handler with intelligent caching
