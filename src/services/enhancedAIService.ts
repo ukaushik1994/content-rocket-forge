@@ -39,7 +39,15 @@ class EnhancedAIService {
       // Fetch comprehensive user context using ai-context-manager
       const context = await this.fetchUserContextWithRetry(userId, 3);
       
-      // Enhance context with AI workflow intelligence
+      // STEP 1: Detect if this query would benefit from intelligent workflow execution
+      const workflowDetection = await this.detectWorkflowOpportunity(message, context);
+      
+      if (workflowDetection.shouldUseWorkflow) {
+        console.log('🔄 Workflow detected - executing intelligent workflow:', workflowDetection.workflowType);
+        return await this.executeIntelligentWorkflow(workflowDetection, message, conversationHistory, userId, context);
+      }
+      
+      // STEP 2: Continue with regular enhanced processing if no workflow needed
       const enhancedContext = await this.enhanceContextWithWorkflowIntelligence(context, userId, message);
       
       // Build enhanced system prompt with solution intelligence
@@ -410,6 +418,247 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // NEW: Automatic Workflow Detection
+  private async detectWorkflowOpportunity(message: string, context: any): Promise<{
+    shouldUseWorkflow: boolean;
+    workflowType?: string;
+    confidence: number;
+    reasoning?: string;
+  }> {
+    const lowerMessage = message.toLowerCase();
+    
+    // Content Strategy Patterns
+    if (this.matchesPattern(lowerMessage, [
+      'content strategy', 'content plan', 'editorial calendar', 'content creation plan',
+      'what content should', 'content ideas', 'content planning', 'strategy for content'
+    ])) {
+      return {
+        shouldUseWorkflow: true,
+        workflowType: 'content-strategy-generator',
+        confidence: 0.9,
+        reasoning: 'User is asking for comprehensive content strategy planning'
+      };
+    }
+    
+    // Performance Analysis Patterns
+    if (this.matchesPattern(lowerMessage, [
+      'how is my', 'performance of', 'analyze performance', 'show me analytics',
+      'how are my solutions', 'solution performance', 'content performance',
+      'metrics', 'dashboard', 'analytics report'
+    ])) {
+      return {
+        shouldUseWorkflow: true,
+        workflowType: 'solution-performance-analyzer',
+        confidence: 0.85,
+        reasoning: 'User wants comprehensive performance analysis and metrics'
+      };
+    }
+    
+    // SEO & Keyword Research Patterns
+    if (this.matchesPattern(lowerMessage, [
+      'keyword research', 'seo analysis', 'keyword opportunities', 'search optimization',
+      'ranking', 'keywords for', 'seo strategy', 'optimize for search'
+    ])) {
+      return {
+        shouldUseWorkflow: true,
+        workflowType: 'seo-keyword-researcher',
+        confidence: 0.88,
+        reasoning: 'User needs comprehensive SEO and keyword analysis'
+      };
+    }
+    
+    return {
+      shouldUseWorkflow: false,
+      confidence: 0
+    };
+  }
+
+  private matchesPattern(message: string, patterns: string[]): boolean {
+    return patterns.some(pattern => message.includes(pattern));
+  }
+
+  // NEW: Execute Intelligent Workflow with Progress Tracking
+  private async executeIntelligentWorkflow(
+    detection: any,
+    message: string,
+    conversationHistory: EnhancedChatMessage[],
+    userId: string,
+    context: any
+  ): Promise<EnhancedChatMessage> {
+    // Create initial progress message
+    const progressMessage = this.createProgressMessage(detection.workflowType, 'Starting intelligent workflow analysis...');
+    
+    try {
+      // Call the intelligent workflow executor
+      const { data: workflowResult, error } = await supabase.functions.invoke('intelligent-workflow-executor', {
+        body: {
+          workflowType: detection.workflowType,
+          userQuery: message,
+          userId,
+          context,
+          conversationHistory: conversationHistory.slice(-5) // Last 5 messages for context
+        }
+      });
+
+      if (error) {
+        console.error('Workflow execution error:', error);
+        return this.createErrorMessage(`Workflow execution failed: ${error.message}`);
+      }
+
+      // Format workflow result as enhanced chat message with visual data
+      return this.formatWorkflowResultAsMessage(workflowResult, detection.workflowType);
+
+    } catch (error) {
+      console.error('Error executing intelligent workflow:', error);
+      return this.createErrorMessage(`Workflow error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private createProgressMessage(workflowType: string, status: string): EnhancedChatMessage {
+    const workflowNames = {
+      'content-strategy-generator': 'Content Strategy Generator',
+      'solution-performance-analyzer': 'Solution Performance Analyzer', 
+      'seo-keyword-researcher': 'SEO & Keyword Research'
+    };
+
+    return {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: `🔄 **${workflowNames[workflowType as keyof typeof workflowNames] || workflowType}**\n\n${status}`,
+      timestamp: new Date(),
+      progressIndicator: {
+        currentStep: 1,
+        totalSteps: 4,
+        stepName: 'Initializing workflow...',
+        completedSteps: ['workflow-detected']
+      }
+    };
+  }
+
+  private formatWorkflowResultAsMessage(workflowResult: any, workflowType: string): EnhancedChatMessage {
+    const workflowNames = {
+      'content-strategy-generator': 'Content Strategy Analysis',
+      'solution-performance-analyzer': 'Performance Analysis Results', 
+      'seo-keyword-researcher': 'SEO & Keyword Analysis'
+    };
+
+    // Format the response content
+    let content = `✅ **${workflowNames[workflowType as keyof typeof workflowNames] || workflowType} Complete**\n\n`;
+    content += workflowResult.summary || 'Analysis completed successfully.';
+
+    // Create visual data from workflow results
+    const visualData = this.createVisualDataFromWorkflow(workflowResult, workflowType);
+    
+    // Create contextual actions
+    const actions = this.createWorkflowActions(workflowResult, workflowType);
+
+    return {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+      visualData,
+      actions,
+      workflowContext: {
+        currentWorkflow: workflowType,
+        stepData: workflowResult
+      },
+      metadata: {
+        reasoning: workflowResult.reasoning,
+        confidence: workflowResult.confidence || 0.9,
+        sources: workflowResult.sources || []
+      }
+    };
+  }
+
+  private createVisualDataFromWorkflow(result: any, workflowType: string): any {
+    if (!result.metrics && !result.charts && !result.data) {
+      return undefined;
+    }
+
+    // Content Strategy Visualization
+    if (workflowType === 'content-strategy-generator') {
+      return {
+        type: 'workflow',
+        workflowStep: {
+          id: 'strategy-results',
+          title: 'Content Strategy Recommendations',
+          description: 'AI-generated content strategy based on your solutions and market analysis',
+          actions: result.recommendations?.map((rec: any, index: number) => ({
+            id: `rec-${index}`,
+            label: rec.title || `Recommendation ${index + 1}`,
+            action: `send:Tell me more about: ${rec.title}`,
+            type: 'button'
+          })) || []
+        }
+      };
+    }
+
+    // Performance Analysis Visualization  
+    if (workflowType === 'solution-performance-analyzer') {
+      return {
+        type: 'metrics',
+        metrics: result.metrics || [
+          {
+            id: 'performance-score',
+            title: 'Overall Performance',
+            value: result.overallScore || 'N/A',
+            color: 'blue'
+          }
+        ]
+      };
+    }
+
+    // SEO Analysis Visualization
+    if (workflowType === 'seo-keyword-researcher') {
+      return {
+        type: 'chart',
+        chartConfig: {
+          type: 'bar',
+          data: result.keywordData || [],
+          categories: ['Keyword Difficulty', 'Search Volume', 'Opportunity Score'],
+          height: 300
+        }
+      };
+    }
+
+    return undefined;
+  }
+
+  private createWorkflowActions(result: any, workflowType: string): any[] {
+    const baseActions = [
+      {
+        id: 'export-results',
+        label: 'Export Results',
+        action: `send:Export the ${workflowType} analysis results to a document`,
+        type: 'button',
+        variant: 'outline'
+      }
+    ];
+
+    if (workflowType === 'content-strategy-generator') {
+      baseActions.push({
+        id: 'create-content',
+        label: 'Start Creating Content',
+        action: 'navigate:/content-builder',
+        type: 'button',
+        variant: 'primary'
+      });
+    }
+
+    if (workflowType === 'solution-performance-analyzer') {
+      baseActions.push({
+        id: 'optimize-solutions',
+        label: 'Optimize Solutions',
+        action: 'send:Show me specific optimization recommendations for my underperforming solutions',
+        type: 'button',
+        variant: 'primary'
+      });
+    }
+
+    return baseActions;
   }
 
   async updateWorkflowState(userId: string, workflowType: string, currentStep: string, data: any) {
