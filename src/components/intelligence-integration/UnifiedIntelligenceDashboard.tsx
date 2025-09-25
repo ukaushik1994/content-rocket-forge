@@ -22,11 +22,11 @@ import {
 import { unifiedIntelligenceService, SystemInsight, CrossSystemPattern } from '@/services/intelligence-integration/UnifiedIntelligenceService';
 import { advancedAutomationEngine, WorkflowTemplate, WorkflowExecution } from '@/services/intelligence-integration/AdvancedAutomationEngine';
 import { integrationEcosystemService } from '@/services/intelligence-integration/IntegrationEcosystemService';
-import { useUser } from '@/hooks/useUser';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 export function UnifiedIntelligenceDashboard() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [insights, setInsights] = useState<SystemInsight[]>([]);
   const [patterns, setPatterns] = useState<CrossSystemPattern[]>([]);
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
