@@ -479,25 +479,6 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
     return patterns.some(pattern => message.includes(pattern));
   }
 
-// NEW: Execute Intelligent Workflow with Progress Tracking
-  private async executeIntelligentWorkflow(
-    detection: any,
-    message: string,
-    conversationHistory: EnhancedChatMessage[],
-    userId: string,
-    context: any
-  ): Promise<EnhancedChatMessage> {
-    // Create initial progress message
-    const progressMessage = this.createProgressMessage(detection.workflowType, 'Starting intelligent workflow analysis...');
-    
-    try {
-      // Call the intelligent workflow executor (now returns JSON directly, no streaming for simplicity)
-      const { data: workflowResult, error } = await supabase.functions.invoke('intelligent-workflow-executor', {
-        body: {
-          workflowType: detection.workflowType,
-          userQuery: message,
-          userId,
-          context,
   // NEW: Execute Intelligent Workflow with Progress Tracking
   private async executeIntelligentWorkflow(
     detection: any,
@@ -559,9 +540,11 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
         completedSteps: ['analysis', 'processing', 'results']
       },
       workflowContext: {
-        workflowType: detection.workflowType,
-        confidence: workflowResult.confidence || detection.confidence,
-        reasoning: workflowResult.reasoning || detection.reasoning
+        currentWorkflow: detection.workflowType,
+        stepData: {
+          confidence: workflowResult.confidence || detection.confidence,
+          reasoning: workflowResult.reasoning || detection.reasoning
+        }
       },
       metadata: {
         reasoning: workflowResult.reasoning,
