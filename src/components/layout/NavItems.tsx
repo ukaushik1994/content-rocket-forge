@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book, TestTube } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -152,7 +152,12 @@ export default function NavItems() {
       />
       
       
-      
+      <NavItem 
+        to="/ab-testing" 
+        icon={<TestTube className="h-4 w-4" />} 
+        label="A/B Testing" 
+        active={location.pathname === '/ab-testing'} 
+      />
       
       <NavItem to="/analytics" icon={<BarChart3 className="h-4 w-4" />} label="Analytics" active={location.pathname === '/analytics'} />
     </div>
