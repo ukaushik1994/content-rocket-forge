@@ -10,8 +10,6 @@ import { SerpMonitoringDashboard } from '@/components/serp/SerpMonitoringDashboa
 import { SerpMetricsOverview } from '@/components/serp/SerpMetricsOverview';
 import { MarketingIntegrationsPanel } from '@/components/serp/MarketingIntegrationsPanel';
 import { AIWorkflowIntelligence } from '@/components/serp/AIWorkflowIntelligence';
-import { SerpABTestingPanel } from '@/components/serp/SerpABTestingPanel';
-import { ABTestProvider } from '@/contexts/ABTestContext';
 
 const SerpIntelligence = () => {
   const canonicalUrl = typeof window !== 'undefined' 
@@ -21,7 +19,7 @@ const SerpIntelligence = () => {
   const getInitialTab = () => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
-      if (['monitoring', 'performance', 'ab-testing', 'integrations', 'ai-insights'].includes(hash)) {
+      if (['monitoring', 'performance', 'integrations', 'ai-insights'].includes(hash)) {
         return hash;
       }
       return localStorage.getItem('serpIntelligenceActiveTab') || 'monitoring';
@@ -76,9 +74,8 @@ const SerpIntelligence = () => {
               </motion.p>
             </div>
 
-            <ABTestProvider>
               <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="grid grid-cols-5 lg:grid-cols-5 mb-8">
+                <TabsList className="grid grid-cols-4 lg:grid-cols-4 mb-8">
                   <TabsTrigger value="monitoring" className="flex items-center gap-2">
                     <Monitor className="h-4 w-4" />
                     <span className="hidden sm:inline">Monitoring</span>
@@ -86,10 +83,6 @@ const SerpIntelligence = () => {
                   <TabsTrigger value="performance" className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
                     <span className="hidden sm:inline">Performance</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="ab-testing" className="flex items-center gap-2">
-                    <Monitor className="h-4 w-4" />
-                    <span className="hidden sm:inline">A/B Testing</span>
                   </TabsTrigger>
                   <TabsTrigger value="integrations" className="flex items-center gap-2">
                     <Zap className="h-4 w-4" />
@@ -110,10 +103,6 @@ const SerpIntelligence = () => {
                     <SerpMetricsOverview />
                   </TabsContent>
 
-                  <TabsContent value="ab-testing">
-                    <SerpABTestingPanel />
-                  </TabsContent>
-
                   <TabsContent value="integrations">
                     <MarketingIntegrationsPanel />
                   </TabsContent>
@@ -123,7 +112,6 @@ const SerpIntelligence = () => {
                   </TabsContent>
                 </div>
               </Tabs>
-            </ABTestProvider>
           </GlassCard>
         </motion.div>
       </main>

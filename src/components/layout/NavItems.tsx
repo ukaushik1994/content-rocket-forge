@@ -151,14 +151,6 @@ export default function NavItems() {
         active={location.pathname === '/research/content-strategy'} 
       />
       
-      
-      <NavItem 
-        to="/ab-testing" 
-        icon={<TestTube className="h-4 w-4" />} 
-        label="A/B Testing" 
-        active={location.pathname === '/ab-testing'} 
-      />
-      
       <NavItem to="/analytics" icon={<BarChart3 className="h-4 w-4" />} label="Analytics" active={location.pathname === '/analytics'} />
     </div>
   );

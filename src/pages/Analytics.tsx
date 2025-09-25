@@ -39,7 +39,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { WorkflowAnalyticsTab } from '@/components/analytics/WorkflowAnalyticsTab';
-import { ABTestAnalyticsCard } from '@/components/analytics/ABTestAnalyticsCard';
+
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -687,14 +687,6 @@ const Analytics = () => {
                     </TabsContent>
 
                     <TabsContent value="abtesting" className="space-y-6">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <ABTestAnalyticsCard timeRange={timeRange} />
-                      </motion.div>
                     </TabsContent>
 
                     <TabsContent value="workflows" className="space-y-6">

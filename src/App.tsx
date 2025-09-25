@@ -35,7 +35,7 @@ import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
 import WorkflowHistoryPage from "./components/workflow/WorkflowHistoryPage";
-import { ABTestingPage } from "./pages/ABTestingPage";
+
 import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
@@ -46,7 +46,7 @@ import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { PWAManager } from "@/components/pwa/PWAManager";
-import { ABTestProvider } from "@/contexts/ABTestContext";
+
 
 const queryClient = new QueryClient();
 
@@ -73,7 +73,6 @@ const App = () => (
         <SettingsProvider>
           <GlobalSettingsBridge />
           <ContentProvider>
-            <ABTestProvider>
               <TourProvider>
                 <ChatContextBridgeProvider>
               <Toaster />
@@ -123,8 +122,6 @@ const App = () => (
                    {/* Smart Actions Analytics */}
                    <Route path="/smart-actions/analytics" element={<ProtectedRoute><SmartActionsAnalytics /></ProtectedRoute>} />
                    
-                   {/* A/B Testing Routes */}
-                   <Route path="/ab-testing" element={<ProtectedRoute><ABTestingPage /></ProtectedRoute>} />
                    
                    {/* Workflow History */}
                    <Route path="/workflows/history" element={<ProtectedRoute><WorkflowHistoryPage /></ProtectedRoute>} />
@@ -138,7 +135,6 @@ const App = () => (
               </BrowserRouter>
                 </ChatContextBridgeProvider>
             </TourProvider>
-          </ABTestProvider>
         </ContentProvider>
         </SettingsProvider>
       </AuthProvider>

@@ -183,7 +183,6 @@ export function UnifiedIntelligenceDashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {insight.system === 'content' && <Brain className="h-4 w-4" />}
-                        {insight.system === 'ab_testing' && <BarChart3 className="h-4 w-4" />}
                         {insight.system === 'workflow' && <Zap className="h-4 w-4" />}
                         {insight.system === 'serp' && <TrendingUp className="h-4 w-4" />}
                         {insight.system === 'strategy' && <Network className="h-4 w-4" />}
@@ -462,16 +461,6 @@ export function UnifiedIntelligenceDashboard() {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Real-time sync enabled, webhook healthy
-                  </p>
-                </div>
-                
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">A/B Testing</h4>
-                    <Badge variant="default">Active</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Event streaming active, data sync up-to-date
                   </p>
                 </div>
                 

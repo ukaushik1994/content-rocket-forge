@@ -1,5 +1,27 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AudienceSegment, SegmentCriteria, TargetedTest } from '@/types/ab-testing-advanced';
+// Define types locally since ab-testing-advanced types were removed
+interface SegmentCriteria {
+  field: string;
+  operator: 'equals' | 'contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
+  value: any;
+}
+
+interface AudienceSegment {
+  id: string;
+  name: string;
+  criteria: SegmentCriteria[];
+  size_estimate: number;
+  created_at: string;
+}
+
+interface TargetedTest {
+  id: string;
+  name: string;
+  description?: string;
+  audience_segments: string[];
+  segment_performance: Record<string, any>;
+  created_at: string;
+}
 
 class AudienceSegmentService {
   private static instance: AudienceSegmentService;
