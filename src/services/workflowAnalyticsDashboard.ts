@@ -116,8 +116,8 @@ export class WorkflowAnalyticsDashboard {
         activeWorkflows: running,
         completedLastHour: completed,
         failedLastHour: failed,
-        avgResponseTime: this.calculateAvgResponseTime(recentExecutions || []),
-        systemHealth: this.calculateSystemHealth(recentExecutions || []),
+        avgResponseTime: this.calculateAvgResponseTime(recentExecutions as any || []),
+        systemHealth: this.calculateSystemHealth(recentExecutions as any || []),
         lastUpdate: now.toISOString()
       };
     } catch (error) {
@@ -212,7 +212,7 @@ export class WorkflowAnalyticsDashboard {
     return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   }
 
-  private static async getExecutions(userId: string, startDate: string): Promise<WorkflowExecution[]> {
+  private static async getExecutions(userId: string, startDate: string): Promise<any[]> {
     const { data } = await supabase
       .from('workflow_executions')
       .select('*')
@@ -470,7 +470,7 @@ export class WorkflowAnalyticsDashboard {
     return 0.78; // Placeholder
   }
 
-  private static calculateAvgResponseTime(executions: WorkflowExecution[]): number {
+  private static calculateAvgResponseTime(executions: any[]): number {
     const times = executions
       .filter(e => e.started_at && e.completed_at)
       .map(e => new Date(e.completed_at!).getTime() - new Date(e.started_at!).getTime());
@@ -478,7 +478,7 @@ export class WorkflowAnalyticsDashboard {
     return times.reduce((sum, time) => sum + time, 0) / Math.max(times.length, 1);
   }
 
-  private static calculateSystemHealth(executions: WorkflowExecution[]): number {
+  private static calculateSystemHealth(executions: any[]): number {
     const completed = executions.filter(e => e.status === 'completed').length;
     const total = executions.length;
     return total > 0 ? completed / total : 1;
