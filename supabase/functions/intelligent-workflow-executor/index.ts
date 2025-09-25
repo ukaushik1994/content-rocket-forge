@@ -610,14 +610,16 @@ function enhanceActionsWithSmartBehaviors(actions: any[], workflowType: string, 
       break;
   }
 
-  // Add universal export action
+  // Add universal export action (avoid circular reference)
   enhancedActions.push({
     id: 'export-workflow-results',
     label: 'Export Results',
     action: 'export-strategy-report',
     type: 'outline',
     data: {
-      reportData: workflowResult
+      workflowType: workflowResult.workflowType,
+      summary: workflowResult.summary,
+      timestamp: new Date().toISOString()
     }
   });
 

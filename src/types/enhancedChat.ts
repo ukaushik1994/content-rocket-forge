@@ -39,6 +39,18 @@ export interface ProgressState {
   totalSteps: number;
   stepName: string;
   completedSteps: string[];
+  // Enhanced workflow progress support
+  workflowTitle?: string;
+  isActive?: boolean;
+  progress?: number;
+  steps?: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    status: 'pending' | 'active' | 'completed' | 'error';
+    duration?: number;
+    result?: any;
+  }>;
 }
 
 export interface VisualData {
