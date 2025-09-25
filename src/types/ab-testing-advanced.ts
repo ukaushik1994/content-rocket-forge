@@ -1,3 +1,5 @@
+import { ABTest, ABTestVariant } from '@/services/abTestService';
+
 export interface MultivariateTest extends Omit<ABTest, 'type'> {
   type: 'multivariate';
   factors: TestFactor[];
@@ -51,6 +53,8 @@ export interface SegmentCriteria {
 }
 
 export interface TargetedTest extends ABTest {
+  id: string;
+  created_at: string;
   audience_segments: string[]; // segment IDs
   segment_performance: Record<string, PerformanceMetrics>;
 }

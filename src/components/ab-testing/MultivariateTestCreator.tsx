@@ -122,13 +122,30 @@ export const MultivariateTestCreator: React.FC<MultivariateTestCreatorProps> = (
         description,
         status: 'draft',
         type: 'multivariate',
+        user_id: 'current-user', // This would be replaced with actual user ID
+        test_type: 'content',
+        target_metric: 'conversion_rate',
+        confidence_level: 95,
+        minimum_sample_size: 1000,
+        started_at: null,
+        ended_at: null,
+        updated_at: new Date().toISOString(),
+        traffic_allocation: combinations.reduce((acc, combo) => {
+          acc[combo.id] = combo.traffic_weight;
+          return acc;
+        }, {} as Record<string, number>),
+        metadata: {},
         factors,
         combinations,
         variants: combinations.map(combo => ({
           id: combo.id,
           name: combo.name,
           traffic_weight: combo.traffic_weight,
-          data: combo.factors
+          test_id: '',
+          is_control: false,
+          content_data: combo.factors,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }))
       };
 

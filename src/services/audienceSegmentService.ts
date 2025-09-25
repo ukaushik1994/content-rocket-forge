@@ -139,13 +139,13 @@ class AudienceSegmentService {
     try {
       // Simplified targeted test creation using existing ab_tests structure
       const testId = crypto.randomUUID();
-      const targetedTest: TargetedTest = {
+      const targetedTest = {
         ...testData,
         id: testId,
         created_at: new Date().toISOString(),
         audience_segments: testData.audience_segments || [],
         segment_performance: {}
-      };
+      } as TargetedTest;
       return targetedTest;
     } catch (error) {
       console.error('Error creating targeted test:', error);
