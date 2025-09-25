@@ -3,6 +3,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import ContentBuilder from '@/components/content-builder/ContentBuilder';
+import { ABTestProvider } from '@/contexts/ABTestContext';
 import { Helmet } from 'react-helmet-async';
 
 const ContentBuilderPage = () => {
@@ -71,19 +72,21 @@ const ContentBuilderPage = () => {
       <Navbar />
       
       <main className="flex-1 py-8">
-        <ContentBuilder 
-          initialKeyword={initialKeyword}
-          selectedKeywords={selectedKeywords}
-          location={locationPref}
-          serpData={serpData}
-          initialStep={initialStep}
-          strategyContext={strategyContext}
-          metaSuggestions={metaSuggestions}
-          suggestedTitle={suggestedTitle}
-          suggestedOutline={suggestedOutline}
-          additionalInstructions={additionalInstructions}
-          sourceInfo={sourceInfo}
-        />
+        <ABTestProvider>
+          <ContentBuilder 
+            initialKeyword={initialKeyword}
+            selectedKeywords={selectedKeywords}
+            location={locationPref}
+            serpData={serpData}
+            initialStep={initialStep}
+            strategyContext={strategyContext}
+            metaSuggestions={metaSuggestions}
+            suggestedTitle={suggestedTitle}
+            suggestedOutline={suggestedOutline}
+            additionalInstructions={additionalInstructions}
+            sourceInfo={sourceInfo}
+          />
+        </ABTestProvider>
       </main>
     </div>
   );

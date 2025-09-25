@@ -10,6 +10,8 @@ import { SerpMonitoringDashboard } from '@/components/serp/SerpMonitoringDashboa
 import { SerpMetricsOverview } from '@/components/serp/SerpMetricsOverview';
 import { MarketingIntegrationsPanel } from '@/components/serp/MarketingIntegrationsPanel';
 import { AIWorkflowIntelligence } from '@/components/serp/AIWorkflowIntelligence';
+import { SerpABTestingPanel } from '@/components/serp/SerpABTestingPanel';
+import { ABTestProvider } from '@/contexts/ABTestContext';
 
 const SerpIntelligence = () => {
   const canonicalUrl = typeof window !== 'undefined' 
@@ -19,7 +21,7 @@ const SerpIntelligence = () => {
   const getInitialTab = () => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
-      if (['monitoring', 'performance', 'integrations', 'ai-insights'].includes(hash)) {
+      if (['monitoring', 'performance', 'ab-testing', 'integrations', 'ai-insights'].includes(hash)) {
         return hash;
       }
       return localStorage.getItem('serpIntelligenceActiveTab') || 'monitoring';
@@ -44,91 +46,84 @@ const SerpIntelligence = () => {
         <meta name="description" content="Advanced SERP monitoring, performance analytics, AI-powered insights, and marketing integrations for comprehensive search intelligence." />
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
-      
+
+      <AnimatedBackground />
       <Navbar />
-      <AnimatedBackground intensity="medium" />
       
-      <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
-        <motion.div 
+      <main className="relative z-10 container mx-auto px-4 py-8">
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
+          transition={{ duration: 0.6 }}
         >
-          {/* Hero Section */}
-          <div className="text-center space-y-4">
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl font-heading font-bold text-foreground"
-            >
-              SERP Intelligence Platform
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-muted-foreground max-w-3xl mx-auto"
-            >
-              Real-time SERP monitoring, performance analytics, AI insights, and marketing integrations
-            </motion.p>
-          </div>
+          <GlassCard className="p-8">
+            <div className="mb-8">
+              <motion.h1 
+                className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                SERP Intelligence
+              </motion.h1>
+              <motion.p 
+                className="text-xl text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                Advanced search engine monitoring, performance analytics, and AI-powered optimization insights
+              </motion.p>
+            </div>
 
-          {/* Main Dashboard */}
-          <GlassCard className="p-4 sm:p-6">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <div className="flex flex-col gap-6">
-                <div className="w-full overflow-x-auto">
-                  <TabsList className="inline-flex min-w-max rounded-lg border border-border/50 bg-muted/50 p-1">
-                    <TabsTrigger 
-                      value="monitoring" 
-                      className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                    >
-                      <Monitor className="h-4 w-4" />
-                      Real-time Monitoring
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="performance" 
-                      className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                      Performance Analytics
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="ai-insights" 
-                      className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                    >
-                      <TrendingUp className="h-4 w-4" />
-                      AI Insights
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="integrations" 
-                      className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                    >
-                      <Zap className="h-4 w-4" />
-                      Marketing Integrations
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
+            <ABTestProvider>
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                <TabsList className="grid grid-cols-5 lg:grid-cols-5 mb-8">
+                  <TabsTrigger value="monitoring" className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    <span className="hidden sm:inline">Monitoring</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="performance" className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Performance</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="ab-testing" className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    <span className="hidden sm:inline">A/B Testing</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="integrations" className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    <span className="hidden sm:inline">Integrations</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="ai-insights" className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="hidden sm:inline">AI Insights</span>
+                  </TabsTrigger>
+                </TabsList>
 
-                <div className="flex-1">
-                  <TabsContent value="monitoring" className="mt-0 animate-fade-in">
+                <div className="space-y-6">
+                  <TabsContent value="monitoring">
                     <SerpMonitoringDashboard />
                   </TabsContent>
 
-                  <TabsContent value="performance" className="mt-0 animate-fade-in">
+                  <TabsContent value="performance">
                     <SerpMetricsOverview />
                   </TabsContent>
 
-                  <TabsContent value="ai-insights" className="mt-0 animate-fade-in">
-                    <AIWorkflowIntelligence />
+                  <TabsContent value="ab-testing">
+                    <SerpABTestingPanel />
                   </TabsContent>
 
-                  <TabsContent value="integrations" className="mt-0 animate-fade-in">
+                  <TabsContent value="integrations">
                     <MarketingIntegrationsPanel />
                   </TabsContent>
+
+                  <TabsContent value="ai-insights">
+                    <AIWorkflowIntelligence />
+                  </TabsContent>
                 </div>
-              </div>
-            </Tabs>
+              </Tabs>
+            </ABTestProvider>
           </GlassCard>
         </motion.div>
       </main>
