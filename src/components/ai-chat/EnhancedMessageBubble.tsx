@@ -5,7 +5,6 @@ import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { VisualDataRenderer } from './VisualDataRenderer';
 import { SerpVisualData } from './SerpVisualData';
 import { ModernActionButtons } from './ModernActionButtons';
-import { WorkflowStreamingProgress } from './WorkflowStreamingProgress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -80,15 +79,22 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
 
       {/* Message Content */}
       <div className={`flex-1 space-y-4 ${isUser ? 'items-end' : 'items-start'}`}>
-        {/* Enhanced Workflow Progress Indicator */}
+        {/* Progress Indicator */}
         {message.progressIndicator && !isUser && (
-          <WorkflowStreamingProgress
-            steps={message.progressIndicator.steps || []}
-            currentStep={message.progressIndicator.currentStep?.toString() || '0'}
-            workflowTitle={message.progressIndicator.workflowTitle || message.progressIndicator.stepName || 'Processing'}
-            isStreaming={message.progressIndicator.isActive}
-            progress={message.progressIndicator.progress}
-          />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+              Step {message.progressIndicator.currentStep} of {message.progressIndicator.totalSteps}
+            </Badge>
+            <span>{message.progressIndicator.stepName}</span>
+            <div className="flex-1 bg-border/50 rounded-full h-1 max-w-[100px]">
+              <div 
+                className="bg-gradient-to-r from-primary to-blue-500 h-1 rounded-full transition-all duration-300"
+                style={{ 
+                  width: `${(message.progressIndicator.currentStep / message.progressIndicator.totalSteps) * 100}%` 
+                }}
+              />
+            </div>
+          </div>
         )}
 
         {/* Main Message */}

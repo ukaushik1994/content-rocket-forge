@@ -4510,48 +4510,6 @@ export type Database = {
           },
         ]
       }
-      workflow_schedules: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          last_run: string | null
-          metadata: Json | null
-          next_run: string
-          schedule_expression: string
-          timezone: string
-          updated_at: string
-          user_id: string
-          workflow_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          last_run?: string | null
-          metadata?: Json | null
-          next_run: string
-          schedule_expression: string
-          timezone?: string
-          updated_at?: string
-          user_id: string
-          workflow_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          last_run?: string | null
-          metadata?: Json | null
-          next_run?: string
-          schedule_expression?: string
-          timezone?: string
-          updated_at?: string
-          user_id?: string
-          workflow_id?: string
-        }
-        Relationships: []
-      }
       workflow_steps_log: {
         Row: {
           ai_prompt: string | null

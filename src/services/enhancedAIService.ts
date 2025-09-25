@@ -491,14 +491,14 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
     const progressMessage = this.createProgressMessage(detection.workflowType, 'Starting intelligent workflow analysis...');
     
     try {
-      // Call the intelligent workflow executor (now returns JSON directly, no streaming for simplicity)
+      // Call the intelligent workflow executor
       const { data: workflowResult, error } = await supabase.functions.invoke('intelligent-workflow-executor', {
         body: {
           workflowType: detection.workflowType,
           userQuery: message,
           userId,
           context,
-          conversationHistory
+          conversationHistory: conversationHistory.slice(-5) // Last 5 messages for context
         }
       });
 
@@ -507,52 +507,13 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
         return this.createErrorMessage(`Workflow execution failed: ${error.message}`);
       }
 
-      // Transform workflow result into enhanced chat message
-      return this.transformWorkflowResult(workflowResult, detection);
+      // Format workflow result as enhanced chat message with visual data
+      return this.formatWorkflowResultAsMessage(workflowResult, detection.workflowType);
 
     } catch (error) {
-      console.error('Error in executeIntelligentWorkflow:', error);
+      console.error('Error executing intelligent workflow:', error);
       return this.createErrorMessage(`Workflow error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
-
-  private transformWorkflowResult(workflowResult: any, detection: any): EnhancedChatMessage {
-    return {
-      id: Date.now().toString(),
-      role: 'assistant',
-      content: workflowResult.summary || 'Analysis completed successfully.',
-      timestamp: new Date(),
-      visualData: workflowResult.visualData || workflowResult.chartConfig ? {
-        type: workflowResult.visualData?.type || 'chart',
-        chartConfig: workflowResult.chartConfig,
-        metrics: workflowResult.visualData?.metrics || workflowResult.metrics,
-        summary: workflowResult.visualData?.summary,
-        workflowStep: workflowResult.workflowStep
-      } : undefined,
-      actions: workflowResult.actions || [
-        { label: 'View Details', action: 'view-details', type: 'button' },
-        { label: 'Create Follow-up', action: 'create-followup', type: 'button' }
-      ],
-      progressIndicator: {
-        currentStep: 100,
-        totalSteps: 100,
-        stepName: 'Analysis Complete',
-        completedSteps: ['analysis', 'processing', 'results']
-      },
-      workflowContext: {
-        currentWorkflow: detection.workflowType,
-        stepData: {
-          confidence: workflowResult.confidence || detection.confidence,
-          reasoning: workflowResult.reasoning || detection.reasoning
-        }
-      },
-      metadata: {
-        reasoning: workflowResult.reasoning,
-        confidence: workflowResult.confidence,
-        sources: workflowResult.sources,
-        actionResults: workflowResult
-      }
-    };
   }
 
   private createProgressMessage(workflowType: string, status: string): EnhancedChatMessage {

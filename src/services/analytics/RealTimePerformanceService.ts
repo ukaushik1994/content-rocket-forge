@@ -245,6 +245,58 @@ export class RealTimePerformanceService {
     }
   }
 
+  // A/B Testing Suggestions
+  async generateABTestingSuggestions(): Promise<Array<{
+    testName: string;
+    hypothesis: string;
+    variants: string[];
+    expectedImpact: 'low' | 'medium' | 'high';
+    duration: string;
+  }>> {
+    try {
+      const currentMetrics = await this.getOverviewMetrics();
+      const suggestions = [];
+
+      // Title optimization test
+      if (currentMetrics.contentViews < 1000) {
+        suggestions.push({
+          testName: 'Title Optimization',
+          hypothesis: 'More compelling titles will increase click-through rates',
+          variants: ['Original titles', 'Emotion-driven titles', 'Question-based titles'],
+          expectedImpact: 'medium' as const,
+          duration: '2 weeks'
+        });
+      }
+
+      // Content length test
+      if (currentMetrics.avgTimeOnPage < 120) { // Less than 2 minutes
+        suggestions.push({
+          testName: 'Content Length Optimization',
+          hypothesis: 'Optimal content length will improve time on page and engagement',
+          variants: ['Short form (500-800 words)', 'Medium form (800-1500 words)', 'Long form (1500+ words)'],
+          expectedImpact: 'high' as const,
+          duration: '3 weeks'
+        });
+      }
+
+      // CTA placement test
+      if (currentMetrics.conversionRate < 2) {
+        suggestions.push({
+          testName: 'Call-to-Action Placement',
+          hypothesis: 'Strategic CTA placement will improve conversion rates',
+          variants: ['Top of content', 'Middle of content', 'Multiple CTAs'],
+          expectedImpact: 'medium' as const,
+          duration: '2 weeks'
+        });
+      }
+
+      return suggestions;
+    } catch (error) {
+      console.error('Error generating A/B testing suggestions:', error);
+      return [];
+    }
+  }
+
   // Content Success Forecasting
   async forecastContentSuccess(contentData: {
     title: string;

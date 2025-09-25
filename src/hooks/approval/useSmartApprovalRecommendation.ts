@@ -4,7 +4,7 @@ import type { SmartRecommendation } from '@/services/smart-actions/types';
 import { getSmartRecommendation } from '@/services/aiService/smartApproval';
 import { logApprovalRecommendation } from '@/services/smart-actions/logging';
 import { useQuery, useQueryClient, QueryClient } from '@tanstack/react-query';
-
+import { getCohort } from '@/services/experiments/ab';
 
 interface Params {
   content: ContentItemType | null;
@@ -51,7 +51,7 @@ export function useSmartApprovalRecommendation(params: Params) {
     params.content?.keywords
   ]);
   const loggedForContentRef = useRef<string | null>(null);
-  const cohort = 'A'; // Default cohort since A/B testing removed
+  const cohort = getCohort('smartActions');
 
   const query = useQuery<SmartRecommendation>({
     queryKey: buildQueryKey(params.content?.id || 'unknown'),

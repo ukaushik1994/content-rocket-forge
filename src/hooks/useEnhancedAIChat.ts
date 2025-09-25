@@ -6,7 +6,6 @@ import AIServiceController from '@/services/aiService/AIServiceController';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useSmartActionHandler } from '@/components/ai-chat/SmartActionHandler';
 import { ContextualAction } from '@/services/aiService';
 
 export const useEnhancedAIChat = () => {
@@ -16,7 +15,6 @@ export const useEnhancedAIChat = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { openSettings } = useSettings();
-  const { executeSmartAction } = useSmartActionHandler();
 
   const sendMessage = useCallback(async (content: string) => {
     if (!user) {
@@ -83,13 +81,6 @@ export const useEnhancedAIChat = () => {
   const handleAction = useCallback(async (action: string, data?: any) => {
     if (!user || !action) return;
 
-    // Try smart action handler first
-    const smartActionResult = await executeSmartAction(action, data);
-    if (smartActionResult && smartActionResult.executed !== false) {
-      return smartActionResult;
-    }
-
-    // Fallback to legacy action handlers
     switch (action) {
       case 'navigate_to_settings':
         console.log('Navigating to settings...', data);
@@ -119,7 +110,7 @@ export const useEnhancedAIChat = () => {
         }
         break;
     }
-  }, [sendMessage, user, openSettings, executeSmartAction]);
+  }, [sendMessage, user, openSettings]);
 
   const handleSerpAction = useCallback(async (action: string, data?: any) => {
     if (!user) return;

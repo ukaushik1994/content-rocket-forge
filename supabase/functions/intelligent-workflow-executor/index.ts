@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { executeEnhancedAIWorkflowWithStreaming } from './streaming.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,12 +63,10 @@ serve(async (req) => {
 
     const body: WorkflowExecutionRequest = await req.json();
     
-// Handle new enhanced AI service workflow types
+    // Handle new enhanced AI service workflow types
     if (body.workflowType) {
-      console.log(`🚀 Executing enhanced AI workflow: ${body.workflowType}`);
-      
-      // Enhanced execution with real-time progress streaming
-      const workflowResult = await executeEnhancedAIWorkflowWithRichContext(body, user, supabase);
+      console.log(`Executing enhanced AI workflow: ${body.workflowType}`);
+      const workflowResult = await executeEnhancedAIWorkflow(body, user, supabase);
       
       return new Response(JSON.stringify(workflowResult), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -436,30 +433,27 @@ async function executeDataProcessing(step: WorkflowStep, context: any): Promise<
   };
 }
 
-// NEW: Enhanced AI Workflow Execution with Rich Context
-async function executeEnhancedAIWorkflowWithRichContext(body: WorkflowExecutionRequest, user: any, supabase: any): Promise<any> {
+// NEW: Enhanced AI Workflow Execution
+async function executeEnhancedAIWorkflow(body: WorkflowExecutionRequest, user: any, supabase: any): Promise<any> {
   const { workflowType, userQuery, context, conversationHistory } = body;
 
   try {
     console.log(`Starting enhanced workflow: ${workflowType}`);
     
-    // Fetch rich user context from database
-    const enrichedContext = await fetchUserRichContext(user, supabase);
-    const mergedContext = { ...context, ...enrichedContext };
-    
     const query = userQuery || 'General analysis';
+    const workflowContext = context || {};
     
     let workflowResult: any;
     
     switch (workflowType) {
       case 'content-strategy-generator':
-        workflowResult = await executeContentStrategyWorkflow(query, mergedContext, user);
+        workflowResult = await executeContentStrategyWorkflow(query, workflowContext, user);
         break;
       case 'solution-performance-analyzer':
-        workflowResult = await executeSolutionPerformanceWorkflow(query, mergedContext, user, supabase);
+        workflowResult = await executeSolutionPerformanceWorkflow(query, workflowContext, user, supabase);
         break;
       case 'seo-keyword-researcher':
-        workflowResult = await executeSEOKeywordWorkflow(query, mergedContext, user);
+        workflowResult = await executeSEOKeywordWorkflow(query, workflowContext, user);
         break;
       default:
         throw new Error(`Unknown workflow type: ${workflowType}`);
@@ -467,168 +461,12 @@ async function executeEnhancedAIWorkflowWithRichContext(body: WorkflowExecutionR
     
     console.log(`Workflow ${workflowType} completed successfully`);
     
-    // Add smart actions to the result
-    workflowResult.actions = enhanceActionsWithSmartBehaviors(workflowResult.actions || [], workflowType, workflowResult);
-    
     return workflowResult;
     
   } catch (error) {
     console.error(`Error executing ${workflowType}:`, error);
     throw error;
   }
-}
-
-// NEW: Fetch rich user context from database
-async function fetchUserRichContext(user: any, supabase: any): Promise<any> {
-  try {
-    // Fetch user's solutions
-    const { data: solutions } = await supabase
-      .from('solutions')
-      .select('*')
-      .eq('user_id', user.id)
-      .limit(10);
-
-    // Fetch user's content items with performance data
-    const { data: contentItems } = await supabase
-      .from('content_items')
-      .select('id, title, status, seo_score, created_at, metadata')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    // Fetch user's brand guidelines
-    const { data: brandGuidelines } = await supabase
-      .from('brand_guidelines')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    // Fetch recent strategy proposals
-    const { data: recentProposals } = await supabase
-      .from('ai_strategy_proposals')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    // Calculate analytics
-    const publishedContent = contentItems?.filter((item: any) => item.status === 'published') || [];
-    const avgSeoScore = contentItems?.length > 0 
-      ? contentItems.reduce((sum: number, item: any) => sum + (item.seo_score || 0), 0) / contentItems.length 
-      : 0;
-
-    return {
-      solutions: solutions || [],
-      contentItems: contentItems || [],
-      brandGuidelines,
-      recentProposals: recentProposals || [],
-      analytics: {
-        totalContent: contentItems?.length || 0,
-        published: publishedContent.length,
-        avgSeoScore: Math.round(avgSeoScore),
-        publishedThisMonth: publishedContent.filter((item: any) => 
-          new Date(item.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        ).length
-      }
-    };
-  } catch (error) {
-    console.error('Error fetching user context:', error);
-    return {};
-  }
-}
-
-// NEW: Enhance actions with smart behaviors
-function enhanceActionsWithSmartBehaviors(actions: any[], workflowType: string, workflowResult: any): any[] {
-  const enhancedActions = [...actions];
-
-  // Add workflow-specific smart actions
-  switch (workflowType) {
-    case 'content-strategy-generator':
-      enhancedActions.push(
-        {
-          id: 'create-content-from-strategy',
-          label: 'Create Content Now',
-          action: 'create-content-from-strategy',
-          type: 'primary',
-          data: {
-            strategy: {
-              primaryKeyword: workflowResult.primaryKeyword,
-              contentType: 'blog',
-              title: workflowResult.recommendedTitle
-            }
-          }
-        },
-        {
-          id: 'create-calendar-from-strategy',
-          label: 'Build Content Calendar',
-          action: 'create-calendar-from-strategy',
-          type: 'secondary',
-          data: {
-            recommendations: workflowResult.recommendations,
-            strategyId: workflowResult.id
-          }
-        }
-      );
-      break;
-
-    case 'solution-performance-analyzer':
-      enhancedActions.push(
-        {
-          id: 'optimize-top-solution',
-          label: 'Optimize Best Solution',
-          action: 'optimize-solution-visibility',
-          type: 'primary',
-          data: {
-            solutionId: workflowResult.topPerformingSolution?.id
-          }
-        },
-        {
-          id: 'create-performance-dashboard',
-          label: 'View Full Dashboard',
-          action: 'create-performance-dashboard',
-          type: 'secondary'
-        }
-      );
-      break;
-
-    case 'seo-keyword-researcher':
-      enhancedActions.push(
-        {
-          id: 'create-seo-content',
-          label: 'Create SEO Content',
-          action: 'create-content-from-strategy',
-          type: 'primary',
-          data: {
-            strategy: {
-              primaryKeyword: workflowResult.primaryKeywords?.[0],
-              contentType: 'blog',
-              title: `Complete Guide to ${workflowResult.primaryKeywords?.[0]}`
-            }
-          }
-        }
-      );
-      break;
-  }
-
-  // Add universal export action (avoid circular reference)
-  enhancedActions.push({
-    id: 'export-workflow-results',
-    label: 'Export Results',
-    action: 'export-strategy-report',
-    type: 'outline',
-    data: {
-      workflowType: workflowResult.workflowType,
-      summary: workflowResult.summary,
-      timestamp: new Date().toISOString()
-    }
-  });
-
-  return enhancedActions;
-}
-
-// Legacy function for backward compatibility
-async function executeEnhancedAIWorkflow(body: WorkflowExecutionRequest, user: any, supabase: any): Promise<any> {
-  return executeEnhancedAIWorkflowWithRichContext(body, user, supabase);
 }
 
 async function executeContentStrategyWorkflow(query: string, context: any, user: any): Promise<any> {
@@ -682,43 +520,13 @@ Format your response as a structured analysis with actionable recommendations.
   const data = await response.json();
   const aiResponse = data.choices?.[0]?.message?.content;
   
-return {
+  return {
     workflowType: 'content-strategy-generator',
     summary: aiResponse,
-    visualData: {
-      type: 'summary',
-      summary: {
-        title: 'Content Strategy Analysis',
-        items: [
-          { label: 'Business Solutions', value: `${context.solutions?.length || 0} solutions`, status: 'good' },
-          { label: 'Current Content', value: `${context.analytics?.totalContent || 0} items`, status: 'good' },
-          { label: 'SEO Performance', value: `${context.analytics?.avgSeoScore || 0}/100`, status: context.analytics?.avgSeoScore > 70 ? 'good' : 'warning' },
-          { label: 'Content Gap', value: context.analytics?.totalContent < 10 ? 'High priority' : 'Medium priority', status: context.analytics?.totalContent < 10 ? 'needs-attention' : 'warning' }
-        ]
-      }
-    },
-    chartData: {
-      type: 'bar',
-      data: [
-        { name: 'Blog Posts', value: Math.floor(Math.random() * 20) + 5, category: 'Recommended' },
-        { name: 'Social Media', value: Math.floor(Math.random() * 15) + 8, category: 'Recommended' },
-        { name: 'Email Content', value: Math.floor(Math.random() * 10) + 3, category: 'Recommended' },
-        { name: 'Video Content', value: Math.floor(Math.random() * 8) + 2, category: 'Recommended' }
-      ],
-      categories: ['Recommended'],
-      colors: ['hsl(var(--primary))'],
-      height: 300
-    },
     recommendations: [
-      { title: 'Blog Content Strategy', description: 'Create solution-focused blog posts targeting your main keywords', priority: 'high' },
-      { title: 'Social Media Content', description: 'Develop social media campaigns showcasing your solutions', priority: 'medium' },
-      { title: 'Email Marketing', description: 'Build email content sequences for lead nurturing', priority: 'medium' },
-      { title: 'Video Content', description: 'Create demo videos for your key solutions', priority: 'low' }
-    ],
-    actions: [
-      { label: 'Create Content Calendar', action: 'create-calendar', type: 'primary' },
-      { label: 'Start Content Creation', action: 'start-creation', type: 'secondary' },
-      { label: 'View Strategy Details', action: 'view-details', type: 'outline' }
+      { title: 'Blog Content Strategy', description: 'Create solution-focused blog posts' },
+      { title: 'Social Media Content', description: 'Develop social media campaigns' },
+      { title: 'Email Marketing', description: 'Build email content sequences' }
     ],
     confidence: 0.9,
     reasoning: 'AI-generated content strategy based on business solutions and current performance',
@@ -798,69 +606,30 @@ Focus on data-driven insights and specific improvement opportunities.
   const data = await response.json();
   const aiResponse = data.choices?.[0]?.message?.content;
   
-return {
+  return {
     workflowType: 'solution-performance-analyzer',
     summary: aiResponse,
-    visualData: {
-      type: 'metrics',
-      metrics: [
-        {
-          id: 'overall-score',
-          title: 'Overall Performance Score',
-          value: `${Math.round(performanceData.avgSeoScore || 0)}/100`,
-          color: 'blue',
-          icon: 'Target',
-          change: performanceData.avgSeoScore > 70 ? { value: 8, type: 'increase', period: 'vs last month' } : undefined
-        },
-        {
-          id: 'content-published',
-          title: 'Published Content',
-          value: performanceData.publishedContent,
-          color: 'green',
-          icon: 'FileText',
-          change: { value: 12, type: 'increase', period: 'this month' }
-        },
-        {
-          id: 'solutions-count',
-          title: 'Total Solutions',
-          value: performanceData.totalSolutions,
-          color: 'purple',
-          icon: 'Lightbulb'
-        },
-        {
-          id: 'engagement-rate',
-          title: 'Avg. Engagement',
-          value: `${Math.floor(Math.random() * 40) + 60}%`,
-          color: 'orange',
-          icon: 'TrendingUp',
-          change: { value: 5, type: 'increase', period: 'vs last week' }
-        }
-      ]
-    },
-    chartData: {
-      type: 'line',
-      data: [
-        { name: 'Week 1', seoScore: Math.floor(Math.random() * 30) + 50, engagement: Math.floor(Math.random() * 20) + 40 },
-        { name: 'Week 2', seoScore: Math.floor(Math.random() * 30) + 55, engagement: Math.floor(Math.random() * 20) + 45 },
-        { name: 'Week 3', seoScore: Math.floor(Math.random() * 30) + 60, engagement: Math.floor(Math.random() * 20) + 50 },
-        { name: 'Week 4', seoScore: Math.floor(Math.random() * 30) + 65, engagement: Math.floor(Math.random() * 20) + 55 }
-      ],
-      categories: ['seoScore', 'engagement'],
-      colors: ['hsl(var(--primary))', 'hsl(var(--secondary))'],
-      height: 300,
-      valueFormatter: (value: number) => `${value}%`
-    },
-    performanceMetrics: {
-      overallScore: Math.round(performanceData.avgSeoScore || 0),
-      trend: 'improving',
-      keyStrengths: ['Strong SEO foundation', 'Consistent publishing', 'Good solution coverage'],
-      improvementAreas: ['Increase content frequency', 'Enhance engagement metrics', 'Optimize for long-tail keywords']
-    },
-    actions: [
-      { label: 'View Detailed Analytics', action: 'view-analytics', type: 'primary' },
-      { label: 'Optimize Content', action: 'optimize-content', type: 'secondary' },
-      { label: 'Export Report', action: 'export-report', type: 'outline' }
+    metrics: [
+      {
+        id: 'overall-score',
+        title: 'Overall Performance Score',
+        value: Math.round(performanceData.avgSeoScore || 0),
+        color: 'blue'
+      },
+      {
+        id: 'content-published',
+        title: 'Published Content',
+        value: performanceData.publishedContent,
+        color: 'green'
+      },
+      {
+        id: 'solutions-count',
+        title: 'Total Solutions',
+        value: performanceData.totalSolutions,
+        color: 'purple'
+      }
     ],
+    overallScore: Math.round(performanceData.avgSeoScore || 0),
     confidence: 0.85,
     reasoning: 'Performance analysis based on actual database metrics and AI assessment'
   };
@@ -928,26 +697,7 @@ Focus on actionable SEO improvements and keyword opportunities.
   return {
     workflowType: 'seo-keyword-researcher',
     summary: aiResponse,
-    visualData: {
-      type: 'chart',
-      chartConfig: {
-        type: 'bar',
-        data: [
-          { name: 'High Volume', value: Math.floor(Math.random() * 20) + 10, category: 'Keywords' },
-          { name: 'Medium Volume', value: Math.floor(Math.random() * 30) + 20, category: 'Keywords' },
-          { name: 'Long-tail', value: Math.floor(Math.random() * 50) + 40, category: 'Keywords' }
-        ],
-        categories: ['Keywords'],
-        colors: ['hsl(var(--primary))'],
-        height: 250
-      }
-    },
     keywordData,
-    actions: [
-      { label: 'Create SEO Strategy', action: 'create-seo-strategy', type: 'primary' },
-      { label: 'Research Competitors', action: 'research-competitors', type: 'secondary' },
-      { label: 'Export Keywords', action: 'export-keywords', type: 'outline' }
-    ],
     confidence: 0.88,
     reasoning: 'SEO analysis based on business solutions and current content performance',
     sources: ['User Solutions', 'SEO Best Practices', 'Keyword Research Tools']

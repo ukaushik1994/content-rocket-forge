@@ -34,8 +34,6 @@ import { EnterpriseHubPage } from "./pages/EnterpriseHubPage";
 import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
-import WorkflowHistoryPage from "./components/workflow/WorkflowHistoryPage";
-
 import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
@@ -45,8 +43,6 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { TourProvider } from "@/contexts/TourContext";
 import { ChatContextBridgeProvider } from "@/contexts/ChatContextBridge";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import { PWAManager } from "@/components/pwa/PWAManager";
-
 
 const queryClient = new QueryClient();
 
@@ -78,7 +74,6 @@ const App = () => (
               <Toaster />
               <Sonner />
               <SettingsPopup />
-              <PWAManager />
               <BrowserRouter>
                 <Routes>
                   <Route path="/landing" element={<Landing />} />
@@ -122,10 +117,6 @@ const App = () => (
                    {/* Smart Actions Analytics */}
                    <Route path="/smart-actions/analytics" element={<ProtectedRoute><SmartActionsAnalytics /></ProtectedRoute>} />
                    
-                   
-                   {/* Workflow History */}
-                   <Route path="/workflows/history" element={<ProtectedRoute><WorkflowHistoryPage /></ProtectedRoute>} />
-                   
                    {/* Notification Demo */}
                    <Route path="/notifications/demo" element={<ProtectedRoute><NotificationDemo /></ProtectedRoute>} />
                    
@@ -133,7 +124,7 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
-                </ChatContextBridgeProvider>
+              </ChatContextBridgeProvider>
             </TourProvider>
         </ContentProvider>
         </SettingsProvider>
