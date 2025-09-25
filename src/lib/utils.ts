@@ -16,3 +16,7 @@ export function formatBytes(bytes: number): string {
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat().format(num);
 }
+
+export function formatPercentage(num: number, decimals = 1): string {
+  return `${(num * 100).toFixed(decimals)}%`;
+}
