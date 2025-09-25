@@ -68,8 +68,8 @@ serve(async (req) => {
     if (body.workflowType) {
       console.log(`🚀 Executing enhanced AI workflow: ${body.workflowType}`);
       
-      // For now, use direct execution instead of streaming to fix compatibility
-      const workflowResult = await executeEnhancedAIWorkflow(body, user, supabase);
+      // Enhanced execution with real-time progress streaming
+      const workflowResult = await executeEnhancedAIWorkflowWithRichContext(body, user, supabase);
       
       return new Response(JSON.stringify(workflowResult), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -436,27 +436,30 @@ async function executeDataProcessing(step: WorkflowStep, context: any): Promise<
   };
 }
 
-// NEW: Enhanced AI Workflow Execution
-async function executeEnhancedAIWorkflow(body: WorkflowExecutionRequest, user: any, supabase: any): Promise<any> {
+// NEW: Enhanced AI Workflow Execution with Rich Context
+async function executeEnhancedAIWorkflowWithRichContext(body: WorkflowExecutionRequest, user: any, supabase: any): Promise<any> {
   const { workflowType, userQuery, context, conversationHistory } = body;
 
   try {
     console.log(`Starting enhanced workflow: ${workflowType}`);
     
+    // Fetch rich user context from database
+    const enrichedContext = await fetchUserRichContext(user, supabase);
+    const mergedContext = { ...context, ...enrichedContext };
+    
     const query = userQuery || 'General analysis';
-    const workflowContext = context || {};
     
     let workflowResult: any;
     
     switch (workflowType) {
       case 'content-strategy-generator':
-        workflowResult = await executeContentStrategyWorkflow(query, workflowContext, user);
+        workflowResult = await executeContentStrategyWorkflow(query, mergedContext, user);
         break;
       case 'solution-performance-analyzer':
-        workflowResult = await executeSolutionPerformanceWorkflow(query, workflowContext, user, supabase);
+        workflowResult = await executeSolutionPerformanceWorkflow(query, mergedContext, user, supabase);
         break;
       case 'seo-keyword-researcher':
-        workflowResult = await executeSEOKeywordWorkflow(query, workflowContext, user);
+        workflowResult = await executeSEOKeywordWorkflow(query, mergedContext, user);
         break;
       default:
         throw new Error(`Unknown workflow type: ${workflowType}`);
@@ -464,12 +467,166 @@ async function executeEnhancedAIWorkflow(body: WorkflowExecutionRequest, user: a
     
     console.log(`Workflow ${workflowType} completed successfully`);
     
+    // Add smart actions to the result
+    workflowResult.actions = enhanceActionsWithSmartBehaviors(workflowResult.actions || [], workflowType, workflowResult);
+    
     return workflowResult;
     
   } catch (error) {
     console.error(`Error executing ${workflowType}:`, error);
     throw error;
   }
+}
+
+// NEW: Fetch rich user context from database
+async function fetchUserRichContext(user: any, supabase: any): Promise<any> {
+  try {
+    // Fetch user's solutions
+    const { data: solutions } = await supabase
+      .from('solutions')
+      .select('*')
+      .eq('user_id', user.id)
+      .limit(10);
+
+    // Fetch user's content items with performance data
+    const { data: contentItems } = await supabase
+      .from('content_items')
+      .select('id, title, status, seo_score, created_at, metadata')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    // Fetch user's brand guidelines
+    const { data: brandGuidelines } = await supabase
+      .from('brand_guidelines')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // Fetch recent strategy proposals
+    const { data: recentProposals } = await supabase
+      .from('ai_strategy_proposals')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    // Calculate analytics
+    const publishedContent = contentItems?.filter((item: any) => item.status === 'published') || [];
+    const avgSeoScore = contentItems?.length > 0 
+      ? contentItems.reduce((sum: number, item: any) => sum + (item.seo_score || 0), 0) / contentItems.length 
+      : 0;
+
+    return {
+      solutions: solutions || [],
+      contentItems: contentItems || [],
+      brandGuidelines,
+      recentProposals: recentProposals || [],
+      analytics: {
+        totalContent: contentItems?.length || 0,
+        published: publishedContent.length,
+        avgSeoScore: Math.round(avgSeoScore),
+        publishedThisMonth: publishedContent.filter((item: any) => 
+          new Date(item.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        ).length
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching user context:', error);
+    return {};
+  }
+}
+
+// NEW: Enhance actions with smart behaviors
+function enhanceActionsWithSmartBehaviors(actions: any[], workflowType: string, workflowResult: any): any[] {
+  const enhancedActions = [...actions];
+
+  // Add workflow-specific smart actions
+  switch (workflowType) {
+    case 'content-strategy-generator':
+      enhancedActions.push(
+        {
+          id: 'create-content-from-strategy',
+          label: 'Create Content Now',
+          action: 'create-content-from-strategy',
+          type: 'primary',
+          data: {
+            strategy: {
+              primaryKeyword: workflowResult.primaryKeyword,
+              contentType: 'blog',
+              title: workflowResult.recommendedTitle
+            }
+          }
+        },
+        {
+          id: 'create-calendar-from-strategy',
+          label: 'Build Content Calendar',
+          action: 'create-calendar-from-strategy',
+          type: 'secondary',
+          data: {
+            recommendations: workflowResult.recommendations,
+            strategyId: workflowResult.id
+          }
+        }
+      );
+      break;
+
+    case 'solution-performance-analyzer':
+      enhancedActions.push(
+        {
+          id: 'optimize-top-solution',
+          label: 'Optimize Best Solution',
+          action: 'optimize-solution-visibility',
+          type: 'primary',
+          data: {
+            solutionId: workflowResult.topPerformingSolution?.id
+          }
+        },
+        {
+          id: 'create-performance-dashboard',
+          label: 'View Full Dashboard',
+          action: 'create-performance-dashboard',
+          type: 'secondary'
+        }
+      );
+      break;
+
+    case 'seo-keyword-researcher':
+      enhancedActions.push(
+        {
+          id: 'create-seo-content',
+          label: 'Create SEO Content',
+          action: 'create-content-from-strategy',
+          type: 'primary',
+          data: {
+            strategy: {
+              primaryKeyword: workflowResult.primaryKeywords?.[0],
+              contentType: 'blog',
+              title: `Complete Guide to ${workflowResult.primaryKeywords?.[0]}`
+            }
+          }
+        }
+      );
+      break;
+  }
+
+  // Add universal export action
+  enhancedActions.push({
+    id: 'export-workflow-results',
+    label: 'Export Results',
+    action: 'export-strategy-report',
+    type: 'outline',
+    data: {
+      reportData: workflowResult
+    }
+  });
+
+  return enhancedActions;
+}
+
+// Legacy function for backward compatibility
+async function executeEnhancedAIWorkflow(body: WorkflowExecutionRequest, user: any, supabase: any): Promise<any> {
+  return executeEnhancedAIWorkflowWithRichContext(body, user, supabase);
 }
 
 async function executeContentStrategyWorkflow(query: string, context: any, user: any): Promise<any> {

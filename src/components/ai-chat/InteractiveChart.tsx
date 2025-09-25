@@ -1,28 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { ChartConfiguration } from '@/types/enhancedChat';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LineChart, BarChart, PieChartComponent } from '@/components/ui/chart';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  BarChart3, 
-  LineChart as LineIcon, 
-  PieChart, 
-  Activity,
-  Maximize2,
-  Download,
-  RefreshCw,
-  Filter
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ChartConfiguration } from '@/types/enhancedChat';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2 } from 'lucide-react';
 
 interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
@@ -31,235 +16,312 @@ interface InteractiveChartProps {
   allowTypeSwitch?: boolean;
   allowDataFilter?: boolean;
   onDataUpdate?: (data: any[]) => void;
+  onExport?: () => void;
 }
 
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   chartConfig,
-  title = "Interactive Chart",
+  title,
   description,
-  allowTypeSwitch = true,
-  allowDataFilter = true,
-  onDataUpdate
+  allowTypeSwitch = false,
+  allowDataFilter = false,
+  onDataUpdate,
+  onExport
 }) => {
-  const [chartType, setChartType] = useState<ChartConfiguration['type']>(chartConfig.type);
+  const [currentType, setCurrentType] = useState(chartConfig.type);
+  const [filteredData, setFilteredData] = useState(chartConfig.data);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [dataFilter, setDataFilter] = useState<string>('all');
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const chartTypes = [
-    { type: 'line' as const, icon: LineIcon, label: 'Line Chart' },
-    { type: 'bar' as const, icon: BarChart3, label: 'Bar Chart' },
-    { type: 'pie' as const, icon: PieChart, label: 'Pie Chart' },
-    { type: 'area' as const, icon: Activity, label: 'Area Chart' }
+    { value: 'line', label: 'Line Chart', icon: LineIcon },
+    { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
+    { value: 'area', label: 'Area Chart', icon: TrendingUp },
+    { value: 'pie', label: 'Pie Chart', icon: PieIcon }
   ];
 
-  const filteredData = useMemo(() => {
-    if (dataFilter === 'all') return chartConfig.data;
-    
-    // Apply basic filtering logic - can be enhanced based on data structure
-    return chartConfig.data.filter((item, index) => {
-      if (dataFilter === 'recent') return index < 10;
-      if (dataFilter === 'top') return item.value > 0; // Assuming value field exists
-      return true;
-    });
-  }, [chartConfig.data, dataFilter]);
+  const colors = chartConfig.colors || [
+    'hsl(var(--primary))',
+    'hsl(var(--secondary))',
+    'hsl(var(--accent))',
+    'hsl(var(--muted))'
+  ];
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Simulate data refresh
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (onDataUpdate) {
-      onDataUpdate(chartConfig.data);
+  const handleDataFilter = useCallback((category: string) => {
+    setSelectedCategory(category);
+    if (category === 'all') {
+      setFilteredData(chartConfig.data);
+    } else {
+      const filtered = chartConfig.data.filter(item => 
+        item.category === category || item.type === category
+      );
+      setFilteredData(filtered);
     }
-    setIsRefreshing(false);
-  };
+    onDataUpdate?.(filteredData);
+  }, [chartConfig.data, filteredData, onDataUpdate]);
 
-  const handleExport = () => {
-    const dataStr = JSON.stringify(filteredData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `chart-data-${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
-
-  const chartProps = {
-    data: filteredData,
-    categories: chartConfig.categories,
-    colors: chartConfig.colors,
-    valueFormatter: chartConfig.valueFormatter,
-    className: isFullscreen ? 'h-[60vh]' : 'h-[300px]'
-  };
+  const handleExport = useCallback(() => {
+    if (onExport) {
+      onExport();
+    } else {
+      // Default export functionality
+      const dataStr = JSON.stringify(filteredData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      const exportFileDefaultName = `chart-data-${Date.now()}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    }
+  }, [filteredData, onExport]);
 
   const renderChart = () => {
-    switch (chartType) {
+    const commonProps = {
+      data: filteredData,
+      width: '100%',
+      height: chartConfig.height || 300
+    };
+
+    switch (currentType) {
       case 'line':
-        return <LineChart {...chartProps} />;
-      case 'bar':
-        return <BarChart {...chartProps} />;
-      case 'pie':
-        return <PieChartComponent {...chartProps} />;
+        return (
+          <ResponsiveContainer {...commonProps}>
+            <LineChart data={filteredData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
+                }}
+              />
+              <Legend />
+              {chartConfig.categories.map((category, index) => (
+                <Line
+                  key={category}
+                  type="monotone"
+                  dataKey={category}
+                  stroke={colors[index % colors.length]}
+                  strokeWidth={2}
+                  dot={{ fill: colors[index % colors.length], strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: colors[index % colors.length], strokeWidth: 2 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        );
+
       case 'area':
-        return <LineChart {...chartProps} />;
+        return (
+          <ResponsiveContainer {...commonProps}>
+            <AreaChart data={filteredData}>
+              <defs>
+                {colors.map((color, index) => (
+                  <linearGradient key={index} id={`colorArea${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={color} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={color} stopOpacity={0.1}/>
+                  </linearGradient>
+                ))}
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
+                }}
+              />
+              <Legend />
+              {chartConfig.categories.map((category, index) => (
+                <Area
+                  key={category}
+                  type="monotone"
+                  dataKey={category}
+                  stroke={colors[index % colors.length]}
+                  fillOpacity={1}
+                  fill={`url(#colorArea${index})`}
+                />
+              ))}
+            </AreaChart>
+          </ResponsiveContainer>
+        );
+
+      case 'bar':
+        return (
+          <ResponsiveContainer {...commonProps}>
+            <BarChart data={filteredData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
+                }}
+              />
+              <Legend />
+              {chartConfig.categories.map((category, index) => (
+                <Bar
+                  key={category}
+                  dataKey={category}
+                  fill={colors[index % colors.length]}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        );
+
+      case 'pie':
+        return (
+          <ResponsiveContainer {...commonProps}>
+            <PieChart>
+              <Pie
+                data={filteredData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {filteredData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+
       default:
-        return <LineChart {...chartProps} />;
+        return null;
     }
   };
 
-  const CurrentIcon = chartTypes.find(ct => ct.type === chartType)?.icon || Activity;
+  const availableCategories = [...new Set(chartConfig.data.map(item => item.category || item.type).filter(Boolean))];
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className={`relative ${isFullscreen ? 'fixed inset-4 z-50' : ''}`}
-      >
-        <Card className="overflow-hidden glass-panel bg-glass border border-white/10 group hover:shadow-neon transition-all duration-300">
-          {/* Enhanced Header */}
-          <div className="p-4 border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5">
-                  <CurrentIcon className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">{title}</h3>
-                  {description && (
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Chart Type Switcher */}
-                {allowTypeSwitch && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8">
-                        <CurrentIcon className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-background/95 backdrop-blur-sm border-white/20">
-                      {chartTypes.map(({ type, icon: Icon, label }) => (
-                        <DropdownMenuItem
-                          key={type}
-                          onClick={() => setChartType(type)}
-                          className="flex items-center gap-2"
-                        >
-                          <Icon className="w-4 h-4" />
-                          {label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-
-                {/* Data Filter */}
-                {allowDataFilter && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8">
-                        <Filter className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-background/95 backdrop-blur-sm border-white/20">
-                      <DropdownMenuItem onClick={() => setDataFilter('all')}>
-                        All Data
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setDataFilter('recent')}>
-                        Recent Only
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setDataFilter('top')}>
-                        Top Performers
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-
-                {/* Refresh Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="h-8"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
-
-                {/* Export Button */}
-                <Button variant="ghost" size="sm" onClick={handleExport} className="h-8">
-                  <Download className="w-4 h-4" />
-                </Button>
-
-                {/* Fullscreen Toggle */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                  className="h-8"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Data Insights */}
-            <div className="flex items-center gap-4 mt-3">
-              <Badge variant="secondary" className="bg-info/20 text-info border-info/30">
-                {filteredData.length} data points
-              </Badge>
-              
-              {chartConfig.data.length !== filteredData.length && (
-                <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">
-                  Filtered from {chartConfig.data.length}
-                </Badge>
-              )}
-
-              {/* Trend Indicator */}
-              {filteredData.length >= 2 && (
-                <div className="flex items-center gap-1 text-sm">
-                  {(() => {
-                    const firstValue = filteredData[0]?.value || 0;
-                    const lastValue = filteredData[filteredData.length - 1]?.value || 0;
-                    const trend = lastValue > firstValue ? 'up' : 'down';
-                    const change = Math.abs(((lastValue - firstValue) / firstValue) * 100).toFixed(1);
-                    
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn(
+        "relative group",
+        isFullscreen && "fixed inset-0 z-50 bg-background p-6"
+      )}
+    >
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-grid opacity-5 group-hover:opacity-10 transition-opacity duration-300 rounded-lg" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg" />
+      
+      <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-6 group-hover:shadow-neon transition-all duration-300">
+        {/* Header with controls */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            {title && (
+              <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+            )}
+            {description && (
+              <p className="text-sm text-muted-foreground mt-1">{description}</p>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {allowDataFilter && availableCategories.length > 0 && (
+              <Select value={selectedCategory} onValueChange={handleDataFilter}>
+                <SelectTrigger className="w-32">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {availableCategories.map(category => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {allowTypeSwitch && (
+              <Select value={currentType} onValueChange={(value) => setCurrentType(value as 'line' | 'bar' | 'pie' | 'area')}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Chart Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {chartTypes.map(type => {
+                    const Icon = type.icon;
                     return (
-                      <div className={`flex items-center gap-1 ${trend === 'up' ? 'text-success' : 'text-destructive'}`}>
-                        {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        <span className="text-xs">{change}%</span>
-                      </div>
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4" />
+                          {type.label}
+                        </div>
+                      </SelectItem>
                     );
-                  })()}
-                </div>
-              )}
+                  })}
+                </SelectContent>
+              </Select>
+            )}
+            
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="w-4 h-4" />
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFullscreen(!isFullscreen)}
+            >
+              <Maximize2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Chart area */}
+        <motion.div
+          key={currentType}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="min-h-[300px]"
+        >
+          {renderChart()}
+        </motion.div>
+
+        {/* Chart statistics */}
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Data points: {filteredData.length}</span>
+            <div className="flex items-center gap-4">
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                {selectedCategory === 'all' ? 'All Data' : selectedCategory}
+              </Badge>
+              <Badge variant="outline" className="bg-secondary/10 text-secondary border-secondary/20">
+                {chartTypes.find(t => t.value === currentType)?.label}
+              </Badge>
             </div>
           </div>
-
-          {/* Chart Container */}
-          <div className="p-6">
-            <div className="relative bg-white/5 rounded-lg p-4 backdrop-blur-sm border border-white/5">
-              {renderChart()}
-            </div>
-          </div>
-        </Card>
-
-        {/* Fullscreen Overlay */}
-        {isFullscreen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
-            onClick={() => setIsFullscreen(false)}
-          />
-        )}
-      </motion.div>
-    </AnimatePresence>
+        </div>
+      </Card>
+    </motion.div>
   );
 };
