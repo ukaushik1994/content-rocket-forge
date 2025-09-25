@@ -247,9 +247,6 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
       case 'performance-forecast':
         await handlePerformanceForecast();
         break;
-      case 'ab-test-suggestions':
-        await handleABTestSuggestions();
-        break;
       default:
         console.log('Unknown action:', action);
     }
@@ -296,30 +293,6 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
       toast({
         title: "Forecast Error",
         description: "Unable to generate performance forecast",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleABTestSuggestions = async () => {
-    try {
-      const suggestions = await realTimePerformanceService.generateABTestingSuggestions();
-      
-      const testMessage = `🧪 **A/B Testing Recommendations**\n\n${
-        suggestions.map(test => 
-          `🎯 **${test.testName}**\n` +
-          `Hypothesis: ${test.hypothesis}\n` +
-          `Variants: ${test.variants.join(' vs ')}\n` +
-          `Expected Impact: ${test.expectedImpact}\n` +
-          `Duration: ${test.duration}\n`
-        ).join('\n')
-      }`;
-      
-      await sendMessage(testMessage, { abTests: suggestions });
-    } catch (error) {
-      toast({
-        title: "Testing Error", 
-        description: "Unable to generate A/B test suggestions",
         variant: "destructive"
       });
     }
