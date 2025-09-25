@@ -62,8 +62,8 @@ export const usePerformanceMonitoring = () => {
         const nav = navigationEntries[0];
         setMetrics(prev => ({
           ...prev,
-          pageLoadTime: nav.loadEventEnd - nav.navigationStart,
-          renderTime: nav.domContentLoadedEventEnd - nav.navigationStart
+          pageLoadTime: nav.loadEventEnd - nav.fetchStart,
+          renderTime: nav.domContentLoadedEventEnd - nav.fetchStart
         }));
       }
     }
