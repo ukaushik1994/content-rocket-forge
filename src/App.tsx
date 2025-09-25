@@ -34,6 +34,7 @@ import { EnterpriseHubPage } from "./pages/EnterpriseHubPage";
 import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
+import WorkflowHistoryPage from "./components/workflow/WorkflowHistoryPage";
 import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
@@ -116,6 +117,9 @@ const App = () => (
 
                    {/* Smart Actions Analytics */}
                    <Route path="/smart-actions/analytics" element={<ProtectedRoute><SmartActionsAnalytics /></ProtectedRoute>} />
+                   
+                   {/* Workflow History */}
+                   <Route path="/workflows/history" element={<ProtectedRoute><WorkflowHistoryPage /></ProtectedRoute>} />
                    
                    {/* Notification Demo */}
                    <Route path="/notifications/demo" element={<ProtectedRoute><NotificationDemo /></ProtectedRoute>} />

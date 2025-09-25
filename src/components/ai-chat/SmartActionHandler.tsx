@@ -229,6 +229,49 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
           });
           break;
 
+        // Workflow actions
+        case 'view-workflow-history':
+          navigate('/workflows/history');
+          result = { navigated: true, route: '/workflows/history' };
+          
+          toast({
+            title: "Workflow History",
+            description: "View your intelligent workflow executions",
+          });
+          break;
+
+        case 'analyze-workflow-patterns':
+          navigate('/workflows/history');
+          result = { navigated: true, route: '/workflows/history', action: 'analyze-patterns' };
+          
+          toast({
+            title: "Workflow Pattern Analysis",
+            description: "Analyzing your workflow success patterns",
+          });
+          break;
+
+        case 'export-workflow-analytics':
+          if (data?.workflowData) {
+            const reportContent = JSON.stringify(data.workflowData, null, 2);
+            const blob = new Blob([reportContent], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `workflow-analytics-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            result = { exported: true, filename: link.download };
+            
+            toast({
+              title: "Workflow Analytics Exported",
+              description: "Workflow analytics data has been downloaded",
+            });
+          }
+          break;
+
         // AI workflow actions
         case 'create-follow-up-workflow':
           if (data?.workflowType && data?.context) {
