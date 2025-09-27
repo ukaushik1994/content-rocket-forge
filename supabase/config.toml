@@ -75,3 +75,12 @@ verify_jwt = false
 
 [functions.dashboard-summary]
 verify_jwt = true
+
+[functions.ai-smart-suggestions]
+verify_jwt = true
+
+[functions.ai-collaboration]
+verify_jwt = true
+
+[functions.ai-search-export]
+verify_jwt = true

@@ -1,14 +1,14 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,204 +16,244 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, contextType } = await req.json();
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { action, conversationId, userId, data } = await req.json();
+    
+    console.log(`🗂️ Context Manager: ${action} for user ${userId}`);
 
-    console.log(`🔍 Fetching context for user: ${userId}, type: ${contextType}`);
-
-    // Fetch comprehensive user context - ALL platform data
-    const [
-      solutionsResult,
-      contentResult,
-      calendarResult,
-      pipelineResult,
-      approvalsResult,
-      strategiesResult,
-      proposalsResult,
-      companyInfoResult,
-      brandGuidelinesResult,
-      competitorsResult,
-      aiAnalysesResult,
-      workflowStatesResult,
-      contextSnapshotsResult,
-      conversationsResult
-    ] = await Promise.all([
-      // Existing data
-      supabase.from('solutions').select('*').eq('user_id', userId),
-      supabase.from('content_items').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20),
-      supabase.from('content_calendar').select('*').eq('user_id', userId).limit(15),
-      supabase.from('content_pipeline').select('*').eq('user_id', userId).limit(15),
+    switch (action) {
+      case 'create_snapshot':
+        return await createSnapshot(conversationId, userId, data);
       
-      // Content approval ecosystem
-      supabase.from('content_approvals')
-        .select(`
-          *,
-          content_items!inner(id, title, user_id)
-        `)
-        .eq('content_items.user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10),
+      case 'load_snapshot':
+        return await loadSnapshot(data.snapshotId, userId);
       
-      // Strategy ecosystem
-      supabase.from('ai_strategies').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
-      supabase.from('ai_strategy_proposals').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(15),
+      case 'list_snapshots':
+        return await listSnapshots(userId, conversationId);
       
-      // Company & Brand context
-      supabase.from('company_info').select('*').eq('user_id', userId).limit(5),
-      supabase.from('brand_guidelines').select('*').eq('user_id', userId).limit(5),
-      supabase.from('company_competitors').select('*').eq('user_id', userId).limit(10),
+      case 'update_context_state':
+        return await updateContextState(userId, data);
       
-      // AI insights & analyses
-      supabase.from('content_ai_analyses')
-        .select(`
-          *,
-          content_items!inner(id, title, user_id)
-        `)
-        .eq('content_items.user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10),
+      case 'get_context_state':
+        return await getContextState(userId);
       
-      // AI workflow context
-      supabase.from('ai_workflow_states').select('*').eq('user_id', userId).limit(5),
-      supabase.from('ai_context_snapshots').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-      supabase.from('ai_conversations').select('*').eq('user_id', userId).order('updated_at', { ascending: false }).limit(10)
-    ]);
-
-    const contentItems = contentResult.data || [];
-    const solutions = solutionsResult.data || [];
-
-    // Calculate analytics
-    const totalContent = contentItems.length;
-    const published = contentItems.filter(item => item.status === 'published').length;
-    const inReview = contentItems.filter(item => item.status === 'review').length;
-    const avgSeoScore = totalContent > 0 
-      ? Math.round(contentItems.reduce((acc, item) => acc + (item.seo_score || 0), 0) / totalContent)
-      : 0;
-
-    // Generate weekly performance data
-    const weeklyData = [];
-    for (let i = 6; i >= 0; i--) {
-      const weekStart = new Date(Date.now() - i * 7 * 24 * 60 * 60 * 1000);
-      const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const weekContent = contentItems.filter(item => {
-        const itemDate = new Date(item.created_at);
-        return itemDate >= weekStart && itemDate < weekEnd;
-      });
+      case 'merge_contexts':
+        return await mergeContexts(userId, data);
       
-      weeklyData.push({
-        name: weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        content: weekContent.length,
-        published: weekContent.filter(item => item.status === 'published').length,
-        seoScore: weekContent.length > 0 
-          ? Math.round(weekContent.reduce((acc, item) => acc + (item.seo_score || 0), 0) / weekContent.length)
-          : 0
-      });
+      default:
+        throw new Error(`Unknown action: ${action}`);
     }
 
-    const context = {
-      // Core content data
-      solutions,
-      contentItems,
-      calendarItems: calendarResult.data || [],
-      pipelineItems: pipelineResult.data || [],
-      
-      // Approval ecosystem
-      contentApprovals: approvalsResult.data || [],
-      
-      // Strategy ecosystem  
-      aiStrategies: strategiesResult.data || [],
-      strategyProposals: proposalsResult.data || [],
-      
-      // Company & Brand context
-      companyInfo: companyInfoResult.data || [],
-      brandGuidelines: brandGuidelinesResult.data || [],
-      competitors: competitorsResult.data || [],
-      
-      // AI insights & analyses
-      contentAnalyses: aiAnalysesResult.data || [],
-      
-      // AI workflow context
-      workflowStates: workflowStatesResult.data || [],
-      contextSnapshots: contextSnapshotsResult.data || [],
-      conversations: conversationsResult.data || [],
-      
-      // Analytics
-      analytics: {
-        totalContent,
-        published,
-        inReview,
-        avgSeoScore,
-        weeklyData,
-        contentByType: contentItems.reduce((acc, item) => {
-          acc[item.content_type || 'unknown'] = (acc[item.content_type || 'unknown'] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-        pipelineByStage: (pipelineResult.data || []).reduce((acc, item) => {
-          acc[item.stage] = (acc[item.stage] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-        totalStrategies: (strategiesResult.data || []).length,
-        totalProposals: (proposalsResult.data || []).length,
-        totalApprovals: (approvalsResult.data || []).length
-      }
-    };
-
-    console.log(`✅ Context fetched successfully: ${solutions.length} solutions, ${contentItems.length} content items`);
-
-    return new Response(JSON.stringify({
-      ...context,
-      lastUpdated: new Date().toISOString()
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
   } catch (error) {
-    console.error('❌ Error in ai-context-manager:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Error in context manager:', error);
     return new Response(JSON.stringify({ 
-      error: errorMessage,
-      // Core content data  
-      solutions: [],
-      contentItems: [],
-      calendarItems: [],
-      pipelineItems: [],
-      
-      // Approval ecosystem
-      contentApprovals: [],
-      
-      // Strategy ecosystem
-      aiStrategies: [],
-      strategyProposals: [],
-      
-      // Company & Brand context
-      companyInfo: [],
-      brandGuidelines: [],
-      competitors: [],
-      
-      // AI insights & analyses
-      contentAnalyses: [],
-      
-      // AI workflow context
-      workflowStates: [],
-      contextSnapshots: [],
-      conversations: [],
-      
-      // Analytics
-      analytics: {
-        totalContent: 0,
-        published: 0,
-        inReview: 0,
-        avgSeoScore: 0,
-        weeklyData: [],
-        contentByType: {},
-        pipelineByStage: {},
-        totalStrategies: 0,
-        totalProposals: 0,
-        totalApprovals: 0
-      }
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
+
+async function createSnapshot(conversationId: string, userId: string, data: any) {
+  // Get current conversation messages
+  const { data: messages, error: messagesError } = await supabase
+    .rpc('get_conversation_messages', {
+      conv_id: conversationId,
+      limit_count: 100
+    });
+
+  if (messagesError) throw messagesError;
+
+  // Get current workflow state
+  const { data: workflowState } = await supabase
+    .from('ai_workflow_states')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('conversation_id', conversationId)
+    .single();
+
+  // Create context snapshot
+  const { data: snapshot, error: snapshotError } = await supabase
+    .from('ai_context_snapshots')
+    .insert({
+      user_id: userId,
+      title: data.title || `Snapshot ${new Date().toLocaleDateString()}`,
+      messages: messages || [],
+      workflow_state: workflowState?.workflow_data || {},
+      conversation_type: data.conversationType || 'regular'
+    })
+    .select()
+    .single();
+
+  if (snapshotError) throw snapshotError;
+
+  return new Response(JSON.stringify({ 
+    snapshot,
+    message: 'Context snapshot created successfully'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function loadSnapshot(snapshotId: string, userId: string) {
+  const { data: snapshot, error } = await supabase
+    .from('ai_context_snapshots')
+    .select('*')
+    .eq('id', snapshotId)
+    .eq('user_id', userId)
+    .single();
+
+  if (error) throw error;
+
+  return new Response(JSON.stringify({ 
+    snapshot,
+    message: 'Context snapshot loaded successfully'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function listSnapshots(userId: string, conversationId?: string) {
+  let query = supabase
+    .from('ai_context_snapshots')
+    .select('id, title, created_at, conversation_type')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  const { data: snapshots, error } = await query;
+
+  if (error) throw error;
+
+  return new Response(JSON.stringify({ 
+    snapshots,
+    count: snapshots?.length || 0
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function updateContextState(userId: string, data: any) {
+  const { data: existingState } = await supabase
+    .from('ai_context_state')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+  const contextData = {
+    ...existingState?.context || {},
+    ...data.context,
+    last_updated: new Date().toISOString()
+  };
+
+  const workflowData = {
+    ...existingState?.workflow_state || {},
+    ...data.workflowState,
+    last_updated: new Date().toISOString()
+  };
+
+  const { data: updatedState, error } = await supabase
+    .from('ai_context_state')
+    .upsert({
+      user_id: userId,
+      context: contextData,
+      workflow_state: workflowData
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return new Response(JSON.stringify({ 
+    contextState: updatedState,
+    message: 'Context state updated successfully'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function getContextState(userId: string) {
+  const { data: contextState, error } = await supabase
+    .from('ai_context_state')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+
+  return new Response(JSON.stringify({ 
+    contextState: contextState || {
+      user_id: userId,
+      context: {},
+      workflow_state: {},
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function mergeContexts(userId: string, data: any) {
+  const { sourceSnapshotId, targetSnapshotId, mergeStrategy = 'append' } = data;
+
+  // Get both snapshots
+  const { data: sourceSnapshot } = await supabase
+    .from('ai_context_snapshots')
+    .select('*')
+    .eq('id', sourceSnapshotId)
+    .eq('user_id', userId)
+    .single();
+
+  const { data: targetSnapshot } = await supabase
+    .from('ai_context_snapshots')
+    .select('*')
+    .eq('id', targetSnapshotId)
+    .eq('user_id', userId)
+    .single();
+
+  if (!sourceSnapshot || !targetSnapshot) {
+    throw new Error('One or both snapshots not found');
+  }
+
+  // Merge messages based on strategy
+  let mergedMessages = [];
+  if (mergeStrategy === 'append') {
+    mergedMessages = [...targetSnapshot.messages, ...sourceSnapshot.messages];
+  } else if (mergeStrategy === 'interleave') {
+    // Sort by timestamp and interleave
+    const allMessages = [...targetSnapshot.messages, ...sourceSnapshot.messages];
+    mergedMessages = allMessages.sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }
+
+  // Merge workflow states
+  const mergedWorkflowState = {
+    ...targetSnapshot.workflow_state,
+    ...sourceSnapshot.workflow_state,
+    merged_at: new Date().toISOString(),
+    source_snapshots: [sourceSnapshotId, targetSnapshotId]
+  };
+
+  // Create new merged snapshot
+  const { data: mergedSnapshot, error } = await supabase
+    .from('ai_context_snapshots')
+    .insert({
+      user_id: userId,
+      title: `Merged: ${targetSnapshot.title} + ${sourceSnapshot.title}`,
+      messages: mergedMessages,
+      workflow_state: mergedWorkflowState,
+      conversation_type: 'merged'
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return new Response(JSON.stringify({ 
+    mergedSnapshot,
+    message: 'Context snapshots merged successfully'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
