@@ -213,7 +213,10 @@ export const useStreamingChatDB = () => {
         if (currentMessageRef.current && activeConversationId) {
           const completedMessage = {
             ...currentMessageRef.current,
-            isStreaming: false
+            isStreaming: false,
+            // Add actions and visual data from AI response
+            actions: data.actions || [],
+            visualData: data.visualData || undefined
           };
 
           setState(prev => ({
@@ -226,7 +229,7 @@ export const useStreamingChatDB = () => {
             isAIThinking: false
           }));
 
-          // Save completed AI message to database
+          // Save completed AI message to database with actions and visual data
           saveMessageToDB(completedMessage, activeConversationId);
           currentMessageRef.current = null;
         }

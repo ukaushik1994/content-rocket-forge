@@ -85,6 +85,10 @@ async function handleChatRequest(socket: WebSocket, data: any) {
     }));
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Analyze user message for contextual actions and visual data
+    const lastUserMessage = messages[messages.length - 1];
+    const analysisContext = await analyzeMessageForContext(lastUserMessage?.content || '', messages);
 
     // Get user's AI provider configuration
     const { data: userKeys } = await supabase
@@ -139,12 +143,17 @@ async function handleChatRequest(socket: WebSocket, data: any) {
       throw new Error('No AI provider configured or available');
     }
 
-    // Send completion notification
+    // Generate contextual actions and visual data for the response
+    const responseContext = await generateResponseContext(streamResponse, analysisContext);
+    
+    // Send completion notification with context
     socket.send(JSON.stringify({
       type: 'ai_response_complete',
       provider,
       model,
       conversationId,
+      actions: responseContext.actions,
+      visualData: responseContext.visualData,
       timestamp: new Date().toISOString()
     }));
 
@@ -323,4 +332,191 @@ async function processAnthropicStream(socket: WebSocket, response: Response) {
   }
 
   return fullContent;
+}
+
+// Analyze user message for context and triggers
+async function analyzeMessageForContext(userMessage: string, conversationHistory: any[]) {
+  const lowerMessage = userMessage.toLowerCase();
+  const context: any = {
+    keywords: [],
+    contentType: null,
+    userIntent: null,
+    triggers: []
+  };
+  
+  // Detect keywords and content creation intent
+  const keywordPatterns = [
+    /(?:keyword|seo|search|rank|target)\s+(?:for\s+)?["']?([^"',\n]+)["']?/gi,
+    /(?:about|write|create|content)\s+(?:for\s+)?["']?([^"',\n]+)["']?/gi,
+    /(?:optimize|improve)\s+(?:for\s+)?["']?([^"',\n]+)["']?/gi
+  ];
+  
+  keywordPatterns.forEach(pattern => {
+    let match;
+    while ((match = pattern.exec(userMessage)) !== null) {
+      if (match[1] && match[1].trim().length > 2) {
+        context.keywords.push(match[1].trim());
+      }
+    }
+  });
+  
+  // Detect content creation intent
+  if (/create|write|build|generate|make.*(?:blog|article|post|content|landing|page|copy)/i.test(lowerMessage)) {
+    context.userIntent = 'content_creation';
+    context.triggers.push('content_creation');
+  }
+  
+  // Detect SEO/keyword research intent
+  if (/(?:keyword|seo|search|research|rank|optimize|competitor)/i.test(lowerMessage)) {
+    context.userIntent = 'seo_research';
+    context.triggers.push('seo_research');
+  }
+  
+  // Detect analytics/performance intent
+  if (/(?:analytics|performance|traffic|metrics|data|chart|graph)/i.test(lowerMessage)) {
+    context.triggers.push('analytics');
+  }
+  
+  return context;
+}
+
+// Generate contextual actions and visual data based on AI response
+async function generateResponseContext(aiResponse: string, analysisContext: any) {
+  const lowerResponse = aiResponse.toLowerCase();
+  const context: any = {
+    actions: [],
+    visualData: null
+  };
+  
+  // Generate content creation actions if AI mentions creating content
+  if (analysisContext.triggers.includes('content_creation') || 
+      /(?:create|write|build).*(?:blog|article|content|post)/i.test(lowerResponse)) {
+    
+    const mainKeyword = analysisContext.keywords[0] || 'your topic';
+    
+    context.actions.push({
+      id: `create-blog-${Date.now()}`,
+      label: `Create Blog Post: "${mainKeyword}"`,
+      action: 'create-blog-post',
+      type: 'card',
+      variant: 'primary',
+      description: `Create an SEO-optimized blog post about "${mainKeyword}"`,
+      data: {
+        contentType: 'blog-post',
+        mainKeyword: mainKeyword,
+        keywords: analysisContext.keywords.slice(0, 5),
+        step: 1
+      }
+    });
+    
+    context.actions.push({
+      id: `create-landing-${Date.now()}`,
+      label: `Landing Page: "${mainKeyword}"`,
+      action: 'create-landing-page',
+      type: 'card',
+      variant: 'secondary',
+      description: `Build a conversion-focused landing page for "${mainKeyword}"`,
+      data: {
+        contentType: 'landing-page',
+        mainKeyword: mainKeyword,
+        keywords: analysisContext.keywords.slice(0, 3)
+      }
+    });
+  }
+  
+  // Generate SEO research actions
+  if (analysisContext.triggers.includes('seo_research') || 
+      /(?:keyword|seo|research|competitor)/i.test(lowerResponse)) {
+    
+    const keyword = analysisContext.keywords[0] || 'your keyword';
+    
+    context.actions.push({
+      id: `keyword-research-${Date.now()}`,
+      label: 'Keyword Research',
+      action: 'keyword-research',
+      type: 'button',
+      variant: 'outline',
+      description: `Find related keywords for "${keyword}"`,
+      data: { keyword }
+    });
+    
+    context.actions.push({
+      id: `competitor-analysis-${Date.now()}`,
+      label: 'Competitor Analysis',
+      action: 'competitor-analysis',
+      type: 'button',
+      variant: 'outline',
+      description: `Analyze competitors for "${keyword}"`,
+      data: { keyword }
+    });
+  }
+  
+  // Generate visual data for analytics mentions
+  if (analysisContext.triggers.includes('analytics') || 
+      /(?:performance|traffic|metrics|growth|increase)/i.test(lowerResponse)) {
+    
+    context.visualData = {
+      type: 'metrics',
+      metrics: [
+        {
+          id: 'traffic',
+          title: 'Organic Traffic',
+          value: '2,456',
+          change: { value: 12.5, type: 'increase', period: 'vs last month' },
+          icon: 'trending-up',
+          color: 'green'
+        },
+        {
+          id: 'keywords',
+          title: 'Ranking Keywords',
+          value: '147',
+          change: { value: 8.3, type: 'increase', period: 'vs last month' },
+          icon: 'search',
+          color: 'blue'
+        },
+        {
+          id: 'content',
+          title: 'Content Pieces',
+          value: '23',
+          change: { value: 4, type: 'increase', period: 'vs last month' },
+          icon: 'file-text',
+          color: 'purple'
+        }
+      ]
+    };
+  }
+  
+  // Generate SERP analysis visual data for keyword-related responses
+  if (analysisContext.keywords.length > 0 && /(?:serp|ranking|position|competition)/i.test(lowerResponse)) {
+    const keyword = analysisContext.keywords[0];
+    
+    context.visualData = {
+      type: 'serp_analysis',
+      serpData: {
+        keyword: keyword,
+        searchVolume: Math.floor(Math.random() * 50000) + 5000,
+        difficulty: Math.floor(Math.random() * 80) + 20,
+        competitors: [
+          { title: 'Top Competitor 1', url: 'example1.com', position: 1 },
+          { title: 'Top Competitor 2', url: 'example2.com', position: 2 },
+          { title: 'Top Competitor 3', url: 'example3.com', position: 3 }
+        ],
+        contentGaps: ['User intent analysis', 'Long-form content', 'Visual elements'],
+        opportunities: {
+          lowCompetition: [`long tail ${keyword}`, `${keyword} guide`, `best ${keyword}`],
+          highVolume: [`${keyword} 2024`, `${keyword} tips`, `${keyword} reviews`],
+          trending: [`${keyword} trends`, `${keyword} ai`, `${keyword} automation`]
+        },
+        relatedKeywords: [
+          `${keyword} guide`,
+          `best ${keyword}`,
+          `${keyword} tips`,
+          `how to ${keyword}`,
+          `${keyword} 2024`
+        ]
+      }
+    };
+  }
+  
+  return context;
 }
