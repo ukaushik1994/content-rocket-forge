@@ -111,7 +111,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       {/* Floating Sidebar Toggle */}
       <motion.div
-        className="fixed top-5 left-4 z-[60]"
+        className="fixed top-20 left-4 z-[60]"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
