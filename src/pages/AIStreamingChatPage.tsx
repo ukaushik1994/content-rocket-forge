@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { EnhancedStreamingInterface } from '@/components/ai-chat/EnhancedStreamingInterface';
 import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
+import { ChatErrorBoundary } from '@/components/ai-chat/ChatErrorBoundary';
 import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 import { motion } from 'framer-motion';
@@ -53,30 +54,36 @@ export const AIStreamingChatPage: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex bg-gradient-to-br from-background to-muted/20">
-      {/* Chat History Sidebar */}
-      {isSidebarOpen && (
-        <ChatHistorySidebar
-          conversations={conversations}
-          activeConversation={activeConversationId}
-          onSelectConversation={handleSelectConversation}
-          onCreateConversation={handleCreateConversation}
-          onDeleteConversation={handleDeleteConversation}
-          onToggleSidebar={handleToggleSidebar}
-          onPinConversation={togglePinConversation}
-          onArchiveConversation={toggleArchiveConversation}
-          className="relative z-40"
-        />
-      )}
+    <ChatErrorBoundary>
+      <div className="h-screen flex bg-gradient-to-br from-background to-muted/20">
+        {/* Chat History Sidebar */}
+        {isSidebarOpen && (
+          <ChatErrorBoundary>
+            <ChatHistorySidebar
+              conversations={conversations}
+              activeConversation={activeConversationId}
+              onSelectConversation={handleSelectConversation}
+              onCreateConversation={handleCreateConversation}
+              onDeleteConversation={handleDeleteConversation}
+              onToggleSidebar={handleToggleSidebar}
+              onPinConversation={togglePinConversation}
+              onArchiveConversation={toggleArchiveConversation}
+              className="relative z-40"
+            />
+          </ChatErrorBoundary>
+        )}
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <EnhancedStreamingInterface
-          onClearConversation={handleClearConversation}
-          onToggleSidebar={handleToggleSidebar}
-          isSidebarOpen={isSidebarOpen}
-        />
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <ChatErrorBoundary>
+            <EnhancedStreamingInterface
+              onClearConversation={handleClearConversation}
+              onToggleSidebar={handleToggleSidebar}
+              isSidebarOpen={isSidebarOpen}
+            />
+          </ChatErrorBoundary>
+        </div>
       </div>
-    </div>
+    </ChatErrorBoundary>
   );
 };
