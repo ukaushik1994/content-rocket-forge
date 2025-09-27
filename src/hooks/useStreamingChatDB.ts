@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
+import { useMessagePagination } from './useMessagePagination';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface StreamingChatState {
@@ -18,6 +19,12 @@ export interface StreamingChatState {
     userName: string;
     isActive: boolean;
   }>;
+  contextState: Record<string, any>;
+  searchQuery: string;
+  filteredMessages: EnhancedChatMessage[];
+  hasMoreMessages: boolean;
+  isLoadingMoreMessages: boolean;
+  messageReactions: Record<string, Array<{ userId: string; emoji: string }>>;
 }
 
 export const useStreamingChatDB = () => {
@@ -29,7 +36,13 @@ export const useStreamingChatDB = () => {
     connectionStatus: 'disconnected',
     messageStatuses: {},
     typingUsers: [],
-    collaborators: []
+    collaborators: [],
+    contextState: {},
+    searchQuery: '',
+    filteredMessages: [],
+    hasMoreMessages: true,
+    isLoadingMoreMessages: false,
+    messageReactions: {}
   });
   
   const websocketRef = useRef<WebSocket | null>(null);
@@ -527,13 +540,40 @@ export const useStreamingChatDB = () => {
     currentMessageRef.current = null;
   }, []);
 
-  // Load more messages (for pagination)
+  // Enhanced pagination integration
+  const paginationConfig = useMemo(() => ({
+    pageSize: 50,
+    enableVirtualization: true,
+    preloadPages: 2
+  }), []);
+
+  const messagesPagination = useMessagePagination(state.messages, paginationConfig);
+
+  // Load more messages with enhanced pagination
   const loadMoreMessages = useCallback(async () => {
-    if (!activeConversationId) return { messages: [], hasMore: false };
+    if (!activeConversationId || state.isLoadingMoreMessages || !state.hasMoreMessages) {
+      return { messages: [], hasMore: false };
+    }
     
-    const offset = state.messages.length;
-    return await loadMessagesFromDB(activeConversationId, 20, offset);
-  }, [activeConversationId, state.messages.length, loadMessagesFromDB]);
+    setState(prev => ({ ...prev, isLoadingMoreMessages: true }));
+    
+    try {
+      const offset = state.messages.length;
+      const result = await loadMessagesFromDB(activeConversationId, 20, offset);
+      
+      setState(prev => ({ 
+        ...prev, 
+        hasMoreMessages: result.hasMore,
+        isLoadingMoreMessages: false 
+      }));
+      
+      return result;
+    } catch (error) {
+      console.error('Error loading more messages:', error);
+      setState(prev => ({ ...prev, isLoadingMoreMessages: false }));
+      return { messages: [], hasMore: false };
+    }
+  }, [activeConversationId, state.messages.length, state.isLoadingMoreMessages, state.hasMoreMessages, loadMessagesFromDB]);
 
   // Load messages and setup subscriptions when active conversation changes
   useEffect(() => {

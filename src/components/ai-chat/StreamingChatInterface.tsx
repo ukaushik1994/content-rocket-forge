@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { ChatHeader } from './ChatHeader';
 import { MessageInput } from './MessageInput';
-import { StreamingMessageBubble } from './StreamingMessageBubble';
-import { useStreamingChatDB } from '@/hooks/useStreamingChatDB';
+import { InfiniteScrollMessages } from './InfiniteScrollMessages';
+import { MessageSearchBar } from './MessageSearchBar';
+import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
 import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,29 +22,28 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   isSidebarOpen = false,
   activeConversation
 }, ref) => {
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const {
     messages,
+    filteredMessages,
     isConnected,
     isTyping,
     isAIThinking,
     connectionStatus,
+    hasMoreMessages,
+    isLoadingMoreMessages,
     connect,
     disconnect,
     sendMessage,
     sendTypingIndicator,
-    clearMessages
-  } = useStreamingChatDB();
+    clearMessages,
+    loadMoreMessages,
+    searchMessages,
+    getConversationAnalytics,
+    exportConversation
+  } = useEnhancedStreamingChat();
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight;
-      }
-    }
-  }, [messages, isAIThinking]);
+  // Use filtered messages for display
+  const displayMessages = filteredMessages.length > 0 ? filteredMessages : messages;
 
   const handleClearConversation = () => {
     clearMessages();
@@ -108,7 +107,7 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
           onClearConversation={handleClearConversation}
           onToggleSidebar={onToggleSidebar}
           sidebarOpen={isSidebarOpen}
-          hasMessages={messages.length > 0}
+          hasMessages={displayMessages.length > 0}
         />
         
         <div className="flex items-center gap-3">
@@ -141,86 +140,28 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea 
-        ref={scrollAreaRef}
-        className="flex-1 p-6"
-      >
-        <div className="space-y-6">
-          <AnimatePresence mode="popLayout">
-            {messages.map((message, index) => (
-              <motion.div
-                key={message.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 20
-                }}
-              >
-                <StreamingMessageBubble 
-                  message={message}
-                  isLatest={index === messages.length - 1}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          
-          {/* AI Thinking Indicator */}
-          <AnimatePresence>
-            {isAIThinking && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="flex justify-start"
-              >
-                <div className="bg-muted/50 backdrop-blur-sm rounded-2xl px-4 py-3 max-w-xs">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="flex gap-1">
-                      <motion.div
-                        className="w-2 h-2 rounded-full bg-primary/60"
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-                      />
-                      <motion.div
-                        className="w-2 h-2 rounded-full bg-primary/60"
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                      />
-                      <motion.div
-                        className="w-2 h-2 rounded-full bg-primary/60"
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                      />
-                    </div>
-                    <span>AI is thinking...</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          {/* Other Users Typing Indicator */}
-          <AnimatePresence>
-            {isTyping && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex justify-start"
-              >
-                <Badge variant="outline" className="text-xs">
-                  Someone is typing...
-                </Badge>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </ScrollArea>
+      {/* Search Bar */}
+      <div className="p-4 border-b border-border/50">
+        <MessageSearchBar
+          searchQuery=""
+          onSearchChange={searchMessages}
+          onExportConversation={exportConversation}
+          onShowAnalytics={() => {}}
+          messageCount={displayMessages.length}
+          filteredCount={filteredMessages.length}
+        />
+      </div>
+
+      {/* Messages with Infinite Scroll */}
+      <InfiniteScrollMessages
+        messages={displayMessages}
+        hasMoreMessages={hasMoreMessages}
+        isLoadingMoreMessages={isLoadingMoreMessages}
+        onLoadMore={loadMoreMessages}
+        isAIThinking={isAIThinking}
+        isTyping={isTyping}
+        className="flex-1"
+      />
 
       {/* Input */}
       <div className="p-4 border-t border-border/50 bg-card/30">
