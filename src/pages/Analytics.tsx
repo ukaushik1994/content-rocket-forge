@@ -38,6 +38,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { WorkflowAnalyticsTab } from '@/components/analytics/WorkflowAnalyticsTab';
+import SystemArchitectureDiagram from '@/components/diagrams/SystemArchitectureDiagram';
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -406,35 +407,42 @@ const Analytics = () => {
               {/* Tabs Section */}
               <motion.div variants={itemVariants}>
                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                   <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-4 gap-2">
-                    <TabsTrigger 
-                      value="overview" 
-                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                      Overview
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="content" 
-                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
-                    >
-                      <FileText className="h-4 w-4" />
-                      Content
-                    </TabsTrigger>
+                   <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-5 gap-2">
                      <TabsTrigger 
-                       value="performance" 
-                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                       value="overview" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                      >
-                       <Activity className="h-4 w-4" />
-                       Performance
+                       <BarChart3 className="h-4 w-4" />
+                       Overview
                      </TabsTrigger>
                      <TabsTrigger 
-                       value="workflows" 
-                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                       value="content" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                      >
-                       <Zap className="h-4 w-4" />
-                       Workflows
+                       <FileText className="h-4 w-4" />
+                       Content
                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="performance" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                      >
+                        <Activity className="h-4 w-4" />
+                        Performance
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="workflows" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                      >
+                        <Zap className="h-4 w-4" />
+                        Workflows
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="architecture" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                      >
+                        <Globe className="h-4 w-4" />
+                        System
+                      </TabsTrigger>
                   </TabsList>
                   
                   <AnimatePresence mode="wait">
@@ -682,6 +690,10 @@ const Analytics = () => {
                         workflowMetrics={workflowMetrics} 
                         executions={executions || []} 
                       />
+                    </TabsContent>
+
+                    <TabsContent value="architecture" className="space-y-6">
+                      <SystemArchitectureDiagram />
                     </TabsContent>
                   </AnimatePresence>
                 </Tabs>
