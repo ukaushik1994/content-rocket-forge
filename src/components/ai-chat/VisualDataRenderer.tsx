@@ -132,7 +132,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
 
     return (
       <motion.div
-        className="grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-3"
+        className="grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-1.5"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -162,9 +162,9 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
                 getColorGradient(metric.color)
               )} />
               
-              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-5 md:p-6 min-h-[120px] group-hover:shadow-neon transition-all duration-300">
+              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-3 md:p-4 min-h-[60px] group-hover:shadow-neon transition-all duration-300">
                 {/* Header with icon */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {IconComponent ? (
                       <motion.div 
@@ -206,7 +206,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
                 
                 {/* Value with enhanced styling */}
                 <motion.div 
-                  className="text-2xl md:text-3xl font-bold group-hover:text-gradient transition-all duration-300 mb-3 whitespace-normal break-words leading-tight"
+                  className="text-2xl md:text-3xl font-bold group-hover:text-gradient transition-all duration-300 mb-1.5 whitespace-normal break-words leading-tight"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 + 0.3 }}
