@@ -112,24 +112,24 @@ export const OpportunityMetrics: React.FC<OpportunityMetricsProps> = ({
   return (
     <div className="space-y-6">
       {/* Main Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {metricCards.map((metric) => {
           const Icon = metric.icon;
           return (
             <Card key={metric.title} className="border-white/10 bg-glass">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-muted-foreground mb-1 truncate">
                       {metric.title}
                     </p>
-                    <p className="text-2xl font-bold">{metric.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-lg md:text-xl font-bold">{metric.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-tight">
                       {metric.description}
                     </p>
                   </div>
-                  <div className={`p-2 rounded-lg ${metric.bgColor}`}>
-                    <Icon className={`h-5 w-5 ${metric.color}`} />
+                  <div className={`p-1.5 rounded-lg ${metric.bgColor} flex-shrink-0 ml-2`}>
+                    <Icon className={`h-4 w-4 ${metric.color}`} />
                   </div>
                 </div>
               </CardContent>
