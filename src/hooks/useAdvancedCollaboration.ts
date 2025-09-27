@@ -287,8 +287,17 @@ export const useAdvancedCollaboration = () => {
       if (error) throw error;
 
       setSessions((data || []).map(session => ({
-        ...session,
-        participants: Array.isArray(session.participants) ? session.participants : []
+        id: session.id,
+        session_name: session.session_name,
+        host_user_id: session.host_user_id,
+        participants: Array.isArray(session.participants) 
+          ? (session.participants as Array<{user_id: string; role: string; joined_at: string}>)
+          : [],
+        screen_sharing_active: session.screen_sharing_active,
+        screen_sharing_user_id: session.screen_sharing_user_id,
+        session_data: session.session_data,
+        created_at: session.created_at,
+        status: session.status
       })));
 
     } catch (error) {
