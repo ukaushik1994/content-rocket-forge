@@ -124,7 +124,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
               ? 'bg-primary text-primary-foreground border-primary/20 ml-4' 
               : 'bg-background/80 border-border/50 mr-4'
           }`}>
-            <div className="px-4 py-3">
+            <div className="px-6 py-3">
               <div className={`text-sm leading-relaxed ${
                 isUser ? 'text-primary-foreground' : 'text-foreground'
               }`}>
