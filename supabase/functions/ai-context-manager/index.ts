@@ -195,11 +195,26 @@ async function getContextState(userId: string) {
       console.log(`📋 Found ${solutions?.length || 0} solutions for user ${userId}`);
     }
 
-    // Get user content analytics
+    // Get comprehensive user content data
     const { data: contentItems, error: contentError } = await supabase
       .from('content_items')
-      .select('status, seo_score, created_at')
-      .eq('user_id', userId);
+      .select(`
+        id,
+        title,
+        content,
+        content_type,
+        status,
+        seo_score,
+        created_at,
+        updated_at,
+        metadata,
+        main_keyword,
+        meta_title,
+        meta_description,
+        approval_status
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
     if (contentError) {
       console.error('❌ Error fetching content items:', contentError);
@@ -207,13 +222,165 @@ async function getContextState(userId: string) {
       console.log(`📝 Found ${contentItems?.length || 0} content items for user ${userId}`);
     }
 
-    // Build comprehensive context
-    const analytics = {
+    // Get content keywords for enhanced analysis
+    const { data: contentKeywords, error: keywordsError } = await supabase
+      .from('content_keywords')
+      .select(`
+        content_id,
+        keywords (
+          id,
+          keyword_text,
+          search_volume,
+          difficulty
+        )
+      `)
+      .in('content_id', contentItems?.map(item => item.id) || []);
+
+    if (keywordsError) {
+      console.error('❌ Error fetching content keywords:', keywordsError);
+    } else {
+      console.log(`🔑 Found keywords for ${contentKeywords?.length || 0} content items`);
+    }
+
+    // Implement solution-content mapping logic
+    const mapContentToSolutions = (content: any[] | null, solutions: any[] | null, keywords: any[] | null) => {
+      const solutionContentMap = new Map();
+      
+      solutions?.forEach(solution => {
+        solutionContentMap.set(solution.name, {
+          solution,
+          mappedContent: [],
+          contentGaps: [],
+          coverage: 0
+        });
+      });
+
+      content?.forEach(contentItem => {
+        const itemKeywords = keywords
+          ?.filter(k => k.content_id === contentItem.id)
+          ?.flatMap(k => k.keywords?.keyword_text || []) || [];
+        
+        let bestMatch = { solution: null, score: 0 };
+        
+        solutions?.forEach(solution => {
+          let relevanceScore = 0;
+          
+          // Check title and content for solution keywords
+          const solutionKeywords = [
+            ...(solution.features || []),
+            ...(solution.pain_points || []),
+            ...(solution.use_cases || []),
+            solution.name,
+            solution.short_description || solution.description
+          ].join(' ').toLowerCase();
+          
+          const contentText = `${contentItem.title} ${contentItem.content || ''} ${contentItem.main_keyword || ''}`.toLowerCase();
+          
+          // Keyword matching
+          itemKeywords.forEach(keyword => {
+            if (solutionKeywords.includes(keyword.toLowerCase())) {
+              relevanceScore += 2;
+            }
+          });
+          
+          // Direct text matching
+          if (contentText.includes(solution.name.toLowerCase())) {
+            relevanceScore += 5;
+          }
+          
+          // Metadata solution mapping
+          if (contentItem.metadata?.solution_id || contentItem.metadata?.mapped_solutions?.includes(solution.name)) {
+            relevanceScore += 10;
+          }
+          
+          // Category/type matching
+          if (contentItem.content_type && solution.category && 
+              contentItem.content_type.toLowerCase() === solution.category.toLowerCase()) {
+            relevanceScore += 3;
+          }
+          
+          if (relevanceScore > bestMatch.score) {
+            bestMatch = { solution: solution.name, score: relevanceScore };
+          }
+        });
+        
+        // Map content to best matching solution (if score > threshold)
+        if (bestMatch.score >= 2 && bestMatch.solution) {
+          const mapping = solutionContentMap.get(bestMatch.solution);
+          mapping.mappedContent.push({
+            ...contentItem,
+            relevanceScore: bestMatch.score,
+            mappedKeywords: itemKeywords
+          });
+          mapping.coverage = Math.min(100, (mapping.mappedContent.length * 25));
+        }
+      });
+      
+      return solutionContentMap;
+    };
+
+    // Create solution-content mapping
+    const solutionContentMapping = mapContentToSolutions(contentItems, solutions, contentKeywords);
+    
+    // Analyze content gaps
+    const contentGapAnalysis = Array.from(solutionContentMapping.entries()).map(([solutionName, data]: [string, any]) => {
+      const gaps = [];
+      
+      // Check for missing content types
+      const existingTypes = data.mappedContent.map((c: any) => c.content_type);
+      const recommendedTypes = ['blog', 'social-twitter', 'social-linkedin', 'email'];
+      
+      recommendedTypes.forEach(type => {
+        if (!existingTypes.includes(type)) {
+          gaps.push({
+            type: 'missing_content_type',
+            contentType: type,
+            priority: type === 'blog' ? 'high' : 'medium',
+            suggestion: `Create ${type} content for ${solutionName}`
+          });
+        }
+      });
+      
+      // Check content freshness
+      const oldContent = data.mappedContent.filter((c: any) => {
+        const contentDate = new Date(c.created_at);
+        const monthsOld = (Date.now() - contentDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        return monthsOld > 6;
+      });
+      
+      if (oldContent.length > 0) {
+        gaps.push({
+          type: 'outdated_content',
+          count: oldContent.length,
+          priority: 'medium',
+          suggestion: `Update ${oldContent.length} pieces of content for ${solutionName}`
+        });
+      }
+      
+      return {
+        solution: solutionName,
+        coverage: data.coverage,
+        contentCount: data.mappedContent.length,
+        gaps
+      };
+    });
+
+    // Enhanced analytics with solution mapping
+    const enhancedAnalytics = {
       totalContent: contentItems?.length || 0,
       published: contentItems?.filter(item => item.status === 'published')?.length || 0,
+      draft: contentItems?.filter(item => item.status === 'draft')?.length || 0,
       avgSeoScore: (contentItems && contentItems.length > 0) 
-        ? contentItems.reduce((sum, item) => sum + (item.seo_score || 0), 0) / contentItems.length 
-        : 0
+        ? Math.round(contentItems.reduce((sum, item) => sum + (item.seo_score || 0), 0) / contentItems.length)
+        : 0,
+      contentBySolution: Object.fromEntries(solutionContentMapping),
+      contentGaps: contentGapAnalysis,
+      recentContent: contentItems?.filter(item => {
+        const itemDate = new Date(item.created_at);
+        const daysOld = (Date.now() - itemDate.getTime()) / (1000 * 60 * 60 * 24);
+        return daysOld <= 30;
+      })?.length || 0,
+      keywordCoverage: contentKeywords?.length || 0
     };
 
     const comprehensiveContext = {
@@ -225,7 +392,7 @@ async function getContextState(userId: string) {
         updated_at: new Date().toISOString()
       },
       solutions: solutions || [],
-      analytics,
+      analytics: enhancedAnalytics,
       companyInfo: contextState?.context?.companyInfo || null,
       lastFetched: new Date().toISOString()
     };
