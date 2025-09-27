@@ -11,6 +11,13 @@ export interface StreamingChatState {
   isTyping: boolean;
   isAIThinking: boolean;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  messageStatuses: Record<string, 'sending' | 'sent' | 'delivered' | 'read' | 'error'>;
+  typingUsers: string[];
+  collaborators: Array<{
+    userId: string;
+    userName: string;
+    isActive: boolean;
+  }>;
 }
 
 export const useStreamingChatDB = () => {
@@ -19,18 +26,22 @@ export const useStreamingChatDB = () => {
     isConnected: false,
     isTyping: false,
     isAIThinking: false,
-    connectionStatus: 'disconnected'
+    connectionStatus: 'disconnected',
+    messageStatuses: {},
+    typingUsers: [],
+    collaborators: []
   });
   
   const websocketRef = useRef<WebSocket | null>(null);
   const currentMessageRef = useRef<EnhancedChatMessage | null>(null);
+  const realtimeChannelRef = useRef<any>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { activeConversationId } = useChatContextBridge();
+  const { activeConversationId, updateMessageStatus: updateContextMessageStatus } = useChatContextBridge();
 
-  // Save message to database
-  const saveMessageToDB = useCallback(async (message: EnhancedChatMessage, conversationId: string) => {
-    if (!conversationId) return;
+  // Save message to database with enhanced status tracking
+  const saveMessageToDB = useCallback(async (message: EnhancedChatMessage, conversationId: string, status: string = 'sent') => {
+    if (!conversationId) return null;
 
     try {
       const validType = message.role === 'user' ? 'user' : 
@@ -45,35 +56,55 @@ export const useStreamingChatDB = () => {
         progress_indicator: message.progressIndicator ? JSON.stringify(message.progressIndicator) : null,
         workflow_context: message.workflowContext ? JSON.stringify(message.workflowContext) : null,
         function_calls: message.actions ? JSON.stringify(message.actions) : null,
-        status: 'completed'
+        status: 'completed',
+        message_status: status,
+        is_streaming: message.isStreaming || false
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('ai_messages')
-        .insert(messageData);
+        .insert(messageData)
+        .select()
+        .single();
       
       if (error) {
         console.error('Database error saving message:', error);
+        return null;
       }
+
+      // Update message status in local state
+      setState(prev => ({
+        ...prev,
+        messageStatuses: {
+          ...prev.messageStatuses,
+          [message.id]: status as any
+        }
+      }));
+
+      return data?.id;
     } catch (error) {
       console.error('Error saving message to database:', error);
+      return null;
     }
   }, []);
 
-  // Load messages from database for active conversation
-  const loadMessagesFromDB = useCallback(async (conversationId: string) => {
-    if (!conversationId) return;
+  // Load messages from database with enhanced pagination support
+  const loadMessagesFromDB = useCallback(async (conversationId: string, limit: number = 50, offset: number = 0) => {
+    if (!conversationId) return { messages: [], hasMore: false };
 
     try {
-      const { data, error } = await supabase
-        .from('ai_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+      const { data, error } = await supabase.rpc('get_conversation_messages', {
+        conv_id: conversationId,
+        limit_count: limit + 1, // Get one extra to check if there are more
+        offset_count: offset
+      });
 
       if (error) throw error;
       
-      const formattedMessages: EnhancedChatMessage[] = (data || []).map(msg => {
+      const hasMore = (data || []).length > limit;
+      const messages = (data || []).slice(0, limit);
+      
+      const formattedMessages: EnhancedChatMessage[] = messages.map((msg: any) => {
         let actions, visualData, progressIndicator, workflowContext;
         
         try {
@@ -105,13 +136,117 @@ export const useStreamingChatDB = () => {
           visualData,
           actions,
           progressIndicator,
-          workflowContext
+          workflowContext,
+          isStreaming: msg.is_streaming || false,
+          messageStatus: msg.message_status || 'sent'
         };
       });
       
-      setState(prev => ({ ...prev, messages: formattedMessages }));
+      if (offset === 0) {
+        setState(prev => ({ ...prev, messages: formattedMessages.reverse() }));
+      } else {
+        setState(prev => ({ ...prev, messages: [...formattedMessages.reverse(), ...prev.messages] }));
+      }
+
+      return { messages: formattedMessages, hasMore };
     } catch (error) {
       console.error('Error loading messages from database:', error);
+      return { messages: [], hasMore: false };
+    }
+  }, []);
+
+  // Setup real-time subscriptions for message updates and typing indicators
+  const setupRealtimeSubscriptions = useCallback(() => {
+    if (!activeConversationId || realtimeChannelRef.current) return;
+
+    console.log('🔄 Setting up real-time subscriptions for conversation:', activeConversationId);
+
+    const channel = supabase.channel(`conversation:${activeConversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'ai_messages',
+          filter: `conversation_id=eq.${activeConversationId}`
+        },
+        (payload) => {
+          console.log('📨 New message received via realtime:', payload);
+          const newMessage = payload.new as any;
+          
+          // Only add if it's not from current user to avoid duplicates
+          if (newMessage.type !== 'user' || !user || newMessage.user_id !== user.id) {
+            const formattedMessage: EnhancedChatMessage = {
+              id: newMessage.id,
+              role: newMessage.type,
+              content: newMessage.content,
+              timestamp: new Date(newMessage.created_at),
+              isStreaming: newMessage.is_streaming || false,
+              messageStatus: newMessage.message_status || 'sent'
+            };
+
+            setState(prev => ({
+              ...prev,
+              messages: [...prev.messages, formattedMessage]
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'ai_messages',
+          filter: `conversation_id=eq.${activeConversationId}`
+        },
+        (payload) => {
+          console.log('✏️ Message updated via realtime:', payload);
+          const updatedMessage = payload.new as any;
+          
+          setState(prev => ({
+            ...prev,
+            messages: prev.messages.map(msg => 
+              msg.id === updatedMessage.id 
+                ? { ...msg, messageStatus: updatedMessage.message_status }
+                : msg
+            )
+          }));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_typing_indicators',
+          filter: `conversation_id=eq.${activeConversationId}`
+        },
+        (payload) => {
+          console.log('⌨️ Typing indicator update:', payload);
+          const indicator = payload.new as any;
+          
+          if (indicator && indicator.user_id !== user?.id) {
+            setState(prev => ({
+              ...prev,
+              typingUsers: indicator.is_typing 
+                ? [...prev.typingUsers.filter(id => id !== indicator.user_id), indicator.user_id]
+                : prev.typingUsers.filter(id => id !== indicator.user_id)
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    realtimeChannelRef.current = channel;
+  }, [activeConversationId, user]);
+
+  // Cleanup real-time subscriptions
+  const cleanupRealtimeSubscriptions = useCallback(() => {
+    if (realtimeChannelRef.current) {
+      console.log('🧹 Cleaning up real-time subscriptions');
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
     }
   }, []);
 
@@ -132,12 +267,21 @@ export const useStreamingChatDB = () => {
       websocketRef.current = new WebSocket(wsUrl);
 
       websocketRef.current.onopen = () => {
-        console.log('🔗 Connected to streaming chat');
+        console.log('🔗 Connected to streaming chat WebSocket');
         setState(prev => ({ 
           ...prev, 
           isConnected: true, 
           connectionStatus: 'connected' 
         }));
+
+        // Authenticate with the WebSocket
+        if (websocketRef.current && user) {
+          websocketRef.current.send(JSON.stringify({
+            type: 'authenticate',
+            userId: user.id,
+            conversationId: activeConversationId
+          }));
+        }
       };
 
       websocketRef.current.onmessage = (event) => {
@@ -150,7 +294,7 @@ export const useStreamingChatDB = () => {
       };
 
       websocketRef.current.onclose = () => {
-        console.log('🔌 Disconnected from streaming chat');
+        console.log('🔌 Disconnected from streaming chat WebSocket');
         setState(prev => ({ 
           ...prev, 
           isConnected: false, 
@@ -173,19 +317,24 @@ export const useStreamingChatDB = () => {
       console.error('Failed to connect:', error);
       setState(prev => ({ ...prev, connectionStatus: 'error' }));
     }
-  }, [user, toast]);
+  }, [user, toast, activeConversationId]);
 
   const disconnect = useCallback(() => {
     if (websocketRef.current) {
       websocketRef.current.close();
       websocketRef.current = null;
     }
-  }, []);
+    cleanupRealtimeSubscriptions();
+  }, [cleanupRealtimeSubscriptions]);
 
   const handleWebSocketMessage = useCallback((data: any) => {
     switch (data.type) {
       case 'connection_established':
-        console.log('✅ Connection established');
+        console.log('✅ WebSocket connection established');
+        break;
+
+      case 'authenticated':
+        console.log('🔐 Authenticated with WebSocket');
         break;
 
       case 'ai_thinking_start':
@@ -213,8 +362,8 @@ export const useStreamingChatDB = () => {
         if (currentMessageRef.current && activeConversationId) {
           const completedMessage = {
             ...currentMessageRef.current,
+            content: data.content,
             isStreaming: false,
-            // Add actions and visual data from AI response
             actions: data.actions || [],
             visualData: data.visualData || undefined
           };
@@ -229,20 +378,30 @@ export const useStreamingChatDB = () => {
             isAIThinking: false
           }));
 
-          // Save completed AI message to database with actions and visual data
+          // Save completed AI message to database
           saveMessageToDB(completedMessage, activeConversationId);
           currentMessageRef.current = null;
         }
         break;
 
       case 'user_typing':
-        if (data.userId !== user?.id) {
-          setState(prev => ({ ...prev, isTyping: true }));
-        }
+        setState(prev => ({
+          ...prev,
+          typingUsers: [...prev.typingUsers.filter(id => id !== data.userId), data.userId]
+        }));
         break;
 
       case 'user_typing_stopped':
-        setState(prev => ({ ...prev, isTyping: false }));
+        setState(prev => ({
+          ...prev,
+          typingUsers: prev.typingUsers.filter(id => id !== data.userId)
+        }));
+        break;
+
+      case 'user_joined':
+      case 'user_disconnected':
+        // Handle collaborator updates
+        console.log(`👥 User ${data.type}:`, data.userId);
         break;
 
       case 'error':
@@ -273,13 +432,26 @@ export const useStreamingChatDB = () => {
       id: `user-${Date.now()}`,
       role: 'user',
       content,
-      timestamp: new Date()
+      timestamp: new Date(),
+      messageStatus: 'sending'
     };
 
-    setState(prev => ({ ...prev, messages: [...prev.messages, userMessage] }));
+    setState(prev => ({ 
+      ...prev, 
+      messages: [...prev.messages, userMessage],
+      messageStatuses: { ...prev.messageStatuses, [userMessage.id]: 'sending' }
+    }));
 
     // Save user message to database
-    await saveMessageToDB(userMessage, activeConversationId);
+    const messageId = await saveMessageToDB(userMessage, activeConversationId, 'sent');
+    
+    if (messageId) {
+      // Update message status to sent
+      setState(prev => ({
+        ...prev,
+        messageStatuses: { ...prev.messageStatuses, [userMessage.id]: 'sent' }
+      }));
+    }
 
     // Create placeholder AI message for streaming
     const aiMessage: EnhancedChatMessage = {
@@ -287,26 +459,26 @@ export const useStreamingChatDB = () => {
       role: 'assistant',
       content: '',
       timestamp: new Date(),
-      isStreaming: true
+      isStreaming: true,
+      messageStatus: 'sending'
     };
 
     setState(prev => ({ ...prev, messages: [...prev.messages, aiMessage] }));
     currentMessageRef.current = aiMessage;
 
-    // Send chat request
+    // Send chat request via WebSocket
     const chatRequest = {
       type: 'chat_request',
       messages: [...state.messages, userMessage].map(msg => ({
         role: msg.role,
         content: msg.content
       })),
-      userId: user.id,
       conversationId: activeConversationId
     };
 
     websocketRef.current.send(JSON.stringify(chatRequest));
 
-    // Update conversation timestamp if needed
+    // Update conversation timestamp
     if (activeConversationId) {
       try {
         await supabase
@@ -328,19 +500,60 @@ export const useStreamingChatDB = () => {
     }));
   }, [user]);
 
+  const updateMessageStatus = useCallback(async (messageId: string, status: 'sent' | 'delivered' | 'read' | 'error') => {
+    if (!user) return;
+
+    try {
+      await supabase.rpc('update_message_status', {
+        message_id: messageId,
+        new_status: status,
+        user_id: user.id
+      });
+
+      setState(prev => ({
+        ...prev,
+        messageStatuses: { ...prev.messageStatuses, [messageId]: status }
+      }));
+
+      // Update context bridge
+      updateContextMessageStatus(messageId, status, user.id);
+    } catch (error) {
+      console.error('Error updating message status:', error);
+    }
+  }, [user, updateContextMessageStatus]);
+
   const clearMessages = useCallback(() => {
-    setState(prev => ({ ...prev, messages: [] }));
+    setState(prev => ({ ...prev, messages: [], messageStatuses: {} }));
     currentMessageRef.current = null;
   }, []);
 
-  // Load messages when active conversation changes
+  // Load more messages (for pagination)
+  const loadMoreMessages = useCallback(async () => {
+    if (!activeConversationId) return { messages: [], hasMore: false };
+    
+    const offset = state.messages.length;
+    return await loadMessagesFromDB(activeConversationId, 20, offset);
+  }, [activeConversationId, state.messages.length, loadMessagesFromDB]);
+
+  // Load messages and setup subscriptions when active conversation changes
   useEffect(() => {
+    cleanupRealtimeSubscriptions();
+    
     if (activeConversationId) {
       loadMessagesFromDB(activeConversationId);
+      setupRealtimeSubscriptions();
+      
+      // Join conversation via WebSocket if connected
+      if (websocketRef.current?.readyState === WebSocket.OPEN) {
+        websocketRef.current.send(JSON.stringify({
+          type: 'join_conversation',
+          conversationId: activeConversationId
+        }));
+      }
     } else {
-      setState(prev => ({ ...prev, messages: [] }));
+      setState(prev => ({ ...prev, messages: [], messageStatuses: {} }));
     }
-  }, [activeConversationId, loadMessagesFromDB]);
+  }, [activeConversationId, loadMessagesFromDB, setupRealtimeSubscriptions, cleanupRealtimeSubscriptions]);
 
   // Auto-connect when component mounts and user is available
   useEffect(() => {
@@ -359,7 +572,11 @@ export const useStreamingChatDB = () => {
     disconnect,
     sendMessage,
     sendTypingIndicator,
+    updateMessageStatus,
     clearMessages,
-    loadMessagesFromDB
+    loadMessagesFromDB,
+    loadMoreMessages,
+    setupRealtimeSubscriptions,
+    cleanupRealtimeSubscriptions
   };
 };

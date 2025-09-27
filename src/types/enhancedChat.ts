@@ -84,6 +84,8 @@ export interface EnhancedChatMessage {
   };
   isStreaming?: boolean;
   type?: 'user' | 'assistant' | 'system';
+  messageStatus?: 'sending' | 'sent' | 'delivered' | 'read' | 'error';
+  readBy?: string[];
   metadata?: {
     reasoning?: string;
     confidence?: number;
