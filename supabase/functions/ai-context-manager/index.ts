@@ -185,15 +185,27 @@ async function getContextState(userId: string) {
     // Get user solutions
     const { data: solutions, error: solutionsError } = await supabase
       .from('solutions')
-      .select('name, description, features, painPoints, targetAudience')
+      .select('name, description, features, pain_points, target_audience, use_cases, benefits, category, short_description')
       .eq('user_id', userId)
       .limit(10);
+
+    if (solutionsError) {
+      console.error('❌ Error fetching solutions:', solutionsError);
+    } else {
+      console.log(`📋 Found ${solutions?.length || 0} solutions for user ${userId}`);
+    }
 
     // Get user content analytics
     const { data: contentItems, error: contentError } = await supabase
       .from('content_items')
       .select('status, seo_score, created_at')
       .eq('user_id', userId);
+
+    if (contentError) {
+      console.error('❌ Error fetching content items:', contentError);
+    } else {
+      console.log(`📝 Found ${contentItems?.length || 0} content items for user ${userId}`);
+    }
 
     // Build comprehensive context
     const analytics = {
