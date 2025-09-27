@@ -162,33 +162,33 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
                 getColorGradient(metric.color)
               )} />
               
-              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-3 md:p-4 min-h-[60px] group-hover:shadow-neon transition-all duration-300">
+              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-2 md:p-3 group-hover:shadow-neon transition-all duration-300">
                 {/* Header with icon */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
                     {IconComponent ? (
                       <motion.div 
                         className={cn(
-                          "p-2.5 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10",
+                          "p-1.5 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-white/10",
                           "group-hover:from-white/20 group-hover:to-white/10 transition-all duration-300"
                         )}
                         whileHover={{ rotate: 5, scale: 1.1 }}
                         transition={{ type: "spring", stiffness: 300 }}
                       >
-                        <IconComponent className={cn("w-5 h-5", getIconColorClass(metric.color))} />
+                        <IconComponent className={cn("w-4 h-4", getIconColorClass(metric.color))} />
                       </motion.div>
                     ) : (
                       <motion.div 
-                        className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 group-hover:from-primary/30 group-hover:to-primary/10 transition-all duration-300"
+                        className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 group-hover:from-primary/30 group-hover:to-primary/10 transition-all duration-300"
                         whileHover={{ rotate: 5, scale: 1.1 }}
                         transition={{ type: "spring", stiffness: 300 }}
                       >
-                        <Activity className="w-5 h-5 text-primary" />
+                        <Activity className="w-4 h-4 text-primary" />
                       </motion.div>
                     )}
                     
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200 whitespace-normal break-words leading-snug">
+                      <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200 whitespace-normal break-words leading-tight">
                         {metric.title}
                       </p>
                     </div>
@@ -200,13 +200,13 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 + 0.5 }}
                   >
-                    <Sparkles className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors duration-300" />
+                    <Sparkles className="w-3 h-3 text-primary/40 group-hover:text-primary transition-colors duration-300" />
                   </motion.div>
                 </div>
                 
                 {/* Value with enhanced styling */}
                 <motion.div 
-                  className="text-2xl md:text-3xl font-bold group-hover:text-gradient transition-all duration-300 mb-1.5 whitespace-normal break-words leading-tight"
+                  className="text-lg md:text-xl font-bold group-hover:text-gradient transition-all duration-300 mb-0.5 whitespace-normal break-words leading-tight"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 + 0.3 }}
