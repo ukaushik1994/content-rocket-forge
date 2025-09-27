@@ -269,9 +269,15 @@ export type Database = {
           content: string
           conversation_id: string
           created_at: string
+          delivery_attempts: number | null
+          error_details: string | null
           function_calls: Json | null
           id: string
+          is_streaming: boolean | null
+          message_sequence: number
+          message_status: string | null
           progress_indicator: Json | null
+          read_by: Json | null
           status: string
           type: string
           visual_data: Json | null
@@ -282,9 +288,15 @@ export type Database = {
           content: string
           conversation_id: string
           created_at?: string
+          delivery_attempts?: number | null
+          error_details?: string | null
           function_calls?: Json | null
           id?: string
+          is_streaming?: boolean | null
+          message_sequence?: number
+          message_status?: string | null
           progress_indicator?: Json | null
+          read_by?: Json | null
           status?: string
           type: string
           visual_data?: Json | null
@@ -295,9 +307,15 @@ export type Database = {
           content?: string
           conversation_id?: string
           created_at?: string
+          delivery_attempts?: number | null
+          error_details?: string | null
           function_calls?: Json | null
           id?: string
+          is_streaming?: boolean | null
+          message_sequence?: number
+          message_status?: string | null
           progress_indicator?: Json | null
+          read_by?: Json | null
           status?: string
           type?: string
           visual_data?: Json | null
@@ -4355,6 +4373,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_typing_indicators: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          id: string
+          is_typing: boolean | null
+          last_activity: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          is_typing?: boolean | null
+          last_activity?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          is_typing?: boolean | null
+          last_activity?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_typing_indicators_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhooks: {
         Row: {
           created_at: string
@@ -4509,6 +4562,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_schedules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_run: string | null
+          metadata: Json | null
+          next_run: string
+          schedule_expression: string
+          timezone: string
+          updated_at: string
+          user_id: string
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_run?: string | null
+          metadata?: Json | null
+          next_run: string
+          schedule_expression: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_run?: string | null
+          metadata?: Json | null
+          next_run?: string
+          schedule_expression?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          workflow_id?: string
+        }
+        Relationships: []
       }
       workflow_steps_log: {
         Row: {
@@ -4698,6 +4793,25 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_conversation_messages: {
+        Args: { conv_id: string; limit_count?: number; offset_count?: number }
+        Returns: {
+          content: string
+          conversation_id: string
+          created_at: string
+          function_calls: Json
+          id: string
+          is_streaming: boolean
+          message_sequence: number
+          message_status: string
+          progress_indicator: Json
+          read_by: Json
+          status: string
+          type: string
+          visual_data: Json
+          workflow_context: Json
+        }[]
+      }
       get_serp_usage_count: {
         Args: { p_start_date: string; p_user_id: string }
         Returns: number
@@ -4752,6 +4866,10 @@ export type Database = {
       }
       migrate_repurposed_content: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_message_status: {
+        Args: { message_id: string; new_status: string; user_id?: string }
         Returns: undefined
       }
       update_optimization_feedback: {
