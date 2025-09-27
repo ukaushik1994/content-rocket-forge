@@ -199,7 +199,7 @@ async function getContextState(userId: string) {
     const analytics = {
       totalContent: contentItems?.length || 0,
       published: contentItems?.filter(item => item.status === 'published')?.length || 0,
-      avgSeoScore: contentItems?.length > 0 
+      avgSeoScore: (contentItems && contentItems.length > 0) 
         ? contentItems.reduce((sum, item) => sum + (item.seo_score || 0), 0) / contentItems.length 
         : 0
     };

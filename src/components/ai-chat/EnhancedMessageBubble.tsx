@@ -2,28 +2,44 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
-import { VisualDataRenderer } from './VisualDataRenderer';
-import { SerpVisualData } from './SerpVisualData';
-import { ModernActionButtons } from './ModernActionButtons';
-import { WorkflowStreamingProgress } from './WorkflowStreamingProgress';
-import { MessageStatus } from './MessageStatus';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Bot, User, Sparkles } from 'lucide-react';
 import { ContextualAction } from '@/services/aiService';
+import { WorkflowStreamingProgress } from './WorkflowStreamingProgress';
+import { SerpVisualData } from './SerpVisualData';
+import { VisualDataRenderer } from './VisualDataRenderer';
+import { ModernActionButtons } from './ModernActionButtons';
+import { MessageStatus } from './MessageStatus';
+import { ErrorMessageBubble } from './ErrorMessageBubble';
+import { cn } from '@/lib/utils';
 
 interface EnhancedMessageBubbleProps {
   message: EnhancedChatMessage;
   isLatest: boolean;
   onAction: (action: ContextualAction) => void;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   message,
   isLatest,
-  onAction
+  onAction,
+  onRetry,
+  isRetrying = false
 }) => {
+  // Check if this is an error message
+  if (message.messageStatus === 'error' && onRetry) {
+    return (
+      <ErrorMessageBubble
+        message={message}
+        onRetry={onRetry}
+        isRetrying={isRetrying}
+      />
+    );
+  }
+
   const isUser = message.role === 'user';
 
   // Helper function to generate prompts for SERP actions

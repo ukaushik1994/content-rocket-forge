@@ -11,9 +11,18 @@ interface StreamingMessageBubbleProps {
   isLatest: boolean;
 }
 
-export const StreamingMessageBubble: React.FC<StreamingMessageBubbleProps> = ({
-  message,
-  isLatest
+interface StreamingMessageBubbleProps {
+  message: EnhancedChatMessage;
+  isLatest: boolean;
+  onRetry?: () => void;
+  isRetrying?: boolean;
+}
+
+export const StreamingMessageBubble: React.FC<StreamingMessageBubbleProps> = ({ 
+  message, 
+  isLatest,
+  onRetry,
+  isRetrying = false
 }) => {
   const navigate = useNavigate();
   const { activeConversationId } = useChatContextBridge();
@@ -76,10 +85,12 @@ export const StreamingMessageBubble: React.FC<StreamingMessageBubbleProps> = ({
   };
 
   return (
-    <EnhancedMessageBubble
-      message={message}
-      isLatest={isLatest}
-      onAction={handleAction}
-    />
+      <EnhancedMessageBubble
+        message={message}
+        isLatest={isLatest}
+        onAction={handleAction}
+        onRetry={onRetry}
+        isRetrying={isRetrying}
+      />
   );
 };

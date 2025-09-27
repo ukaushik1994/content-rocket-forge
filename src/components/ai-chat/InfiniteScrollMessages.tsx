@@ -9,22 +9,22 @@ import { cn } from '@/lib/utils';
 
 interface InfiniteScrollMessagesProps {
   messages: EnhancedChatMessage[];
+  isTyping: boolean;
   hasMoreMessages: boolean;
-  isLoadingMoreMessages: boolean;
-  onLoadMore: () => Promise<any>;
-  isAIThinking?: boolean;
-  isTyping?: boolean;
-  className?: string;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
+  onRetryMessage?: () => void;
+  isRetryingMessage?: boolean;
 }
 
 export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
   messages,
+  isTyping,
   hasMoreMessages,
-  isLoadingMoreMessages,
+  isLoadingMore,
   onLoadMore,
-  isAIThinking = false,
-  isTyping = false,
-  className
+  onRetryMessage,
+  isRetryingMessage = false
 }) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -44,13 +44,12 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
     setShowScrollToBottom(!nearBottom && messages.length > 5);
 
     // Load more messages when scrolled to top
-    if (scrollTop < 100 && hasMoreMessages && !isLoadingMoreMessages && !loadingRef.current) {
+    if (scrollTop < 100 && hasMoreMessages && !isLoadingMore && !loadingRef.current) {
       loadingRef.current = true;
-      onLoadMore().finally(() => {
-        loadingRef.current = false;
-      });
+      onLoadMore();
+      loadingRef.current = false;
     }
-  }, [hasMoreMessages, isLoadingMoreMessages, onLoadMore, messages.length]);
+  }, [hasMoreMessages, isLoadingMore, onLoadMore, messages.length]);
 
   // Auto-scroll to bottom when new messages arrive (only if user is near bottom)
   useEffect(() => {
@@ -60,7 +59,7 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
     }
-  }, [messages, isAIThinking, isNearBottom]);
+  }, [messages, isTyping, isNearBottom]);
 
   // Scroll to bottom manually
   const scrollToBottom = useCallback(() => {
@@ -76,7 +75,7 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
   }, []);
 
   return (
-    <div className={cn("relative flex-1", className)}>
+    <div className="relative flex-1">
       <ScrollArea 
         ref={scrollAreaRef}
         className="h-full p-6"
@@ -85,7 +84,7 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
         <div className="space-y-6">
           {/* Load More Indicator */}
           <AnimatePresence>
-            {isLoadingMoreMessages && (
+            {isLoadingMore && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -125,9 +124,12 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
                   layout: { duration: 0.2 }
                 }}
               >
-                <StreamingMessageBubble 
+                <StreamingMessageBubble
+                  key={message.id}
                   message={message}
                   isLatest={index === messages.length - 1}
+                  onRetry={onRetryMessage}
+                  isRetrying={isRetryingMessage}
                 />
               </motion.div>
             ))}
@@ -135,7 +137,7 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
           
           {/* AI Thinking Indicator */}
           <AnimatePresence>
-            {isAIThinking && (
+            {isTyping && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -161,24 +163,8 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
                         transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
                       />
                     </div>
-                    <span>AI is thinking...</span>
+                    <span>AI is typing...</span>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          {/* Typing Indicator */}
-          <AnimatePresence>
-            {isTyping && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex justify-start"
-              >
-                <div className="text-xs text-muted-foreground bg-muted/30 rounded-full px-3 py-1">
-                  Someone is typing...
                 </div>
               </motion.div>
             )}

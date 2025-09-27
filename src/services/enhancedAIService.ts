@@ -420,6 +420,7 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
       role: 'assistant',
       content: `I encountered an error: ${errorMessage}. Please try again or contact support if this persists.`,
       timestamp: new Date(),
+      messageStatus: 'error',
       actions: []
     };
   }

@@ -617,6 +617,8 @@ export const useStreamingChatDB = () => {
     loadMessagesFromDB,
     loadMoreMessages,
     setupRealtimeSubscriptions,
-    cleanupRealtimeSubscriptions
+    cleanupRealtimeSubscriptions,
+    retryLastMessage: () => {}, // Placeholder for now
+    isRetryingMessage: false
   };
 };

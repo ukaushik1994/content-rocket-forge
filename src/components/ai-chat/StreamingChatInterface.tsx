@@ -189,11 +189,11 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
       <InfiniteScrollMessages
         messages={displayMessages}
         hasMoreMessages={hasMoreMessages}
-        isLoadingMoreMessages={isLoadingMoreMessages}
+        isLoadingMore={isLoadingMoreMessages}
         onLoadMore={loadMoreMessages}
-        isAIThinking={isAIThinking}
         isTyping={isTyping}
-        className="flex-1"
+        onRetryMessage={() => {}}
+        isRetryingMessage={false}
       />
 
       {/* Input */}
