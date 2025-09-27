@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import { EnhancedChatInterface } from '@/components/ai-chat/EnhancedChatInterface';
+import { EnhancedChatIntegration } from '@/components/ai-chat/EnhancedChatIntegration';
 
 const AIChat = () => {
+  const [showIntegration, setShowIntegration] = useState(false);
+  
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -77,6 +80,12 @@ const AIChat = () => {
         <div className="flex-1 flex flex-col min-w-0">
           <EnhancedChatInterface />
         </div>
+        
+        {/* Phase 4 Integration Overlay */}
+        <EnhancedChatIntegration 
+          isVisible={showIntegration}
+          onClose={() => setShowIntegration(false)}
+        />
       </motion.main>
     </motion.div>
   );

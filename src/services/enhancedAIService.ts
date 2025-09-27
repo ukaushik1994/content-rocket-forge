@@ -1,6 +1,7 @@
 import { EnhancedChatMessage, VisualData, WorkflowStep } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
+import { AIChatIntegrator } from './aiChatIntegrator';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
