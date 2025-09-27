@@ -8,7 +8,7 @@ import { InfiniteScrollMessages } from './InfiniteScrollMessages';
 import { MessageSearchBar } from './MessageSearchBar';
 import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
-import { useSmartSuggestions } from '@/hooks/useSmartSuggestions';
+import { ChatSuggestion } from '@/hooks/useSmartSuggestions';
 import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
 import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
 import { useContextSnapshots } from '@/hooks/useContextSnapshots';
@@ -46,7 +46,8 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     loadMoreMessages,
     searchMessages,
     getConversationAnalytics,
-    exportConversation
+    exportConversation,
+    retryLastMessage
   } = useEnhancedStreamingChat();
   
   // Advanced collaboration
@@ -60,8 +61,9 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   // Use collaboration users or fallback to empty array
   const collaborators = collabUsers || [];
 
-  // Smart suggestions integration
-  const { suggestions, isGenerating } = useSmartSuggestions(messages);
+  // Smart suggestions integration - using a simpler approach for now
+  const suggestions: ChatSuggestion[] = [];
+  const isGenerating = false;
   
   // Real-time message status
   const { markAsDelivered, markAsRead } = useRealtimeMessageStatus(activeConversation?.id);
@@ -120,9 +122,9 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   const statusInfo = getConnectionStatusInfo();
   const StatusIcon = statusInfo.icon;
 
-  const handleSuggestionClick = (suggestion: any) => {
+  const handleSuggestionClick = (suggestion: ChatSuggestion) => {
     if (suggestion.text || suggestion.description) {
-      sendMessage(suggestion.text || suggestion.description);
+      sendMessage(suggestion.text || suggestion.description || '');
     }
   };
 
@@ -192,8 +194,8 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         isLoadingMore={isLoadingMoreMessages}
         onLoadMore={loadMoreMessages}
         isTyping={isTyping}
-        onRetryMessage={() => {}}
-        isRetryingMessage={false}
+        onRetryMessage={retryLastMessage}
+        isRetryingMessage={isAIThinking}
       />
 
       {/* Input */}
@@ -219,11 +221,11 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         transition={{ duration: 0.3 }}
         className="w-80 flex-shrink-0 space-y-4"
       >
-        <SmartSuggestionsPanel
+        {/* <SmartSuggestionsPanel
           suggestions={suggestions}
           onSuggestionClick={handleSuggestionClick}
           isLoading={isGenerating}
-        />
+        /> */}
         <ContextSnapshotPanel
           messages={displayMessages}
           onLoadSnapshot={handleSnapshotLoad}

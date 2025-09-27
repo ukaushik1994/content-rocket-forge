@@ -258,6 +258,49 @@ export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB
     loadContextState();
   }, [loadContextState]);
 
+  // Retry last message functionality
+  const retryLastMessage = useCallback(async () => {
+    const messages = streamingChat.messages;
+    if (messages.length < 2) return;
+
+    // Find the last user message and AI response
+    const lastAIMessage = messages[messages.length - 1];
+    const lastUserMessage = messages[messages.length - 2];
+
+    if (lastAIMessage.role !== 'assistant' || lastUserMessage.role !== 'user') return;
+
+    try {
+      // Mark AI message as retrying
+      streamingChat.messages.forEach((msg, index) => {
+        if (msg.id === lastAIMessage.id) {
+          streamingChat.messages[index] = { 
+            ...msg, 
+            messageStatus: 'sending', 
+            content: '', 
+            isStreaming: true 
+          };
+        }
+      });
+
+      // Resend the last user message to trigger AI response
+      if (streamingChat.sendMessage) {
+        await streamingChat.sendMessage(lastUserMessage.content);
+      }
+
+      toast({
+        title: "Retrying message",
+        description: "Regenerating AI response...",
+      });
+    } catch (error) {
+      console.error('Error retrying message:', error);
+      toast({
+        title: "Retry failed",
+        description: "Could not retry the message. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [streamingChat.messages, streamingChat.sendMessage, toast]);
+
   return {
     ...streamingChat,
     filteredMessages,
@@ -273,6 +316,7 @@ export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB
     getConversationAnalytics,
     exportConversation,
     deleteMessages,
-    markMessagesAsRead
+    markMessagesAsRead,
+    retryLastMessage
   };
 };
