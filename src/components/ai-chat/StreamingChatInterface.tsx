@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { CollaborationIndicators } from './CollaborationIndicators';
 import { ChatHeader } from './ChatHeader';
 import { MessageInput } from './MessageInput';
 import { InfiniteScrollMessages } from './InfiniteScrollMessages';
@@ -10,6 +11,7 @@ import { ContextSnapshotPanel } from './ContextSnapshotPanel';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
 import { useSmartSuggestions } from '@/hooks/useSmartSuggestions';
 import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
+import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
 import { useContextSnapshots } from '@/hooks/useContextSnapshots';
 import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -46,6 +48,17 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     getConversationAnalytics,
     exportConversation
   } = useEnhancedStreamingChat();
+  
+  // Advanced collaboration
+  const { 
+    collaborators: collabUsers, 
+    isScreenSharing, 
+    startScreenSharing, 
+    stopScreenSharing 
+  } = useAdvancedCollaboration();
+  
+  // Use collaboration users or fallback to empty array
+  const collaborators = collabUsers || [];
 
   // Smart suggestions integration
   const { suggestions, isGenerating } = useSmartSuggestions(messages);
@@ -141,23 +154,13 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         />
         
         <div className="flex items-center gap-3">
-          <Badge 
-            variant="outline"
-            className={cn(
-              "flex items-center gap-1.5 text-xs font-medium transition-all",
-              statusInfo.bgColor,
-              statusInfo.color,
-              statusInfo.icon === Loader2 && "animate-pulse"
-            )}
-          >
-            <StatusIcon 
-              className={cn(
-                "h-3 w-3", 
-                statusInfo.icon === Loader2 && "animate-spin"
-              )} 
-            />
-            {statusInfo.text}
-          </Badge>
+          <CollaborationIndicators 
+            users={collaborators || []}
+            connectionStatus={connectionStatus}
+            isScreenSharing={isScreenSharing}
+            onStartScreenShare={startScreenSharing}
+            onStopScreenShare={stopScreenSharing}
+          />
           
           {!isConnected && connectionStatus === 'disconnected' && (
             <button
@@ -222,8 +225,8 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
           isLoading={isGenerating}
         />
         <ContextSnapshotPanel
-          conversationId={activeConversation?.id}
-          onSnapshotLoad={handleSnapshotLoad}
+          messages={displayMessages}
+          onLoadSnapshot={handleSnapshotLoad}
         />
       </motion.div>
     )}

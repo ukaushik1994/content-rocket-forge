@@ -3,6 +3,8 @@ import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { ContextualAction } from '@/services/aiService';
 import { useNavigate } from 'react-router-dom';
+import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
+import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 
 interface StreamingMessageBubbleProps {
   message: EnhancedChatMessage;
@@ -14,6 +16,26 @@ export const StreamingMessageBubble: React.FC<StreamingMessageBubbleProps> = ({
   isLatest
 }) => {
   const navigate = useNavigate();
+  const { activeConversationId } = useChatContextBridge();
+  const { markAsDelivered, markAsRead } = useRealtimeMessageStatus(activeConversationId);
+  
+  // Mark message as delivered when it appears
+  React.useEffect(() => {
+    if (message.role === 'assistant' && message.id && !message.isStreaming) {
+      markAsDelivered(message.id);
+    }
+  }, [message.id, message.role, message.isStreaming, markAsDelivered]);
+  
+  // Mark as read when user views it (on scroll into view)
+  React.useEffect(() => {
+    if (isLatest && message.role === 'assistant' && message.id) {
+      const timer = setTimeout(() => {
+        markAsRead(message.id);
+      }, 1000); // Mark as read after 1 second of being visible
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLatest, message.id, message.role, markAsRead]);
 
   const handleAction = (action: ContextualAction) => {
     console.log('🎯 Action triggered:', action);

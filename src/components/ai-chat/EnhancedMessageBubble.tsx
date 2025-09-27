@@ -6,6 +6,7 @@ import { VisualDataRenderer } from './VisualDataRenderer';
 import { SerpVisualData } from './SerpVisualData';
 import { ModernActionButtons } from './ModernActionButtons';
 import { WorkflowStreamingProgress } from './WorkflowStreamingProgress';
+import { MessageStatus } from './MessageStatus';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -144,6 +145,16 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             <ModernActionButtons 
               actions={message.actions}
               onAction={onAction}
+            />
+          </div>
+        )}
+
+        {/* Message Status for user messages */}
+        {isUser && (
+          <div className="flex justify-end mt-2">
+            <MessageStatus 
+              status={message.messageStatus as 'sent' | 'delivered' | 'read' | 'failed' || 'sent'}
+              timestamp={message.timestamp}
             />
           </div>
         )}
