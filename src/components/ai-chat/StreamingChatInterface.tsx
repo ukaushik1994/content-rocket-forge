@@ -7,12 +7,12 @@ import { MessageInput } from './MessageInput';
 import { InfiniteScrollMessages } from './InfiniteScrollMessages';
 import { MessageSearchBar } from './MessageSearchBar';
 import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
-import { ContextSnapshotPanel } from './ContextSnapshotPanel';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
 import { useSmartSuggestions } from '@/hooks/useSmartSuggestions';
 import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
 import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
 import { useContextSnapshots } from '@/hooks/useContextSnapshots';
+import { ContextSnapshotPanel } from './ContextSnapshotPanel';
 import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
