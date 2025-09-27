@@ -131,120 +131,83 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     };
 
     return (
-      <motion.div
-        className="grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-1.5"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <div className="grid gap-2 auto-rows-min" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
         {data.metrics.map((metric, index) => {
           const IconComponent = metric.icon && (LucideIcons[metric.icon as keyof typeof LucideIcons] as LucideIcon | undefined);
           
           return (
             <motion.div
               key={metric.id}
-              variants={itemVariants}
-              whileHover={{ 
-                scale: 1.05,
-                transition: { duration: 0.2 }
-              }}
-              className="relative group"
+              className="group relative max-w-xs"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              whileHover={{ scale: 1.02 }}
             >
-              {/* Floating particles effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-neon-blue/20 to-neon-purple/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Background grid pattern */}
-              <div className="absolute inset-0 bg-grid opacity-5 group-hover:opacity-15 transition-opacity duration-300 rounded-lg" />
-              
-              {/* Animated background gradient */}
+              {/* Simple background gradient */}
               <div className={cn(
-                "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg",
+                "absolute inset-0 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-200",
                 getColorGradient(metric.color)
               )} />
               
-              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-2 md:p-3 group-hover:shadow-neon transition-all duration-300">
-                {/* Header with icon */}
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {IconComponent ? (
-                      <motion.div 
-                        className={cn(
-                          "p-1.5 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-white/10",
-                          "group-hover:from-white/20 group-hover:to-white/10 transition-all duration-300"
-                        )}
-                        whileHover={{ rotate: 5, scale: 1.1 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      >
-                        <IconComponent className={cn("w-4 h-4", getIconColorClass(metric.color))} />
-                      </motion.div>
-                    ) : (
-                      <motion.div 
-                        className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 group-hover:from-primary/30 group-hover:to-primary/10 transition-all duration-300"
-                        whileHover={{ rotate: 5, scale: 1.1 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      >
-                        <Activity className="w-4 h-4 text-primary" />
-                      </motion.div>
-                    )}
-                    
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200 whitespace-normal break-words leading-tight">
+              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-2 group-hover:shadow-lg transition-all duration-200">
+                {/* Compact vertical layout */}
+                <div className="flex flex-col">
+                  {/* Title and icon row */}
+                  <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                      {IconComponent ? (
+                        <div className={cn(
+                          "p-1 rounded bg-gradient-to-br from-white/10 to-white/5",
+                          "group-hover:from-white/15 group-hover:to-white/8 transition-all duration-200"
+                        )}>
+                          <IconComponent className={cn("w-3 h-3", getIconColorClass(metric.color))} />
+                        </div>
+                      ) : (
+                        <div className="p-1 rounded bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/8 transition-all duration-200">
+                          <Activity className="w-3 h-3 text-primary" />
+                        </div>
+                      )}
+                      
+                      <p className="text-[10px] md:text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200 leading-none truncate">
                         {metric.title}
                       </p>
                     </div>
+                    
+                    <Sparkles className="w-2.5 h-2.5 text-primary/30 group-hover:text-primary/60 transition-colors duration-200 flex-shrink-0" />
                   </div>
                   
-                  {/* Sparkles decoration */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 + 0.5 }}
-                  >
-                    <Sparkles className="w-3 h-3 text-primary/40 group-hover:text-primary transition-colors duration-300" />
-                  </motion.div>
-                </div>
-                
-                {/* Value with enhanced styling */}
-                <motion.div 
-                  className="text-lg md:text-xl font-bold group-hover:text-gradient transition-all duration-300 mb-0.5 whitespace-normal break-words leading-tight"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 + 0.3 }}
-                >
-                  {metric.value}
-                </motion.div>
-                
-                {/* Change indicator with enhanced styling */}
-                {metric.change && (
-                  <motion.div 
-                    className="flex items-center gap-2"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 + 0.6 }}
-                  >
-                    <div className={cn(
-                      "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
-                      "backdrop-blur-sm border",
-                      metric.change.type === 'increase' 
-                        ? "bg-success/20 text-success border-success/30" 
-                        : "bg-destructive/20 text-destructive border-destructive/30"
-                    )}>
-                      {metric.change.type === 'increase' ? (
-                        <TrendingUp className="h-3 w-3" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3" />
-                      )}
-                      <span>
-                        {metric.change.value}% {metric.change.period}
-                      </span>
+                  {/* Value */}
+                  <div className="text-base md:text-lg font-bold leading-none group-hover:text-gradient transition-all duration-200">
+                    {typeof metric.value === 'string' ? metric.value : metric.value?.toLocaleString() || 'N/A'}
+                  </div>
+                  
+                  {/* Change indicator if present */}
+                  {metric.change && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className={cn(
+                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+                        metric.change.type === 'increase' 
+                          ? "bg-success/20 text-success" 
+                          : "bg-destructive/20 text-destructive"
+                      )}>
+                        {metric.change.type === 'increase' ? (
+                          <TrendingUp className="h-2.5 w-2.5" />
+                        ) : (
+                          <TrendingDown className="h-2.5 w-2.5" />
+                        )}
+                        <span>
+                          {metric.change.value}%
+                        </span>
+                      </div>
                     </div>
-                  </motion.div>
-                )}
+                  )}
+                </div>
               </Card>
             </motion.div>
           );
         })}
-      </motion.div>
+      </div>
     );
   };
 
