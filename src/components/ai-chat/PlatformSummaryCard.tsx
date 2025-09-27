@@ -84,11 +84,11 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
   }];
   if (isLoading) {
     return <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           <div className="animate-pulse space-y-4">
             <div className="h-4 bg-border/50 rounded w-1/3"></div>
-            <div className="grid grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-background/60 rounded"></div>)}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-background/60 rounded"></div>)}
             </div>
           </div>
         </CardContent>
