@@ -109,41 +109,27 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} />}
       </AnimatePresence>
 
+      {/* Floating Sidebar Toggle */}
+      <motion.div
+        className="fixed top-4 left-4 z-40"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowSidebar(!showSidebar)}
+          className="rounded-full shadow-lg backdrop-blur-sm bg-background/90 border-border/50 hover:bg-background/95 transition-all duration-200"
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+      </motion.div>
+
       {/* Main Chat Interface */}
       <div className={`flex transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
-        <motion.div className="flex-1 flex flex-col h-full pt-16 pb-24" initial="hidden" animate="visible" variants={containerVariants}>
-      {/* Elegant Header */}
-      <div className="fixed top-16 left-0 right-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className={`max-w-6xl mx-auto px-6 py-4 transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {!showSidebar && <Button variant="ghost" size="sm" onClick={() => setShowSidebar(true)} className="text-muted-foreground hover:text-foreground hover:bg-background/60 mr-2">
-                  <Menu className="h-4 w-4" />
-                </Button>}
-              <motion.div className="inline-flex items-center gap-3 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50" whileHover={{
-                scale: 1.02
-              }} transition={{
-                type: "spring",
-                stiffness: 300
-              }}>
-                <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-blue-500/20 border border-border/30">
-                  <Brain className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
-                    AI Assistant
-                  </h2>
-                  <p className="text-xs text-muted-foreground">Ready to help with your content strategy</p>
-                </div>
-              </motion.div>
-            </div>
-            
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-0 relative pt-20">
+        <motion.div className="flex-1 flex flex-col h-full pt-6 pb-24" initial="hidden" animate="visible" variants={containerVariants}>
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col min-h-0 relative">
         {/* Messages Area */}
         <ScrollArea className="flex-1 px-6">
           <div className="max-w-6xl mx-auto py-6 space-y-8">
