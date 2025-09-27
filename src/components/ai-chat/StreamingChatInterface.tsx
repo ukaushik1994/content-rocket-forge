@@ -5,7 +5,12 @@ import { ChatHeader } from './ChatHeader';
 import { MessageInput } from './MessageInput';
 import { InfiniteScrollMessages } from './InfiniteScrollMessages';
 import { MessageSearchBar } from './MessageSearchBar';
+import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
+import { ContextSnapshotPanel } from './ContextSnapshotPanel';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
+import { useSmartSuggestions } from '@/hooks/useSmartSuggestions';
+import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
+import { useContextSnapshots } from '@/hooks/useContextSnapshots';
 import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +46,15 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     getConversationAnalytics,
     exportConversation
   } = useEnhancedStreamingChat();
+
+  // Smart suggestions integration
+  const { suggestions, isGenerating } = useSmartSuggestions(messages);
+  
+  // Real-time message status
+  const { markAsDelivered, markAsRead } = useRealtimeMessageStatus(activeConversation?.id);
+  
+  // Context snapshots
+  const { loadSnapshot } = useContextSnapshots();
 
   // Use filtered messages for display
   const displayMessages = filteredMessages.length > 0 ? filteredMessages : messages;
@@ -93,14 +107,30 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   const statusInfo = getConnectionStatusInfo();
   const StatusIcon = statusInfo.icon;
 
+  const handleSuggestionClick = (suggestion: any) => {
+    if (suggestion.text || suggestion.description) {
+      sendMessage(suggestion.text || suggestion.description);
+    }
+  };
+
+  const handleSnapshotLoad = (snapshot: any) => {
+    // Load conversation context from snapshot
+    if (snapshot.messages) {
+      // This would restore the conversation state
+      console.log('Loading snapshot:', snapshot);
+    }
+  };
+
   return (
-    <motion.div 
-      ref={ref}
-      className="flex flex-col h-full bg-background/50 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-    >
+    <div className="flex h-full gap-4">
+      {/* Main Chat Interface */}
+      <motion.div 
+        ref={ref}
+        className="flex flex-col flex-1 bg-background/50 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
       {/* Header with connection status */}
       <div className="flex items-center justify-between p-4 border-b border-border/50 bg-card/50">
         <ChatHeader 
@@ -176,6 +206,28 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         />
       </div>
     </motion.div>
+
+    {/* Smart Suggestions Sidebar */}
+    {isSidebarOpen && (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 20 }}
+        transition={{ duration: 0.3 }}
+        className="w-80 flex-shrink-0 space-y-4"
+      >
+        <SmartSuggestionsPanel
+          suggestions={suggestions}
+          onSuggestionClick={handleSuggestionClick}
+          isLoading={isGenerating}
+        />
+        <ContextSnapshotPanel
+          conversationId={activeConversation?.id}
+          onSnapshotLoad={handleSnapshotLoad}
+        />
+      </motion.div>
+    )}
+    </div>
   );
 });
 

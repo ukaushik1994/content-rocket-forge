@@ -4,11 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface SmartSuggestion {
   id: string;
-  text: string;
-  type: 'followup' | 'workflow' | 'optimization' | 'analysis';
-  priority: number;
-  context?: any;
-  actionData?: any;
+  type: 'keyword' | 'content' | 'optimization' | 'strategy' | 'competitive';
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  action: string;
+  data?: any;
+  confidence?: number;
 }
 
 interface SuggestionConfig {
@@ -47,7 +49,6 @@ export const useSmartSuggestions = (
       const conversationTopics = analyzeConversationTopics(conversationContext);
       const hasWorkflowContext = messages.some(m => m.workflowContext?.currentWorkflow);
       const hasVisualData = messages.some(m => m.visualData);
-      const hasActions = messages.some(m => m.actions && m.actions.length > 0);
 
       // Follow-up suggestions based on last message
       if (latestMessage.role === 'assistant') {
@@ -74,8 +75,9 @@ export const useSmartSuggestions = (
       }
 
       // Sort by priority and limit results
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
       const sortedSuggestions = newSuggestions
-        .sort((a, b) => b.priority - a.priority)
+        .sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority])
         .slice(0, config.maxSuggestions);
 
       setSuggestions(sortedSuggestions);
@@ -114,30 +116,36 @@ export const useSmartSuggestions = (
     if (lastMessage.visualData) {
       suggestions.push({
         id: `followup-data-${Date.now()}`,
-        text: "Can you explain these insights in more detail?",
-        type: 'followup',
-        priority: 8,
-        context: { hasData: true }
+        type: 'content',
+        title: "Explain Insights",
+        description: "Can you explain these insights in more detail?",
+        priority: 'high',
+        action: "Get Details",
+        confidence: 85
       });
     }
 
     if (lastMessage.actions && lastMessage.actions.length > 0) {
       suggestions.push({
         id: `followup-actions-${Date.now()}`,
-        text: "What's the next step after these actions?",
-        type: 'followup',
-        priority: 7,
-        context: { hasActions: true }
+        type: 'strategy',
+        title: "Next Steps",
+        description: "What's the next step after these actions?",
+        priority: 'medium',
+        action: "Show Next Steps",
+        confidence: 75
       });
     }
 
     if (topics.includes('seo')) {
       suggestions.push({
         id: `followup-seo-${Date.now()}`,
-        text: "How can I improve my SEO score further?",
-        type: 'followup',
-        priority: 9,
-        context: { topic: 'seo' }
+        type: 'optimization',
+        title: "Improve SEO",
+        description: "How can I improve my SEO score further?",
+        priority: 'high',
+        action: "Analyze SEO",
+        confidence: 90
       });
     }
 
@@ -151,30 +159,33 @@ export const useSmartSuggestions = (
     if (!hasWorkflow && topics.includes('content')) {
       suggestions.push({
         id: `workflow-content-${Date.now()}`,
-        text: "Start a content creation workflow",
-        type: 'workflow',
-        priority: 8,
-        actionData: { workflow: 'content-creation' }
+        type: 'content',
+        title: "Content Workflow",
+        description: "Start a content creation workflow",
+        priority: 'high',
+        action: "Start Workflow"
       });
     }
 
     if (topics.includes('analytics')) {
       suggestions.push({
         id: `workflow-analysis-${Date.now()}`,
-        text: "Run a performance analysis workflow",
-        type: 'workflow',
-        priority: 7,
-        actionData: { workflow: 'performance-analysis' }
+        type: 'strategy',
+        title: "Performance Analysis",
+        description: "Run a performance analysis workflow",
+        priority: 'medium',
+        action: "Analyze Performance"
       });
     }
 
     if (topics.includes('keywords')) {
       suggestions.push({
         id: `workflow-keywords-${Date.now()}`,
-        text: "Optimize keywords with AI workflow",
-        type: 'workflow',
-        priority: 8,
-        actionData: { workflow: 'keyword-optimization' }
+        type: 'keyword',
+        title: "Keyword Optimization",
+        description: "Optimize keywords with AI workflow",
+        priority: 'high',
+        action: "Optimize Keywords"
       });
     }
 
@@ -188,20 +199,22 @@ export const useSmartSuggestions = (
     if (!hasVisualData && messages.length > 2) {
       suggestions.push({
         id: `optimize-visuals-${Date.now()}`,
-        text: "Show me visual data and charts for better insights",
         type: 'optimization',
-        priority: 6,
-        context: { needsVisuals: true }
+        title: "Visual Insights",
+        description: "Show me visual data and charts for better insights",
+        priority: 'medium',
+        action: "Show Visuals"
       });
     }
 
     if (messages.length > 5) {
       suggestions.push({
         id: `optimize-summary-${Date.now()}`,
-        text: "Summarize our conversation with key action items",
-        type: 'optimization',
-        priority: 7,
-        context: { needsSummary: true }
+        type: 'strategy',
+        title: "Conversation Summary",
+        description: "Summarize our conversation with key action items",
+        priority: 'medium',
+        action: "Summarize"
       });
     }
 
@@ -215,20 +228,22 @@ export const useSmartSuggestions = (
     if (topics.includes('content') && messageCount > 3) {
       suggestions.push({
         id: `analysis-content-${Date.now()}`,
-        text: "Analyze my content strategy gaps and opportunities",
-        type: 'analysis',
-        priority: 8,
-        context: { analysisType: 'content-strategy' }
+        type: 'competitive',
+        title: "Content Strategy",
+        description: "Analyze my content strategy gaps and opportunities",
+        priority: 'high',
+        action: "Analyze Strategy"
       });
     }
 
     if (topics.includes('solutions')) {
       suggestions.push({
         id: `analysis-solutions-${Date.now()}`,
-        text: "How well does my content align with my solutions?",
-        type: 'analysis',
-        priority: 7,
-        context: { analysisType: 'solution-alignment' }
+        type: 'strategy',
+        title: "Solution Alignment",
+        description: "How well does my content align with my solutions?",
+        priority: 'medium',
+        action: "Check Alignment"
       });
     }
 
@@ -264,10 +279,11 @@ export const useSmartSuggestions = (
     // Utilities
     hasSuggestions: suggestions.length > 0,
     suggestionsByType: {
-      followup: getSuggestionsByType('followup'),
-      workflow: getSuggestionsByType('workflow'),
+      keyword: getSuggestionsByType('keyword'),
+      content: getSuggestionsByType('content'),
       optimization: getSuggestionsByType('optimization'),
-      analysis: getSuggestionsByType('analysis')
+      strategy: getSuggestionsByType('strategy'),
+      competitive: getSuggestionsByType('competitive')
     }
   };
 };
