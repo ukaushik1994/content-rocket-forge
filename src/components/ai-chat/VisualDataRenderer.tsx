@@ -132,7 +132,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
 
     return (
       <motion.div
-        className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3"
+        className="grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-3"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
