@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ContextualAction } from '@/services/aiService';
+import { useNavigate } from 'react-router-dom';
 
 export interface AIConversation {
   id: string;
@@ -25,6 +26,7 @@ export const useEnhancedAIChatDB = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Load conversations from database with search and filter support
   const loadConversations = useCallback(async (options?: {
@@ -333,47 +335,37 @@ export const useEnhancedAIChatDB = () => {
       } else if (actionString.startsWith('navigate:')) {
         const path = actionString.replace('navigate:', '');
         console.log('🧭 Navigating to:', path);
-        // Use React Router navigation instead of window.location
-        window.history.pushState({}, '', path);
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        navigate(path);
       } else {
         // Handle action types based on patterns
         switch (actionString) {
           case 'create-blog-post':
             console.log('📝 Creating blog post');
-            window.history.pushState({}, '', '/content-builder?type=blog-post');
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            navigate('/content-builder?type=blog-post');
             break;
           case 'create-landing-page':
             console.log('🏗️ Creating landing page');
-            window.history.pushState({}, '', '/content-builder?type=landing-page');
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            navigate('/content-builder?type=landing-page');
             break;
           case 'keyword-research':
             console.log('🔍 Opening keyword research');
-            window.history.pushState({}, '', '/research');
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            navigate('/research');
             break;
           case 'content-strategy':
             console.log('📊 Opening content strategy');
-            window.history.pushState({}, '', '/strategies');
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            navigate('/strategies');
             break;
           case 'navigate-content-builder':
-            window.history.pushState({}, '', '/content-builder');
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            navigate('/content-builder');
             break;
           case 'navigate-analytics':
-            window.history.pushState({}, '', '/analytics');
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            navigate('/analytics');
             break;
           case 'navigate-keyword-research':
-            window.history.pushState({}, '', '/research');
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            navigate('/research');
             break;
           case 'navigate-strategy':
-            window.history.pushState({}, '', '/strategies');
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            navigate('/strategies');
             break;
           default:
             console.warn('❓ Unknown action:', actionString);
@@ -393,7 +385,7 @@ export const useEnhancedAIChatDB = () => {
         variant: "destructive"
       });
     }
-  }, [sendMessage, user, toast]);
+  }, [sendMessage, user, toast, navigate]);
 
   const handleLegacyAction = useCallback(async (action: string, data?: any) => {
     if (!user || !action) return;

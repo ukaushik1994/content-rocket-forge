@@ -111,7 +111,10 @@ export class EnhancedChatErrorBoundary extends Component<Props, State> {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
-      onClick: () => window.history.pushState({}, '', '/settings'),
+      onClick: () => {
+        // Use proper navigation
+        window.location.href = '/settings';
+      },
       variant: 'default' as const,
       disabled: false
     });

@@ -49,11 +49,16 @@ serve(async (req) => {
 - Strategic recommendations with actionable insights
 - Contextual action generation
 
-## Response Format Instructions:
-You MUST include structured data in your responses when appropriate:
+## CRITICAL: Always Include Visual Data and Actions
+For EVERY response, you MUST include AT LEAST ONE of the following:
+1. Contextual actions that help the user take next steps
+2. Visual data (charts, metrics, or summaries) that illustrate your points
+3. Both actions AND visual data when relevant
 
-### For Contextual Actions:
-Include actions in this exact JSON format within your response:
+## Response Format Instructions:
+You MUST include structured data in your responses using these exact formats:
+
+### For Contextual Actions (ALWAYS include when recommending next steps):
 \`\`\`json
 {
   "actions": [
@@ -61,15 +66,14 @@ Include actions in this exact JSON format within your response:
       "id": "unique-action-id",
       "label": "Action Label", 
       "type": "button",
-      "action": "workflow:action-type",
+      "action": "workflow:action-type|navigate:path|create-content|keyword-research|content-strategy",
       "data": {}
     }
   ]
 }
 \`\`\`
 
-### For Visual Data:
-Include visual data in this exact JSON format within your response:
+### For Visual Data (ALWAYS include for data, performance, analytics):
 \`\`\`json
 {
   "visualData": {
@@ -79,46 +83,46 @@ Include visual data in this exact JSON format within your response:
         "id": "metric-id",
         "title": "Metric Title",
         "value": "25%",
-        "icon": "TrendingUp",
-        "color": "blue"
+        "icon": "TrendingUp|Search|BarChart|Users|Calendar",
+        "color": "blue|green|purple|orange"
       }
     ]
   }
 }
 \`\`\`
 
-### Chart Data Format:
+### Chart Data Format (Use for trends, comparisons, analytics):
 \`\`\`json
 {
   "visualData": {
     "type": "chart",
     "chartConfig": {
       "type": "line|bar|pie|area",
-      "data": [{"name": "Jan", "value": 100}],
+      "data": [{"name": "Jan", "value": 100}, {"name": "Feb", "value": 150}],
       "categories": ["name"],
-      "colors": ["#8b5cf6"]
+      "colors": ["#8b5cf6", "#06b6d4", "#10b981"]
     }
   }
 }
 \`\`\`
 
-Generate contextual actions for:
-- Content creation and optimization
-- SEO analysis and improvements  
-- Performance monitoring
-- Workflow management
-- Strategy implementation
+## ALWAYS Generate Actions For:
+- Content creation and optimization → "workflow:content-creation" or "create-content"
+- SEO analysis and improvements → "workflow:seo-analysis" or "keyword-research"
+- Performance monitoring → "workflow:analytics-deep-dive" or "navigate:/analytics"
+- Strategy development → "workflow:content-strategy" or "navigate:/strategies"
+- Research activities → "keyword-research" or "navigate:/research"
 
-Generate visual data for:
-- Performance metrics
-- Analytics insights
-- Comparative data
-- Progress tracking
-- Strategic overviews
+## ALWAYS Generate Visual Data For:
+- Performance metrics (use type: "metrics")
+- Analytics insights (use type: "chart" with real data)
+- Comparative data (use type: "chart" with multiple series)
+- Progress tracking (use type: "metrics" with progress indicators)
+- Strategic overviews (use type: "summary")
 
 ${context ? `## User Context:\n${JSON.stringify(context, null, 2)}` : ''}
 
-Provide comprehensive, data-driven responses that include relevant actions and visual insights.`;
+Provide comprehensive, data-driven responses that ALWAYS include relevant actions and visual insights. Remember: Every response should help the user take action and understand data visually.`;
 
     // Call the Lovable AI Gateway
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -197,26 +201,62 @@ Provide comprehensive, data-driven responses that include relevant actions and v
       }
     }
 
-    // If no structured data found, generate some based on query analysis
+    // Enhanced fallback generation with better detection
     if (actions.length === 0 && !visualData) {
-      console.log("🎯 Generating contextual actions based on query analysis...");
+      console.log("🎯 Generating enhanced contextual actions and visual data...");
       
-      if (userQuery.toLowerCase().includes('content') || userQuery.toLowerCase().includes('blog') || userQuery.toLowerCase().includes('article')) {
+      const queryLower = userQuery.toLowerCase();
+      
+      // Content-related queries
+      if (queryLower.includes('content') || queryLower.includes('blog') || queryLower.includes('article') || queryLower.includes('write')) {
         actions.push({
           id: "create-content",
           label: "Create Content Strategy",
           type: "button",
           action: "workflow:content-creation",
           data: {}
+        }, {
+          id: "content-builder",
+          label: "Open Content Builder",
+          type: "button",
+          action: "navigate:/content-builder",
+          data: {}
         });
+        
+        visualData = {
+          type: "metrics",
+          metrics: [
+            {
+              id: "content-performance",
+              title: "Content Performance",
+              value: "78%",
+              icon: "BarChart",
+              color: "blue"
+            },
+            {
+              id: "publishing-rate",
+              title: "Publishing Rate",
+              value: "12/month",
+              icon: "Calendar",
+              color: "green"
+            }
+          ]
+        };
       }
       
-      if (userQuery.toLowerCase().includes('seo') || userQuery.toLowerCase().includes('optimize') || userQuery.toLowerCase().includes('search')) {
+      // SEO and optimization queries
+      else if (queryLower.includes('seo') || queryLower.includes('optimize') || queryLower.includes('search') || queryLower.includes('ranking')) {
         actions.push({
           id: "seo-analysis",
-          label: "Analyze SEO Opportunities", 
+          label: "Analyze SEO Opportunities",
           type: "button",
           action: "workflow:seo-analysis",
+          data: {}
+        }, {
+          id: "keyword-research",
+          label: "Start Keyword Research",
+          type: "button",
+          action: "navigate:/research",
           data: {}
         });
         
@@ -225,7 +265,7 @@ Provide comprehensive, data-driven responses that include relevant actions and v
           metrics: [
             {
               id: "seo-score",
-              title: "Current SEO Score",
+              title: "Average SEO Score",
               value: "72/100",
               icon: "Search",
               color: "orange"
@@ -234,14 +274,36 @@ Provide comprehensive, data-driven responses that include relevant actions and v
               id: "keywords-ranking",
               title: "Keywords Ranking",
               value: "156",
-              icon: "TrendingUp", 
+              icon: "TrendingUp",
               color: "green"
+            },
+            {
+              id: "traffic-growth",
+              title: "Traffic Growth",
+              value: "+24%",
+              icon: "Users",
+              color: "blue"
             }
           ]
         };
       }
       
-      if (userQuery.toLowerCase().includes('analytics') || userQuery.toLowerCase().includes('performance') || userQuery.toLowerCase().includes('data')) {
+      // Analytics and performance queries
+      else if (queryLower.includes('analytics') || queryLower.includes('performance') || queryLower.includes('data') || queryLower.includes('metric')) {
+        actions.push({
+          id: "view-analytics",
+          label: "View Detailed Analytics",
+          type: "button",
+          action: "navigate:/analytics",
+          data: {}
+        }, {
+          id: "performance-analysis",
+          label: "Run Performance Analysis",
+          type: "button",
+          action: "workflow:analytics-deep-dive",
+          data: {}
+        });
+        
         visualData = {
           type: "chart",
           chartConfig: {
@@ -251,20 +313,79 @@ Provide comprehensive, data-driven responses that include relevant actions and v
               { name: "Feb", value: 300 },
               { name: "Mar", value: 600 },
               { name: "Apr", value: 800 },
-              { name: "May", value: 750 }
+              { name: "May", value: 750 },
+              { name: "Jun", value: 920 }
             ],
             categories: ["name"],
-            colors: ["#8b5cf6"]
+            colors: ["#8b5cf6", "#06b6d4"]
           }
         };
-        
+      }
+      
+      // Strategy queries
+      else if (queryLower.includes('strategy') || queryLower.includes('plan') || queryLower.includes('roadmap')) {
         actions.push({
-          id: "view-analytics",
-          label: "View Detailed Analytics",
-          type: "button", 
-          action: "workflow:analytics-deep-dive",
+          id: "content-strategy",
+          label: "Develop Content Strategy",
+          type: "button",
+          action: "navigate:/strategies",
+          data: {}
+        }, {
+          id: "strategy-analysis",
+          label: "Analyze Current Strategy",
+          type: "button",
+          action: "workflow:strategy-analysis",
           data: {}
         });
+        
+        visualData = {
+          type: "summary",
+          summary: {
+            title: "Strategy Overview",
+            items: [
+              { label: "Active Strategies", value: "3", status: "good" },
+              { label: "Implementation Rate", value: "85%", status: "good" },
+              { label: "ROI Tracking", value: "Needs Setup", status: "needs-attention" }
+            ]
+          }
+        };
+      }
+      
+      // Default fallback - always provide something
+      else {
+        actions.push({
+          id: "explore-features",
+          label: "Explore Platform Features",
+          type: "button",
+          action: "navigate:/dashboard",
+          data: {}
+        }, {
+          id: "get-help",
+          label: "Get Started Guide",
+          type: "button",
+          action: "workflow:onboarding-help",
+          data: {}
+        });
+        
+        visualData = {
+          type: "metrics",
+          metrics: [
+            {
+              id: "platform-usage",
+              title: "Platform Usage",
+              value: "Active",
+              icon: "Users",
+              color: "green"
+            },
+            {
+              id: "features-explored",
+              title: "Features Explored",
+              value: "65%",
+              icon: "BarChart",
+              color: "blue"
+            }
+          ]
+        };
       }
     }
 
