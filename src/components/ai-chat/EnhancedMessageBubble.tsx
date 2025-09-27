@@ -7,7 +7,6 @@ import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { VisualDataRenderer } from './VisualDataRenderer';
 import { ModernActionButtons } from './ModernActionButtons';
-import { ChatSuggestion, useSmartSuggestions } from '@/hooks/useSmartSuggestions';
 import { InlineProgress } from './InlineProgress';
 import { SerpVisualData } from './SerpVisualData';
 import { MessageStatus } from './MessageStatus';
@@ -30,8 +29,6 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   onRetry,
   isRetrying = false
 }) => {
-  // Generate smart suggestions for the latest AI message
-  const { suggestions } = useSmartSuggestions(message.role === 'assistant' && isLatest ? [message] : []);
   // Check if this is an error message
   if (message.messageStatus === 'error' && onRetry) {
     return (
@@ -175,24 +172,11 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             </div>
           )}
 
-          {/* Action Buttons and Smart Suggestions */}
-          {((message.actions && message.actions.length > 0) || suggestions.length > 0) && (
+          {/* Action Buttons */}
+          {message.actions && message.actions.length > 0 && (
             <ModernActionButtons 
-              actions={message.actions || []} 
-              suggestions={isLatest && message.role === 'assistant' ? suggestions : []}
-              onAction={onAction || (() => {})}
-              onSuggestionClick={(suggestion) => {
-                // Convert suggestion to a contextual action
-                if (onAction) {
-                  onAction({
-                    id: suggestion.id,
-                    type: 'button',
-                    label: suggestion.text,
-                    action: 'send_message',
-                    data: { message: suggestion.text }
-                  });
-                }
-              }}
+              actions={message.actions} 
+              onAction={onAction || (() => {})} 
             />
           )}
 
