@@ -120,10 +120,16 @@ class EnhancedAIService {
         return this.createErrorMessage(`AI service error: ${error.message}. Please check your API key configuration in Settings.`);
       }
 
-      const responseContent = response?.message || response?.content;
+      const responseContent = response?.message || response?.content || response?.response;
       if (!responseContent) {
         console.error('No content in enhanced AI response:', response);
-        return this.createErrorMessage('No response content received');
+        
+        // Check if we have an error message from the backend
+        if (response?.error) {
+          return this.createErrorMessage(response.message || response.error);
+        }
+        
+        return this.createErrorMessage('No response content received. Please try again or contact support if this persists.');
       }
 
       console.log('✅ Enhanced AI Response received with context awareness');
@@ -168,8 +174,9 @@ class EnhancedAIService {
         // Call the ai-context-manager function for comprehensive context
         const { data: contextResponse, error } = await supabase.functions.invoke('ai-context-manager', {
           body: { 
+            action: 'get_context_state',
             userId,
-            contextType: 'comprehensive' 
+            data: { contextType: 'comprehensive' }
           }
         });
         

@@ -172,25 +172,85 @@ async function updateContextState(userId: string, data: any) {
 }
 
 async function getContextState(userId: string) {
-  const { data: contextState, error } = await supabase
-    .from('ai_context_state')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  console.log(`🔄 Getting context state for user: ${userId}`);
+  
+  try {
+    // Get user context state
+    const { data: contextState, error: contextError } = await supabase
+      .from('ai_context_state')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
-  if (error && error.code !== 'PGRST116') throw error;
+    // Get user solutions
+    const { data: solutions, error: solutionsError } = await supabase
+      .from('solutions')
+      .select('name, description, features, painPoints, targetAudience')
+      .eq('user_id', userId)
+      .limit(10);
 
-  return new Response(JSON.stringify({ 
-    contextState: contextState || {
-      user_id: userId,
-      context: {},
-      workflow_state: {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+    // Get user content analytics
+    const { data: contentItems, error: contentError } = await supabase
+      .from('content_items')
+      .select('status, seo_score, created_at')
+      .eq('user_id', userId);
+
+    // Build comprehensive context
+    const analytics = {
+      totalContent: contentItems?.length || 0,
+      published: contentItems?.filter(item => item.status === 'published')?.length || 0,
+      avgSeoScore: contentItems?.length > 0 
+        ? contentItems.reduce((sum, item) => sum + (item.seo_score || 0), 0) / contentItems.length 
+        : 0
+    };
+
+    const comprehensiveContext = {
+      contextState: contextState || {
+        user_id: userId,
+        context: {},
+        workflow_state: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      solutions: solutions || [],
+      analytics,
+      companyInfo: contextState?.context?.companyInfo || null,
+      lastFetched: new Date().toISOString()
+    };
+
+    console.log(`✅ Context state retrieved successfully:`, {
+      solutionsCount: solutions?.length || 0,
+      contentCount: contentItems?.length || 0,
+      hasContextState: !!contextState
+    });
+
+    return new Response(JSON.stringify(comprehensiveContext), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching context state:', error);
+    
+    // Return fallback context
+    const fallbackContext = {
+      contextState: {
+        user_id: userId,
+        context: {},
+        workflow_state: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      solutions: [],
+      analytics: { totalContent: 0, published: 0, avgSeoScore: 0 },
+      companyInfo: null,
+      lastFetched: new Date().toISOString(),
+      error: 'Partial data due to fetch error'
+    };
+
+    return new Response(JSON.stringify(fallbackContext), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 async function mergeContexts(userId: string, data: any) {

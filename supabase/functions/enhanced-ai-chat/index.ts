@@ -146,8 +146,13 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     });
 
     if (!response.ok) {
-      console.error("AI Gateway error:", await response.text());
-      return new Response(JSON.stringify({ error: "Failed to get AI response" }), {
+      const errorText = await response.text();
+      console.error("AI Gateway error:", errorText);
+      return new Response(JSON.stringify({ 
+        error: "Failed to get AI response",
+        details: errorText,
+        message: "AI service temporarily unavailable. Please try again in a moment."
+      }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -158,11 +163,19 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
 
     if (!aiMessage) {
       console.error("No response from AI", data);
-      return new Response(JSON.stringify({ error: "No response from AI" }), {
+      console.log("Full AI response data:", JSON.stringify(data, null, 2));
+      return new Response(JSON.stringify({ 
+        error: "No response content received",
+        message: "The AI service returned an empty response. Please try rephrasing your question or try again in a moment.",
+        details: "Empty AI response"
+      }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log(`📝 AI Response received (${aiMessage.length} characters)`);
+    console.log("🔍 Response preview:", aiMessage.substring(0, 300));
 
     // Parse the AI response for structured data
     console.log("🔍 Parsing AI response for structured data...");
@@ -171,26 +184,59 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     let visualData = null;
     let cleanContent = aiMessage;
 
-    // Extract actions
-    const actionMatch = aiMessage.match(/```json\s*\n([\s\S]*?"actions"[\s\S]*?)\n```/);
+    // Enhanced action extraction with multiple patterns
+    let actionMatch = aiMessage.match(/```json\s*\n([\s\S]*?"actions"[\s\S]*?)\n```/);
+    
+    // Try alternative patterns if first fails
+    if (!actionMatch) {
+      actionMatch = aiMessage.match(/\{[\s\S]*?"actions"[\s\S]*?\}/);
+    }
+    
     if (actionMatch) {
       try {
-        const actionData = JSON.parse(actionMatch[1]);
-        if (actionData.actions) {
+        let actionText = actionMatch[1] || actionMatch[0];
+        
+        // Clean up common JSON issues
+        actionText = actionText
+          .replace(/,\s*}/g, '}')  // Remove trailing commas
+          .replace(/,\s*]/g, ']')   // Remove trailing commas in arrays
+          .trim();
+        
+        console.log("🔧 Attempting to parse actions:", actionText.substring(0, 200));
+        
+        const actionData = JSON.parse(actionText);
+        if (actionData.actions && Array.isArray(actionData.actions)) {
           actions = actionData.actions;
           console.log("📋 Found actions data:", JSON.stringify(actions, null, 2));
           cleanContent = cleanContent.replace(actionMatch[0], '').trim();
         }
       } catch (e) {
         console.log("Failed to parse actions:", e);
+        console.log("Action text that failed:", actionMatch[1] || actionMatch[0]);
       }
     }
 
-    // Extract visual data
-    const visualMatch = aiMessage.match(/```json\s*\n([\s\S]*?"visualData"[\s\S]*?)\n```/);
+    // Enhanced visual data extraction with multiple patterns
+    let visualMatch = aiMessage.match(/```json\s*\n([\s\S]*?"visualData"[\s\S]*?)\n```/);
+    
+    // Try alternative patterns if first fails
+    if (!visualMatch) {
+      visualMatch = aiMessage.match(/\{[\s\S]*?"visualData"[\s\S]*?\}/);
+    }
+    
     if (visualMatch) {
       try {
-        const visualJson = JSON.parse(visualMatch[1]);
+        let visualText = visualMatch[1] || visualMatch[0];
+        
+        // Clean up common JSON issues
+        visualText = visualText
+          .replace(/,\s*}/g, '}')  // Remove trailing commas
+          .replace(/,\s*]/g, ']')   // Remove trailing commas in arrays
+          .trim();
+        
+        console.log("🔧 Attempting to parse visual data:", visualText.substring(0, 200));
+        
+        const visualJson = JSON.parse(visualText);
         if (visualJson.visualData) {
           visualData = visualJson.visualData;
           console.log("📊 Found visual data:", JSON.stringify(visualData, null, 2));
@@ -198,6 +244,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
         }
       } catch (e) {
         console.log("Failed to parse visual data:", e);
+        console.log("Visual text that failed:", visualMatch[1] || visualMatch[0]);
       }
     }
 
@@ -391,17 +438,44 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
 
     console.log(`✅ Parsed response: { hasActions: ${actions.length > 0}, hasVisualData: ${!!visualData}, messageLength: ${cleanContent.length} }`);
 
-    return new Response(JSON.stringify({
-      response: cleanContent,
+    // Validate response before sending
+    if (!cleanContent || cleanContent.trim().length === 0) {
+      console.error("❌ Empty clean content after processing");
+      return new Response(JSON.stringify({
+        error: "No response content received",
+        message: "Failed to process AI response properly. Please try again.",
+        details: "Empty content after processing"
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const responseData = {
+      message: cleanContent,
+      content: cleanContent, // Fallback for different response formats
       actions: actions.length > 0 ? actions : undefined,
-      visualData: visualData || undefined
-    }), {
+      visualData: visualData || undefined,
+      metadata: {
+        processed_at: new Date().toISOString(),
+        has_actions: actions.length > 0,
+        has_visual_data: !!visualData
+      }
+    };
+
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
-    console.error("Error in enhanced AI chat:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+    console.error("❌ Error in enhanced AI chat:", error);
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
+    
+    return new Response(JSON.stringify({ 
+      error: "Internal server error",
+      message: "An unexpected error occurred while processing your request. Please try again.",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
