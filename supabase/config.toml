@@ -66,3 +66,12 @@ verify_jwt = true
 
 [functions.openrouter-content-generator]
 verify_jwt = true
+
+[functions.google-analytics-fetch]
+verify_jwt = false
+
+[functions.search-console-fetch]
+verify_jwt = false
+
+[functions.dashboard-summary]
+verify_jwt = true
