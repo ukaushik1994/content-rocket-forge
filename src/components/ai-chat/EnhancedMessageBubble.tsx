@@ -104,7 +104,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       )}
 
       {/* Message Content */}
-      <div className="max-w-md sm:max-w-xl lg:max-w-3xl">
+      <div className="max-w-xs sm:max-w-md lg:max-w-lg">
         <div className="relative">
           {/* AI Processing Indicator */}
           {message.progressIndicator && (
@@ -121,10 +121,10 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {/* Message Content */}
           <Card className={`shadow-sm border backdrop-blur-sm ${
             isUser 
-              ? 'bg-primary text-primary-foreground border-primary/20 ml-1' 
-              : 'bg-background/80 border-border/50 mr-1'
+              ? 'bg-primary text-primary-foreground border-primary/20 ml-4' 
+              : 'bg-background/80 border-border/50 mr-4'
           }`}>
-            <div className="px-3 py-2">
+            <div className="px-4 py-3">
               <div className={`text-sm leading-relaxed ${
                 isUser ? 'text-primary-foreground' : 'text-foreground'
               }`}>
@@ -182,13 +182,13 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
 
           {/* Retry Button for AI messages */}
           {!isUser && onRetry && (
-            <div className="mt-3 flex justify-start">
+            <div className="mt-3 flex justify-end">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={onRetry}
                 disabled={isRetrying}
-                className="h-8 px-3 gap-2 text-xs bg-background/80 hover:bg-background border-border/60 hover:border-border text-foreground hover:text-foreground transition-all duration-200"
+                className="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
                 <RefreshCw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
                 {isRetrying ? 'Retrying...' : 'Retry'}
