@@ -25,10 +25,18 @@ import {
 } from 'lucide-react';
 
 interface VisualDataRendererProps {
-  visualData: VisualData;
+  data: VisualData;
 }
 
-export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualData }) => {
+export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) => {
+  if (!data) return null;
+
+  // Validate data structure
+  if (typeof data !== 'object') {
+    console.warn('Invalid visual data type:', typeof data);
+    return null;
+  }
+
   const getChartIcon = (type: string) => {
     switch (type) {
       case 'line':
@@ -74,14 +82,14 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
   };
 
   const renderChart = () => {
-    if (!visualData.chartConfig) return null;
+    if (!data.chartConfig) return null;
 
-    const { type, data, categories, colors, valueFormatter, height = 300 } = visualData.chartConfig;
+    const { type, data: chartData, categories, colors, valueFormatter, height = 300 } = data.chartConfig;
     
     // Use InteractiveChart for enhanced experience
     return (
       <InteractiveChart
-        chartConfig={visualData.chartConfig}
+        chartConfig={data.chartConfig}
         title={`${type.charAt(0).toUpperCase() + type.slice(1)} Chart`}
         description="Interactive data visualization"
         allowTypeSwitch={true}
@@ -95,7 +103,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
   };
 
   const renderMetrics = () => {
-    if (!visualData.metrics) return null;
+    if (!data.metrics) return null;
 
     const containerVariants = {
       hidden: { opacity: 0 },
@@ -129,7 +137,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
         initial="hidden"
         animate="visible"
       >
-        {visualData.metrics.map((metric, index) => {
+        {data.metrics.map((metric, index) => {
           const IconComponent = metric.icon && (LucideIcons[metric.icon as keyof typeof LucideIcons] as LucideIcon | undefined);
           
           return (
@@ -241,9 +249,9 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
   };
 
   const renderWorkflow = () => {
-    if (!visualData.workflowStep) return null;
+    if (!data.workflowStep) return null;
 
-    const { title, description, actions, progress } = visualData.workflowStep;
+    const { title, description, actions, progress } = data.workflowStep;
     const progressPercentage = progress ? (progress.current / progress.total) * 100 : 0;
 
     return (
@@ -365,9 +373,9 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
   };
 
   const renderSummary = () => {
-    if (!visualData.summary) return null;
+    if (!data.summary) return null;
 
-    const { title, items } = visualData.summary;
+    const { title, items } = data.summary;
 
     const getStatusIcon = (status: string) => {
       switch (status) {
@@ -526,10 +534,10 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
       }}
       className="my-6"
     >
-      {visualData.type === 'chart' && renderChart()}
-      {visualData.type === 'metrics' && renderMetrics()}
-      {visualData.type === 'workflow' && renderWorkflow()}
-      {visualData.type === 'summary' && renderSummary()}
+      {data.type === 'chart' && renderChart()}
+      {data.type === 'metrics' && renderMetrics()}
+      {data.type === 'workflow' && renderWorkflow()}
+      {data.type === 'summary' && renderSummary()}
     </motion.div>
   );
 };

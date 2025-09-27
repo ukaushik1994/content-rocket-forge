@@ -145,11 +145,10 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 }}
               />
             )}
-            {message.visualData.type === 'chart' && message.visualData.chartConfig && (
-              <VisualDataRenderer visualData={message.visualData} />
-            )}
-            {(message.visualData.type === 'metrics' || message.visualData.type === 'workflow' || message.visualData.type === 'summary') && (
-              <VisualDataRenderer visualData={message.visualData} />
+            {message.visualData && (
+              <div className="mt-3 mb-2">
+                <VisualDataRenderer data={message.visualData} />
+              </div>
             )}
           </div>
         )}

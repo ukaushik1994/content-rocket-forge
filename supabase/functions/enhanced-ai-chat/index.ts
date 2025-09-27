@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -177,86 +178,61 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     console.log(`📝 AI Response received (${aiMessage.length} characters)`);
     console.log("🔍 Response preview:", aiMessage.substring(0, 300));
 
-    // Parse the AI response for structured data
-    console.log("🔍 Parsing AI response for structured data...");
+    // Parse the response for structured data
+    console.log('🔍 Parsing AI response for structured data...');
+    const jsonBlocks = extractJSONBlocks(aiMessage);
     
-    let actions = [];
     let visualData = null;
-    let cleanContent = aiMessage;
-
-    // Enhanced action extraction with multiple patterns
-    let actionMatch = aiMessage.match(/```json\s*\n([\s\S]*?"actions"[\s\S]*?)\n```/);
+    let actions = null;
     
-    // Try alternative patterns if first fails
-    if (!actionMatch) {
-      actionMatch = aiMessage.match(/\{[\s\S]*?"actions"[\s\S]*?\}/);
-    }
-    
-    if (actionMatch) {
-      try {
-        let actionText = actionMatch[1] || actionMatch[0];
-        
-        // Clean up common JSON issues
-        actionText = actionText
-          .replace(/,\s*}/g, '}')  // Remove trailing commas
-          .replace(/,\s*]/g, ']')   // Remove trailing commas in arrays
-          .trim();
-        
-        console.log("🔧 Attempting to parse actions:", actionText.substring(0, 200));
-        
-        const actionData = JSON.parse(actionText);
-        if (actionData.actions && Array.isArray(actionData.actions)) {
-          actions = actionData.actions;
-          console.log("📋 Found actions data:", JSON.stringify(actions, null, 2));
-          cleanContent = cleanContent.replace(actionMatch[0], '').trim();
+    for (const block of jsonBlocks) {
+      console.log('🔍 Processing JSON block:', JSON.stringify(block).substring(0, 200));
+      
+      // Check for visual data (direct or nested)
+      if (block.visualData) {
+        try {
+          visualData = typeof block.visualData === 'string' ? JSON.parse(block.visualData) : block.visualData;
+          console.log('📊 Found nested visual data:', visualData);
+        } catch (e) {
+          console.log('Failed to parse nested visual data:', e);
         }
-      } catch (e) {
-        console.log("Failed to parse actions:", e);
-        console.log("Action text that failed:", actionMatch[1] || actionMatch[0]);
+      } else if (block.type && (block.metrics || block.charts || block.data)) {
+        // Direct visual data object
+        visualData = block;
+        console.log('📊 Found direct visual data:', visualData);
+      }
+      
+      // Check for actions (direct or nested)
+      if (block.actions) {
+        try {
+          actions = Array.isArray(block.actions) ? block.actions : JSON.parse(block.actions);
+          console.log('🎯 Found actions:', actions);
+        } catch (e) {
+          console.log('Failed to parse actions:', e);
+        }
       }
     }
-
-    // Enhanced visual data extraction with multiple patterns
-    let visualMatch = aiMessage.match(/```json\s*\n([\s\S]*?"visualData"[\s\S]*?)\n```/);
     
-    // Try alternative patterns if first fails
-    if (!visualMatch) {
-      visualMatch = aiMessage.match(/\{[\s\S]*?"visualData"[\s\S]*?\}/);
-    }
+    // Clean the response text by removing extracted JSON
+    const cleanedResponse = removeExtractedJSON(aiMessage);
     
-    if (visualMatch) {
-      try {
-        let visualText = visualMatch[1] || visualMatch[0];
-        
-        // Clean up common JSON issues
-        visualText = visualText
-          .replace(/,\s*}/g, '}')  // Remove trailing commas
-          .replace(/,\s*]/g, ']')   // Remove trailing commas in arrays
-          .trim();
-        
-        console.log("🔧 Attempting to parse visual data:", visualText.substring(0, 200));
-        
-        const visualJson = JSON.parse(visualText);
-        if (visualJson.visualData) {
-          visualData = visualJson.visualData;
-          console.log("📊 Found visual data:", JSON.stringify(visualData, null, 2));
-          cleanContent = cleanContent.replace(visualMatch[0], '').trim();
-        }
-      } catch (e) {
-        console.log("Failed to parse visual data:", e);
-        console.log("Visual text that failed:", visualMatch[1] || visualMatch[0]);
-      }
-    }
+    console.log('✅ Parsed response:', { 
+      hasActions: !!actions, 
+      hasVisualData: !!visualData,
+      originalLength: aiMessage.length,
+      cleanedLength: cleanedResponse.length,
+      blocksFound: jsonBlocks.length
+    });
 
     // Enhanced fallback generation with better detection
-    if (actions.length === 0 && !visualData) {
+    if (!actions && !visualData) {
       console.log("🎯 Generating enhanced contextual actions and visual data...");
       
       const queryLower = userQuery.toLowerCase();
       
       // Content-related queries
       if (queryLower.includes('content') || queryLower.includes('blog') || queryLower.includes('article') || queryLower.includes('write')) {
-        actions.push({
+        actions = [{
           id: "create-content",
           label: "Create Content Strategy",
           type: "button",
@@ -268,7 +244,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
           type: "button",
           action: "navigate:/content-builder",
           data: {}
-        });
+        }];
         
         visualData = {
           type: "metrics",
@@ -293,7 +269,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       
       // SEO and optimization queries
       else if (queryLower.includes('seo') || queryLower.includes('optimize') || queryLower.includes('search') || queryLower.includes('ranking')) {
-        actions.push({
+        actions = [{
           id: "seo-analysis",
           label: "Analyze SEO Opportunities",
           type: "button",
@@ -305,7 +281,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
           type: "button",
           action: "navigate:/research",
           data: {}
-        });
+        }];
         
         visualData = {
           type: "metrics",
@@ -337,7 +313,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       
       // Analytics and performance queries
       else if (queryLower.includes('analytics') || queryLower.includes('performance') || queryLower.includes('data') || queryLower.includes('metric')) {
-        actions.push({
+        actions = [{
           id: "view-analytics",
           label: "View Detailed Analytics",
           type: "button",
@@ -349,7 +325,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
           type: "button",
           action: "workflow:analytics-deep-dive",
           data: {}
-        });
+        }];
         
         visualData = {
           type: "chart",
@@ -371,7 +347,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       
       // Strategy queries
       else if (queryLower.includes('strategy') || queryLower.includes('plan') || queryLower.includes('roadmap')) {
-        actions.push({
+        actions = [{
           id: "content-strategy",
           label: "Develop Content Strategy",
           type: "button",
@@ -383,7 +359,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
           type: "button",
           action: "workflow:strategy-analysis",
           data: {}
-        });
+        }];
         
         visualData = {
           type: "summary",
@@ -400,7 +376,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       
       // Default fallback - always provide something
       else {
-        actions.push({
+        actions = [{
           id: "explore-features",
           label: "Explore Platform Features",
           type: "button",
@@ -412,7 +388,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
           type: "button",
           action: "workflow:onboarding-help",
           data: {}
-        });
+        }];
         
         visualData = {
           type: "metrics",
@@ -436,10 +412,11 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       }
     }
 
-    console.log(`✅ Parsed response: { hasActions: ${actions.length > 0}, hasVisualData: ${!!visualData}, messageLength: ${cleanContent.length} }`);
+    console.log(`✅ Parsed response: { hasActions: ${!!actions}, hasVisualData: ${!!visualData}, messageLength: ${cleanedResponse?.length || aiMessage.length} }`);
 
     // Validate response before sending
-    if (!cleanContent || cleanContent.trim().length === 0) {
+    const finalContent = cleanedResponse || aiMessage;
+    if (!finalContent || finalContent.trim().length === 0) {
       console.error("❌ Empty clean content after processing");
       return new Response(JSON.stringify({
         error: "No response content received",
@@ -452,13 +429,13 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     }
 
     const responseData = {
-      message: cleanContent,
-      content: cleanContent, // Fallback for different response formats
-      actions: actions.length > 0 ? actions : undefined,
+      message: finalContent,
+      content: finalContent, // Fallback for different response formats
+      actions: actions || undefined,
       visualData: visualData || undefined,
       metadata: {
         processed_at: new Date().toISOString(),
-        has_actions: actions.length > 0,
+        has_actions: !!actions,
         has_visual_data: !!visualData
       }
     };

@@ -63,9 +63,12 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
   actions, 
   onAction 
 }) => {
+  if (!actions || !Array.isArray(actions) || actions.length === 0) {
+    console.warn('Invalid actions data:', actions);
+    return null;
+  }
+  
   const navigate = useNavigate();
-
-  if (!actions || actions.length === 0) return null;
 
   const handleActionClick = (action: ContextualAction) => {
     console.log('🎯 Modern action clicked:', action);
