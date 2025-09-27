@@ -34,6 +34,9 @@ jwt_expiry = 3600
 refresh_token_rotation_enabled = true
 security_update_password_require_reauthentication = true
 
+[functions.ai]
+verify_jwt = false
+
 [functions.ai-proxy]
 verify_jwt = false
 
@@ -41,6 +44,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.enhanced-ai-chat]
+verify_jwt = false
+
+[functions.ai-streaming-chat]
 verify_jwt = false
 
 [functions.ai-context-manager]
