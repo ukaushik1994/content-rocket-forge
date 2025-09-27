@@ -41,6 +41,14 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   }
 
   const isUser = message.role === 'user';
+  
+  // Debug logging for retry button visibility
+  console.log('EnhancedMessageBubble debug:', {
+    isUser,
+    onRetry: !!onRetry,
+    messageRole: message.role,
+    messageStatus: message.messageStatus
+  });
 
   // Helper function to generate prompts for SERP actions
   const getActionPrompt = (action: string, data: any): string => {
@@ -104,7 +112,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       )}
 
       {/* Message Content */}
-      <div className="max-w-sm sm:max-w-lg lg:max-w-2xl">
+      <div className="max-w-md sm:max-w-xl lg:max-w-3xl">
         <div className="relative">
           {/* AI Processing Indicator */}
           {message.progressIndicator && (
@@ -121,8 +129,8 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {/* Message Content */}
           <Card className={`shadow-sm border backdrop-blur-sm ${
             isUser 
-              ? 'bg-primary text-primary-foreground border-primary/20 ml-2' 
-              : 'bg-background/80 border-border/50 mr-2'
+              ? 'bg-primary text-primary-foreground border-primary/20 ml-1' 
+              : 'bg-background/80 border-border/50 mr-1'
           }`}>
             <div className="px-3 py-2">
               <div className={`text-sm leading-relaxed ${
