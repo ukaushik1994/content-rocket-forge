@@ -440,7 +440,7 @@ export const useStreamingChatDB = () => {
 
     if (!user || !activeConversationId) return;
 
-    // Add user message
+    // Add user message immediately for instant feedback
     const userMessage: EnhancedChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -449,6 +449,7 @@ export const useStreamingChatDB = () => {
       messageStatus: 'sending'
     };
 
+    // Show user message immediately
     setState(prev => ({ 
       ...prev, 
       messages: [...prev.messages, userMessage],

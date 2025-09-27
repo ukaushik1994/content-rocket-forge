@@ -9,11 +9,6 @@ import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 interface StreamingMessageBubbleProps {
   message: EnhancedChatMessage;
   isLatest: boolean;
-}
-
-interface StreamingMessageBubbleProps {
-  message: EnhancedChatMessage;
-  isLatest: boolean;
   onRetry?: () => void;
   isRetrying?: boolean;
 }
@@ -27,6 +22,13 @@ export const StreamingMessageBubble: React.FC<StreamingMessageBubbleProps> = ({
   const navigate = useNavigate();
   const { activeConversationId } = useChatContextBridge();
   const { markAsDelivered, markAsRead } = useRealtimeMessageStatus(activeConversationId);
+
+  // Add retry functionality
+  const handleRetry = React.useCallback(() => {
+    if (onRetry) {
+      onRetry();
+    }
+  }, [onRetry]);
   
   // Mark message as delivered when it appears
   React.useEffect(() => {
@@ -89,7 +91,7 @@ export const StreamingMessageBubble: React.FC<StreamingMessageBubbleProps> = ({
         message={message}
         isLatest={isLatest}
         onAction={handleAction}
-        onRetry={onRetry}
+        onRetry={handleRetry}
         isRetrying={isRetrying}
       />
   );

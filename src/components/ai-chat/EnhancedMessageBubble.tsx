@@ -1,23 +1,23 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { EnhancedChatMessage } from '@/types/enhancedChat';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
-import { Bot, User, Sparkles } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, Bot, RefreshCw } from 'lucide-react';
+import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
-import { WorkflowStreamingProgress } from './WorkflowStreamingProgress';
-import { SerpVisualData } from './SerpVisualData';
 import { VisualDataRenderer } from './VisualDataRenderer';
 import { ModernActionButtons } from './ModernActionButtons';
+import { InlineProgress } from './InlineProgress';
+import { SerpVisualData } from './SerpVisualData';
 import { MessageStatus } from './MessageStatus';
 import { ErrorMessageBubble } from './ErrorMessageBubble';
-import { cn } from '@/lib/utils';
+import { FormattedResponseRenderer } from './FormattedResponseRenderer';
+import { Button } from '@/components/ui/button';
 
 interface EnhancedMessageBubbleProps {
   message: EnhancedChatMessage;
-  isLatest: boolean;
-  onAction: (action: ContextualAction) => void;
+  isLatest?: boolean;
+  onAction?: (action: ContextualAction) => void;
   onRetry?: () => void;
   isRetrying?: boolean;
 }
@@ -72,108 +72,166 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
     }
   };
 
+  const bubbleVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 200,
+        damping: 20
+      }
+    }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'} max-w-5xl mx-auto`}
+      variants={bubbleVariants}
+      className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
     >
-      {/* Avatar */}
-      <div className="flex-shrink-0">
-        <Avatar className="h-10 w-10 border border-border/50">
-          <AvatarFallback className={
-            isUser 
-              ? 'bg-gradient-to-br from-primary/20 to-blue-500/20' 
-              : 'bg-gradient-to-br from-purple-500/20 to-pink-500/20'
-          }>
-            {isUser ? (
-              <User className="h-5 w-5 text-primary" />
-            ) : (
-              <Sparkles className="h-5 w-5 text-primary" />
-            )}
-          </AvatarFallback>
-        </Avatar>
-      </div>
+      {/* Avatar (only for AI messages) */}
+      {!isUser && (
+        <motion.div 
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 border border-primary/30 flex-shrink-0"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 300 }}
+        >
+          <Bot className="h-4 w-4 text-primary" />
+        </motion.div>
+      )}
 
       {/* Message Content */}
-      <div className={`flex-1 space-y-4 ${isUser ? 'items-end' : 'items-start'}`}>
-        {/* Enhanced Workflow Progress Indicator */}
-        {message.progressIndicator && !isUser && (
-          <WorkflowStreamingProgress
-            steps={message.progressIndicator.steps || []}
-            currentStep={message.progressIndicator.currentStep?.toString() || '0'}
-            workflowTitle={message.progressIndicator.workflowTitle || message.progressIndicator.stepName || 'Processing'}
-            isStreaming={message.progressIndicator.isActive}
-            progress={message.progressIndicator.progress}
-          />
-        )}
+      <div className="max-w-xs sm:max-w-md lg:max-w-lg">
+        <div className="relative">
+          {/* AI Processing Indicator */}
+          {message.progressIndicator && (
+            <InlineProgress
+              workflowTitle={message.progressIndicator.workflowTitle}
+              currentStep={message.progressIndicator.currentStep}
+              totalSteps={message.progressIndicator.totalSteps}
+              stepName={message.progressIndicator.stepName}
+              progress={message.progressIndicator.progress}
+              isActive={message.progressIndicator.isActive}
+            />
+          )}
 
-        {/* Main Message */}
-        <Card className={`p-4 max-w-4xl backdrop-blur-xl ${
-          isUser 
-            ? 'bg-gradient-to-br from-primary/10 to-blue-500/10 border-primary/20 ml-auto' 
-            : 'bg-background/60 border-border/50'
-        }`}>
-          {/* Text Content */}
-          <div className="prose prose-sm max-w-none">
-            {message.content.split('\n').map((line, i) => (
-              <p key={i} className={`text-sm leading-relaxed mb-2 last:mb-0 ${
+          {/* Message Content */}
+          <Card className={`shadow-sm border backdrop-blur-sm ${
+            isUser 
+              ? 'bg-primary text-primary-foreground border-primary/20 ml-4' 
+              : 'bg-background/80 border-border/50 mr-4'
+          }`}>
+            <div className="px-4 py-3">
+              <div className={`text-sm leading-relaxed ${
                 isUser ? 'text-primary-foreground' : 'text-foreground'
               }`}>
-                {line}
-              </p>
-            ))}
-          </div>
-
-        {/* Visual Data Rendering */}
-        {message.visualData && (
-          <div className="mt-4">
-            {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
-              <SerpVisualData 
-                serpData={message.visualData.serpData} 
-                onActionClick={(action, data) => {
-                  // Convert to contextual action and trigger
-                  onAction({
-                    id: `serp-action-${Date.now()}`,
-                    type: 'button',
-                    label: action,
-                    action: 'send_message',
-                    data: { 
-                      message: getActionPrompt(action, data)
-                    }
-                  });
-                }}
-              />
-            )}
-            {message.visualData && (
-              <div className="mt-3 mb-2">
-                <VisualDataRenderer data={message.visualData} />
+                {isUser ? (
+                  <div className="whitespace-pre-wrap break-words">
+                    {message.content}
+                  </div>
+                ) : (
+                  <FormattedResponseRenderer content={message.content} />
+                )}
               </div>
-            )}
-          </div>
-        )}
-        </Card>
+            </div>
 
-        {/* Action Buttons */}
-        {message.actions && message.actions.length > 0 && !isUser && (
-          <div className="flex flex-wrap gap-2">
+            {/* Message Tail */}
+            <div className={`absolute top-4 ${
+              isUser ? '-left-1' : '-right-1'
+            } w-2 h-2 transform rotate-45 ${
+              isUser 
+                ? 'bg-primary border-r border-b border-primary/20' 
+                : 'bg-background/80 border-l border-t border-border/50'
+            }`} />
+          </Card>
+
+          {/* Visual Data Rendering */}
+          {message.visualData && (
+            <div className="mt-3">
+              {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
+                <SerpVisualData 
+                  serpData={message.visualData.serpData} 
+                  onActionClick={(action, data) => {
+                    // Convert to contextual action and trigger
+                    onAction?.({
+                      id: `serp-action-${Date.now()}`,
+                      type: 'button',
+                      label: action,
+                      action: 'send_message',
+                      data: { 
+                        message: getActionPrompt(action, data)
+                      }
+                    });
+                  }}
+                />
+              )}
+              <VisualDataRenderer data={message.visualData} />
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {message.actions && message.actions.length > 0 && (
             <ModernActionButtons 
-              actions={message.actions}
-              onAction={onAction}
+              actions={message.actions} 
+              onAction={onAction || (() => {})} 
             />
-          </div>
-        )}
+          )}
 
-        {/* Message Status for user messages */}
-        {isUser && (
-          <div className="flex justify-end mt-2">
+          {/* Retry Button for AI messages */}
+          {!isUser && onRetry && (
+            <div className="mt-3 flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRetry}
+                disabled={isRetrying}
+                className="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
+                {isRetrying ? 'Retrying...' : 'Retry'}
+              </Button>
+            </div>
+          )}
+
+          {/* User message status */}
+          {isUser && (
             <MessageStatus 
-              status={message.messageStatus as 'sent' | 'delivered' | 'read' | 'failed' || 'sent'}
+              status={message.messageStatus === 'error' ? 'failed' : (message.messageStatus as 'sent' | 'delivered' | 'read' | 'failed') || 'sent'}
               timestamp={message.timestamp}
             />
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Timestamp */}
+        <motion.div 
+          className={`mt-1 px-1 text-xs text-muted-foreground ${
+            isUser ? 'text-right' : 'text-left'
+          }`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          {message.timestamp.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })}
+        </motion.div>
       </div>
+
+      {/* Avatar (only for user messages) */}
+      {isUser && (
+        <motion.div 
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/20 border border-secondary/30 flex-shrink-0"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 300 }}
+        >
+          <User className="h-4 w-4 text-secondary" />
+        </motion.div>
+      )}
     </motion.div>
   );
 };

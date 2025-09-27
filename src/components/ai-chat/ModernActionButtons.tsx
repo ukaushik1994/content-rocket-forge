@@ -1,22 +1,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowRight, 
-  FileText, 
-  Search, 
-  Target, 
-  Sparkles, 
-  ExternalLink,
-  PenTool,
-  BarChart3,
-  Zap,
-  TrendingUp
-} from 'lucide-react';
 import { ContextualAction } from '@/services/aiService';
+import { 
+  PenTool, 
+  Search, 
+  TrendingUp, 
+  Target, 
+  FileText, 
+  BarChart3,
+  ExternalLink
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ModernActionButtonsProps {
   actions: ContextualAction[];
@@ -43,39 +38,33 @@ const getActionIcon = (action: string) => {
     case 'competitor-analysis':
       return TrendingUp;
     default:
-      return Sparkles;
+      return FileText;
   }
 };
 
-const getActionGradient = (index: number) => {
-  const gradients = [
-    'from-neon-purple to-neon-blue',
-    'from-neon-blue to-purple-400',
-    'from-purple-400 to-pink-400',
-    'from-pink-400 to-neon-purple',
-    'from-green-400 to-blue-500',
-    'from-yellow-400 to-orange-500'
-  ];
-  return gradients[index % gradients.length];
-};
-
-export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({ 
-  actions, 
-  onAction 
-}) => {
-  if (!actions || !Array.isArray(actions) || actions.length === 0) {
-    console.warn('Invalid actions data:', actions);
-    return null;
-  }
-  
+export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({ actions, onAction }) => {
   const navigate = useNavigate();
 
+  // Filter only working actions and limit to 4
+  const workingActions = actions.filter(action => {
+    // Only include actions that actually work
+    return action.action?.includes('create-') || 
+           action.action?.includes('content-') ||
+           action.action?.includes('keyword-research') ||
+           action.action?.includes('research') ||
+           action.action?.includes('strategy') ||
+           action.action?.includes('workflow:');
+  }).slice(0, 4);
+
+  if (!workingActions || workingActions.length === 0) {
+    return null;
+  }
+
   const handleActionClick = (action: ContextualAction) => {
-    console.log('🎯 Modern action clicked:', action);
+    console.log('🎯 Action clicked:', action);
     
     // Handle content creation actions with navigation
-    if (action.action?.includes('create-') || action.action?.includes('content-') || action.action?.includes('blog-post')) {
-      // Navigate to content builder with pre-filled data
+    if (action.action?.includes('create-') || action.action?.includes('content-')) {
       const preloadData = {
         mainKeyword: action.data?.keyword || action.data?.mainKeyword || action.label,
         selectedKeywords: action.data?.keywords || [],
@@ -91,181 +80,52 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
         state: { prefilledData: preloadData }
       });
     } else if (action.action?.includes('keyword-research') || action.action?.includes('research')) {
-      // Navigate to research page with keyword
       navigate('/research', { 
         state: { 
           prefilledKeyword: action.data?.keyword || action.data?.mainKeyword || action.label 
         }
       });
     } else if (action.action?.includes('strategy')) {
-      // Navigate to strategy page
       navigate('/strategies');
     } else {
-      // Handle other actions through the normal flow
       onAction(action);
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20, scale: 0.9 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 20
-      }
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="space-y-4"
-      >
-        <h3 className="text-lg font-semibold text-gradient mb-4 flex items-center gap-2">
-          <Zap className="h-5 w-5 text-neon-purple" />
-          Smart Actions
-        </h3>
-        
-        <div className="grid gap-3">
-          {actions.map((action, index) => {
-            const Icon = getActionIcon(action.action);
-            const gradient = getActionGradient(index);
-            
-            return (
-              <motion.div
-                key={action.id}
-                variants={itemVariants}
-                whileHover={{ 
-                  scale: 1.02,
-                  transition: { duration: 0.2 }
-                }}
-                whileTap={{ scale: 0.98 }}
+    <motion.div 
+      className="mt-3"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+    >
+      <div className="flex gap-2 flex-wrap">
+        {workingActions.map((action, index) => {
+          const Icon = getActionIcon(action.action || '');
+          
+          return (
+            <motion.div
+              key={action.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 gap-1.5 bg-background/50 hover:bg-primary/10 border-border/50 hover:border-primary/30 text-xs"
+                onClick={() => handleActionClick(action)}
               >
-                {action.type === 'card' ? (
-                  <Card 
-                    className="glass-card hover:shadow-lg hover:shadow-neon-purple/20 transition-all duration-300 cursor-pointer group border-white/10 overflow-hidden relative"
-                    onClick={() => handleActionClick(action)}
-                  >
-                    {/* Animated gradient background */}
-                    <div className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
-                    
-                    {/* Glowing border effect */}
-                    <div className="absolute inset-0 rounded-lg border border-transparent bg-gradient-to-r from-white/20 to-white/5 group-hover:from-neon-purple/30 group-hover:to-neon-blue/30 transition-all duration-300" />
-                    
-                    <CardContent className="p-4 relative z-10">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3 flex-1">
-                          {/* Icon with gradient background */}
-                          <motion.div 
-                            className={`p-2 rounded-xl bg-gradient-to-r ${gradient} bg-opacity-20 group-hover:bg-opacity-30 transition-all duration-300`}
-                            whileHover={{ rotate: [0, -5, 5, 0] }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <Icon className="h-5 w-5 text-white" />
-                          </motion.div>
-                          
-                          <div className="flex-1 space-y-2">
-                            <h4 className="font-semibold text-white group-hover:text-gradient transition-all duration-300">
-                              {action.label}
-                            </h4>
-                            
-                            {action.description && (
-                              <p className="text-sm text-white/70 group-hover:text-white/90 transition-colors">
-                                {action.description}
-                              </p>
-                            )}
-                            
-                            {/* Data badges */}
-                            {action.data && Object.keys(action.data).length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {Object.entries(action.data).slice(0, 3).map(([key, value]) => (
-                                  <Badge 
-                                    key={key} 
-                                    variant="outline" 
-                                    className="text-xs bg-white/5 border-white/20 text-white/80 group-hover:bg-white/10 group-hover:border-neon-purple/30 transition-all"
-                                  >
-                                    {key === 'keyword' || key === 'mainKeyword' ? (
-                                      <span className="flex items-center gap-1">
-                                        <Search className="h-3 w-3" />
-                                        {String(value)}
-                                      </span>
-                                    ) : (
-                                      String(value)
-                                    )}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Action indicator */}
-                        <motion.div
-                          className="p-1.5 rounded-full bg-white/5 group-hover:bg-white/10 transition-all duration-300"
-                          whileHover={{ x: 5 }}
-                        >
-                          <ArrowRight className="h-3.5 w-3.5 text-white/60 group-hover:text-neon-purple transition-colors" />
-                        </motion.div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="default"
-                    className="w-full justify-between text-left h-auto p-3 glass-card border-white/10 hover:border-neon-purple/30 group"
-                    onClick={() => handleActionClick(action)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <motion.div 
-                        className={`p-1.5 rounded-lg bg-gradient-to-r ${gradient} bg-opacity-20`}
-                        whileHover={{ scale: 1.1 }}
-                      >
-                        <Icon className="h-4 w-4 text-white" />
-                      </motion.div>
-                      
-                      <div className="text-left">
-                        <div className="font-medium text-white group-hover:text-gradient transition-all">
-                          {action.label}
-                        </div>
-                        {action.description && (
-                          <div className="text-xs text-white/60 group-hover:text-white/80 transition-colors">
-                            {action.description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <motion.div
-                      whileHover={{ x: 5 }}
-                      className="text-white/60 group-hover:text-neon-purple transition-colors"
-                    >
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </motion.div>
-                  </Button>
+                <Icon className="h-3 w-3" />
+                <span className="max-w-20 truncate">{action.label}</span>
+                {action.action?.includes('workflow:') && (
+                  <ExternalLink className="h-3 w-3 opacity-60" />
                 )}
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.div>
-    </div>
+              </Button>
+            </motion.div>
+          );
+        })}
+      </div>
+    </motion.div>
   );
 };
