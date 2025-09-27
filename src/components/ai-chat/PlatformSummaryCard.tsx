@@ -84,11 +84,11 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
   }];
   if (isLoading) {
     return <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-        <CardContent className="p-4">
+        <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
             <div className="h-4 bg-border/50 rounded w-1/3"></div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-background/60 rounded"></div>)}
+            <div className="grid grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-background/60 rounded"></div>)}
             </div>
           </div>
         </CardContent>
@@ -105,7 +105,7 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     delay: 0.1
   }}>
       <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-        <CardContent className="p-4">
+        <CardContent className="p-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-5 w-5 text-primary" />
@@ -114,20 +114,20 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
               </h3>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {metrics.map((metric, index) => (
                 <motion.div 
                   key={metric.label}
-                  className={`p-2 rounded-xl bg-gradient-to-br ${metric.bgColor} border border-border/50`}
+                  className={`p-4 rounded-xl bg-gradient-to-br ${metric.bgColor} border border-border/50`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 * index }}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <metric.icon className={`h-3 w-3 ${metric.color}`} />
+                    <metric.icon className={`h-4 w-4 ${metric.color}`} />
                   </div>
-                  <div className="text-lg font-bold text-foreground">{metric.value}</div>
-                  <div className="text-[10px] text-muted-foreground">{metric.label}</div>
+                  <div className="text-2xl font-bold text-foreground">{metric.value}</div>
+                  <div className="text-xs text-muted-foreground">{metric.label}</div>
                 </motion.div>
               ))}
             </div>
