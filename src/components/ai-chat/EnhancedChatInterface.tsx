@@ -127,7 +127,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       {/* Main Chat Interface */}
       <div className={`flex transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
-        <motion.div className="flex-1 flex flex-col h-full pt-6 pb-24" initial="hidden" animate="visible" variants={containerVariants}>
+        <motion.div className="flex-1 flex flex-col h-full pt-20 pb-24" initial="hidden" animate="visible" variants={containerVariants}>
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-h-0 relative">
         {/* Messages Area */}
