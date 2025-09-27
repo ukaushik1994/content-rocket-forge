@@ -192,7 +192,13 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         isLoadingMore={isLoadingMoreMessages}
         onLoadMore={loadMoreMessages}
         isTyping={isTyping}
-        onRetryMessage={() => {}}
+        onRetryMessage={() => {
+          // Retry the last AI message by resending the previous user message
+          const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
+          if (lastUserMessage && lastUserMessage.content) {
+            sendMessage(lastUserMessage.content);
+          }
+        }}
         isRetryingMessage={false}
       />
 

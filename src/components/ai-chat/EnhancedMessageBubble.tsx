@@ -104,7 +104,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       )}
 
       {/* Message Content */}
-      <div className="max-w-xs sm:max-w-md lg:max-w-lg">
+      <div className="max-w-sm sm:max-w-lg lg:max-w-2xl">
         <div className="relative">
           {/* AI Processing Indicator */}
           {message.progressIndicator && (

@@ -87,8 +87,8 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
         <CardContent className="p-4">
           <div className="animate-pulse space-y-4">
             <div className="h-4 bg-border/50 rounded w-1/3"></div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-8 bg-background/60 rounded"></div>)}
+            <div className="grid grid-cols-4 gap-0.5">
+              {[...Array(4)].map((_, i) => <div key={i} className="h-6 bg-background/60 rounded"></div>)}
             </div>
           </div>
         </CardContent>
@@ -114,20 +114,20 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
               </h3>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+            <div className="grid grid-cols-4 gap-0.5">
               {metrics.map((metric, index) => (
                 <motion.div 
                   key={metric.label}
-                  className={`p-1.5 rounded-xl bg-gradient-to-br ${metric.bgColor} border border-border/50`}
+                  className={`p-1 rounded-lg bg-gradient-to-br ${metric.bgColor} border border-border/50`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 * index }}
                 >
-                  <div className="flex items-center gap-1 mb-1">
-                    <metric.icon className={`h-2.5 w-2.5 ${metric.color}`} />
+                  <div className="flex items-center gap-0.5 mb-0.5">
+                    <metric.icon className={`h-2 w-2 ${metric.color}`} />
                   </div>
-                  <div className="text-base font-bold text-foreground">{metric.value}</div>
-                  <div className="text-[9px] text-muted-foreground">{metric.label}</div>
+                  <div className="text-sm font-bold text-foreground">{metric.value}</div>
+                  <div className="text-[8px] text-muted-foreground">{metric.label}</div>
                 </motion.div>
               ))}
             </div>
