@@ -41,14 +41,6 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   }
 
   const isUser = message.role === 'user';
-  
-  // Debug logging for retry button visibility
-  console.log('EnhancedMessageBubble debug:', {
-    isUser,
-    onRetry: !!onRetry,
-    messageRole: message.role,
-    messageStatus: message.messageStatus
-  });
 
   // Helper function to generate prompts for SERP actions
   const getActionPrompt = (action: string, data: any): string => {
@@ -190,13 +182,13 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
 
           {/* Retry Button for AI messages */}
           {!isUser && onRetry && (
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex justify-start">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={onRetry}
                 disabled={isRetrying}
-                className="h-7 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                className="h-8 px-3 gap-2 text-xs bg-background/80 hover:bg-background border-border/60 hover:border-border text-foreground hover:text-foreground transition-all duration-200"
               >
                 <RefreshCw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
                 {isRetrying ? 'Retrying...' : 'Retry'}
