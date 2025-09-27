@@ -8,7 +8,6 @@ import {
   MessageSquare, 
   Plus, 
   Trash2, 
-  X,
   Settings,
   Search
 } from 'lucide-react';
@@ -42,7 +41,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     visible: { 
       x: 0, 
       opacity: 1,
-      transition: { type: "spring", stiffness: 300, damping: 30 }
+      transition: { 
+        type: "spring", 
+        stiffness: 400, 
+        damping: 25,
+        duration: 0.5
+      }
     }
   };
 
@@ -64,16 +68,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     >
       {/* Header */}
       <div className="p-4 border-b border-white/10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center mb-4">
           <h2 className="text-lg font-semibold text-foreground">Conversations</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleSidebar}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </div>
 
         {/* New Conversation Button */}

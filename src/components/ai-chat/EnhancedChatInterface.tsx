@@ -66,6 +66,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       setShowWelcome(false);
     }
   }, [messages.length]);
+
+  // Handle escape key to close sidebar
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showSidebar) {
+        setShowSidebar(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [showSidebar]);
   const handleSendMessage = async (message: string) => {
     await sendMessage(message);
   };
@@ -119,9 +131,14 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           variant="outline"
           size="icon"
           onClick={() => setShowSidebar(!showSidebar)}
-          className="rounded-full shadow-lg backdrop-blur-sm bg-background/90 border-border/50 hover:bg-background/95 transition-all duration-200"
+          className="rounded-full shadow-lg backdrop-blur-sm bg-background/90 border-border/50 hover:bg-background/95 transition-all duration-300"
         >
-          <Menu className="h-4 w-4" />
+          <motion.div
+            animate={{ rotate: showSidebar ? 90 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Menu className="h-4 w-4" />
+          </motion.div>
         </Button>
       </motion.div>
 
