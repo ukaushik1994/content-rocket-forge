@@ -1,13 +1,13 @@
-// AI Proxy Edge Function
-// Handles requests to various AI providers (OpenAI, Anthropic, Gemini, etc.)
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { corsHeaders } from "../shared/cors.ts";
+import { createErrorResponse, createSuccessResponse } from "../shared/errors.ts";
+import { getApiKey } from "../shared/apiKeyService.ts";
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
 interface AiRequest {
   service: string;
@@ -25,21 +25,50 @@ serve(async (req) => {
   try {
     console.log('🚀 AI-Proxy Edge Function called');
     
-    const { service, endpoint, apiKey, params } = await req.json() as AiRequest;
+    const { service, endpoint, apiKey: providedApiKey, params } = await req.json() as AiRequest;
     
     console.log(`📥 Request received: ${service} - ${endpoint}`, {
-      hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length,
-      apiKeyType: typeof apiKey,
+      hasProvidedApiKey: !!providedApiKey,
       paramsReceived: Object.keys(params || {})
     });
 
     if (!service || !endpoint) {
-      throw new Error('Missing required parameters: service and endpoint');
+      return createErrorResponse('Missing required parameters: service and endpoint', 400, 'ai-proxy', endpoint);
+    }
+
+    // Get user ID from auth header
+    const authHeader = req.headers.get('authorization');
+    let userId: string | undefined;
+    let userApiKey: string | null = null;
+
+    if (authHeader) {
+      try {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: { user }, error } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+        if (user && !error) {
+          userId = user.id;
+          userApiKey = await getApiKey(service, userId);
+        }
+      } catch (authError) {
+        console.log('Auth error (non-blocking):', authError);
+      }
+    }
+
+    // Determine which API key to use
+    let apiKey = providedApiKey || userApiKey;
+
+    // For Lovable AI, use the environment variable
+    if (service === 'lovable' && !apiKey && lovableApiKey) {
+      apiKey = lovableApiKey;
     }
 
     if (!apiKey) {
-      throw new Error(`No API key provided for ${service}`);
+      return createErrorResponse(
+        `No API key found for ${service}. Please configure your API key.`,
+        401,
+        'ai-proxy',
+        endpoint
+      );
     }
 
     let result;
@@ -57,6 +86,9 @@ serve(async (req) => {
       case 'openrouter':
         result = await handleOpenRouter(endpoint, apiKey, params);
         break;
+      case 'lovable':
+        result = await handleLovable(endpoint, apiKey, params);
+        break;
       case 'mistral':
         result = await handleMistral(endpoint, apiKey, params);
         break;
@@ -67,19 +99,56 @@ serve(async (req) => {
         throw new Error(`Unsupported service: ${service}`);
     }
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Log successful usage
+    if (userId && result?.success && 'data' in result) {
+      try {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        await supabase.from('llm_usage_logs').insert({
+          user_id: userId,
+          provider: service,
+          model: params?.model || 'unknown',
+          input_tokens: result.data?.usage?.prompt_tokens || 0,
+          output_tokens: result.data?.usage?.completion_tokens || 0,
+          total_tokens: result.data?.usage?.total_tokens || 0,
+          success: true,
+          metadata: { endpoint, ...params }
+        });
+      } catch (logError) {
+        console.error('Error logging usage:', logError);
+      }
+    }
+
+    return createSuccessResponse(result);
 
   } catch (error: any) {
     console.error('💥 AI-Proxy error:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message || 'Unknown error occurred'
-    }), {
-      status: 200, // Return 200 with error in body for consistent parsing
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    const errorMessage = error.message || 'Unknown error occurred';
+    
+    // Log failed usage
+    try {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader) {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+        if (user) {
+          await supabase.from('llm_usage_logs').insert({
+            user_id: user.id,
+            provider: 'unknown',
+            model: 'unknown',
+            input_tokens: 0,
+            output_tokens: 0,
+            total_tokens: 0,
+            success: false,
+            error_message: errorMessage,
+            metadata: { error: true }
+          });
+        }
+      }
+    } catch (logError) {
+      console.error('Error logging failed usage:', logError);
+    }
+
+    return createErrorResponse(errorMessage, 500, 'ai-proxy', 'unknown');
   }
 });
 
@@ -735,5 +804,94 @@ async function chatLMStudio(apiKey: string, params: any) {
   } catch (error: any) {
     console.error('💥 LM Studio chat exception:', error);
     throw new Error(`LM Studio chat error: ${error.message}`);
+  }
+}
+
+// Lovable AI Handler Functions
+async function handleLovable(endpoint: string, apiKey: string, params: any) {
+  console.log(`🔍 Processing Lovable AI request: ${endpoint}`);
+  
+  if (endpoint === 'test') {
+    return await testLovable(apiKey);
+  }
+  
+  if (endpoint === 'chat' || endpoint === 'completion') {
+    return await chatLovable(apiKey, params);
+  }
+  
+  throw new Error(`Unsupported Lovable endpoint: ${endpoint}`);
+}
+
+async function testLovable(apiKey: string) {
+  console.log('🧪 Testing Lovable AI API key');
+  
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ Lovable AI test failed:', response.status, errorData);
+      throw new Error(`Lovable AI test failed: ${response.statusText}`);
+    }
+
+    console.log('✅ Lovable AI test successful');
+    
+    return {
+      success: true,
+      provider: 'Lovable AI',
+      message: 'Lovable AI connection successful'
+    };
+  } catch (error: any) {
+    console.error('💥 Lovable AI test exception:', error);
+    throw new Error(`Lovable AI error: ${error.message}`);
+  }
+}
+
+async function chatLovable(apiKey: string, params: any) {
+  console.log('💬 Processing Lovable AI chat request');
+  
+  const requestBody = {
+    model: params.model || 'google/gemini-2.5-flash',
+    messages: params.messages || [],
+    temperature: params.temperature || 0.7,
+    max_tokens: params.maxTokens || params.max_tokens || 1000,
+    ...params
+  };
+
+  // Clean up unused parameters
+  delete requestBody.maxTokens;
+
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('❌ Lovable AI chat failed:', response.status, errorData);
+      throw new Error(`Lovable AI chat failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Lovable AI chat successful');
+    
+    return {
+      success: true,
+      data,
+      provider: 'Lovable AI'
+    };
+  } catch (error: any) {
+    console.error('💥 Lovable AI chat exception:', error);
+    throw new Error(`Lovable AI chat error: ${error.message}`);
   }
 }
