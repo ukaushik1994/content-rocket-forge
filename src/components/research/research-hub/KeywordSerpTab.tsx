@@ -1,0 +1,213 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Search, BarChart3, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SerpAnalysisContainer } from '@/components/content/serp-analysis/SerpAnalysisContainer';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { SerpAnalysisResult } from '@/types/serp';
+import { toast } from 'sonner';
+
+interface KeywordSerpTabProps {
+  searchTerm: string;
+  onDataUpdate?: (data: any) => void;
+}
+
+export const KeywordSerpTab: React.FC<KeywordSerpTabProps> = ({ 
+  searchTerm, 
+  onDataUpdate 
+}) => {
+  const [serpData, setSerpData] = useState<SerpAnalysisResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleAnalyzeKeyword = async (keyword: string) => {
+    if (!keyword.trim()) return;
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      toast.info(`Analyzing SERP data for "${keyword}"`);
+      
+      const result = await analyzeKeywordSerp(keyword);
+      
+      if (result) {
+        setSerpData(result);
+        onDataUpdate?.(result);
+        toast.success('SERP analysis completed');
+      } else {
+        throw new Error('No SERP data received');
+      }
+    } catch (error) {
+      const errorMessage = 'Failed to analyze keyword. Using mock data for demonstration.';
+      console.error('SERP Analysis Error:', error);
+      setError(errorMessage);
+      
+      // Generate mock SERP data for demonstration
+      const mockData: SerpAnalysisResult = {
+        keyword,
+        searchVolume: Math.floor(Math.random() * 10000) + 1000,
+        keywordDifficulty: Math.floor(Math.random() * 100),
+        competitionScore: Math.random(),
+        topResults: [
+          {
+            title: `Top result for ${keyword}`,
+            link: 'https://example.com',
+            snippet: `Comprehensive guide about ${keyword} with detailed information...`,
+            position: 1
+          },
+          {
+            title: `Best practices for ${keyword}`,
+            link: 'https://example2.com',
+            snippet: `Learn the best practices and strategies for ${keyword}...`,
+            position: 2
+          }
+        ],
+        peopleAlsoAsk: [
+          { question: `What is ${keyword}?`, source: 'Google' },
+          { question: `How to use ${keyword}?`, source: 'Google' },
+          { question: `Best ${keyword} practices?`, source: 'Google' }
+        ],
+        relatedSearches: [
+          { query: `${keyword} guide` },
+          { query: `${keyword} tips` },
+          { query: `best ${keyword}` }
+        ],
+        entities: [
+          { name: keyword.charAt(0).toUpperCase() + keyword.slice(1), type: 'Topic' },
+          { name: 'Best Practices', type: 'Concept' },
+          { name: 'Guide', type: 'Content Type' }
+        ],
+        headings: [
+          { text: `Understanding ${keyword}`, level: 'h2' },
+          { text: `${keyword} Best Practices`, level: 'h2' },
+          { text: `Getting Started with ${keyword}`, level: 'h3' }
+        ],
+        contentGaps: [
+          { 
+            topic: `Advanced ${keyword} techniques`,
+            description: 'Competitors lack in-depth technical coverage',
+            recommendation: 'Create comprehensive technical guide',
+            content: `Create detailed advanced guide for ${keyword} with technical strategies`,
+            source: 'SERP Analysis'
+          },
+          {
+            topic: `${keyword} for beginners`,
+            description: 'Missing beginner-friendly content',
+            recommendation: 'Develop step-by-step tutorial',
+            content: `Develop beginner-friendly tutorial series for ${keyword}`,
+            source: 'SERP Analysis'
+          }
+        ],
+        featuredSnippets: [
+          {
+            type: 'paragraph',
+            content: `${keyword} is a crucial aspect of modern digital strategy...`,
+            source: 'example.com',
+            title: `What is ${keyword}?`
+          }
+        ],
+        isMockData: true
+      };
+      
+      setSerpData(mockData);
+      onDataUpdate?.(mockData);
+      toast.warning(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddToContent = (content: string, type: string) => {
+    toast.success(`Added ${type} to content selections`);
+    console.log('Added to content:', { content, type });
+  };
+
+  const handleRetry = () => {
+    handleAnalyzeKeyword(searchTerm);
+  };
+
+  // Auto-analyze when searchTerm changes
+  useEffect(() => {
+    if (searchTerm && searchTerm.trim()) {
+      handleAnalyzeKeyword(searchTerm);
+    }
+  }, [searchTerm]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-panel p-6 bg-white/5 border-white/10"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-blue to-cyan-400 flex items-center justify-center">
+            <BarChart3 className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">SERP Analysis</h3>
+            <p className="text-white/60">
+              Comprehensive search engine results analysis for "{searchTerm}"
+            </p>
+          </div>
+        </div>
+        
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-3"
+          >
+            <AlertCircle className="h-4 w-4 text-yellow-400" />
+            <span className="text-yellow-200 text-sm">{error}</span>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* SERP Analysis Container */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="glass-panel bg-white/3 border-white/10 rounded-xl overflow-hidden"
+      >
+        <SerpAnalysisContainer
+          serpData={serpData}
+          isLoading={isLoading}
+          mainKeyword={searchTerm}
+          onAddToContent={handleAddToContent}
+          onRetry={handleRetry}
+        />
+      </motion.div>
+
+      {/* Quick Actions */}
+      {serpData && !isLoading && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass-panel p-4 bg-white/5 border-white/10"
+        >
+          <div className="flex items-center justify-between">
+            <div className="text-white/60 text-sm">
+              Analysis completed • {serpData.isMockData ? 'Demo data' : 'Live data'}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                className="border-white/20 text-white/80 hover:bg-white/10"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Refresh Analysis
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+};

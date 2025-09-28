@@ -14,9 +14,9 @@ import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/Simple
 import { SimpleSerpServiceIndicator } from '@/components/content-builder/ai/SimpleSerpServiceIndicator';
 
 // Import tab components
-import { ContentGapsTab } from '@/components/research/content-strategy/tabs/ContentGapsTab';
-import { PeopleQuestionsTab } from '@/components/research/research-hub/PeopleQuestionsTab';
-import { KeywordResearchTab } from '@/components/research/research-hub/KeywordResearchTab';
+import { EnhancedContentGapsTab } from '@/components/research/research-hub/EnhancedContentGapsTab';
+import { EnhancedPeopleQuestionsTab } from '@/components/research/research-hub/EnhancedPeopleQuestionsTab';
+import { KeywordSerpTab } from '@/components/research/research-hub/KeywordSerpTab';
 import { ResearchDataExporter } from '@/components/research/research-hub/ResearchDataExporter';
 
 const ResearchHub = () => {
@@ -287,9 +287,10 @@ const ResearchHub = () => {
                                 <p className="text-white/60">for "{searchTerm}"</p>
                               </div>
                             </div>
-                            <div className="glass-panel bg-white/3 border-white/10 rounded-xl overflow-hidden">
-                              <KeywordResearchTab searchTerm={searchTerm} />
-                            </div>
+                            <KeywordSerpTab 
+                              searchTerm={searchTerm} 
+                              onDataUpdate={(data) => handleDataUpdate('serpData', data)}
+                            />
                           </motion.div>
                         )}
                         
@@ -309,9 +310,10 @@ const ResearchHub = () => {
                                 <p className="text-white/60">for "{searchTerm}"</p>
                               </div>
                             </div>
-                            <div className="glass-panel bg-white/3 border-white/10 rounded-xl overflow-hidden">
-                              <ContentGapsTab goals={{ monthlyTraffic: '', contentPieces: '', timeline: '3 months', mainKeyword: searchTerm }} />
-                            </div>
+                            <EnhancedContentGapsTab 
+                              searchTerm={searchTerm} 
+                              onDataUpdate={(data) => handleDataUpdate('contentGaps', data)}
+                            />
                           </motion.div>
                         )}
                         
@@ -331,9 +333,10 @@ const ResearchHub = () => {
                                 <p className="text-white/60">for "{searchTerm}"</p>
                               </div>
                             </div>
-                            <div className="glass-panel bg-white/3 border-white/10 rounded-xl overflow-hidden">
-                              <PeopleQuestionsTab />
-                            </div>
+                            <EnhancedPeopleQuestionsTab 
+                              searchTerm={searchTerm} 
+                              onDataUpdate={(data) => handleDataUpdate('peopleQuestions', data)}
+                            />
                           </motion.div>
                           )}
                         </div>
