@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { unifiedDataService } from '@/services/unifiedDataService';
 import { useAuth } from '@/contexts/AuthContext';
+import { keywordStrategyBridge } from '@/services/keywordStrategyBridge';
+import { keywordLibraryService } from '@/services/keywordLibraryService';
 
 interface StrategyIntegrationState {
   isLoading: boolean;
@@ -35,7 +37,7 @@ export const useStrategyIntegration = () => {
     
     try {
       const context = await unifiedDataService.getUserContext(user.id);
-      const actions = generateCrossToolActions(context);
+      const actions = await generateCrossToolActions(context);
       
       setState({
         isLoading: false,
@@ -48,7 +50,7 @@ export const useStrategyIntegration = () => {
     }
   };
 
-  const generateCrossToolActions = (context: any) => {
+  const generateCrossToolActions = async (context: any) => {
     const actions = [];
 
     // Strategy-based actions
@@ -69,6 +71,44 @@ export const useStrategyIntegration = () => {
           action: () => navigateToAIChat('keyword-analysis', context.currentStrategy.main_keyword),
           priority: 'medium'
         });
+      }
+
+      // Keyword-driven actions
+      try {
+        const keywordRecommendations = await keywordStrategyBridge.getKeywordRecommendations(
+          context.currentStrategy.id, 
+          3
+        );
+        
+        if (keywordRecommendations.length > 0) {
+          const topKeyword = keywordRecommendations[0];
+          actions.push({
+            id: 'high-opportunity-keyword',
+            label: `Create Content for "${topKeyword.keyword.keyword}"`,
+            icon: 'Zap',
+            action: () => navigateToContentBuilder(null, null, null, topKeyword.keyword.keyword),
+            priority: 'high',
+            metadata: { 
+              opportunityScore: topKeyword.opportunityScore,
+              contentType: topKeyword.recommendedContentType 
+            }
+          });
+        }
+
+        // Content gap analysis action
+        const gapAnalysis = await keywordStrategyBridge.analyzeContentGaps(context.currentStrategy.id);
+        if (gapAnalysis.gapKeywords.length > 0) {
+          actions.push({
+            id: 'address-content-gaps',
+            label: `Address ${gapAnalysis.gapKeywords.length} Content Gaps`,
+            icon: 'Target',
+            action: () => navigateToKeywords('gap-analysis'),
+            priority: 'medium',
+            metadata: { gapCount: gapAnalysis.gapKeywords.length }
+          });
+        }
+      } catch (error) {
+        console.error('Error generating keyword-driven actions:', error);
       }
     }
 
@@ -100,22 +140,45 @@ export const useStrategyIntegration = () => {
       }
     }
 
+    // Keyword library actions
+    try {
+      const { keywords } = await keywordLibraryService.getKeywords({ data_freshness: 'stale' }, 1, 5);
+      if (keywords.length > 0) {
+        actions.push({
+          id: 'refresh-keyword-data',
+          label: `Refresh ${keywords.length} Stale Keywords`,
+          icon: 'RefreshCw',
+          action: () => navigateToKeywords('refresh-data'),
+          priority: 'low'
+        });
+      }
+    } catch (error) {
+      console.error('Error checking stale keywords:', error);
+    }
+
     return actions.sort((a, b) => 
       (b.priority === 'high' ? 2 : b.priority === 'medium' ? 1 : 0) - 
       (a.priority === 'high' ? 2 : a.priority === 'medium' ? 1 : 0)
     );
   };
 
-  const navigateToContentBuilder = (strategy?: any, solution?: any, pipelineItem?: any) => {
+  const navigateToContentBuilder = (strategy?: any, solution?: any, pipelineItem?: any, keyword?: string) => {
     const params = new URLSearchParams();
     
-    if (strategy?.main_keyword) params.set('keyword', strategy.main_keyword);
+    if (keyword) params.set('keyword', keyword);
+    else if (strategy?.main_keyword) params.set('keyword', strategy.main_keyword);
     if (strategy?.target_audience) params.set('audience', strategy.target_audience);
     if (strategy?.id) params.set('strategy_id', strategy.id);
     if (solution?.id) params.set('solution_id', solution.id);
     if (pipelineItem?.id) params.set('pipeline_id', pipelineItem.id);
     
     navigate(`/content-builder?${params.toString()}`);
+  };
+
+  const navigateToKeywords = (tab?: string) => {
+    const params = new URLSearchParams();
+    if (tab) params.set('tab', tab);
+    navigate(`/keywords?${params.toString()}`);
   };
 
   const navigateToAIChat = (context: string, keyword?: string) => {
