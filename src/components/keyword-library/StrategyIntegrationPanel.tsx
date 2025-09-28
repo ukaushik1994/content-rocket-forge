@@ -183,7 +183,7 @@ export const StrategyIntegrationPanel: React.FC<StrategyIntegrationPanelProps> =
                       <SelectItem key={strategy.id} value={strategy.id}>
                         <div className="flex items-center gap-2">
                           {strategy.is_active && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                          <span>{strategy.title}</span>
+                          <span>{strategy.name || 'Unnamed Strategy'}</span>
                         </div>
                       </SelectItem>
                     ))}

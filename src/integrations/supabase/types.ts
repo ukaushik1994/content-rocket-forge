@@ -1682,6 +1682,7 @@ export type Database = {
           created_at: string
           glossary_id: string | null
           id: string
+          keywords: Json | null
           metadata: Json | null
           published_url: string | null
           review_deadline: string | null
@@ -1701,6 +1702,7 @@ export type Database = {
           created_at?: string
           glossary_id?: string | null
           id?: string
+          keywords?: Json | null
           metadata?: Json | null
           published_url?: string | null
           review_deadline?: string | null
@@ -1720,6 +1722,7 @@ export type Database = {
           created_at?: string
           glossary_id?: string | null
           id?: string
+          keywords?: Json | null
           metadata?: Json | null
           published_url?: string | null
           review_deadline?: string | null
@@ -3927,6 +3930,50 @@ export type Database = {
             columns: ["strategy_id"]
             isOneToOne: false
             referencedRelation: "content_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_keyword_integrations: {
+        Row: {
+          content_gap_score: number | null
+          created_at: string
+          id: string
+          keyword_id: string
+          priority: string
+          strategy_id: string
+          target_position: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_gap_score?: number | null
+          created_at?: string
+          id?: string
+          keyword_id: string
+          priority?: string
+          strategy_id: string
+          target_position?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_gap_score?: number | null
+          created_at?: string
+          id?: string
+          keyword_id?: string
+          priority?: string
+          strategy_id?: string
+          target_position?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_keyword_integrations_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "unified_keywords"
             referencedColumns: ["id"]
           },
         ]

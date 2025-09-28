@@ -29,6 +29,8 @@ import { KeywordResearchModal } from './KeywordResearchModal';
 import { EnhancedBulkActions } from './EnhancedBulkActions';
 import { KeywordAnalyticsDashboard } from './KeywordAnalyticsDashboard';
 import { EnhancedKeywordCard } from './EnhancedKeywordCard';
+import { StrategyIntegrationPanel } from './StrategyIntegrationPanel';
+import { KeywordOpportunityAlerts } from './KeywordOpportunityAlerts';
 import { DuplicateManager } from './DuplicateManager';
 import { KeywordUsageDetail } from './KeywordUsageDetail';
 import { 
@@ -45,6 +47,7 @@ export const KeywordLibrary: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<KeywordFilters>({});
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
+  const [showStrategyIntegration, setShowStrategyIntegration] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showResearchModal, setShowResearchModal] = useState(false);
   const [showDuplicateManager, setShowDuplicateManager] = useState(false);
@@ -155,8 +158,7 @@ export const KeywordLibrary: React.FC = () => {
           toast.success(`SERP data refreshed for ${selectedIds.length} keywords`);
           break;
         case 'add_to_strategy':
-          // Add keywords to strategy (placeholder for now)
-          toast.success(`Added ${selectedIds.length} keywords to strategy`);
+          setShowStrategyIntegration(true);
           break;
         case 'import':
           // Handle file import (placeholder for now)
@@ -558,6 +560,19 @@ export const KeywordLibrary: React.FC = () => {
         onClose={() => setShowResearchModal(false)}
         onSuccess={loadKeywords}
       />
+
+      {/* Strategy Integration Modal */}
+      {showStrategyIntegration && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <StrategyIntegrationPanel
+            selectedKeywords={Array.from(selectedKeywords)}
+            onClose={() => {
+              setShowStrategyIntegration(false);
+              setSelectedKeywords(new Set());
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
