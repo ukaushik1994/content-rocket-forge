@@ -66,7 +66,50 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
   const handleActionClick = (action: ContextualAction) => {
     console.log('🎯 Action clicked:', action);
     
-    // Handle content creation actions with navigation
+    // Determine if action should continue in chat vs navigate
+    const shouldContinueInChat = (action: ContextualAction) => {
+      const chatActions = [
+        'workflow:content-strategy|review-drafts',
+        'workflow:seo-analysis|optimize-content',
+        'workflow:content-publishing|publish-content',
+        'analyze-content-gaps',
+        'suggest-titles',
+        'content-audit',
+        'seo-analysis'
+      ];
+      
+      return chatActions.some(chatAction => 
+        action.action?.includes(chatAction) || 
+        action.action?.includes('workflow:') ||
+        action.label?.toLowerCase().includes('analyze') ||
+        action.label?.toLowerCase().includes('suggest') ||
+        action.label?.toLowerCase().includes('map') ||
+        action.label?.toLowerCase().includes('optimize')
+      );
+    };
+
+    // Continue conversation for analytical/suggestion actions
+    if (shouldContinueInChat(action)) {
+      // Generate a follow-up prompt based on the action
+      let followUpPrompt = '';
+      
+      if (action.action?.includes('review-drafts')) {
+        followUpPrompt = 'Show me a detailed analysis of my 8 draft articles and suggest which solutions each should be mapped to, with reasoning for each mapping.';
+      } else if (action.action?.includes('optimize-content')) {
+        followUpPrompt = 'Analyze the SEO issues with my current content and provide specific optimization recommendations for improving the 0.0 average SEO score.';
+      } else if (action.action?.includes('publish-content')) {
+        followUpPrompt = 'Create a publishing schedule and strategy for my draft content, prioritizing based on solution coverage and SEO potential.';
+      } else if (action.label?.toLowerCase().includes('solution-specific')) {
+        followUpPrompt = 'Generate 5-10 specific content title suggestions for each of my solutions (People Analytics, GL Connect, Data Pipeline, SQL Connect) based on content gaps analysis.';
+      } else {
+        followUpPrompt = `Help me with: ${action.label}. ${action.description || 'Provide detailed analysis and actionable recommendations.'}`;
+      }
+      
+      onAction({ ...action, action: 'send-message', data: { message: followUpPrompt } });
+      return;
+    }
+    
+    // Handle navigation actions with correct routes
     if (action.action?.includes('create-') || action.action?.includes('content-')) {
       const preloadData = {
         mainKeyword: action.data?.keyword || action.data?.mainKeyword || action.label,
@@ -79,17 +122,17 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
         ...action.data
       };
 
-      navigate('/content', { 
+      navigate('/content-builder', { 
         state: { prefilledData: preloadData }
       });
     } else if (action.action?.includes('keyword-research') || action.action?.includes('research')) {
-      navigate('/research', { 
+      navigate('/research/research-hub', { 
         state: { 
           prefilledKeyword: action.data?.keyword || action.data?.mainKeyword || action.label 
         }
       });
     } else if (action.action?.includes('strategy')) {
-      navigate('/strategies');
+      navigate('/research/content-strategy');
     } else {
       onAction(action);
     }
