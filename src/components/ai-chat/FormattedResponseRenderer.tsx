@@ -43,21 +43,50 @@ const detectAndConvertTables = (content: string): string => {
 const detectTablePattern = (line: string): boolean => {
   const trimmed = line.trim();
   
-  // Check for pipe-separated values (|)
-  if (trimmed.includes('|') && trimmed.split('|').length >= 3) {
+  // Skip empty lines
+  if (!trimmed) return false;
+  
+  // Check for pipe-separated values (|) - most common markdown table format
+  if (trimmed.includes('|') && trimmed.split('|').length >= 2) {
     return true;
   }
   
   // Check for CSV-like patterns with commas
   if (trimmed.includes(',') && trimmed.split(',').length >= 2) {
-    // Additional validation to avoid false positives
     const parts = trimmed.split(',');
-    return parts.length >= 2 && parts.some(part => part.trim().length > 0);
+    // Validate that it looks like tabular data (not just a sentence with commas)
+    return parts.length >= 2 && 
+           parts.some(part => part.trim().length > 0) &&
+           parts.filter(part => part.trim().length > 0).length >= 2;
+  }
+  
+  // Check for tab-separated values
+  if (trimmed.includes('\t') && trimmed.split('\t').length >= 2) {
+    return true;
   }
   
   // Check for space-aligned columns (multiple spaces between words)
   if (/\s{2,}/.test(trimmed) && trimmed.split(/\s{2,}/).length >= 2) {
+    const parts = trimmed.split(/\s{2,}/);
+    // Ensure we have meaningful content in multiple columns
+    return parts.filter(part => part.trim().length > 0).length >= 2;
+  }
+  
+  // Check for common table header patterns
+  if (/^[A-Za-z0-9\s]+\s+[A-Za-z0-9\s]+/.test(trimmed) && 
+      (trimmed.includes('Strategy') || trimmed.includes('Description') || 
+       trimmed.includes('Timeline') || trimmed.includes('Budget') ||
+       trimmed.includes('Priority') || trimmed.includes('Status'))) {
     return true;
+  }
+  
+  // Check for numbered/lettered list with structured data
+  if (/^\d+[\.\)]\s+/.test(trimmed) || /^[a-zA-Z][\.\)]\s+/.test(trimmed)) {
+    // Look for structured data patterns within the line
+    const content = trimmed.replace(/^\d+[\.\)]\s+/, '').replace(/^[a-zA-Z][\.\)]\s+/, '');
+    if (content.includes(':') || content.includes('-') || content.includes('|')) {
+      return true;
+    }
   }
   
   return false;
@@ -67,9 +96,27 @@ const collectTableLines = (lines: string[], startIndex: number): string[] => {
   const tableLines: string[] = [];
   let i = startIndex;
   
-  while (i < lines.length && detectTablePattern(lines[i])) {
-    tableLines.push(lines[i]);
-    i++;
+  // Collect consecutive table lines
+  while (i < lines.length) {
+    const line = lines[i];
+    
+    // Skip empty lines but continue collecting
+    if (!line.trim()) {
+      // Only allow 1 empty line between table rows
+      if (tableLines.length > 0 && i + 1 < lines.length && detectTablePattern(lines[i + 1])) {
+        i++;
+        continue;
+      } else {
+        break;
+      }
+    }
+    
+    if (detectTablePattern(line)) {
+      tableLines.push(line);
+      i++;
+    } else {
+      break;
+    }
   }
   
   return tableLines;
@@ -82,22 +129,54 @@ const convertToMarkdownTable = (tableLines: string[]): string => {
   
   // Process each line to extract columns
   for (const line of tableLines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    
     let columns: string[];
     
-    if (line.includes('|')) {
-      // Pipe-separated format
-      columns = line.split('|')
+    if (trimmed.includes('|')) {
+      // Pipe-separated format - handle both existing markdown tables and raw pipe data
+      columns = trimmed.split('|')
         .map(col => col.trim())
-        .filter(col => col.length > 0);
-    } else if (line.includes(',')) {
-      // CSV format
-      columns = line.split(',').map(col => col.trim());
+        .filter((col, index, array) => {
+          // Remove empty first/last columns that are just markdown table borders
+          if ((index === 0 || index === array.length - 1) && col === '') {
+            return false;
+          }
+          return true;
+        });
+    } else if (trimmed.includes('\t')) {
+      // Tab-separated format
+      columns = trimmed.split('\t').map(col => col.trim());
+    } else if (trimmed.includes(',')) {
+      // CSV format - be more intelligent about parsing
+      columns = trimmed.split(',').map(col => col.trim());
+    } else if (/^\d+[\.\)]\s+/.test(trimmed) || /^[a-zA-Z][\.\)]\s+/.test(trimmed)) {
+      // Handle numbered/lettered lists with structured data
+      const listMatch = trimmed.match(/^(\d+[\.\)]|[a-zA-Z][\.\)])\s+(.+)/);
+      if (listMatch) {
+        const content = listMatch[2];
+        if (content.includes(':')) {
+          const parts = content.split(':');
+          columns = [listMatch[1].trim(), parts[0].trim(), parts.slice(1).join(':').trim()];
+        } else if (content.includes('-')) {
+          const parts = content.split('-');
+          columns = [listMatch[1].trim(), ...parts.map(p => p.trim())];
+        } else {
+          columns = [listMatch[1].trim(), content];
+        }
+      } else {
+        columns = [trimmed];
+      }
+    } else if (/\s{2,}/.test(trimmed)) {
+      // Space-separated format with better column detection
+      columns = trimmed.split(/\s{2,}/).map(col => col.trim());
     } else {
-      // Space-separated format
-      columns = line.split(/\s{2,}/).map(col => col.trim());
+      // Single column or unstructured text
+      columns = [trimmed];
     }
     
-    if (columns.length > 0) {
+    if (columns.length > 0 && columns.some(col => col.length > 0)) {
       processedRows.push(columns);
     }
   }
@@ -107,18 +186,24 @@ const convertToMarkdownTable = (tableLines: string[]): string => {
   // Find the maximum number of columns
   const maxColumns = Math.max(...processedRows.map(row => row.length));
   
+  // If all rows have only 1 column, it's probably not a table
+  if (maxColumns === 1 && processedRows.length > 1) {
+    return tableLines.join('\n');
+  }
+  
   // Normalize all rows to have the same number of columns
   const normalizedRows = processedRows.map(row => {
-    while (row.length < maxColumns) {
-      row.push('');
+    const normalizedRow = [...row];
+    while (normalizedRow.length < maxColumns) {
+      normalizedRow.push('');
     }
-    return row;
+    return normalizedRow;
   });
   
   // Build markdown table
   const markdownLines: string[] = [];
   
-  // Header row
+  // Header row - use first row as header
   markdownLines.push('| ' + normalizedRows[0].join(' | ') + ' |');
   
   // Separator row
