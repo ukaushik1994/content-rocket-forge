@@ -6,8 +6,13 @@ import { Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedTableRenderer } from './EnhancedTableRenderer';
 
-// Pre-process content to convert CSV code blocks to markdown tables
-const processCodeBlocks = (content: string): string => {
+// Process content but skip CSV conversion when visual data exists
+const processCodeBlocks = (content: string, hasVisualData: boolean = false): string => {
+  // If visual data exists, don't convert code blocks to avoid double processing
+  if (hasVisualData) {
+    return content;
+  }
+  
   // Pattern to match code blocks with optional language specifier
   const codeBlockPattern = /```(?:csv|)?\n?([\s\S]*?)\n?```/g;
   
@@ -576,19 +581,30 @@ const convertToMarkdownTable = (tableLines: string[]): string => {
 interface FormattedResponseRendererProps {
   content: string;
   className?: string;
+  hasVisualData?: boolean;
 }
 
 export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps> = ({ 
   content, 
-  className 
+  className,
+  hasVisualData = false
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   
-  // Process content to convert text-based tables to markdown tables
+  // Process content to convert text-based tables to markdown tables (skip if visual data exists)
   const processedResult = React.useMemo(() => {
     setIsProcessing(true);
     try {
+      // Skip table processing if visual data already handles the tables
+      if (hasVisualData) {
+        return { 
+          processedContent: content, 
+          hasErrors: false, 
+          errorCount: 0 
+        };
+      }
+      
       const result = detectAndConvertTables(content);
       return result;
     } catch (error) {
@@ -601,7 +617,7 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
     } finally {
       setTimeout(() => setIsProcessing(false), 100);
     }
-  }, [content]);
+  }, [content, hasVisualData]);
   
   // Show warning if there were processing errors
   React.useEffect(() => {

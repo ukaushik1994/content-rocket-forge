@@ -17,17 +17,7 @@ export const EnhancedTableRenderer: React.FC<EnhancedTableRendererProps> = ({
 }) => {
   return (
     <div className={cn("space-y-3", className)}>
-      {/* Table Controls */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          {rawTableData && (
-            <TableExportButton 
-              tableData={rawTableData}
-              filename="ai-chat-table"
-            />
-          )}
-        </div>
-      </div>
+      {/* Table wrapper without export buttons */}
 
       {/* Enhanced Table with Horizontal Scroll */}
       <div className="relative">

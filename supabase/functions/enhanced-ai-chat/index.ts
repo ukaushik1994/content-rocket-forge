@@ -669,17 +669,19 @@ When users ask for "spreadsheet format" or "table format", create download actio
 }
 \`\`\`
 
-### For Table Display (Use Visual Data Instead of Raw CSV):
+### For Table Display (Use Visual Data for Clean Tables):
 \`\`\`json
 {
   "visualData": {
     "type": "table",
-    "title": "Data Overview",
-    "headers": ["Keyword", "Impressions", "Content Type", "Priority"],
-    "rows": [
-      ["ai enhanced people analytics platform", "34,245", "Guide", "Critical"],
-      ["workforce planning analytics software", "44,505", "Blog", "High"]
-    ]
+    "tableData": {
+      "title": "Data Overview", 
+      "headers": ["Keyword", "Impressions", "Content Type", "Priority"],
+      "rows": [
+        ["AI Enhanced People Analytics Platform", "34,245", "Guide", "Critical"],
+        ["Workforce Planning Analytics Software", "44,505", "Blog", "High"]
+      ]
+    }
   }
 }
 \`\`\`
@@ -761,6 +763,35 @@ When creating charts, ALWAYS:
 - Comparative data (use type: "chart" with multiple series)
 - Progress tracking (use type: "metrics" with progress indicators)
 - Strategic overviews (use type: "summary")
+- Data tables (use type: "table" with proper tableData structure)
+
+## Visualization Intelligence Guidelines:
+**AUTO-DETECT the best visualization based on data characteristics:**
+
+### Use TABLES when:
+- User requests "spreadsheet", "table", "list format", or "data export"  
+- Data has many columns (>4) or rows (>10)
+- Data contains detailed text, IDs, or precise values
+- User needs to compare exact numbers or perform data analysis
+
+### Use CHARTS when:
+- User asks for "trends", "performance", "growth", or "comparison"
+- Data shows patterns over time (line/area charts)
+- Data compares categories (bar charts) 
+- Data shows parts of a whole (pie charts)
+- User wants to "visualize" or "see patterns"
+
+### Use METRICS when:
+- User asks about "KPIs", "performance summary", or "dashboard view"
+- Highlighting 2-5 key numbers with context
+- Showing percentage changes, growth rates, or achievement status
+- User wants a "quick overview" or "summary"
+
+### Smart Suggestions:
+- For large datasets: "This data works great in both chart and table views"
+- For financial data: "Switch to table view for precise numbers" 
+- For trends: "View as chart to see patterns over time"
+- Always tell user when visualization isn't possible for their specific request
 
 ## Smart View Recommendations:
 When generating chart data, also suggest optimal viewing mode:

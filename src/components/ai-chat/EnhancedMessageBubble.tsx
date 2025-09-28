@@ -121,8 +121,8 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {/* Message Content */}
           <Card className={`shadow-sm border backdrop-blur-sm ${
             isUser 
-              ? 'bg-primary text-primary-foreground border-primary/20 ml-4' 
-              : 'bg-background/80 border-border/50 mr-4'
+              ? 'bg-primary text-primary-foreground border-primary/20 ml-4 max-w-4xl' 
+              : 'bg-background/80 border-border/50 mr-4 max-w-5xl'
           }`}>
             <div className="px-6 py-3">
               <div className={`text-sm leading-relaxed ${
@@ -133,7 +133,10 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                     {message.content}
                   </div>
                 ) : (
-                  <FormattedResponseRenderer content={message.content} />
+                  <FormattedResponseRenderer 
+                    content={message.content} 
+                    hasVisualData={!!message.visualData}
+                  />
                 )}
               </div>
             </div>
