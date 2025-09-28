@@ -9,17 +9,37 @@ import {
   generateSmartSuggestions 
 } from './serp-intelligence.ts';
 
-// Real data fetching function
+// Enhanced real data fetching function with Phase 1 intelligence
 async function fetchRealDataContext() {
   try {
-    // Fetch content items data
-    const { data: contentItems } = await supabase
+    // PHASE 1: ENHANCED AI STRATEGY PROPOSALS INTEGRATION
+    const { data: strategyProposals } = await supabase
+      .from('ai_strategy_proposals')
+      .select('id, title, primary_keyword, description, status, priority_tag, estimated_impressions, content_type, related_keywords, created_at')
+      .order('estimated_impressions', { ascending: false })
+      .limit(20);
+
+    // PHASE 1: CONTENT PIPELINE AWARENESS
+    const { data: contentWithPipeline } = await supabase
       .from('content_items')
       .select(`
-        id, title, status, created_at, seo_score, 
+        id, title, status, created_at, seo_score, content_type,
         solutions(name, description)
       `)
       .order('created_at', { ascending: false });
+
+    // Get pipeline data separately and join manually
+    const { data: pipelineData } = await supabase
+      .from('content_pipeline')
+      .select('content_id, stage, priority, notes, created_at');
+
+    // PHASE 1: EDITORIAL CALENDAR INTEGRATION
+    const { data: calendarItems } = await supabase
+      .from('content_calendar')
+      .select('id, title, scheduled_date, status, content_type, created_at, proposal_id')
+      .gte('scheduled_date', new Date().toISOString())
+      .order('scheduled_date', { ascending: true })
+      .limit(10);
 
     // Fetch solutions data
     const { data: solutions } = await supabase
@@ -27,43 +47,101 @@ async function fetchRealDataContext() {
       .select('id, name, description, created_at')
       .order('created_at', { ascending: false });
 
-    // Calculate real statistics
-    const totalContent = contentItems?.length || 0;
-    const publishedContent = contentItems?.filter(item => item.status === 'published').length || 0;
-    const draftContent = contentItems?.filter(item => item.status === 'draft').length || 0;
-    const avgSeoScore = contentItems?.reduce((sum, item) => sum + (item.seo_score || 0), 0) / (totalContent || 1);
+    // Calculate enhanced statistics
+    const totalContent = contentWithPipeline?.length || 0;
+    const publishedContent = contentWithPipeline?.filter(item => item.status === 'published').length || 0;
+    const draftContent = contentWithPipeline?.filter(item => item.status === 'draft').length || 0;
+    const avgSeoScore = contentWithPipeline?.reduce((sum, item) => sum + (item.seo_score || 0), 0) / (totalContent || 1);
     
+    // Pipeline statistics - create a map for easy lookup
+    const pipelineMap = pipelineData?.reduce((map, pipeline) => {
+      map[pipeline.content_id] = pipeline;
+      return map;
+    }, {} as Record<string, any>) || {};
+    
+    const contentInPipeline = contentWithPipeline?.filter(item => pipelineMap[item.id]).length || 0;
+    const pipelineStages = pipelineData?.reduce((acc, pipeline) => {
+      if (pipeline.stage) {
+        acc[pipeline.stage] = (acc[pipeline.stage] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    // Strategy proposal statistics
+    const availableProposals = strategyProposals?.filter(p => p.status === 'available').length || 0;
+    const scheduledProposals = strategyProposals?.filter(p => p.status === 'scheduled').length || 0;
+    const completedProposals = strategyProposals?.filter(p => p.status === 'completed').length || 0;
+    const totalImpressions = strategyProposals?.reduce((sum, p) => sum + (p.estimated_impressions || 0), 0) || 0;
+    
+    // Top opportunity keywords from proposals
+    const topOpportunities = strategyProposals?.slice(0, 5).map(p => ({
+      keyword: p.primary_keyword,
+      impressions: p.estimated_impressions,
+      contentType: p.content_type,
+      priority: p.priority_tag
+    })) || [];
+
+    // Calendar insights
+    const upcomingItems = calendarItems?.length || 0;
+    const nextDeadline = calendarItems?.[0]?.scheduled_date || 'No upcoming deadlines';
+
     // Get content creation timeline (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentContent = contentItems?.filter(item => 
+    const recentContent = contentWithPipeline?.filter(item => 
       new Date(item.created_at) > thirtyDaysAgo
     ).length || 0;
 
     return `
-## REAL CONTENT DATA (Current as of ${new Date().toISOString()}):
+## REAL CONTENT STRATEGY DATA (Phase 1 Enhanced - ${new Date().toISOString()}):
+
+### AI STRATEGY PROPOSALS (REAL DATA):
+- Total Proposals: ${strategyProposals?.length || 0}
+- Available Opportunities: ${availableProposals} (ready for content creation)
+- Scheduled: ${scheduledProposals} | Completed: ${completedProposals}
+- Total Potential Impressions: ${totalImpressions.toLocaleString()}
+- Highest Opportunity: ${topOpportunities[0]?.keyword || 'No proposals'} (${(topOpportunities[0]?.impressions || 0).toLocaleString()} impressions)
+
+### TOP 5 CONTENT OPPORTUNITIES (REAL PROPOSALS):
+${topOpportunities.map((opp, i) => 
+  `${i + 1}. "${opp.keyword}" - ${opp.impressions?.toLocaleString() || 0} impressions (${opp.contentType}, ${opp.priority})`
+).join('\n')}
+
+### CONTENT PIPELINE STATUS (REAL DATA):
 - Total Content Items: ${totalContent}
-- Published Content: ${publishedContent} (${totalContent > 0 ? Math.round((publishedContent/totalContent)*100) : 0}% publication rate)
-- Draft Content: ${draftContent} (${totalContent > 0 ? Math.round((draftContent/totalContent)*100) : 0}% unpublished)
-- Average SEO Score: ${avgSeoScore.toFixed(1)}/100 ${avgSeoScore === 0 ? '⚠️ CRITICAL: All SEO scores are 0 - SEO optimization not implemented' : ''}
+- In Pipeline: ${contentInPipeline} (${totalContent > 0 ? Math.round((contentInPipeline/totalContent)*100) : 0}%)
+- Published: ${publishedContent} (${totalContent > 0 ? Math.round((publishedContent/totalContent)*100) : 0}% publication rate)
+- Draft: ${draftContent} (${totalContent > 0 ? Math.round((draftContent/totalContent)*100) : 0}% unpublished)
+- Pipeline Stages: ${Object.entries(pipelineStages).map(([stage, count]) => `${stage}: ${count}`).join(', ') || 'No stages tracked'}
+
+### EDITORIAL CALENDAR (REAL DATA):
+- Upcoming Scheduled Items: ${upcomingItems}
+- Next Deadline: ${nextDeadline}
+- Calendar Integration: ${calendarItems && calendarItems.length > 0 ? 'Active' : 'No items scheduled'}
+
+### PERFORMANCE METRICS (REAL DATA):
+- Average SEO Score: ${avgSeoScore.toFixed(1)}/100 ${avgSeoScore === 0 ? '⚠️ CRITICAL: All SEO scores are 0' : ''}
 - Content Created (Last 30 days): ${recentContent}
 
-## REAL SOLUTIONS DATA:
+### SOLUTIONS DATA (REAL):
 ${solutions && solutions.length > 0 ? solutions.map(solution => 
   `- "${solution.name}": ${solution.description?.substring(0, 100)}...`
 ).join('\n') : 'No solutions found'}
 
-## CRITICAL ISSUES DETECTED:
-${avgSeoScore === 0 ? '❌ SEO system not functional - all scores are 0' : ''}
-${publishedContent === 0 ? '❌ No published content - publishing workflow blocked' : ''}
-${(publishedContent/totalContent) < 0.2 ? '⚠️ Low publication rate - content creation vs publishing imbalance' : ''}
+### CRITICAL STRATEGIC INSIGHTS:
+${availableProposals > 50 ? `🎯 MAJOR OPPORTUNITY: ${availableProposals} untapped content proposals worth ${totalImpressions.toLocaleString()} potential impressions` : ''}
+${avgSeoScore === 0 ? '❌ SEO system not functional - all content has 0 SEO scores' : ''}
+${publishedContent === 0 ? '❌ No published content - publishing workflow needs attention' : ''}
+${contentInPipeline === 0 ? '⚠️ No content in pipeline - content workflow not being used' : ''}
+${upcomingItems === 0 ? '📅 No scheduled content - editorial calendar needs planning' : ''}
 
-## ACTIONABLE INSIGHTS:
-${draftContent > 0 ? `✓ ${draftContent} draft articles ready for review and publishing` : ''}
-${solutions && solutions.length > 0 ? `✓ ${solutions.length} solutions available for content mapping` : ''}
-${recentContent > 0 ? `✓ Active content creation (${recentContent} items in last 30 days)` : ''}
+### ACTIONABLE NEXT STEPS:
+${availableProposals > 0 ? `✅ ${availableProposals} AI-generated proposals ready for immediate content creation` : ''}
+${draftContent > 0 ? `✅ ${draftContent} draft articles ready for review and publishing` : ''}
+${solutions && solutions.length > 0 ? `✅ ${solutions.length} solutions available for content mapping` : ''}
+${recentContent > 0 ? `✅ Active content creation (${recentContent} items in last 30 days)` : ''}
 
-IMPORTANT: Base all recommendations on this REAL data. Do not create fake metrics or numbers.
+CRITICAL: This is REAL data from the user's actual strategy proposals and content pipeline. Provide specific, actionable recommendations based on these exact numbers and opportunities.
     `;
   } catch (error) {
     console.error('Error fetching real data context:', error);
