@@ -94,205 +94,16 @@ const convertCSVToMarkdownTable = (csvContent: string): string => {
   return `\n${header}\n${separator}\n${body}\n`;
 };
 
-// Enhanced malformed table detection with better pattern recognition
-const detectMalformedTable = (content: string): boolean => {
-  const lines = content.split('\n');
-  let pipeLineCount = 0;
-  let consecutivePipeLines = 0;
-  let maxConsecutive = 0;
-  
-  for (const line of lines) {
-    const trimmed = line.trim();
-    
-    // Count lines that look like table rows
-    if (trimmed.startsWith('|') && (trimmed.match(/\|/g) || []).length >= 2) {
-      pipeLineCount++;
-      consecutivePipeLines++;
-      maxConsecutive = Math.max(maxConsecutive, consecutivePipeLines);
-    } else {
-      consecutivePipeLines = 0;
-    }
-  }
-  
-  // More robust detection: need either 3+ pipe lines OR 2+ consecutive ones
-  return pipeLineCount >= 3 || maxConsecutive >= 2;
-};
-
-// Improved malformed table repair with better error handling
-const repairMalformedTable = (content: string): string => {
-  console.log('🔧 Starting malformed table repair');
-  const lines = content.split('\n');
-  const result: string[] = [];
-  let currentTableLines: string[] = [];
-  let inTable = false;
-  
-  const processCurrentTable = () => {
-    if (currentTableLines.length >= 2) {
-      console.log('📋 Processing table with', currentTableLines.length, 'lines');
-      try {
-        const repairedTable = processTableLines(currentTableLines);
-        if (repairedTable && repairedTable.trim()) {
-          result.push(repairedTable);
-          console.log('✅ Table repaired successfully');
-        } else {
-          console.warn('⚠️ Table repair produced empty result');
-          result.push(...currentTableLines);
-        }
-      } catch (error) {
-        console.warn('❌ Table repair failed:', error);
-        result.push(...currentTableLines);
-      }
-    } else {
-      result.push(...currentTableLines);
-    }
-    currentTableLines = [];
-  };
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-    
-    // Detect table lines with improved pattern matching
-    const isTableLine = trimmed.startsWith('|') && (trimmed.match(/\|/g) || []).length >= 2;
-    
-    if (isTableLine) {
-      if (!inTable) {
-        console.log('🔍 Table start detected at line', i);
-        inTable = true;
-      }
-      currentTableLines.push(line);
-    } else if (inTable && trimmed === '') {
-      // Allow one empty line within a table
-      if (i + 1 < lines.length && 
-          lines[i + 1].trim().startsWith('|') && 
-          (lines[i + 1].trim().match(/\|/g) || []).length >= 2) {
-        currentTableLines.push(line);
-      } else {
-        // End of table
-        processCurrentTable();
-        inTable = false;
-        result.push(line);
-      }
-    } else {
-      if (inTable) {
-        // Process the collected table and end table mode
-        processCurrentTable();
-        inTable = false;
-      }
-      result.push(line);
-    }
-  }
-  
-  // Handle table at end of content
-  if (inTable && currentTableLines.length > 0) {
-    processCurrentTable();
-  }
-  
-  console.log('🏁 Malformed table repair complete');
-  return result.join('\n');
-};
-
-// Enhanced table line processing with better normalization
-const processTableLines = (lines: string[]): string => {
-  console.log('📊 Processing', lines.length, 'table lines');
-  const nonEmptyLines = lines.filter(line => line.trim());
-  if (nonEmptyLines.length < 2) {
-    console.warn('⚠️ Insufficient non-empty lines for table processing');
-    return lines.join('\n');
-  }
-  
-  // Parse each line and extract content between pipes
-  const parsedRows: string[][] = [];
-  let maxColumns = 0;
-  
-  for (const line of nonEmptyLines) {
-    try {
-      const cells = line.split('|')
-        .map(cell => cell.trim())
-        .filter((cell, index, arr) => {
-          // Remove empty cells at start/end (from leading/trailing pipes)
-          if (index === 0 || index === arr.length - 1) return cell !== '';
-          return true;
-        });
-      
-      if (cells.length > 0) {
-        parsedRows.push(cells);
-        maxColumns = Math.max(maxColumns, cells.length);
-      }
-    } catch (error) {
-      console.warn('❌ Error parsing table line:', line, error);
-      // Skip problematic lines but continue processing
-      continue;
-    }
-  }
-  
-  if (parsedRows.length === 0) {
-    console.warn('⚠️ No valid rows found after parsing');
-    return lines.join('\n');
-  }
-  
-  console.log('📋 Parsed', parsedRows.length, 'rows with max', maxColumns, 'columns');
-  
-  // Normalize all rows to have the same number of columns
-  const normalizedRows = parsedRows.map(row => {
-    const normalized = [...row];
-    while (normalized.length < maxColumns) {
-      normalized.push('');
-    }
-    return normalized.slice(0, maxColumns); // Ensure we don't exceed maxColumns
-  });
-  
-  // Create proper markdown table with validation
-  try {
-    const header = '| ' + normalizedRows[0].join(' | ') + ' |';
-    const separator = '| ' + Array(maxColumns).fill('---').join(' | ') + ' |';
-    const body = normalizedRows.slice(1).map(row => '| ' + row.join(' | ') + ' |').join('\n');
-    
-    const result = `${header}\n${separator}\n${body}`;
-    console.log('✅ Table processing successful');
-    return result;
-  } catch (error) {
-    console.warn('❌ Error creating markdown table:', error);
-    return lines.join('\n');
-  }
-};
-
-// Streamlined table detection with single-pass processing
+// Enhanced table detection with error handling and recovery
 const detectAndConvertTables = (content: string): { processedContent: string; hasErrors: boolean; errorCount: number } => {
   let errorCount = 0;
   let hasErrors = false;
   
-  console.log('🔄 Starting table detection and conversion process');
+  // First, pre-process code blocks to convert CSV to tables
+  const preProcessedContent = processCodeBlocks(content);
   
-  // Step 1: Pre-process code blocks to convert CSV to tables
-  let processedContent = processCodeBlocks(content);
-  console.log('📋 Code blocks processed');
-  
-  // Step 2: Check if content has malformed tables and repair them first
-  if (detectMalformedTable(processedContent)) {
-    console.log('🔧 Malformed table detected, attempting repair');
-    try {
-      processedContent = repairMalformedTable(processedContent);
-      console.log('✅ Malformed table repaired successfully');
-      
-      // If we successfully repaired malformed tables, skip further processing
-      // to avoid double-processing the same content
-      return { 
-        processedContent,
-        hasErrors: false,
-        errorCount: 0
-      };
-    } catch (error) {
-      console.warn('❌ Failed to repair malformed table:', error);
-      hasErrors = true;
-      errorCount++;
-      // Continue with regular processing as fallback
-    }
-  }
-  
-  // Step 3: Process remaining content for table patterns (only if no malformed tables were found/repaired)
-  console.log('🔍 Scanning for additional table patterns');
-  const lines = processedContent.split('\n');
+  // Split content into lines for processing
+  const lines = preProcessedContent.split('\n');
   const processedLines: string[] = [];
   let i = 0;
 
@@ -310,40 +121,35 @@ const detectAndConvertTables = (content: string): { processedContent: string; ha
     const tableMatch = detectTablePattern(line);
     
     if (tableMatch) {
-      console.log('📋 Table pattern detected at line', i);
       // Found a potential table, collect all consecutive table rows
       try {
         const tableLines = collectTableLines(lines, i);
-        console.log('📊 Collected', tableLines.length, 'table lines');
-        
         if (tableLines.length >= 2) { // Need at least header + 1 data row
           const markdownTable = convertToMarkdownTable(tableLines);
           if (markdownTable && markdownTable.trim()) {
-            console.log('✅ Successfully converted to markdown table');
             processedLines.push(markdownTable);
             i += tableLines.length;
             continue;
           } else {
-            console.warn('⚠️ Table conversion resulted in empty content');
+            // Fallback: treat as regular text if conversion fails
             hasErrors = true;
             errorCount++;
+            processedLines.push(line);
           }
-        } else {
-          console.warn('⚠️ Insufficient table lines for conversion');
         }
       } catch (error) {
-        console.warn('❌ Table conversion error:', error);
+        // Graceful fallback - treat as regular text
         hasErrors = true;
         errorCount++;
+        console.warn('Table conversion error:', error);
+        processedLines.push(line);
       }
     }
     
-    // Add the line as regular content (only add once per iteration)
     processedLines.push(line);
     i++;
   }
 
-  console.log('🏁 Table processing complete. Errors:', errorCount);
   return { 
     processedContent: processedLines.join('\n'),
     hasErrors,
@@ -433,144 +239,99 @@ const collectTableLines = (lines: string[], startIndex: number): string[] => {
   return tableLines;
 };
 
-// Enhanced table conversion with comprehensive error handling
 const convertToMarkdownTable = (tableLines: string[]): string => {
-  console.log('🔄 Converting', tableLines.length, 'lines to markdown table');
-  
-  if (tableLines.length === 0) {
-    console.warn('⚠️ No table lines to convert');
-    return '';
-  }
+  if (tableLines.length === 0) return '';
   
   const processedRows: string[][] = [];
   
-  // Process each line to extract columns with enhanced error handling
-  for (let lineIndex = 0; lineIndex < tableLines.length; lineIndex++) {
-    const line = tableLines[lineIndex];
+  // Process each line to extract columns
+  for (const line of tableLines) {
     const trimmed = line.trim();
+    if (!trimmed) continue;
     
-    if (!trimmed) {
-      console.log('📋 Skipping empty line', lineIndex);
-      continue;
-    }
+    let columns: string[];
     
-    let columns: string[] = [];
-    
-    try {
-      if (trimmed.includes('|')) {
-        // Pipe-separated format - handle both existing markdown tables and raw pipe data
-        columns = trimmed.split('|')
-          .map(col => col.trim())
-          .filter((col, index, array) => {
-            // Remove empty first/last columns that are just markdown table borders
-            if ((index === 0 || index === array.length - 1) && col === '') {
-              return false;
-            }
-            return true;
-          });
-      } else if (trimmed.includes('\t')) {
-        // Tab-separated format
-        columns = trimmed.split('\t').map(col => col.trim());
-      } else if (trimmed.includes(',')) {
-        // CSV format - be more intelligent about parsing
-        columns = trimmed.split(',').map(col => col.trim());
-      } else if (/^\d+[\.\)]\s+/.test(trimmed) || /^[a-zA-Z][\.\)]\s+/.test(trimmed)) {
-        // Handle numbered/lettered lists with structured data
-        const listMatch = trimmed.match(/^(\d+[\.\)]|[a-zA-Z][\.\)])\s+(.+)/);
-        if (listMatch) {
-          const content = listMatch[2];
-          if (content.includes(':')) {
-            const parts = content.split(':');
-            columns = [listMatch[1].trim(), parts[0].trim(), parts.slice(1).join(':').trim()];
-          } else if (content.includes('-')) {
-            const parts = content.split('-');
-            columns = [listMatch[1].trim(), ...parts.map(p => p.trim())];
-          } else {
-            columns = [listMatch[1].trim(), content];
+    if (trimmed.includes('|')) {
+      // Pipe-separated format - handle both existing markdown tables and raw pipe data
+      columns = trimmed.split('|')
+        .map(col => col.trim())
+        .filter((col, index, array) => {
+          // Remove empty first/last columns that are just markdown table borders
+          if ((index === 0 || index === array.length - 1) && col === '') {
+            return false;
           }
+          return true;
+        });
+    } else if (trimmed.includes('\t')) {
+      // Tab-separated format
+      columns = trimmed.split('\t').map(col => col.trim());
+    } else if (trimmed.includes(',')) {
+      // CSV format - be more intelligent about parsing
+      columns = trimmed.split(',').map(col => col.trim());
+    } else if (/^\d+[\.\)]\s+/.test(trimmed) || /^[a-zA-Z][\.\)]\s+/.test(trimmed)) {
+      // Handle numbered/lettered lists with structured data
+      const listMatch = trimmed.match(/^(\d+[\.\)]|[a-zA-Z][\.\)])\s+(.+)/);
+      if (listMatch) {
+        const content = listMatch[2];
+        if (content.includes(':')) {
+          const parts = content.split(':');
+          columns = [listMatch[1].trim(), parts[0].trim(), parts.slice(1).join(':').trim()];
+        } else if (content.includes('-')) {
+          const parts = content.split('-');
+          columns = [listMatch[1].trim(), ...parts.map(p => p.trim())];
         } else {
-          columns = [trimmed];
+          columns = [listMatch[1].trim(), content];
         }
-      } else if (/\s{2,}/.test(trimmed)) {
-        // Space-separated format with better column detection
-        columns = trimmed.split(/\s{2,}/).map(col => col.trim());
       } else {
-        // Single column or unstructured text
         columns = [trimmed];
       }
-      
-      // Validate and add columns if they contain meaningful data
-      if (columns.length > 0 && columns.some(col => col.length > 0)) {
-        processedRows.push(columns);
-        console.log('✅ Processed line', lineIndex, 'with', columns.length, 'columns');
-      } else {
-        console.warn('⚠️ Line', lineIndex, 'produced no valid columns');
-      }
-    } catch (error) {
-      console.warn('❌ Error processing line', lineIndex, ':', error);
-      // Fallback: treat entire line as single column
-      if (trimmed.length > 0) {
-        processedRows.push([trimmed]);
-      }
+    } else if (/\s{2,}/.test(trimmed)) {
+      // Space-separated format with better column detection
+      columns = trimmed.split(/\s{2,}/).map(col => col.trim());
+    } else {
+      // Single column or unstructured text
+      columns = [trimmed];
+    }
+    
+    if (columns.length > 0 && columns.some(col => col.length > 0)) {
+      processedRows.push(columns);
     }
   }
   
-  if (processedRows.length === 0) {
-    console.warn('⚠️ No valid rows after processing, returning original content');
-    return tableLines.join('\n');
-  }
+  if (processedRows.length === 0) return tableLines.join('\n');
   
   // Find the maximum number of columns
   const maxColumns = Math.max(...processedRows.map(row => row.length));
-  console.log('📊 Maximum columns detected:', maxColumns);
   
   // If all rows have only 1 column, it's probably not a table
   if (maxColumns === 1 && processedRows.length > 1) {
-    console.log('📝 Single column detected, treating as regular text');
     return tableLines.join('\n');
   }
   
   // Normalize all rows to have the same number of columns
-  const normalizedRows = processedRows.map((row, index) => {
-    try {
-      const normalizedRow = [...row];
-      while (normalizedRow.length < maxColumns) {
-        normalizedRow.push('');
-      }
-      return normalizedRow;
-    } catch (error) {
-      console.warn('❌ Error normalizing row', index, ':', error);
-      // Fallback: create a row with the original content in first column
-      const fallbackRow = [row[0] || ''];
-      while (fallbackRow.length < maxColumns) {
-        fallbackRow.push('');
-      }
-      return fallbackRow;
+  const normalizedRows = processedRows.map(row => {
+    const normalizedRow = [...row];
+    while (normalizedRow.length < maxColumns) {
+      normalizedRow.push('');
     }
+    return normalizedRow;
   });
   
-  // Build markdown table with error handling
-  try {
-    const markdownLines: string[] = [];
-    
-    // Header row - use first row as header
-    markdownLines.push('| ' + normalizedRows[0].join(' | ') + ' |');
-    
-    // Separator row
-    markdownLines.push('|' + ' --- |'.repeat(maxColumns));
-    
-    // Data rows
-    for (let i = 1; i < normalizedRows.length; i++) {
-      markdownLines.push('| ' + normalizedRows[i].join(' | ') + ' |');
-    }
-    
-    const result = '\n' + markdownLines.join('\n') + '\n';
-    console.log('✅ Successfully created markdown table');
-    return result;
-  } catch (error) {
-    console.warn('❌ Error building markdown table:', error);
-    return tableLines.join('\n');
+  // Build markdown table
+  const markdownLines: string[] = [];
+  
+  // Header row - use first row as header
+  markdownLines.push('| ' + normalizedRows[0].join(' | ') + ' |');
+  
+  // Separator row
+  markdownLines.push('|' + ' --- |'.repeat(maxColumns));
+  
+  // Data rows
+  for (let i = 1; i < normalizedRows.length; i++) {
+    markdownLines.push('| ' + normalizedRows[i].join(' | ') + ' |');
   }
+  
+  return '\n' + markdownLines.join('\n') + '\n';
 };
 
 interface FormattedResponseRendererProps {

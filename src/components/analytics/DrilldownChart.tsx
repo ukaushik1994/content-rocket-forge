@@ -34,12 +34,7 @@ export const DrilldownChart: React.FC<DrilldownChartProps> = ({
     { date: '2024-01-07', value: 1950, change: -7.1 }
   ];
 
-  const formatValue = (value: number | undefined | null) => {
-    // Handle undefined/null values
-    if (value === undefined || value === null || isNaN(value)) {
-      return '0';
-    }
-    
+  const formatValue = (value: number) => {
     if (metric === 'engagement') return `${value}%`;
     return value.toLocaleString();
   };
