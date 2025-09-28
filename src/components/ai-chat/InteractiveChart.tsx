@@ -48,14 +48,20 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     { value: 'pie', label: 'Pie Chart', icon: PieIcon }
   ];
 
-  const colors = chartConfig.colors || [
-    'hsl(var(--primary))',
-    'hsl(var(--secondary))',
-    'hsl(var(--accent))',
-    'hsl(var(--info))',
-    'hsl(var(--warning))',
-    'hsl(var(--success))'
-  ];
+  // Extract colors from series or use defaults
+  const colors = (() => {
+    if (chartConfig.series && chartConfig.series.length > 0) {
+      return chartConfig.series.map(s => (s as any).color || 'hsl(var(--primary))');
+    }
+    return chartConfig.colors || [
+      '#06b6d4', // cyan
+      '#ef4444', // red
+      '#10b981', // green
+      '#f59e0b', // orange
+      '#8b5cf6', // purple
+      '#06b6d4'  // blue
+    ];
+  })();
 
   console.log('InteractiveChart config:', {
     type: chartConfig.type,
@@ -116,12 +122,26 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       );
     }
 
-    // Extract data keys from the actual data if categories is not properly set
-    const dataKeys = chartConfig.categories?.length ? 
-      chartConfig.categories.filter(cat => cat !== 'name' && cat !== 'label') : 
-      Object.keys(filteredData[0] || {}).filter(key => 
+    // Extract data keys for chart rendering
+    let dataKeys: string[] = [];
+    
+    // First priority: use series from chartConfig if available
+    if (chartConfig.series && chartConfig.series.length > 0) {
+      dataKeys = chartConfig.series.map(s => s.dataKey);
+      console.log('🎯 Using series dataKeys:', dataKeys);
+    }
+    // Second priority: use categories (but filter out name/label)
+    else if (chartConfig.categories?.length) {
+      dataKeys = chartConfig.categories.filter(cat => cat !== 'name' && cat !== 'label');
+      console.log('🎯 Using filtered categories:', dataKeys);
+    }
+    // Last resort: extract from data object keys
+    else {
+      dataKeys = Object.keys(filteredData[0] || {}).filter(key => 
         key !== 'name' && key !== 'label' && key !== 'category' && key !== 'type'
       );
+      console.log('🎯 Using extracted keys from data:', dataKeys);
+    }
 
     console.log('🎯 InteractiveChart: Rendering chart details:', {
       type: currentType,

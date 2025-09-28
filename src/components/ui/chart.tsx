@@ -26,7 +26,7 @@ interface ChartProps {
 export const LineChart: React.FC<ChartProps> = ({
   data,
   categories,
-  colors = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))'],
+  colors = ['#06b6d4', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
   valueFormatter = (value) => value.toString(),
   className = '',
   index = 'name'
@@ -35,7 +35,13 @@ export const LineChart: React.FC<ChartProps> = ({
   const processedData = Array.isArray(data) ? data : [];
   const dataKeys = categories?.length ? categories : Object.keys(processedData[0] || {}).filter(key => key !== index);
   
-  console.log('LineChart data:', { data: processedData, categories, dataKeys, index });
+  console.log('📊 LineChart rendering:', { 
+    dataLength: processedData.length, 
+    categories, 
+    dataKeys, 
+    firstDataItem: processedData[0],
+    index 
+  });
   
   if (!processedData.length) {
     return (
@@ -88,7 +94,7 @@ export const LineChart: React.FC<ChartProps> = ({
 export const BarChart: React.FC<ChartProps> = ({
   data,
   categories,
-  colors = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))'],
+  colors = ['#06b6d4', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'],
   valueFormatter = (value) => value.toString(),
   className = '',
   index = 'name'
@@ -97,7 +103,13 @@ export const BarChart: React.FC<ChartProps> = ({
   const processedData = Array.isArray(data) ? data : [];
   const dataKeys = categories?.length ? categories : Object.keys(processedData[0] || {}).filter(key => key !== index);
   
-  console.log('BarChart data:', { data: processedData, categories, dataKeys, index });
+  console.log('📊 BarChart rendering:', { 
+    dataLength: processedData.length, 
+    categories, 
+    dataKeys, 
+    firstDataItem: processedData[0],
+    index 
+  });
   
   if (!processedData.length) {
     return (

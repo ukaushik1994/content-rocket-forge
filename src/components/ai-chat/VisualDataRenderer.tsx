@@ -110,11 +110,10 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
       fullConfig: data.chartConfig
     });
 
-    // Process data for different chart types
+    // Process data for different chart types - pass through the config as-is
+    // InteractiveChart will handle the series vs categories logic
     const processedConfig = {
-      ...data.chartConfig,
-      // Extract actual data series from chartConfig.series if available
-      categories: data.chartConfig.series?.map(s => s.dataKey) || categories || []
+      ...data.chartConfig
     };
 
     console.log('📈 renderChart: Processed chart config:', processedConfig);
