@@ -326,11 +326,9 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
               onHoverEnd={() => setHoveredTile(null)}
               whileHover={{ scale: 1.02, y: -2 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="h-full"
             >
-              <Card 
-                className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group cursor-pointer h-full"
-                onClick={() => onSectionClick(section.id)}
-              >
+              <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group cursor-pointer h-full flex flex-col">
                 {/* Animated Background Gradient */}
                 <motion.div
                   className={`absolute inset-0 bg-gradient-to-br ${section.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
@@ -339,7 +337,7 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
 
                 {/* Count Badge */}
                 <motion.div
-                  className="absolute top-3 right-3 z-10"
+                  className="absolute top-4 right-4 z-10"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
@@ -347,9 +345,9 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Badge className={`${section.bgColor} ${section.iconColor} ${section.borderColor} font-bold`}>
-                          {section.count}
-                        </Badge>
+                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 ${section.iconColor} font-bold text-xs`}>
+                          <span>{section.count}</span>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent>
                         <span className="text-xs">{section.count} items found</span>
@@ -360,28 +358,28 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
 
                 <CardHeader className="relative pb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${section.gradient} flex items-center justify-center border ${section.borderColor}`}>
-                      <SectionIcon className={`h-4 w-4 ${section.iconColor}`} />
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${section.gradient} flex items-center justify-center border ${section.borderColor} shadow-lg`}>
+                      <SectionIcon className={`h-5 w-5 ${section.iconColor}`} />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-sm font-semibold text-foreground">
+                      <CardTitle className="text-base font-semibold text-foreground line-clamp-1">
                         {section.title}
                       </CardTitle>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
                     {section.description}
                   </p>
                 </CardHeader>
 
-                <CardContent className="relative pt-0">
-                  {/* Content Preview */}
-                  <div className="mb-4 min-h-[80px]">
+                <CardContent className="relative pt-0 flex-1 flex flex-col">
+                  {/* Content Preview - Fixed Height Section */}
+                  <div className="mb-4 min-h-[100px] p-3 rounded-lg bg-background/40 border border-border/30">
                     {renderTilePreview(section)}
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
+                  {/* Action Buttons - Fixed at bottom */}
+                  <div className="flex gap-2 mt-auto">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -410,7 +408,7 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            className={`${section.bgColor} hover:${section.bgColor.replace('/10', '/20')} ${section.borderColor} ${section.iconColor}`}
+                            className={`bg-background/40 hover:bg-background/60 border-border/50 hover:border-primary/30 ${section.iconColor} transition-all duration-200 hover:scale-[1.02]`}
                             onClick={(e) => {
                               e.stopPropagation();
                               // Add all items from this section
@@ -423,7 +421,7 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
                               }
                             }}
                           >
-                            <Plus className="h-3 w-3" />
+                            <Plus className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -434,7 +432,7 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
                   </div>
                 </CardContent>
 
-                {/* Hover Effect */}
+                {/* Hover Glow Effect */}
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                   initial={false}
@@ -444,7 +442,7 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
                 <AnimatePresence>
                   {isHovered && (
                     <motion.div
-                      className="absolute bottom-3 right-3"
+                      className="absolute bottom-4 right-4"
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
@@ -460,43 +458,68 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
         })}
       </motion.div>
 
-      {/* Summary Stats */}
+      {/* Enhanced Summary Stats */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
         className="grid grid-cols-2 md:grid-cols-4 gap-4"
       >
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-          <CardContent className="pt-4 pb-4 text-center">
-            <div className="text-2xl font-bold text-primary">{sections.length}</div>
-            <div className="text-xs text-muted-foreground">Active Sections</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-          <CardContent className="pt-4 pb-4 text-center">
-            <div className="text-2xl font-bold text-blue-400">
-              {sections.reduce((sum, section) => sum + section.count, 0)}
-            </div>
-            <div className="text-xs text-muted-foreground">Total Items</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-          <CardContent className="pt-4 pb-4 text-center">
-            <div className="text-2xl font-bold text-green-400">
-              {serpData.searchVolume?.toLocaleString() || 'N/A'}
-            </div>
-            <div className="text-xs text-muted-foreground">Search Volume</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-          <CardContent className="pt-4 pb-4 text-center">
-            <div className="text-2xl font-bold text-amber-400">
-              {serpData.keywordDifficulty || 'N/A'}%
-            </div>
-            <div className="text-xs text-muted-foreground">Difficulty</div>
-          </CardContent>
-        </Card>
+        <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+          <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-primary/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              initial={false}
+            />
+            <CardContent className="pt-6 pb-6 text-center relative">
+              <div className="text-3xl font-bold text-primary mb-2">{sections.length}</div>
+              <div className="text-xs text-muted-foreground">Active Sections</div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+          <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              initial={false}
+            />
+            <CardContent className="pt-6 pb-6 text-center relative">
+              <div className="text-3xl font-bold text-blue-400 mb-2">
+                {sections.reduce((sum, section) => sum + section.count, 0)}
+              </div>
+              <div className="text-xs text-muted-foreground">Total Items</div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+          <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              initial={false}
+            />
+            <CardContent className="pt-6 pb-6 text-center relative">
+              <div className="text-3xl font-bold text-green-400 mb-2">
+                {serpData?.searchVolume?.toLocaleString() || 'N/A'}
+              </div>
+              <div className="text-xs text-muted-foreground">Search Volume</div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+          <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              initial={false}
+            />
+            <CardContent className="pt-6 pb-6 text-center relative">
+              <div className="text-3xl font-bold text-amber-400 mb-2">{serpData?.keywordDifficulty || 'N/A'}%</div>
+              <div className="text-xs text-muted-foreground">Keyword Difficulty</div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
 
       {/* SERP Section Modal */}
