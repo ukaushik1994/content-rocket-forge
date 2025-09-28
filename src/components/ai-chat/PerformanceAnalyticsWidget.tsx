@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RichMediaRenderer } from './RichMediaRenderer';
+import { VisualDataRenderer } from './VisualDataRenderer';
 
 interface AnalyticsData {
   totalContent: number;
@@ -160,8 +160,8 @@ export const PerformanceAnalyticsWidget: React.FC<PerformanceAnalyticsWidgetProp
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4 mt-4">
-              <RichMediaRenderer
-                visualData={{
+              <VisualDataRenderer
+                data={{
                   type: 'metrics',
                   metrics
                 }}
@@ -194,7 +194,7 @@ export const PerformanceAnalyticsWidget: React.FC<PerformanceAnalyticsWidgetProp
 
             <TabsContent value="trends" className="space-y-4 mt-4">
               {chartData && (
-                <RichMediaRenderer visualData={chartData} />
+                <VisualDataRenderer data={chartData} />
               )}
               
               {data.weeklyData && (
