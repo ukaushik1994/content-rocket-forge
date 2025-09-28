@@ -25,6 +25,7 @@ import { keywordLibraryService, UnifiedKeyword, KeywordFilters } from '@/service
 import { KeywordUsageDetail } from '@/components/keyword-library/KeywordUsageDetail';
 import { DuplicateManager } from '@/components/keyword-library/DuplicateManager';
 import { KeywordFilters as KeywordFiltersComponent } from './KeywordFilters';
+import { AdminActions } from '@/components/keywords/AdminActions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { 
@@ -230,6 +231,7 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
                 Delete ({selectedKeywords.length})
               </Button>
             )}
+            <AdminActions onDataChange={loadKeywords} />
           </div>
         </div>
         

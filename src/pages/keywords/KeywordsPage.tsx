@@ -5,8 +5,6 @@ import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EnhancedEmbeddedKeywordLibrary } from '@/components/research/keyword/EnhancedEmbeddedKeywordLibrary';
-import { MigrationDashboard } from '@/components/keywords/MigrationDashboard';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Database, TrendingUp, Activity } from 'lucide-react';
 
 const KeywordsPage = () => {
@@ -90,39 +88,20 @@ const KeywordsPage = () => {
             </motion.div>
           </div>
 
-          {/* Main Content Tabs */}
+          {/* Main Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <Tabs defaultValue="repository" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="repository" className="flex items-center gap-2">
-                  <Database className="h-4 w-4" />
-                  Keyword Repository
-                </TabsTrigger>
-                <TabsTrigger value="migration" className="flex items-center gap-2">
-                  <Activity className="h-4 w-4" />
-                  Migration & Testing
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="repository" className="space-y-0">
-                <GlassCard className="p-6">
-                  <EnhancedEmbeddedKeywordLibrary
-                    className="w-full"
-                    onKeywordSelect={(keyword) => {
-                      console.log('Selected keyword:', keyword);
-                    }}
-                  />
-                </GlassCard>
-              </TabsContent>
-              
-              <TabsContent value="migration" className="space-y-0">
-                <MigrationDashboard />
-              </TabsContent>
-            </Tabs>
+            <GlassCard className="p-6">
+              <EnhancedEmbeddedKeywordLibrary
+                className="w-full"
+                onKeywordSelect={(keyword) => {
+                  console.log('Selected keyword:', keyword);
+                }}
+              />
+            </GlassCard>
           </motion.div>
         </motion.div>
       </main>
