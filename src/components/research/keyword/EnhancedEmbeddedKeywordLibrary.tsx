@@ -24,7 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { keywordLibraryService, UnifiedKeyword, KeywordFilters } from '@/services/keywordLibraryService';
 import { KeywordUsageDetail } from '@/components/keyword-library/KeywordUsageDetail';
 import { DuplicateManager } from '@/components/keyword-library/DuplicateManager';
-import { KeywordFilters as KeywordFiltersComponent } from './KeywordFilters';
+import { SimplifiedKeywordFilters } from '@/components/keyword-library/SimplifiedKeywordFilters';
 import { AdminActions } from '@/components/keywords/AdminActions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -35,10 +35,12 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { 
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface EnhancedEmbeddedKeywordLibraryProps {
   onKeywordSelect?: (keyword: UnifiedKeyword) => void;
@@ -245,27 +247,29 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
               className="pl-10 h-8 text-sm"
             />
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="h-8 px-3"
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <Collapsible open={showFilters} onOpenChange={setShowFilters}>
-          <CollapsibleContent>
-            <div className="mt-4">
-              <KeywordFiltersComponent
+          <Dialog open={showFilters} onOpenChange={setShowFilters}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3"
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Filter Keywords</DialogTitle>
+              </DialogHeader>
+              <SimplifiedKeywordFilters
                 filters={filters}
                 onFiltersChange={setFilters}
-                onClose={() => setShowFilters(false)}
+                onApply={() => setShowFilters(false)}
               />
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+            </DialogContent>
+          </Dialog>
+        </div>
+
       </CardHeader>
       
       <CardContent className="p-0">
