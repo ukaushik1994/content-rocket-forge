@@ -244,7 +244,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                   Transform your content strategy with AI-powered analysis and optimization
                 </motion.p>
 
-                {/* Progress Section */}
+                {/* Simplified Progress Section */}
                 <motion.div 
                   className="max-w-lg mx-auto bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 p-3"
                   initial={{ scale: 0.95, opacity: 0 }}
@@ -255,8 +255,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                     <span>Step {currentStep + 1} of {STEPS.length}</span>
                     <span>{Math.round(progress)}% Complete</span>
                   </div>
-                  <Progress value={progress} className="h-2 mb-3" />
-                  <ProgressIndicator currentStep={currentStep} />
+                  <Progress value={progress} className="h-2" />
                 </motion.div>
               </div>
             </motion.div>

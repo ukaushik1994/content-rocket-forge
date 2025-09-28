@@ -114,16 +114,16 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
   ];
 
   useEffect(() => {
-    if (keyword) {
+    if (keyword && !data) {
       // Check if we have proposal data first
-      if (proposalData && !data) {
+      if (proposalData) {
         console.log('📥 Using proposal data instead of API call...');
         loadProposalData();
       } else {
         fetchData();
       }
     }
-  }, [keyword, proposalData]);
+  }, [keyword]); // Remove proposalData dependency to prevent refresh loops
 
   const loadProposalData = () => {
     try {

@@ -8,7 +8,7 @@ import { SerpApiDiagnostics } from './serp-analysis/SerpApiDiagnostics';
 import { SerpDataManager } from '../serp/SerpDataManager';
 import { DataValidationProvider } from '../serp/DataValidationProvider';
 import { EnhancedSerpStatus } from '../serp/EnhancedSerpStatus';
-import { EnhancedSerpAnalysis } from '../serp/EnhancedSerpAnalysis';
+import { SimplifiedSerpAnalysis } from '../serp/SimplifiedSerpAnalysis';
 import { SerpDebugPanel } from '../serp/debug/SerpDebugPanel';
 import { SerpAnalysisResult } from '@/types/serp';
 import { EnhancedSerpResult } from '@/services/enhancedSerpService';
@@ -39,15 +39,8 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
       try {
         setIsCheckingKeys(true);
         console.log('🔑 Checking and testing SERP API keys...');
-        console.log('📊 Proposal debug info:', {
-          hasProposal: !!proposal,
-          proposalKeyword: proposal?.primary_keyword,
-          hasSerpData: !!proposal?.serp_data,
-          serpDataKeys: proposal?.serp_data ? Object.keys(proposal.serp_data) : 'none',
-          currentMainKeyword: mainKeyword
-        });
 
-        // Check both API keys
+        // Check both API keys once
         const serpApiKey = await getApiKey('serp');
         const serpstackKey = await getApiKey('serpstack');
 
@@ -69,7 +62,7 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
           setUseEnhancedMode(true);
         }
 
-        // If we have proposal SERP data, convert and inject it into the context
+        // If we have proposal SERP data, convert and inject it into the context ONCE
         if (hasProposalData && !serpData) {
           console.log('📥 Converting proposal SERP data to context...');
           injectProposalSerpData();
@@ -149,8 +142,11 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
       setMainKeyword(proposal.primary_keyword);
     }
 
-    checkApiKeys();
-  }, [mainKeyword, proposal?.primary_keyword, proposal?.serp_data, serpData, setMainKeyword, dispatch]);
+    // Only run once when component mounts or when proposal changes
+    if (!serpData) {
+      checkApiKeys();
+    }
+  }, [proposal?.primary_keyword]); // Simplified dependencies to prevent loops
 
   const handleStatusChange = (status: any) => {
     setApiKeysStatus(status);
@@ -378,15 +374,15 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
             <SerpDebugPanel />
           )}
 
-          {/* Show enhanced analysis if API is available OR we have proposal data */}
-          {(hasWorkingApis || hasProposalData) && mainKeyword ? (
-            <div className="w-full">
-              <EnhancedSerpAnalysis 
-                keyword={mainKeyword}
-                onDataUpdate={handleSerpDataChange}
-                proposalData={hasProposalData ? proposal?.serp_data : null}
-              />
-            </div>
+            {/* Show enhanced analysis if API is available OR we have proposal data */}
+            {(hasWorkingApis || hasProposalData) && mainKeyword ? (
+              <div className="w-full">
+                <SimplifiedSerpAnalysis 
+                  keyword={mainKeyword}
+                  onDataUpdate={handleSerpDataChange}
+                  proposalData={hasProposalData ? proposal?.serp_data : null}
+                />
+              </div>
           ) : (
             <>
               {/* Show API setup or legacy analysis */}
