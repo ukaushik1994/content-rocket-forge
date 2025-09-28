@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +45,7 @@ export const ContentStrategyEngine = ({
   workflowMode = 'estimated',
   realAnalytics
 }: ContentStrategyEngineProps) => {
+  const navigate = useNavigate();
   const ctx = useContentStrategy();
   const {
     aiProposals,
@@ -435,7 +437,29 @@ export const ContentStrategyEngine = ({
                       setSelected(newSelected);
                       setSelectedProposals(newSelected);
                     }}
-                    onSendToBuilder={(proposal) => console.log('Send to builder:', proposal)}
+                    onSendToBuilder={(proposal) => {
+                      navigate('/content-builder', {
+                        state: {
+                          fromProposal: true,
+                          source_proposal_id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
+                          initialKeyword: proposal.primary_keyword,
+                          selectedKeywords: proposal.related_keywords || proposal.keywords || [],
+                          serpData: proposal.serp_data,
+                          suggestedTitle: proposal.title,
+                          suggestedOutline: proposal.suggested_outline || [],
+                          additionalInstructions: proposal.description || '',
+                          strategyContext: {
+                            proposal_id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
+                            priority_tag: proposal.priority_tag,
+                            estimated_impressions: proposal.estimated_impressions,
+                            meta_suggestions: {
+                              title: proposal.title,
+                              description: proposal.description
+                            }
+                          }
+                        }
+                      });
+                    }}
                     isNew={newProposalIds.has(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'))}
                   />
                 ))}
