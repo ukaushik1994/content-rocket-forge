@@ -198,8 +198,89 @@ CRITICAL: This is REAL data from the user's actual strategy proposals and conten
     const serpSuccess = serpUsage?.filter(usage => usage.success).length || 0;
     const serpSuccessRate = serpApiCalls > 0 ? (serpSuccess / serpApiCalls * 100) : 0;
 
+    // PHASE 3: RESEARCH & INTELLIGENCE ENHANCEMENT
+    // Fetch keywords research data
+    const { data: keywords } = await supabase
+      .from('keywords')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    // Fetch content clusters data
+    const { data: contentClusters } = await supabase
+      .from('content_clusters')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Fetch cluster keywords relationships
+    const { data: clusterKeywords } = await supabase
+      .from('cluster_keywords')
+      .select('*, content_clusters(name), keywords(keyword)')
+      .order('created_at', { ascending: false });
+
+    // Fetch SERP analysis history for competitive intelligence
+    const { data: serpAnalysisHistory } = await supabase
+      .from('serp_analysis_history')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Fetch keyword position tracking for ranking insights
+    const { data: keywordPositions } = await supabase
+      .from('keyword_position_history')
+      .select('*')
+      .order('tracked_at', { ascending: false })
+      .limit(15);
+
+    // Fetch opportunity seeds for content gap analysis
+    const { data: opportunitySeeds } = await supabase
+      .from('opportunity_seeds')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Calculate Phase 3 research intelligence metrics
+    const totalKeywords = keywords?.length || 0;
+    const totalClusters = contentClusters?.length || 0;
+    const totalClusterRelations = clusterKeywords?.length || 0;
+    const serpAnalysisCount = serpAnalysisHistory?.length || 0;
+    const positionTrackingCount = keywordPositions?.length || 0;
+    const opportunitiesCount = opportunitySeeds?.length || 0;
+
+    // Keyword categorization and analysis
+    const keywordCategories = keywords?.reduce((acc, kw) => {
+      // Simple categorization based on keyword patterns
+      if (kw.keyword.includes('how to') || kw.keyword.includes('what is') || kw.keyword.includes('guide')) {
+        acc.informational = (acc.informational || 0) + 1;
+      } else if (kw.keyword.includes('best') || kw.keyword.includes('top') || kw.keyword.includes('review')) {
+        acc.commercial = (acc.commercial || 0) + 1;
+      } else if (kw.keyword.includes('buy') || kw.keyword.includes('price') || kw.keyword.includes('cost')) {
+        acc.transactional = (acc.transactional || 0) + 1;
+      } else {
+        acc.navigational = (acc.navigational || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    // Content gap analysis
+    const contentGaps = {
+      missingClusters: totalKeywords > 0 && totalClusters === 0,
+      orphanedKeywords: totalKeywords - totalClusterRelations,
+      lackingPositionData: totalKeywords > 0 && positionTrackingCount === 0,
+      missingSerpIntelligence: serpAnalysisCount === 0,
+      untappedOpportunities: opportunitiesCount === 0
+    };
+
+    // Top research insights
+    const researchInsights = [];
+    if (totalKeywords > 20) researchInsights.push(`Rich keyword portfolio: ${totalKeywords} keywords ready for optimization`);
+    if (contentGaps.missingClusters) researchInsights.push('OPPORTUNITY: Keywords not organized into topic clusters');
+    if (contentGaps.orphanedKeywords > 10) researchInsights.push(`ATTENTION: ${contentGaps.orphanedKeywords} keywords not assigned to clusters`);
+    if (contentGaps.lackingPositionData) researchInsights.push('MISSING: Keyword position tracking for ranking insights');
+    if (contentGaps.missingSerpIntelligence) researchInsights.push('OPPORTUNITY: SERP analysis for competitive intelligence');
+
     return `
-## REAL CONTENT STRATEGY DATA (Phase 1 & 2 Enhanced - ${new Date().toISOString()}):
+## REAL CONTENT STRATEGY DATA (Phase 1, 2 & 3 Enhanced - ${new Date().toISOString()}):
 
 ### AI STRATEGY PROPOSALS (REAL DATA):
 - Total Proposals: ${strategyProposals?.length || 0}
@@ -220,6 +301,33 @@ ${topOpportunities.map((opp, i) =>
 - Content Activity Events: ${recentActivity} recent events
 - Active Content Modules: ${Object.entries(contentModules).map(([module, count]) => `${module}: ${count}`).join(', ') || 'No activity'}
 - SERP API Usage: ${serpApiCalls} calls (${serpSuccessRate.toFixed(1)}% success rate)
+
+### PHASE 3: RESEARCH & INTELLIGENCE ENHANCEMENT (REAL DATA):
+- **Keyword Research Portfolio**: ${totalKeywords} keywords tracked
+- **Topic Clusters**: ${totalClusters} clusters (${totalClusterRelations} keyword-cluster relationships)
+- **Keyword Intent Distribution**: ${Object.entries(keywordCategories).map(([intent, count]) => `${intent}: ${count}`).join(', ') || 'No categorization'}
+- **SERP Competitive Analysis**: ${serpAnalysisCount} historical analyses
+- **Position Tracking**: ${positionTrackingCount} position records
+- **Content Opportunities**: ${opportunitiesCount} opportunity seeds identified
+
+### KEYWORD RESEARCH INSIGHTS (PHASE 3):
+${keywords?.length ? 
+`**Top Keywords (Sample)**:
+${(keywords || []).slice(0, 8).map((kw, i) => `${i + 1}. "${kw.keyword}" (added ${new Date(kw.created_at).toLocaleDateString()})`).join('\n')}` 
+: 'No keywords in research database'}
+
+### CONTENT GAP ANALYSIS (PHASE 3):
+${contentGaps.missingClusters ? '⚠️ CRITICAL: Keywords not organized into topic clusters - missing topical authority strategy' : ''}
+${contentGaps.orphanedKeywords > 0 ? `⚠️ GAP: ${contentGaps.orphanedKeywords} keywords not assigned to content clusters` : ''}
+${contentGaps.lackingPositionData ? '❌ MISSING: No keyword position tracking - blind to ranking performance' : ''}
+${contentGaps.missingSerpIntelligence ? '❌ OPPORTUNITY: No SERP competitive analysis - missing competitor insights' : ''}
+${contentGaps.untappedOpportunities ? '⚠️ POTENTIAL: No opportunity seeds identified - content gap analysis needed' : ''}
+
+### RESEARCH INTELLIGENCE RECOMMENDATIONS (PHASE 3):
+${researchInsights.map(insight => `✅ ${insight}`).join('\n')}
+${totalKeywords > 0 && totalClusters === 0 ? '🎯 PRIORITY: Create topic clusters to organize your ' + totalKeywords + ' keywords for better content strategy' : ''}
+${totalKeywords > 0 && positionTrackingCount === 0 ? '📈 PRIORITY: Implement position tracking to monitor keyword ranking performance' : ''}
+${serpAnalysisCount === 0 ? '🔍 PRIORITY: Enable SERP analysis for competitive intelligence and content gap identification' : ''}
 
 ### BUSINESS IMPACT & ROI INSIGHTS (PHASE 2):
 ${actionSuccessRate < 70 ? '⚠️ ACTION SUCCESS RATE BELOW 70% - User experience optimization needed' : '✅ High action success rate indicates good UX'}
