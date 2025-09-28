@@ -137,36 +137,6 @@ export const KeywordSerpTab: React.FC<KeywordSerpTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-panel p-6 bg-background/60 backdrop-blur-xl border-border/50"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center">
-            <BarChart3 className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-foreground">SERP Analysis</h3>
-            <p className="text-muted-foreground">
-              Comprehensive search engine results analysis for "{searchTerm}"
-            </p>
-          </div>
-        </div>
-        
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-3"
-          >
-            <AlertCircle className="h-4 w-4 text-yellow-400" />
-            <span className="text-yellow-400 text-sm">{error}</span>
-          </motion.div>
-        )}
-      </motion.div>
-
       {/* SERP Analysis Overview */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
