@@ -6,12 +6,104 @@ import { Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedTableRenderer } from './EnhancedTableRenderer';
 
+// Pre-process content to convert CSV code blocks to markdown tables
+const processCodeBlocks = (content: string): string => {
+  // Pattern to match code blocks with optional language specifier
+  const codeBlockPattern = /```(?:csv|)?\n?([\s\S]*?)\n?```/g;
+  
+  return content.replace(codeBlockPattern, (match, codeContent) => {
+    const trimmedContent = codeContent.trim();
+    
+    // Check if this looks like CSV data
+    if (detectCSVPattern(trimmedContent)) {
+      try {
+        // Convert CSV to markdown table
+        const markdownTable = convertCSVToMarkdownTable(trimmedContent);
+        return markdownTable;
+      } catch (error) {
+        console.warn('Failed to convert code block CSV to table:', error);
+        // Return original code block if conversion fails
+        return match;
+      }
+    }
+    
+    // Return original code block for non-CSV content
+    return match;
+  });
+};
+
+// Enhanced CSV detection for code blocks
+const detectCSVPattern = (content: string): boolean => {
+  const lines = content.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return false;
+  
+  // Check if most lines have consistent comma separation
+  const commaLinesCount = lines.filter(line => {
+    const commas = (line.match(/,/g) || []).length;
+    return commas >= 1 && commas <= 20; // Reasonable range for CSV columns
+  }).length;
+  
+  // At least 70% of lines should have commas for CSV detection
+  return commaLinesCount / lines.length >= 0.7;
+};
+
+// Convert CSV content to markdown table
+const convertCSVToMarkdownTable = (csvContent: string): string => {
+  const lines = csvContent.split('\n').filter(line => line.trim());
+  if (lines.length === 0) return csvContent;
+  
+  // Parse CSV lines (basic parsing - handles quoted fields)
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result.map(cell => cell.replace(/^"|"$/g, '')); // Remove surrounding quotes
+  };
+  
+  const rows = lines.map(parseCSVLine);
+  const maxColumns = Math.max(...rows.map(row => row.length));
+  
+  // Ensure all rows have the same number of columns
+  const normalizedRows = rows.map(row => {
+    while (row.length < maxColumns) {
+      row.push('');
+    }
+    return row;
+  });
+  
+  if (normalizedRows.length === 0) return csvContent;
+  
+  // Create markdown table
+  const header = '| ' + normalizedRows[0].join(' | ') + ' |';
+  const separator = '| ' + Array(maxColumns).fill('---').join(' | ') + ' |';
+  const body = normalizedRows.slice(1).map(row => '| ' + row.join(' | ') + ' |').join('\n');
+  
+  return `\n${header}\n${separator}\n${body}\n`;
+};
+
 // Enhanced table detection with error handling and recovery
 const detectAndConvertTables = (content: string): { processedContent: string; hasErrors: boolean; errorCount: number } => {
   let errorCount = 0;
   let hasErrors = false;
+  
+  // First, pre-process code blocks to convert CSV to tables
+  const preProcessedContent = processCodeBlocks(content);
+  
   // Split content into lines for processing
-  const lines = content.split('\n');
+  const lines = preProcessedContent.split('\n');
   const processedLines: string[] = [];
   let i = 0;
 
