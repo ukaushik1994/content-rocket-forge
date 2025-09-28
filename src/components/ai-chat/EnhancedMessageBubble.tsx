@@ -151,10 +151,23 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {/* Visual Data Rendering */}
           {message.visualData && (
             <div className="mt-3">
+              {(() => {
+                console.log('🎨 EnhancedMessageBubble: Rendering visual data:', {
+                  messageId: message.id,
+                  visualDataType: message.visualData?.type,
+                  hasChartConfig: !!message.visualData?.chartConfig,
+                  hasMetrics: !!message.visualData?.metrics,
+                  hasSerpData: !!message.visualData?.serpData,
+                  fullVisualData: message.visualData
+                });
+                return null;
+              })()}
+              
               {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
                 <SerpVisualData 
                   serpData={message.visualData.serpData} 
                   onActionClick={(action, data) => {
+                    console.log('🔄 SerpVisualData action clicked:', { action, data });
                     // Convert to contextual action and trigger
                     onAction?.({
                       id: `serp-action-${Date.now()}`,

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { VisualData } from '@/types/enhancedChat';
@@ -30,11 +29,22 @@ interface VisualDataRendererProps {
 }
 
 export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) => {
-  if (!data) return null;
+  console.log('📊 VisualDataRenderer: Received data:', {
+    hasData: !!data,
+    dataType: typeof data,
+    visualDataType: data?.type,
+    keys: data ? Object.keys(data) : [],
+    fullData: data
+  });
+  
+  if (!data) {
+    console.log('❌ VisualDataRenderer: No data provided');
+    return null;
+  }
 
   // Validate data structure
   if (typeof data !== 'object') {
-    console.warn('Invalid visual data type:', typeof data);
+    console.warn('❌ VisualDataRenderer: Invalid visual data type:', typeof data);
     return null;
   }
 
@@ -83,18 +93,21 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   };
 
   const renderChart = () => {
+    console.log('📈 renderChart: Starting chart render process');
     if (!data.chartConfig) {
-      console.warn('No chartConfig found in visual data:', data);
+      console.warn('❌ renderChart: No chartConfig found in visual data:', data);
       return null;
     }
 
     const { type, data: chartData, categories, colors, valueFormatter, height = 300 } = data.chartConfig;
     
-    console.log('Rendering chart with config:', {
+    console.log('📈 renderChart: Chart config details:', {
       type,
       dataLength: chartData?.length,
       categories,
-      colors
+      colors,
+      chartData: chartData?.slice(0, 3), // Show first 3 items
+      fullConfig: data.chartConfig
     });
 
     // Process data for different chart types
@@ -104,28 +117,39 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
       categories: data.chartConfig.series?.map(s => s.dataKey) || categories || []
     };
 
-    console.log('Processed chart config:', processedConfig);
+    console.log('📈 renderChart: Processed chart config:', processedConfig);
     
     // Use InteractiveChart with error boundary for enhanced experience
     return (
-      <ChartErrorBoundary>
-        <InteractiveChart
-          chartConfig={processedConfig}
-          title={(data as any).title || `${type.charAt(0).toUpperCase() + type.slice(1)} Chart`}
-          description={(data as any).description || "Interactive data visualization"}
-          allowTypeSwitch={true}
-          allowDataFilter={true}
-          onDataUpdate={(newData) => {
-            console.log('Chart data updated:', newData);
-            // Handle real-time data updates here
-          }}
-        />
-      </ChartErrorBoundary>
+      <div>
+        {(() => {
+          console.log('📈 renderChart: About to render InteractiveChart component');
+          return null;
+        })()}
+        <ChartErrorBoundary>
+          <InteractiveChart
+            chartConfig={processedConfig}
+            title={(data as any).title || `${type.charAt(0).toUpperCase() + type.slice(1)} Chart`}
+            description={(data as any).description || "Interactive data visualization"}
+            allowTypeSwitch={true}
+            allowDataFilter={true}
+            onDataUpdate={(newData) => {
+              console.log('📈 Chart data updated:', newData);
+              // Handle real-time data updates here
+            }}
+          />
+        </ChartErrorBoundary>
+      </div>
     );
   };
 
   const renderMetrics = () => {
-    if (!data.metrics) return null;
+    console.log('📊 renderMetrics: Starting metrics render, hasMetrics:', !!data.metrics);
+    if (!data.metrics) {
+      console.log('❌ renderMetrics: No metrics data found');
+      return null;
+    }
+    console.log('📊 renderMetrics: Rendering', data.metrics.length, 'metrics');
 
     const containerVariants = {
       hidden: { opacity: 0 },
@@ -234,7 +258,11 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   };
 
   const renderWorkflow = () => {
-    if (!data.workflowStep) return null;
+    console.log('🔄 renderWorkflow: Starting workflow render, hasWorkflow:', !!data.workflowStep);
+    if (!data.workflowStep) {
+      console.log('❌ renderWorkflow: No workflow data found');
+      return null;
+    }
 
     const { title, description, actions, progress } = data.workflowStep;
     const progressPercentage = progress ? (progress.current / progress.total) * 100 : 0;
@@ -482,22 +510,18 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
                     <div className={cn("p-2 rounded-lg", colors.bg, colors.border, "border")}>
                       <StatusIcon className={cn("w-4 h-4", colors.icon)} />
                     </div>
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <div>
+                      <p className="font-medium text-foreground">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">{item.value}</p>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-foreground">{item.value}</span>
-                    <Badge 
-                      className={cn(
-                        "text-xs font-medium backdrop-blur-sm border",
-                        colors.bg,
-                        colors.text,
-                        colors.border
-                      )}
-                    >
-                      {item.status === 'good' ? 'Good' : item.status === 'warning' ? 'OK' : 'Needs Attention'}
-                    </Badge>
-                  </div>
+                  <Badge 
+                    variant="secondary" 
+                    className={cn(colors.bg, colors.text, colors.border, "border")}
+                  >
+                    {item.status.replace('-', ' ')}
+                  </Badge>
                 </motion.div>
               );
             })}
@@ -507,22 +531,34 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     );
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ 
-        duration: 0.5,
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }}
-      className="my-6"
-    >
-      {data.type === 'chart' && renderChart()}
-      {data.type === 'metrics' && renderMetrics()}
-      {data.type === 'workflow' && renderWorkflow()}
-      {data.type === 'summary' && renderSummary()}
-    </motion.div>
-  );
+  // Main render logic with comprehensive logging
+  console.log('📊 VisualDataRenderer: About to render, data type:', data.type);
+
+  switch (data.type) {
+    case 'chart':
+      console.log('📈 VisualDataRenderer: Rendering chart');
+      return renderChart();
+    case 'metrics':
+      console.log('📊 VisualDataRenderer: Rendering metrics');
+      return renderMetrics();
+    case 'workflow':
+      console.log('🔄 VisualDataRenderer: Rendering workflow');
+      return renderWorkflow();
+    case 'summary':
+      console.log('📋 VisualDataRenderer: Rendering summary');
+      return renderSummary();
+    case 'serp_analysis':
+      console.log('🔍 VisualDataRenderer: SERP analysis handled by SerpVisualData component');
+      return null; // Handled by SerpVisualData component
+    default:
+      console.warn('⚠️ VisualDataRenderer: Unknown data type:', data.type);
+      return (
+        <div className="p-4 border border-warning/30 bg-warning/10 rounded-lg">
+          <p className="text-warning font-medium">Unknown visualization type: {data.type}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Expected types: chart, metrics, workflow, summary, serp_analysis
+          </p>
+        </div>
+      );
+  }
 };

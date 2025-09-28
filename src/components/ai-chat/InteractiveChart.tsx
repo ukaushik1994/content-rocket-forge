@@ -28,6 +28,14 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   onDataUpdate,
   onExport
 }) => {
+  console.log('🎯 InteractiveChart: Component mounted with config:', {
+    type: chartConfig.type,
+    dataLength: chartConfig.data?.length,
+    categories: chartConfig.categories,
+    series: chartConfig.series,
+    fullConfig: chartConfig
+  });
+
   const [currentType, setCurrentType] = useState(chartConfig.type);
   const [filteredData, setFilteredData] = useState(chartConfig.data);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -86,6 +94,13 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   }, [filteredData, onExport]);
 
   const renderChart = () => {
+    console.log('🎯 InteractiveChart: renderChart called with:', {
+      currentType,
+      filteredDataLength: filteredData?.length,
+      selectedCategory,
+      filteredDataSample: filteredData?.[0]
+    });
+
     const commonProps = {
       data: filteredData,
       width: '100%',
@@ -93,6 +108,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     };
 
     if (!filteredData || filteredData.length === 0) {
+      console.log('❌ InteractiveChart: No data available');
       return (
         <div className="flex items-center justify-center h-64 text-muted-foreground">
           No data available to display
@@ -107,10 +123,11 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
         key !== 'name' && key !== 'label' && key !== 'category' && key !== 'type'
       );
 
-    console.log('Rendering chart:', {
+    console.log('🎯 InteractiveChart: Rendering chart details:', {
       type: currentType,
       dataKeys,
-      filteredDataSample: filteredData[0]
+      filteredDataSample: filteredData[0],
+      dataKeysLength: dataKeys.length
     });
 
     switch (currentType) {
