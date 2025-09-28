@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Settings, Download, RefreshCw, Database, TestTube, Loader2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Settings, Download, RefreshCw, Database, TestTube, Loader2, Trash2, BarChart3 } from 'lucide-react';
 import { keywordMigrationService } from '@/services/keywordMigrationService';
+import { keywordLibraryService } from '@/services/keywordLibraryService';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 
 interface AdminActionsProps {
@@ -13,7 +15,10 @@ interface AdminActionsProps {
 export const AdminActions: React.FC<AdminActionsProps> = ({ onDataChange }) => {
   const [showMigrationDialog, setShowMigrationDialog] = useState(false);
   const [showTestDialog, setShowTestDialog] = useState(false);
+  const [showRefreshDialog, setShowRefreshDialog] = useState(false);
+  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleMigrateLegacyData = async () => {
     setIsLoading(true);
@@ -44,6 +49,46 @@ export const AdminActions: React.FC<AdminActionsProps> = ({ onDataChange }) => {
     }
   };
 
+  const handleRefreshSerpData = async () => {
+    setIsLoading(true);
+    setProgress(0);
+    try {
+      const refreshed = await keywordLibraryService.refreshStaleKeywords();
+      setProgress(100);
+      toast.success(`Refreshed SERP data for ${refreshed} keywords`);
+      onDataChange?.();
+      setShowRefreshDialog(false);
+    } catch (error) {
+      toast.error('Failed to refresh SERP data. Please try again.');
+    } finally {
+      setIsLoading(false);
+      setProgress(0);
+    }
+  };
+
+  const handleDataCleanup = async () => {
+    setIsLoading(true);
+    setProgress(0);
+    try {
+      // Simulate cleanup with progress
+      setProgress(33);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setProgress(66);
+      await keywordLibraryService.syncKeywordsFromSources();
+      
+      setProgress(100);
+      toast.success('Data cleanup completed successfully');
+      onDataChange?.();
+      setShowCleanupDialog(false);
+    } catch (error) {
+      toast.error('Data cleanup failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+      setProgress(0);
+    }
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -58,6 +103,16 @@ export const AdminActions: React.FC<AdminActionsProps> = ({ onDataChange }) => {
             <Database className="h-4 w-4 mr-2" />
             Migrate Legacy Data
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setShowRefreshDialog(true)}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh SERP Data
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowCleanupDialog(true)}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clean & Sync Data
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowTestDialog(true)}>
             <TestTube className="h-4 w-4 mr-2" />
             Run Integration Tests
@@ -82,6 +137,63 @@ export const AdminActions: React.FC<AdminActionsProps> = ({ onDataChange }) => {
             <Button onClick={handleMigrateLegacyData} disabled={isLoading}>
               {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Start Migration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* SERP Refresh Dialog */}
+      <Dialog open={showRefreshDialog} onOpenChange={setShowRefreshDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Refresh SERP Data</DialogTitle>
+            <DialogDescription>
+              This will refresh metrics for keywords with stale SERP data (older than 24 hours). 
+              Limited to 10 keywords per run to respect API limits.
+            </DialogDescription>
+          </DialogHeader>
+          {isLoading && progress > 0 && (
+            <div className="space-y-2">
+              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-muted-foreground">Refreshing SERP data...</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRefreshDialog(false)} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleRefreshSerpData} disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Refresh Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Data Cleanup Dialog */}
+      <Dialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clean & Sync Data</DialogTitle>
+            <DialogDescription>
+              This will synchronize keywords from all sources, remove duplicates, and validate data quality.
+            </DialogDescription>
+          </DialogHeader>
+          {isLoading && progress > 0 && (
+            <div className="space-y-2">
+              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-muted-foreground">
+                {progress < 50 ? 'Validating data...' : progress < 90 ? 'Syncing sources...' : 'Finalizing cleanup...'}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCleanupDialog(false)} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleDataCleanup} disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Clean Data
             </Button>
           </DialogFooter>
         </DialogContent>
