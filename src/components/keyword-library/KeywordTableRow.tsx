@@ -109,9 +109,14 @@ export const KeywordTableRow: React.FC<KeywordTableRowProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
+      transition={{ 
+        duration: 0.3,
+        ease: [0.4, 0, 0.2, 1]
+      }}
       className={`
-        group border-b border-border/30 hover:bg-muted/30 transition-colors
-        ${selected ? 'bg-primary/5' : ''}
+        group border-b border-border/20 hover:bg-accent/50 transition-all duration-300
+        hover:shadow-sm hover:shadow-primary/5
+        ${selected ? 'bg-primary/10 border-primary/30 shadow-sm shadow-primary/10' : ''}
       `}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -217,17 +222,19 @@ export const KeywordTableRow: React.FC<KeywordTableRowProps> = ({
 
       {/* Actions */}
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          {/* Quick Actions - Always Visible */}
+        <motion.div 
+          className="flex items-center gap-1"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovered || selected ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {/* Quick Actions */}
           <Button
             size="sm"
             variant="ghost"
             onClick={handleResearch}
             disabled={researching}
-            className={`
-              h-7 px-2 transition-opacity
-              ${isHovered || selected ? 'opacity-100' : 'opacity-0'}
-            `}
+            className="h-7 px-2 hover:bg-primary/20 hover:scale-105 transition-all duration-200"
           >
             <RefreshCw className={`h-3 w-3 ${researching ? 'animate-spin' : ''}`} />
           </Button>
@@ -238,41 +245,54 @@ export const KeywordTableRow: React.FC<KeywordTableRowProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                className={`
-                  h-7 w-7 p-0 transition-opacity
-                  ${isHovered || selected ? 'opacity-100' : 'opacity-0'}
-                `}
+                className="h-7 w-7 p-0 hover:bg-accent hover:scale-105 transition-all duration-200"
               >
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => onAction('google', keyword.id)}>
+            <DropdownMenuContent 
+              align="end" 
+              className="w-48 border-border/50 bg-card/95 backdrop-blur-xl"
+              sideOffset={8}
+            >
+              <DropdownMenuItem 
+                onClick={() => onAction('google', keyword.id)}
+                className="hover:bg-accent/50 transition-colors cursor-pointer"
+              >
                 <Search className="h-3 w-3 mr-2" />
                 Search Google
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAction('edit', keyword.id)}>
+              <DropdownMenuItem 
+                onClick={() => onAction('edit', keyword.id)}
+                className="hover:bg-accent/50 transition-colors cursor-pointer"
+              >
                 <Edit className="h-3 w-3 mr-2" />
                 Edit Details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAction('usage', keyword.id)}>
+              <DropdownMenuItem 
+                onClick={() => onAction('usage', keyword.id)}
+                className="hover:bg-accent/50 transition-colors cursor-pointer"
+              >
                 <Eye className="h-3 w-3 mr-2" />
                 View Usage
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAction('export', keyword.id)}>
+              <DropdownMenuItem 
+                onClick={() => onAction('export', keyword.id)}
+                className="hover:bg-accent/50 transition-colors cursor-pointer"
+              >
                 <Download className="h-3 w-3 mr-2" />
                 Export
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => onAction('delete', keyword.id)}
-                className="text-destructive focus:text-destructive"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
               >
                 <Trash2 className="h-3 w-3 mr-2" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </motion.div>
       </td>
     </motion.tr>
   );

@@ -43,6 +43,11 @@
     --info: 217 91% 60%;
     --info-foreground: 0 0% 98%;
 
+    /* Professional Enhancement Colors */
+    --accent-hover: var(--accent) / 0.8;
+    --primary-glow: var(--primary) / 0.2;
+    --card-subtle: var(--card) / 0.6;
+
   --sidebar-background: 240 10% 3.9%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-primary: 255 92% 76%;

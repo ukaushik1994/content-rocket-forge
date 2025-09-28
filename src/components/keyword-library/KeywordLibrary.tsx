@@ -324,56 +324,106 @@ export const KeywordLibrary: React.FC = () => {
           )}
         </AnimatePresence>
 
+        {/* Analytics Dashboard */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <KeywordAnalyticsDashboard 
+            keywords={keywords}
+            className="mb-6"
+          />
+        </motion.div>
+
+        {/* Opportunity Alerts */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mb-6"
+        >
+          <KeywordOpportunityAlerts 
+            className="border border-border/50 rounded-lg bg-card/60 backdrop-blur-xl"
+            onKeywordSelect={(keywordId) => {
+              setSelectedKeywords(new Set([keywordId]));
+            }}
+            onCreateContent={(keyword) => {
+              toast.success(`Content creation suggested for "${keyword}"`);
+            }}
+          />
+        </motion.div>
+
         {/* Professional Keywords Table */}
-        <KeywordTable
-          keywords={keywords}
-          selectedKeywords={selectedKeywords}
-          loading={loading}
-          onSelect={handleSelectKeyword}
-          onSelectAll={handleSelectAll}
-          onUpdate={loadKeywords}
-          onAction={async (action, keywordId) => {
-            const keyword = keywords.find(k => k.id === keywordId);
-            if (!keyword) return;
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="border border-border/50 rounded-lg bg-card/60 backdrop-blur-xl overflow-hidden"
+        >
+          <KeywordTable
+            keywords={keywords}
+            selectedKeywords={selectedKeywords}
+            loading={loading}
+            onSelect={handleSelectKeyword}
+            onSelectAll={handleSelectAll}
+            onUpdate={loadKeywords}
+            onAction={async (action, keywordId) => {
+              const keyword = keywords.find(k => k.id === keywordId);
+              if (!keyword) return;
 
-            switch (action) {
-              case 'refresh':
-                await keywordLibraryService.refreshKeywordMetrics(keywordId);
-                await loadKeywords();
-                break;
-              case 'delete':
-                await keywordLibraryService.deleteKeywords([keywordId]);
-                await loadKeywords();
-                break;
-              case 'google':
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(keyword.keyword)}`, '_blank');
-                break;
-              case 'export':
-                await keywordLibraryService.exportKeywords([keywordId], 'csv');
-                break;
-              default:
-                console.log(`Action ${action} not implemented for keyword ${keywordId}`);
-            }
-          }}
-        />
+              try {
+                switch (action) {
+                  case 'refresh':
+                    toast.loading('Refreshing keyword data...');
+                    await keywordLibraryService.refreshKeywordMetrics(keywordId);
+                    await loadKeywords();
+                    toast.success('Keyword data refreshed');
+                    break;
+                  case 'delete':
+                    toast.loading('Deleting keyword...');
+                    await keywordLibraryService.deleteKeywords([keywordId]);
+                    await loadKeywords();
+                    toast.success('Keyword deleted');
+                    break;
+                  case 'google':
+                    window.open(`https://www.google.com/search?q=${encodeURIComponent(keyword.keyword)}`, '_blank');
+                    break;
+                  case 'export':
+                    toast.loading('Exporting keyword...');
+                    await keywordLibraryService.exportKeywords([keywordId], 'csv');
+                    toast.success('Keyword exported');
+                    break;
+                  default:
+                    console.log(`Action ${action} not implemented for keyword ${keywordId}`);
+                }
+              } catch (error) {
+                toast.error('Action failed');
+                console.error('Keyword action error:', error);
+              }
+            }}
+          />
+        </motion.div>
 
-        {/* Pagination */}
+        {/* Professional Pagination */}
         {totalPages > 1 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex justify-center gap-2"
+            transition={{ delay: 0.5 }}
+            className="flex justify-center items-center gap-3 mt-8"
           >
             <Button
               variant="outline"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(currentPage - 1)}
-              className="border-white/20 hover:bg-white/10"
+              className="border-border/50 hover:bg-accent/50 transition-all duration-200"
             >
               Previous
             </Button>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const page = currentPage <= 3 ? i + 1 : currentPage - 2 + i;
                 if (page > totalPages) return null;
@@ -381,12 +431,12 @@ export const KeywordLibrary: React.FC = () => {
                 return (
                   <Button
                     key={page}
-                    variant={page === currentPage ? "default" : "outline"}
+                    variant={page === currentPage ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setCurrentPage(page)}
                     className={page === currentPage 
-                      ? "bg-primary text-primary-foreground" 
-                      : "border-white/20 hover:bg-white/10"
+                      ? "bg-primary text-primary-foreground shadow-sm" 
+                      : "hover:bg-accent/50 transition-all duration-200"
                     }
                   >
                     {page}
@@ -399,7 +449,7 @@ export const KeywordLibrary: React.FC = () => {
               variant="outline"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(currentPage + 1)}
-              className="border-white/20 hover:bg-white/10"
+              className="border-border/50 hover:bg-accent/50 transition-all duration-200"
             >
               Next
             </Button>
