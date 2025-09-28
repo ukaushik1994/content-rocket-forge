@@ -9,6 +9,72 @@ import {
   generateSmartSuggestions 
 } from './serp-intelligence.ts';
 
+// Real data fetching function
+async function fetchRealDataContext() {
+  try {
+    // Fetch content items data
+    const { data: contentItems } = await supabase
+      .from('content_items')
+      .select(`
+        id, title, status, created_at, seo_score, 
+        solutions(name, description)
+      `)
+      .order('created_at', { ascending: false });
+
+    // Fetch solutions data
+    const { data: solutions } = await supabase
+      .from('solutions')
+      .select('id, name, description, created_at')
+      .order('created_at', { ascending: false });
+
+    // Calculate real statistics
+    const totalContent = contentItems?.length || 0;
+    const publishedContent = contentItems?.filter(item => item.status === 'published').length || 0;
+    const draftContent = contentItems?.filter(item => item.status === 'draft').length || 0;
+    const avgSeoScore = contentItems?.reduce((sum, item) => sum + (item.seo_score || 0), 0) / (totalContent || 1);
+    
+    // Get content creation timeline (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentContent = contentItems?.filter(item => 
+      new Date(item.created_at) > thirtyDaysAgo
+    ).length || 0;
+
+    return `
+## REAL CONTENT DATA (Current as of ${new Date().toISOString()}):
+- Total Content Items: ${totalContent}
+- Published Content: ${publishedContent} (${totalContent > 0 ? Math.round((publishedContent/totalContent)*100) : 0}% publication rate)
+- Draft Content: ${draftContent} (${totalContent > 0 ? Math.round((draftContent/totalContent)*100) : 0}% unpublished)
+- Average SEO Score: ${avgSeoScore.toFixed(1)}/100 ${avgSeoScore === 0 ? '⚠️ CRITICAL: All SEO scores are 0 - SEO optimization not implemented' : ''}
+- Content Created (Last 30 days): ${recentContent}
+
+## REAL SOLUTIONS DATA:
+${solutions && solutions.length > 0 ? solutions.map(solution => 
+  `- "${solution.name}": ${solution.description?.substring(0, 100)}...`
+).join('\n') : 'No solutions found'}
+
+## CRITICAL ISSUES DETECTED:
+${avgSeoScore === 0 ? '❌ SEO system not functional - all scores are 0' : ''}
+${publishedContent === 0 ? '❌ No published content - publishing workflow blocked' : ''}
+${(publishedContent/totalContent) < 0.2 ? '⚠️ Low publication rate - content creation vs publishing imbalance' : ''}
+
+## ACTIONABLE INSIGHTS:
+${draftContent > 0 ? `✓ ${draftContent} draft articles ready for review and publishing` : ''}
+${solutions && solutions.length > 0 ? `✓ ${solutions.length} solutions available for content mapping` : ''}
+${recentContent > 0 ? `✓ Active content creation (${recentContent} items in last 30 days)` : ''}
+
+IMPORTANT: Base all recommendations on this REAL data. Do not create fake metrics or numbers.
+    `;
+  } catch (error) {
+    console.error('Error fetching real data context:', error);
+    return `
+## REAL DATA UNAVAILABLE
+Error fetching current data. Recommend checking database connection.
+IMPORTANT: Do not generate fake data. Inform user that real-time data is currently unavailable.
+    `;
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -77,20 +143,26 @@ serve(async (req) => {
     }
 
     // Build enhanced system prompt with context
+    // Fetch real data from database
+    const realDataContext = await fetchRealDataContext();
+    
     const systemPrompt = `You are an intelligent workflow orchestration assistant with deep expertise in content strategy, business solutions, and data analysis.
 
-## Your Capabilities:
-- Advanced content analysis and optimization
-- Solution integration and positioning  
-- Visual data creation (charts, metrics, workflows)
-- Strategic recommendations with actionable insights
-- Contextual action generation
+## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:
+${realDataContext}
 
-## CRITICAL: Always Include Visual Data and Actions
-For EVERY response, you MUST include AT LEAST ONE of the following:
-1. Contextual actions that help the user take next steps
-2. Visual data (charts, metrics, or summaries) that illustrate your points
-3. Both actions AND visual data when relevant
+## Your Capabilities:
+- Advanced content analysis and optimization based on REAL data
+- Solution integration and positioning using ACTUAL solution data
+- Visual data creation (charts, metrics, workflows) using FACTUAL information only
+- Strategic recommendations with actionable insights based on REAL performance metrics
+- Contextual action generation using ACTUAL content and solution data
+
+## CRITICAL RULES:
+1. NEVER create fake data, metrics, or numbers
+2. ALWAYS base responses on the REAL DATA CONTEXT provided above
+3. When data is missing, clearly state that and suggest how to obtain it
+4. For EVERY response, include contextual actions AND visual data when relevant
 
 ## SERP Data Integration
 ${serpContext ? `You have access to REAL-TIME SERP DATA that MUST be used in your response:${serpContext}` : 'No SERP data available for this query.'}
@@ -288,197 +360,18 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       blocksFound: jsonBlocks.length
     });
 
-    // Enhanced fallback generation with better detection
+    // Only provide basic contextual actions if AI didn't return structured data
+    // NO MOCK DATA GENERATION - Let the AI create appropriate responses based on real data
     if (!actions && !visualData) {
-      console.log("🎯 Generating enhanced contextual actions and visual data...");
+      console.log("⚠️ No structured data returned from AI - providing basic navigation only");
       
-      const queryLower = userQuery.toLowerCase();
-      
-      // Content-related queries
-      if (queryLower.includes('content') || queryLower.includes('blog') || queryLower.includes('article') || queryLower.includes('write')) {
-        actions = [{
-          id: "create-content",
-          label: "Create Content Strategy",
-          type: "button",
-          action: "workflow:content-creation",
-          data: {}
-        }, {
-          id: "content-builder",
-          label: "Open Content Builder",
-          type: "button",
-          action: "navigate:/content-builder",
-          data: {}
-        }];
-        
-        visualData = {
-          type: "metrics",
-          metrics: [
-            {
-              id: "content-performance",
-              title: "Content Performance",
-              value: "78%",
-              icon: "BarChart",
-              color: "blue"
-            },
-            {
-              id: "publishing-rate",
-              title: "Publishing Rate",
-              value: "12/month",
-              icon: "Calendar",
-              color: "green"
-            }
-          ]
-        };
-      }
-      
-      // SEO and optimization queries
-      else if (queryLower.includes('seo') || queryLower.includes('optimize') || queryLower.includes('search') || queryLower.includes('ranking')) {
-        actions = [{
-          id: "seo-analysis",
-          label: "Analyze SEO Opportunities",
-          type: "button",
-          action: "workflow:seo-analysis",
-          data: {}
-        }, {
-          id: "keyword-research",
-          label: "Start Keyword Research",
-          type: "button",
-          action: "navigate:/research",
-          data: {}
-        }];
-        
-        visualData = {
-          type: "metrics",
-          metrics: [
-            {
-              id: "seo-score",
-              title: "Average SEO Score",
-              value: "72/100",
-              icon: "Search",
-              color: "orange"
-            },
-            {
-              id: "keywords-ranking",
-              title: "Keywords Ranking",
-              value: "156",
-              icon: "TrendingUp",
-              color: "green"
-            },
-            {
-              id: "traffic-growth",
-              title: "Traffic Growth",
-              value: "+24%",
-              icon: "Users",
-              color: "blue"
-            }
-          ]
-        };
-      }
-      
-      // Analytics and performance queries
-      else if (queryLower.includes('analytics') || queryLower.includes('performance') || queryLower.includes('data') || queryLower.includes('metric')) {
-        actions = [{
-          id: "view-analytics",
-          label: "View Detailed Analytics",
-          type: "button",
-          action: "navigate:/analytics",
-          data: {}
-        }, {
-          id: "performance-analysis",
-          label: "Run Performance Analysis",
-          type: "button",
-          action: "workflow:analytics-deep-dive",
-          data: {}
-        }];
-        
-        visualData = {
-          type: "chart",
-          chartConfig: {
-            type: "line",
-            data: [
-              { month: "January", visitors: 12400, conversions: 340, revenue: 18500, conversion_rate: 2.74 },
-              { month: "February", visitors: 15200, conversions: 520, revenue: 28600, conversion_rate: 3.42 },
-              { month: "March", visitors: 18900, conversions: 695, revenue: 38200, conversion_rate: 3.68 },
-              { month: "April", visitors: 22100, conversions: 890, revenue: 48900, conversion_rate: 4.03 },
-              { month: "May", visitors: 25800, conversions: 1150, revenue: 62400, conversion_rate: 4.46 },
-              { month: "June", visitors: 28600, conversions: 1320, revenue: 71800, conversion_rate: 4.62 }
-            ],
-            series: [
-              { dataKey: "visitors", name: "Website Visitors", color: "#06b6d4" },
-              { dataKey: "conversions", name: "Conversions", color: "#10b981" },
-              { dataKey: "revenue", name: "Revenue ($)", color: "#8b5cf6" }
-            ],
-            categories: ["month"],
-            colors: ["#06b6d4", "#10b981", "#8b5cf6"]
-          }
-        };
-      }
-      
-      // Strategy queries
-      else if (queryLower.includes('strategy') || queryLower.includes('plan') || queryLower.includes('roadmap')) {
-        actions = [{
-          id: "content-strategy",
-          label: "Develop Content Strategy",
-          type: "button",
-          action: "navigate:/strategies",
-          data: {}
-        }, {
-          id: "strategy-analysis",
-          label: "Analyze Current Strategy",
-          type: "button",
-          action: "workflow:strategy-analysis",
-          data: {}
-        }];
-        
-        visualData = {
-          type: "summary",
-          summary: {
-            title: "Strategy Overview",
-            items: [
-              { label: "Active Strategies", value: "3", status: "good" },
-              { label: "Implementation Rate", value: "85%", status: "good" },
-              { label: "ROI Tracking", value: "Needs Setup", status: "needs-attention" }
-            ]
-          }
-        };
-      }
-      
-      // Default fallback - always provide something
-      else {
-        actions = [{
-          id: "explore-features",
-          label: "Explore Platform Features",
-          type: "button",
-          action: "navigate:/dashboard",
-          data: {}
-        }, {
-          id: "get-help",
-          label: "Get Started Guide",
-          type: "button",
-          action: "workflow:onboarding-help",
-          data: {}
-        }];
-        
-        visualData = {
-          type: "metrics",
-          metrics: [
-            {
-              id: "platform-usage",
-              title: "Platform Usage",
-              value: "Active",
-              icon: "Users",
-              color: "green"
-            },
-            {
-              id: "features-explored",
-              title: "Features Explored",
-              value: "65%",
-              icon: "BarChart",
-              color: "blue"
-            }
-          ]
-        };
-      }
+      actions = [{
+        id: "explore-dashboard",
+        label: "View Dashboard",
+        type: "button", 
+        action: "navigate:/dashboard",
+        data: {}
+      }];
     }
 
     console.log(`✅ Parsed response: { hasActions: ${!!actions}, hasVisualData: ${!!visualData}, messageLength: ${cleanedResponse?.length || aiMessage.length} }`);
