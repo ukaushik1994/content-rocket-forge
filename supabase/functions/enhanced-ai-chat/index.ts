@@ -9,7 +9,7 @@ import {
   generateSmartSuggestions 
 } from './serp-intelligence.ts';
 
-// Enhanced real data fetching function with Phase 1 intelligence
+// Enhanced real data fetching function with Phase 1 & Phase 2 intelligence
 async function fetchRealDataContext() {
   try {
     // PHASE 1: ENHANCED AI STRATEGY PROPOSALS INTEGRATION
@@ -142,7 +142,132 @@ ${solutions && solutions.length > 0 ? `✅ ${solutions.length} solutions availab
 ${recentContent > 0 ? `✅ Active content creation (${recentContent} items in last 30 days)` : ''}
 
 CRITICAL: This is REAL data from the user's actual strategy proposals and content pipeline. Provide specific, actionable recommendations based on these exact numbers and opportunities.
-    `;
+     `;
+
+    // PHASE 2: PERFORMANCE & ANALYTICS INTELLIGENCE
+    // Fetch performance analytics data
+    const { data: performanceMetrics } = await supabase
+      .from('performance_metrics')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Fetch action analytics for user behavior insights
+    const { data: actionAnalytics } = await supabase
+      .from('action_analytics')
+      .select('*')
+      .order('triggered_at', { ascending: false })
+      .limit(20);
+
+    // Fetch content activity logs for engagement tracking
+    const { data: activityLogs } = await supabase
+      .from('content_activity_log')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(15);
+
+    // Fetch SERP usage logs for competitive intelligence
+    const { data: serpUsage } = await supabase
+      .from('serp_usage_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Calculate Phase 2 analytics
+    const totalActions = actionAnalytics?.length || 0;
+    const successfulActions = actionAnalytics?.filter(action => action.success).length || 0;
+    const actionSuccessRate = totalActions > 0 ? (successfulActions / totalActions * 100) : 0;
+    
+    // User behavior patterns
+    const actionTypes = actionAnalytics?.reduce((acc, action) => {
+      const type = action.action_type;
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    // Content engagement metrics
+    const recentActivity = activityLogs?.length || 0;
+    const contentModules = activityLogs?.reduce((acc, log) => {
+      const module = log.module || 'unknown';
+      acc[module] = (acc[module] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    // SERP intelligence
+    const serpApiCalls = serpUsage?.length || 0;
+    const serpSuccess = serpUsage?.filter(usage => usage.success).length || 0;
+    const serpSuccessRate = serpApiCalls > 0 ? (serpSuccess / serpApiCalls * 100) : 0;
+
+    return `
+## REAL CONTENT STRATEGY DATA (Phase 1 & 2 Enhanced - ${new Date().toISOString()}):
+
+### AI STRATEGY PROPOSALS (REAL DATA):
+- Total Proposals: ${strategyProposals?.length || 0}
+- Available Opportunities: ${availableProposals} (ready for content creation)
+- Scheduled: ${scheduledProposals} | Completed: ${completedProposals}
+- Total Potential Impressions: ${totalImpressions.toLocaleString()}
+- Highest Opportunity: ${topOpportunities[0]?.keyword || 'No proposals'} (${(topOpportunities[0]?.impressions || 0).toLocaleString()} impressions)
+
+### TOP 5 CONTENT OPPORTUNITIES (REAL PROPOSALS):
+${topOpportunities.map((opp, i) => 
+  `${i + 1}. "${opp.keyword}" - ${opp.impressions?.toLocaleString() || 0} impressions (${opp.contentType}, ${opp.priority})`
+).join('\n')}
+
+### PHASE 2: PERFORMANCE & ANALYTICS INTELLIGENCE (REAL DATA):
+- Total User Actions Tracked: ${totalActions}
+- Action Success Rate: ${actionSuccessRate.toFixed(1)}% (${successfulActions}/${totalActions})
+- Top Action Types: ${Object.entries(actionTypes).map(([type, count]) => `${type}: ${count}`).join(', ') || 'No actions tracked'}
+- Content Activity Events: ${recentActivity} recent events
+- Active Content Modules: ${Object.entries(contentModules).map(([module, count]) => `${module}: ${count}`).join(', ') || 'No activity'}
+- SERP API Usage: ${serpApiCalls} calls (${serpSuccessRate.toFixed(1)}% success rate)
+
+### BUSINESS IMPACT & ROI INSIGHTS (PHASE 2):
+${actionSuccessRate < 70 ? '⚠️ ACTION SUCCESS RATE BELOW 70% - User experience optimization needed' : '✅ High action success rate indicates good UX'}
+${totalActions === 0 ? '❌ NO USER ACTIONS TRACKED - Analytics integration not working' : `✅ Active user engagement: ${totalActions} tracked actions`}
+${recentActivity === 0 ? '⚠️ No recent content activity - Content workflow may be stagnant' : `✅ Active content workflow: ${recentActivity} recent events`}
+${serpApiCalls === 0 ? '❌ No SERP intelligence usage - Missing competitive insights' : `✅ SERP intelligence active: ${serpApiCalls} API calls`}
+
+### CONTENT PIPELINE STATUS (REAL DATA):
+- Total Content Items: ${totalContent}
+- In Pipeline: ${contentInPipeline} (${totalContent > 0 ? Math.round((contentInPipeline/totalContent)*100) : 0}%)
+- Published: ${publishedContent} (${totalContent > 0 ? Math.round((publishedContent/totalContent)*100) : 0}% publication rate)
+- Draft: ${draftContent} (${totalContent > 0 ? Math.round((draftContent/totalContent)*100) : 0}% unpublished)
+- Pipeline Stages: ${Object.entries(pipelineStages).map(([stage, count]) => `${stage}: ${count}`).join(', ') || 'No stages tracked'}
+
+### EDITORIAL CALENDAR (REAL DATA):
+- Upcoming Scheduled Items: ${upcomingItems}
+- Next Deadline: ${nextDeadline}
+- Calendar Integration: ${(calendarItems?.length || 0) > 0 ? 'Active' : 'No items scheduled'}
+
+### SEO & PERFORMANCE METRICS (REAL DATA):
+- Average SEO Score: ${avgSeoScore.toFixed(1)}/100 ${avgSeoScore === 0 ? '⚠️ CRITICAL: All SEO scores are 0' : ''}
+- Content Created (Last 30 days): ${recentContent}
+- Performance Metrics Available: ${performanceMetrics?.length || 0} records
+
+### SOLUTIONS DATA (REAL):
+${(solutions?.length || 0) > 0 ? solutions!.map(solution => 
+  `- "${solution.name}": ${solution.description?.substring(0, 100)}...`
+).join('\n') : 'No solutions found'}
+
+### CRITICAL STRATEGIC INSIGHTS (PHASE 1 & 2):
+${availableProposals > 50 ? `🎯 MAJOR OPPORTUNITY: ${availableProposals} untapped content proposals worth ${totalImpressions.toLocaleString()} potential impressions` : ''}
+${avgSeoScore === 0 ? '❌ SEO system not functional - all content has 0 SEO scores' : ''}
+${publishedContent === 0 ? '❌ No published content - publishing workflow needs attention' : ''}
+${contentInPipeline === 0 ? '⚠️ No content in pipeline - content workflow not being used' : ''}
+${upcomingItems === 0 ? '📅 No scheduled content - editorial calendar needs planning' : ''}
+${actionSuccessRate < 50 ? `❌ LOW USER SUCCESS RATE (${actionSuccessRate.toFixed(1)}%) - Critical UX issues detected` : ''}
+${totalActions < 10 ? '⚠️ Low user engagement - Need to drive more platform usage' : ''}
+
+### ACTIONABLE NEXT STEPS (PHASE 1 & 2):
+${availableProposals > 0 ? `✅ ${availableProposals} AI-generated proposals ready for immediate content creation` : ''}
+${draftContent > 0 ? `✅ ${draftContent} draft articles ready for review and publishing` : ''}
+${(solutions?.length || 0) > 0 ? `✅ ${solutions!.length} solutions available for content mapping` : ''}
+${recentContent > 0 ? `✅ Active content creation (${recentContent} items in last 30 days)` : ''}
+${actionSuccessRate > 80 ? `✅ High user engagement quality (${actionSuccessRate.toFixed(1)}% success rate)` : ''}
+${serpApiCalls > 0 ? `✅ SERP intelligence active - competitive positioning data available` : ''}
+
+CRITICAL: This includes REAL performance data, user behavior analytics, and business impact metrics. Provide specific, data-driven recommendations based on both content strategy AND performance insights.
+     `;
   } catch (error) {
     console.error('Error fetching real data context:', error);
     return `
