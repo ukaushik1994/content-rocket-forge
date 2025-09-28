@@ -18,12 +18,8 @@ import { EnhancedContentGapsTab } from '@/components/research/research-hub/Enhan
 import { EnhancedPeopleQuestionsTab } from '@/components/research/research-hub/EnhancedPeopleQuestionsTab';
 import { KeywordSerpTab } from '@/components/research/research-hub/KeywordSerpTab';
 import { ResearchDataExporter } from '@/components/research/research-hub/ResearchDataExporter';
-
 const ResearchHub = () => {
-  const canonicalUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/research/research-hub` 
-    : '/research/research-hub';
-
+  const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/research/research-hub` : '/research/research-hub';
   const [searchMode, setSearchMode] = useState('keywords');
   const [searchTerm, setSearchTerm] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
@@ -32,21 +28,17 @@ const ResearchHub = () => {
     contentGaps?: any[];
     peopleQuestions?: any[];
   }>({});
-
   const handleSearch = () => {
     if (!searchTerm.trim()) return;
     setHasSearched(true);
   };
-
   const handleDataUpdate = (type: string, data: any) => {
     setResearchData(prev => ({
       ...prev,
       [type]: data
     }));
   };
-
-  return (
-    <ContentStrategyProvider>
+  return <ContentStrategyProvider>
       <div className="min-h-screen bg-background relative overflow-hidden">
         <Helmet>
           <title>Research Hub — Unified Content Intelligence Platform</title>
@@ -70,122 +62,98 @@ const ResearchHub = () => {
         <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
           {/* Enhanced Background Effects */}
           <div className="absolute inset-0 -z-10 overflow-hidden">
-            <motion.div 
-              className="absolute top-[15%] left-[25%] w-[400px] h-[400px] rounded-full bg-gradient-to-r from-neon-purple/15 via-neon-blue/10 to-transparent blur-[120px]"
-              animate={{
-                x: [0, 60, 0],
-                y: [0, -40, 0],
-                scale: [1, 1.3, 1],
-              }}
-              transition={{
-                duration: 25,
-                repeat: Infinity,
-                repeatType: "reverse",
-                ease: "easeInOut"
-              }}
-            />
-            <motion.div 
-              className="absolute bottom-[10%] right-[20%] w-[350px] h-[350px] rounded-full bg-gradient-to-l from-neon-pink/12 via-neon-purple/8 to-transparent blur-[100px]"
-              animate={{
-                x: [0, -40, 0],
-                y: [0, 30, 0],
-                scale: [1, 0.9, 1],
-              }}
-              transition={{
-                duration: 20,
-                repeat: Infinity,
-                repeatType: "reverse",
-                ease: "easeInOut",
-                delay: 8
-              }}
-            />
+            <motion.div className="absolute top-[15%] left-[25%] w-[400px] h-[400px] rounded-full bg-gradient-to-r from-neon-purple/15 via-neon-blue/10 to-transparent blur-[120px]" animate={{
+            x: [0, 60, 0],
+            y: [0, -40, 0],
+            scale: [1, 1.3, 1]
+          }} transition={{
+            duration: 25,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut"
+          }} />
+            <motion.div className="absolute bottom-[10%] right-[20%] w-[350px] h-[350px] rounded-full bg-gradient-to-l from-neon-pink/12 via-neon-purple/8 to-transparent blur-[100px]" animate={{
+            x: [0, -40, 0],
+            y: [0, 30, 0],
+            scale: [1, 0.9, 1]
+          }} transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut",
+            delay: 8
+          }} />
             {/* Floating particles */}
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full bg-white/5 blur-sm"
-                style={{
-                  width: Math.random() * 80 + 30,
-                  height: Math.random() * 80 + 30,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`
-                }}
-                animate={{
-                  x: [0, Math.random() * 100 - 50],
-                  y: [0, Math.random() * 100 - 50],
-                  opacity: [0.1, 0.4, 0.1]
-                }}
-                transition={{
-                  duration: Math.random() * 15 + 20,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut"
-                }}
-              />
-            ))}
+            {[...Array(6)].map((_, i) => <motion.div key={i} className="absolute rounded-full bg-white/5 blur-sm" style={{
+            width: Math.random() * 80 + 30,
+            height: Math.random() * 80 + 30,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`
+          }} animate={{
+            x: [0, Math.random() * 100 - 50],
+            y: [0, Math.random() * 100 - 50],
+            opacity: [0.1, 0.4, 0.1]
+          }} transition={{
+            duration: Math.random() * 15 + 20,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut"
+          }} />)}
           </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} className="space-y-8">
             <ResearchHubHero />
 
             {/* Enhanced Unified Search Interface */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-              className="relative"
-            >
+            <motion.div initial={{
+            opacity: 0,
+            y: 30
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} transition={{
+            delay: 0.2,
+            duration: 0.8
+          }} className="relative">
               <div className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl p-8 rounded-xl shadow-2xl relative overflow-hidden">
                 {/* Card background effects */}
                 <div className="absolute inset-0 futuristic-grid opacity-5" />
-                <motion.div 
-                  className="absolute inset-0 bg-gradient-to-br from-neon-purple/8 to-neon-blue/4"
-                  animate={{
-                    background: [
-                      "linear-gradient(to bottom right, rgba(155, 135, 245, 0.08), rgba(51, 195, 240, 0.04))",
-                      "linear-gradient(to bottom right, rgba(155, 135, 245, 0.12), rgba(51, 195, 240, 0.06))",
-                      "linear-gradient(to bottom right, rgba(155, 135, 245, 0.08), rgba(51, 195, 240, 0.04))"
-                    ]
-                  }}
-                  transition={{
-                    duration: 8,
-                    repeat: Infinity,
-                    repeatType: "reverse"
-                  }}
-                />
+                <motion.div className="absolute inset-0 bg-gradient-to-br from-neon-purple/8 to-neon-blue/4" animate={{
+                background: ["linear-gradient(to bottom right, rgba(155, 135, 245, 0.08), rgba(51, 195, 240, 0.04))", "linear-gradient(to bottom right, rgba(155, 135, 245, 0.12), rgba(51, 195, 240, 0.06))", "linear-gradient(to bottom right, rgba(155, 135, 245, 0.08), rgba(51, 195, 240, 0.04))"]
+              }} transition={{
+                duration: 8,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }} />
                 
                 <div className="relative z-10 space-y-8">
                   {/* Enhanced Search Header */}
-                  <motion.div 
-                    className="text-center space-y-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
-                      Research & Analysis
-                    </h2>
-                    <p className="text-white/60 text-lg max-w-2xl mx-auto leading-relaxed">
-                      Discover high-impact keywords, identify untapped content opportunities, and analyze what your audience is asking
-                    </p>
-                  </motion.div>
+                  
 
                   {/* Enhanced Search Interface */}
-                  <motion.div 
-                    className="space-y-6"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                  >
+                  <motion.div className="space-y-6" initial={{
+                  opacity: 0,
+                  y: 20
+                }} animate={{
+                  opacity: 1,
+                  y: 0
+                }} transition={{
+                  delay: 0.4
+                }}>
                     <div className="flex flex-col lg:flex-row gap-4 max-w-4xl mx-auto">
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                      >
+                      <motion.div whileHover={{
+                      scale: 1.02
+                    }} transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 30
+                    }}>
                         <Select value={searchMode} onValueChange={setSearchMode}>
                           <SelectTrigger className="w-full lg:w-64 h-14 bg-white/5 border-white/20 hover:border-white/30 transition-all duration-300 backdrop-blur-sm">
                             <SelectValue />
@@ -220,34 +188,26 @@ const ResearchHub = () => {
                       </motion.div>
                       
                       <div className="flex-1 flex gap-3">
-                        <motion.div 
-                          className="flex-1 relative group"
-                          whileHover={{ scale: 1.01 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        >
+                        <motion.div className="flex-1 relative group" whileHover={{
+                        scale: 1.01
+                      }} transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30
+                      }}>
                           <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/20 to-neon-purple/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          <Input
-                            placeholder={
-                              searchMode === 'keywords' ? 'Enter keyword to research...' :
-                              searchMode === 'content-gaps' ? 'Enter topic to find content gaps...' :
-                              'Enter topic to find questions...'
-                            }
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                            className="h-14 bg-white/5 border-white/20 hover:border-white/30 focus:border-neon-blue/50 transition-all duration-300 backdrop-blur-sm text-white placeholder:text-white/40 text-lg relative z-10"
-                          />
+                          <Input placeholder={searchMode === 'keywords' ? 'Enter keyword to research...' : searchMode === 'content-gaps' ? 'Enter topic to find content gaps...' : 'Enter topic to find questions...'} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSearch()} className="h-14 bg-white/5 border-white/20 hover:border-white/30 focus:border-neon-blue/50 transition-all duration-300 backdrop-blur-sm text-white placeholder:text-white/40 text-lg relative z-10" />
                         </motion.div>
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        >
-                          <Button 
-                            onClick={handleSearch} 
-                            disabled={!searchTerm.trim()}
-                            className="h-14 px-8 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 hover:shadow-lg hover:shadow-neon-purple/25 disabled:opacity-50 disabled:hover:scale-100 relative overflow-hidden group"
-                          >
+                        <motion.div whileHover={{
+                        scale: 1.05
+                      }} whileTap={{
+                        scale: 0.95
+                      }} transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30
+                      }}>
+                          <Button onClick={handleSearch} disabled={!searchTerm.trim()} className="h-14 px-8 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 hover:shadow-lg hover:shadow-neon-purple/25 disabled:opacity-50 disabled:hover:scale-100 relative overflow-hidden group">
                             <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-20 transition-opacity" />
                             <span className="relative z-10 flex items-center gap-2 font-medium">
                               <Search className="h-5 w-5" />
@@ -260,24 +220,27 @@ const ResearchHub = () => {
                   </motion.div>
 
                   {/* Enhanced Results Section */}
-                  {hasSearched && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2, duration: 0.6 }}
-                      className="pt-8 border-t border-white/10 relative"
-                    >
+                  {hasSearched && <motion.div initial={{
+                  opacity: 0,
+                  y: 30
+                }} animate={{
+                  opacity: 1,
+                  y: 0
+                }} transition={{
+                  delay: 0.2,
+                  duration: 0.6
+                }} className="pt-8 border-t border-white/10 relative">
                       {/* Results background glow */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neon-purple/5 to-transparent blur-xl" />
                       
                       <div className="relative z-10">
-                        {searchMode === 'keywords' && (
-                          <motion.div 
-                            className="space-y-6"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                          >
+                        {searchMode === 'keywords' && <motion.div className="space-y-6" initial={{
+                      opacity: 0
+                    }} animate={{
+                      opacity: 1
+                    }} transition={{
+                      delay: 0.3
+                    }}>
                             <div className="flex items-center gap-3 mb-6">
                               <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neon-blue to-cyan-400 flex items-center justify-center">
                                 <Search className="h-5 w-5 text-white" />
@@ -287,20 +250,16 @@ const ResearchHub = () => {
                                 <p className="text-white/60">for "{searchTerm}"</p>
                               </div>
                             </div>
-                            <KeywordSerpTab 
-                              searchTerm={searchTerm} 
-                              onDataUpdate={(data) => handleDataUpdate('serpData', data)}
-                            />
-                          </motion.div>
-                        )}
+                            <KeywordSerpTab searchTerm={searchTerm} onDataUpdate={data => handleDataUpdate('serpData', data)} />
+                          </motion.div>}
                         
-                        {searchMode === 'content-gaps' && (
-                          <motion.div 
-                            className="space-y-6"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                          >
+                        {searchMode === 'content-gaps' && <motion.div className="space-y-6" initial={{
+                      opacity: 0
+                    }} animate={{
+                      opacity: 1
+                    }} transition={{
+                      delay: 0.3
+                    }}>
                             <div className="flex items-center gap-3 mb-6">
                               <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neon-purple to-purple-400 flex items-center justify-center">
                                 <FileSearch className="h-5 w-5 text-white" />
@@ -310,20 +269,16 @@ const ResearchHub = () => {
                                 <p className="text-white/60">for "{searchTerm}"</p>
                               </div>
                             </div>
-                            <EnhancedContentGapsTab 
-                              searchTerm={searchTerm} 
-                              onDataUpdate={(data) => handleDataUpdate('contentGaps', data)}
-                            />
-                          </motion.div>
-                        )}
+                            <EnhancedContentGapsTab searchTerm={searchTerm} onDataUpdate={data => handleDataUpdate('contentGaps', data)} />
+                          </motion.div>}
                         
-                        {searchMode === 'people-questions' && (
-                          <motion.div 
-                            className="space-y-6"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                          >
+                        {searchMode === 'people-questions' && <motion.div className="space-y-6" initial={{
+                      opacity: 0
+                    }} animate={{
+                      opacity: 1
+                    }} transition={{
+                      delay: 0.3
+                    }}>
                             <div className="flex items-center gap-3 mb-6">
                               <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neon-pink to-pink-400 flex items-center justify-center">
                                 <Users className="h-5 w-5 text-white" />
@@ -333,40 +288,29 @@ const ResearchHub = () => {
                                 <p className="text-white/60">for "{searchTerm}"</p>
                               </div>
                             </div>
-                            <EnhancedPeopleQuestionsTab 
-                              searchTerm={searchTerm} 
-                              onDataUpdate={(data) => handleDataUpdate('peopleQuestions', data)}
-                            />
-                          </motion.div>
-                          )}
+                            <EnhancedPeopleQuestionsTab searchTerm={searchTerm} onDataUpdate={data => handleDataUpdate('peopleQuestions', data)} />
+                          </motion.div>}
                         </div>
 
                         {/* Research Data Export Panel */}
-                        {hasSearched && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6 }}
-                            className="pt-6"
-                          >
-                            <ResearchDataExporter
-                              searchTerm={searchTerm}
-                              serpData={null}
-                              contentGaps={[]}
-                              peopleQuestions={[]}
-                            />
-                          </motion.div>
-                        )}
-                    </motion.div>
-                  )}
+                        {hasSearched && <motion.div initial={{
+                    opacity: 0,
+                    y: 20
+                  }} animate={{
+                    opacity: 1,
+                    y: 0
+                  }} transition={{
+                    delay: 0.6
+                  }} className="pt-6">
+                            <ResearchDataExporter searchTerm={searchTerm} serpData={null} contentGaps={[]} peopleQuestions={[]} />
+                          </motion.div>}
+                    </motion.div>}
                 </div>
               </div>
             </motion.div>
           </motion.div>
         </main>
       </div>
-    </ContentStrategyProvider>
-  );
+    </ContentStrategyProvider>;
 };
-
 export default ResearchHub;
