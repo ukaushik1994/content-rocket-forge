@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, BarChart3, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SerpAnalysisContainer } from '@/components/content/serp-analysis/SerpAnalysisContainer';
+import { SerpTilesOverview } from '@/components/content-builder/serp/SerpTilesOverview';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { SerpAnalysisResult } from '@/types/serp';
 import { toast } from 'sonner';
@@ -140,15 +141,15 @@ export const KeywordSerpTab: React.FC<KeywordSerpTabProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-panel p-6 bg-white/5 border-white/10"
+        className="glass-panel p-6 bg-background/60 backdrop-blur-xl border-border/50"
       >
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-blue to-cyan-400 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center">
             <BarChart3 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-white">SERP Analysis</h3>
-            <p className="text-white/60">
+            <h3 className="text-xl font-bold text-foreground">SERP Analysis</h3>
+            <p className="text-muted-foreground">
               Comprehensive search engine results analysis for "{searchTerm}"
             </p>
           </div>
@@ -161,25 +162,37 @@ export const KeywordSerpTab: React.FC<KeywordSerpTabProps> = ({
             className="mt-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-3"
           >
             <AlertCircle className="h-4 w-4 text-yellow-400" />
-            <span className="text-yellow-200 text-sm">{error}</span>
+            <span className="text-yellow-400 text-sm">{error}</span>
           </motion.div>
         )}
       </motion.div>
 
-      {/* SERP Analysis Container */}
+      {/* SERP Analysis Overview */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="glass-panel bg-white/3 border-white/10 rounded-xl overflow-hidden"
+        className="glass-panel bg-background/60 backdrop-blur-xl border-border/50 rounded-xl p-6"
       >
-        <SerpAnalysisContainer
-          serpData={serpData}
-          isLoading={isLoading}
-          mainKeyword={searchTerm}
-          onAddToContent={handleAddToContent}
-          onRetry={handleRetry}
-        />
+        {serpData && !isLoading ? (
+          <SerpTilesOverview
+            serpData={serpData}
+            mainKeyword={searchTerm}
+            onSectionClick={(sectionId) => {
+              console.log('Section clicked:', sectionId);
+              // TODO: Open detailed view modal or navigate to section
+            }}
+            onAddToContent={handleAddToContent}
+          />
+        ) : (
+          <SerpAnalysisContainer
+            serpData={serpData}
+            isLoading={isLoading}
+            mainKeyword={searchTerm}
+            onAddToContent={handleAddToContent}
+            onRetry={handleRetry}
+          />
+        )}
       </motion.div>
 
       {/* Quick Actions */}
@@ -188,10 +201,10 @@ export const KeywordSerpTab: React.FC<KeywordSerpTabProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-panel p-4 bg-white/5 border-white/10"
+          className="glass-panel p-4 bg-background/60 backdrop-blur-xl border-border/50"
         >
           <div className="flex items-center justify-between">
-            <div className="text-white/60 text-sm">
+            <div className="text-muted-foreground text-sm">
               Analysis completed • {serpData.isMockData ? 'Demo data' : 'Live data'}
             </div>
             <div className="flex gap-2">
@@ -199,7 +212,7 @@ export const KeywordSerpTab: React.FC<KeywordSerpTabProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={handleRetry}
-                className="border-white/20 text-white/80 hover:bg-white/10"
+                className="border-border/50 text-foreground hover:bg-background/60"
               >
                 <Search className="h-4 w-4 mr-2" />
                 Refresh Analysis
