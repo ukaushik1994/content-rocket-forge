@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Download, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { EnhancedTableRenderer } from './EnhancedTableRenderer';
 
-// Table detection and conversion utilities
-const detectAndConvertTables = (content: string): string => {
+// Enhanced table detection with error handling and recovery
+const detectAndConvertTables = (content: string): { processedContent: string; hasErrors: boolean; errorCount: number } => {
+  let errorCount = 0;
+  let hasErrors = false;
   // Split content into lines for processing
   const lines = content.split('\n');
   const processedLines: string[] = [];
@@ -24,12 +30,27 @@ const detectAndConvertTables = (content: string): string => {
     
     if (tableMatch) {
       // Found a potential table, collect all consecutive table rows
-      const tableLines = collectTableLines(lines, i);
-      if (tableLines.length >= 2) { // Need at least header + 1 data row
-        const markdownTable = convertToMarkdownTable(tableLines);
-        processedLines.push(markdownTable);
-        i += tableLines.length;
-        continue;
+      try {
+        const tableLines = collectTableLines(lines, i);
+        if (tableLines.length >= 2) { // Need at least header + 1 data row
+          const markdownTable = convertToMarkdownTable(tableLines);
+          if (markdownTable && markdownTable.trim()) {
+            processedLines.push(markdownTable);
+            i += tableLines.length;
+            continue;
+          } else {
+            // Fallback: treat as regular text if conversion fails
+            hasErrors = true;
+            errorCount++;
+            processedLines.push(line);
+          }
+        }
+      } catch (error) {
+        // Graceful fallback - treat as regular text
+        hasErrors = true;
+        errorCount++;
+        console.warn('Table conversion error:', error);
+        processedLines.push(line);
       }
     }
     
@@ -37,7 +58,11 @@ const detectAndConvertTables = (content: string): string => {
     i++;
   }
 
-  return processedLines.join('\n');
+  return { 
+    processedContent: processedLines.join('\n'),
+    hasErrors,
+    errorCount
+  };
 };
 
 const detectTablePattern = (line: string): boolean => {
@@ -226,8 +251,46 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
   content, 
   className 
 }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  
   // Process content to convert text-based tables to markdown tables
-  const processedContent = detectAndConvertTables(content);
+  const processedResult = React.useMemo(() => {
+    setIsProcessing(true);
+    try {
+      const result = detectAndConvertTables(content);
+      return result;
+    } catch (error) {
+      console.error('Content processing error:', error);
+      return { 
+        processedContent: content, 
+        hasErrors: true, 
+        errorCount: 1 
+      };
+    } finally {
+      setTimeout(() => setIsProcessing(false), 100);
+    }
+  }, [content]);
+  
+  // Show warning if there were processing errors
+  React.useEffect(() => {
+    if (processedResult.hasErrors && processedResult.errorCount > 0) {
+      toast({
+        title: "Content Processing Warning",
+        description: `${processedResult.errorCount} table(s) could not be properly formatted`,
+        variant: "default",
+      });
+    }
+  }, [processedResult.hasErrors, processedResult.errorCount, toast]);
+  
+  if (isProcessing) {
+    return (
+      <div className={cn("prose prose-sm max-w-none flex items-center justify-center py-4", className)}>
+        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        <span className="text-sm text-muted-foreground">Processing content...</span>
+      </div>
+    );
+  }
   
   return (
     <div className={cn("prose prose-sm max-w-none", className)}>
@@ -279,11 +342,11 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
             </em>
           ),
           table: ({ children }) => (
-            <div className="overflow-x-auto mb-4">
+            <EnhancedTableRenderer rawTableData={processedResult.processedContent}>
               <table className="min-w-full border border-border rounded-lg bg-card">
                 {children}
               </table>
-            </div>
+            </EnhancedTableRenderer>
           ),
           thead: ({ children }) => (
             <thead className="bg-muted/50">
@@ -333,7 +396,7 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
           }
         }}
       >
-        {processedContent}
+        {processedResult.processedContent}
       </ReactMarkdown>
     </div>
   );
