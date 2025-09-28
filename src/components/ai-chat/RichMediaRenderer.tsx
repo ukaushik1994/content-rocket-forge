@@ -19,6 +19,7 @@ import {
   AreaChart,
   Area
 } from 'recharts';
+import { SmartDataViewer } from './SmartDataViewer';
 import {
   FileText,
   TrendingUp,
@@ -48,6 +49,11 @@ interface ChartData {
   type: 'line' | 'bar' | 'pie' | 'area';
   data: any[];
   categories?: string[];
+  series?: Array<{
+    dataKey: string;
+    name: string;
+    color?: string;
+  }>;
   colors?: string[];
   height?: number;
 }
@@ -416,12 +422,14 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
         >
           {visualData.type === 'metrics' && visualData.metrics && renderMetrics(visualData.metrics)}
           
+          {/* Chart Rendering with Smart Analysis */}
           {visualData.type === 'chart' && visualData.chartConfig && (
-            <Card>
-              <CardContent className="p-4">
-                {renderChart(visualData.chartConfig)}
-              </CardContent>
-            </Card>
+            <SmartDataViewer
+              chartConfig={{
+                ...visualData.chartConfig,
+                categories: visualData.chartConfig.categories || ['name']
+              }}
+            />
           )}
           
           {visualData.type === 'table' && visualData.tableData && (

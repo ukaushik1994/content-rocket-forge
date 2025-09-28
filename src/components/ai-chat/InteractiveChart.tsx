@@ -6,8 +6,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTable } from './DataTable';
 import { cn } from '@/lib/utils';
-import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2 } from 'lucide-react';
+import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2, Table as TableIcon } from 'lucide-react';
 
 interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
@@ -40,6 +42,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const [filteredData, setFilteredData] = useState(chartConfig.data);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
 
   const chartTypes = [
     { value: 'line', label: 'Line Chart', icon: LineIcon },
@@ -301,13 +304,29 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-6 group-hover:shadow-neon transition-all duration-300">
         {/* Header with controls */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            {title && (
-              <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-            )}
-            {description && (
-              <p className="text-sm text-muted-foreground mt-1">{description}</p>
-            )}
+          <div className="flex items-center gap-4">
+            <div>
+              {title && (
+                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+              )}
+              {description && (
+                <p className="text-sm text-muted-foreground mt-1">{description}</p>
+              )}
+            </div>
+            
+            {/* View Mode Toggle */}
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'chart' | 'table')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="chart" className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  Chart
+                </TabsTrigger>
+                <TabsTrigger value="table" className="flex items-center gap-2">
+                  <TableIcon className="w-4 h-4" />
+                  Table
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           
           <div className="flex items-center gap-2">
@@ -363,15 +382,27 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           </div>
         </div>
 
-        {/* Chart area */}
+        {/* Content area - Chart or Table */}
         <motion.div
-          key={currentType}
+          key={viewMode}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
           className="min-h-[300px]"
         >
-          {renderChart()}
+          {viewMode === 'chart' ? (
+            renderChart()
+          ) : (
+            <DataTable
+              data={filteredData}
+              allowEdit={false}
+              allowFilter={true}
+              allowSort={true}
+              onExport={(format) => {
+                console.log(`Exporting data as ${format}`);
+              }}
+            />
+          )}
         </motion.div>
 
         {/* Chart statistics */}

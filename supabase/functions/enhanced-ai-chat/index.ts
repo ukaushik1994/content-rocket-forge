@@ -138,13 +138,31 @@ You MUST include structured data in your responses using these exact formats:
     "type": "chart",
     "chartConfig": {
       "type": "line|bar|pie|area",
-      "data": [{"name": "Jan", "value": 100}, {"name": "Feb", "value": 150}],
-      "categories": ["name"],
-      "colors": ["#8b5cf6", "#06b6d4", "#10b981"]
+      "data": [
+        {"month": "January", "revenue": 45000, "expenses": 32000, "profit": 13000, "growth": 8.5},
+        {"month": "February", "revenue": 52000, "expenses": 35000, "profit": 17000, "growth": 15.6},
+        {"month": "March", "revenue": 58000, "expenses": 38000, "profit": 20000, "growth": 23.1}
+      ],
+      "series": [
+        {"dataKey": "revenue", "name": "Revenue", "color": "#10b981"},
+        {"dataKey": "expenses", "name": "Expenses", "color": "#ef4444"},
+        {"dataKey": "profit", "name": "Profit", "color": "#8b5cf6"}
+      ],
+      "categories": ["month"],
+      "colors": ["#10b981", "#ef4444", "#8b5cf6"]
     }
   }
 }
 \`\`\`
+
+## CRITICAL: Generate Realistic, Contextual Data
+When creating charts, ALWAYS:
+1. Use realistic business metrics (revenue, growth rates, conversion rates, etc.)
+2. Include proper time series data (months, quarters, years)
+3. Add multiple data series for meaningful comparisons
+4. Use industry-appropriate ranges (e.g., 5-25% for growth rates)
+5. Include trend patterns (growth, seasonality, fluctuations)
+6. Consider suggesting table view for detailed data analysis
 
 ## ALWAYS Generate Actions For:
 - Content creation and optimization → "workflow:content-creation" or "create-content"
@@ -159,6 +177,13 @@ You MUST include structured data in your responses using these exact formats:
 - Comparative data (use type: "chart" with multiple series)
 - Progress tracking (use type: "metrics" with progress indicators)
 - Strategic overviews (use type: "summary")
+
+## Smart View Recommendations:
+When generating chart data, also suggest optimal viewing mode:
+- Use charts for trends, comparisons, and visual patterns
+- Suggest table view for detailed analysis, exact values, or when data has many dimensions
+- For large datasets (>20 rows), mention "This data works great in both chart and table views"
+- For financial data with exact values, add note: "Switch to table view for precise numbers and easy export"
 
 ${context ? `## User Context:\n${JSON.stringify(context, null, 2)}` : ''}
 
@@ -371,15 +396,20 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
           chartConfig: {
             type: "line",
             data: [
-              { name: "Jan", value: 400 },
-              { name: "Feb", value: 300 },
-              { name: "Mar", value: 600 },
-              { name: "Apr", value: 800 },
-              { name: "May", value: 750 },
-              { name: "Jun", value: 920 }
+              { month: "January", visitors: 12400, conversions: 340, revenue: 18500, conversion_rate: 2.74 },
+              { month: "February", visitors: 15200, conversions: 520, revenue: 28600, conversion_rate: 3.42 },
+              { month: "March", visitors: 18900, conversions: 695, revenue: 38200, conversion_rate: 3.68 },
+              { month: "April", visitors: 22100, conversions: 890, revenue: 48900, conversion_rate: 4.03 },
+              { month: "May", visitors: 25800, conversions: 1150, revenue: 62400, conversion_rate: 4.46 },
+              { month: "June", visitors: 28600, conversions: 1320, revenue: 71800, conversion_rate: 4.62 }
             ],
-            categories: ["name"],
-            colors: ["#8b5cf6", "#06b6d4"]
+            series: [
+              { dataKey: "visitors", name: "Website Visitors", color: "#06b6d4" },
+              { dataKey: "conversions", name: "Conversions", color: "#10b981" },
+              { dataKey: "revenue", name: "Revenue ($)", color: "#8b5cf6" }
+            ],
+            categories: ["month"],
+            colors: ["#06b6d4", "#10b981", "#8b5cf6"]
           }
         };
       }
