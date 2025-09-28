@@ -2,22 +2,17 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { analyzeKeywordEnhanced, EnhancedSerpResult } from '@/services/enhancedSerpService';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { 
   Search, 
-  MessageSquare, 
-  FileText, 
-  Star, 
-  TrendingUp, 
   RefreshCw,
-  CheckCircle2,
   AlertCircle,
-  Loader2
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { SerpAnalysisPanel } from './SerpAnalysisPanel';
+import { SimplifiedSerpCategories } from './SimplifiedSerpCategories';
 
 interface SimplifiedSerpAnalysisProps {
   keyword: string;
@@ -240,16 +235,27 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
     );
   }
 
+  // Create selectedItems set for tracking
+  const selectedItems = useMemo(() => {
+    const items = new Set<string>();
+    state.serpSelections.forEach(selection => {
+      if (selection.selected) {
+        items.add(`${selection.type}-${selection.content}`);
+      }
+    });
+    return items;
+  }, [state.serpSelections]);
+
   // Show SERP analysis results
   return (
     <div className="space-y-6">
-      {/* Header with stats */}
+      {/* Simplified Header */}
       <Card className="border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Search className="h-5 w-5 text-primary" />
-              SERP Analysis Results
+              SERP Analysis: "{keyword}"
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
@@ -266,43 +272,18 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
               </Button>
             </div>
           </CardTitle>
-          <CardDescription>
-            Keyword: "{keyword}" • {data?.isMockData ? 'Proposal Data' : 'Live Data'}
+          <CardDescription className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            {data?.isMockData ? 'Using proposal data' : 'Live SERP data'}
           </CardDescription>
         </CardHeader>
-        {data && (
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{data.searchVolume?.toLocaleString() || 'N/A'}</div>
-                <div className="text-xs text-muted-foreground">Search Volume</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{data.keywordDifficulty || 'N/A'}</div>
-                <div className="text-xs text-muted-foreground">Difficulty</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{data.keywords?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Keywords</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{data.questions?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Questions</div>
-              </div>
-            </div>
-          </CardContent>
-        )}
       </Card>
 
-      {/* SERP Analysis Panel */}
+      {/* Simplified Categories Grid */}
       {data && (
-        <SerpAnalysisPanel
+        <SimplifiedSerpCategories
           serpData={{
-            keyword: data.keyword,
-            searchVolume: data.searchVolume,
-            keywordDifficulty: data.keywordDifficulty,
-            competitionScore: data.competitionScore || 0.5,
-            entities: data.entities || [],
+            keywords: data.keywords || [],
             peopleAlsoAsk: data.questions?.map(q => ({
               question: q.question,
               source: q.source || 'serp'
@@ -316,8 +297,7 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
               topic: typeof gap === 'string' ? gap : gap.topic || '',
               description: typeof gap === 'string' ? gap : gap.description || gap.topic || '',
               recommendation: typeof gap === 'object' ? gap.opportunity || '' : '',
-              content: typeof gap === 'object' ? gap.description || '' : '',
-              source: typeof gap === 'object' ? gap.source || 'serp' : 'serp'
+              opportunity: typeof gap === 'object' ? gap.description || '' : ''
             })) || [],
             topResults: data.serp_blocks?.organic?.slice(0, 10)?.map((result, index) => ({
               title: result.title || '',
@@ -325,17 +305,10 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
               snippet: result.snippet || '',
               position: index + 1
             })) || [],
-            relatedSearches: data.related_keywords?.map(kw => ({
-              query: typeof kw === 'string' ? kw : kw.title,
-              volume: typeof kw === 'object' ? kw.volume : undefined
-            })) || [],
-            keywords: data.keywords || [],
-            recommendations: data.recommendations || [],
-            isMockData: data.isMockData
+            entities: data.entities || []
           }}
-          isLoading={isLoading}
-          onAddToContent={handleToggleSelection}
-          onRetry={async () => handleRefresh()}
+          onToggleSelection={handleToggleSelection}
+          selectedItems={selectedItems}
         />
       )}
     </div>
