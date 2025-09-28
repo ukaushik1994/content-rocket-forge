@@ -94,16 +94,130 @@ const convertCSVToMarkdownTable = (csvContent: string): string => {
   return `\n${header}\n${separator}\n${body}\n`;
 };
 
+// Enhanced malformed markdown table detection
+const detectMalformedTable = (content: string): boolean => {
+  const lines = content.split('\n');
+  let pipeLineCount = 0;
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Count lines that start with | and have multiple pipes
+    if (trimmed.startsWith('|') && (trimmed.match(/\|/g) || []).length >= 2) {
+      pipeLineCount++;
+    }
+  }
+  
+  // If we have 2+ lines with pipe structure, it's likely a malformed table
+  return pipeLineCount >= 2;
+};
+
+// Repair malformed markdown tables
+const repairMalformedTable = (content: string): string => {
+  const lines = content.split('\n');
+  const tableLines: string[] = [];
+  const nonTableLines: string[] = [];
+  let inTable = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Detect table start/continuation
+    if (line.startsWith('|') && (line.match(/\|/g) || []).length >= 2) {
+      if (!inTable) inTable = true;
+      tableLines.push(line);
+    } else if (inTable && line === '') {
+      // Empty line in table - continue table
+      tableLines.push(line);
+    } else {
+      if (inTable) {
+        // End of table, process it
+        if (tableLines.length >= 2) {
+          const repairedTable = processTableLines(tableLines);
+          nonTableLines.push(repairedTable);
+        } else {
+          nonTableLines.push(...tableLines);
+        }
+        tableLines.length = 0;
+        inTable = false;
+      }
+      nonTableLines.push(line);
+    }
+  }
+  
+  // Handle table at end of content
+  if (tableLines.length >= 2) {
+    const repairedTable = processTableLines(tableLines);
+    nonTableLines.push(repairedTable);
+  } else if (tableLines.length > 0) {
+    nonTableLines.push(...tableLines);
+  }
+  
+  return nonTableLines.join('\n');
+};
+
+// Process and repair table lines
+const processTableLines = (lines: string[]): string => {
+  const nonEmptyLines = lines.filter(line => line.trim());
+  if (nonEmptyLines.length < 2) return lines.join('\n');
+  
+  // Parse each line and extract content between pipes
+  const parsedRows: string[][] = [];
+  let maxColumns = 0;
+  
+  for (const line of nonEmptyLines) {
+    const cells = line.split('|')
+      .map(cell => cell.trim())
+      .filter((cell, index, arr) => {
+        // Remove empty cells at start/end (from leading/trailing pipes)
+        if (index === 0 || index === arr.length - 1) return cell !== '';
+        return true;
+      });
+    
+    if (cells.length > 0) {
+      parsedRows.push(cells);
+      maxColumns = Math.max(maxColumns, cells.length);
+    }
+  }
+  
+  if (parsedRows.length === 0) return lines.join('\n');
+  
+  // Normalize all rows to have the same number of columns
+  const normalizedRows = parsedRows.map(row => {
+    while (row.length < maxColumns) {
+      row.push('');
+    }
+    return row.slice(0, maxColumns); // Ensure we don't exceed maxColumns
+  });
+  
+  // Create proper markdown table
+  const header = '| ' + normalizedRows[0].join(' | ') + ' |';
+  const separator = '| ' + Array(maxColumns).fill('---').join(' | ') + ' |';
+  const body = normalizedRows.slice(1).map(row => '| ' + row.join(' | ') + ' |').join('\n');
+  
+  return `${header}\n${separator}\n${body}`;
+};
+
 // Enhanced table detection with error handling and recovery
 const detectAndConvertTables = (content: string): { processedContent: string; hasErrors: boolean; errorCount: number } => {
   let errorCount = 0;
   let hasErrors = false;
   
   // First, pre-process code blocks to convert CSV to tables
-  const preProcessedContent = processCodeBlocks(content);
+  let processedContent = processCodeBlocks(content);
   
-  // Split content into lines for processing
-  const lines = preProcessedContent.split('\n');
+  // Then, detect and repair malformed markdown tables
+  if (detectMalformedTable(processedContent)) {
+    try {
+      processedContent = repairMalformedTable(processedContent);
+    } catch (error) {
+      console.warn('Failed to repair malformed table:', error);
+      hasErrors = true;
+      errorCount++;
+    }
+  }
+  
+  // Split content into lines for existing CSV processing
+  const lines = processedContent.split('\n');
   const processedLines: string[] = [];
   let i = 0;
 
