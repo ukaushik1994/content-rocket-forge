@@ -57,12 +57,20 @@ export interface ProgressState {
   }>;
 }
 
+export interface TableData {
+  headers: string[];
+  rows: string[][];
+  title?: string;
+  caption?: string;
+}
+
 export interface VisualData {
-  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis';
+  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table';
   chartConfig?: ChartConfiguration;
   metrics?: MetricCard[];
   workflowStep?: WorkflowStep;
   serpData?: any; // Add SERP data support
+  tableData?: TableData;
   summary?: {
     title: string;
     items: Array<{

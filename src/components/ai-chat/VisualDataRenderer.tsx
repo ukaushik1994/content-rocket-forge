@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { EnhancedTableRenderer } from './EnhancedTableRenderer';
+import { AccessibleTableWrapper } from './AccessibleTableWrapper';
 import * as LucideIcons from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { 
@@ -530,6 +532,72 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     );
   };
 
+  const renderTable = () => {
+    console.log('📋 renderTable: Starting table render, hasTableData:', !!data.tableData);
+    if (!data.tableData) {
+      console.log('❌ renderTable: No table data found');
+      return null;
+    }
+
+    const { headers, rows, title, caption } = data.tableData;
+    console.log('📋 renderTable: Rendering table with', headers.length, 'columns and', rows.length, 'rows');
+
+    // Convert table data to markdown format for EnhancedTableRenderer
+    const markdownTable = [
+      '| ' + headers.join(' | ') + ' |',
+      '| ' + headers.map(() => '---').join(' | ') + ' |',
+      ...rows.map(row => '| ' + row.join(' | ') + ' |')
+    ].join('\n');
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="w-full"
+      >
+        <AccessibleTableWrapper
+          caption={title || caption}
+          summary={`Table with ${headers.length} columns and ${rows.length} rows`}
+        >
+          <EnhancedTableRenderer rawTableData={markdownTable}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  {headers.map((header, index) => (
+                    <th
+                      key={index}
+                      className="px-3 py-2 text-left font-medium text-muted-foreground bg-muted/30"
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, rowIndex) => (
+                  <tr
+                    key={rowIndex}
+                    className="border-b border-border/50 hover:bg-muted/20 transition-colors"
+                  >
+                    {row.map((cell, cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        className="px-3 py-2 text-foreground"
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </EnhancedTableRenderer>
+        </AccessibleTableWrapper>
+      </motion.div>
+    );
+  };
+
   // Main render logic with comprehensive logging
   console.log('📊 VisualDataRenderer: About to render, data type:', data.type);
 
@@ -546,6 +614,9 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     case 'summary':
       console.log('📋 VisualDataRenderer: Rendering summary');
       return renderSummary();
+    case 'table':
+      console.log('📋 VisualDataRenderer: Rendering table');
+      return renderTable();
     case 'serp_analysis':
       console.log('🔍 VisualDataRenderer: SERP analysis handled by SerpVisualData component');
       return null; // Handled by SerpVisualData component
@@ -555,7 +626,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
         <div className="p-4 border border-warning/30 bg-warning/10 rounded-lg">
           <p className="text-warning font-medium">Unknown visualization type: {data.type}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Expected types: chart, metrics, workflow, summary, serp_analysis
+            Expected types: chart, metrics, workflow, summary, table, serp_analysis
           </p>
         </div>
       );
