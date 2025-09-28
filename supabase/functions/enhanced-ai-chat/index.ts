@@ -239,6 +239,37 @@ CRITICAL: This is REAL data from the user's actual strategy proposals and conten
       .order('created_at', { ascending: false })
       .limit(10);
 
+    // PHASE 4: ENTERPRISE & WORKFLOW INTELLIGENCE
+    // Fetch AI workflow states for process intelligence
+    const { data: workflowStates } = await supabase
+      .from('ai_workflow_states')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(20);
+
+    // Fetch team collaboration sessions
+    const { data: collaborationSessions } = await supabase
+      .from('collaboration_sessions')
+      .select('*')
+      .eq('status', 'active')
+      .order('updated_at', { ascending: false });
+
+    // Fetch workflow executions for optimization insights
+    const { data: workflowExecutions } = await supabase
+      .from('workflow_executions')
+      .select('*')
+      .order('started_at', { ascending: false })
+      .limit(30);
+
+    // Fetch team workspaces for collaboration context
+    const { data: teamWorkspaces } = await supabase
+      .from('team_workspaces')
+      .select(`
+        *,
+        workspace_members(user_id, role, permissions)
+      `)
+      .eq('is_active', true);
+
     // Calculate Phase 3 research intelligence metrics
     const totalKeywords = keywords?.length || 0;
     const totalClusters = contentClusters?.length || 0;
@@ -246,6 +277,21 @@ CRITICAL: This is REAL data from the user's actual strategy proposals and conten
     const serpAnalysisCount = serpAnalysisHistory?.length || 0;
     const positionTrackingCount = keywordPositions?.length || 0;
     const opportunitiesCount = opportunitySeeds?.length || 0;
+
+    // Calculate Phase 4 enterprise intelligence metrics
+    const totalWorkflowStates = workflowStates?.length || 0;
+    const activeWorkflows = workflowStates?.filter(w => w.current_step !== 'completed').length || 0;
+    const completedWorkflows = workflowStates?.filter(w => w.current_step === 'completed').length || 0;
+    const stalledWorkflows = workflowStates?.filter(w => w.current_step === 'stalled' || w.current_step === 'error').length || 0;
+    
+    const activeCollaborationSessions = collaborationSessions?.length || 0;
+    const totalWorkflowExecutions = workflowExecutions?.length || 0;
+    const successfulExecutions = workflowExecutions?.filter(w => w.status === 'completed').length || 0;
+    const failedExecutions = workflowExecutions?.filter(w => w.status === 'failed').length || 0;
+    
+    const totalWorkspaces = teamWorkspaces?.length || 0;
+    const totalTeamMembers = teamWorkspaces?.reduce((acc, workspace) => 
+      acc + (workspace.workspace_members?.length || 0), 0) || 0;
 
     // Keyword categorization and analysis
     const keywordCategories = keywords?.reduce((acc, kw) => {
@@ -261,6 +307,24 @@ CRITICAL: This is REAL data from the user's actual strategy proposals and conten
       }
       return acc;
     }, {} as Record<string, number>) || {};
+
+    // Workflow pattern analysis
+    const workflowTypes = workflowStates?.reduce((acc, workflow) => {
+      const type = workflow.workflow_type || 'unknown';
+      if (!acc[type]) acc[type] = { total: 0, completed: 0, active: 0, stalled: 0 };
+      acc[type].total++;
+      if (workflow.current_step === 'completed') acc[type].completed++;
+      else if (workflow.current_step === 'stalled' || workflow.current_step === 'error') acc[type].stalled++;
+      else acc[type].active++;
+      return acc;
+    }, {} as Record<string, any>) || {};
+
+    // Team productivity metrics
+    const workspaceUtilization = totalWorkspaces > 0 && activeCollaborationSessions > 0 ? 
+      (activeCollaborationSessions / totalWorkspaces) * 100 : 0;
+    
+    const workflowSuccessRate = totalWorkflowExecutions > 0 ? 
+      (successfulExecutions / totalWorkflowExecutions) * 100 : 0;
 
     // Content gap analysis
     const contentGaps = {
@@ -279,8 +343,16 @@ CRITICAL: This is REAL data from the user's actual strategy proposals and conten
     if (contentGaps.lackingPositionData) researchInsights.push('MISSING: Keyword position tracking for ranking insights');
     if (contentGaps.missingSerpIntelligence) researchInsights.push('OPPORTUNITY: SERP analysis for competitive intelligence');
 
+    // Enterprise workflow insights
+    const enterpriseInsights = [];
+    if (activeWorkflows > 10) enterpriseInsights.push(`High workflow activity: ${activeWorkflows} active automation processes`);
+    if (stalledWorkflows > 0) enterpriseInsights.push(`ATTENTION: ${stalledWorkflows} workflows need troubleshooting`);
+    if (workflowSuccessRate < 70) enterpriseInsights.push(`OPTIMIZATION NEEDED: Workflow success rate at ${workflowSuccessRate.toFixed(1)}%`);
+    if (totalTeamMembers > 1 && activeCollaborationSessions === 0) enterpriseInsights.push('OPPORTUNITY: Team collaboration features underutilized');
+    if (workspaceUtilization > 80) enterpriseInsights.push(`Excellent workspace utilization: ${workspaceUtilization.toFixed(1)}%`);
+
     return `
-## REAL CONTENT STRATEGY DATA (Phase 1, 2 & 3 Enhanced - ${new Date().toISOString()}):
+## REAL CONTENT STRATEGY DATA (ALL PHASES 1-4 ENHANCED - ${new Date().toISOString()}):
 
 ### AI STRATEGY PROPOSALS (REAL DATA):
 - Total Proposals: ${strategyProposals?.length || 0}
@@ -323,6 +395,26 @@ ${contentGaps.lackingPositionData ? '❌ MISSING: No keyword position tracking -
 ${contentGaps.missingSerpIntelligence ? '❌ OPPORTUNITY: No SERP competitive analysis - missing competitor insights' : ''}
 ${contentGaps.untappedOpportunities ? '⚠️ POTENTIAL: No opportunity seeds identified - content gap analysis needed' : ''}
 
+### PHASE 4: ENTERPRISE & WORKFLOW INTELLIGENCE (REAL DATA):
+- **AI Workflow States**: ${totalWorkflowStates} total workflows (${activeWorkflows} active, ${completedWorkflows} completed, ${stalledWorkflows} stalled)
+- **Team Collaboration**: ${activeCollaborationSessions} active sessions across ${totalWorkspaces} workspaces
+- **Workflow Executions**: ${totalWorkflowExecutions} executions (${workflowSuccessRate.toFixed(1)}% success rate)
+- **Team Members**: ${totalTeamMembers} members across all workspaces
+- **Workspace Utilization**: ${workspaceUtilization.toFixed(1)}% (collaboration sessions per workspace)
+
+### WORKFLOW TYPE BREAKDOWN (PHASE 4):
+${totalWorkflowStates > 0 ? 
+  Object.entries(workflowTypes).map(([type, stats]: [string, any]) => 
+    `**${type}**: ${stats.total} total (${stats.active} active, ${stats.completed} completed, ${stats.stalled} stalled)`
+  ).join('\n') 
+  : 'No workflow states tracked'}
+
+### ENTERPRISE INTELLIGENCE INSIGHTS (PHASE 4):
+${enterpriseInsights.map(insight => `✅ ${insight}`).join('\n')}
+${stalledWorkflows > 0 ? `🔧 PRIORITY: Resolve ${stalledWorkflows} stalled workflows for improved efficiency` : ''}
+${workflowSuccessRate < 70 && totalWorkflowExecutions > 0 ? `📊 OPTIMIZATION: Workflow success rate needs improvement (currently ${workflowSuccessRate.toFixed(1)}%)` : ''}
+${totalTeamMembers > 1 && activeCollaborationSessions === 0 ? '👥 OPPORTUNITY: Enable team collaboration features to boost productivity' : ''}
+
 ### RESEARCH INTELLIGENCE RECOMMENDATIONS (PHASE 3):
 ${researchInsights.map(insight => `✅ ${insight}`).join('\n')}
 ${totalKeywords > 0 && totalClusters === 0 ? '🎯 PRIORITY: Create topic clusters to organize your ' + totalKeywords + ' keywords for better content strategy' : ''}
@@ -357,7 +449,7 @@ ${(solutions?.length || 0) > 0 ? solutions!.map(solution =>
   `- "${solution.name}": ${solution.description?.substring(0, 100)}...`
 ).join('\n') : 'No solutions found'}
 
-### CRITICAL STRATEGIC INSIGHTS (PHASE 1 & 2):
+### CRITICAL STRATEGIC INSIGHTS (ALL PHASES 1-4):
 ${availableProposals > 50 ? `🎯 MAJOR OPPORTUNITY: ${availableProposals} untapped content proposals worth ${totalImpressions.toLocaleString()} potential impressions` : ''}
 ${avgSeoScore === 0 ? '❌ SEO system not functional - all content has 0 SEO scores' : ''}
 ${publishedContent === 0 ? '❌ No published content - publishing workflow needs attention' : ''}
@@ -365,16 +457,22 @@ ${contentInPipeline === 0 ? '⚠️ No content in pipeline - content workflow no
 ${upcomingItems === 0 ? '📅 No scheduled content - editorial calendar needs planning' : ''}
 ${actionSuccessRate < 50 ? `❌ LOW USER SUCCESS RATE (${actionSuccessRate.toFixed(1)}%) - Critical UX issues detected` : ''}
 ${totalActions < 10 ? '⚠️ Low user engagement - Need to drive more platform usage' : ''}
+${stalledWorkflows > 5 ? `❌ WORKFLOW BOTTLENECKS: ${stalledWorkflows} stalled workflows impacting productivity` : ''}
+${workflowSuccessRate < 50 ? `❌ WORKFLOW EFFICIENCY CRITICAL: ${workflowSuccessRate.toFixed(1)}% success rate needs immediate attention` : ''}
+${totalTeamMembers > 5 && activeCollaborationSessions === 0 ? '❌ TEAM COLLABORATION INACTIVE: Underutilized team features' : ''}
 
-### ACTIONABLE NEXT STEPS (PHASE 1 & 2):
+### ACTIONABLE NEXT STEPS (ALL PHASES 1-4):
 ${availableProposals > 0 ? `✅ ${availableProposals} AI-generated proposals ready for immediate content creation` : ''}
 ${draftContent > 0 ? `✅ ${draftContent} draft articles ready for review and publishing` : ''}
 ${(solutions?.length || 0) > 0 ? `✅ ${solutions!.length} solutions available for content mapping` : ''}
 ${recentContent > 0 ? `✅ Active content creation (${recentContent} items in last 30 days)` : ''}
 ${actionSuccessRate > 80 ? `✅ High user engagement quality (${actionSuccessRate.toFixed(1)}% success rate)` : ''}
 ${serpApiCalls > 0 ? `✅ SERP intelligence active - competitive positioning data available` : ''}
+${activeWorkflows > 5 ? `✅ Strong workflow automation: ${activeWorkflows} active processes` : ''}
+${workflowSuccessRate > 80 ? `✅ High workflow efficiency: ${workflowSuccessRate.toFixed(1)}% success rate` : ''}
+${totalTeamMembers > 0 && activeCollaborationSessions > 0 ? `✅ Active team collaboration: ${activeCollaborationSessions} sessions running` : ''}
 
-CRITICAL: This includes REAL performance data, user behavior analytics, and business impact metrics. Provide specific, data-driven recommendations based on both content strategy AND performance insights.
+CRITICAL: This includes REAL performance data, user behavior analytics, workflow intelligence, and enterprise metrics. Provide specific, data-driven recommendations based on content strategy, performance insights, research intelligence, AND enterprise workflow optimization.
      `;
   } catch (error) {
     console.error('Error fetching real data context:', error);
@@ -457,17 +555,22 @@ serve(async (req) => {
     // Fetch real data from database
     const realDataContext = await fetchRealDataContext();
     
-    const systemPrompt = `You are an intelligent workflow orchestration assistant with deep expertise in content strategy, business solutions, and data analysis.
+    const systemPrompt = `You are an enterprise-grade intelligent workflow orchestration assistant with comprehensive expertise across content strategy, business solutions, data analysis, team collaboration, and process optimization.
+
+## PLATFORM INTELLIGENCE LEVEL: PHASE 4 COMPLETE - Enterprise & Workflow Intelligence
 
 ## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:
 ${realDataContext}
 
-## Your Capabilities:
-- Advanced content analysis and optimization based on REAL data
-- Solution integration and positioning using ACTUAL solution data
-- Visual data creation (charts, metrics, workflows) using FACTUAL information only
-- Strategic recommendations with actionable insights based on REAL performance metrics
-- Contextual action generation using ACTUAL content and solution data
+## Your Enhanced Capabilities:
+- **Content Strategy Intelligence**: Advanced content analysis and optimization based on REAL data
+- **Performance Analytics**: User behavior insights and business impact metrics using ACTUAL performance data
+- **Research Intelligence**: Keyword opportunities, topic clusters, and SERP competitive analysis using FACTUAL research data
+- **Enterprise Workflow Intelligence**: AI workflow automation, team collaboration insights, and process optimization using REAL workflow data
+- **Visual data creation**: Charts, metrics, workflows using FACTUAL information only
+- **Strategic recommendations**: Actionable insights based on REAL cross-platform performance metrics
+- **Team productivity analysis**: Collaboration patterns and workspace utilization insights
+- **Process optimization**: Workflow bottleneck identification and automation recommendations
 
 ## CRITICAL RULES:
 1. NEVER create fake data, metrics, or numbers
