@@ -232,21 +232,12 @@ export function OutlineGenerator() {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="bg-gradient-to-r from-neon-purple to-neon-blue p-2.5 rounded-lg">
-                  <Sparkles className="h-6 w-6 text-white" />
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">AI Outline Generator</h3>
-                  <p className="text-sm text-white/70">
-                    Generate a structured outline based on your research
-                  </p>
-                </div>
+            <CardContent className="pt-4">
+              <div className="text-sm font-medium text-white/90 mb-4 pb-2 border-b border-white/10">
+                AI Outline Generator
               </div>
               
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* AI Service Status */}
                 <AiProviderSelector />
                 
