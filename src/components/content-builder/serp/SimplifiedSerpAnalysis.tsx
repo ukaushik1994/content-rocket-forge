@@ -89,100 +89,106 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
         console.log('📥 Using proposal data for SERP analysis');
         setData(processedProposalData as any);
         onDataUpdate?.(processedProposalData as any);
-        addSelectionsFromData(processedProposalData);
+        
+        // Add selections from proposal data
+        if (processedProposalData) {
+          const addSelection = (type: string, content: string, metadata?: any) => {
+            if (!content || !content.trim()) return;
+            
+            dispatch({
+              type: 'ADD_SERP_SELECTION',
+              payload: {
+                type,
+                content: content.trim(),
+                selected: false,
+                source: 'serp_analysis',
+                metadata
+              }
+            });
+          };
+
+          // Add different types of selections
+          processedProposalData.keywords?.forEach((kw: any) => {
+            const content = typeof kw === 'string' ? kw : kw.keyword || kw.title;
+            addSelection('keyword', content);
+          });
+
+          processedProposalData.questions?.forEach((q: any) => {
+            const content = typeof q === 'string' ? q : q.question;
+            addSelection('question', content);
+          });
+
+          processedProposalData.entities?.forEach((entity: any) => {
+            const content = typeof entity === 'string' ? entity : entity.name;
+            addSelection('entity', content, entity);
+          });
+
+          processedProposalData.headings?.forEach((h: any) => {
+            const content = typeof h === 'string' ? h : h.text;
+            addSelection('heading', content, h);
+          });
+
+          processedProposalData.contentGaps?.forEach((gap: any) => {
+            const content = typeof gap === 'string' ? gap : gap.topic || gap.description;
+            addSelection('contentGap', content, gap);
+          });
+        }
+        
         toast.success('SERP data loaded from proposal');
       } else {
         console.log('🔍 Fetching fresh SERP data');
-        await fetchData();
+        setIsLoading(true);
+        try {
+          const result = await analyzeKeywordEnhanced(keyword, 'us', false);
+          if (result) {
+            console.log('📊 Enhanced SERP result received');
+            setData(result);
+            onDataUpdate?.(result);
+            toast.success('SERP analysis completed successfully');
+          }
+        } catch (error: any) {
+          console.error('Error fetching SERP data:', error);
+          
+          if (error.message?.includes('API key not configured')) {
+            toast.error('SERP API key not configured. Please add your SerpAPI key.');
+          } else if (error.message?.includes('quota')) {
+            toast.error('SERP API quota exceeded. Please check your usage.');
+          } else {
+            toast.error('Failed to analyze keyword. Please try again.');
+          }
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
 
     initializeData();
-  }, [keyword, processedProposalData, hasInitialized]);
-
-  const addSelectionsFromData = useCallback((serpData: any) => {
-    if (!serpData) return;
-
-    const addSelection = (type: string, content: string, metadata?: any) => {
-      if (!content || !content.trim()) return;
-      
-      dispatch({
-        type: 'ADD_SERP_SELECTION',
-        payload: {
-          type,
-          content: content.trim(),
-          selected: false,
-          source: 'serp_analysis',
-          metadata
-        }
-      });
-    };
-
-    // Add different types of selections
-    serpData.keywords?.forEach((kw: any) => {
-      const content = typeof kw === 'string' ? kw : kw.keyword || kw.title;
-      addSelection('keyword', content);
-    });
-
-    serpData.questions?.forEach((q: any) => {
-      const content = typeof q === 'string' ? q : q.question;
-      addSelection('question', content);
-    });
-
-    serpData.entities?.forEach((entity: any) => {
-      const content = typeof entity === 'string' ? entity : entity.name;
-      addSelection('entity', content, entity);
-    });
-
-    serpData.headings?.forEach((h: any) => {
-      const content = typeof h === 'string' ? h : h.text;
-      addSelection('heading', content, h);
-    });
-
-    serpData.contentGaps?.forEach((gap: any) => {
-      const content = typeof gap === 'string' ? gap : gap.topic || gap.description;
-      addSelection('contentGap', content, gap);
-    });
-
-    console.log('✅ Added selections from SERP data');
-  }, [dispatch]);
-
-  const fetchData = useCallback(async (forceRefresh = false) => {
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    try {
-      const result = await analyzeKeywordEnhanced(keyword, 'us', forceRefresh);
-      if (result) {
-        console.log('📊 Enhanced SERP result received');
-        setData(result);
-        onDataUpdate?.(result);
-        
-        // Add selections from fresh data
-        addSelectionsFromData(result);
-        
-        toast.success('SERP analysis completed successfully');
-      }
-    } catch (error: any) {
-      console.error('Error fetching SERP data:', error);
-      
-      if (error.message?.includes('API key not configured')) {
-        toast.error('SERP API key not configured. Please add your SerpAPI key.');
-      } else if (error.message?.includes('quota')) {
-        toast.error('SERP API quota exceeded. Please check your usage.');
-      } else {
-        toast.error('Failed to analyze keyword. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [keyword, isLoading, onDataUpdate, addSelectionsFromData]);
+  }, [keyword, processedProposalData, hasInitialized, onDataUpdate, dispatch]);
 
   const handleRefresh = useCallback(() => {
     setData(null);
     setHasInitialized(false);
-    fetchData(true);
-  }, [fetchData]);
+    setIsLoading(true);
+    
+    const refreshData = async () => {
+      try {
+        const result = await analyzeKeywordEnhanced(keyword, 'us', true);
+        if (result) {
+          console.log('📊 Enhanced SERP result received');
+          setData(result);
+          onDataUpdate?.(result);
+          toast.success('SERP analysis completed successfully');
+        }
+      } catch (error: any) {
+        console.error('Error fetching SERP data:', error);
+        toast.error('Failed to refresh data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    refreshData();
+  }, [keyword, onDataUpdate]);
 
   const handleToggleSelection = useCallback((type: string, content: string) => {
     dispatch({
