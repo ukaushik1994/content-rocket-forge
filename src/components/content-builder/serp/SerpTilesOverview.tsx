@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { SerpAnalysisResult } from '@/types/serp';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { SerpSectionModal } from './SerpSectionModal';
 
 interface SerpTilesOverviewProps {
   serpData: SerpAnalysisResult;
@@ -37,6 +38,13 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
   onAddToContent = () => {}
 }) => {
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
+  const [modalSection, setModalSection] = useState<{
+    id: string;
+    title: string;
+    description: string;
+    count: number;
+    data: any;
+  } | null>(null);
 
   const sections = [
     {
@@ -378,15 +386,15 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="outline"
+                            variant="default"
                             size="sm"
-                            className="flex-1 bg-background/40 hover:bg-background/60 border-border/50 text-xs"
+                            className="flex-1 bg-primary/90 hover:bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02]"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onSectionClick(section.id);
+                              setModalSection(section);
                             }}
                           >
-                            <Eye className="h-3 w-3 mr-1" />
+                            <Eye className="h-4 w-4 mr-2" />
                             View All
                           </Button>
                         </TooltipTrigger>
@@ -490,6 +498,17 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* SERP Section Modal */}
+      {modalSection && (
+        <SerpSectionModal
+          isOpen={!!modalSection}
+          onClose={() => setModalSection(null)}
+          section={modalSection}
+          serpData={serpData}
+          onAddToContent={onAddToContent}
+        />
+      )}
     </div>
   );
 };
