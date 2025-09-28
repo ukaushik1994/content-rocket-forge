@@ -66,6 +66,9 @@ function isValidStructuredData(obj: any): boolean {
   // Check if it's a direct visualData object
   if (obj.type && (obj.metrics || obj.charts || obj.data)) return true;
   
+  // Check for chart configuration
+  if (obj.chartConfig && obj.chartConfig.type && obj.chartConfig.data) return true;
+  
   return false;
 }
 

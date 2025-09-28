@@ -44,8 +44,17 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     'hsl(var(--primary))',
     'hsl(var(--secondary))',
     'hsl(var(--accent))',
-    'hsl(var(--muted))'
+    'hsl(var(--info))',
+    'hsl(var(--warning))',
+    'hsl(var(--success))'
   ];
+
+  console.log('InteractiveChart config:', {
+    type: chartConfig.type,
+    dataLength: chartConfig.data?.length,
+    categories: chartConfig.categories,
+    colors: colors
+  });
 
   const handleDataFilter = useCallback((category: string) => {
     setSelectedCategory(category);
@@ -83,6 +92,27 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       height: chartConfig.height || 300
     };
 
+    if (!filteredData || filteredData.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-64 text-muted-foreground">
+          No data available to display
+        </div>
+      );
+    }
+
+    // Extract data keys from the actual data if categories is not properly set
+    const dataKeys = chartConfig.categories?.length ? 
+      chartConfig.categories.filter(cat => cat !== 'name' && cat !== 'label') : 
+      Object.keys(filteredData[0] || {}).filter(key => 
+        key !== 'name' && key !== 'label' && key !== 'category' && key !== 'type'
+      );
+
+    console.log('Rendering chart:', {
+      type: currentType,
+      dataKeys,
+      filteredDataSample: filteredData[0]
+    });
+
     switch (currentType) {
       case 'line':
         return (
@@ -100,7 +130,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 }}
               />
               <Legend />
-              {chartConfig.categories.map((category, index) => (
+              {dataKeys.map((category, index) => (
                 <Line
                   key={category}
                   type="monotone"
@@ -139,7 +169,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 }}
               />
               <Legend />
-              {chartConfig.categories.map((category, index) => (
+              {dataKeys.map((category, index) => (
                 <Area
                   key={category}
                   type="monotone"
@@ -169,7 +199,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 }}
               />
               <Legend />
-              {chartConfig.categories.map((category, index) => (
+              {dataKeys.map((category, index) => (
                 <Bar
                   key={category}
                   dataKey={category}

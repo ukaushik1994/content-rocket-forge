@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { VisualData } from '@/types/enhancedChat';
 import { LineChart, BarChart, PieChartComponent } from '@/components/ui/chart';
 import { InteractiveChart } from './InteractiveChart';
+import { ChartErrorBoundary } from './ChartErrorBoundary';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -82,23 +83,44 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   };
 
   const renderChart = () => {
-    if (!data.chartConfig) return null;
+    if (!data.chartConfig) {
+      console.warn('No chartConfig found in visual data:', data);
+      return null;
+    }
 
     const { type, data: chartData, categories, colors, valueFormatter, height = 300 } = data.chartConfig;
     
-    // Use InteractiveChart for enhanced experience
+    console.log('Rendering chart with config:', {
+      type,
+      dataLength: chartData?.length,
+      categories,
+      colors
+    });
+
+    // Process data for different chart types
+    const processedConfig = {
+      ...data.chartConfig,
+      // Extract actual data series from chartConfig.series if available
+      categories: data.chartConfig.series?.map(s => s.dataKey) || categories || []
+    };
+
+    console.log('Processed chart config:', processedConfig);
+    
+    // Use InteractiveChart with error boundary for enhanced experience
     return (
-      <InteractiveChart
-        chartConfig={data.chartConfig}
-        title={`${type.charAt(0).toUpperCase() + type.slice(1)} Chart`}
-        description="Interactive data visualization"
-        allowTypeSwitch={true}
-        allowDataFilter={true}
-        onDataUpdate={(newData) => {
-          console.log('Chart data updated:', newData);
-          // Handle real-time data updates here
-        }}
-      />
+      <ChartErrorBoundary>
+        <InteractiveChart
+          chartConfig={processedConfig}
+          title={(data as any).title || `${type.charAt(0).toUpperCase() + type.slice(1)} Chart`}
+          description={(data as any).description || "Interactive data visualization"}
+          allowTypeSwitch={true}
+          allowDataFilter={true}
+          onDataUpdate={(newData) => {
+            console.log('Chart data updated:', newData);
+            // Handle real-time data updates here
+          }}
+        />
+      </ChartErrorBoundary>
     );
   };
 

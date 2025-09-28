@@ -5,6 +5,10 @@ export interface ChartConfiguration {
   type: 'line' | 'bar' | 'pie' | 'area';
   data: any[];
   categories: string[];
+  series?: Array<{
+    dataKey: string;
+    name: string;
+  }>;
   colors?: string[];
   valueFormatter?: (value: number) => string;
   height?: number;
