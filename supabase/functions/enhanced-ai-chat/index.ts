@@ -9,6 +9,60 @@ import {
   generateSmartSuggestions 
 } from './serp-intelligence.ts';
 
+// Content sanitization function to prevent raw data leakage
+function sanitizeResponseContent(content: string): string {
+  // Remove any raw CSV-like patterns
+  let cleaned = content
+    // Remove CSV headers and data rows
+    .replace(/^[A-Za-z\s,]+(?:,\s*[A-Za-z\s]+)*\n(?:[^,\n]*,\s*)*[^,\n]*$/gm, '')
+    // Remove quoted CSV data patterns
+    .replace(/^"[^"]*"(?:,\s*"[^"]*")*$/gm, '')
+    // Remove standalone JSON objects that shouldn't be in text
+    .replace(/^\s*\{[\s\S]*?\}\s*$/gm, '')
+    // Clean up extra whitespace
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    .trim();
+
+  // If content becomes too short after cleaning, return a friendly message
+  if (cleaned.length < 50 && content.length > 200) {
+    return "I've prepared the data you requested. Please use the action buttons below to access the formatted information.";
+  }
+
+  return cleaned || content;
+}
+
+// Enhanced JSON parsing with better error recovery
+function parseResponseWithFallback(content: string): { message: string; actions?: any[]; visualData?: any; } {
+  try {
+    const jsonBlocks = extractJSONBlocks(content);
+    let actions, visualData;
+    
+    for (const block of jsonBlocks) {
+      if (block.actions) {
+        actions = Array.isArray(block.actions) ? block.actions : JSON.parse(block.actions);
+      }
+      if (block.visualData) {
+        visualData = block.visualData;
+      } else if (block.type && (block.metrics || block.data || block.headers)) {
+        visualData = block;
+      }
+    }
+    
+    const cleanedMessage = sanitizeResponseContent(removeExtractedJSON(content));
+    
+    return {
+      message: cleanedMessage,
+      actions,
+      visualData
+    };
+  } catch (error) {
+    console.log('Parsing failed, using content sanitization only:', error);
+    return {
+      message: sanitizeResponseContent(content)
+    };
+  }
+}
+
 // Enhanced real data fetching function with Phase 1 & Phase 2 intelligence
 async function fetchRealDataContext() {
   try {
@@ -572,19 +626,63 @@ ${realDataContext}
 - **Team productivity analysis**: Collaboration patterns and workspace utilization insights
 - **Process optimization**: Workflow bottleneck identification and automation recommendations
 
-## CRITICAL RULES:
+## CRITICAL CONTENT FORMATTING RULES:
 1. NEVER create fake data, metrics, or numbers
 2. ALWAYS base responses on the REAL DATA CONTEXT provided above
 3. When data is missing, clearly state that and suggest how to obtain it
 4. For EVERY response, include contextual actions AND visual data when relevant
+5. **NEVER include raw CSV data, spreadsheet formats, or comma-separated values in your text response**
+6. **NEVER display JSON structures or technical data formats in your text content**
+7. **ALWAYS use structured visual data for tables, charts, and data displays**
+8. **Keep your text response conversational and user-friendly**
 
 ## SERP Data Integration
 ${serpContext ? `You have access to REAL-TIME SERP DATA that MUST be used in your response:${serpContext}` : 'No SERP data available for this query.'}
 
-## Response Format Instructions:
+## Response Content Guidelines:
+- Write conversational, business-focused responses
+- Explain insights and recommendations clearly
+- Reference data trends and patterns in text form
+- NEVER paste raw data tables or CSV content
+- When mentioning data, describe it conversationally: "Your top keyword generates 44,505 impressions" instead of showing raw CSV
+- For spreadsheet requests, create download actions with structured data instead of displaying raw CSV
+
+## Structured Data Requirements:
 You MUST include structured data in your responses using these exact formats:
 
-### For Contextual Actions (ALWAYS include when recommending next steps):
+### For Table/Spreadsheet Data Requests:
+When users ask for "spreadsheet format" or "table format", create download actions with structured CSV content instead of displaying raw data:
+\`\`\`json
+{
+  "actions": [
+    {
+      "id": "download-data-csv",
+      "label": "Download CSV",
+      "type": "button", 
+      "action": "download:csv",
+      "data": {
+        "filename": "data-export.csv",
+        "content": "Column1,Column2,Column3\nValue1,Value2,Value3"
+      }
+    }
+  ]
+}
+\`\`\`
+
+### For Table Display (Use Visual Data Instead of Raw CSV):
+\`\`\`json
+{
+  "visualData": {
+    "type": "table",
+    "title": "Data Overview",
+    "headers": ["Keyword", "Impressions", "Content Type", "Priority"],
+    "rows": [
+      ["ai enhanced people analytics platform", "34,245", "Guide", "Critical"],
+      ["workforce planning analytics software", "44,505", "Blog", "High"]
+    ]
+  }
+}
+\`\`\`
 \`\`\`json
 {
   "actions": [
@@ -730,48 +828,54 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
 
     // Parse the response for structured data
     console.log('🔍 Parsing AI response for structured data...');
-    const jsonBlocks = extractJSONBlocks(aiMessage);
     
-    let visualData = null;
-    let actions = null;
+    // Use enhanced parsing with fallback
+    const parsedResponse = parseResponseWithFallback(aiMessage);
+    let { message: cleanedResponse, actions, visualData } = parsedResponse;
     
-    for (const block of jsonBlocks) {
-      console.log('🔍 Processing JSON block:', JSON.stringify(block).substring(0, 200));
+    // If no structured data was found, try legacy parsing
+    if (!actions && !visualData) {
+      const jsonBlocks = extractJSONBlocks(aiMessage);
       
-      // Check for visual data (direct or nested)
-      if (block.visualData) {
-        try {
-          visualData = typeof block.visualData === 'string' ? JSON.parse(block.visualData) : block.visualData;
-          console.log('📊 Found nested visual data:', visualData);
-        } catch (e) {
-          console.log('Failed to parse nested visual data:', e);
+      for (const block of jsonBlocks) {
+        console.log('🔍 Processing JSON block:', JSON.stringify(block).substring(0, 200));
+        
+        // Check for visual data (direct or nested)
+        if (block.visualData) {
+          try {
+            visualData = typeof block.visualData === 'string' ? JSON.parse(block.visualData) : block.visualData;
+            console.log('📊 Found nested visual data:', visualData);
+          } catch (e) {
+            console.log('Failed to parse nested visual data:', e);
+          }
+        } else if (block.type && (block.metrics || block.charts || block.data)) {
+          // Direct visual data object
+          visualData = block;
+          console.log('📊 Found direct visual data:', visualData);
         }
-      } else if (block.type && (block.metrics || block.charts || block.data)) {
-        // Direct visual data object
-        visualData = block;
-        console.log('📊 Found direct visual data:', visualData);
+        
+        // Check for actions (direct or nested)
+        if (block.actions) {
+          try {
+            actions = Array.isArray(block.actions) ? block.actions : JSON.parse(block.actions);
+            console.log('🎯 Found actions:', actions);
+          } catch (e) {
+            console.log('Failed to parse actions:', e);
+          }
+        }
       }
       
-      // Check for actions (direct or nested)
-      if (block.actions) {
-        try {
-          actions = Array.isArray(block.actions) ? block.actions : JSON.parse(block.actions);
-          console.log('🎯 Found actions:', actions);
-        } catch (e) {
-          console.log('Failed to parse actions:', e);
-        }
+      // If still no response from legacy parsing, use sanitized original content
+      if (!cleanedResponse) {
+        cleanedResponse = sanitizeResponseContent(removeExtractedJSON(aiMessage));
       }
     }
-    
-    // Clean the response text by removing extracted JSON
-    const cleanedResponse = removeExtractedJSON(aiMessage);
     
     console.log('✅ Parsed response:', { 
       hasActions: !!actions, 
       hasVisualData: !!visualData,
       originalLength: aiMessage.length,
-      cleanedLength: cleanedResponse.length,
-      blocksFound: jsonBlocks.length
+      cleanedLength: cleanedResponse?.length || aiMessage.length
     });
 
     // Only provide basic contextual actions if AI didn't return structured data

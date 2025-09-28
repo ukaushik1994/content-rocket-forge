@@ -64,10 +64,16 @@ function isValidStructuredData(obj: any): boolean {
   if (Array.isArray(obj.actions)) return true;
   
   // Check if it's a direct visualData object
-  if (obj.type && (obj.metrics || obj.charts || obj.data)) return true;
+  if (obj.type && (obj.metrics || obj.charts || obj.data || obj.headers)) return true;
   
   // Check for chart configuration
   if (obj.chartConfig && obj.chartConfig.type && obj.chartConfig.data) return true;
+  
+  // Reject CSV-like or raw data objects
+  if (typeof obj === 'object' && Object.keys(obj).length > 10 && 
+      Object.values(obj).every(v => typeof v === 'string' || typeof v === 'number')) {
+    return false; // Likely CSV data
+  }
   
   return false;
 }
@@ -97,8 +103,29 @@ export function removeExtractedJSON(text: string): string {
   // Remove standalone JSON objects
   cleaned = cleaned.replace(/(?:^|\n)\s*\{(?:[^{}]|{(?:[^{}]|{[^{}]*})*})*\}\s*(?:\n|$)/gm, '\n');
   
+  // Remove CSV-like patterns that shouldn't be displayed
+  cleaned = cleaned.replace(/^[A-Za-z\s,]+(?:,\s*[A-Za-z\s]+)*\n(?:[^,\n]*,\s*)*[^,\n]*$/gm, '');
+  
+  // Remove quoted CSV data patterns
+  cleaned = cleaned.replace(/^"[^"]*"(?:,\s*"[^"]*")*$/gm, '');
+  
   // Clean up extra whitespace and newlines
   cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
   
-  return cleaned;
+  // If content becomes too minimal, preserve some context
+  if (cleaned.length < 50 && text.length > 200) {
+    // Extract any conversational parts that aren't data
+    const lines = text.split('\n');
+    const conversationalLines = lines.filter(line => 
+      line.length > 10 && 
+      !line.match(/^[A-Za-z\s,]+(?:,\s*[A-Za-z\s]+)*$/) && // Not CSV headers
+      !line.match(/^"[^"]*"(?:,\s*"[^"]*")*$/) && // Not CSV data
+      !line.match(/^\s*\{/) && // Not JSON
+      !line.match(/^\s*\}/) &&
+      !line.trim().match(/^[0-9,.\s]+$/) // Not just numbers and commas
+    );
+    cleaned = conversationalLines.slice(0, 3).join('\n');
+  }
+  
+  return cleaned || text;
 }
