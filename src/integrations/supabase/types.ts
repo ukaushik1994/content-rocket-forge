@@ -2490,6 +2490,53 @@ export type Database = {
         }
         Relationships: []
       }
+      keyword_position_history: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          position: number
+          position_change: number | null
+          previous_position: number | null
+          snippet: string | null
+          title: string | null
+          tracking_id: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          position: number
+          position_change?: number | null
+          previous_position?: number | null
+          snippet?: string | null
+          title?: string | null
+          tracking_id?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          position?: number
+          position_change?: number | null
+          previous_position?: number | null
+          snippet?: string | null
+          title?: string | null
+          tracking_id?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_position_history_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "serp_tracking_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keyword_usage_log: {
         Row: {
           content_id: string | null
@@ -3427,6 +3474,42 @@ export type Database = {
         }
         Relationships: []
       }
+      serp_monitoring_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          keyword: string
+          last_triggered: string | null
+          threshold_value: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          keyword: string
+          last_triggered?: string | null
+          threshold_value?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          keyword?: string
+          last_triggered?: string | null
+          threshold_value?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       serp_monitoring_configs: {
         Row: {
           alert_thresholds: Json | null
@@ -3515,6 +3598,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      serp_tracking_history: {
+        Row: {
+          competition_score: number | null
+          cpc: number | null
+          created_at: string
+          id: string
+          keyword: string
+          keyword_difficulty: number | null
+          keyword_id: string | null
+          location: string | null
+          search_date: string
+          search_volume: number | null
+          serp_features: Json | null
+          top_10_results: Json | null
+          total_results: number | null
+          updated_at: string
+        }
+        Insert: {
+          competition_score?: number | null
+          cpc?: number | null
+          created_at?: string
+          id?: string
+          keyword: string
+          keyword_difficulty?: number | null
+          keyword_id?: string | null
+          location?: string | null
+          search_date?: string
+          search_volume?: number | null
+          serp_features?: Json | null
+          top_10_results?: Json | null
+          total_results?: number | null
+          updated_at?: string
+        }
+        Update: {
+          competition_score?: number | null
+          cpc?: number | null
+          created_at?: string
+          id?: string
+          keyword?: string
+          keyword_difficulty?: number | null
+          keyword_id?: string | null
+          location?: string | null
+          search_date?: string
+          search_volume?: number | null
+          serp_features?: Json | null
+          top_10_results?: Json | null
+          total_results?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       serp_usage_logs: {
         Row: {

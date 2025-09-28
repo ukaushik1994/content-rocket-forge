@@ -87,3 +87,6 @@ verify_jwt = true
 
 [functions.serp-api]
 verify_jwt = false
+
+[functions.serp-historical-tracker]
+verify_jwt = false
