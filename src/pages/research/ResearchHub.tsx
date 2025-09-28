@@ -157,20 +157,6 @@ const ResearchHub = () => {
                 />
                 
                 <div className="relative z-10 space-y-8">
-                  {/* Enhanced Search Header */}
-                  <motion.div 
-                    className="text-center space-y-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground via-foreground/90 to-foreground/80 bg-clip-text text-transparent">
-                      Research & Analysis
-                    </h2>
-                    <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-                      Discover high-impact keywords and analyze what your audience is asking
-                    </p>
-                  </motion.div>
 
                   {/* Enhanced Search Interface */}
                   <motion.div 
@@ -267,15 +253,6 @@ const ResearchHub = () => {
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3 }}
                           >
-                            <div className="flex items-center gap-3 mb-6">
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-primary to-blue-500 flex items-center justify-center">
-                                <Search className="h-5 w-5 text-primary-foreground" />
-                              </div>
-                              <div>
-                                <h3 className="text-xl font-bold text-foreground">Keyword Research Results</h3>
-                                <p className="text-muted-foreground">for "{searchTerm}"</p>
-                              </div>
-                            </div>
                             <KeywordSerpTab 
                               searchTerm={searchTerm} 
                               onDataUpdate={(data) => handleDataUpdate('serpData', data)}
@@ -290,15 +267,6 @@ const ResearchHub = () => {
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3 }}
                           >
-                            <div className="flex items-center gap-3 mb-6">
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-blue-400 flex items-center justify-center">
-                                <Users className="h-5 w-5 text-white" />
-                              </div>
-                              <div>
-                                <h3 className="text-xl font-bold text-foreground">People Questions</h3>
-                                <p className="text-muted-foreground">for "{searchTerm}"</p>
-                              </div>
-                            </div>
                             <EnhancedPeopleQuestionsTab 
                               searchTerm={searchTerm} 
                               onDataUpdate={(data) => handleDataUpdate('peopleQuestions', data)}
