@@ -80,7 +80,7 @@ serve(async (req) => {
     switch (service) {
       case 'serp':
       case 'serpapi':  // Handle both 'serp' and 'serpapi' for compatibility
-        return await handleSerpApi(endpoint, finalApiKey, params);
+        return await handleSerpApiWithFallback(endpoint, finalApiKey, params);
       case 'serpstack':
         return await handleSerpstackApi(endpoint, finalApiKey, params);
       case 'openai':
@@ -117,6 +117,36 @@ serve(async (req) => {
   }
 });
 
+async function handleSerpApiWithFallback(endpoint: string, apiKey: string, params?: any) {
+  console.log('🔍 Processing SerpAPI request with Serpstack fallback');
+  
+  try {
+    // Try SerpAPI first
+    return await handleSerpApi(endpoint, apiKey, params);
+  } catch (error: any) {
+    console.warn('⚠️ SerpAPI failed, attempting Serpstack fallback:', error.message);
+    
+    // Check if error indicates quota/rate limit issues that warrant fallback
+    if (isQuotaOrRateLimitError(error)) {
+      try {
+        // Get Serpstack API key
+        const serpstackKey = Deno.env.get('SERPSTACK_KEY');
+        if (serpstackKey) {
+          console.log('🔄 Falling back to Serpstack...');
+          return await handleSerpstackApi(endpoint, serpstackKey, params);
+        } else {
+          console.error('❌ No Serpstack key available for fallback');
+        }
+      } catch (fallbackError: any) {
+        console.error('💥 Serpstack fallback also failed:', fallbackError.message);
+      }
+    }
+    
+    // If fallback failed or not applicable, return original SerpAPI error
+    throw error;
+  }
+}
+
 async function handleSerpApi(endpoint: string, apiKey: string, params?: any) {
   console.log('🔍 Processing SerpAPI request');
   
@@ -135,6 +165,15 @@ async function handleSerpApi(endpoint: string, apiKey: string, params?: any) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     }
   );
+}
+
+function isQuotaOrRateLimitError(error: any): boolean {
+  const errorMessage = (error.message || error.toString()).toLowerCase();
+  return errorMessage.includes('quota') || 
+         errorMessage.includes('rate limit') || 
+         errorMessage.includes('429') ||
+         errorMessage.includes('quota exceeded') ||
+         errorMessage.includes('credit');
 }
 
 async function analyzeSerpApiKeyword(apiKey: string, params: any) {

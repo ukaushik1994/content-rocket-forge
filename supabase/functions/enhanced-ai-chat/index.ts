@@ -1,11 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { 
+  analyzeSerpIntent, 
+  executeSerpAnalysis, 
+  generateSerpContext, 
+  generateSmartSuggestions 
+} from './serp-intelligence.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Initialize Supabase client for SERP operations
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,11 +46,35 @@ serve(async (req) => {
       });
     }
 
-    // Analyze the user query for intent
+    // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const userQuery = lastUserMessage?.content || '';
     
-    console.log("🧠 Analyzing query for context:", userQuery);
+    console.log("🧠 Analyzing query for context and SERP opportunities:", userQuery);
+    
+    // STEP 1: Detect if query would benefit from SERP data
+    const serpIntelligence = await analyzeSerpIntent(userQuery);
+    let serpContext = '';
+    let serpData = null;
+    
+    if (serpIntelligence.shouldTriggerSerp && serpIntelligence.keywords.length > 0) {
+      console.log("🔍 SERP opportunity detected, fetching real-time data:", serpIntelligence);
+      try {
+        const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType);
+        if (serpResults.length > 0) {
+          serpContext = generateSerpContext(serpResults);
+          serpData = {
+            keywords: serpIntelligence.keywords,
+            results: serpResults,
+            analysisType: serpIntelligence.queryType,
+            suggestions: generateSmartSuggestions(serpResults)
+          };
+          console.log("✅ SERP data successfully integrated into AI context");
+        }
+      } catch (error) {
+        console.error("❌ SERP analysis failed, continuing without SERP data:", error);
+      }
+    }
 
     // Build enhanced system prompt with context
     const systemPrompt = `You are an intelligent workflow orchestration assistant with deep expertise in content strategy, business solutions, and data analysis.
@@ -55,6 +91,9 @@ For EVERY response, you MUST include AT LEAST ONE of the following:
 1. Contextual actions that help the user take next steps
 2. Visual data (charts, metrics, or summaries) that illustrate your points
 3. Both actions AND visual data when relevant
+
+## SERP Data Integration
+${serpContext ? `You have access to REAL-TIME SERP DATA that MUST be used in your response:${serpContext}` : 'No SERP data available for this query.'}
 
 ## Response Format Instructions:
 You MUST include structured data in your responses using these exact formats:
@@ -433,10 +472,13 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       content: finalContent, // Fallback for different response formats
       actions: actions || undefined,
       visualData: visualData || undefined,
+      serpData: serpData || undefined, // Include SERP data from our analysis
       metadata: {
         processed_at: new Date().toISOString(),
         has_actions: !!actions,
-        has_visual_data: !!visualData
+        has_visual_data: !!visualData,
+        has_serp_data: !!serpData,
+        serp_keywords: serpData?.keywords || []
       }
     };
 
