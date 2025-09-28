@@ -28,7 +28,7 @@ import { KeywordFilters as KeywordFiltersComponent } from './KeywordFilters';
 import { KeywordResearchModal } from './KeywordResearchModal';
 import { EnhancedBulkActions } from './EnhancedBulkActions';
 import { KeywordAnalyticsDashboard } from './KeywordAnalyticsDashboard';
-import { EnhancedKeywordCard } from './EnhancedKeywordCard';
+import { KeywordTable } from './KeywordTable';
 import { StrategyIntegrationPanel } from './StrategyIntegrationPanel';
 import { KeywordOpportunityAlerts } from './KeywordOpportunityAlerts';
 import { DuplicateManager } from './DuplicateManager';
@@ -199,9 +199,9 @@ export const KeywordLibrary: React.FC = () => {
   const someSelected = selectedKeywords.size > 0 && selectedKeywords.size < keywords.length;
 
   return (
-    <div className="bg-gradient-to-br from-background via-background/95 to-primary/5">
-      <div className="container mx-auto px-6 py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
+      <div className="container mx-auto px-6 py-8 max-w-7xl">
+        {/* Professional Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -209,176 +209,101 @@ export const KeywordLibrary: React.FC = () => {
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
-                <Hash className="h-8 w-8 text-primary" />
+              <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                <Hash className="h-7 w-7 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-semibold text-foreground">
                   Keyword Library
                 </h1>
-                <p className="text-muted-foreground mt-1">
-                  Manage all your keywords from one central location
+                <p className="text-muted-foreground text-sm mt-1">
+                  {total} keywords • {keywords.filter(k => k.usage_count > 0).length} in use
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowDuplicateManager(true)}
-                className="border-yellow-500/20 hover:bg-yellow-500/10 text-yellow-600"
+                className="text-xs"
               >
-                <Users className="h-4 w-4 mr-2" />
+                <Users className="h-3 w-3 mr-2" />
                 Find Duplicates
               </Button>
               
-              <Button
-                variant={showDuplicatesOnly ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
-                className={showDuplicatesOnly 
-                  ? "bg-yellow-500 hover:bg-yellow-600 text-black" 
-                  : "border-yellow-500/20 hover:bg-yellow-500/10 text-yellow-600"
-                }
-              >
-                <Layers className="h-4 w-4 mr-2" />
-                {showDuplicatesOnly ? 'Show All' : 'Duplicates Only'}
-              </Button>
-
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSync}
                 disabled={syncing}
-                className="border-primary/20 hover:bg-primary/10"
+                className="text-xs"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                Sync Sources
+                <RefreshCw className={`h-3 w-3 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                Sync
               </Button>
               
               <Button
                 onClick={() => setShowResearchModal(true)}
-                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground"
+                size="sm"
+                className="text-xs"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Research Keywords
+                <Plus className="h-3 w-3 mr-2" />
+                Research
               </Button>
             </div>
           </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-blue-500/20 bg-gradient-to-br from-blue-900/10 to-blue-900/5">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Keywords</p>
-                    <p className="text-2xl font-bold">{total}</p>
-                  </div>
-                  <Hash className="h-8 w-8 text-blue-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-green-500/20 bg-gradient-to-br from-green-900/10 to-green-900/5">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">With Usage</p>
-                    <p className="text-2xl font-bold">
-                      {keywords.filter(k => k.usage_count > 0).length}
-                    </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-green-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-purple-500/20 bg-gradient-to-br from-purple-900/10 to-purple-900/5">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Sources</p>
-                    <p className="text-2xl font-bold">
-                      {new Set(keywords.map(k => k.source_type)).size}
-                    </p>
-                  </div>
-                  <Target className="h-8 w-8 text-purple-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-orange-500/20 bg-gradient-to-br from-orange-900/10 to-orange-900/5">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Selected</p>
-                    <p className="text-2xl font-bold">{selectedKeywords.size}</p>
-                  </div>
-                  <Eye className="h-8 w-8 text-orange-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </motion.div>
 
-        {/* Search and Filters */}
+        {/* Clean Search and Filters */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="mb-6"
         >
-          <Card className="border-white/10 bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-md">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search keywords..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 border-white/20 bg-white/5"
-                  />
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="border-white/20 hover:bg-white/10"
-                  >
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filters
-                  </Button>
-
-                  {selectedKeywords.size > 0 && (
-                    <EnhancedBulkActions
-                      selectedCount={selectedKeywords.size}
-                      onAction={handleBulkAction}
-                    />
-                  )}
-                </div>
+          <div className="border border-border/50 rounded-lg bg-card/60 backdrop-blur-xl p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search keywords..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary/50"
+                />
               </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  size="sm"
+                  className="text-xs"
+                >
+                  <Filter className="h-3 w-3 mr-2" />
+                  Filters
+                </Button>
 
-              {/* Bulk Selection */}
-              {keywords.length > 0 && (
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/10">
-                  <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={handleSelectAll}
+                {selectedKeywords.size > 0 && (
+                  <EnhancedBulkActions
+                    selectedCount={selectedKeywords.size}
+                    onAction={handleBulkAction}
                   />
-                  <span className="text-sm text-muted-foreground">
-                    {selectedKeywords.size > 0 
-                      ? `${selectedKeywords.size} of ${keywords.length} selected`
-                      : 'Select all keywords'
-                    }
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </div>
+            </div>
+
+            {/* Selection Summary */}
+            {selectedKeywords.size > 0 && (
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
+                <Badge variant="secondary" className="text-xs">
+                  {selectedKeywords.size} of {keywords.length} selected
+                </Badge>
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Filters Panel */}
@@ -399,103 +324,38 @@ export const KeywordLibrary: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Enhanced Keywords List */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="visible"
-          className="mb-8"
-        >
-          <Card className="border-white/10 bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-md">
-            <CardContent className="p-0">
-              <AnimatePresence mode="popLayout">
-                {loading ? (
-                  // Loading skeletons
-                  <div className="space-y-1">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <motion.div
-                        key={`skeleton-${i}`}
-                        variants={item}
-                        className="animate-pulse border-b border-white/5 last:border-b-0 p-4"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 flex-1">
-                            <div className="w-4 h-4 bg-white/10 rounded"></div>
-                            <div className="w-16 h-6 bg-white/10 rounded"></div>
-                            <div className="w-48 h-6 bg-white/20 rounded"></div>
-                            <div className="w-20 h-5 bg-white/10 rounded"></div>
-                          </div>
-                          <div className="w-24 h-5 bg-white/10 rounded"></div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                 ) : keywords.length > 0 ? (
-                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-6">
-                     {keywords.map((keyword) => (
-                       <EnhancedKeywordCard
-                         key={keyword.id}
-                         keyword={keyword}
-                         selected={selectedKeywords.has(keyword.id)}
-                         onSelect={handleSelectKeyword}
-                         onUpdate={loadKeywords}
-                         onAction={async (action, keywordId) => {
-                           // Handle various keyword actions
-                           switch (action) {
-                             case 'refresh':
-                               await keywordLibraryService.refreshKeywordMetrics(keywordId);
-                               break;
-                             case 'delete':
-                               await keywordLibraryService.deleteKeywords([keywordId]);
-                               await loadKeywords();
-                               break;
-                             case 'google':
-                               window.open(`https://www.google.com/search?q=${encodeURIComponent(keyword.keyword)}`, '_blank');
-                               break;
-                             case 'export':
-                               await keywordLibraryService.exportKeywords([keywordId], 'csv');
-                               break;
-                             default:
-                               console.log(`Action ${action} not implemented yet`);
-                           }
-                         }}
-                         showPerformanceDetails={false}
-                       />
-                     ))}
-                   </div>
-                ) : (
-                  <motion.div
-                    variants={item}
-                    className="text-center py-12"
-                  >
-                    <Tag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No keywords found</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Start by researching keywords or sync from your existing sources
-                    </p>
-                    <div className="flex justify-center gap-3">
-                      <Button
-                        onClick={() => setShowResearchModal(true)}
-                        className="bg-gradient-to-r from-primary to-primary/90"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Research Keywords
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleSync}
-                        disabled={syncing}
-                      >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                        Sync Sources
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Professional Keywords Table */}
+        <KeywordTable
+          keywords={keywords}
+          selectedKeywords={selectedKeywords}
+          loading={loading}
+          onSelect={handleSelectKeyword}
+          onSelectAll={handleSelectAll}
+          onUpdate={loadKeywords}
+          onAction={async (action, keywordId) => {
+            const keyword = keywords.find(k => k.id === keywordId);
+            if (!keyword) return;
+
+            switch (action) {
+              case 'refresh':
+                await keywordLibraryService.refreshKeywordMetrics(keywordId);
+                await loadKeywords();
+                break;
+              case 'delete':
+                await keywordLibraryService.deleteKeywords([keywordId]);
+                await loadKeywords();
+                break;
+              case 'google':
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(keyword.keyword)}`, '_blank');
+                break;
+              case 'export':
+                await keywordLibraryService.exportKeywords([keywordId], 'csv');
+                break;
+              default:
+                console.log(`Action ${action} not implemented for keyword ${keywordId}`);
+            }
+          }}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (
