@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, ExternalLink, Building2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Loader2, ExternalLink, Building2, Check } from 'lucide-react';
 import { Solution, EnhancedSolution } from '@/contexts/content-builder/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -163,93 +163,63 @@ export const SolutionSelector = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {solutions.map((solution) => (
-            <motion.div
-              key={solution.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card 
-                className={`cursor-pointer transition-all hover:bg-white/10 ${
-                  selectedSolution?.id === solution.id 
-                    ? 'bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-purple-500/50' 
-                    : 'bg-white/5 border-white/10 hover:border-white/20'
-                }`}
-                onClick={() => handleSelectSolution(solution)}
+        <TooltipProvider>
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-4">
+            {solutions.map((solution) => (
+              <motion.div
+                key={solution.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.2 }}
+                className="flex justify-center"
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="h-12 w-12 rounded-lg border border-white/20">
-                      {solution.logoUrl ? (
-                        <AvatarImage 
-                          src={solution.logoUrl} 
-                          alt={solution.name}
-                          className="object-cover"
-                        />
-                      ) : (
-                        <AvatarFallback className="rounded-lg bg-white/10 text-white font-medium">
-                          {getInitials(solution.name)}
-                        </AvatarFallback>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`relative cursor-pointer transition-all duration-200 ${
+                        selectedSolution?.id === solution.id 
+                          ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' 
+                          : ''
+                      }`}
+                      onClick={() => handleSelectSolution(solution)}
+                    >
+                      <Avatar className="h-16 w-16 rounded-full border-2 border-white/20 hover:border-primary/50 transition-colors">
+                        {solution.logoUrl ? (
+                          <AvatarImage 
+                            src={solution.logoUrl} 
+                            alt={solution.name}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <AvatarFallback className="rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 text-white font-semibold text-lg">
+                            {getInitials(solution.name)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      
+                      {selectedSolution?.id === solution.id && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-1 -right-1 h-6 w-6 bg-primary rounded-full flex items-center justify-center border-2 border-background"
+                        >
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        </motion.div>
                       )}
-                    </Avatar>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-white truncate">{solution.name}</h4>
-                        {selectedSolution?.id === solution.id && (
-                          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                            Selected
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <p className="text-sm text-white/70 mb-3 line-clamp-2">
-                        {solution.description}
-                      </p>
-                      
-                      <div className="space-y-2">
-                        {solution.features.length > 0 && (
-                          <div>
-                            <span className="text-xs font-medium text-purple-300">Features:</span>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {solution.features.slice(0, 2).map((feature, idx) => (
-                                <Badge 
-                                  key={idx} 
-                                  variant="outline" 
-                                  className="text-xs bg-purple-500/10 text-purple-300 border-purple-500/30"
-                                >
-                                  {feature}
-                                </Badge>
-                              ))}
-                              {solution.features.length > 2 && (
-                                <span className="text-xs text-white/60">
-                                  +{solution.features.length - 2} more
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {solution.targetAudience.length > 0 && (
-                          <div>
-                            <span className="text-xs font-medium text-blue-300">Target:</span>
-                            <span className="text-xs text-white/70 ml-1">
-                              {solution.targetAudience.slice(0, 2).join(', ')}
-                              {solution.targetAudience.length > 2 ? '...' : ''}
-                            </span>
-                          </div>
-                        )}
-                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-popover border border-border">
+                    <div className="text-center max-w-48">
+                      <p className="font-medium text-foreground">{solution.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{solution.category}</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
+            ))}
+          </div>
+        </TooltipProvider>
       )}
     </div>
   );
