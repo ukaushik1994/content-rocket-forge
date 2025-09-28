@@ -13,9 +13,11 @@ import { ResearchHubHero } from '@/components/research/research-hub/ResearchHubH
 import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/SimpleAIServiceIndicator';
 import { SimpleSerpServiceIndicator } from '@/components/content-builder/ai/SimpleSerpServiceIndicator';
 
-// Import tab components (without keyword library)
+// Import tab components
 import { ContentGapsTab } from '@/components/research/content-strategy/tabs/ContentGapsTab';
 import { PeopleQuestionsTab } from '@/components/research/research-hub/PeopleQuestionsTab';
+import { KeywordResearchTab } from '@/components/research/research-hub/KeywordResearchTab';
+import { ResearchDataExporter } from '@/components/research/research-hub/ResearchDataExporter';
 
 const ResearchHub = () => {
   const canonicalUrl = typeof window !== 'undefined' 
@@ -25,10 +27,22 @@ const ResearchHub = () => {
   const [searchMode, setSearchMode] = useState('keywords');
   const [searchTerm, setSearchTerm] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [researchData, setResearchData] = useState<{
+    serpData?: any;
+    contentGaps?: any[];
+    peopleQuestions?: any[];
+  }>({});
 
   const handleSearch = () => {
     if (!searchTerm.trim()) return;
     setHasSearched(true);
+  };
+
+  const handleDataUpdate = (type: string, data: any) => {
+    setResearchData(prev => ({
+      ...prev,
+      [type]: data
+    }));
   };
 
   return (
@@ -273,13 +287,8 @@ const ResearchHub = () => {
                                 <p className="text-white/60">for "{searchTerm}"</p>
                               </div>
                             </div>
-                            <div className="glass-panel bg-white/3 border-white/10 p-6 rounded-xl">
-                              <p className="text-white/70 leading-relaxed">
-                                SERP analysis and keyword intelligence will be displayed here. 
-                                <span className="block mt-3 text-neon-blue font-medium">
-                                  💡 Pro tip: Visit the dedicated Keywords page under Content menu for comprehensive keyword management.
-                                </span>
-                              </p>
+                            <div className="glass-panel bg-white/3 border-white/10 rounded-xl overflow-hidden">
+                              <KeywordResearchTab searchTerm={searchTerm} />
                             </div>
                           </motion.div>
                         )}
@@ -326,8 +335,25 @@ const ResearchHub = () => {
                               <PeopleQuestionsTab />
                             </div>
                           </motion.div>
+                          )}
+                        </div>
+
+                        {/* Research Data Export Panel */}
+                        {hasSearched && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6 }}
+                            className="pt-6"
+                          >
+                            <ResearchDataExporter
+                              searchTerm={searchTerm}
+                              serpData={null}
+                              contentGaps={[]}
+                              peopleQuestions={[]}
+                            />
+                          </motion.div>
                         )}
-                      </div>
                     </motion.div>
                   )}
                 </div>
