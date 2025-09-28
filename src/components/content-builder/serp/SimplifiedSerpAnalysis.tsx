@@ -33,6 +33,17 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
   // Get selected count from context
   const selectedCount = state.serpSelections.filter(item => item.selected).length;
 
+  // Create selectedItems set for tracking - MUST be before any conditional returns
+  const selectedItems = useMemo(() => {
+    const items = new Set<string>();
+    state.serpSelections.forEach(selection => {
+      if (selection.selected) {
+        items.add(`${selection.type}-${selection.content}`);
+      }
+    });
+    return items;
+  }, [state.serpSelections]);
+
   // Memoize proposal data processing to prevent re-processing
   const processedProposalData = useMemo(() => {
     if (!proposalData || !keyword) return null;
@@ -234,17 +245,6 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
       </Card>
     );
   }
-
-  // Create selectedItems set for tracking
-  const selectedItems = useMemo(() => {
-    const items = new Set<string>();
-    state.serpSelections.forEach(selection => {
-      if (selection.selected) {
-        items.add(`${selection.type}-${selection.content}`);
-      }
-    });
-    return items;
-  }, [state.serpSelections]);
 
   // Show SERP analysis results
   return (
