@@ -80,6 +80,10 @@ export const ContentStrategyEngine = ({
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  // Strategy Builder Dialog state
+  const [showBuilderDialog, setShowBuilderDialog] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<any>(null);
+
   // Track newly generated proposals with timestamps
   const [newProposalIds, setNewProposalIds] = useState<Set<string>>(new Set());
   const [newProposalTimestamps, setNewProposalTimestamps] = useState<Record<string, number>>({});
@@ -438,27 +442,8 @@ export const ContentStrategyEngine = ({
                       setSelectedProposals(newSelected);
                     }}
                     onSendToBuilder={(proposal) => {
-                      navigate('/content-builder', {
-                        state: {
-                          fromProposal: true,
-                          source_proposal_id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
-                          initialKeyword: proposal.primary_keyword,
-                          selectedKeywords: proposal.related_keywords || proposal.keywords || [],
-                          serpData: proposal.serp_data,
-                          suggestedTitle: proposal.title,
-                          suggestedOutline: proposal.suggested_outline || [],
-                          additionalInstructions: proposal.description || '',
-                          strategyContext: {
-                            proposal_id: proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'),
-                            priority_tag: proposal.priority_tag,
-                            estimated_impressions: proposal.estimated_impressions,
-                            meta_suggestions: {
-                              title: proposal.title,
-                              description: proposal.description
-                            }
-                          }
-                        }
-                      });
+                      setSelectedProposal(proposal);
+                      setShowBuilderDialog(true);
                     }}
                     isNew={newProposalIds.has(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'))}
                   />
@@ -500,9 +485,14 @@ export const ContentStrategyEngine = ({
         onCancel={() => setShowGenModal(false)}
       />
       <StrategyBuilderDialog 
-        open={false}
-        onOpenChange={() => {}}
-        proposal={null}
+        open={showBuilderDialog}
+        onOpenChange={(open) => {
+          setShowBuilderDialog(open);
+          if (!open) {
+            setSelectedProposal(null);
+          }
+        }}
+        proposal={selectedProposal}
       />
     </div>
   );
