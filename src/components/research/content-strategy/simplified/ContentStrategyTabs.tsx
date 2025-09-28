@@ -2,16 +2,10 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
-import { 
-  LayoutDashboard, 
-  Lightbulb, 
-  Calendar as CalendarIcon,
-  BarChart3
-} from 'lucide-react';
+import { LayoutDashboard, Lightbulb, Calendar as CalendarIcon } from 'lucide-react';
 import { StrategyOverview } from './StrategyOverview';
 import { StrategySuggestions } from '../tabs/StrategySuggestions';
 import { EditorialCalendar } from '../calendar/EditorialCalendar';
-import { StrategyDashboard } from '../dashboard/StrategyDashboard';
 import { useAnalyticsConnection } from '@/hooks/useAnalyticsConnection';
 import { useRealAnalytics } from '@/hooks/useRealAnalytics';
 
@@ -50,7 +44,7 @@ export const ContentStrategyTabs: React.FC<ContentStrategyTabsProps> = ({ onEdit
 
   const getInitialTab = () => {
     const allowed = new Set([
-      'overview', 'strategies', 'calendar', 'dashboard'
+      'overview', 'strategies', 'calendar'
     ]);
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
@@ -112,13 +106,6 @@ export const ContentStrategyTabs: React.FC<ContentStrategyTabsProps> = ({ onEdit
                   <CalendarIcon className="h-4 w-4" />
                   <span>Calendar</span>
                 </TabsTrigger>
-                <TabsTrigger
-                  value="dashboard"
-                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  <span>Analytics</span>
-                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -139,21 +126,6 @@ export const ContentStrategyTabs: React.FC<ContentStrategyTabsProps> = ({ onEdit
             <TabsContent value="calendar" className="animate-fade-in">
               <div className="space-y-6">
                 <EditorialCalendar goals={goals} />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="dashboard" className="animate-fade-in">
-              <div className="space-y-6">
-                <StrategyDashboard 
-                  goals={goals} 
-                  strategy={currentStrategy}
-                  workflowMode={workflowMode}
-                  realAnalytics={workflowMode === 'real' && canUseRealData ? {
-                    metrics,
-                    contentAnalytics,
-                    loading: analyticsLoading
-                  } : undefined}
-                />
               </div>
             </TabsContent>
           </div>
