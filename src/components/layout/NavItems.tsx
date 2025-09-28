@@ -55,7 +55,8 @@ export default function NavItems() {
     '/glossary-builder',
     '/repository',
     '/drafts',
-    '/content-type-selection'
+    '/content-type-selection',
+    '/keywords'
   ];
   
   const isContentActive = contentRoutes.includes(location.pathname);
@@ -130,6 +131,18 @@ export default function NavItems() {
             >
               <FileText className="h-4 w-4" />
               Repository
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/keywords" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/keywords' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Search className="h-4 w-4" />
+              Keywords
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>

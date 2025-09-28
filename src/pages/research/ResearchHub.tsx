@@ -3,17 +3,17 @@ import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
-import { Search, FileSearch, Users, Brain } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, FileSearch, Users, ChevronDown } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { ResearchHubHero } from '@/components/research/research-hub/ResearchHubHero';
 import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/SimpleAIServiceIndicator';
 import { SimpleSerpServiceIndicator } from '@/components/content-builder/ai/SimpleSerpServiceIndicator';
 
-// Import existing tab components
-import { KeywordIntelligenceTab } from '@/components/research/research-hub/KeywordIntelligenceTab';
+// Import tab components (without keyword library)
 import { ContentGapsTab } from '@/components/research/content-strategy/tabs/ContentGapsTab';
 import { PeopleQuestionsTab } from '@/components/research/research-hub/PeopleQuestionsTab';
 
@@ -22,26 +22,13 @@ const ResearchHub = () => {
     ? `${window.location.origin}/research/research-hub` 
     : '/research/research-hub';
 
-  // Get initial tab from URL hash or localStorage
-  const getInitialTab = () => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash.replace('#', '');
-      if (['keyword-intelligence', 'content-gaps', 'people-questions', 'serp-intelligence'].includes(hash)) {
-        return hash;
-      }
-      return localStorage.getItem('researchHubActiveTab') || 'keyword-intelligence';
-    }
-    return 'keyword-intelligence';
-  };
+  const [searchMode, setSearchMode] = useState('keywords');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const [activeTab, setActiveTab] = useState(getInitialTab);
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('researchHubActiveTab', value);
-      window.location.hash = value;
-    }
+  const handleSearch = () => {
+    if (!searchTerm.trim()) return;
+    setHasSearched(true);
   };
 
   return (
@@ -74,71 +61,106 @@ const ResearchHub = () => {
           >
             <ResearchHubHero />
 
-            {/* Main Tabs Interface - Exact Content Strategy Layout */}
-            <GlassCard className="p-4 sm:p-6">
-              <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <div className="flex flex-col gap-6">
-                  <div className="w-full overflow-x-auto">
-                    <TabsList className="inline-flex min-w-max rounded-lg border border-border/50 bg-muted/50 p-1">
-                      <TabsTrigger 
-                        value="keyword-intelligence" 
-                        className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                      >
-                        <Search className="h-4 w-4" />
-                        Keyword Intelligence
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="content-gaps" 
-                        className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                      >
-                        <FileSearch className="h-4 w-4" />
-                        Content Gaps
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="people-questions" 
-                        className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                      >
-                        <Users className="h-4 w-4" />
-                        People Questions
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="serp-intelligence" 
-                        className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-                      >
-                        <Brain className="h-4 w-4" />
-                        SERP Intelligence
-                      </TabsTrigger>
-                    </TabsList>
+            {/* Unified Search Interface */}
+            <GlassCard className="p-6">
+              <div className="space-y-6">
+                {/* Search Header */}
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl font-semibold text-foreground">Research & Analysis</h2>
+                  <p className="text-muted-foreground">Discover keywords, identify content gaps, and analyze audience questions</p>
+                </div>
+
+                {/* Search Interface */}
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Select value={searchMode} onValueChange={setSearchMode}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="keywords">
+                          <div className="flex items-center gap-2">
+                            <Search className="h-4 w-4" />
+                            Keywords
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="content-gaps">
+                          <div className="flex items-center gap-2">
+                            <FileSearch className="h-4 w-4" />
+                            Content Gaps
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="people-questions">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            People Questions
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="flex-1 flex gap-2">
+                      <Input
+                        placeholder={
+                          searchMode === 'keywords' ? 'Enter keyword to research...' :
+                          searchMode === 'content-gaps' ? 'Enter topic to find content gaps...' :
+                          'Enter topic to find questions...'
+                        }
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                        className="flex-1"
+                      />
+                      <Button onClick={handleSearch} disabled={!searchTerm.trim()}>
+                        <Search className="h-4 w-4 mr-2" />
+                        Search
+                      </Button>
+                    </div>
                   </div>
+                </div>
 
-                   <div className="flex-1">
-                     <TabsContent value="keyword-intelligence" className="mt-0 animate-fade-in">
-                       <KeywordIntelligenceTab />
-                     </TabsContent>
-
-                     <TabsContent value="content-gaps" className="mt-0 animate-fade-in">
-                       <ContentGapsTab goals={{ monthlyTraffic: '', contentPieces: '', timeline: '3 months', mainKeyword: '' }} />
-                     </TabsContent>
-
-                     <TabsContent value="people-questions" className="mt-0 animate-fade-in">
-                       <PeopleQuestionsTab />
-                     </TabsContent>
-
-                     <TabsContent value="serp-intelligence" className="mt-0 animate-fade-in">
-                       <div className="text-center py-8">
-                         <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                         <h3 className="text-lg font-medium mb-2">SERP Intelligence Platform</h3>
-                         <p className="text-muted-foreground mb-4">
-                           Access advanced SERP monitoring, AI insights, and marketing integrations
-                         </p>
-                         <Button onClick={() => window.open('/research/serp-intelligence', '_blank')}>
-                           Launch SERP Intelligence
-                         </Button>
-                       </div>
-                     </TabsContent>
-                   </div>
-                 </div>
-              </Tabs>
+                {/* Results Section */}
+                {hasSearched && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="pt-6 border-t border-border/50"
+                  >
+                    {searchMode === 'keywords' && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium flex items-center gap-2">
+                          <Search className="h-5 w-5 text-primary" />
+                          Keyword Research Results for "{searchTerm}"
+                        </h3>
+                        <p className="text-muted-foreground">
+                          SERP analysis and keyword intelligence will be displayed here. 
+                          <span className="text-sm block mt-1">Note: Full keyword analysis moved to dedicated Keywords page under Content menu.</span>
+                        </p>
+                      </div>
+                    )}
+                    
+                    {searchMode === 'content-gaps' && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium flex items-center gap-2">
+                          <FileSearch className="h-5 w-5 text-primary" />
+                          Content Gap Analysis for "{searchTerm}"
+                        </h3>
+                        <ContentGapsTab goals={{ monthlyTraffic: '', contentPieces: '', timeline: '3 months', mainKeyword: searchTerm }} />
+                      </div>
+                    )}
+                    
+                    {searchMode === 'people-questions' && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium flex items-center gap-2">
+                          <Users className="h-5 w-5 text-primary" />
+                          People Questions for "{searchTerm}"
+                        </h3>
+                        <PeopleQuestionsTab />
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
             </GlassCard>
           </motion.div>
         </main>

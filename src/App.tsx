@@ -15,6 +15,7 @@ import ContentTypeSelection from "./pages/ContentTypeSelection";
 import ContentApproval from "./pages/ContentApproval";
 import GlossaryBuilder from "./pages/GlossaryBuilder";
 import Solutions from "./pages/Solutions";
+import KeywordsPage from "./pages/keywords/KeywordsPage";
 
 import Analytics from "./pages/Analytics";
 import ContentStrategy from "./pages/research/ContentStrategy";
@@ -91,6 +92,7 @@ const App = () => (
                   <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                   <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
                   <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
+                  <Route path="/keywords" element={<ProtectedRoute><KeywordsPage /></ProtectedRoute>} />
                   
                   <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                   
