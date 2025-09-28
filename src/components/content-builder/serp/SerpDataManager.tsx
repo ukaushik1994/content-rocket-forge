@@ -95,18 +95,6 @@ export const SerpDataManager: React.FC<SerpDataManagerProps> = ({
       );
     }
     
-    if (dataSourceStatus === 'success' && serpData) {
-      return (
-        <Card className="mb-4 border-green-200 bg-green-50">
-          <CardContent className="flex items-center justify-center py-2">
-            <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-            <span className="text-green-800 text-sm">
-              SERP analysis loaded for "{mainKeyword}"
-            </span>
-          </CardContent>
-        </Card>
-      );
-    }
     
     if (dataSourceStatus === 'error') {
       return (
