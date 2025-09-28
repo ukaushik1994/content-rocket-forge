@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, BarChart3, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SerpAnalysisContainer } from '@/components/content/serp-analysis/SerpAnalysisContainer';
 import { SerpTilesOverview } from '@/components/content-builder/serp/SerpTilesOverview';
+import { SerpTilesLoading } from '@/components/content-builder/serp/SerpTilesLoading';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { SerpAnalysisResult } from '@/types/serp';
 import { toast } from 'sonner';
@@ -174,7 +174,9 @@ export const KeywordSerpTab: React.FC<KeywordSerpTabProps> = ({
         transition={{ delay: 0.1 }}
         className="glass-panel bg-background/60 backdrop-blur-xl border-border/50 rounded-xl p-6"
       >
-        {serpData && !isLoading ? (
+        {isLoading ? (
+          <SerpTilesLoading mainKeyword={searchTerm} />
+        ) : serpData ? (
           <SerpTilesOverview
             serpData={serpData}
             mainKeyword={searchTerm}
@@ -185,13 +187,12 @@ export const KeywordSerpTab: React.FC<KeywordSerpTabProps> = ({
             onAddToContent={handleAddToContent}
           />
         ) : (
-          <SerpAnalysisContainer
-            serpData={serpData}
-            isLoading={isLoading}
-            mainKeyword={searchTerm}
-            onAddToContent={handleAddToContent}
-            onRetry={handleRetry}
-          />
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No SERP data available</p>
+            <Button onClick={handleRetry} className="mt-4">
+              Try Again
+            </Button>
+          </div>
         )}
       </motion.div>
 

@@ -46,10 +46,10 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
       description: 'Volume, competition, and opportunity analysis',
       count: 4,
       variant: 'blue' as const,
-      gradient: 'from-blue-500/10 to-indigo-600/10',
-      iconColor: 'text-blue-400',
-      borderColor: 'border-blue-500/30',
-      bgColor: 'bg-blue-500/20',
+      gradient: 'from-primary/10 to-blue-600/10',
+      iconColor: 'text-primary',
+      borderColor: 'border-primary/30',
+      bgColor: 'bg-primary/10',
       data: {
         searchVolume: serpData.searchVolume,
         keywordDifficulty: serpData.keywordDifficulty,
@@ -63,10 +63,10 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
       description: 'Related keywords and search terms',
       count: serpData?.keywords?.length || 0,
       variant: 'purple' as const,
-      gradient: 'from-purple-500/10 to-violet-600/10',
-      iconColor: 'text-purple-400',
-      borderColor: 'border-purple-500/30',
-      bgColor: 'bg-purple-500/20',
+      gradient: 'from-secondary/10 to-accent/10',
+      iconColor: 'text-secondary-foreground',
+      borderColor: 'border-secondary/30',
+      bgColor: 'bg-secondary/10',
       data: serpData.keywords?.slice(0, 3)
     },
     {
@@ -76,10 +76,10 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
       description: 'Opportunities competitors are missing',
       count: serpData?.contentGaps?.length || 0,
       variant: 'rose' as const,
-      gradient: 'from-rose-500/10 to-pink-600/10',
-      iconColor: 'text-rose-400',
-      borderColor: 'border-rose-500/30',
-      bgColor: 'bg-rose-500/20',
+      gradient: 'from-destructive/10 to-destructive/20',
+      iconColor: 'text-destructive',
+      borderColor: 'border-destructive/30',
+      bgColor: 'bg-destructive/10',
       data: serpData.contentGaps?.slice(0, 2)
     },
     {
@@ -89,10 +89,10 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
       description: 'People also ask questions',
       count: serpData?.peopleAlsoAsk?.length || 0,
       variant: 'amber' as const,
-      gradient: 'from-amber-500/10 to-orange-600/10',
-      iconColor: 'text-amber-400',
-      borderColor: 'border-amber-500/30',
-      bgColor: 'bg-amber-500/20',
+      gradient: 'from-accent/10 to-accent/20',
+      iconColor: 'text-accent-foreground',
+      borderColor: 'border-accent/30',
+      bgColor: 'bg-accent/10',
       data: serpData.peopleAlsoAsk?.slice(0, 3)
     },
     {
@@ -102,10 +102,10 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
       description: 'Snippet optimization opportunities',
       count: serpData?.featuredSnippets?.length || 0,
       variant: 'green' as const,
-      gradient: 'from-green-500/10 to-emerald-600/10',
-      iconColor: 'text-green-400',
-      borderColor: 'border-green-500/30',
-      bgColor: 'bg-green-500/20',
+      gradient: 'from-primary/10 to-primary/20',
+      iconColor: 'text-primary',
+      borderColor: 'border-primary/30',
+      bgColor: 'bg-primary/10',
       data: serpData.featuredSnippets?.slice(0, 2)
     },
     {
@@ -115,10 +115,10 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
       description: 'Key entities and concepts',
       count: serpData?.entities?.length || 0,
       variant: 'indigo' as const,
-      gradient: 'from-indigo-500/10 to-blue-600/10',
-      iconColor: 'text-indigo-400',
-      borderColor: 'border-indigo-500/30',
-      bgColor: 'bg-indigo-500/20',
+      gradient: 'from-secondary/10 to-secondary/20',
+      iconColor: 'text-secondary-foreground',
+      borderColor: 'border-secondary/30',
+      bgColor: 'bg-secondary/10',
       data: serpData.entities?.slice(0, 4)
     },
     {
@@ -128,10 +128,10 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
       description: 'Suggested content headings',
       count: serpData?.headings?.length || 0,
       variant: 'teal' as const,
-      gradient: 'from-teal-500/10 to-cyan-600/10',
-      iconColor: 'text-teal-400',
-      borderColor: 'border-teal-500/30',
-      bgColor: 'bg-teal-500/20',
+      gradient: 'from-accent/10 to-accent/20',
+      iconColor: 'text-accent-foreground',
+      borderColor: 'border-accent/30',
+      bgColor: 'bg-accent/10',
       data: serpData.headings?.slice(0, 3)
     },
     {
@@ -141,10 +141,10 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
       description: 'Recent news and trending content',
       count: 3,
       variant: 'slate' as const,
-      gradient: 'from-slate-500/10 to-gray-600/10',
-      iconColor: 'text-slate-400',
-      borderColor: 'border-slate-500/30',
-      bgColor: 'bg-slate-500/20',
+      gradient: 'from-muted/10 to-muted/20',
+      iconColor: 'text-muted-foreground',
+      borderColor: 'border-muted/30',
+      bgColor: 'bg-muted/10',
       data: ['Latest industry updates', 'Trending topics', 'Breaking news']
     }
   ].filter(section => section.count > 0);
@@ -402,7 +402,7 @@ export const SerpTilesOverview: React.FC<SerpTilesOverviewProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            className={`bg-${section.variant}-500/10 hover:bg-${section.variant}-500/20 border-${section.variant}-500/30 ${section.iconColor}`}
+                            className={`${section.bgColor} hover:${section.bgColor.replace('/10', '/20')} ${section.borderColor} ${section.iconColor}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               // Add all items from this section
