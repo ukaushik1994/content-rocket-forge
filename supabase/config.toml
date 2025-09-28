@@ -84,3 +84,6 @@ verify_jwt = true
 
 [functions.ai-search-export]
 verify_jwt = true
+
+[functions.serp-api]
+verify_jwt = false

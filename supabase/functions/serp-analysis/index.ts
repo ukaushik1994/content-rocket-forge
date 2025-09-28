@@ -37,10 +37,10 @@ serve(async (req) => {
 
         if (serpstackData.organic_results) {
           serpData = {
-            searchVolume: Math.floor(Math.random() * 50000) + 5000, // Mock data as SerpStack doesn't provide volume
-            keywordDifficulty: Math.floor(Math.random() * 70) + 20,
-            competitionScore: Math.random() * 0.8 + 0.1,
-            cpc: Math.random() * 3 + 0.5,
+            searchVolume: null, // SerpStack doesn't provide search volume
+            keywordDifficulty: null, // Calculated separately if needed
+            competitionScore: serpstackData.ads ? Math.min(serpstackData.ads.length / 10, 1) : 0,
+            cpc: null, // Not available from SerpStack
             topResults: serpstackData.organic_results.slice(0, 10).map((result: any, index: number) => ({
               position: index + 1,
               title: result.title,
@@ -54,27 +54,28 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('SerpStack error:', error)
+        // Don't fall back to mock data - let it fail properly
+        throw new Error(`SerpStack API error: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
 
-    // Fallback to mock data if no API key or API fails
+    // If no SERP data is available, throw an error instead of returning mock data
     if (!serpData) {
-      serpData = {
-        searchVolume: Math.floor(Math.random() * 50000) + 5000,
-        keywordDifficulty: Math.floor(Math.random() * 70) + 20,
-        competitionScore: Math.random() * 0.8 + 0.1,
-        cpc: Math.random() * 3 + 0.5,
-        topResults: Array(10).fill(null).map((_, i) => ({
-          position: i + 1,
-          title: `Top Result ${i + 1} for "${keyword}"`,
-          url: `https://example${i + 1}.com`,
-          snippet: `High-quality content about ${keyword} with detailed information and insights...`,
-          domain: `example${i + 1}.com`
-        })),
-        totalResults: Math.floor(Math.random() * 1000000) + 100000,
-        isMockData: true,
-        provider: 'mock'
-      }
+      const errorMessage = !serpstackKey 
+        ? 'No SERP API keys configured. Please add SerpStack API key to enable real-time SERP data.'
+        : 'All SERP API calls failed. Please check your API keys and try again.';
+      
+      return new Response(
+        JSON.stringify({ 
+          error: errorMessage,
+          code: 'NO_SERP_DATA',
+          details: 'Real-time SERP data is required. Mock data has been disabled.' 
+        }),
+        { 
+          status: 503, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     // Cache the result
