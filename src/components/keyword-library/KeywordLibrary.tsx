@@ -24,7 +24,7 @@ import {
   Layers
 } from 'lucide-react';
 import { keywordLibraryService, UnifiedKeyword, KeywordFilters } from '@/services/keywordLibraryService';
-import { KeywordFilters as KeywordFiltersComponent } from './KeywordFilters';
+import { SimplifiedKeywordFilters } from './SimplifiedKeywordFilters';
 import { KeywordResearchModal } from './KeywordResearchModal';
 import { EnhancedBulkActions } from './EnhancedBulkActions';
 import { KeywordAnalyticsDashboard } from './KeywordAnalyticsDashboard';
@@ -308,14 +308,14 @@ export const KeywordLibrary: React.FC = () => {
                       Filters
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Filter Keywords</DialogTitle>
                     </DialogHeader>
-                    <KeywordFiltersComponent
+                    <SimplifiedKeywordFilters
                       filters={filters}
                       onFiltersChange={setFilters}
-                      onClose={() => setShowFilterDialog(false)}
+                      onApply={() => setShowFilterDialog(false)}
                     />
                   </DialogContent>
                 </Dialog>
