@@ -39,6 +39,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 export const KeywordLibrary: React.FC = () => {
@@ -48,7 +61,7 @@ export const KeywordLibrary: React.FC = () => {
   const [filters, setFilters] = useState<KeywordFilters>({});
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
   const [showStrategyIntegration, setShowStrategyIntegration] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showResearchModal, setShowResearchModal] = useState(false);
   const [showDuplicateManager, setShowDuplicateManager] = useState(false);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
@@ -233,16 +246,24 @@ export const KeywordLibrary: React.FC = () => {
                 Find Duplicates
               </Button>
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSync}
-                disabled={syncing}
-                className="text-xs"
-              >
-                <RefreshCw className={`h-3 w-3 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                Sync
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleSync}
+                      disabled={syncing}
+                      className="h-8 w-8"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${syncing ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sync Keywords</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               
               <Button
                 onClick={() => setShowResearchModal(true)}
@@ -276,15 +297,28 @@ export const KeywordLibrary: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                  size="sm"
-                  className="text-xs"
-                >
-                  <Filter className="h-3 w-3 mr-2" />
-                  Filters
-                </Button>
+                <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      <Filter className="h-3 w-3 mr-2" />
+                      Filters
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Filter Keywords</DialogTitle>
+                    </DialogHeader>
+                    <KeywordFiltersComponent
+                      filters={filters}
+                      onFiltersChange={setFilters}
+                      onClose={() => setShowFilterDialog(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
 
                 {selectedKeywords.size > 0 && (
                   <EnhancedBulkActions
@@ -306,23 +340,6 @@ export const KeywordLibrary: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Filters Panel */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-6"
-            >
-              <KeywordFiltersComponent
-                filters={filters}
-                onFiltersChange={setFilters}
-                onClose={() => setShowFilters(false)}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Analytics Dashboard */}
         <motion.div
