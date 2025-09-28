@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EnhancedEmbeddedKeywordLibrary } from '@/components/research/keyword/EnhancedEmbeddedKeywordLibrary';
-import { Search, Database, TrendingUp } from 'lucide-react';
+import { MigrationDashboard } from '@/components/keywords/MigrationDashboard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Database, TrendingUp, Activity } from 'lucide-react';
 
 const KeywordsPage = () => {
   const canonicalUrl = typeof window !== 'undefined' 
@@ -59,7 +61,7 @@ const KeywordsPage = () => {
               transition={{ delay: 0.3 }}
               className="text-muted-foreground max-w-2xl mx-auto text-lg"
             >
-              Manage your complete keyword library with metrics, analytics, and organizational tools
+              Manage your keyword library, migrate legacy data, and test integrations
             </motion.p>
 
             {/* Feature highlights */}
@@ -79,26 +81,48 @@ const KeywordsPage = () => {
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-background/60 backdrop-blur-sm border border-border/50 rounded-full text-sm">
                 <Database className="h-4 w-4 text-purple-500" />
-                Duplicate Management
+                Data Migration
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-background/60 backdrop-blur-sm border border-border/50 rounded-full text-sm">
+                <Activity className="h-4 w-4 text-green-500" />
+                Integration Testing
               </div>
             </motion.div>
           </div>
 
-          {/* Keyword Library */}
+          {/* Main Content Tabs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <GlassCard className="p-6">
-              <EnhancedEmbeddedKeywordLibrary
-                className="w-full"
-                onKeywordSelect={(keyword) => {
-                  // Optional: Handle keyword selection for any future functionality
-                  console.log('Selected keyword:', keyword);
-                }}
-              />
-            </GlassCard>
+            <Tabs defaultValue="repository" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="repository" className="flex items-center gap-2">
+                  <Database className="h-4 w-4" />
+                  Keyword Repository
+                </TabsTrigger>
+                <TabsTrigger value="migration" className="flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  Migration & Testing
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="repository" className="space-y-0">
+                <GlassCard className="p-6">
+                  <EnhancedEmbeddedKeywordLibrary
+                    className="w-full"
+                    onKeywordSelect={(keyword) => {
+                      console.log('Selected keyword:', keyword);
+                    }}
+                  />
+                </GlassCard>
+              </TabsContent>
+              
+              <TabsContent value="migration" className="space-y-0">
+                <MigrationDashboard />
+              </TabsContent>
+            </Tabs>
           </motion.div>
         </motion.div>
       </main>
