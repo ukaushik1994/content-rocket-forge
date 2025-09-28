@@ -255,35 +255,22 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
   // Show SERP analysis results
   return (
     <div className="space-y-6">
-      {/* Simplified Header */}
-      <Card className="border-primary/20">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-primary" />
-              SERP Analysis: "{keyword}"
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {selectedCount} Selected
-              </Badge>
-              <Button
-                onClick={handleRefresh}
-                variant="outline"
-                size="sm"
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
-          </CardTitle>
-          <CardDescription className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            {data?.isMockData ? 'Using proposal data' : 'Live SERP data'}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      {/* Minimal Header */}
+      <div className="flex items-center justify-between py-2 border-b border-border/50">
+        <h3 className="font-medium">"{keyword}"</h3>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{selectedCount} selected</span>
+          <Button
+            onClick={handleRefresh}
+            variant="ghost"
+            size="sm"
+            disabled={isLoading}
+            className="h-8"
+          >
+            <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+      </div>
 
       {/* Simplified Categories Grid */}
       {data && (
