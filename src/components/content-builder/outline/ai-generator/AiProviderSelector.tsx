@@ -15,7 +15,7 @@ export function AiProviderSelector({
 }: AiProviderSelectorProps) {
   return (
     <div className={`flex items-center justify-center ${className}`}>
-      <SimpleAIServiceIndicator size="md" showLabel={true} />
+      <SimpleAIServiceIndicator size="sm" showLabel={true} />
     </div>
   );
 }

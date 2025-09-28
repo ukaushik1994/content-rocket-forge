@@ -19,22 +19,22 @@ export function AIGenerateButton({
   mainKeyword
 }: AIGenerateButtonProps) {
   return (
-    <div className="pt-3">
+    <div className="pt-2">
       <Button 
         onClick={onGenerate}
         disabled={disabled || isGenerating}
         className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-        size="lg"
+        size="default"
       >
         {isGenerating ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Generating Outline...
+            Generating...
           </>
         ) : (
           <>
             <Sparkles className="h-4 w-4 mr-2" />
-            Generate AI Outline {totalSelectedItems > 0 ? `from ${totalSelectedItems} Selected Items` : ''}
+            Generate Outline {totalSelectedItems > 0 ? `(${totalSelectedItems} items)` : ''}
           </>
         )}
       </Button>

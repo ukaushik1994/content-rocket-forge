@@ -232,12 +232,12 @@ export function OutlineGenerator() {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
-            <CardContent className="pt-4">
-              <div className="text-sm font-medium text-white/90 mb-4 pb-2 border-b border-white/10">
+            <CardContent className="pt-3">
+              <div className="text-sm font-medium text-white/90 mb-3 pb-2 border-b border-white/10">
                 AI Outline Generator
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* AI Service Status */}
                 <AiProviderSelector />
                 
