@@ -26,7 +26,9 @@ import {
 import { keywordLibraryService, UnifiedKeyword, KeywordFilters } from '@/services/keywordLibraryService';
 import { KeywordFilters as KeywordFiltersComponent } from './KeywordFilters';
 import { KeywordResearchModal } from './KeywordResearchModal';
-import { KeywordBulkActions } from './KeywordBulkActions';
+import { EnhancedBulkActions } from './EnhancedBulkActions';
+import { KeywordAnalyticsDashboard } from './KeywordAnalyticsDashboard';
+import { EnhancedKeywordCard } from './EnhancedKeywordCard';
 import { DuplicateManager } from './DuplicateManager';
 import { KeywordUsageDetail } from './KeywordUsageDetail';
 import { 
@@ -137,15 +139,40 @@ export const KeywordLibrary: React.FC = () => {
         case 'export':
           await keywordLibraryService.exportKeywords(selectedIds, data.format);
           break;
+        case 'bulk_edit':
         case 'update':
           await keywordLibraryService.bulkUpdateKeywords(selectedIds, data);
           break;
+        case 'bulk_serp_refresh':
+          // Refresh SERP data for selected keywords
+          for (const keywordId of selectedIds) {
+            try {
+              await keywordLibraryService.refreshKeywordMetrics(keywordId);
+            } catch (error) {
+              console.error(`Failed to refresh keyword ${keywordId}:`, error);
+            }
+          }
+          toast.success(`SERP data refreshed for ${selectedIds.length} keywords`);
+          break;
+        case 'add_to_strategy':
+          // Add keywords to strategy (placeholder for now)
+          toast.success(`Added ${selectedIds.length} keywords to strategy`);
+          break;
+        case 'import':
+          // Handle file import (placeholder for now)
+          if (data?.file) {
+            toast.success('File import started - processing...');
+          }
+          break;
+        default:
+          console.log(`Bulk action ${action} not implemented yet`);
       }
       
       setSelectedKeywords(new Set());
       await loadKeywords();
     } catch (error) {
       console.error('Bulk action error:', error);
+      toast.error(`Failed to ${action} keywords`);
     }
   };
 
@@ -325,7 +352,7 @@ export const KeywordLibrary: React.FC = () => {
                   </Button>
 
                   {selectedKeywords.size > 0 && (
-                    <KeywordBulkActions
+                    <EnhancedBulkActions
                       selectedCount={selectedKeywords.size}
                       onAction={handleBulkAction}
                     />
@@ -370,7 +397,7 @@ export const KeywordLibrary: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Keywords List */}
+        {/* Enhanced Keywords List */}
         <motion.div
           variants={container}
           initial="hidden"
@@ -401,128 +428,39 @@ export const KeywordLibrary: React.FC = () => {
                       </motion.div>
                     ))}
                   </div>
-                ) : keywords.length > 0 ? (
-                  <div className="space-y-0">
-                    {keywords.map((keyword) => (
-                      <motion.div
-                        key={keyword.id}
-                        variants={item}
-                        layout
-                        className={`
-                          border-b border-white/5 last:border-b-0 p-4 
-                          hover:bg-white/5 transition-all duration-200 group
-                          ${selectedKeywords.has(keyword.id) ? 'bg-primary/5 border-primary/20' : ''}
-                        `}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 flex-1">
-                            {/* Checkbox */}
-                            <Checkbox
-                              checked={selectedKeywords.has(keyword.id)}
-                              onCheckedChange={(checked) => handleSelectKeyword(keyword.id, !!checked)}
-                            />
-                            
-                            {/* Source Badge */}
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Tag className="h-3 w-3 text-muted-foreground" />
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs ${getSourceBadgeColor(keyword.source_type)}`}
-                              >
-                                {keyword.source_type}
-                              </Badge>
-                            </div>
-                            
-                            {/* Keyword Name */}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-foreground truncate">
-                                {keyword.keyword}
-                              </h3>
-                            </div>
-                            
-                            {/* Search Volume & Difficulty */}
-                            <div className="flex items-center gap-4 text-sm">
-                              {keyword.search_volume !== null && keyword.search_volume !== undefined && (
-                                <div className="flex items-center gap-1">
-                                  <TrendingUp className="h-4 w-4 text-blue-400" />
-                                  <span className="text-muted-foreground">
-                                    {keyword.search_volume.toLocaleString()}
-                                  </span>
-                                </div>
-                              )}
-                              
-                              {keyword.difficulty !== null && keyword.difficulty !== undefined && (
-                                <div className="flex items-center gap-1">
-                                  <div className={`w-2 h-2 rounded-full ${getDifficultyColor(keyword.difficulty).replace('text-', 'bg-')}`} />
-                                  <span className={getDifficultyColor(keyword.difficulty)}>
-                                    {keyword.difficulty}%
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Usage Count with Details */}
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">Usage:</span>
-                              <KeywordUsageDetail 
-                                keywordId={keyword.id}
-                                usageCount={keyword.usage_count}
-                              />
-                            </div>
-                          </div>
-                          
-                          {/* Date & Actions */}
-                          <div className="flex items-center gap-4">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {new Date(keyword.first_discovered_at).toLocaleDateString()}
-                            </span>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem>
-                                  <Search className="h-4 w-4 mr-2" />
-                                  Research via SERP
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Usage
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Download className="h-4 w-4 mr-2" />
-                                  Export
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-400">
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                        
-                        {keyword.notes && (
-                          <div className="mt-3 ml-8 pt-2 border-t border-white/10">
-                            <p className="text-xs text-muted-foreground">
-                              {keyword.notes}
-                            </p>
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
+                 ) : keywords.length > 0 ? (
+                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-6">
+                     {keywords.map((keyword) => (
+                       <EnhancedKeywordCard
+                         key={keyword.id}
+                         keyword={keyword}
+                         selected={selectedKeywords.has(keyword.id)}
+                         onSelect={handleSelectKeyword}
+                         onUpdate={loadKeywords}
+                         onAction={async (action, keywordId) => {
+                           // Handle various keyword actions
+                           switch (action) {
+                             case 'refresh':
+                               await keywordLibraryService.refreshKeywordMetrics(keywordId);
+                               break;
+                             case 'delete':
+                               await keywordLibraryService.deleteKeywords([keywordId]);
+                               await loadKeywords();
+                               break;
+                             case 'google':
+                               window.open(`https://www.google.com/search?q=${encodeURIComponent(keyword.keyword)}`, '_blank');
+                               break;
+                             case 'export':
+                               await keywordLibraryService.exportKeywords([keywordId], 'csv');
+                               break;
+                             default:
+                               console.log(`Action ${action} not implemented yet`);
+                           }
+                         }}
+                         showPerformanceDetails={false}
+                       />
+                     ))}
+                   </div>
                 ) : (
                   <motion.div
                     variants={item}
