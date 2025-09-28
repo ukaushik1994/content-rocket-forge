@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RefreshCw, Send, TrendingUp, Calendar, Target, BarChart3, Lightbulb, Trash2, Eye, FileText, AlertCircle, TreePine } from 'lucide-react';
+import { RefreshCw, Send, TrendingUp, Calendar, Target, BarChart3, Lightbulb, Trash2, Eye, FileText, AlertCircle, TreePine, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { aiStrategyService } from '@/services/aiStrategyService';
@@ -15,8 +15,10 @@ import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
-import { ProposalStatusFilter } from './ProposalStatusFilter';
-import { useProposalStatusFilterFixed } from '@/hooks/useProposalStatusFilterFixed';
+import { ConsolidatedFilterDialog } from './ConsolidatedFilterDialog';
+import { ViewToggle, ViewMode } from './ViewToggle';
+import { ProposalRowView } from './ProposalRowView';
+import { useConsolidatedFilters } from '@/hooks/useConsolidatedFilters';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
 
@@ -56,14 +58,20 @@ export const ContentStrategyEngine = ({
   const [completedProposalIds, setCompletedProposalIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>(selectedProposals || {});
   
-  // Proposal status filtering - moved after allProposals definition
+  // New consolidated filtering and view state
+  const [viewMode, setViewMode] = useState<ViewMode>('tiles');
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+  
+  // Consolidated filtering
   const {
-    selectedStatuses,
+    filters,
+    setFilters,
+    filteredProposals,
     statusCounts,
-    filteredProposals: statusFilteredProposals,
-    handleStatusToggle,
-    clearFilters
-  } = useProposalStatusFilterFixed(allProposals);
+    categoryCounts,
+    hasActiveFilters,
+    clearAllFilters
+  } = useConsolidatedFilters(allProposals);
   const [loading, setLoading] = useState(false);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -102,18 +110,18 @@ export const ContentStrategyEngine = ({
     }
   }, [selectedProposals]);
 
-  // Calculate selection metrics using allProposals
+  // Calculate selection metrics using filteredProposals
   const targetCount = parseInt(goals?.contentPieces) || 0;
   const selectedCount = Object.values(selected).filter(Boolean).length;
   const targetTraffic = parseInt(goals?.monthlyTraffic) || 0;
-  const estimatedTraffic = allProposals.filter((_, index) => selected[index]).reduce((sum, proposal) => {
+  const estimatedTraffic = filteredProposals.filter((_, index) => selected[index]).reduce((sum, proposal) => {
     const primaryKw = proposal.primary_keyword;
     const metrics = proposal.serp_data?.[primaryKw] || {};
     const est = proposal.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
     return sum + est;
   }, 0);
   const handleSelectAllProposals = () => {
-    const newSelected = allProposals.reduce((acc, _, index) => {
+    const newSelected = filteredProposals.reduce((acc, _, index) => {
       acc[index] = true;
       return acc;
     }, {} as Record<string, boolean>);
@@ -121,7 +129,7 @@ export const ContentStrategyEngine = ({
     setSelectedProposals(newSelected);
   };
   const handleScheduleSelected = async () => {
-    const selectedProposalsList = allProposals.filter((_, index) => selected[index]);
+    const selectedProposalsList = filteredProposals.filter((_, index) => selected[index]);
     if (selectedProposalsList.length === 0) {
       toast({
         title: "No Proposals Selected",
@@ -801,9 +809,24 @@ export const ContentStrategyEngine = ({
               <Lightbulb className="h-5 w-5" />
               AI Proposals
             </div>
-            {/* Bulk Actions Toolbar */}
-            {allProposals.length > 0 && (
+            {/* New Consolidated Toolbar */}
+            {filteredProposals.length > 0 && (
               <div className="flex items-center gap-2">
+                <ViewToggle view={viewMode} onViewChange={setViewMode} />
+                <Button 
+                  onClick={() => setShowFilterDialog(true)} 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-white/20 text-white/80 hover:bg-white/10 gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  Filters
+                  {hasActiveFilters() && (
+                    <Badge variant="secondary" className="text-xs bg-primary/20">
+                      {filters.statuses.length + filters.categories.length + (filters.dateRange ? 1 : 0)}
+                    </Badge>
+                  )}
+                </Button>
                 <Button onClick={handleSelectAllProposals} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10">
                   Select All
                 </Button>
@@ -819,49 +842,74 @@ export const ContentStrategyEngine = ({
               </div>
             )}
           </CardTitle>
-          {allProposals.length > 0 && selectedCount > 0 && (
+          {filteredProposals.length > 0 && (
             <div className="text-sm text-white/60">
-              {allProposals.length} total • {selectedCount} selected • Est. Traffic: {estimatedTraffic.toLocaleString()}
+              {filteredProposals.length} proposals {hasActiveFilters() && `(of ${allProposals.length} total)`}
+              {selectedCount > 0 && ` • ${selectedCount} selected • Est. Traffic: ${estimatedTraffic.toLocaleString()}`}
             </div>
           )}
         </CardHeader>
         <CardContent>
-          {/* Status Filter */}
-          <ProposalStatusFilter
-            statusCounts={statusCounts}
-            selectedStatuses={selectedStatuses}
-            onStatusToggle={handleStatusToggle}
-            onClearFilters={clearFilters}
-          />
-          
-          <Tabs defaultValue="all" className="space-y-4 mt-4">
-            <TabsList className="bg-white/10 border-white/20">
-              <TabsTrigger value="all" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70">
-                All Proposals
-              </TabsTrigger>
-              <TabsTrigger value="selected" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-300 text-white/70">
-                Selected ({Object.values(selected).filter(Boolean).length})
-              </TabsTrigger>
-              <TabsTrigger value="quick_wins" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 text-white/70">
-                Quick Wins ({getFilteredProposals('quick_win').length})
-              </TabsTrigger>
-              <TabsTrigger value="high_return" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-white/70">
-                High Return ({getFilteredProposals('high_return').length})
-              </TabsTrigger>
-              <TabsTrigger value="evergreen" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 text-white/70">
-                Evergreen ({getFilteredProposals('evergreen').length})
-              </TabsTrigger>
-            </TabsList>
+          {/* Main Content Display */}
+          <div className="space-y-4 mt-4">
+            {/* Render based on view mode */}
+            {viewMode === 'tiles' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProposals.map((proposal, index) => (
+                  <ProposalCard
+                    key={proposal.id || index}
+                    proposal={proposal}
+                    index={index}
+                    selected={selected}
+                    onToggleSelection={(idx) => {
+                      const newSelected = { ...selected, [idx]: !selected[idx] };
+                      setSelected(newSelected);
+                      setSelectedProposals(newSelected);
+                    }}
+                    newProposalIds={newProposalIds}
+                    metrics={proposal.serp_data?.[proposal.primary_keyword] || {}}
+                    targetCount={targetCount}
+                    selectedCount={selectedCount}
+                    targetTraffic={targetTraffic}
+                    estimatedTraffic={estimatedTraffic}
+                  />
+                ))}
+              </div>
+            ) : (
+              <ProposalRowView
+                proposals={filteredProposals}
+                selected={selected}
+                onToggleSelection={(index) => {
+                  const newSelected = { ...selected, [index]: !selected[index] };
+                  setSelected(newSelected);
+                  setSelectedProposals(newSelected);
+                }}
+                onViewDetails={(proposal) => {
+                  console.log('View details:', proposal);
+                }}
+                newProposalIds={newProposalIds}
+              />
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-          <TabsContent value="all" className="space-y-4">
-            {loading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => <motion.div key={i} initial={{
-                opacity: 0,
-                y: 20
-              }} animate={{
-                opacity: 1,
-                y: 0
-              }} transition={{
+      {/* Consolidated Filter Dialog */}
+      <ConsolidatedFilterDialog
+        open={showFilterDialog}
+        onOpenChange={setShowFilterDialog}
+        filters={filters}
+        onFiltersChange={setFilters}
+        statusCounts={statusCounts}
+        categoryCounts={{ ...categoryCounts, selected: selectedCount }}
+      />
+
+      {/* Generation and Builder Modals */}
+      <StrategyGenerationModal open={showGenModal} onOpenChange={setShowGenModal} steps={genSteps} />
+      <StrategyBuilderDialog />
+    </div>
+  );
+};
                 delay: i * 0.1
               }}>
                     <Card className="h-96 bg-white/5 border-white/10">
