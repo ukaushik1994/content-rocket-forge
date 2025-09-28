@@ -316,63 +316,6 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
     <DataValidationProvider>
       <SerpDataManager proposal={proposal} autoLoad={true}>
         <div className="space-y-6">
-          {/* Always show enhanced status at the top of the analysis step */}
-          <Card className="border-neon-purple/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <StatusIcon className="h-5 w-5 mr-2 text-neon-purple" />
-                  Enhanced SERP Analysis
-                </div>
-                <Badge className={`${overallStatus.color} hover:${overallStatus.color}/80`}>
-                  {overallStatus.label}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-2 rounded bg-white/5">
-                  <span className="text-sm">SerpAPI (Enhanced)</span>
-                  <div className="flex items-center">
-                    {apiKeysStatus.serpApi.working ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : apiKeysStatus.serpApi.configured ? (
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                    ) : (
-                      <Settings className="h-4 w-4 text-red-500" />
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-white/5">
-                  <span className="text-sm">Serpstack (Fallback)</span>
-                  <div className="flex items-center">
-                    {apiKeysStatus.serpstack.working ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : apiKeysStatus.serpstack.configured ? (
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                    ) : (
-                      <Settings className="h-4 w-4 text-red-500" />
-                    )}
-                  </div>
-                </div>
-              </div>
-              {!hasWorkingApis && !hasProposalData && (
-                <div className="mt-3 text-center">
-                  <button
-                    onClick={() => setShowApiSetup(true)}
-                    className="text-sm text-neon-purple hover:text-neon-blue underline"
-                  >
-                    Configure API Keys for Full Analysis
-                  </button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Debug panel in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <SerpDebugPanel />
-          )}
 
             {/* Show enhanced analysis if API is available OR we have proposal data */}
             {(hasWorkingApis || hasProposalData) && mainKeyword ? (
@@ -395,7 +338,7 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
                     </p>
                   </div>
 
-                  <EnhancedSerpStatus onStatusChange={handleStatusChange} />
+                  
 
                   <Tabs defaultValue="setup" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 mb-4">
