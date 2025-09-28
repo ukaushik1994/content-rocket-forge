@@ -169,16 +169,16 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-panel p-6 bg-white/5 border-white/10"
+        className="bg-background/60 backdrop-blur-xl border border-border/50 p-6"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-pink to-pink-400 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
               <Users className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white">People Questions</h3>
-              <p className="text-white/60">
+              <h3 className="text-xl font-bold text-foreground">People Questions</h3>
+              <p className="text-muted-foreground">
                 Discover what people are asking about "{searchTerm}"
               </p>
             </div>
@@ -186,10 +186,10 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
 
           {questionsData && (
             <div className="text-center">
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-foreground">
                 {getCategoryCount('all')}
               </div>
-              <div className="text-white/60 text-sm">Total Questions</div>
+              <div className="text-muted-foreground text-sm">Total Questions</div>
             </div>
           )}
         </div>
@@ -201,7 +201,7 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass-panel p-4 bg-white/5 border-white/10"
+          className="bg-background/60 backdrop-blur-xl border border-border/50 p-4"
         >
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => {
@@ -216,15 +216,15 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
                   onClick={() => setActiveCategory(category.id as any)}
                   className={`${
                     activeCategory === category.id
-                      ? 'bg-neon-purple hover:bg-neon-purple/80'
-                      : 'border-white/20 text-white/80 hover:bg-white/10'
+                      ? 'bg-primary hover:bg-primary/80'
+                      : 'border-border text-muted-foreground hover:bg-accent'
                   }`}
                 >
                   <Icon className="h-4 w-4 mr-2" />
                   {category.label}
                   <Badge 
                     variant="secondary" 
-                    className="ml-2 bg-white/10 text-white border-0"
+                    className="ml-2 bg-muted text-muted-foreground border-0"
                   >
                     {count}
                   </Badge>
@@ -241,12 +241,12 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-panel p-4 bg-white/5 border-white/10"
+          className="bg-background/60 backdrop-blur-xl border border-border/50 p-4"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Sparkles className="h-4 w-4 text-neon-pink" />
-              <span className="text-white/80">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-muted-foreground">
                 {selectedQuestions.length} of {displayedQuestions.length} questions selected
               </span>
             </div>
@@ -255,7 +255,7 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
                 variant="outline"
                 size="sm"
                 onClick={handleSelectAll}
-                className="border-white/20 text-white/80 hover:bg-white/10"
+                className="border-border text-muted-foreground hover:bg-accent"
               >
                 {selectedQuestions.length === displayedQuestions.length ? 'Deselect All' : 'Select All'}
               </Button>
@@ -263,7 +263,7 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
                 <Button
                   size="sm"
                   onClick={handleCreateContent}
-                  className="bg-neon-pink hover:bg-neon-pink/80"
+                  className="bg-primary hover:bg-primary/80"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create FAQ Content ({selectedQuestions.length})
@@ -288,19 +288,19 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className={`glass-panel p-4 cursor-pointer transition-all duration-300 ${
+              className={`bg-background/60 backdrop-blur-xl border cursor-pointer transition-all duration-300 p-4 ${
                 selectedQuestions.includes(question.text)
-                  ? 'bg-neon-pink/10 border-neon-pink/30 ring-1 ring-neon-pink/20'
-                  : 'bg-white/5 border-white/10 hover:border-white/20'
+                  ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
+                  : 'border-border/50 hover:border-border'
               }`}
               onClick={() => handleQuestionSelect(question.text)}
             >
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center mt-1">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-muted/50 to-muted/20 flex items-center justify-center mt-1">
                   {selectedQuestions.includes(question.text) ? (
-                    <CheckCircle2 className="h-5 w-5 text-neon-pink" />
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
                   ) : (
-                    <Circle className="h-5 w-5 text-white/40" />
+                    <Circle className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
                 
@@ -309,13 +309,13 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
                     <span className="text-lg">{getCategoryIcon(question.category)}</span>
                     <Badge 
                       variant="outline" 
-                      className="text-xs border-white/20 text-white/70 bg-white/5"
+                      className="text-xs border-border text-muted-foreground bg-muted/50"
                     >
                       {question.category}
                     </Badge>
                   </div>
                   
-                  <p className="text-white font-medium mb-2 leading-relaxed">
+                  <p className="text-foreground font-medium mb-2 leading-relaxed">
                     {question.text}
                   </p>
                   
@@ -343,10 +343,10 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="glass-panel p-6 bg-white/5 border-white/10"
+          className="bg-background/60 backdrop-blur-xl border border-border/50 p-6"
         >
-          <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-neon-pink" />
+          <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
             Analysis Summary
           </h4>
           
@@ -355,13 +355,13 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
               const count = getCategoryCount(category.id as any);
               const Icon = category.icon;
               
-              return (
-                <div key={category.id} className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                  <Icon className={`h-8 w-8 mx-auto mb-2 ${category.color}`} />
-                  <div className="text-2xl font-bold text-white">{count}</div>
-                  <div className="text-white/60 text-sm">{category.label}</div>
-                </div>
-              );
+                return (
+                  <div key={category.id} className="text-center p-4 bg-muted/50 rounded-lg border border-border">
+                    <Icon className={`h-8 w-8 mx-auto mb-2 ${category.color}`} />
+                    <div className="text-2xl font-bold text-foreground">{count}</div>
+                    <div className="text-muted-foreground text-sm">{category.label}</div>
+                  </div>
+                );
             })}
           </div>
         </motion.div>
@@ -372,11 +372,11 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="glass-panel p-8 bg-white/5 border-white/10 text-center"
+          className="bg-background/60 backdrop-blur-xl border border-border/50 p-8 text-center"
         >
-          <div className="w-16 h-16 border-4 border-neon-pink/30 border-t-neon-pink rounded-full animate-spin mx-auto mb-4"></div>
-          <h3 className="text-lg font-semibold text-white mb-2">Analyzing People Questions</h3>
-          <p className="text-white/60">
+          <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Analyzing People Questions</h3>
+          <p className="text-muted-foreground">
             Discovering what people are asking about "{searchTerm}"...
           </p>
         </motion.div>
@@ -387,18 +387,18 @@ export const EnhancedPeopleQuestionsTab: React.FC<EnhancedPeopleQuestionsTabProp
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-panel p-12 bg-white/5 border-white/10 text-center"
+          className="bg-background/60 backdrop-blur-xl border border-border/50 p-12 text-center"
         >
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neon-pink/20 to-pink-400/20 flex items-center justify-center mx-auto mb-6">
-            <Users className="h-8 w-8 text-neon-pink" />
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-blue-400/20 flex items-center justify-center mx-auto mb-6">
+            <Users className="h-8 w-8 text-primary" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">Ready to Discover Questions</h3>
-          <p className="text-white/60 mb-6 max-w-md mx-auto">
+          <h3 className="text-lg font-semibold text-foreground mb-2">Ready to Discover Questions</h3>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Enter a keyword to analyze what people are asking about that topic 
             across search engines and forums.
           </p>
           
-          <div className="flex items-center justify-center gap-6 text-sm text-white/60">
+          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4 text-blue-400" />
               <span>Questions</span>
