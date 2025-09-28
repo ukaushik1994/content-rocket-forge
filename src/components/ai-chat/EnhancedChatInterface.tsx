@@ -123,7 +123,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       {/* Floating Sidebar Toggle */}
       <motion.div
-        className="fixed top-20 left-4 z-[60]"
+        className={`fixed z-[60] transition-all duration-300 ${
+          showSidebar 
+            ? 'top-[4.5rem] left-[18.5rem]' 
+            : 'top-20 left-4'
+        }`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -131,7 +135,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           variant="outline"
           size="icon"
           onClick={() => setShowSidebar(!showSidebar)}
-          className="rounded-full shadow-lg backdrop-blur-sm bg-background/90 border-border/50 hover:bg-background/95 transition-all duration-300"
+          className={`rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ${
+            showSidebar
+              ? 'bg-white/10 border-white/20 hover:bg-white/20 text-white/60 hover:text-white'
+              : 'bg-background/90 border-border/50 hover:bg-background/95'
+          }`}
         >
           <motion.div
             animate={{ rotate: showSidebar ? 90 : 0 }}

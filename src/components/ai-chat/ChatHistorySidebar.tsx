@@ -138,19 +138,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     >
       {/* Header */}
       <div className="p-4 border-b border-white/10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <History className="h-5 w-5 text-white/70" />
-            <h2 className="text-lg font-semibold text-white">Chat History</h2>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleSidebar}
-            className="text-white/60 hover:text-white hover:bg-white/10"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-2 mb-4">
+          <History className="h-5 w-5 text-white/70" />
+          <h2 className="text-lg font-semibold text-white">Chat History</h2>
         </div>
 
         {/* New Chat Button */}
