@@ -1,188 +1,238 @@
 import React from 'react';
-import { SerpAnalysisPanel as CoreSerpAnalysisPanel } from '@/components/content/SerpAnalysisPanel';
-import { SerpAnalysisResult } from '@/types/serp';
-import { toast } from 'sonner';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { SerpAnalysisResult } from '@/types/serp';
 
 interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
-  isLoading: boolean;
-  mainKeyword: string;
+  isLoading?: boolean;
+  mainKeyword?: string;
   onAddToContent?: (content: string, type: string) => void;
-  onRetry?: () => void;
-  onSerpDataChange?: (data: SerpAnalysisResult | null) => void;
+  onRetry?: () => Promise<void>;
+  onSerpDataChange?: (data: SerpAnalysisResult) => void;
   proposalData?: any;
 }
 
-export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
-  const { 
-    serpData, 
-    mainKeyword, 
-    onSerpDataChange = () => {},
-    isLoading: externalLoading,
-    proposalData
-  } = props;
-  
-  const [isLocalLoading, setIsLocalLoading] = React.useState(false);
-  const [dataSource, setDataSource] = React.useState<'real' | 'mock' | 'loading' | 'proposal' | null>(null);
-  const isLoading = externalLoading || isLocalLoading;
+interface SerpSection {
+  key: keyof SerpAnalysisResult;
+  title: string;
+  description: string;
+  icon?: React.ReactNode;
+}
 
-  console.log('🔍 SerpAnalysisPanel debug:', {
-    mainKeyword,
-    hasSerpData: !!serpData,
-    hasProposalData: !!proposalData,
-    proposalKeys: proposalData ? Object.keys(proposalData) : 'none',
-    isLoading
-  });
+const serpSections: SerpSection[] = [
+  { key: 'keywords', title: 'Keywords', description: 'Related search terms' },
+  { key: 'peopleAlsoAsk', title: 'Questions', description: 'People also ask' },
+  { key: 'entities', title: 'Entities', description: 'Key topics and entities' },
+  { key: 'headings', title: 'Headings', description: 'Suggested content structure' },
+  { key: 'contentGaps', title: 'Content Gaps', description: 'Missing content opportunities' },
+  { key: 'topResults', title: 'Top Results', description: 'Competitor analysis' },
+  { key: 'relatedSearches', title: 'Related Searches', description: 'Additional keywords' }
+];
 
-  const convertProposalToSerpData = (serpDataEntry: any, keyword: string): SerpAnalysisResult => {
-    return {
-      keyword: serpDataEntry.keyword || keyword,
-      searchVolume: serpDataEntry.searchVolume || 1000,
-      keywordDifficulty: serpDataEntry.keywordDifficulty || 50,
-      competitionScore: serpDataEntry.competitionScore || 0.5,
-      entities: serpDataEntry.entities || [],
-      peopleAlsoAsk: (serpDataEntry.peopleAlsoAsk || []).map(q => ({
-        question: typeof q === 'string' ? q : q.question,
-        source: typeof q === 'object' ? q.source || 'proposal' : 'proposal'
-      })),
-      headings: (serpDataEntry.headings || []).map(h => ({
-        text: typeof h === 'string' ? h : h.text,
-        level: (typeof h === 'object' ? h.level : 'h2') as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
-        subtext: typeof h === 'object' ? h.subtext : ''
-      })),
-      contentGaps: serpDataEntry.contentGaps || [],
-      topResults: (serpDataEntry.topResults || []).map((result, index) => ({
-        title: result.title || '',
-        link: result.link || '',
-        snippet: result.snippet || '',
-        position: result.position || index + 1
-      })),
-      relatedSearches: (serpDataEntry.relatedSearches || serpDataEntry.keywords || []).map(kw => ({
-        query: typeof kw === 'string' ? kw : kw.query || kw.keyword,
-        volume: typeof kw === 'object' ? kw.volume : undefined
-      })),
-      keywords: serpDataEntry.keywords || [],
-      recommendations: serpDataEntry.recommendations || [],
-      isMockData: false // Proposal data is considered real
-    };
+export const SerpAnalysisPanel: React.FC<SerpAnalysisPanelProps> = ({
+  serpData,
+  isLoading = false,
+  mainKeyword,
+  onAddToContent,
+  onRetry,
+  onSerpDataChange,
+  proposalData
+}) => {
+  const { dispatch } = useContentBuilder();
+  const [expandedSections, setExpandedSections] = React.useState<Set<string>>(
+    new Set(['keywords', 'peopleAlsoAsk'])
+  );
+
+  const toggleSection = (sectionKey: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionKey)) {
+      newExpanded.delete(sectionKey);
+    } else {
+      newExpanded.add(sectionKey);
+    }
+    setExpandedSections(newExpanded);
   };
 
-  const fetchSerpData = async () => {
-    if (!mainKeyword || serpData || isLoading) return;
-    
-    setIsLocalLoading(true);
-    setDataSource('loading');
-    try {
-      console.log("🔄 Fetching SERP data via API for:", mainKeyword);
-      const data = await analyzeKeywordSerp(mainKeyword);
-      if (data) {
-        onSerpDataChange(data);
-        
-        if (data.isMockData) {
-          setDataSource('mock');
-          toast.warning("Using mock data. Add your SERP API key for real results.", {
-            duration: 5000,
-            action: {
-              label: "Add Key",
-              onClick: () => {
-                // Dispatch custom event to trigger settings popup with API tab
-                window.dispatchEvent(new CustomEvent('openSettings', { detail: { tab: 'api' } }));
-              }
-            }
-          });
-        } else {
-          setDataSource('real');
-          toast.success("SERP analysis completed with real data!");
+  const addToSelection = (type: string, content: string) => {
+    if (onAddToContent) {
+      onAddToContent(content, type);
+    } else {
+      dispatch({
+        type: 'ADD_SERP_SELECTION',
+        payload: {
+          type,
+          content,
+          selected: true,
+          source: 'serp_analysis'
         }
-      }
-    } catch (error) {
-      console.error('❌ Error fetching SERP data:', error);
-      toast.error("Failed to fetch SERP data. Please try again.");
-    } finally {
-      setIsLocalLoading(false);
+      });
     }
   };
 
-  // Check for proposal data first, then try API call
-  React.useEffect(() => {
-    const loadData = async () => {
-      if (!mainKeyword) return;
+  const renderSectionContent = (section: SerpSection) => {
+    if (!serpData) return null;
 
-      // First try to use proposal data if available
-      if (proposalData && !serpData) {
-        console.log('📥 Loading SERP data from proposal...');
-        try {
-          const targetKeyword = mainKeyword;
-          let serpDataEntry = proposalData[targetKeyword] || Object.values(proposalData)[0];
-          
-          if (serpDataEntry) {
-            const convertedData = convertProposalToSerpData(serpDataEntry, targetKeyword);
-            onSerpDataChange(convertedData);
-            setDataSource('proposal');
-            toast.success('SERP data loaded from proposal');
-            return;
+    const data = serpData[section.key];
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      return (
+        <div className="text-muted-foreground text-sm py-4 text-center">
+          No {section.title.toLowerCase()} data available
+        </div>
+      );
+    }
+
+    const renderItems = () => {
+      if (Array.isArray(data)) {
+        return data.slice(0, 10).map((item: any, index: number) => {
+          let content = '';
+          let metadata = {};
+
+          switch (section.key) {
+            case 'keywords':
+              content = typeof item === 'string' ? item : item.query || item.keyword || String(item);
+              break;
+            case 'peopleAlsoAsk':
+              content = item.question || String(item);
+              metadata = { answer: item.answer, source: item.source };
+              break;
+            case 'entities':
+              content = item.name || String(item);
+              metadata = { type: item.type, description: item.description };
+              break;
+            case 'headings':
+              content = item.text || String(item);
+              metadata = { level: item.level, subtext: item.subtext };
+              break;
+            case 'contentGaps':
+              content = item.topic || item.description || String(item);
+              metadata = { recommendation: item.recommendation, opportunity: item.opportunity };
+              break;
+            case 'topResults':
+              content = item.title || String(item);
+              metadata = { link: item.link, snippet: item.snippet, position: item.position };
+              break;
+            case 'relatedSearches':
+              content = item.query || item.keyword || String(item);
+              metadata = { volume: item.volume };
+              break;
+            default:
+              content = String(item);
           }
-        } catch (error) {
-          console.error('❌ Error loading proposal data:', error);
-        }
+
+          return (
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/50 hover:border-primary/20 transition-colors"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{content}</p>
+                {metadata && Object.keys(metadata).length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {JSON.stringify(metadata).slice(0, 100)}...
+                  </p>
+                )}
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => addToSelection(section.key, content)}
+                className="ml-2 h-8 w-8 p-0"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        });
       }
 
-      // Fallback to API call if no proposal data or serpData
-      if (!serpData && !isLoading) {
-        await fetchSerpData();
-      }
+      return (
+        <div className="text-muted-foreground text-sm py-4">
+          Unexpected data format for {section.title}
+        </div>
+      );
     };
 
-    loadData();
-  }, [mainKeyword, proposalData, serpData, isLoading]);
-
-  // Data source indicator
-  const getDataSourceBadge = () => {
-    if (isLoading) return null;
-    
-    switch (dataSource) {
-      case 'real':
-        return (
-          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-            <Info className="h-3 w-3 mr-1" />
-            Real Data
-          </Badge>
-        );
-      case 'proposal':
-        return (
-          <Badge variant="secondary" className="bg-blue-600 hover:bg-blue-700">
-            <Info className="h-3 w-3 mr-1" />
-            Proposal Data
-          </Badge>
-        );
-      case 'mock':
-        return (
-          <Badge variant="outline" className="bg-yellow-600 hover:bg-yellow-700">
-            <Info className="h-3 w-3 mr-1" />
-            Mock Data
-          </Badge>
-        );
-      default:
-        return null;
-    }
+    return <div className="space-y-2">{renderItems()}</div>;
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {serpSections.map((section) => (
+          <Card key={section.key} className="animate-pulse">
+            <CardHeader className="pb-3">
+              <div className="h-5 bg-muted rounded w-32"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-12 bg-muted rounded"></div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!serpData) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <p className="text-muted-foreground">No SERP analysis data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="relative">
-      {/* Data Source Indicator */}
-      {getDataSourceBadge() && (
-        <div className="absolute top-4 right-4 z-10">
-          {getDataSourceBadge()}
-        </div>
-      )}
-      
-      <CoreSerpAnalysisPanel 
-        {...props} 
-        isLoading={isLoading}
-      />
+    <div className="space-y-4">
+      {serpSections.map((section) => {
+        const isExpanded = expandedSections.has(section.key);
+        const data = serpData[section.key];
+        const itemCount = Array.isArray(data) ? data.length : data ? 1 : 0;
+
+        return (
+          <Card key={section.key} className="transition-all duration-200">
+            <CardHeader
+              className="pb-3 cursor-pointer"
+              onClick={() => toggleSection(section.key)}
+            >
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {section.icon}
+                  <div>
+                    <h3 className="text-base font-medium">{section.title}</h3>
+                    <p className="text-sm text-muted-foreground font-normal">
+                      {section.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    {itemCount}
+                  </Badge>
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+              </CardTitle>
+            </CardHeader>
+            {isExpanded && (
+              <CardContent className="pt-0">
+                {renderSectionContent(section)}
+              </CardContent>
+            )}
+          </Card>
+        );
+      })}
     </div>
   );
-}
+};
