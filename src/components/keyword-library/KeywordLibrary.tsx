@@ -308,9 +308,9 @@ export const KeywordLibrary: React.FC = () => {
                       Filters
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-lg mx-auto">
                     <DialogHeader>
-                      <DialogTitle>Filter Keywords</DialogTitle>
+                      <DialogTitle className="text-lg font-semibold">Filter Keywords</DialogTitle>
                     </DialogHeader>
                     <SimplifiedKeywordFilters
                       filters={filters}
