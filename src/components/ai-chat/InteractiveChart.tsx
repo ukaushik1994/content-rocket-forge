@@ -321,7 +321,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             
             {/* View Mode Toggle */}
             <Tabs value={viewMode} onValueChange={value => setViewMode(value as 'chart' | 'table')}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="inline-grid grid-cols-2">
                 <TabsTrigger value="chart" className="flex items-center justify-center" aria-label="Chart view">
                   <BarChart3 className="w-4 h-4" />
                 </TabsTrigger>
