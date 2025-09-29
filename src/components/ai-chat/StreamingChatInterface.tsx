@@ -12,6 +12,7 @@ import { ChatSuggestion } from '@/hooks/useSmartSuggestions';
 import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
 import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
 import { useContextSnapshots } from '@/hooks/useContextSnapshots';
+import { MultiUserTypingIndicator } from './MultiUserTypingIndicator';
 import { ContextSnapshotPanel } from './ContextSnapshotPanel';
 import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -50,13 +51,17 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     retryLastMessage
   } = useEnhancedStreamingChat();
   
-  // Advanced collaboration
+  // Advanced collaboration with enhanced features
   const { 
     collaborators: collabUsers, 
+    typingUsers,
     isScreenSharing, 
     startScreenSharing, 
-    stopScreenSharing 
-  } = useAdvancedCollaboration();
+    stopScreenSharing,
+    updateTypingStatus,
+    broadcastAIResponse,
+    activeUserCount
+  } = useAdvancedCollaboration(activeConversation?.id);
   
   // Use collaboration users or fallback to empty array
   const collaborators = collabUsers || [];
@@ -188,15 +193,24 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
       </div>
 
       {/* Messages with Infinite Scroll */}
-      <InfiniteScrollMessages
-        messages={displayMessages}
-        hasMoreMessages={hasMoreMessages}
-        isLoadingMore={isLoadingMoreMessages}
-        onLoadMore={loadMoreMessages}
-        isTyping={isTyping}
-        onRetryMessage={retryLastMessage}
-        isRetryingMessage={isAIThinking}
-      />
+      <div className="flex-1 overflow-hidden">
+        <InfiniteScrollMessages
+          messages={displayMessages}
+          hasMoreMessages={hasMoreMessages}
+          isLoadingMore={isLoadingMoreMessages}
+          onLoadMore={loadMoreMessages}
+          isTyping={isTyping}
+          onRetryMessage={retryLastMessage}
+          isRetryingMessage={isAIThinking}
+        />
+        
+        {/* Multi-User Typing Indicator */}
+        {typingUsers && typingUsers.length > 0 && (
+          <div className="px-4 pb-2">
+            <MultiUserTypingIndicator typingUsers={typingUsers} />
+          </div>
+        )}
+      </div>
 
       {/* Input */}
       <div className="p-4 border-t border-border/50 bg-card/30">

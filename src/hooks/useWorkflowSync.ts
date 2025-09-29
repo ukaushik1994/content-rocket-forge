@@ -48,11 +48,12 @@ export const useWorkflowSync = (conversationId?: string) => {
         current_step: currentStep,
         progress: Math.min(100, Math.max(0, progress)),
         context: context || {},
+        user_name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Anonymous',
         updated_at: new Date().toISOString()
       };
 
-      // Update database
-      const { error } = await supabase
+      // Update database - use any to avoid type issues during migration
+      const { error } = await (supabase as any)
         .from('workflow_sync_states')
         .upsert(workflowState);
 
@@ -84,7 +85,7 @@ export const useWorkflowSync = (conversationId?: string) => {
     if (!user || !conversationId) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('workflow_sync_states')
         .update({ 
           context,
@@ -189,14 +190,14 @@ export const useWorkflowSync = (conversationId?: string) => {
         }
       })
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event: '*',
-          schema: 'public',
+          schema: 'public',  
           table: 'workflow_sync_states',
           filter: `conversation_id=eq.${conversationId}`
         },
-        (payload) => {
+        (payload: any) => {
           const workflowState = payload.new as any;
           
           if (workflowState && workflowState.user_id !== user?.id) {
@@ -227,7 +228,7 @@ export const useWorkflowSync = (conversationId?: string) => {
     if (!conversationId) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('workflow_sync_states')
         .select('*')
         .eq('conversation_id', conversationId)
@@ -235,7 +236,7 @@ export const useWorkflowSync = (conversationId?: string) => {
 
       if (error) throw error;
 
-      const states: WorkflowState[] = (data || []).map(state => ({
+      const states: WorkflowState[] = (data || []).map((state: any) => ({
         id: state.id,
         userId: state.user_id,
         userName: state.user_name || 'Anonymous',
