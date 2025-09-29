@@ -9,9 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from './DataTable';
-import { ChartSuggestionPanel } from './ChartSuggestionPanel';
+
 import { cn } from '@/lib/utils';
-import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2, Table as TableIcon } from 'lucide-react';
+import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2, Table as TableIcon, CheckCircle2 } from 'lucide-react';
 interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
   title?: string;
@@ -350,15 +350,35 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             
             {allowTypeSwitch && <Select value={currentType} onValueChange={value => setCurrentType(value as 'line' | 'bar' | 'pie' | 'area')}>
                 <SelectTrigger className="w-36">
-                  <SelectValue placeholder="Chart Type" />
+                  <div className="flex items-center gap-2">
+                    <SelectValue placeholder="Chart Type" />
+                    {chartSuggestions.some(s => s.type === currentType && s.confidence >= 0.7) && (
+                      <CheckCircle2 className="w-3 h-3 text-success" />
+                    )}
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
                   {chartTypes.map(type => {
                 const Icon = type.icon;
+                const recommendation = chartSuggestions.find(s => s.type === type.value);
+                const isRecommended = recommendation && recommendation.confidence >= 0.7;
+                const confidenceLevel = recommendation?.confidence >= 0.8 ? 'High' : 
+                                     recommendation?.confidence >= 0.6 ? 'Medium' : null;
+                
                 return <SelectItem key={type.value} value={type.value}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="w-4 h-4" />
-                          {type.label}
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <Icon className="w-4 h-4" />
+                            {type.label}
+                          </div>
+                          {isRecommended && (
+                            <div className="flex items-center gap-1 ml-2">
+                              <CheckCircle2 className="w-3 h-3 text-success" />
+                              {confidenceLevel && (
+                                <span className="text-xs text-success">{confidenceLevel}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </SelectItem>;
               })}
@@ -386,11 +406,6 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           {viewMode === 'chart' ? <div className="space-y-4">
               {renderChart()}
               
-              {/* AI Suggestions Panel */}
-              {showIntelligentSuggestions && (chartSuggestions.length > 0 || chartImprovements.length > 0) && <ChartSuggestionPanel suggestions={chartSuggestions} improvements={chartImprovements} currentType={currentType} onApplySuggestion={type => {
-            console.log('🤖 Applying AI suggestion:', type);
-            setCurrentType(type);
-          }} />}
             </div> : <DataTable data={filteredData} allowEdit={false} allowFilter={true} allowSort={true} onExport={format => {
           console.log(`Exporting data as ${format}`);
         }} />}
