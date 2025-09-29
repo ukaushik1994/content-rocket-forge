@@ -362,8 +362,6 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 const Icon = type.icon;
                 const recommendation = chartSuggestions.find(s => s.type === type.value);
                 const isRecommended = recommendation && recommendation.confidence >= 0.7;
-                const confidenceLevel = recommendation?.confidence >= 0.8 ? 'High' : 
-                                     recommendation?.confidence >= 0.6 ? 'Medium' : null;
                 
                 return <SelectItem key={type.value} value={type.value}>
                         <div className="flex items-center justify-between w-full">
@@ -372,12 +370,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                             {type.label}
                           </div>
                           {isRecommended && (
-                            <div className="flex items-center gap-1 ml-2">
-                              <CheckCircle2 className="w-3 h-3 text-success" />
-                              {confidenceLevel && (
-                                <span className="text-xs text-success">{confidenceLevel}</span>
-                              )}
-                            </div>
+                            <CheckCircle2 className="w-3 h-3 text-success" />
                           )}
                         </div>
                       </SelectItem>;
