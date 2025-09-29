@@ -1,13 +1,39 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { 
   analyzeSerpIntent, 
   executeSerpAnalysis, 
   generateSerpContext, 
   generateSmartSuggestions 
 } from './serp-intelligence.ts';
+
+// Helper function to convert metrics to chart format
+function convertMetricsToChart(metrics: any[], userQuery: string): any | null {
+  if (!metrics || metrics.length === 0) return null;
+  
+  try {
+    // Detect if metrics can be converted to a chart
+    const hasNumericValues = metrics.some(m => typeof m.value === 'number' || !isNaN(parseFloat(m.value)));
+    if (!hasNumericValues) return null;
+    
+    // Create chart data from metrics
+    const chartData = {
+      type: 'bar', // Default to bar chart for metrics
+      data: metrics.map(metric => ({
+        name: metric.title || metric.label || 'Unknown',
+        value: typeof metric.value === 'number' ? metric.value : parseFloat(metric.value) || 0
+      })),
+      categories: ['value']
+    };
+    
+    return chartData;
+  } catch (error) {
+    console.error('Error converting metrics to chart:', error);
+    return null;
+  }
+}
 
 // Content sanitization function to prevent raw data leakage
 function sanitizeResponseContent(content: string): string {
@@ -871,16 +897,19 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     const parsedResponse = parseResponseWithFallback(aiMessage);
     let { message: cleanedResponse, actions, visualData } = parsedResponse;
     
-    // Validate chart generation compliance
+    // Validate chart generation compliance and attempt fallback
     if (userRequestedChart && visualData && visualData.type !== 'chart') {
       console.warn('⚠️ Chart requested but AI generated:', visualData.type);
       console.log('📝 Full response for debugging:', aiMessage.substring(0, 500));
-    }
-    
-    // Validate chart generation compliance
-    if (userRequestedChart && visualData && visualData.type !== 'chart') {
-      console.warn('⚠️ Chart requested but AI generated:', visualData.type);
-      console.log('📝 Full response for debugging:', aiMessage.substring(0, 500));
+      
+      // Attempt to convert metrics to chart if possible
+      if (visualData.type === 'metrics' && visualData.metrics) {
+        const chartData = convertMetricsToChart(visualData.metrics, userQuery);
+        if (chartData) {
+          console.log('✅ Successfully converted metrics to chart');
+          visualData = { type: 'chart', chartConfig: chartData };
+        }
+      }
     }
     
     // If no structured data was found, try legacy parsing
