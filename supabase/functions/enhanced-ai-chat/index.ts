@@ -771,6 +771,22 @@ serve(async (req) => {
 
 ## PLATFORM INTELLIGENCE LEVEL: PHASE 4 COMPLETE - Enterprise & Workflow Intelligence
 
+## 🚨 CRITICAL CHART GENERATION RULES - MANDATORY:
+**When user explicitly requests a chart (says "show me a chart", "create a chart", "visualize", etc.):**
+1. ✅ YOU MUST ALWAYS generate a chartConfig - NEVER explain why you cannot
+2. ✅ Use ANY available numeric data - GSC clicks, impressions, proposals, content counts, ANY metrics
+3. ✅ If no perfect data exists, create a chart from contextual metrics (proposals by status, content by type, etc.)
+4. ✅ DEFAULT chart type: bar (unless user specifies line/pie/area)
+5. ✅ If truly confused about what to chart, ask "What specific data would you like to see charted?" THEN generate the chart
+6. ❌ NEVER respond with "I cannot create this chart" or explanations about data availability
+7. ❌ NEVER generate tables or metrics when user explicitly asks for charts
+
+**Chart Generation Examples:**
+- User: "show me a chart" → Generate bar chart of available proposals or content by status
+- User: "chart of performance" → Use GSC clicks/impressions or content metrics
+- User: "visualize trends" → Create line chart from time-series data
+- User: "pie chart of content" → Generate pie chart of content types distribution
+
 ## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:
 ${realDataContext}
 
@@ -924,32 +940,37 @@ When creating charts, ALWAYS:
 - Data tables (use type: "table" with proper tableData structure)
 
 ## Visualization Intelligence Guidelines:
-**AUTO-DETECT the best visualization based on data characteristics:**
+**PRIORITY ORDER - Follow this strictly:**
 
-### Use TABLES when:
+### 1️⃣ Use CHARTS when (HIGHEST PRIORITY):
+- User explicitly says "chart", "graph", "visualize", "plot", or "show me visually"
+- User asks for "trends", "performance over time", "growth", or "comparison"
+- Data shows patterns over time → line/area charts
+- Data compares categories → bar charts
+- Data shows parts of a whole → pie charts
+- **CRITICAL**: If user requests chart, ALWAYS generate chartConfig - never substitute with table/metrics
+
+### 2️⃣ Use TABLES when:
 - User requests "spreadsheet", "table", "list format", or "data export"  
-- Data has many columns (>4) or rows (>10)
+- Data has many columns (>4) or rows (>10) AND user didn't ask for chart
 - Data contains detailed text, IDs, or precise values
 - User needs to compare exact numbers or perform data analysis
+- **NEVER use table if user explicitly requested chart**
 
-### Use CHARTS when:
-- User asks for "trends", "performance", "growth", or "comparison"
-- Data shows patterns over time (line/area charts)
-- Data compares categories (bar charts) 
-- Data shows parts of a whole (pie charts)
-- User wants to "visualize" or "see patterns"
-
-### Use METRICS when:
+### 3️⃣ Use METRICS when:
 - User asks about "KPIs", "performance summary", or "dashboard view"
-- Highlighting 2-5 key numbers with context
+- Highlighting 2-5 key numbers with context (AND user didn't ask for chart)
 - Showing percentage changes, growth rates, or achievement status
 - User wants a "quick overview" or "summary"
+- **NEVER use metrics if user explicitly requested chart**
 
-### Smart Suggestions:
-- For large datasets: "This data works great in both chart and table views"
-- For financial data: "Switch to table view for precise numbers" 
-- For trends: "View as chart to see patterns over time"
-- Always tell user when visualization isn't possible for their specific request
+### 🚨 MANDATORY CHART RULES:
+- "show me a chart" = MUST generate chartConfig
+- "visualize this" = MUST generate chartConfig  
+- "create a graph" = MUST generate chartConfig
+- "chart of X" = MUST generate chartConfig
+- When confused about chart data, ask clarifying question BUT still prepare to generate chart
+- Use available data creatively - proposals, content counts, GSC metrics, pipeline stages, etc.
 
 ## Smart View Recommendations:
 When generating chart data, also suggest optimal viewing mode:
@@ -1029,45 +1050,99 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     const parsedResponse = parseResponseWithFallback(aiMessage);
     let { message: cleanedResponse, actions, visualData } = parsedResponse;
     
-    // Enhanced validation and conversion logic
-    if (chartRequest.requested && visualData && visualData.type !== 'chart') {
-      console.warn(`⚠️ Chart requested (${chartRequest.type}) but AI generated:`, visualData.type);
-      console.log('📝 Attempting intelligent conversion...');
+    // 🚨 AGGRESSIVE CHART FALLBACK - When user explicitly requests chart but AI didn't generate one
+    if (chartRequest.requested && chartRequest.confidence >= 0.7 && (!visualData || visualData.type !== 'chart')) {
+      console.log('🚨 CRITICAL: Chart explicitly requested but not generated. Forcing fallback chart generation...');
       
-      let conversionSuccessful = false;
+      let fallbackChartCreated = false;
       
-      // Try metrics to chart conversion
-      if (visualData.type === 'metrics' && visualData.metrics) {
-        const chartData = convertMetricsToChart(visualData.metrics, userQuery);
-        if (chartData) {
-          console.log('✅ Successfully converted metrics to chart');
-          visualData = { type: 'chart', chartConfig: chartData };
-          conversionSuccessful = true;
+      // Try to convert any existing visual data first
+      if (visualData) {
+        console.warn(`⚠️ Chart requested (${chartRequest.type}) but AI generated:`, visualData.type);
+        console.log('📝 Attempting intelligent conversion...');
+        
+        // Try metrics to chart conversion
+        if (visualData.type === 'metrics' && visualData.metrics) {
+          const chartData = convertMetricsToChart(visualData.metrics, userQuery);
+          if (chartData) {
+            console.log('✅ Successfully converted metrics to chart');
+            visualData = { type: 'chart', chartConfig: chartData };
+            fallbackChartCreated = true;
+          }
+        }
+        
+        // Try table to chart conversion
+        if (!fallbackChartCreated && visualData.type === 'table' && visualData.tableData) {
+          const chartData = convertTableToChart(visualData.tableData);
+          if (chartData) {
+            console.log('✅ Successfully converted table to chart');
+            visualData = { type: 'chart', chartConfig: chartData };
+            fallbackChartCreated = true;
+          }
         }
       }
       
-      // Try table to chart conversion
-      if (!conversionSuccessful && visualData.type === 'table' && visualData.tableData) {
-        const chartData = convertTableToChart(visualData.tableData);
-        if (chartData) {
-          console.log('✅ Successfully converted table to chart');
-          visualData = { type: 'chart', chartConfig: chartData };
-          conversionSuccessful = true;
+      // LAST RESORT: Create a generic chart from real data context
+      if (!fallbackChartCreated) {
+        console.log('🔧 Creating fallback chart from available context data...');
+        
+        try {
+          // Fetch quick metrics for fallback chart
+          const { data: proposals } = await supabase
+            .from('ai_strategy_proposals')
+            .select('status')
+            .limit(100);
+          
+          if (proposals && proposals.length > 0) {
+            // Count proposals by status
+            const statusCounts = proposals.reduce((acc, p) => {
+              const status = p.status || 'unknown';
+              acc[status] = (acc[status] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>);
+            
+            const chartData = {
+              type: 'bar',
+              data: Object.entries(statusCounts).map(([status, count]) => ({
+                name: status.charAt(0).toUpperCase() + status.slice(1),
+                value: count
+              })),
+              categories: ['value'],
+              colors: ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))'],
+              height: 300
+            };
+            
+            visualData = { type: 'chart', chartConfig: chartData };
+            fallbackChartCreated = true;
+            
+            // Update the message to explain what we're showing
+            cleanedResponse = cleanedResponse.replace(
+              /I (cannot|can't|am unable to)/gi,
+              "Here's a chart showing"
+            );
+            cleanedResponse += `\n\n📊 **Chart Generated**: Showing distribution of AI proposals by status. This gives you a visual overview of your content opportunities.`;
+            
+            console.log('✅ Fallback chart created from proposal data');
+          }
+        } catch (error) {
+          console.error('❌ Failed to create fallback chart:', error);
         }
       }
       
-      // Add user feedback if conversion failed
-      if (!conversionSuccessful && chartRequest.confidence > 0.7) {
-        // Add action to suggest viewing data in different format
+      // If still no chart and confidence is very high, add clarifying action
+      if (!fallbackChartCreated && chartRequest.confidence > 0.85) {
         if (!actions) actions = [];
         actions.push({
-          label: "📊 Try Chart View",
-          action: "ask_for_chart_data",
-          description: "Request data in a chart-compatible format"
+          id: "clarify-chart-request",
+          label: "📊 Specify Chart Data",
+          type: "button",
+          action: "ask_for_clarification",
+          data: { 
+            message: "What specific data would you like to see in the chart? (e.g., proposals by status, content performance, GSC clicks over time)"
+          }
         });
         
-        // Append explanation to the response
-        cleanedResponse += `\n\n*Note: The data shown above isn't easily chart-compatible, but I've provided it in a detailed format. You can ask me to "show a chart of [specific metric]" for visual representation.*`;
+        cleanedResponse += `\n\n💡 **Need more details**: Could you specify what data you'd like to visualize? For example:\n- "Chart of proposals by status"\n- "GSC performance trends"\n- "Content creation over time"`;
       }
     }
     
