@@ -96,9 +96,19 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
 
   const renderChart = () => {
     console.log('📈 renderChart: Starting chart render process');
+    console.log('📈 renderChart: Full data object:', data);
+    
     if (!data.chartConfig) {
       console.warn('❌ renderChart: No chartConfig found in visual data:', data);
-      return null;
+      console.warn('❌ renderChart: Available data keys:', Object.keys(data));
+      return (
+        <div className="p-4 border border-warning/30 bg-warning/10 rounded-lg">
+          <p className="text-warning font-medium">Chart configuration missing</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            No chartConfig found in visual data. Available keys: {Object.keys(data).join(', ')}
+          </p>
+        </div>
+      );
     }
 
     const { type, data: chartData, categories, colors, valueFormatter, height = 300 } = data.chartConfig;

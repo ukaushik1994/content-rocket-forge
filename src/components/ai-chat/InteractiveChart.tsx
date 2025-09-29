@@ -51,26 +51,46 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     { value: 'pie', label: 'Pie Chart', icon: PieIcon }
   ];
 
-  // Extract colors from series or use defaults
+  // Extract colors from series or use defaults with proper validation
   const colors = (() => {
+    // First: try to get colors from series
     if (chartConfig.series && chartConfig.series.length > 0) {
-      return chartConfig.series.map(s => (s as any).color || 'hsl(var(--primary))');
+      const seriesColors = chartConfig.series.map(s => (s as any).color || 'hsl(var(--primary))');
+      console.log('🎨 Using series colors:', seriesColors);
+      return seriesColors;
     }
-    return chartConfig.colors || [
-      '#06b6d4', // cyan
-      '#ef4444', // red
-      '#10b981', // green
-      '#f59e0b', // orange
-      '#8b5cf6', // purple
-      '#06b6d4'  // blue
+    
+    // Second: use provided colors if they exist and are valid
+    if (Array.isArray(chartConfig.colors) && chartConfig.colors.length > 0) {
+      console.log('🎨 Using provided chartConfig colors:', chartConfig.colors);
+      return chartConfig.colors;
+    }
+    
+    // Fallback: use semantic color system
+    const defaultColors = [
+      'hsl(var(--primary))',      // brand primary
+      'hsl(var(--secondary))',    // brand secondary  
+      'hsl(var(--accent))',       // accent color
+      'hsl(var(--info))',         // info blue
+      'hsl(var(--success))',      // success green
+      'hsl(var(--warning))',      // warning orange
+      'hsl(var(--destructive))',  // error red
+      'hsl(221 83% 53%)',         // additional blue
+      'hsl(142 76% 36%)',         // additional green
+      'hsl(262 83% 58%)',         // additional purple
     ];
+    console.log('🎨 Using default semantic colors');
+    return defaultColors;
   })();
 
-  console.log('InteractiveChart config:', {
+  console.log('🎯 InteractiveChart config validated:', {
     type: chartConfig.type,
     dataLength: chartConfig.data?.length,
     categories: chartConfig.categories,
-    colors: colors
+    series: chartConfig.series,
+    providedColors: chartConfig.colors,
+    finalColors: colors,
+    colorsLength: colors.length
   });
 
   const handleDataFilter = useCallback((category: string) => {
@@ -170,17 +190,22 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 }}
               />
               <Legend />
-              {dataKeys.map((category, index) => (
-                <Line
-                  key={category}
-                  type="monotone"
-                  dataKey={category}
-                  stroke={colors[index % colors.length]}
-                  strokeWidth={2}
-                  dot={{ fill: colors[index % colors.length], strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: colors[index % colors.length], strokeWidth: 2 }}
-                />
-              ))}
+              {dataKeys.map((category, index) => {
+                const colorIndex = index % Math.max(colors.length, 1);
+                const strokeColor = colors[colorIndex] || 'hsl(var(--primary))';
+                
+                return (
+                  <Line
+                    key={category}
+                    type="monotone"
+                    dataKey={category}
+                    stroke={strokeColor}
+                    strokeWidth={2}
+                    dot={{ fill: strokeColor, strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: strokeColor, strokeWidth: 2 }}
+                  />
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         );
@@ -190,12 +215,15 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <ResponsiveContainer {...commonProps}>
             <AreaChart data={filteredData}>
               <defs>
-                {colors.map((color, index) => (
-                  <linearGradient key={index} id={`colorArea${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor={color} stopOpacity={0.1}/>
-                  </linearGradient>
-                ))}
+                {colors.map((color, index) => {
+                  const safeColor = color || 'hsl(var(--primary))';
+                  return (
+                    <linearGradient key={index} id={`colorArea${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={safeColor} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={safeColor} stopOpacity={0.1}/>
+                    </linearGradient>
+                  );
+                })}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
@@ -209,16 +237,21 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 }}
               />
               <Legend />
-              {dataKeys.map((category, index) => (
-                <Area
-                  key={category}
-                  type="monotone"
-                  dataKey={category}
-                  stroke={colors[index % colors.length]}
-                  fillOpacity={1}
-                  fill={`url(#colorArea${index})`}
-                />
-              ))}
+              {dataKeys.map((category, index) => {
+                const colorIndex = index % Math.max(colors.length, 1);
+                const strokeColor = colors[colorIndex] || 'hsl(var(--primary))';
+                
+                return (
+                  <Area
+                    key={category}
+                    type="monotone"
+                    dataKey={category}
+                    stroke={strokeColor}
+                    fillOpacity={1}
+                    fill={`url(#colorArea${index})`}
+                  />
+                );
+              })}
             </AreaChart>
           </ResponsiveContainer>
         );
@@ -239,14 +272,19 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 }}
               />
               <Legend />
-              {dataKeys.map((category, index) => (
-                <Bar
-                  key={category}
-                  dataKey={category}
-                  fill={colors[index % colors.length]}
-                  radius={[4, 4, 0, 0]}
-                />
-              ))}
+              {dataKeys.map((category, index) => {
+                const colorIndex = index % Math.max(colors.length, 1);
+                const fillColor = colors[colorIndex] || 'hsl(var(--primary))';
+                
+                return (
+                  <Bar
+                    key={category}
+                    dataKey={category}
+                    fill={fillColor}
+                    radius={[4, 4, 0, 0]}
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         );
@@ -265,9 +303,14 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 fill="#8884d8"
                 dataKey="value"
               >
-                {filteredData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
+                {filteredData.map((entry, index) => {
+                  const colorIndex = index % Math.max(colors.length, 1);
+                  const fillColor = colors[colorIndex] || 'hsl(var(--primary))';
+                  
+                  return (
+                    <Cell key={`cell-${index}`} fill={fillColor} />
+                  );
+                })}
               </Pie>
               <Tooltip 
                 contentStyle={{
