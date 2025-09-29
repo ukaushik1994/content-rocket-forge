@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from './DataTable';
+import { ChartActionModal } from './ChartActionModal';
 
 import { cn } from '@/lib/utils';
 import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2, Table as TableIcon, CheckCircle2 } from 'lucide-react';
@@ -60,7 +61,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const [currentType, setCurrentType] = useState(chartConfig.type);
   const [filteredData, setFilteredData] = useState(chartConfig.data);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
   const chartTypes = [{
     value: 'line',
@@ -299,13 +300,14 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     }
   };
   const availableCategories = [...new Set(chartConfig.data.map(item => item.category || item.type).filter(Boolean))];
-  return <motion.div initial={{
-    opacity: 0,
-    y: 20
-  }} animate={{
-    opacity: 1,
-    y: 0
-  }} className={cn("relative group", isFullscreen && "fixed inset-0 z-50 bg-background p-6")}>
+  return <>
+    <motion.div initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} className="relative group">
       {/* Background effects */}
       <div className="absolute inset-0 bg-grid opacity-5 group-hover:opacity-10 transition-opacity duration-300 rounded-lg" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg" />
@@ -380,7 +382,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             
             
             
-            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(!isFullscreen)}>
+            <Button variant="outline" size="sm" onClick={() => setShowModal(true)}>
               <Maximize2 className="w-4 h-4" />
             </Button>
           </div>
@@ -419,5 +421,15 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           </div>
         </div>
       </Card>
-    </motion.div>;
+    </motion.div>
+
+    <ChartActionModal
+      isOpen={showModal}
+      onClose={() => setShowModal(false)}
+      chartConfig={{ ...chartConfig, type: currentType, data: filteredData }}
+      title={title}
+      description={description}
+      chatContext="Chart analysis from AI chat interface"
+    />
+  </>;
 };
