@@ -857,12 +857,31 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     console.log(`📝 AI Response received (${aiMessage.length} characters)`);
     console.log("🔍 Response preview:", aiMessage.substring(0, 300));
 
+    // Validate chart generation if user requested charts
+    const userRequestedChart = userQuery.toLowerCase().match(/(chart|graph|plot|visual|trend|trending|over time|timeline|progression|growth|comparison|compare|vs|versus|against|breakdown|distribution|split|performance|metrics over|tracking|monitoring)/);
+    
+    if (userRequestedChart) {
+      console.log('📊 User requested chart visualization:', userRequestedChart[0]);
+    }
+    
     // Parse the response for structured data
     console.log('🔍 Parsing AI response for structured data...');
     
     // Use enhanced parsing with fallback
     const parsedResponse = parseResponseWithFallback(aiMessage);
     let { message: cleanedResponse, actions, visualData } = parsedResponse;
+    
+    // Validate chart generation compliance
+    if (userRequestedChart && visualData && visualData.type !== 'chart') {
+      console.warn('⚠️ Chart requested but AI generated:', visualData.type);
+      console.log('📝 Full response for debugging:', aiMessage.substring(0, 500));
+    }
+    
+    // Validate chart generation compliance
+    if (userRequestedChart && visualData && visualData.type !== 'chart') {
+      console.warn('⚠️ Chart requested but AI generated:', visualData.type);
+      console.log('📝 Full response for debugging:', aiMessage.substring(0, 500));
+    }
     
     // If no structured data was found, try legacy parsing
     if (!actions && !visualData) {
