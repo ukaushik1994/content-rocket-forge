@@ -429,7 +429,15 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       chartConfig={{ ...chartConfig, type: currentType, data: filteredData }}
       title={title}
       description={description}
-      chatContext="Chart analysis from AI chat interface"
+      chatContext={`Chart showing ${currentType} visualization with ${filteredData.length} data points. ${description || ''}`}
+      conversationHistory={[]}
+      onContinueChat={(prompt) => {
+        // This could be enhanced to integrate with actual chat context
+        console.log('Continue chat with prompt:', prompt);
+        window.dispatchEvent(new CustomEvent('continueChat', { 
+          detail: { prompt } 
+        }));
+      }}
     />
   </>;
 };
