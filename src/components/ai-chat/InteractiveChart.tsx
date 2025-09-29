@@ -322,13 +322,11 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             {/* View Mode Toggle */}
             <Tabs value={viewMode} onValueChange={value => setViewMode(value as 'chart' | 'table')}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="chart" className="flex items-center gap-2">
+                <TabsTrigger value="chart" className="flex items-center justify-center" aria-label="Chart view">
                   <BarChart3 className="w-4 h-4" />
-                  Chart
                 </TabsTrigger>
-                <TabsTrigger value="table" className="flex items-center gap-2">
+                <TabsTrigger value="table" className="flex items-center justify-center" aria-label="Table view">
                   <TableIcon className="w-4 h-4" />
-                  Table
                 </TabsTrigger>
               </TabsList>
             </Tabs>
