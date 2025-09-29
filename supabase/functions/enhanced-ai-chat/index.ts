@@ -772,20 +772,19 @@ serve(async (req) => {
 ## PLATFORM INTELLIGENCE LEVEL: PHASE 4 COMPLETE - Enterprise & Workflow Intelligence
 
 ## 🚨 CRITICAL CHART GENERATION RULES - MANDATORY:
-**When user explicitly requests a chart (says "show me a chart", "create a chart", "visualize", etc.):**
-1. ✅ YOU MUST ALWAYS generate a chartConfig - NEVER explain why you cannot
-2. ✅ Use ANY available numeric data - GSC clicks, impressions, proposals, content counts, ANY metrics
-3. ✅ If no perfect data exists, create a chart from contextual metrics (proposals by status, content by type, etc.)
-4. ✅ DEFAULT chart type: bar (unless user specifies line/pie/area)
-5. ✅ If truly confused about what to chart, ask "What specific data would you like to see charted?" THEN generate the chart
-6. ❌ NEVER respond with "I cannot create this chart" or explanations about data availability
-7. ❌ NEVER generate tables or metrics when user explicitly asks for charts
+**ONLY generate charts when you have proper, actual data:**
+1. ✅ Generate a chartConfig ONLY if you have real numeric data with proper structure
+2. ✅ For time-series charts (line/area): You MUST have actual timestamps or dates
+3. ✅ For comparison charts (bar): You MUST have real categories and numeric values
+4. ✅ For distribution charts (pie): You MUST have actual parts-of-whole data
+5. ❌ NEVER create fake data, simulated trends, or estimated values for charts
+6. ❌ NEVER generate cumulative or projected data unless explicitly in the REAL DATA CONTEXT
+7. ⚠️ If user requests a chart but data is missing: Explain what data is needed and how to obtain it
 
-**Chart Generation Examples:**
-- User: "show me a chart" → Generate bar chart of available proposals or content by status
-- User: "chart of performance" → Use GSC clicks/impressions or content metrics
-- User: "visualize trends" → Create line chart from time-series data
-- User: "pie chart of content" → Generate pie chart of content types distribution
+**Chart Validation Examples:**
+- User: "show trend of proposal impressions" + No timestamp data → Explain: "I don't have generation dates for each proposal. To show a true trend, I would need timestamps for when each proposal was created."
+- User: "chart performance over time" + Have GSC data with dates → ✅ Generate line chart with ACTUAL dates
+- User: "show me a chart" + No specific data → Ask: "What specific data would you like to visualize? (e.g., proposals by status, GSC clicks, content types)"
 
 ## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:
 ${realDataContext}
@@ -800,15 +799,49 @@ ${realDataContext}
 - **Team productivity analysis**: Collaboration patterns and workspace utilization insights
 - **Process optimization**: Workflow bottleneck identification and automation recommendations
 
-## CRITICAL CONTENT FORMATTING RULES:
-1. NEVER create fake data, metrics, or numbers
-2. ALWAYS base responses on the REAL DATA CONTEXT provided above
-3. When data is missing, clearly state that and suggest how to obtain it
-4. For EVERY response, include contextual actions AND visual data when relevant
-5. **NEVER include raw CSV data, spreadsheet formats, or comma-separated values in your text response**
-6. **NEVER display JSON structures or technical data formats in your text content**
-7. **ALWAYS use structured visual data for tables, charts, and data displays**
-8. **Keep your text response conversational and user-friendly**
+## 🚨 CRITICAL DATA ACCURACY RULES - ABSOLUTE REQUIREMENTS:
+1. ❌ NEVER create fake data, simulated data, estimated values, or made-up numbers
+2. ❌ NEVER generate cumulative trends, projected growth, or simulated time-series unless explicitly present in REAL DATA CONTEXT
+3. ❌ NEVER infer, guess, or extrapolate data that isn't explicitly provided
+4. ✅ ALWAYS cite the source: "From your AI proposals..." or "Based on your GSC data..."
+5. ✅ If you don't have the exact data requested, say: "I don't have [specific data] available. To provide this, I would need [requirements]."
+6. ✅ If asked for trends over time without timestamps, explain: "I don't have timestamp data. To show a true trend, I would need creation/update dates for each item."
+7. ✅ Only show numbers that exist in the REAL DATA CONTEXT section above
+
+## MANDATORY RESPONSE STRUCTURE:
+Every response MUST follow this exact structure:
+
+**1. Context Understanding** (1-2 sentences)
+- Acknowledge what the user is asking for
+- Confirm what data you have access to
+
+**2. Data Analysis** (Use markdown tables for organizing information)
+Example format:
+| Metric | Value | Source |
+| --- | --- | --- |
+| Total Proposals | 89 | From your AI proposals |
+| Available Opportunities | 67 | Status: Available |
+
+**3. Key Observations** (3-5 bullet points with specific data)
+* Observation 1 with actual numbers from REAL DATA CONTEXT
+* Observation 2 identifying a specific pattern or trend
+* Observation 3 with comparative insight using real data
+
+**4. Actionable Next Steps** (3-5 specific actions)
+* Step 1: Specific action with context and reasoning
+* Step 2: Priority recommendation based on data
+* Step 3: How to gather missing data (if applicable)
+
+**5. Data Limitations** (If applicable)
+- Clearly state what data you don't have
+- Explain what would be needed to provide more complete insights
+
+## CONTENT FORMATTING RULES:
+1. **NEVER include raw CSV data, spreadsheet formats, or comma-separated values in your text response**
+2. **NEVER display JSON structures or technical data formats in your text content**
+3. **ALWAYS use markdown tables for structured information**
+4. **Keep your text response conversational and professional**
+5. **Use visual data structures for complex data displays**
 
 ## SERP Data Integration
 ${serpContext ? `You have access to REAL-TIME SERP DATA that MUST be used in your response:${serpContext}` : 'No SERP data available for this query.'}
@@ -1050,99 +1083,26 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     const parsedResponse = parseResponseWithFallback(aiMessage);
     let { message: cleanedResponse, actions, visualData } = parsedResponse;
     
-    // 🚨 AGGRESSIVE CHART FALLBACK - When user explicitly requests chart but AI didn't generate one
-    if (chartRequest.requested && chartRequest.confidence >= 0.7 && (!visualData || visualData.type !== 'chart')) {
-      console.log('🚨 CRITICAL: Chart explicitly requested but not generated. Forcing fallback chart generation...');
+    // Chart validation - Only convert existing visual data, never force generation
+    if (chartRequest.requested && visualData && visualData.type !== 'chart') {
+      console.log(`📊 Chart requested but AI generated ${visualData.type}. Attempting intelligent conversion...`);
       
-      let fallbackChartCreated = false;
-      
-      // Try to convert any existing visual data first
-      if (visualData) {
-        console.warn(`⚠️ Chart requested (${chartRequest.type}) but AI generated:`, visualData.type);
-        console.log('📝 Attempting intelligent conversion...');
-        
-        // Try metrics to chart conversion
-        if (visualData.type === 'metrics' && visualData.metrics) {
-          const chartData = convertMetricsToChart(visualData.metrics, userQuery);
-          if (chartData) {
-            console.log('✅ Successfully converted metrics to chart');
-            visualData = { type: 'chart', chartConfig: chartData };
-            fallbackChartCreated = true;
-          }
-        }
-        
-        // Try table to chart conversion
-        if (!fallbackChartCreated && visualData.type === 'table' && visualData.tableData) {
-          const chartData = convertTableToChart(visualData.tableData);
-          if (chartData) {
-            console.log('✅ Successfully converted table to chart');
-            visualData = { type: 'chart', chartConfig: chartData };
-            fallbackChartCreated = true;
-          }
+      // Try metrics to chart conversion
+      if (visualData.type === 'metrics' && visualData.metrics) {
+        const chartData = convertMetricsToChart(visualData.metrics, userQuery);
+        if (chartData) {
+          console.log('✅ Successfully converted metrics to chart');
+          visualData = { type: 'chart', chartConfig: chartData };
         }
       }
       
-      // LAST RESORT: Create a generic chart from real data context
-      if (!fallbackChartCreated) {
-        console.log('🔧 Creating fallback chart from available context data...');
-        
-        try {
-          // Fetch quick metrics for fallback chart
-          const { data: proposals } = await supabase
-            .from('ai_strategy_proposals')
-            .select('status')
-            .limit(100);
-          
-          if (proposals && proposals.length > 0) {
-            // Count proposals by status
-            const statusCounts = proposals.reduce((acc, p) => {
-              const status = p.status || 'unknown';
-              acc[status] = (acc[status] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>);
-            
-            const chartData = {
-              type: 'bar',
-              data: Object.entries(statusCounts).map(([status, count]) => ({
-                name: status.charAt(0).toUpperCase() + status.slice(1),
-                value: count
-              })),
-              categories: ['value'],
-              colors: ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))'],
-              height: 300
-            };
-            
-            visualData = { type: 'chart', chartConfig: chartData };
-            fallbackChartCreated = true;
-            
-            // Update the message to explain what we're showing
-            cleanedResponse = cleanedResponse.replace(
-              /I (cannot|can't|am unable to)/gi,
-              "Here's a chart showing"
-            );
-            cleanedResponse += `\n\n📊 **Chart Generated**: Showing distribution of AI proposals by status. This gives you a visual overview of your content opportunities.`;
-            
-            console.log('✅ Fallback chart created from proposal data');
-          }
-        } catch (error) {
-          console.error('❌ Failed to create fallback chart:', error);
+      // Try table to chart conversion
+      else if (visualData.type === 'table' && visualData.tableData) {
+        const chartData = convertTableToChart(visualData.tableData);
+        if (chartData) {
+          console.log('✅ Successfully converted table to chart');
+          visualData = { type: 'chart', chartConfig: chartData };
         }
-      }
-      
-      // If still no chart and confidence is very high, add clarifying action
-      if (!fallbackChartCreated && chartRequest.confidence > 0.85) {
-        if (!actions) actions = [];
-        actions.push({
-          id: "clarify-chart-request",
-          label: "📊 Specify Chart Data",
-          type: "button",
-          action: "ask_for_clarification",
-          data: { 
-            message: "What specific data would you like to see in the chart? (e.g., proposals by status, content performance, GSC clicks over time)"
-          }
-        });
-        
-        cleanedResponse += `\n\n💡 **Need more details**: Could you specify what data you'd like to visualize? For example:\n- "Chart of proposals by status"\n- "GSC performance trends"\n- "Content creation over time"`;
       }
     }
     
