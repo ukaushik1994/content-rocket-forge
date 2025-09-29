@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ChartConfiguration } from '@/types/enhancedChat';
+import { useChartIntelligence } from '@/hooks/useChartIntelligence';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from './DataTable';
+import { ChartSuggestionPanel } from './ChartSuggestionPanel';
 import { cn } from '@/lib/utils';
 import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2, Table as TableIcon } from 'lucide-react';
 
@@ -17,6 +19,7 @@ interface InteractiveChartProps {
   description?: string;
   allowTypeSwitch?: boolean;
   allowDataFilter?: boolean;
+  showIntelligentSuggestions?: boolean;
   onDataUpdate?: (data: any[]) => void;
   onExport?: () => void;
 }
@@ -27,9 +30,29 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   description,
   allowTypeSwitch = false,
   allowDataFilter = false,
+  showIntelligentSuggestions = false,
   onDataUpdate,
   onExport
 }) => {
+  // Enhanced chart intelligence
+  const { 
+    analyzeData,
+    suggestChartImprovements, 
+    detectDataPatterns,
+    recommendations 
+  } = useChartIntelligence();
+
+  // Generate intelligent suggestions when data changes
+  const chartSuggestions = React.useMemo(() => {
+    if (chartConfig.data && chartConfig.data.length > 0) {
+      return analyzeData(chartConfig.data, title || description);
+    }
+    return [];
+  }, [chartConfig.data, title, description, analyzeData]);
+
+  const chartImprovements = React.useMemo(() => {
+    return suggestChartImprovements(chartConfig);
+  }, [chartConfig, suggestChartImprovements]);
   console.log('🎯 InteractiveChart: Component mounted with config:', {
     type: chartConfig.type,
     dataLength: chartConfig.data?.length,
@@ -434,7 +457,22 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           className="min-h-[300px]"
         >
           {viewMode === 'chart' ? (
-            renderChart()
+            <div className="space-y-4">
+              {renderChart()}
+              
+              {/* AI Suggestions Panel */}
+              {showIntelligentSuggestions && (chartSuggestions.length > 0 || chartImprovements.length > 0) && (
+                <ChartSuggestionPanel
+                  suggestions={chartSuggestions}
+                  improvements={chartImprovements}
+                  currentType={currentType}
+                  onApplySuggestion={(type) => {
+                    console.log('🤖 Applying AI suggestion:', type);
+                    setCurrentType(type);
+                  }}
+                />
+              )}
+            </div>
           ) : (
             <DataTable
               data={filteredData}

@@ -95,7 +95,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   };
 
   const renderChart = () => {
-    console.log('📈 renderChart: Starting chart render process');
+    console.log('📈 renderChart: Starting enhanced chart render process');
     console.log('📈 renderChart: Full data object:', data);
     
     if (!data.chartConfig) {
@@ -113,7 +113,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
 
     const { type, data: chartData, categories, colors, valueFormatter, height = 300 } = data.chartConfig;
     
-    console.log('📈 renderChart: Chart config details:', {
+    console.log('📈 renderChart: Enhanced chart config details:', {
       type,
       dataLength: chartData?.length,
       categories,
@@ -122,31 +122,29 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
       fullConfig: data.chartConfig
     });
 
-    // Process data for different chart types - pass through the config as-is
-    // InteractiveChart will handle the series vs categories logic
+    // Enhanced processing with chart intelligence
     const processedConfig = {
-      ...data.chartConfig
+      ...data.chartConfig,
+      // Ensure proper height for larger datasets
+      height: chartData?.length > 20 ? 400 : height
     };
 
-    console.log('📈 renderChart: Processed chart config:', processedConfig);
+    console.log('📈 renderChart: Enhanced processed chart config:', processedConfig);
     
-    // Use InteractiveChart with error boundary for enhanced experience
+    // Enhanced InteractiveChart with intelligent recommendations
     return (
-      <div>
-        {(() => {
-          console.log('📈 renderChart: About to render InteractiveChart component');
-          return null;
-        })()}
+      <div className="space-y-2">
         <ChartErrorBoundary>
           <InteractiveChart
             chartConfig={processedConfig}
             title={(data as any).title || `${type.charAt(0).toUpperCase() + type.slice(1)} Chart`}
-            description={(data as any).description || "Interactive data visualization"}
+            description={(data as any).description || "AI-optimized data visualization"}
             allowTypeSwitch={true}
             allowDataFilter={true}
+            showIntelligentSuggestions={true}
             onDataUpdate={(newData) => {
-              console.log('📈 Chart data updated:', newData);
-              // Handle real-time data updates here
+              console.log('📈 Enhanced chart data updated:', newData);
+              // Handle real-time data updates with intelligence
             }}
           />
         </ChartErrorBoundary>
