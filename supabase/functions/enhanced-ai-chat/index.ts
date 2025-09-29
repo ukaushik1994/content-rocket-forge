@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
 import { 
   analyzeSerpIntent, 
   executeSerpAnalysis, 
@@ -9,28 +9,128 @@ import {
   generateSmartSuggestions 
 } from './serp-intelligence.ts';
 
-// Helper function to convert metrics to chart format
+// Enhanced chart detection patterns
+function detectChartRequest(query: string): { requested: boolean, type: string | null, confidence: number } {
+  const lowerQuery = query.toLowerCase();
+  
+  // Explicit chart requests (high confidence)
+  const explicitPatterns = [
+    /\b(show|create|generate|make|build|display)\s+(me\s+)?(a\s+)?(chart|graph|plot|visualization|visual)/,
+    /\b(chart|graph|plot)\s+(of|for|showing|displaying)/,
+    /\bvisuali[sz]e\s+(this|the|my)/,
+    /\b(bar|line|pie|area)\s+chart/,
+    /\bgraph\s+(this|the|my)/
+  ];
+  
+  for (const pattern of explicitPatterns) {
+    if (pattern.test(lowerQuery)) {
+      return { requested: true, type: 'explicit', confidence: 0.9 };
+    }
+  }
+  
+  // Implicit chart patterns (medium confidence)
+  const implicitPatterns = [
+    /\b(trend|trending|growth|decline|increase|decrease|over time|timeline|progression)/,
+    /\b(comparison|compare|vs|versus|against|between)/,
+    /\b(breakdown|distribution|split|composition)/,
+    /\b(performance|metrics)\s+(over|across|by)/,
+    /\b(tracking|monitoring)\s+/,
+    /\b(analyze|analysis)\s+(trends|growth|performance)/
+  ];
+  
+  for (const pattern of implicitPatterns) {
+    if (pattern.test(lowerQuery)) {
+      return { requested: true, type: 'implicit', confidence: 0.6 };
+    }
+  }
+  
+  return { requested: false, type: null, confidence: 0 };
+}
+
+// Enhanced conversion function with intelligent chart type selection
 function convertMetricsToChart(metrics: any[], userQuery: string): any | null {
   if (!metrics || metrics.length === 0) return null;
   
   try {
-    // Detect if metrics can be converted to a chart
-    const hasNumericValues = metrics.some(m => typeof m.value === 'number' || !isNaN(parseFloat(m.value)));
-    if (!hasNumericValues) return null;
+    // Check if data is chart-compatible
+    const hasNumericValues = metrics.some(m => {
+      const value = m.value || m.count || m.total || m.amount || m.score;
+      return typeof value === 'number' || !isNaN(parseFloat(value));
+    });
     
-    // Create chart data from metrics
+    if (!hasNumericValues) {
+      console.log('❌ Metrics not chart-compatible: no numeric values found');
+      return null;
+    }
+    
+    // Intelligent chart type selection
+    let chartType = 'bar'; // default
+    const queryLower = userQuery.toLowerCase();
+    
+    if (queryLower.includes('trend') || queryLower.includes('over time') || queryLower.includes('timeline')) {
+      chartType = 'line';
+    } else if (queryLower.includes('pie') || queryLower.includes('distribution') || queryLower.includes('breakdown')) {
+      chartType = 'pie';
+    } else if (queryLower.includes('area') || queryLower.includes('growth')) {
+      chartType = 'area';
+    }
+    
+    // Create enhanced chart data
     const chartData = {
-      type: 'bar', // Default to bar chart for metrics
-      data: metrics.map(metric => ({
-        name: metric.title || metric.label || 'Unknown',
-        value: typeof metric.value === 'number' ? metric.value : parseFloat(metric.value) || 0
-      })),
-      categories: ['value']
+      type: chartType,
+      data: metrics.map(metric => {
+        const value = metric.value || metric.count || metric.total || metric.amount || metric.score;
+        return {
+          name: metric.title || metric.label || metric.name || 'Unknown',
+          value: typeof value === 'number' ? value : parseFloat(value) || 0
+        };
+      }),
+      categories: ['value'],
+      colors: ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))'],
+      height: 300
     };
     
+    console.log(`✅ Successfully converted ${metrics.length} metrics to ${chartType} chart`);
     return chartData;
   } catch (error) {
     console.error('Error converting metrics to chart:', error);
+    return null;
+  }
+}
+
+// Enhanced table to chart conversion
+function convertTableToChart(tableData: any): any | null {
+  if (!tableData || !tableData.rows || !tableData.headers) return null;
+  
+  try {
+    const headers = tableData.headers;
+    const rows = tableData.rows;
+    
+    // Find numeric columns
+    const numericColumns = headers.slice(1).filter((_: string, colIndex: number) => {
+      return rows.some((row: any[]) => !isNaN(parseFloat(row[colIndex + 1])));
+    });
+    
+    if (numericColumns.length === 0) return null;
+    
+    // Use first numeric column for chart
+    const valueColumnIndex = headers.indexOf(numericColumns[0]);
+    const labelColumnIndex = 0; // Assume first column is labels
+    
+    const chartData = {
+      type: 'bar',
+      data: rows.slice(0, 10).map((row: any[]) => ({ // Limit to 10 items for readability
+        name: row[labelColumnIndex] || 'Unknown',
+        value: parseFloat(row[valueColumnIndex]) || 0
+      })),
+      categories: ['value'],
+      height: 300
+    };
+    
+    console.log(`✅ Successfully converted table to chart (${rows.length} rows)`);
+    return chartData;
+  } catch (error) {
+    console.error('Error converting table to chart:', error);
     return null;
   }
 }
@@ -131,7 +231,7 @@ async function fetchRealDataContext() {
     const totalContent = contentWithPipeline?.length || 0;
     const publishedContent = contentWithPipeline?.filter(item => item.status === 'published').length || 0;
     const draftContent = contentWithPipeline?.filter(item => item.status === 'draft').length || 0;
-    const avgSeoScore = contentWithPipeline?.reduce((sum, item) => sum + (item.seo_score || 0), 0) / (totalContent || 1);
+    const avgSeoScore = (contentWithPipeline?.reduce((sum, item) => sum + (item.seo_score || 0), 0) || 0) / (totalContent || 1);
     
     // Pipeline statistics - create a map for easy lookup
     const pipelineMap = pipelineData?.reduce((map, pipeline) => {
@@ -883,11 +983,11 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     console.log(`📝 AI Response received (${aiMessage.length} characters)`);
     console.log("🔍 Response preview:", aiMessage.substring(0, 300));
 
-    // Validate chart generation if user requested charts
-    const userRequestedChart = userQuery.toLowerCase().match(/(chart|graph|plot|visual|trend|trending|over time|timeline|progression|growth|comparison|compare|vs|versus|against|breakdown|distribution|split|performance|metrics over|tracking|monitoring)/);
+    // Enhanced chart request detection
+    const chartRequest = detectChartRequest(userQuery);
     
-    if (userRequestedChart) {
-      console.log('📊 User requested chart visualization:', userRequestedChart[0]);
+    if (chartRequest.requested) {
+      console.log(`📊 Chart visualization detected: ${chartRequest.type} (confidence: ${chartRequest.confidence})`);
     }
     
     // Parse the response for structured data
@@ -897,18 +997,45 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     const parsedResponse = parseResponseWithFallback(aiMessage);
     let { message: cleanedResponse, actions, visualData } = parsedResponse;
     
-    // Validate chart generation compliance and attempt fallback
-    if (userRequestedChart && visualData && visualData.type !== 'chart') {
-      console.warn('⚠️ Chart requested but AI generated:', visualData.type);
-      console.log('📝 Full response for debugging:', aiMessage.substring(0, 500));
+    // Enhanced validation and conversion logic
+    if (chartRequest.requested && visualData && visualData.type !== 'chart') {
+      console.warn(`⚠️ Chart requested (${chartRequest.type}) but AI generated:`, visualData.type);
+      console.log('📝 Attempting intelligent conversion...');
       
-      // Attempt to convert metrics to chart if possible
+      let conversionSuccessful = false;
+      
+      // Try metrics to chart conversion
       if (visualData.type === 'metrics' && visualData.metrics) {
         const chartData = convertMetricsToChart(visualData.metrics, userQuery);
         if (chartData) {
           console.log('✅ Successfully converted metrics to chart');
           visualData = { type: 'chart', chartConfig: chartData };
+          conversionSuccessful = true;
         }
+      }
+      
+      // Try table to chart conversion
+      if (!conversionSuccessful && visualData.type === 'table' && visualData.tableData) {
+        const chartData = convertTableToChart(visualData.tableData);
+        if (chartData) {
+          console.log('✅ Successfully converted table to chart');
+          visualData = { type: 'chart', chartConfig: chartData };
+          conversionSuccessful = true;
+        }
+      }
+      
+      // Add user feedback if conversion failed
+      if (!conversionSuccessful && chartRequest.confidence > 0.7) {
+        // Add action to suggest viewing data in different format
+        if (!actions) actions = [];
+        actions.push({
+          label: "📊 Try Chart View",
+          action: "ask_for_chart_data",
+          description: "Request data in a chart-compatible format"
+        });
+        
+        // Append explanation to the response
+        cleanedResponse += `\n\n*Note: The data shown above isn't easily chart-compatible, but I've provided it in a detailed format. You can ask me to "show a chart of [specific metric]" for visual representation.*`;
       }
     }
     
