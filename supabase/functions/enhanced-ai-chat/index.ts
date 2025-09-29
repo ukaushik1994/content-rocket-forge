@@ -189,9 +189,24 @@ function parseResponseWithFallback(content: string): { message: string; actions?
   }
 }
 
-// Enhanced real data fetching function with Phase 1 & Phase 2 intelligence
+// Enhanced real data fetching function with Phase 1 & Phase 2 intelligence including GSC
 async function fetchRealDataContext() {
   try {
+    // PHASE 1: GOOGLE SEARCH CONSOLE INTEGRATION
+    const { data: gscData } = await supabase
+      .from('content_analytics')
+      .select('*')
+      .order('last_fetched_at', { ascending: false })
+      .limit(20);
+
+    // Calculate GSC insights
+    const totalImpressions = gscData?.reduce((sum, item) => sum + (item.search_console_data?.impressions || 0), 0) || 0;
+    const totalClicks = gscData?.reduce((sum, item) => sum + (item.search_console_data?.clicks || 0), 0) || 0;
+    const averageCTR = totalClicks > 0 && totalImpressions > 0 ? (totalClicks / totalImpressions * 100) : 0;
+    const topPerformingPages = gscData?.filter(item => item.search_console_data?.clicks > 0)
+      .sort((a, b) => (b.search_console_data?.clicks || 0) - (a.search_console_data?.clicks || 0))
+      .slice(0, 5) || [];
+
     // PHASE 1: ENHANCED AI STRATEGY PROPOSALS INTEGRATION
     const { data: strategyProposals } = await supabase
       .from('ai_strategy_proposals')
@@ -251,7 +266,7 @@ async function fetchRealDataContext() {
     const availableProposals = strategyProposals?.filter(p => p.status === 'available').length || 0;
     const scheduledProposals = strategyProposals?.filter(p => p.status === 'scheduled').length || 0;
     const completedProposals = strategyProposals?.filter(p => p.status === 'completed').length || 0;
-    const totalImpressions = strategyProposals?.reduce((sum, p) => sum + (p.estimated_impressions || 0), 0) || 0;
+    const proposalTotalImpressions = strategyProposals?.reduce((sum, p) => sum + (p.estimated_impressions || 0), 0) || 0;
     
     // Top opportunity keywords from proposals
     const topOpportunities = strategyProposals?.slice(0, 5).map(p => ({
@@ -273,13 +288,24 @@ async function fetchRealDataContext() {
     ).length || 0;
 
     return `
-## REAL CONTENT STRATEGY DATA (Phase 1 Enhanced - ${new Date().toISOString()}):
+## REAL CONTENT STRATEGY DATA (Phase 1 Enhanced with GSC - ${new Date().toISOString()}):
+
+### GOOGLE SEARCH CONSOLE INSIGHTS (REAL DATA):
+- Total Tracked Pages: ${gscData?.length || 0}
+- Total Impressions (Last 30 days): ${totalImpressions.toLocaleString()}
+- Total Clicks: ${totalClicks.toLocaleString()}
+- Average CTR: ${averageCTR.toFixed(2)}%
+- Top Performing Pages: ${topPerformingPages.length} pages with clicks
+${topPerformingPages.map((page, i) => 
+  `  ${i + 1}. ${page.published_url} - ${page.search_console_data?.clicks || 0} clicks, ${page.search_console_data?.impressions || 0} impressions`
+).join('\n')}
+${gscData?.length === 0 ? '⚠️ No Search Console data available - connect GSC API for insights' : ''}
 
 ### AI STRATEGY PROPOSALS (REAL DATA):
 - Total Proposals: ${strategyProposals?.length || 0}
 - Available Opportunities: ${availableProposals} (ready for content creation)
 - Scheduled: ${scheduledProposals} | Completed: ${completedProposals}
-- Total Potential Impressions: ${totalImpressions.toLocaleString()}
+- Total Potential Impressions: ${proposalTotalImpressions.toLocaleString()}
 - Highest Opportunity: ${topOpportunities[0]?.keyword || 'No proposals'} (${(topOpportunities[0]?.impressions || 0).toLocaleString()} impressions)
 
 ### TOP 5 CONTENT OPPORTUNITIES (REAL PROPOSALS):
@@ -309,17 +335,23 @@ ${solutions && solutions.length > 0 ? solutions.map(solution =>
 ).join('\n') : 'No solutions found'}
 
 ### CRITICAL STRATEGIC INSIGHTS:
-${availableProposals > 50 ? `🎯 MAJOR OPPORTUNITY: ${availableProposals} untapped content proposals worth ${totalImpressions.toLocaleString()} potential impressions` : ''}
+${availableProposals > 50 ? `🎯 MAJOR OPPORTUNITY: ${availableProposals} untapped content proposals worth ${proposalTotalImpressions.toLocaleString()} potential impressions` : ''}
 ${avgSeoScore === 0 ? '❌ SEO system not functional - all content has 0 SEO scores' : ''}
 ${publishedContent === 0 ? '❌ No published content - publishing workflow needs attention' : ''}
 ${contentInPipeline === 0 ? '⚠️ No content in pipeline - content workflow not being used' : ''}
 ${upcomingItems === 0 ? '📅 No scheduled content - editorial calendar needs planning' : ''}
+${totalClicks === 0 && totalImpressions > 0 ? '⚠️ GSC: High impressions but no clicks - CTR optimization needed' : ''}
+${averageCTR > 0 && averageCTR < 2 ? `⚠️ GSC: Low average CTR (${averageCTR.toFixed(2)}%) - meta descriptions and titles need optimization` : ''}
+${totalImpressions === 0 ? '❌ GSC: No search visibility detected - SEO and content discovery issues' : ''}
 
 ### ACTIONABLE NEXT STEPS:
 ${availableProposals > 0 ? `✅ ${availableProposals} AI-generated proposals ready for immediate content creation` : ''}
 ${draftContent > 0 ? `✅ ${draftContent} draft articles ready for review and publishing` : ''}
 ${solutions && solutions.length > 0 ? `✅ ${solutions.length} solutions available for content mapping` : ''}
 ${recentContent > 0 ? `✅ Active content creation (${recentContent} items in last 30 days)` : ''}
+${topPerformingPages.length > 0 ? `🔍 GSC: Optimize top performing pages for higher CTR and expand similar content` : ''}
+${totalImpressions > 1000 && totalClicks < 50 ? `🎯 GSC: Focus on improving meta titles/descriptions for ${totalImpressions.toLocaleString()} impressions` : ''}
+${gscData && gscData.length > 0 ? `📊 GSC: ${gscData.length} pages tracked - analyze query data for content optimization opportunities` : ''}
 
 CRITICAL: This is REAL data from the user's actual strategy proposals and content pipeline. Provide specific, actionable recommendations based on these exact numbers and opportunities.
      `;
