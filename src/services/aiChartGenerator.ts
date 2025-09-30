@@ -97,20 +97,115 @@ export class AIChartGenerator {
   }
 
   /**
-   * Detect chart opportunities in text/data
+   * Detect chart opportunities in text/data with intelligent pattern recognition
    */
   static detectChartOpportunities(content: string, data?: any[]): boolean {
+    console.log('🔍 Detecting chart opportunities:', { contentLength: content.length, dataLength: data?.length });
+    
+    // Check for explicit chart requests
     const chartKeywords = [
-      'chart', 'graph', 'visualize', 'plot', 'trend', 'comparison',
-      'analytics', 'data', 'metrics', 'performance', 'statistics',
-      'growth', 'decline', 'correlation', 'distribution'
+      'chart', 'graph', 'visualize', 'plot', 'show', 'display'
     ];
-
     const lowerContent = content.toLowerCase();
-    const hasChartKeywords = chartKeywords.some(keyword => lowerContent.includes(keyword));
-    const hasNumericData = data && data.length > 0 && this.hasNumericColumns(data);
+    const hasExplicitRequest = chartKeywords.some(keyword => lowerContent.includes(keyword));
+    
+    // If no data, no chart opportunity
+    if (!data || data.length === 0) {
+      return hasExplicitRequest; // Only return true if explicitly requested
+    }
 
-    return hasChartKeywords || hasNumericData;
+    // Analyze data structure for automatic visualization opportunities
+    const dataPatterns = this.analyzeDataPatterns(data);
+    
+    // Automatic chart generation criteria (proactive)
+    const shouldAutoGenerate = 
+      dataPatterns.hasTimeSeriesData ||        // Has dates/timestamps → line chart
+      dataPatterns.hasComparativeData ||       // Multiple categories with values → bar chart
+      dataPatterns.hasDistributionData ||      // Parts of whole → pie chart
+      dataPatterns.hasPerformanceMetrics;      // KPIs, scores → appropriate chart
+
+    console.log('📊 Chart opportunity analysis:', {
+      hasExplicitRequest,
+      shouldAutoGenerate,
+      patterns: dataPatterns
+    });
+
+    return hasExplicitRequest || shouldAutoGenerate;
+  }
+
+  /**
+   * Analyze data structure to detect visualization patterns
+   */
+  private static analyzeDataPatterns(data: any[]): {
+    hasTimeSeriesData: boolean;
+    hasComparativeData: boolean;
+    hasDistributionData: boolean;
+    hasPerformanceMetrics: boolean;
+    hasNumericColumns: boolean;
+  } {
+    if (!data || data.length === 0) {
+      return {
+        hasTimeSeriesData: false,
+        hasComparativeData: false,
+        hasDistributionData: false,
+        hasPerformanceMetrics: false,
+        hasNumericColumns: false
+      };
+    }
+
+    const sample = data[0];
+    const keys = Object.keys(sample);
+    
+    // Check for time-series data (dates, timestamps, time-based keys)
+    const hasTimeSeriesData = keys.some(key => {
+      const lowerKey = key.toLowerCase();
+      return (
+        lowerKey.includes('date') || 
+        lowerKey.includes('time') || 
+        lowerKey.includes('created') ||
+        lowerKey.includes('updated') ||
+        lowerKey.includes('month') ||
+        lowerKey.includes('year')
+      ) || data.every(item => {
+        const value = item[key];
+        return value instanceof Date || 
+               (typeof value === 'string' && !isNaN(Date.parse(value)));
+      });
+    });
+
+    // Check for comparative data (multiple items with numeric values)
+    const hasNumericColumns = this.hasNumericColumns(data);
+    const hasComparativeData = data.length >= 2 && hasNumericColumns;
+
+    // Check for distribution data (percentage, ratio, parts-of-whole patterns)
+    const hasDistributionData = keys.some(key => {
+      const lowerKey = key.toLowerCase();
+      return lowerKey.includes('percent') || 
+             lowerKey.includes('ratio') || 
+             lowerKey.includes('share') ||
+             lowerKey.includes('distribution');
+    });
+
+    // Check for performance metrics (scores, rates, KPIs)
+    const hasPerformanceMetrics = keys.some(key => {
+      const lowerKey = key.toLowerCase();
+      return lowerKey.includes('score') ||
+             lowerKey.includes('rate') ||
+             lowerKey.includes('metric') ||
+             lowerKey.includes('kpi') ||
+             lowerKey.includes('performance') ||
+             lowerKey.includes('impression') ||
+             lowerKey.includes('click') ||
+             lowerKey.includes('conversion');
+    });
+
+    return {
+      hasTimeSeriesData,
+      hasComparativeData,
+      hasDistributionData,
+      hasPerformanceMetrics,
+      hasNumericColumns
+    };
   }
 
   /**

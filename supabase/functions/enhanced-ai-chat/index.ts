@@ -566,19 +566,33 @@ CRITICAL: This is REAL data from the user's actual strategy proposals and conten
     return `
 ## REAL CONTENT STRATEGY DATA (ALL PHASES 1-4 ENHANCED - ${new Date().toISOString()}):
 
-### AI STRATEGY PROPOSALS (REAL DATA):
+### 📊 VISUALIZATION-READY DATA - PROACTIVE INTELLIGENCE:
+**This data is structured for automatic visualization. Consider generating charts when analyzing:**
+
+### AI STRATEGY PROPOSALS (REAL DATA) [CHART-READY: Bar chart for top opportunities]:
 - Total Proposals: ${strategyProposals?.length || 0}
 - Available Opportunities: ${availableProposals} (ready for content creation)
 - Scheduled: ${scheduledProposals} | Completed: ${completedProposals}
 - Total Potential Impressions: ${totalImpressions.toLocaleString()}
 - Highest Opportunity: ${topOpportunities[0]?.keyword || 'No proposals'} (${(topOpportunities[0]?.impressions || 0).toLocaleString()} impressions)
 
-### TOP 5 CONTENT OPPORTUNITIES (REAL PROPOSALS):
+**💡 VISUALIZATION HINT**: This data shows comparative performance across proposals - ideal for a bar chart comparing impressions.
+
+### TOP 5 CONTENT OPPORTUNITIES (REAL PROPOSALS) [CHART-READY: Comparison data]:
 ${topOpportunities.map((opp, i) => 
   `${i + 1}. "${opp.keyword}" - ${opp.impressions?.toLocaleString() || 0} impressions (${opp.contentType}, ${opp.priority})`
 ).join('\n')}
 
-### PHASE 2: PERFORMANCE & ANALYTICS INTELLIGENCE (REAL DATA):
+**💡 CHART DATA AVAILABLE**: 
+\`\`\`json
+${JSON.stringify(topOpportunities.slice(0, 5).map(opp => ({
+  name: opp.keyword?.substring(0, 40) || 'Unknown',
+  impressions: opp.impressions || 0,
+  priority: opp.priority
+})), null, 2)}
+\`\`\`
+
+### PHASE 2: PERFORMANCE & ANALYTICS INTELLIGENCE (REAL DATA) [CHART-READY: Success rate trends]:
 - Total User Actions Tracked: ${totalActions}
 - Action Success Rate: ${actionSuccessRate.toFixed(1)}% (${successfulActions}/${totalActions})
 - Top Action Types: ${Object.entries(actionTypes).map(([type, count]) => `${type}: ${count}`).join(', ') || 'No actions tracked'}
@@ -586,13 +600,26 @@ ${topOpportunities.map((opp, i) =>
 - Active Content Modules: ${Object.entries(contentModules).map(([module, count]) => `${module}: ${count}`).join(', ') || 'No activity'}
 - SERP API Usage: ${serpApiCalls} calls (${serpSuccessRate.toFixed(1)}% success rate)
 
-### PHASE 3: RESEARCH & INTELLIGENCE ENHANCEMENT (REAL DATA):
+**💡 VISUALIZATION HINT**: Action types show clear distribution - ideal for a pie or bar chart showing usage patterns.
+
+### PHASE 3: RESEARCH & INTELLIGENCE ENHANCEMENT (REAL DATA) [CHART-READY: Keyword distribution]:
 - **Keyword Research Portfolio**: ${totalKeywords} keywords tracked
 - **Topic Clusters**: ${totalClusters} clusters (${totalClusterRelations} keyword-cluster relationships)
 - **Keyword Intent Distribution**: ${Object.entries(keywordCategories).map(([intent, count]) => `${intent}: ${count}`).join(', ') || 'No categorization'}
 - **SERP Competitive Analysis**: ${serpAnalysisCount} historical analyses
 - **Position Tracking**: ${positionTrackingCount} position records
 - **Content Opportunities**: ${opportunitiesCount} opportunity seeds identified
+
+**💡 VISUALIZATION HINT**: Keyword intent distribution is perfect for a pie chart showing content strategy balance.
+${Object.keys(keywordCategories).length > 0 ? `
+**💡 CHART DATA AVAILABLE**:
+\`\`\`json
+${JSON.stringify(Object.entries(keywordCategories).map(([intent, count]) => ({
+  name: intent,
+  value: count
+})), null, 2)}
+\`\`\`
+` : ''}
 
 ### KEYWORD RESEARCH INSIGHTS (PHASE 3):
 ${keywords?.length ? 
@@ -607,12 +634,24 @@ ${contentGaps.lackingPositionData ? '❌ MISSING: No keyword position tracking -
 ${contentGaps.missingSerpIntelligence ? '❌ OPPORTUNITY: No SERP competitive analysis - missing competitor insights' : ''}
 ${contentGaps.untappedOpportunities ? '⚠️ POTENTIAL: No opportunity seeds identified - content gap analysis needed' : ''}
 
-### PHASE 4: ENTERPRISE & WORKFLOW INTELLIGENCE (REAL DATA):
+### PHASE 4: ENTERPRISE & WORKFLOW INTELLIGENCE (REAL DATA) [CHART-READY: Workflow status distribution]:
 - **AI Workflow States**: ${totalWorkflowStates} total workflows (${activeWorkflows} active, ${completedWorkflows} completed, ${stalledWorkflows} stalled)
 - **Team Collaboration**: ${activeCollaborationSessions} active sessions across ${totalWorkspaces} workspaces
 - **Workflow Executions**: ${totalWorkflowExecutions} executions (${workflowSuccessRate.toFixed(1)}% success rate)
 - **Team Members**: ${totalTeamMembers} members across all workspaces
 - **Workspace Utilization**: ${workspaceUtilization.toFixed(1)}% (collaboration sessions per workspace)
+
+**💡 VISUALIZATION HINT**: Workflow status breakdown is ideal for visualizing with a stacked bar or pie chart.
+${totalWorkflowStates > 0 ? `
+**💡 CHART DATA AVAILABLE**:
+\`\`\`json
+${JSON.stringify([
+  { name: 'Active', value: activeWorkflows },
+  { name: 'Completed', value: completedWorkflows },
+  { name: 'Stalled', value: stalledWorkflows }
+], null, 2)}
+\`\`\`
+` : ''}
 
 ### WORKFLOW TYPE BREAKDOWN (PHASE 4):
 ${totalWorkflowStates > 0 ? 
@@ -771,20 +810,41 @@ serve(async (req) => {
 
 ## PLATFORM INTELLIGENCE LEVEL: PHASE 4 COMPLETE - Enterprise & Workflow Intelligence
 
-## 🚨 CRITICAL CHART GENERATION RULES - MANDATORY:
-**ONLY generate charts when you have proper, actual data:**
-1. ✅ Generate a chartConfig ONLY if you have real numeric data with proper structure
-2. ✅ For time-series charts (line/area): You MUST have actual timestamps or dates
-3. ✅ For comparison charts (bar): You MUST have real categories and numeric values
-4. ✅ For distribution charts (pie): You MUST have actual parts-of-whole data
-5. ❌ NEVER create fake data, simulated trends, or estimated values for charts
-6. ❌ NEVER generate cumulative or projected data unless explicitly in the REAL DATA CONTEXT
-7. ⚠️ If user requests a chart but data is missing: Explain what data is needed and how to obtain it
+## 🎯 PROACTIVE VISUALIZATION INTELLIGENCE - MANDATORY:
 
-**Chart Validation Examples:**
-- User: "show trend of proposal impressions" + No timestamp data → Explain: "I don't have generation dates for each proposal. To show a true trend, I would need timestamps for when each proposal was created."
-- User: "chart performance over time" + Have GSC data with dates → ✅ Generate line chart with ACTUAL dates
-- User: "show me a chart" + No specific data → Ask: "What specific data would you like to visualize? (e.g., proposals by status, GSC clicks, content types)"
+**Your Mission: Be a Proactive Data Storyteller**
+When you analyze structured data (proposals, analytics, performance metrics, SERP results), you MUST actively look for visualization opportunities.
+
+**Automatic Visualization Rules:**
+1. ✅ **TIME-SERIES DATA**: If you detect dates/timestamps → Automatically generate a line/area chart showing trends
+   - Example: "Based on your proposal data over time, I've created a trend chart showing..."
+   
+2. ✅ **COMPARATIVE DATA**: If you have categories with numeric values → Automatically generate a bar chart
+   - Example: "I notice clear differences in your solution performance - here's a comparison chart..."
+   
+3. ✅ **PERFORMANCE METRICS**: If you analyze KPIs, scores, or performance data → Automatically generate appropriate charts
+   - Example: "Looking at your content metrics, I've visualized the key patterns..."
+   
+4. ✅ **DISTRIBUTION DATA**: If you have parts-of-whole (percentages, categories) → Consider a pie chart
+   - Example: "Your content is distributed across these types - let me show you the breakdown..."
+
+**Proactive Pattern Recognition:**
+- When you see structured data in REAL DATA CONTEXT, ask yourself: "Would a chart make this clearer?"
+- When you provide numeric insights, ask: "Can I visualize this pattern?"
+- When you compare multiple items, think: "A chart would show these differences better"
+- When you discuss trends, performance, or changes, automatically consider time-series visualization
+
+**Quality Standards for Auto-Generated Charts:**
+- ✅ Generate charts when you have 2+ comparable data points
+- ✅ Use ONLY real data from REAL DATA CONTEXT - NEVER create fake/simulated data
+- ✅ For time-series: Require actual timestamps/dates (no made-up timelines)
+- ✅ For comparisons: Require real categories and numeric values (no estimates)
+- ⚠️ If data is insufficient: Explain what's missing and suggest how to obtain it
+
+**Your Presentation Style:**
+- Lead with insight, then visualization: "I notice [pattern] in your data - let me visualize this for you"
+- Explain WHY you're showing a chart: "This chart makes it easier to see [specific insight]"
+- Provide both text analysis AND visual representation when patterns exist
 
 ## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:
 ${realDataContext}
@@ -807,6 +867,12 @@ ${realDataContext}
 5. ✅ If you don't have the exact data requested, say: "I don't have [specific data] available. To provide this, I would need [requirements]."
 6. ✅ If asked for trends over time without timestamps, explain: "I don't have timestamp data. To show a true trend, I would need creation/update dates for each item."
 7. ✅ Only show numbers that exist in the REAL DATA CONTEXT section above
+
+**Proactive vs Reactive Visualization:**
+- ✅ PROACTIVE: When analyzing data, automatically generate charts if patterns are clear
+- ✅ PROACTIVE: "I notice [pattern] - here's a chart that illustrates this..."
+- ✅ REACTIVE: When user explicitly asks for a chart, provide it if data exists
+- ❌ NEVER: Generate charts with made-up data just to fulfill a request
 
 ## MANDATORY RESPONSE STRUCTURE:
 Every response MUST follow this exact structure:
