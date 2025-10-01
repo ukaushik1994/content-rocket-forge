@@ -11,9 +11,8 @@ export interface EmbeddingResult {
  */
 export async function generateEmbedding(text: string): Promise<number[] | null> {
   try {
-    const { data, error } = await supabase.functions.invoke('ai-streaming', {
+    const { data, error } = await supabase.functions.invoke('generate-embedding', {
       body: {
-        action: 'embedding',
         text: text.slice(0, 8000) // Limit text length
       }
     });
