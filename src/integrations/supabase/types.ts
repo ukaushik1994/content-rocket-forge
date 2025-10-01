@@ -5315,6 +5315,10 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      increment_topic_frequency: {
+        Args: { p_topic_name: string; p_user_id: string }
+        Returns: undefined
+      }
       initialize_default_ai_providers: {
         Args: { target_user_id: string }
         Returns: undefined
@@ -5369,6 +5373,29 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      match_messages: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          message_id: string
+          similarity: number
+        }[]
+      }
+      match_topics: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          id: string
+          similarity: number
+          topic_name: string
+        }[]
       }
       migrate_repurposed_content: {
         Args: Record<PropertyKey, never>

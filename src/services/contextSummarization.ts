@@ -77,7 +77,7 @@ Respond in JSON format:
         user_id: (await supabase.auth.getUser()).data.user?.id,
         summary: analysis.summary,
         key_topics: analysis.keyTopics,
-        entities: analysis.entities,
+        entities: analysis.entities as any,
         sentiment_score: analysis.sentimentScore,
         importance_score: analysis.importanceScore
       })
@@ -90,10 +90,10 @@ Respond in JSON format:
       id: summary.id,
       conversationId: summary.conversation_id,
       summary: summary.summary,
-      keyTopics: summary.key_topics,
-      entities: summary.entities,
-      sentimentScore: summary.sentiment_score,
-      importanceScore: summary.importance_score
+      keyTopics: (summary.key_topics || []) as string[],
+      entities: (summary.entities || []) as any[],
+      sentimentScore: summary.sentiment_score || undefined,
+      importanceScore: summary.importance_score || 0.5
     };
   } catch (error) {
     console.error('Error summarizing conversation:', error);
@@ -113,12 +113,14 @@ export async function extractTopics(conversationId: string): Promise<string[]> {
       .single();
 
     if (!summary?.key_topics) return [];
+    
+    const topics = (summary.key_topics as string[]) || [];
 
     const userId = (await supabase.auth.getUser()).data.user?.id;
     if (!userId) return [];
 
     // Upsert topics
-    for (const topic of summary.key_topics) {
+    for (const topic of topics) {
       await supabase
         .from('context_topics')
         .upsert({
@@ -133,13 +135,13 @@ export async function extractTopics(conversationId: string): Promise<string[]> {
         .single();
 
       // Increment frequency
-      await supabase.rpc('increment_topic_frequency', {
+      await supabase.rpc('increment_topic_frequency' as any, {
         p_user_id: userId,
         p_topic_name: topic
       });
     }
 
-    return summary.key_topics;
+    return topics;
   } catch (error) {
     console.error('Error extracting topics:', error);
     return [];
@@ -167,8 +169,8 @@ export async function getConversationSummary(
       id: data.id,
       conversationId: data.conversation_id,
       summary: data.summary,
-      keyTopics: data.key_topics || [],
-      entities: data.entities || [],
+      keyTopics: (data.key_topics || []) as string[],
+      entities: (data.entities || []) as any[],
       sentimentScore: data.sentiment_score,
       importanceScore: data.importance_score || 0.5
     };

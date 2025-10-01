@@ -99,7 +99,7 @@ export async function findSimilarMessages(
     if (!userId) return [];
 
     // Use cosine similarity to find similar messages
-    const { data, error } = await supabase.rpc('match_messages', {
+    const { data, error } = await supabase.rpc('match_messages' as any, {
       query_embedding: JSON.stringify(queryEmbedding),
       match_threshold: threshold,
       match_count: limit
@@ -107,7 +107,7 @@ export async function findSimilarMessages(
 
     if (error || !data) return [];
 
-    return data.map((item: any) => ({
+    return (data as any[]).map((item: any) => ({
       id: item.message_id,
       embedding: item.embedding,
       similarity: item.similarity
@@ -133,7 +133,7 @@ export async function findSimilarTopics(
     const userId = (await supabase.auth.getUser()).data.user?.id;
     if (!userId) return [];
 
-    const { data, error } = await supabase.rpc('match_topics', {
+    const { data, error } = await supabase.rpc('match_topics' as any, {
       query_embedding: JSON.stringify(queryEmbedding),
       match_threshold: threshold,
       match_count: limit
@@ -141,7 +141,7 @@ export async function findSimilarTopics(
 
     if (error || !data) return [];
 
-    return data.map((item: any) => ({
+    return (data as any[]).map((item: any) => ({
       id: item.id,
       topicName: item.topic_name,
       similarity: item.similarity
