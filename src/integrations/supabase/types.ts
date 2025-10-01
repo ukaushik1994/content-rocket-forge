@@ -1435,15 +1435,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "content_briefs_opportunity_id_fkey"
-            columns: ["opportunity_id"]
-            isOneToOne: false
-            referencedRelation: "content_opportunities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       content_calendar: {
         Row: {
@@ -1604,6 +1596,71 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      content_gaps: {
+        Row: {
+          competition_level: string | null
+          created_at: string | null
+          current_ranking: number | null
+          description: string | null
+          gap_type: string
+          id: string
+          keywords: string[] | null
+          metadata: Json | null
+          opportunity_score: number | null
+          potential_traffic: number | null
+          search_volume: number | null
+          status: string | null
+          target_cluster_id: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          competition_level?: string | null
+          created_at?: string | null
+          current_ranking?: number | null
+          description?: string | null
+          gap_type: string
+          id?: string
+          keywords?: string[] | null
+          metadata?: Json | null
+          opportunity_score?: number | null
+          potential_traffic?: number | null
+          search_volume?: number | null
+          status?: string | null
+          target_cluster_id?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          competition_level?: string | null
+          created_at?: string | null
+          current_ranking?: number | null
+          description?: string | null
+          gap_type?: string
+          id?: string
+          keywords?: string[] | null
+          metadata?: Json | null
+          opportunity_score?: number | null
+          potential_traffic?: number | null
+          search_volume?: number | null
+          status?: string | null
+          target_cluster_id?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_gaps_target_cluster_id_fkey"
+            columns: ["target_cluster_id"]
+            isOneToOne: false
+            referencedRelation: "topic_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       content_goals: {
         Row: {
@@ -1791,92 +1848,92 @@ export type Database = {
       }
       content_opportunities: {
         Row: {
-          assigned_to: string | null
-          competition_score: number | null
-          content_format: string | null
-          content_gaps: Json | null
-          detected_at: string
-          expires_at: string | null
+          cluster_id: string | null
+          competitor_count: number | null
+          content_angle: string | null
+          content_quality_gap: number | null
+          created_at: string | null
+          description: string | null
+          estimated_effort: string | null
+          estimated_traffic: number | null
           id: string
-          internal_link_opportunities: Json | null
-          is_aio_friendly: boolean | null
-          keyword: string
           keyword_difficulty: number | null
-          last_updated: string
-          notes: string | null
-          opportunity_score: number | null
-          priority: string
-          relevance_score: number | null
+          metadata: Json | null
+          opportunity_type: string
+          primary_keyword: string
+          priority_score: number | null
+          related_keywords: string[] | null
+          scheduled_date: string | null
           search_volume: number | null
-          serp_data: Json | null
-          source: string | null
-          status: string
-          strategy_id: string | null
-          suggested_outline: Json | null
-          suggested_title: string | null
-          trend_direction: string | null
+          serp_features: string[] | null
+          status: string | null
+          suggested_format: string | null
+          target_audience: string | null
+          title: string
+          trending_score: number | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          assigned_to?: string | null
-          competition_score?: number | null
-          content_format?: string | null
-          content_gaps?: Json | null
-          detected_at?: string
-          expires_at?: string | null
+          cluster_id?: string | null
+          competitor_count?: number | null
+          content_angle?: string | null
+          content_quality_gap?: number | null
+          created_at?: string | null
+          description?: string | null
+          estimated_effort?: string | null
+          estimated_traffic?: number | null
           id?: string
-          internal_link_opportunities?: Json | null
-          is_aio_friendly?: boolean | null
-          keyword: string
           keyword_difficulty?: number | null
-          last_updated?: string
-          notes?: string | null
-          opportunity_score?: number | null
-          priority?: string
-          relevance_score?: number | null
+          metadata?: Json | null
+          opportunity_type: string
+          primary_keyword: string
+          priority_score?: number | null
+          related_keywords?: string[] | null
+          scheduled_date?: string | null
           search_volume?: number | null
-          serp_data?: Json | null
-          source?: string | null
-          status?: string
-          strategy_id?: string | null
-          suggested_outline?: Json | null
-          suggested_title?: string | null
-          trend_direction?: string | null
+          serp_features?: string[] | null
+          status?: string | null
+          suggested_format?: string | null
+          target_audience?: string | null
+          title: string
+          trending_score?: number | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          assigned_to?: string | null
-          competition_score?: number | null
-          content_format?: string | null
-          content_gaps?: Json | null
-          detected_at?: string
-          expires_at?: string | null
+          cluster_id?: string | null
+          competitor_count?: number | null
+          content_angle?: string | null
+          content_quality_gap?: number | null
+          created_at?: string | null
+          description?: string | null
+          estimated_effort?: string | null
+          estimated_traffic?: number | null
           id?: string
-          internal_link_opportunities?: Json | null
-          is_aio_friendly?: boolean | null
-          keyword?: string
           keyword_difficulty?: number | null
-          last_updated?: string
-          notes?: string | null
-          opportunity_score?: number | null
-          priority?: string
-          relevance_score?: number | null
+          metadata?: Json | null
+          opportunity_type?: string
+          primary_keyword?: string
+          priority_score?: number | null
+          related_keywords?: string[] | null
+          scheduled_date?: string | null
           search_volume?: number | null
-          serp_data?: Json | null
-          source?: string | null
-          status?: string
-          strategy_id?: string | null
-          suggested_outline?: Json | null
-          suggested_title?: string | null
-          trend_direction?: string | null
+          serp_features?: string[] | null
+          status?: string | null
+          suggested_format?: string | null
+          target_audience?: string | null
+          title?: string
+          trending_score?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "content_opportunities_strategy_id_fkey"
-            columns: ["strategy_id"]
+            foreignKeyName: "content_opportunities_cluster_id_fkey"
+            columns: ["cluster_id"]
             isOneToOne: false
-            referencedRelation: "content_strategies"
+            referencedRelation: "topic_clusters"
             referencedColumns: ["id"]
           },
         ]
@@ -2655,6 +2712,57 @@ export type Database = {
           },
         ]
       }
+      keyword_topics: {
+        Row: {
+          cluster_id: string | null
+          competition_level: string | null
+          created_at: string | null
+          id: string
+          keyword: string
+          relevance_score: number | null
+          search_volume: number | null
+          topic_id: string | null
+          user_id: string
+        }
+        Insert: {
+          cluster_id?: string | null
+          competition_level?: string | null
+          created_at?: string | null
+          id?: string
+          keyword: string
+          relevance_score?: number | null
+          search_volume?: number | null
+          topic_id?: string | null
+          user_id: string
+        }
+        Update: {
+          cluster_id?: string | null
+          competition_level?: string | null
+          created_at?: string | null
+          id?: string
+          keyword?: string
+          relevance_score?: number | null
+          search_volume?: number | null
+          topic_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_topics_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "topic_clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "keyword_topics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "context_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keyword_usage_log: {
         Row: {
           content_id: string | null
@@ -2983,15 +3091,7 @@ export type Database = {
           priority?: string | null
           status?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "opportunity_assignments_opportunity_id_fkey"
-            columns: ["opportunity_id"]
-            isOneToOne: false
-            referencedRelation: "content_opportunities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       opportunity_briefs: {
         Row: {
@@ -3057,15 +3157,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "opportunity_briefs_opportunity_id_fkey"
-            columns: ["opportunity_id"]
-            isOneToOne: false
-            referencedRelation: "content_opportunities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       opportunity_metrics: {
         Row: {
@@ -3118,13 +3210,6 @@ export type Database = {
             referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "opportunity_metrics_opportunity_id_fkey"
-            columns: ["opportunity_id"]
-            isOneToOne: false
-            referencedRelation: "content_opportunities"
-            referencedColumns: ["id"]
-          },
         ]
       }
       opportunity_notifications: {
@@ -3164,15 +3249,7 @@ export type Database = {
           status?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "opportunity_notifications_opportunity_id_fkey"
-            columns: ["opportunity_id"]
-            isOneToOne: false
-            referencedRelation: "content_opportunities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       opportunity_seeds: {
         Row: {
@@ -4381,6 +4458,87 @@ export type Database = {
         }
         Relationships: []
       }
+      strategy_recommendations: {
+        Row: {
+          accepted_at: string | null
+          action_items: Json | null
+          completed_at: string | null
+          confidence_score: number | null
+          created_at: string | null
+          data_sources: Json | null
+          description: string
+          effort_estimate: string | null
+          expected_impact: string | null
+          id: string
+          priority: string | null
+          reasoning: string | null
+          recommendation_type: string
+          related_cluster_id: string | null
+          related_gap_id: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          action_items?: Json | null
+          completed_at?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          data_sources?: Json | null
+          description: string
+          effort_estimate?: string | null
+          expected_impact?: string | null
+          id?: string
+          priority?: string | null
+          reasoning?: string | null
+          recommendation_type: string
+          related_cluster_id?: string | null
+          related_gap_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          action_items?: Json | null
+          completed_at?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          data_sources?: Json | null
+          description?: string
+          effort_estimate?: string | null
+          expected_impact?: string | null
+          id?: string
+          priority?: string | null
+          reasoning?: string | null
+          recommendation_type?: string
+          related_cluster_id?: string | null
+          related_gap_id?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_recommendations_related_cluster_id_fkey"
+            columns: ["related_cluster_id"]
+            isOneToOne: false
+            referencedRelation: "topic_clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_recommendations_related_gap_id_fkey"
+            columns: ["related_gap_id"]
+            isOneToOne: false
+            referencedRelation: "content_gaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategy_runs: {
         Row: {
           created_at: string
@@ -4490,6 +4648,119 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      topic_clusters: {
+        Row: {
+          cluster_name: string
+          created_at: string | null
+          description: string | null
+          embedding: string | null
+          id: string
+          importance_score: number | null
+          parent_cluster_id: string | null
+          topic_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cluster_name: string
+          created_at?: string | null
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          importance_score?: number | null
+          parent_cluster_id?: string | null
+          topic_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cluster_name?: string
+          created_at?: string | null
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          importance_score?: number | null
+          parent_cluster_id?: string | null
+          topic_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_clusters_parent_cluster_id_fkey"
+            columns: ["parent_cluster_id"]
+            isOneToOne: false
+            referencedRelation: "topic_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topic_performance: {
+        Row: {
+          average_position: number | null
+          clicks: number | null
+          cluster_id: string | null
+          content_count: number | null
+          conversion_score: number | null
+          created_at: string | null
+          ctr: number | null
+          engagement_score: number | null
+          id: string
+          impressions: number | null
+          metadata: Json | null
+          metric_date: string
+          topic_id: string | null
+          user_id: string
+        }
+        Insert: {
+          average_position?: number | null
+          clicks?: number | null
+          cluster_id?: string | null
+          content_count?: number | null
+          conversion_score?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          engagement_score?: number | null
+          id?: string
+          impressions?: number | null
+          metadata?: Json | null
+          metric_date: string
+          topic_id?: string | null
+          user_id: string
+        }
+        Update: {
+          average_position?: number | null
+          clicks?: number | null
+          cluster_id?: string | null
+          content_count?: number | null
+          conversion_score?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          engagement_score?: number | null
+          id?: string
+          impressions?: number | null
+          metadata?: Json | null
+          metric_date?: string
+          topic_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_performance_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "topic_clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "topic_performance_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "context_topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       topic_relationships: {
         Row: {
