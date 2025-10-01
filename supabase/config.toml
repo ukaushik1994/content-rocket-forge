@@ -93,3 +93,6 @@ verify_jwt = false
 
 [functions.ai-streaming]
 verify_jwt = false
+
+[functions.generate-embedding]
+verify_jwt = false
