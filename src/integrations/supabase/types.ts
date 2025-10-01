@@ -2131,6 +2131,77 @@ export type Database = {
         }
         Relationships: []
       }
+      context_topics: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          embedding: string | null
+          frequency: number | null
+          id: string
+          last_mentioned: string | null
+          topic_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          embedding?: string | null
+          frequency?: number | null
+          id?: string
+          last_mentioned?: string | null
+          topic_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          embedding?: string | null
+          frequency?: number | null
+          id?: string
+          last_mentioned?: string | null
+          topic_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      conversation_insights: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          importance: number | null
+          insight_data: Json
+          insight_type: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          importance?: number | null
+          insight_data: Json
+          insight_type: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          importance?: number | null
+          insight_data?: Json
+          insight_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_insights_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_steps: {
         Row: {
           ai_input: Json
@@ -2180,6 +2251,53 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "ai_strategy_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_summaries: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          entities: Json | null
+          id: string
+          importance_score: number | null
+          key_topics: string[] | null
+          sentiment_score: number | null
+          summary: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          entities?: Json | null
+          id?: string
+          importance_score?: number | null
+          key_topics?: string[] | null
+          sentiment_score?: number | null
+          summary: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          entities?: Json | null
+          id?: string
+          importance_score?: number | null
+          key_topics?: string[] | null
+          sentiment_score?: number | null
+          summary?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_summaries_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -2607,6 +2725,39 @@ export type Database = {
           },
         ]
       }
+      learned_patterns: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          id: string
+          last_seen: string | null
+          occurrences: number | null
+          pattern_data: Json
+          pattern_type: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          last_seen?: string | null
+          occurrences?: number | null
+          pattern_data: Json
+          pattern_type: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          last_seen?: string | null
+          occurrences?: number | null
+          pattern_data?: Json
+          pattern_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       llm_usage_logs: {
         Row: {
           completion_tokens: number | null
@@ -2651,6 +2802,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      message_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string | null
+          id: string
+          message_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          message_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          message_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_embeddings_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ai_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mobile_settings: {
         Row: {
@@ -4308,6 +4491,51 @@ export type Database = {
         }
         Relationships: []
       }
+      topic_relationships: {
+        Row: {
+          created_at: string | null
+          id: string
+          relationship_type: string
+          strength: number | null
+          topic_a_id: string | null
+          topic_b_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          relationship_type: string
+          strength?: number | null
+          topic_a_id?: string | null
+          topic_b_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          relationship_type?: string
+          strength?: number | null
+          topic_a_id?: string | null
+          topic_b_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_relationships_topic_a_id_fkey"
+            columns: ["topic_a_id"]
+            isOneToOne: false
+            referencedRelation: "context_topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "topic_relationships_topic_b_id_fkey"
+            columns: ["topic_b_id"]
+            isOneToOne: false
+            referencedRelation: "context_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_datasets: {
         Row: {
           accuracy: number | null
@@ -4553,6 +4781,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          preference_type: string
+          preference_value: Json
+          source_conversation_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          preference_type: string
+          preference_value: Json
+          source_conversation_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          preference_type?: string
+          preference_value?: Json
+          source_conversation_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_typing_indicators: {
         Row: {
@@ -4958,6 +5227,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       clean_expired_serp_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -5010,6 +5283,38 @@ export type Database = {
         }
         Returns: string
       }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       initialize_default_ai_providers: {
         Args: { target_user_id: string }
         Returns: undefined
@@ -5017,6 +5322,26 @@ export type Database = {
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
       }
       log_optimization_activity: {
         Args: {
@@ -5049,6 +5374,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
       update_message_status: {
         Args: { message_id: string; new_status: string; user_id?: string }
         Returns: undefined
@@ -5061,6 +5398,30 @@ export type Database = {
           p_user_feedback: string
         }
         Returns: boolean
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
     }
     Enums: {
