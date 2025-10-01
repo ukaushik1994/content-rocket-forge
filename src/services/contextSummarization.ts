@@ -90,8 +90,8 @@ Respond in JSON format:
       id: summary.id,
       conversationId: summary.conversation_id,
       summary: summary.summary,
-      keyTopics: (summary.key_topics || []) as string[],
-      entities: (summary.entities || []) as any[],
+      keyTopics: Array.isArray(summary.key_topics) ? summary.key_topics : [],
+      entities: Array.isArray(summary.entities) ? summary.entities : [],
       sentimentScore: summary.sentiment_score || undefined,
       importanceScore: summary.importance_score || 0.5
     };
@@ -135,7 +135,7 @@ export async function extractTopics(conversationId: string): Promise<string[]> {
         .single();
 
       // Increment frequency
-      await supabase.rpc('increment_topic_frequency' as any, {
+      await (supabase.rpc as any)('increment_topic_frequency', {
         p_user_id: userId,
         p_topic_name: topic
       });
@@ -169,9 +169,9 @@ export async function getConversationSummary(
       id: data.id,
       conversationId: data.conversation_id,
       summary: data.summary,
-      keyTopics: (data.key_topics || []) as string[],
-      entities: (data.entities || []) as any[],
-      sentimentScore: data.sentiment_score,
+      keyTopics: Array.isArray(data.key_topics) ? data.key_topics : [],
+      entities: Array.isArray(data.entities) ? data.entities : [],
+      sentimentScore: data.sentiment_score || undefined,
       importanceScore: data.importance_score || 0.5
     };
   } catch (error) {
