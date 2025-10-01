@@ -2,12 +2,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StreamingChatInterface } from './StreamingChatInterface';
 import { ConversationAnalyticsModal } from './ConversationAnalyticsModal';
+import { PresenceIndicator } from './PresenceIndicator';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, Users, Wifi, WifiOff } from 'lucide-react';
+import { BarChart3, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EnhancedStreamingInterfaceProps {
@@ -26,21 +27,14 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
   const { toast } = useToast();
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
-  const [collaborationUsers, setCollaborationUsers] = useState<number>(1);
 
   // Monitor connection status
   useEffect(() => {
     const channel = supabase.channel('connection_monitor');
     
-    channel.on('presence', { event: 'sync' }, () => {
-      const state = channel.presenceState();
-      setCollaborationUsers(Object.keys(state).length);
-    });
-
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setConnectionStatus('connected');
-        channel.track({ user_id: user?.id, online_at: new Date().toISOString() });
       } else if (status === 'CHANNEL_ERROR') {
         setConnectionStatus('disconnected');
         toast({
@@ -86,14 +80,15 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
       <div className="flex items-center justify-between p-3 border-b border-border/50 bg-card/50 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <Badge variant={connectionStatus === 'connected' ? 'default' : 'destructive'} className="flex items-center gap-1">
-            {connectionStatus === 'connected' ? <Wifi size={12} /> : <WifiOff size={12} />}
-            {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+            <Activity size={12} />
+            {connectionStatus === 'connected' ? 'Live' : 'Offline'}
           </Badge>
           
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Users size={12} />
-            {collaborationUsers} user{collaborationUsers !== 1 ? 's' : ''}
-          </Badge>
+          {/* Real-time Presence Indicator */}
+          <PresenceIndicator 
+            conversationId={activeConversationId || undefined}
+            showTyping={true}
+          />
         </div>
 
         <div className="flex items-center gap-2">

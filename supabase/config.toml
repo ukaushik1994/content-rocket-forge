@@ -90,3 +90,6 @@ verify_jwt = false
 
 [functions.serp-historical-tracker]
 verify_jwt = false
+
+[functions.ai-streaming]
+verify_jwt = false
