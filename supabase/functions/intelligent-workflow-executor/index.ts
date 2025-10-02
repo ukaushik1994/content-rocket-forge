@@ -186,18 +186,34 @@ serve(async (req) => {
       });
     }
 
-    // Get user's active AI provider from Settings
-    const { data: activeProvider } = await supabase
+    // Get user's AI provider from Settings (try active first, then any status)
+    let { data: activeProvider } = await supabase
       .from('ai_service_providers')
-      .select('provider, preferred_model')
+      .select('provider, preferred_model, status')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .order('priority', { ascending: true })
       .limit(1)
       .maybeSingle();
 
+    // If no active provider, try any provider (even with error status)
+    if (!activeProvider) {
+      console.log("⚠️ No active provider found, trying any available provider...");
+      const { data: anyProvider } = await supabase
+        .from('ai_service_providers')
+        .select('provider, preferred_model, status')
+        .eq('user_id', user.id)
+        .order('priority', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      activeProvider = anyProvider;
+    }
+
     const aiProvider = activeProvider?.provider || 'none';
     const aiModel = activeProvider?.preferred_model || 'default';
+    
+    console.log(`🔑 Using provider: ${aiProvider} (status: ${activeProvider?.status || 'unknown'})`);
 
     // Create execution record
     const { data: execution, error: execError } = await supabase

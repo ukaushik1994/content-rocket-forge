@@ -780,25 +780,45 @@ serve(async (req) => {
       });
     }
 
-    // Get user's active AI provider from Settings
-    const { data: provider, error: providerError } = await supabase
+    // Get user's AI provider from Settings (try active first, then any status)
+    let { data: provider, error: providerError } = await supabase
       .from('ai_service_providers')
       .select('provider, api_key, preferred_model, status')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .order('priority', { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    // If no active provider, try any provider (even with error status)
+    if (!provider && !providerError) {
+      console.log("⚠️ No active provider found, trying any available provider...");
+      const { data: anyProvider } = await supabase
+        .from('ai_service_providers')
+        .select('provider, api_key, preferred_model, status')
+        .eq('user_id', user.id)
+        .order('priority', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      provider = anyProvider;
+    }
 
     if (providerError || !provider) {
-      console.error("No active AI provider configured");
-      return new Response(JSON.stringify({ error: "No active AI provider configured. Please configure your AI service in Settings." }), {
-        status: 500,
+      console.error("❌ No AI provider configured:", providerError);
+      return new Response(JSON.stringify({ 
+        error: "No AI provider configured. Please add and test an API key in Settings → AI Service Hub." 
+      }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Using AI provider: ${provider.provider} with model: ${provider.preferred_model}`);
+    console.log(`🔑 Using provider: ${provider.provider} (status: ${provider.status}, model: ${provider.preferred_model})`);
+    
+    if (provider.status === 'error') {
+      console.warn(`⚠️ Provider ${provider.provider} has error status - attempting to use anyway...`);
+    }
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
