@@ -780,31 +780,14 @@ serve(async (req) => {
       });
     }
 
-    // Get user's AI provider from Settings (try active first, then any status)
-    let { data: provider, error: providerError } = await supabase
+    // Get all user's AI providers ordered by priority
+    const { data: allProviders, error: providerError } = await supabase
       .from('ai_service_providers')
-      .select('provider, api_key, preferred_model, status')
+      .select('provider, api_key, preferred_model, status, priority')
       .eq('user_id', user.id)
-      .eq('status', 'active')
-      .order('priority', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .order('priority', { ascending: true });
 
-    // If no active provider, try any provider (even with error status)
-    if (!provider && !providerError) {
-      console.log("⚠️ No active provider found, trying any available provider...");
-      const { data: anyProvider } = await supabase
-        .from('ai_service_providers')
-        .select('provider, api_key, preferred_model, status')
-        .eq('user_id', user.id)
-        .order('priority', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      
-      provider = anyProvider;
-    }
-
-    if (providerError || !provider) {
+    if (providerError || !allProviders || allProviders.length === 0) {
       console.error("❌ No AI provider configured:", providerError);
       return new Response(JSON.stringify({ 
         error: "No AI provider configured. Please add and test an API key in Settings → AI Service Hub." 
@@ -814,11 +797,20 @@ serve(async (req) => {
       });
     }
 
-    console.log(`🔑 Using provider: ${provider.provider} (status: ${provider.status}, model: ${provider.preferred_model})`);
-    
-    if (provider.status === 'error') {
-      console.warn(`⚠️ Provider ${provider.provider} has error status - attempting to use anyway...`);
+    // Find first valid provider with a model configured
+    const provider = allProviders.find(p => p.preferred_model && p.preferred_model.trim() !== '');
+
+    if (!provider) {
+      console.error("❌ No valid AI provider with model configured");
+      return new Response(JSON.stringify({ 
+        error: "No valid AI provider configured. Please set a model for your API key in Settings → AI Service Hub." 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    console.log(`🔑 Using provider: ${provider.provider} (priority: ${provider.priority}, model: ${provider.preferred_model})`)
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
