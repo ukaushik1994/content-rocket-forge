@@ -751,8 +751,27 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization required' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authorization' }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { messages, context } = await req.json();
-    console.log("🚀 Processing enhanced AI chat request");
+    console.log("🚀 Processing enhanced AI chat request for user:", user.id);
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Messages array is required" }), {
@@ -761,11 +780,11 @@ serve(async (req) => {
       });
     }
 
-    // Get user's active AI provider from database
+    // Get user's active AI provider from Settings
     const { data: provider, error: providerError } = await supabase
       .from('ai_service_providers')
       .select('provider, api_key, preferred_model, status')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .eq('status', 'active')
       .order('priority', { ascending: true })
       .limit(1)

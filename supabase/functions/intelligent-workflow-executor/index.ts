@@ -186,6 +186,19 @@ serve(async (req) => {
       });
     }
 
+    // Get user's active AI provider from Settings
+    const { data: activeProvider } = await supabase
+      .from('ai_service_providers')
+      .select('provider, preferred_model')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const aiProvider = activeProvider?.provider || 'none';
+    const aiModel = activeProvider?.preferred_model || 'default';
+
     // Create execution record
     const { data: execution, error: execError } = await supabase
       .from('workflow_executions')
@@ -200,8 +213,8 @@ serve(async (req) => {
           completed_steps: []
         },
         input_context: body.inputContext || {},
-        ai_provider: 'lovable-gateway',
-        ai_model: 'google/gemini-2.5-flash',
+        ai_provider: aiProvider,
+        ai_model: aiModel,
         started_at: new Date().toISOString()
       })
       .select()
