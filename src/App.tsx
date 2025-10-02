@@ -36,7 +36,6 @@ import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
 import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
 import WorkflowHistoryPage from "./components/workflow/WorkflowHistoryPage";
-import { PersonalizationDashboard } from "./components/personalization/PersonalizationDashboard";
 import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
@@ -116,9 +115,6 @@ const App = () => (
                    <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
                    <Route path="/research/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
                    <Route path="/research/pipeline" element={<Navigate to="/research/content-strategy#pipeline" replace />} />
-                   
-                   {/* Personalization */}
-                   <Route path="/personalization" element={<ProtectedRoute><PersonalizationDashboard /></ProtectedRoute>} />
                   
 
                    {/* Smart Actions Analytics */}
