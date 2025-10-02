@@ -186,23 +186,52 @@ serve(async (req) => {
       });
     }
 
-    // Get all user's AI providers ordered by priority
+    // Get active providers using same logic as Content Builder (AIServiceController)
+    // 1. Check user_llm_keys for OpenRouter
+    let openrouterKey = null;
+    const { data: llmKey } = await supabase
+      .from('user_llm_keys')
+      .select('api_key, provider')
+      .eq('user_id', user.id)
+      .eq('provider', 'openrouter')
+      .eq('is_active', true)
+      .maybeSingle();
+    
+    if (llmKey?.api_key) {
+      openrouterKey = llmKey.api_key;
+    }
+
+    // 2. Get all AI service providers
     const { data: allProviders } = await supabase
       .from('ai_service_providers')
-      .select('provider, preferred_model, status, priority')
+      .select('provider, api_key, preferred_model, status, priority')
       .eq('user_id', user.id)
       .order('priority', { ascending: true });
 
-    // Find first valid provider with a model configured
-    const activeProvider = allProviders?.find(p => p.preferred_model && p.preferred_model.trim() !== '');
+    // 3. Filter and find first valid provider (same logic as AIServiceController)
+    const validProviders = (allProviders || []).filter(p => {
+      // Must have a model configured
+      if (!p.preferred_model || p.preferred_model.trim() === '') {
+        return false;
+      }
+      
+      // Check if has valid API key
+      if (p.provider === 'openrouter' && openrouterKey) {
+        return true; // Use user_llm_keys key
+      }
+      
+      // For other providers, must have api_key in ai_service_providers
+      return p.api_key && p.api_key.trim() !== '';
+    });
 
+    const activeProvider = validProviders[0];
     const aiProvider = activeProvider?.provider || 'none';
     const aiModel = activeProvider?.preferred_model || 'default';
     
     if (activeProvider) {
       console.log(`🔑 Using provider: ${aiProvider} (priority: ${activeProvider.priority}, model: ${aiModel})`);
     } else {
-      console.warn(`⚠️ No valid provider with model found, using fallback: ${aiProvider}`);
+      console.warn(`⚠️ No valid provider with API key and model found, using fallback: ${aiProvider}`);
     }
 
     // Create execution record

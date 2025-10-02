@@ -780,34 +780,69 @@ serve(async (req) => {
       });
     }
 
-    // Get all user's AI providers ordered by priority
+    // Get active providers using same logic as Content Builder (AIServiceController)
+    // 1. Check user_llm_keys for OpenRouter
+    let openrouterKey = null;
+    const { data: llmKey } = await supabase
+      .from('user_llm_keys')
+      .select('api_key, provider')
+      .eq('user_id', user.id)
+      .eq('provider', 'openrouter')
+      .eq('is_active', true)
+      .maybeSingle();
+    
+    if (llmKey?.api_key) {
+      openrouterKey = llmKey.api_key;
+    }
+
+    // 2. Get all AI service providers
     const { data: allProviders, error: providerError } = await supabase
       .from('ai_service_providers')
       .select('provider, api_key, preferred_model, status, priority')
       .eq('user_id', user.id)
       .order('priority', { ascending: true });
 
-    if (providerError || !allProviders || allProviders.length === 0) {
-      console.error("❌ No AI provider configured:", providerError);
+    if (providerError) {
+      console.error("❌ Error fetching providers:", providerError);
       return new Response(JSON.stringify({ 
-        error: "No AI provider configured. Please add and test an API key in Settings → AI Service Hub." 
+        error: "Failed to fetch AI providers" 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 3. Filter and find first valid provider (same logic as AIServiceController)
+    const validProviders = (allProviders || []).filter(p => {
+      // Must have a model configured
+      if (!p.preferred_model || p.preferred_model.trim() === '') {
+        return false;
+      }
+      
+      // Check if has valid API key
+      if (p.provider === 'openrouter' && openrouterKey) {
+        return true; // Use user_llm_keys key
+      }
+      
+      // For other providers, must have api_key in ai_service_providers
+      return p.api_key && p.api_key.trim() !== '';
+    });
+
+    if (validProviders.length === 0) {
+      console.error("❌ No valid AI provider with API key and model configured");
+      return new Response(JSON.stringify({ 
+        error: "No valid AI provider configured. Please add and test an API key in Settings → AI Service Hub, and set a model." 
       }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Find first valid provider with a model configured
-    const provider = allProviders.find(p => p.preferred_model && p.preferred_model.trim() !== '');
-
-    if (!provider) {
-      console.error("❌ No valid AI provider with model configured");
-      return new Response(JSON.stringify({ 
-        error: "No valid AI provider configured. Please set a model for your API key in Settings → AI Service Hub." 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const provider = validProviders[0];
+    
+    // Use openrouter key from user_llm_keys if available
+    if (provider.provider === 'openrouter' && openrouterKey) {
+      provider.api_key = openrouterKey;
     }
 
     console.log(`🔑 Using provider: ${provider.provider} (priority: ${provider.priority}, model: ${provider.preferred_model})`)
