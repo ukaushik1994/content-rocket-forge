@@ -124,30 +124,40 @@ async function searchMessages(userId: string, data: any) {
 async function semanticSearch(userId: string, data: any) {
   const { query, conversationId, threshold = 0.7 } = data;
   
-  // Get the LOVABLE_API_KEY for embeddings
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) {
-    throw new Error("LOVABLE_API_KEY not found");
+  // Get user's active AI provider for embeddings
+  const { data: provider, error: providerError } = await supabase
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (providerError || !provider) {
+    throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
   }
 
-  // Generate embedding for the search query
-  const embeddingResponse = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "text-embedding-ada-002",
-      input: query
-    }),
+  console.log(`Using AI provider: ${provider.provider} for semantic search`);
+
+  // Generate embedding for the search query using ai-proxy
+  const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+    body: {
+      service: provider.provider,
+      endpoint: 'embeddings',
+      apiKey: provider.api_key,
+      params: {
+        model: "text-embedding-ada-002",
+        input: query
+      }
+    }
   });
 
-  if (!embeddingResponse.ok) {
-    throw new Error(`Embedding API error: ${embeddingResponse.status}`);
+  if (aiProxyError || !aiProxyResult?.success) {
+    throw new Error(aiProxyError?.message || aiProxyResult?.error || 'Failed to generate embedding');
   }
 
-  const embeddingData = await embeddingResponse.json();
+  const embeddingData = aiProxyResult.data;
   const queryEmbedding = embeddingData.data[0].embedding;
 
   // For now, fall back to text search since we don't have vector embeddings stored

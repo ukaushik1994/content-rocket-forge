@@ -20,11 +20,36 @@ serve(async (req) => {
     
     console.log('🧠 Generating AI-powered smart suggestions...');
 
-    // Get the LOVABLE_API_KEY from environment
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!apiKey) {
-      throw new Error("LOVABLE_API_KEY not found");
+    // Get user ID from auth header
+    const authHeader = req.headers.get('authorization');
+    let userId: string | undefined;
+
+    if (authHeader) {
+      const { data: { user }, error } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+      if (user && !error) {
+        userId = user.id;
+      }
     }
+
+    if (!userId) {
+      throw new Error("Authentication required");
+    }
+
+    // Get user's active AI provider from database
+    const { data: provider, error: providerError } = await supabase
+      .from('ai_service_providers')
+      .select('provider, api_key, preferred_model, status')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (providerError || !provider) {
+      throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
+    }
+
+    console.log(`Using AI provider: ${provider.provider} for smart suggestions`);
 
     // Analyze conversation context with AI
     const contextPrompt = `Based on this conversation, suggest 3 contextual follow-up actions or questions that would be most helpful to the user. Consider:
@@ -49,28 +74,29 @@ Return ONLY a JSON array with this exact structure:
   }
 ]`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: "You are a smart suggestion engine that returns only valid JSON arrays of suggestions." },
-          { role: "user", content: contextPrompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 800,
-      }),
+    // Call ai-proxy edge function
+    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        apiKey: provider.api_key,
+        params: {
+          model: provider.preferred_model,
+          messages: [
+            { role: "system", content: "You are a smart suggestion engine that returns only valid JSON arrays of suggestions." },
+            { role: "user", content: contextPrompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 800,
+        }
+      }
     });
 
-    if (!response.ok) {
-      throw new Error(`AI Gateway error: ${response.status}`);
+    if (aiProxyError || !aiProxyResult?.success) {
+      throw new Error(aiProxyError?.message || aiProxyResult?.error || 'AI request failed');
     }
 
-    const aiResponse = await response.json();
+    const aiResponse = aiProxyResult.data;
     let suggestions;
     
     try {

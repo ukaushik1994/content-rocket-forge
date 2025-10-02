@@ -7,7 +7,7 @@ import { getApiKey } from "../shared/apiKeyService.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+// Removed Lovable AI - using user's configured providers only
 
 interface AiRequest {
   service: string;
@@ -57,14 +57,9 @@ serve(async (req) => {
     // Determine which API key to use
     let apiKey = providedApiKey || userApiKey;
 
-    // For Lovable AI, use the environment variable
-    if (service === 'lovable' && !apiKey && lovableApiKey) {
-      apiKey = lovableApiKey;
-    }
-
     if (!apiKey) {
       return createErrorResponse(
-        `No API key found for ${service}. Please configure your API key.`,
+        `No API key found for ${service}. Please configure your API key in Settings.`,
         401,
         'ai-proxy',
         endpoint
@@ -86,9 +81,6 @@ serve(async (req) => {
       case 'openrouter':
         result = await handleOpenRouter(endpoint, apiKey, params);
         break;
-      case 'lovable':
-        result = await handleLovable(endpoint, apiKey, params);
-        break;
       case 'mistral':
         result = await handleMistral(endpoint, apiKey, params);
         break;
@@ -96,7 +88,7 @@ serve(async (req) => {
         result = await handleLMStudio(endpoint, apiKey, params);
         break;
       default:
-        throw new Error(`Unsupported service: ${service}`);
+        throw new Error(`Unsupported service: ${service}. Supported services: openai, anthropic, gemini, openrouter, mistral, lmstudio`);
     }
 
     // Log successful usage
@@ -807,91 +799,5 @@ async function chatLMStudio(apiKey: string, params: any) {
   }
 }
 
-// Lovable AI Handler Functions
-async function handleLovable(endpoint: string, apiKey: string, params: any) {
-  console.log(`🔍 Processing Lovable AI request: ${endpoint}`);
-  
-  if (endpoint === 'test') {
-    return await testLovable(apiKey);
-  }
-  
-  if (endpoint === 'chat' || endpoint === 'completion') {
-    return await chatLovable(apiKey, params);
-  }
-  
-  throw new Error(`Unsupported Lovable endpoint: ${endpoint}`);
-}
-
-async function testLovable(apiKey: string) {
-  console.log('🧪 Testing Lovable AI API key');
-  
-  try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Lovable AI test failed:', response.status, errorData);
-      throw new Error(`Lovable AI test failed: ${response.statusText}`);
-    }
-
-    console.log('✅ Lovable AI test successful');
-    
-    return {
-      success: true,
-      provider: 'Lovable AI',
-      message: 'Lovable AI connection successful'
-    };
-  } catch (error: any) {
-    console.error('💥 Lovable AI test exception:', error);
-    throw new Error(`Lovable AI error: ${error.message}`);
-  }
-}
-
-async function chatLovable(apiKey: string, params: any) {
-  console.log('💬 Processing Lovable AI chat request');
-  
-  const requestBody = {
-    model: params.model || 'google/gemini-2.5-flash',
-    messages: params.messages || [],
-    temperature: params.temperature || 0.7,
-    max_tokens: params.maxTokens || params.max_tokens || 1000,
-    ...params
-  };
-
-  // Clean up unused parameters
-  delete requestBody.maxTokens;
-
-  try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Lovable AI chat failed:', response.status, errorData);
-      throw new Error(`Lovable AI chat failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ Lovable AI chat successful');
-    
-    return {
-      success: true,
-      data,
-      provider: 'Lovable AI'
-    };
-  } catch (error: any) {
-    console.error('💥 Lovable AI chat exception:', error);
-    throw new Error(`Lovable AI chat error: ${error.message}`);
-  }
-}
+// Lovable AI has been removed - all AI requests now use user-configured providers
+// Users can configure OpenAI, Anthropic, Gemini, OpenRouter, Mistral, or LMStudio in Settings

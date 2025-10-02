@@ -231,7 +231,7 @@ class OpportunityHunterService {
       .order('detected_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []) as Opportunity[];
+    return (data || []) as any[];
   }
 
   async getFilteredOpportunities(filters: any): Promise<any[]> {
@@ -276,7 +276,7 @@ class OpportunityHunterService {
       .single();
 
     if (error) return null;
-    return data as Opportunity;
+    return data as any;
   }
 
   async getBriefsByOpportunityId(opportunityId: string): Promise<OpportunityBrief[]> {

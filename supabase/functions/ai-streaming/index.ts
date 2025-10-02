@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { corsHeaders } from '../shared/cors.ts';
 
 serve(async (req) => {
@@ -17,109 +18,100 @@ serve(async (req) => {
       });
     }
 
-    // Get the LOVABLE_API_KEY from environment
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!apiKey) {
-      console.error("LOVABLE_API_KEY not found");
-      return new Response(JSON.stringify({ error: "AI service unavailable" }), {
-        status: 500,
+    // Get user ID from request
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "User ID is required" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     console.log('🚀 Starting streaming request for user:', userId);
 
-    // Call Lovable AI Gateway with streaming enabled
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: messages,
-        stream: true, // Enable streaming
-        temperature: 0.7,
-        max_tokens: 4000,
-      }),
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user's active AI provider from database
+    const { data: provider, error: providerError } = await supabase
+      .from('ai_service_providers')
+      .select('provider, api_key, preferred_model, status')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (providerError || !provider) {
+      return new Response(JSON.stringify({ error: "No active AI provider configured. Please configure your AI service in Settings." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`Using AI provider: ${provider.provider} with model: ${provider.preferred_model}`);
+
+    // Call ai-proxy edge function with streaming
+    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        apiKey: provider.api_key,
+        params: {
+          model: provider.preferred_model,
+          messages: messages,
+          stream: true,
+          temperature: 0.7,
+          max_tokens: 4000,
+        }
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      return new Response(JSON.stringify({ error: "Failed to get AI response" }), {
+    // For now we're using the invoke pattern which doesn't support direct streaming
+    // We'll need to handle the response data differently
+    if (!aiProxyResult?.success || !aiProxyResult?.data) {
+      return new Response(JSON.stringify({ error: aiProxyError?.message || "Failed to get AI response" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Create a ReadableStream to handle the streaming response
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
+    // Get the AI response content
+    const aiMessage = aiProxyResult.data?.choices?.[0]?.message?.content;
 
-    if (!reader) {
-      throw new Error("Failed to get reader from response");
+    if (!aiMessage) {
+      return new Response(JSON.stringify({ error: "No response from AI" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Create a TransformStream to handle SSE formatting
+    // Simulate streaming by sending chunks of the response as SSE
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          let buffer = '';
+          const words = aiMessage.split(' ');
+          let currentContent = '';
           
-          while (true) {
-            const { done, value } = await reader.read();
+          for (let i = 0; i < words.length; i++) {
+            currentContent += (i > 0 ? ' ' : '') + words[i];
             
-            if (done) {
-              // Send completion event
-              controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-              controller.close();
-              break;
-            }
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6).trim();
-                
-                if (data === '[DONE]') {
-                  controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-                  continue;
-                }
-
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices?.[0]?.delta?.content;
-                  
-                  if (content) {
-                    // Send token as SSE event
-                    const sseEvent = `data: ${JSON.stringify({ 
-                      type: 'token', 
-                      content,
-                      timestamp: Date.now()
-                    })}\n\n`;
-                    
-                    controller.enqueue(new TextEncoder().encode(sseEvent));
-                  }
-                } catch (e) {
-                  console.error('Error parsing streaming data:', e);
-                }
-              }
-            }
+            const sseEvent = `data: ${JSON.stringify({ 
+              type: 'token', 
+              content: words[i] + (i < words.length - 1 ? ' ' : ''),
+              timestamp: Date.now()
+            })}\n\n`;
+            
+            controller.enqueue(new TextEncoder().encode(sseEvent));
+            
+            // Small delay to simulate streaming
+            await new Promise(resolve => setTimeout(resolve, 30));
           }
+          
+          // Send completion event
+          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          controller.close();
         } catch (error) {
           console.error('Streaming error:', error);
           controller.error(error);

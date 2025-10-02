@@ -761,16 +761,25 @@ serve(async (req) => {
       });
     }
 
-    // Get the LOVABLE_API_KEY from environment
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    // Get user's active AI provider from database
+    const { data: provider, error: providerError } = await supabase
+      .from('ai_service_providers')
+      .select('provider, api_key, preferred_model, status')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
 
-    if (!apiKey) {
-      console.error("LOVABLE_API_KEY not found in environment, please enable the AI gateway");
-      return new Response(JSON.stringify({ error: "AI service unavailable" }), {
+    if (providerError || !provider) {
+      console.error("No active AI provider configured");
+      return new Response(JSON.stringify({ error: "No active AI provider configured. Please configure your AI service in Settings." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log(`Using AI provider: ${provider.provider} with model: ${provider.preferred_model}`);
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
@@ -1082,33 +1091,32 @@ ${context ? `## User Context:\n${JSON.stringify(context, null, 2)}` : ''}
 
 Provide comprehensive, data-driven responses that ALWAYS include relevant actions and visual insights. Remember: Every response should help the user take action and understand data visually.`;
 
-    // Call the Lovable AI Gateway
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          ...messages,
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
+    // Call ai-proxy edge function with user's provider
+    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        apiKey: provider.api_key,
+        params: {
+          model: provider.preferred_model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            ...messages,
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+        }
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", errorText);
+    if (aiProxyError || !aiProxyResult?.success) {
+      console.error("AI request failed:", aiProxyError?.message || aiProxyResult?.error);
       return new Response(JSON.stringify({ 
         error: "Failed to get AI response",
-        details: errorText,
+        details: aiProxyError?.message || aiProxyResult?.error,
         message: "AI service temporarily unavailable. Please try again in a moment."
       }), {
         status: 500,
@@ -1116,8 +1124,8 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       });
     }
 
-    const data = await response.json();
-    const aiMessage = data.choices?.[0]?.message?.content;
+    const data = aiProxyResult.data;
+    const aiMessage = data?.choices?.[0]?.message?.content;
 
     if (!aiMessage) {
       console.error("No response from AI", data);

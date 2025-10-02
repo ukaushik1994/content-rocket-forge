@@ -171,46 +171,54 @@ async function handleChatRequest(socket: WebSocket, connectionId: string, data: 
   }));
   
   try {
-    // Get the LOVABLE_API_KEY from environment
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!apiKey) {
-      throw new Error("LOVABLE_API_KEY not found in environment");
+    // Get user's active AI provider from database
+    const { data: provider, error: providerError } = await supabase
+      .from('ai_service_providers')
+      .select('provider, api_key, preferred_model, status')
+      .eq('user_id', session.userId)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (providerError || !provider) {
+      throw new Error('No active AI provider configured. Please configure your AI service in Settings.');
     }
+
+    console.log(`Using AI provider: ${provider.provider} with model: ${provider.preferred_model}`);
     
     // Build system prompt for streaming responses
     const systemPrompt = `You are an intelligent workflow orchestration assistant. You help users create, execute, and manage complex multi-step workflows that integrate multiple solutions and AI capabilities. You can decompose complex tasks into manageable steps, suggest optimal solution integrations, and execute workflows with real-time progress tracking. Focus on being practical, efficient, and solution-aware in your recommendations.
 
 Provide clear, helpful responses that directly address the user's questions and needs.`;
 
-    // Call the Lovable AI Gateway for streaming response
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          ...messages,
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-        stream: false // For now, we'll simulate streaming by sending the full response
-      }),
+    // Call ai-proxy edge function with user's provider
+    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        apiKey: provider.api_key,
+        params: {
+          model: provider.preferred_model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            ...messages,
+          ],
+          temperature: 0.7,
+          max_tokens: 1500,
+          stream: true
+        }
+      }
     });
 
-    if (!response.ok) {
-      throw new Error(`AI Gateway error: ${response.status}`);
+    if (aiProxyError || !aiProxyResult?.success) {
+      throw new Error(aiProxyError?.message || aiProxyResult?.error || 'AI request failed');
     }
 
-    const aiResponse = await response.json();
-    const aiMessage = aiResponse.choices?.[0]?.message?.content;
+    const aiMessage = aiProxyResult.data?.choices?.[0]?.message?.content;
 
     if (!aiMessage) {
       throw new Error("No response from AI");

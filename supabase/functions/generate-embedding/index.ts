@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { corsHeaders } from '../shared/cors.ts';
 
 serve(async (req) => {
@@ -17,58 +18,75 @@ serve(async (req) => {
       });
     }
 
-    // Get the LOVABLE_API_KEY from environment
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    if (!apiKey) {
-      console.error("LOVABLE_API_KEY not found");
-      return new Response(JSON.stringify({ error: "AI service unavailable" }), {
-        status: 500,
+    // Get user ID from auth header
+    const authHeader = req.headers.get('authorization');
+    let userId: string | undefined;
+
+    if (authHeader) {
+      const { data: { user }, error } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+      if (user && !error) {
+        userId = user.id;
+      }
+    }
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     console.log('🔢 Generating embedding for text length:', text.length);
 
-    // Call Lovable AI Gateway for embeddings
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "text-embedding-3-small",
-        input: text,
-      }),
+    // Get user's active AI provider from database
+    const { data: provider, error: providerError } = await supabase
+      .from('ai_service_providers')
+      .select('provider, api_key, preferred_model, status')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (providerError || !provider) {
+      console.error("No active AI provider configured");
+      return new Response(JSON.stringify({ error: "No active AI provider configured. Please configure your AI service in Settings." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`Using AI provider: ${provider.provider} for embeddings`);
+
+    // Call ai-proxy edge function for embeddings
+    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'embeddings',
+        apiKey: provider.api_key,
+        params: {
+          model: "text-embedding-3-small",
+          input: text,
+        }
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required. Please add credits to your workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
+    if (aiProxyError || !aiProxyResult?.success) {
+      console.error("AI request failed:", aiProxyError?.message || aiProxyResult?.error);
       return new Response(JSON.stringify({ error: "Failed to generate embedding" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const data = await response.json();
-    const embedding = data.data?.[0]?.embedding;
+    const response = aiProxyResult.data;
+    const data = response;
+    const embedding = data?.data?.[0]?.embedding;
 
     if (!embedding || !Array.isArray(embedding)) {
       console.error("Invalid embedding response:", data);

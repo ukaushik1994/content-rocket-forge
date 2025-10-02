@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+
 // Enhanced AI Workflow with Real-time Streaming
 export async function executeEnhancedAIWorkflowWithStreaming(
   body: any,
@@ -88,8 +90,25 @@ async function executeContentStrategyWithProgress(
     message: 'Generating content strategy recommendations...'
   }) + '\n');
 
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) throw new Error("AI service unavailable");
+  // Get user's active AI provider
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { data: provider, error: providerError } = await supabase
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (providerError || !provider) {
+    throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
+  }
+
+  console.log(`Using AI provider: ${provider.provider} for content strategy`);
 
   const prompt = `
 Based on the user's business context, create a comprehensive content strategy:
@@ -122,25 +141,28 @@ Format your response as a structured analysis with actionable recommendations.
     message: 'Processing AI analysis...'
   }) + '\n');
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: "You are a content strategy expert. Provide structured, actionable content strategies." },
-        { role: "user", content: prompt }
-      ],
-    }),
+  // Call ai-proxy edge function
+  const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+    body: {
+      service: provider.provider,
+      endpoint: 'chat',
+      apiKey: provider.api_key,
+      params: {
+        model: provider.preferred_model,
+        messages: [
+          { role: "system", content: "You are a content strategy expert. Provide structured, actionable content strategies." },
+          { role: "user", content: prompt }
+        ],
+      }
+    }
   });
 
-  if (!response.ok) throw new Error(`AI request failed: ${response.statusText}`);
+  if (aiProxyError || !aiProxyResult?.success) {
+    throw new Error(aiProxyError?.message || aiProxyResult?.error || 'AI request failed');
+  }
   
-  const data = await response.json();
-  const aiResponse = data.choices?.[0]?.message?.content;
+  const data = aiProxyResult.data;
+  const aiResponse = data?.choices?.[0]?.message?.content;
 
   // Progress: Finalizing results
   controller.enqueue(JSON.stringify({
@@ -235,8 +257,25 @@ async function executePerformanceAnalysisWithProgress(
     message: 'Analyzing performance metrics and trends...'
   }) + '\n');
 
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) throw new Error("AI service unavailable");
+  // Get user's active AI provider
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { data: provider, error: providerError } = await supabaseClient
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (providerError || !provider) {
+    throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
+  }
+
+  console.log(`Using AI provider: ${provider.provider} for performance analysis`);
 
   // Progress: AI analysis
   controller.enqueue(JSON.stringify({
@@ -270,25 +309,28 @@ Please provide:
 Focus on data-driven insights and specific improvement opportunities.
 `;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: "You are a performance analyst. Provide data-driven insights and recommendations." },
-        { role: "user", content: prompt }
-      ],
-    }),
+  // Call ai-proxy edge function
+  const { data: aiProxyResult, error: aiProxyError } = await supabaseClient.functions.invoke('ai-proxy', {
+    body: {
+      service: provider.provider,
+      endpoint: 'chat',
+      apiKey: provider.api_key,
+      params: {
+        model: provider.preferred_model,
+        messages: [
+          { role: "system", content: "You are a performance analyst. Provide data-driven insights and recommendations." },
+          { role: "user", content: prompt }
+        ],
+      }
+    }
   });
 
-  if (!response.ok) throw new Error(`AI request failed: ${response.statusText}`);
+  if (aiProxyError || !aiProxyResult?.success) {
+    throw new Error(aiProxyError?.message || aiProxyResult?.error || 'AI request failed');
+  }
   
-  const data = await response.json();
-  const aiResponse = data.choices?.[0]?.message?.content;
+  const data = aiProxyResult.data;
+  const aiResponse = data?.choices?.[0]?.message?.content;
 
   return {
     workflowType: 'solution-performance-analyzer',
@@ -358,8 +400,25 @@ async function executeSEOAnalysisWithProgress(
     message: 'Analyzing keywords and search opportunities...'
   }) + '\n');
 
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) throw new Error("AI service unavailable");
+  // Get user's active AI provider
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { data: provider, error: providerError } = await supabaseClient
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (providerError || !provider) {
+    throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
+  }
+
+  console.log(`Using AI provider: ${provider.provider} for SEO analysis`);
 
   // Progress: SEO analysis
   controller.enqueue(JSON.stringify({
@@ -391,25 +450,28 @@ Please provide:
 Focus on actionable SEO strategies and keyword opportunities.
 `;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: "You are an SEO expert. Provide data-driven keyword and SEO strategies." },
-        { role: "user", content: prompt }
-      ],
-    }),
+  // Call ai-proxy edge function
+  const { data: aiProxyResult, error: aiProxyError } = await supabaseClient.functions.invoke('ai-proxy', {
+    body: {
+      service: provider.provider,
+      endpoint: 'chat',
+      apiKey: provider.api_key,
+      params: {
+        model: provider.preferred_model,
+        messages: [
+          { role: "system", content: "You are an SEO expert. Provide data-driven keyword and SEO strategies." },
+          { role: "user", content: prompt }
+        ],
+      }
+    }
   });
 
-  if (!response.ok) throw new Error(`AI request failed: ${response.statusText}`);
+  if (aiProxyError || !aiProxyResult?.success) {
+    throw new Error(aiProxyError?.message || aiProxyResult?.error || 'AI request failed');
+  }
   
-  const data = await response.json();
-  const aiResponse = data.choices?.[0]?.message?.content;
+  const data = aiProxyResult.data;
+  const aiResponse = data?.choices?.[0]?.message?.content;
 
   return {
     workflowType: 'seo-keyword-researcher',
