@@ -148,6 +148,56 @@ export function useWorkflowData() {
     }
   });
 
+  // 🚀 PHASE 1 FIX: Create AND execute workflow in one action
+  const createAndExecuteWorkflowMutation = useMutation({
+    mutationFn: async ({
+      workflowData,
+      inputContext,
+      executionName
+    }: {
+      workflowData: Omit<IntelligentWorkflow, 'id' | 'created_at' | 'updated_at'>;
+      inputContext?: any;
+      executionName?: string;
+    }) => {
+      // Step 1: Create workflow
+      const { data: workflow, error: createError } = await supabase
+        .from('intelligent_workflows')
+        .insert(workflowData)
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // Step 2: Immediately execute it
+      const { data: execution, error: execError } = await supabase.functions.invoke('intelligent-workflow-executor', {
+        body: {
+          workflowId: workflow.id,
+          inputContext: inputContext || {},
+          executionName: executionName || `${workflow.title} - ${new Date().toLocaleString()}`
+        }
+      });
+
+      if (execError) throw execError;
+
+      return { workflow, execution };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['intelligent-workflows'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-executions'] });
+      toast({
+        title: "Workflow Started",
+        description: `${data.workflow.title} is now executing`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create and execute workflow",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Execute workflow mutation
   const executeWorkflowMutation = useMutation({
     mutationFn: async ({
@@ -296,6 +346,10 @@ export function useWorkflowData() {
 
     executeWorkflow: executeWorkflowMutation.mutate,
     isExecuting: executeWorkflowMutation.isPending,
+
+    // 🚀 PHASE 1: New combined mutation
+    createAndExecuteWorkflow: createAndExecuteWorkflowMutation.mutate,
+    isCreatingAndExecuting: createAndExecuteWorkflowMutation.isPending,
 
     updateWorkflow: updateWorkflowMutation.mutate,
     isUpdating: updateWorkflowMutation.isPending,

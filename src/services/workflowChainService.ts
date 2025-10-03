@@ -122,6 +122,26 @@ export class WorkflowChainService {
     };
 
     await this.saveWorkflow(userId, workflow);
+    
+    // 🚀 PHASE 1 FIX: Trigger workflow execution via edge function
+    try {
+      const { data, error } = await supabase.functions.invoke('intelligent-workflow-executor', {
+        body: {
+          workflowId: workflow.id,
+          inputContext: workflow.context,
+          executionName: `${workflow.title} - ${new Date().toLocaleString()}`
+        }
+      });
+      
+      if (error) {
+        console.error('❌ Failed to trigger workflow execution:', error);
+      } else {
+        console.log('✅ Workflow execution triggered:', data);
+      }
+    } catch (execError) {
+      console.error('❌ Error triggering workflow execution:', execError);
+    }
+    
     return workflow;
   }
 

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { CrossWorkflowIntelligence } from '@/services/crossWorkflowIntelligence';
 import { WorkflowErrorRecovery } from '@/services/workflowErrorRecovery';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,15 +45,31 @@ export const useEnhancedAIWorkflow = () => {
         suggestions,
       }));
 
-      // Execute workflow with pattern optimization - simplified
+      // 🚀 PHASE 1 FIX: Call the actual intelligent-workflow-executor edge function
+      const { data, error } = await supabase.functions.invoke('intelligent-workflow-executor', {
+        body: {
+          workflowType,
+          context: {
+            ...context,
+            userId: user.id
+          },
+          userId: user.id,
+          executionName: `${workflowType} - ${new Date().toLocaleString()}`
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Workflow execution failed');
+      }
+
       setExecutionState(prev => ({
         ...prev,
         currentStep: 'Executing optimized workflow...',
         progress: 70,
       }));
 
-      // Simulate workflow execution steps
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for execution results
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       setExecutionState(prev => ({
         ...prev,
@@ -60,7 +77,7 @@ export const useEnhancedAIWorkflow = () => {
         progress: 90,
       }));
 
-      // Learn from execution - simplified for now
+      // Complete
       setExecutionState(prev => ({
         ...prev,
         currentStep: 'Complete',
@@ -72,12 +89,19 @@ export const useEnhancedAIWorkflow = () => {
         description: "Intelligent workflow executed successfully with optimizations",
       });
 
-      return { success: true, suggestions };
+      console.log('✅ Workflow execution completed:', data);
+
+      return { 
+        success: true, 
+        suggestions,
+        executionId: data?.executionId,
+        results: data?.results
+      };
 
     } catch (error) {
-      console.error('Workflow execution failed:', error);
+      console.error('❌ Workflow execution failed:', error);
       
-      // Attempt error recovery - simplified
+      // Attempt error recovery
       try {
         setExecutionState(prev => ({
           ...prev,
