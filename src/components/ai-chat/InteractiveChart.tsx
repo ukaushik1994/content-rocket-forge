@@ -166,6 +166,33 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       linkElement.click();
     }
   }, [filteredData, onExport]);
+  // Phase 1: Normalize pie chart data
+  const normalizePieChartData = (data: any[]): any[] => {
+    if (!data || data.length === 0) return [];
+    
+    // Check if data already has "name" and "value" keys
+    if (data[0].name && data[0].value) {
+      return data;
+    }
+    
+    // Find the name key (solution, label, category, etc.)
+    const nameKey = Object.keys(data[0]).find(key => 
+      typeof data[0][key] === 'string' && !['type', 'category'].includes(key)
+    ) || 'name';
+    
+    // Find the value key (impressions, clicks, value, etc.)
+    const valueKey = Object.keys(data[0]).find(key => 
+      typeof data[0][key] === 'number'
+    ) || 'value';
+    
+    console.log('🔄 Normalizing pie chart data:', { nameKey, valueKey, sample: data[0] });
+    
+    return data.map(item => ({
+      name: item[nameKey] || item.name || 'Unknown',
+      value: item[valueKey] || item.value || 0
+    }));
+  };
+
   const renderChart = () => {
     console.log('🎯 InteractiveChart: renderChart called with:', {
       currentType,
@@ -288,13 +315,22 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             </BarChart>
           </ResponsiveContainer>;
       case 'pie':
+        // Phase 1: Normalize data for pie charts
+        const normalizedPieData = normalizePieChartData(filteredData);
+        console.log('📊 Pie chart rendering with normalized data:', normalizedPieData);
+        
         return <ResponsiveContainer {...commonProps}>
             <PieChart>
-              <Pie data={filteredData} cx="50%" cy="50%" labelLine={false} label={({
-              name,
-              percent
-            }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
-                {filteredData.map((entry, index) => {
+              <Pie 
+                data={normalizedPieData} 
+                cx="50%" 
+                cy="50%" 
+                labelLine={false} 
+                label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`} 
+                outerRadius={80} 
+                fill="#8884d8" 
+                dataKey="value">
+                {normalizedPieData.map((entry, index) => {
                 const colorIndex = index % Math.max(colors.length, 1);
                 const fillColor = colors[colorIndex] || 'hsl(var(--primary))';
                 return <Cell key={`cell-${index}`} fill={fillColor} />;

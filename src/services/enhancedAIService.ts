@@ -433,6 +433,23 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
   private validateVisualData(visualData?: VisualData | VisualData[]): VisualData | VisualData[] | undefined {
     if (!visualData) return undefined;
     
+    // Phase 2: Chart diversity validation
+    if (Array.isArray(visualData)) {
+      const chartTypes = visualData
+        .map(vd => vd.chartConfig?.type)
+        .filter(type => type !== undefined);
+      
+      const uniqueTypes = new Set(chartTypes);
+      if (uniqueTypes.size < chartTypes.length) {
+        console.warn('⚠️ Duplicate chart types detected:', {
+          total: chartTypes.length,
+          unique: uniqueTypes.size,
+          types: chartTypes
+        });
+        console.warn('💡 AI should generate diverse chart types (pie, bar, line, table)');
+      }
+    }
+    
     const validateSingleVisualData = (vd: VisualData, index: number = 0): VisualData => ({
       ...vd,
       title: vd.title || vd.chartConfig?.title || `Visualization ${index + 1}`,

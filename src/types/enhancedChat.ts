@@ -23,6 +23,13 @@ export interface ActionableItem {
   description: string;
   priority: 'high' | 'medium' | 'low';
   action?: string;
+  // Enhanced fields for Phase 4
+  estimatedImpact?: string; // e.g., "+15% conversions"
+  timeRequired?: string; // e.g., "5 minutes", "2 hours"
+  actionType?: 'navigate' | 'workflow' | 'external' | 'info';
+  targetUrl?: string; // Where to navigate or external link
+  icon?: string; // Lucide icon name
+  prerequisites?: string[]; // ["Set up GA4", "Configure tracking"]
 }
 
 export interface MetricCard {

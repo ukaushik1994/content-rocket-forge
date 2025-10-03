@@ -59,7 +59,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   onActionClick
 }) => {
   const { toast } = useToast();
-  const [chartTypes, setChartTypes] = useState<Record<number, 'line' | 'bar' | 'area' | 'pie'>>({});
+  // Phase 3: Removed chartTypes state - AI chooses optimal type
   const [selectedPoint, setSelectedPoint] = useState<any>(null);
   const [showDetailPopup, setShowDetailPopup] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
@@ -133,9 +133,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     ];
   }, [charts]);
 
-  const handleChartTypeChange = (chartIndex: number, newType: 'line' | 'bar' | 'area' | 'pie') => {
-    setChartTypes(prev => ({ ...prev, [chartIndex]: newType }));
-  };
+  // Phase 3: Removed handleChartTypeChange - AI chooses optimal type
 
   const handleDataPointClick = (data: any, chartIndex: number) => {
     setSelectedPoint({ ...data, chartIndex });
@@ -169,8 +167,35 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     });
   };
 
+  // Phase 1: Normalize pie chart data
+  const normalizePieChartData = (data: any[]): any[] => {
+    if (!data || data.length === 0) return [];
+    
+    // Check if data already has "name" and "value" keys
+    if (data[0].name && data[0].value) {
+      return data;
+    }
+    
+    // Find the name key (solution, label, category, etc.)
+    const nameKey = Object.keys(data[0]).find(key => 
+      typeof data[0][key] === 'string' && !['type', 'category'].includes(key)
+    ) || 'name';
+    
+    // Find the value key (impressions, clicks, value, etc.)
+    const valueKey = Object.keys(data[0]).find(key => 
+      typeof data[0][key] === 'number'
+    ) || 'value';
+    
+    console.log('🔄 Normalizing pie chart data:', { nameKey, valueKey, sample: data[0] });
+    
+    return data.map(item => ({
+      name: item[nameKey] || item.name || 'Unknown',
+      value: item[valueKey] || item.value || 0
+    }));
+  };
+
   const renderChart = (config: ChartConfiguration, index: number) => {
-    const currentType = chartTypes[index] || config.type;
+    const currentType = config.type; // Phase 3: Use AI-selected type directly
     const zoom = zoomLevel[index] || 1;
     
     if (!config.data || config.data.length === 0) {
@@ -316,12 +341,16 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
         );
 
       case 'pie':
+        // Phase 1: Normalize data for pie charts
+        const normalizedPieData = normalizePieChartData(config.data);
+        console.log('📊 Pie chart rendering with normalized data:', normalizedPieData);
+        
         return (
           <div style={chartStyle}>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={config.data}
+                  data={normalizedPieData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -330,7 +359,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {config.data.map((entry, idx) => (
+                  {normalizedPieData.map((entry, idx) => (
                     <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
                   ))}
                 </Pie>
@@ -485,10 +514,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <ChartTypeSwitcher
-                          value={chartTypes[index] || chart.type}
-                          onChange={(type) => handleChartTypeChange(index, type)}
-                        />
+                        {/* Phase 3: Removed ChartTypeSwitcher - AI chooses optimal type */}
                         
                         <div className="flex gap-1">
                           <Button
@@ -535,7 +561,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                 </motion.div>
               )}
 
-              {/* Actionable Items Panel */}
+              {/* Phase 4: Enhanced Actionable Items Panel */}
               {actionableItems && actionableItems.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -548,25 +574,85 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                     Actionable Insights
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {actionableItems.map((item) => (
-                      <motion.div
-                        key={item.id}
-                        whileHover={{ scale: 1.02 }}
-                        className="bg-background/50 p-3 rounded-md cursor-pointer hover:bg-background/70 transition-colors"
-                        onClick={() => onActionClick?.(item)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <Badge variant={item.priority === 'high' ? 'default' : 'outline'} className="mb-1 text-xs">
-                              {item.priority} priority
-                            </Badge>
-                            <h4 className="font-medium text-sm">{item.title}</h4>
-                            <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                    {actionableItems.map((item) => {
+                      // Import icons dynamically based on item.icon
+                      const iconName = item.icon || 'TrendingUp';
+                      const IconComponent = require('lucide-react')[iconName] || TrendingUp;
+                      
+                      return (
+                        <motion.div
+                          key={item.id}
+                          whileHover={{ scale: 1.02 }}
+                          className="bg-background/50 p-4 rounded-md cursor-pointer hover:bg-background/70 transition-all border border-white/5"
+                          onClick={() => onActionClick?.(item)}
+                        >
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <IconComponent className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className="font-semibold text-sm">{item.title}</h4>
+                                <Badge 
+                                  variant={item.priority === 'high' ? 'default' : 'outline'} 
+                                  className="text-xs"
+                                >
+                                  {item.priority}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {item.description}
+                              </p>
+                            </div>
                           </div>
-                          <TrendingUp className="h-4 w-4 text-muted-foreground ml-2" />
-                        </div>
-                      </motion.div>
-                    ))}
+                          
+                          {/* Enhanced metadata */}
+                          {(item.estimatedImpact || item.timeRequired) && (
+                            <div className="space-y-1.5 mb-3">
+                              {item.estimatedImpact && (
+                                <div className="flex items-center gap-2 text-xs">
+                                  <Sparkles className="w-3 h-3 text-success" />
+                                  <span className="text-success font-medium">
+                                    Impact: {item.estimatedImpact}
+                                  </span>
+                                </div>
+                              )}
+                              {item.timeRequired && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span>⏱️ Time: {item.timeRequired}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Prerequisites */}
+                          {item.prerequisites && item.prerequisites.length > 0 && (
+                            <div className="mb-3">
+                              <p className="text-xs text-muted-foreground mb-1">Prerequisites:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {item.prerequisites.map((prereq, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    {prereq}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Action button */}
+                          <Button 
+                            size="sm" 
+                            className="w-full"
+                            variant={item.actionType === 'navigate' || item.actionType === 'workflow' ? 'default' : 'outline'}
+                          >
+                            {item.actionType === 'external' ? 'Open Link →' : 
+                             item.actionType === 'navigate' ? 'Go There →' :
+                             item.actionType === 'workflow' ? 'Start Workflow' :
+                             'Learn More'}
+                          </Button>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </motion.div>
               )}

@@ -1268,24 +1268,104 @@ Generate 3-4 DIFFERENT charts, each with unique insights:
    - subtitle (optional): Additional context
    - dataContext: Explain what the data represents
 
-2. **Include actionableItems** (2-5 items per response):
-   - Specific actions user can take
+2. **Phase 4: Enhanced actionableItems** (2-5 items per response):
+   - Specific actions user can take with rich metadata
    - Priority levels (high/medium/low)
-   - Clear description of expected impact
+   - **estimatedImpact**: Quantify expected result (e.g., "+20% CTR")
+   - **timeRequired**: Set user expectations (e.g., "30 minutes", "2 hours")
+   - **actionType**: 'navigate' (internal page), 'workflow' (trigger automation), 'external' (open link), 'info' (show details)
+   - **targetUrl**: /content-hub or https://example.com
+   - **icon**: Lucide icon name (TrendingUp, Zap, ExternalLink, etc.)
+   - **prerequisites**: Array of required steps (optional)
+
+Example actionableItem:
+\`\`\`json
+{
+  "id": "optimize_gl_connect",
+  "title": "Optimize GL Connect Content",
+  "description": "GL Connect has 15K impressions but low CTR. Improve headlines and meta descriptions.",
+  "priority": "high",
+  "estimatedImpact": "+20% CTR (~300 more clicks)",
+  "timeRequired": "30 minutes",
+  "actionType": "navigate",
+  "targetUrl": "/content-hub?solution=gl-connect",
+  "icon": "TrendingUp",
+  "prerequisites": []
+}
+\`\`\`
 
 3. **Include deepDivePrompts** (3-5 prompts):
    - Follow-up questions for deeper analysis
    - Related insights to explore
    - Next logical steps in the analysis
 
-4. **Chart Diversity Rules**:
-   - NEVER show the same data twice
-   - Each chart shows a DIFFERENT perspective
+4. **Phase 2: Chart Diversity Rules (CRITICAL)**:
+   - When showing multiple charts (2-4), EACH must be DIFFERENT type
+   - NEVER show duplicate chart types (no two pie charts, no two bar charts)
+   - Each chart shows a DIFFERENT perspective of the data
    - Use appropriate chart types for the insight:
-     * Pie → Distribution/breakdown
-     * Bar → Comparisons/rankings
-     * Line → Trends over time
-     * Area → Cumulative/volume trends
+     * Pie → Distribution/breakdown (market share, composition)
+     * Bar → Comparisons/rankings (solution performance, category comparison)
+     * Line → Trends over time (growth, historical patterns)
+     * Table → Detailed breakdown (exact numbers, comprehensive data)
+
+Example of 4 DIVERSE charts:
+\`\`\`json
+[
+  {
+    "type": "chart",
+    "title": "Solution Market Share",
+    "chartConfig": {
+      "type": "pie",
+      "title": "Distribution of Impressions",
+      "subtitle": "Which solutions dominate visibility?",
+      "data": [
+        {"name": "GL Connect", "value": 15000},
+        {"name": "AI Assist", "value": 8500}
+      ]
+    }
+  },
+  {
+    "type": "chart",
+    "title": "Performance Ranking",
+    "chartConfig": {
+      "type": "bar",
+      "title": "Impressions by Solution",
+      "subtitle": "Head-to-head comparison",
+      "data": [
+        {"name": "GL Connect", "impressions": 15000},
+        {"name": "AI Assist", "impressions": 8500}
+      ],
+      "categories": ["impressions"]
+    }
+  },
+  {
+    "type": "chart",
+    "title": "Growth Trend",
+    "chartConfig": {
+      "type": "line",
+      "title": "30-Day Impression Trend",
+      "subtitle": "How are impressions evolving?",
+      "data": [
+        {"name": "Week 1", "GL Connect": 3500, "AI Assist": 2000},
+        {"name": "Week 2", "GL Connect": 4000, "AI Assist": 2200}
+      ],
+      "categories": ["GL Connect", "AI Assist"]
+    }
+  },
+  {
+    "type": "table",
+    "title": "Detailed Metrics",
+    "tableData": {
+      "headers": ["Solution", "Impressions", "CTR", "Conversions"],
+      "rows": [
+        ["GL Connect", "15,000", "3.2%", "480"],
+        ["AI Assist", "8,500", "2.8%", "238"]
+      ]
+    }
+  }
+]
+\`\`\`
 
 5. **Data Accuracy Requirements**:
    - ✅ ONLY use data from REAL DATA CONTEXT
