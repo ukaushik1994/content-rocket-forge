@@ -63,6 +63,9 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
+  
+  // Multi-chart modal support - can be enhanced to show all visualData
+  const [allVisualData, setAllVisualData] = React.useState<any[]>([]);
   const chartTypes = [{
     value: 'line',
     label: 'Line Chart',
