@@ -202,6 +202,7 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
           isTyping={isTyping}
           onRetryMessage={retryLastMessage}
           isRetryingMessage={isAIThinking}
+          onSendMessage={sendMessage}
         />
         
         {/* Multi-User Typing Indicator */}

@@ -135,6 +135,7 @@ class EnhancedAIService {
       console.log('✅ Enhanced AI Response received with context awareness');
 
       // Create enhanced message with validated visual data
+      // Phase 1: Store ALL charts in allVisualData, display first in visualData
       const validatedData = this.validateVisualData(response.visualData);
       const enhancedMessage: EnhancedChatMessage = {
         id: Date.now().toString(),
@@ -142,6 +143,7 @@ class EnhancedAIService {
         content: responseContent,
         timestamp: new Date(),
         visualData: Array.isArray(validatedData) ? validatedData[0] : validatedData,
+        allVisualData: Array.isArray(validatedData) ? validatedData : (validatedData ? [validatedData] : undefined), // Store all charts
         serpData: response.serpData,
         actions: response.actions || [],
         workflowContext: response.workflowContext,

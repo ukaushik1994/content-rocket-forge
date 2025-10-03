@@ -15,6 +15,7 @@ interface InfiniteScrollMessagesProps {
   onLoadMore: () => void;
   onRetryMessage?: () => void;
   isRetryingMessage?: boolean;
+  onSendMessage?: (message: string) => void;
 }
 
 export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
@@ -24,7 +25,8 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
   isLoadingMore,
   onLoadMore,
   onRetryMessage,
-  isRetryingMessage = false
+  isRetryingMessage = false,
+  onSendMessage
 }) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -130,6 +132,7 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
                   isLatest={index === messages.length - 1}
                   onRetry={onRetryMessage}
                   isRetrying={isRetryingMessage}
+                  onSendMessage={onSendMessage}
                 />
               </motion.div>
             ))}

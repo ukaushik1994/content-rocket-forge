@@ -110,6 +110,7 @@ export interface EnhancedChatMessage {
   content: string;
   timestamp: Date;
   visualData?: VisualData;
+  allVisualData?: VisualData[]; // Phase 1: Store all generated charts
   serpData?: any[]; // Added SERP data support
   actions?: ContextualAction[];
   progressIndicator?: ProgressState;

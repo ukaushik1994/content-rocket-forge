@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +12,7 @@ import { SerpVisualData } from './SerpVisualData';
 import { MessageStatus } from './MessageStatus';
 import { ErrorMessageBubble } from './ErrorMessageBubble';
 import { FormattedResponseRenderer } from './FormattedResponseRenderer';
+import { MultiChartModal } from './MultiChartModal';
 import { Button } from '@/components/ui/button';
 
 interface EnhancedMessageBubbleProps {
@@ -20,6 +21,7 @@ interface EnhancedMessageBubbleProps {
   onAction?: (action: ContextualAction) => void;
   onRetry?: () => void;
   isRetrying?: boolean;
+  onSendMessage?: (message: string) => void; // For deep dive prompts
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
@@ -27,8 +29,11 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   isLatest,
   onAction,
   onRetry,
-  isRetrying = false
+  isRetrying = false,
+  onSendMessage
 }) => {
+  const [showMultiChartModal, setShowMultiChartModal] = useState(false);
+  
   // Check if this is an error message
   if (message.messageStatus === 'error' && onRetry) {
     return (
@@ -161,7 +166,8 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   hasChartConfig: !!message.visualData?.chartConfig,
                   hasMetrics: !!message.visualData?.metrics,
                   hasSerpData: !!message.visualData?.serpData,
-                  fullVisualData: message.visualData
+                  fullVisualData: message.visualData,
+                  allVisualDataCount: message.allVisualData?.length
                 });
                 return null;
               })()}
@@ -185,6 +191,21 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 />
               )}
               <VisualDataRenderer data={message.visualData} />
+              
+              {/* Phase 1: Show "View all charts" link when multiple charts exist */}
+              {message.allVisualData && message.allVisualData.length > 1 && (
+                <div className="mt-2 text-center">
+                  <button
+                    onClick={() => setShowMultiChartModal(true)}
+                    className="text-sm text-primary hover:text-primary/80 transition-colors underline-offset-4 hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>View all {message.allVisualData.length} charts</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -247,6 +268,27 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         >
           <User className="h-4 w-4 text-secondary" />
         </motion.div>
+      )}
+
+      {/* Multi-Chart Modal */}
+      {message.allVisualData && message.allVisualData.length > 1 && (
+        <MultiChartModal
+          isOpen={showMultiChartModal}
+          onClose={() => setShowMultiChartModal(false)}
+          allVisualData={message.allVisualData}
+          currentChartConfig={message.visualData?.chartConfig}
+          title={message.visualData?.title || 'Data Visualization'}
+          description={message.visualData?.description}
+          actionableItems={message.visualData?.actionableItems}
+          deepDivePrompts={message.visualData?.deepDivePrompts}
+          onDeepDiveClick={(prompt) => {
+            setShowMultiChartModal(false);
+            onSendMessage?.(prompt);
+          }}
+          onActionClick={(action) => {
+            onAction?.(action);
+          }}
+        />
       )}
     </motion.div>
   );
