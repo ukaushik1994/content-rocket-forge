@@ -362,9 +362,13 @@ const detectTablePattern = (line: string): boolean => {
   // Skip empty lines
   if (!trimmed) return false;
   
-  // Check for pipe-separated values (|) - most common markdown table format
-  if (trimmed.includes('|') && trimmed.split('|').length >= 2) {
-    return true;
+  // Check for pipe-separated values (|) - STRICT: must start AND end with |
+  if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+    const parts = trimmed.split('|').filter(p => p.trim().length > 0);
+    // Must have at least 2 actual columns (not just random pipes in text)
+    if (parts.length >= 2) {
+      return true;
+    }
   }
   
   // Check for CSV-like patterns with commas
@@ -433,6 +437,12 @@ const collectTableLines = (lines: string[], startIndex: number): string[] => {
     } else {
       break;
     }
+  }
+  
+  // STRICT: Require at least 2 lines to be considered a valid table
+  // Single lines with pipes are NOT tables (they're fragments in conversation)
+  if (tableLines.length < 2) {
+    return [];
   }
   
   return tableLines;
