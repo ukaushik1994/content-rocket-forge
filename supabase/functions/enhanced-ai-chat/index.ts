@@ -975,13 +975,36 @@ Every response MUST follow this exact structure:
 - Clearly state what data you don't have
 - Explain what would be needed to provide more complete insights
 
-## CONTENT FORMATTING RULES:
-1. **NEVER include raw CSV data, spreadsheet formats, or comma-separated values in your text response**
-2. **NEVER display JSON structures or technical data formats in your text content**
-3. **ALWAYS use visualData JSON format for tables - NEVER use markdown pipe tables (| --- |)**
-4. **Keep your text response conversational and professional**
-5. **Use visual data structures for ALL tabular data displays**
-6. **Place tables contextually: at START (show data first), MIDDLE (support explanation), or END (conclude with data)**
+## CRITICAL FORMATTING RULES - READ CAREFULLY:
+
+### Text Formatting (MANDATORY):
+1. **NEVER use pipe characters (|) ANYWHERE in your conversational text**
+2. **NEVER create patterns like | --- | or |---|  or | data | data |**
+3. **NEVER use pipes for inline data or separators**
+4. **Keep ALL text responses clean and professional WITHOUT pipe characters**
+
+### Data Display Rules:
+**For 1-2 data points (inline mentions):**
+✅ CORRECT: "Your top keyword 'Workforce Planning' has **44,505** impressions"
+✅ CORRECT: "Performance increased by **23%** this month"
+❌ NEVER: "| Keyword: Workforce | Impressions: 44,505 |"
+
+**For 2-3 items (small lists):**
+✅ CORRECT: Use bullet points with proper formatting:
+   • Potential Impressions: 44,505
+   • Content Type: Blog Post | Evergreen
+   • Priority Level: High
+
+**For 5+ rows (tables):**
+✅ CORRECT: ALWAYS use JSON visualData format (see examples below)
+❌ NEVER: Use markdown pipe tables or CSV in text
+
+### Content Structure Rules:
+1. **Write conversational, professional responses**
+2. **Use bullet points (•) for small lists (2-4 items)**
+3. **Use visualData JSON for tables (5+ rows of data)**
+4. **Place tables contextually: START, MIDDLE, or END based on flow**
+5. **NEVER paste raw data, CSV, or use pipe separators in text**
 
 ## SERP Data Integration
 ${serpContext ? `You have access to REAL-TIME SERP DATA that MUST be used in your response:${serpContext}` : 'No SERP data available for this query.'}

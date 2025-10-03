@@ -52,6 +52,25 @@ const detectCSVPattern = (content: string): boolean => {
   return commaLinesCount / lines.length >= 0.7;
 };
 
+// Clean malformed pipe characters before processing
+const cleanMalformedPipes = (content: string): string => {
+  console.log('🧹 Cleaning malformed pipes from content');
+  let cleaned = content;
+  
+  // Remove broken table separator patterns like | --- | or |---|
+  cleaned = cleaned.replace(/\|\s*-+\s*\|/g, '');
+  
+  // Remove empty pipe patterns like | | | or |  |  |
+  cleaned = cleaned.replace(/\|\s+\|\s+\|/g, '');
+  
+  // Remove standalone pipes that aren't part of proper markdown tables
+  // This regex looks for pipes not surrounded by other pipes (not part of table structure)
+  cleaned = cleaned.replace(/(?<!\|)\|(?!\|)(?![^\n]*\|)/g, '');
+  
+  console.log('✅ Pipe cleaning complete');
+  return cleaned;
+};
+
 // Convert CSV content to markdown table
 const convertCSVToMarkdownTable = (csvContent: string): string => {
   const lines = csvContent.split('\n').filter(line => line.trim());
@@ -98,6 +117,8 @@ const convertCSVToMarkdownTable = (csvContent: string): string => {
   
   return `\n${header}\n${separator}\n${body}\n`;
 };
+
+
 
 // Enhanced malformed table detection with better pattern recognition
 const detectMalformedTable = (content: string): boolean => {
@@ -269,8 +290,12 @@ const detectAndConvertTables = (content: string): { processedContent: string; ha
   
   console.log('🔄 Starting table detection and conversion process');
   
+  // Step 0: Clean malformed pipes before any processing
+  let processedContent = cleanMalformedPipes(content);
+  console.log('🧹 Malformed pipes cleaned');
+  
   // Step 1: Pre-process code blocks to convert CSV to tables
-  let processedContent = processCodeBlocks(content);
+  processedContent = processCodeBlocks(processedContent);
   console.log('📋 Code blocks processed');
   
   // Step 2: Check if content has malformed tables and repair them first
