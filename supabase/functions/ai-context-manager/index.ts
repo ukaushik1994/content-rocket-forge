@@ -416,6 +416,51 @@ async function getContextState(userId: string) {
         high: aiProposals?.filter(p => p.priority_tag === 'quick-win' || p.priority_tag === 'high-priority')?.length || 0,
         medium: aiProposals?.filter(p => p.priority_tag === 'evergreen')?.length || 0,
         low: aiProposals?.filter(p => p.priority_tag === 'long-tail')?.length || 0
+      },
+      
+      // ✅ Comprehensive data availability tracking
+      dataAvailability: {
+        solutions: {
+          available: (solutions?.length || 0) > 0,
+          count: solutions?.length || 0,
+          status: (solutions?.length || 0) > 0 
+            ? `✅ ${solutions?.length} solutions tracked` 
+            : "⚠️ No solutions configured. Add your products/services in Settings to enable solution-based insights."
+        },
+        content: {
+          available: (contentItems?.length || 0) > 0,
+          count: contentItems?.length || 0,
+          status: (contentItems?.length || 0) > 0 
+            ? `✅ ${contentItems?.length} content items tracked` 
+            : "⚠️ No content created yet. Create content in Content Builder to track performance."
+        },
+        keywords: {
+          available: (contentKeywords?.length || 0) > 0,
+          count: contentKeywords?.length || 0,
+          status: (contentKeywords?.length || 0) > 0 
+            ? `✅ ${contentKeywords?.length} keywords linked to content` 
+            : "⚠️ No keywords linked to content. Link keywords in Content Builder to unlock keyword-based insights."
+        },
+        proposals: {
+          available: (aiProposals?.length || 0) > 0,
+          count: aiProposals?.length || 0,
+          status: (aiProposals?.length || 0) > 0 
+            ? `✅ ${aiProposals?.length} AI proposals available` 
+            : "⚠️ No AI proposals generated. Run Strategy Builder to generate content recommendations."
+        },
+        companyInfo: {
+          available: !!contextState?.context?.companyInfo,
+          status: contextState?.context?.companyInfo 
+            ? "✅ Company information configured" 
+            : "⚠️ Company information not set. Add company details in Settings for personalized insights."
+        },
+        seoData: {
+          available: (contentItems?.filter(item => item.seo_score && item.seo_score > 0)?.length || 0) > 0,
+          count: contentItems?.filter(item => item.seo_score && item.seo_score > 0)?.length || 0,
+          status: (contentItems?.filter(item => item.seo_score && item.seo_score > 0)?.length || 0) > 0
+            ? `✅ SEO scores available for ${contentItems?.filter(item => item.seo_score && item.seo_score > 0)?.length} content items`
+            : "⚠️ No SEO scores available. Analyze content in SEO Optimizer to generate scores."
+        }
       }
     };
 
@@ -437,7 +482,11 @@ async function getContextState(userId: string) {
     console.log(`✅ Context state retrieved successfully:`, {
       solutionsCount: solutions?.length || 0,
       contentCount: contentItems?.length || 0,
-      hasContextState: !!contextState
+      keywordCoverage: contentKeywords?.length || 0,
+      proposalsCount: aiProposals?.length || 0,
+      hasContextState: !!contextState,
+      hasSeoData: contentItems?.filter(item => item.seo_score && item.seo_score > 0)?.length || 0,
+      hasCompanyInfo: !!contextState?.context?.companyInfo
     });
 
     return new Response(JSON.stringify(comprehensiveContext), {
