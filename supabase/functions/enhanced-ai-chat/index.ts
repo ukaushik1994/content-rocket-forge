@@ -157,6 +157,129 @@ function sanitizeResponseContent(content: string): string {
   return cleaned || content;
 }
 
+/**
+ * Generate multiple chart perspectives from a single chart
+ * This ensures we always show data from multiple angles
+ */
+function generateMultipleChartPerspectives(originalChart: any): any[] {
+  const charts: any[] = [];
+  
+  // Always include the original chart first
+  charts.push(originalChart);
+  
+  const chartType = originalChart.chartConfig?.type;
+  const chartData = originalChart.chartConfig?.data || [];
+  
+  // Only generate alternatives if we have valid data
+  if (!chartData || chartData.length === 0) {
+    return charts;
+  }
+  
+  // 1. If it's a pie chart, generate a bar chart variant
+  if (chartType === 'pie' && chartData.length > 0) {
+    const barChart = {
+      ...originalChart,
+      title: `${originalChart.title} (Bar View)`,
+      description: originalChart.description,
+      chartConfig: {
+        ...originalChart.chartConfig,
+        type: 'bar',
+        xAxis: { dataKey: 'name', label: 'Category' },
+        yAxis: { label: 'Value' },
+        bars: [{ dataKey: 'value', fill: '#8884d8', name: 'Value' }]
+      }
+    };
+    charts.push(barChart);
+  }
+  
+  // 2. If it's a bar/line chart with time data, generate area chart
+  if ((chartType === 'bar' || chartType === 'line') && hasTimeSeriesData(chartData)) {
+    const areaChart = {
+      ...originalChart,
+      title: `${originalChart.title} (Trend View)`,
+      description: `Trend analysis: ${originalChart.description}`,
+      chartConfig: {
+        ...originalChart.chartConfig,
+        type: 'area',
+        areas: originalChart.chartConfig.bars?.map((bar: any) => ({
+          dataKey: bar.dataKey,
+          fill: bar.fill,
+          stroke: bar.fill,
+          name: bar.name
+        })) || originalChart.chartConfig.lines || []
+      }
+    };
+    charts.push(areaChart);
+  }
+  
+  // 3. Always generate a table view for data inspection
+  if (chartData.length > 0 && chartData.length <= 20) {
+    const tableChart = {
+      ...originalChart,
+      title: `${originalChart.title} (Data Table)`,
+      description: 'Detailed data breakdown',
+      chartConfig: {
+        type: 'table',
+        data: chartData,
+        columns: Object.keys(chartData[0] || {}).map(key => ({
+          key,
+          label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
+        }))
+      }
+    };
+    charts.push(tableChart);
+  }
+  
+  // 4. If data has comparison potential, generate comparison chart
+  if (hasComparisonData(chartData) && chartType !== 'pie') {
+    const comparisonChart = {
+      ...originalChart,
+      title: `${originalChart.title} (Comparison)`,
+      description: `Comparative analysis: ${originalChart.description}`,
+      chartConfig: {
+        ...originalChart.chartConfig,
+        type: 'bar',
+        layout: 'horizontal',
+        bars: originalChart.chartConfig.bars || []
+      }
+    };
+    charts.push(comparisonChart);
+  }
+  
+  console.log(`📊 Generated ${charts.length} chart perspectives:`, charts.map(c => c.title));
+  return charts;
+}
+
+/**
+ * Check if data contains time series information
+ */
+function hasTimeSeriesData(data: any[]): boolean {
+  if (!data || data.length === 0) return false;
+  
+  const firstItem = data[0];
+  const keys = Object.keys(firstItem);
+  
+  // Look for common time-related keys
+  const timeKeys = ['date', 'time', 'month', 'year', 'week', 'day', 'timestamp', 'created_at'];
+  return keys.some(key => timeKeys.some(timeKey => key.toLowerCase().includes(timeKey)));
+}
+
+/**
+ * Check if data has comparison potential (multiple numeric columns)
+ */
+function hasComparisonData(data: any[]): boolean {
+  if (!data || data.length === 0) return false;
+  
+  const firstItem = data[0];
+  const numericKeys = Object.keys(firstItem).filter(key => {
+    const value = firstItem[key];
+    return typeof value === 'number' && !key.toLowerCase().includes('id');
+  });
+  
+  // If we have multiple numeric columns, it's good for comparison
+  return numericKeys.length >= 2 || data.length >= 3;
+}
+
 // Enhanced JSON parsing with better error recovery
 function parseResponseWithFallback(content: string): { message: string; actions?: any[]; visualData?: any; } {
   try {
@@ -1654,10 +1777,12 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
         )
       );
       
-      // Set visualData to first chart for backward compatibility
+      // Generate multiple chart perspectives from the first chart
       if (uniqueCharts.length > 0) {
-        visualData = uniqueCharts[0];
-        console.log(`✅ Collected ${uniqueCharts.length} unique charts (displaying first inline)`);
+        const expandedCharts = generateMultipleChartPerspectives(uniqueCharts[0]);
+        visualData = expandedCharts[0];
+        allVisualData = expandedCharts; // Always include expanded array
+        console.log(`✅ Generated ${expandedCharts.length} chart perspectives from ${uniqueCharts.length} original chart(s)`);
       }
       
       // If still no response from legacy parsing, use sanitized original content
