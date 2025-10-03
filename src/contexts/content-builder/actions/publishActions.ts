@@ -45,6 +45,7 @@ export const createPublishActions = (
         status: 'draft',
         seo_score: content.seoScore || 0,
         user_id: user.id,
+        keywords: [content.mainKeyword, ...(content.secondaryKeywords || [])].filter(Boolean),
         metadata: {
           mainKeyword: content.mainKeyword,
           secondaryKeywords: content.secondaryKeywords || [],
@@ -193,6 +194,7 @@ export const createPublishActions = (
         status: 'published',
         seo_score: content.seoScore || 0,
         user_id: user.id,
+        keywords: [content.mainKeyword, ...(content.secondaryKeywords || [])].filter(Boolean),
         metadata: {
           mainKeyword: content.mainKeyword,
           secondaryKeywords: content.secondaryKeywords || [],
