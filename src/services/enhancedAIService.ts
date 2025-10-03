@@ -134,13 +134,14 @@ class EnhancedAIService {
 
       console.log('✅ Enhanced AI Response received with context awareness');
 
-      // Create enhanced message with all data
+      // Create enhanced message with validated visual data
+      const validatedData = this.validateVisualData(response.visualData);
       const enhancedMessage: EnhancedChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
         content: responseContent,
         timestamp: new Date(),
-        visualData: response.visualData,
+        visualData: Array.isArray(validatedData) ? validatedData[0] : validatedData,
         serpData: response.serpData,
         actions: response.actions || [],
         workflowContext: response.workflowContext,
@@ -427,6 +428,39 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private validateVisualData(visualData?: VisualData | VisualData[]): VisualData | VisualData[] | undefined {
+    if (!visualData) return undefined;
+    
+    const validateSingleVisualData = (vd: VisualData, index: number = 0): VisualData => ({
+      ...vd,
+      title: vd.title || vd.chartConfig?.title || `Visualization ${index + 1}`,
+      chartConfig: vd.chartConfig ? {
+        ...vd.chartConfig,
+        title: vd.chartConfig.title || vd.title || `Chart ${index + 1}`,
+        dataContext: vd.chartConfig.dataContext || 'Data visualization'
+      } : undefined,
+      actionableItems: vd.actionableItems && vd.actionableItems.length > 0 ? vd.actionableItems : [
+        {
+          id: 'explore-more',
+          title: 'Explore this data further',
+          description: 'Get deeper insights and analysis',
+          priority: 'medium'
+        }
+      ],
+      deepDivePrompts: vd.deepDivePrompts && vd.deepDivePrompts.length > 0 ? vd.deepDivePrompts : [
+        'Show me more details about this data',
+        'How does this compare to previous periods?',
+        'What are the key insights here?'
+      ]
+    });
+
+    if (Array.isArray(visualData)) {
+      return visualData.map((vd, index) => validateSingleVisualData(vd, index));
+    }
+    
+    return validateSingleVisualData(visualData);
   }
 
   // NEW: Automatic Workflow Detection

@@ -209,6 +209,7 @@ export class ChartIntelligenceService {
 
     const config: ChartConfiguration = {
       type: chartType,
+      title: context || 'Data Analysis',
       data: data,
       categories: categories,
       colors: colors,

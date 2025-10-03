@@ -83,6 +83,7 @@ export class AIChartGenerator {
           type: 'chart',
           chartConfig: {
             type: 'bar',
+            title: 'Data Visualization',
             data,
             categories: Object.keys(data[0] || {}).filter(k => k !== 'name'),
             colors: ['hsl(var(--primary))', 'hsl(var(--secondary))'],

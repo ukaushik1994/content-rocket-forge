@@ -5,6 +5,9 @@ export interface ChartConfiguration {
   type: 'line' | 'bar' | 'pie' | 'area';
   data: any[];
   categories: string[];
+  title: string; // Chart title
+  subtitle?: string; // Additional context
+  dataContext?: string; // Explain what data represents
   series?: Array<{
     dataKey: string;
     name: string;
@@ -12,6 +15,14 @@ export interface ChartConfiguration {
   colors?: string[];
   valueFormatter?: (value: number) => string;
   height?: number;
+}
+
+export interface ActionableItem {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  action?: string;
 }
 
 export interface MetricCard {
@@ -66,11 +77,16 @@ export interface TableData {
 
 export interface VisualData {
   type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table';
+  title?: string; // Descriptive title for the visual
+  description?: string;
+  insightTitle?: string; // Key insight headline
   chartConfig?: ChartConfiguration;
   metrics?: MetricCard[];
   workflowStep?: WorkflowStep;
-  serpData?: any; // Add SERP data support
+  serpData?: any;
   tableData?: TableData;
+  actionableItems?: ActionableItem[]; // Actions user can take
+  deepDivePrompts?: string[]; // Follow-up questions
   summary?: {
     title: string;
     items: Array<{

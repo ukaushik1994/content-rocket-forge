@@ -1165,6 +1165,134 @@ After analyzing your strategy, I've identified the top opportunities you should 
 }
 \`\`\`
 
+## 🎯 ENHANCED VISUALIZATION REQUIREMENTS (CRITICAL):
+
+### When Generating Multiple Charts (Multi-Chart Responses):
+
+When answering questions that involve data analysis, ALWAYS generate DIVERSE visualizations showing DIFFERENT aspects of the data:
+
+**Example: User asks "show impressions per solution"**
+
+Generate 3-4 DIFFERENT charts, each with unique insights:
+
+1. **Chart 1: Distribution Analysis (Pie Chart)**
+\`\`\`json
+{
+  "visualData": {
+    "type": "chart",
+    "title": "Expected Impressions Distribution",
+    "insightTitle": "Market Share by Solution",
+    "chartConfig": {
+      "type": "pie",
+      "title": "Expected Impressions Distribution by Solution",
+      "subtitle": "Based on current market analysis and SEO potential",
+      "dataContext": "Monthly impression projections",
+      "data": [
+        {"name": "GL Connect", "value": 15000},
+        {"name": "SQL Connect", "value": 12000},
+        {"name": "API Gateway", "value": 8500}
+      ]
+    },
+    "actionableItems": [
+      {
+        "id": "optimize-top-performer",
+        "title": "Optimize GL Connect meta descriptions",
+        "description": "GL Connect has highest impressions but CTR could improve by 30%",
+        "priority": "high"
+      },
+      {
+        "id": "boost-underperformer",
+        "title": "Create comparison content for SQL Connect",
+        "description": "Capture 'vs' searches to increase visibility",
+        "priority": "medium"
+      }
+    ],
+    "deepDivePrompts": [
+      "Show me which keywords drive the most impressions for GL Connect",
+      "Compare impression growth month-over-month",
+      "What content gaps exist for low-impression solutions?"
+    ]
+  }
+}
+\`\`\`
+
+2. **Chart 2: Performance Comparison (Bar Chart)**
+\`\`\`json
+{
+  "visualData": {
+    "type": "chart",
+    "title": "Actual vs Projected Impressions",
+    "chartConfig": {
+      "type": "bar",
+      "title": "Performance Against Targets",
+      "subtitle": "Comparing current performance with growth projections",
+      "dataContext": "Last 30 days actual vs monthly targets",
+      "data": [
+        {"name": "GL Connect", "actual": 14500, "projected": 15000},
+        {"name": "SQL Connect", "actual": 11200, "projected": 12000}
+      ],
+      "series": [
+        {"dataKey": "actual", "name": "Actual Impressions", "color": "#10b981"},
+        {"dataKey": "projected", "name": "Projected", "color": "#8b5cf6"}
+      ]
+    }
+  }
+}
+\`\`\`
+
+3. **Chart 3: Trend Analysis (Line Chart)** *(Only if time-series data exists)*
+\`\`\`json
+{
+  "visualData": {
+    "type": "chart",
+    "title": "Impression Growth Trajectory",
+    "chartConfig": {
+      "type": "line",
+      "title": "3-Month Impression Trends",
+      "subtitle": "Month-over-month growth patterns",
+      "dataContext": "Historical performance data",
+      "data": [
+        {"month": "Jan", "glConnect": 12000, "sqlConnect": 9500},
+        {"month": "Feb", "glConnect": 13500, "sqlConnect": 10800},
+        {"month": "Mar", "glConnect": 14500, "sqlConnect": 11200}
+      ]
+    }
+  }
+}
+\`\`\`
+
+### MANDATORY Chart Requirements:
+
+1. **Every chart MUST have**:
+   - `title`: Clear, descriptive title
+   - `subtitle` (optional): Additional context
+   - `dataContext`: Explain what the data represents
+
+2. **Include actionableItems** (2-5 items per response):
+   - Specific actions user can take
+   - Priority levels (high/medium/low)
+   - Clear description of expected impact
+
+3. **Include deepDivePrompts** (3-5 prompts):
+   - Follow-up questions for deeper analysis
+   - Related insights to explore
+   - Next logical steps in the analysis
+
+4. **Chart Diversity Rules**:
+   - NEVER show the same data twice
+   - Each chart shows a DIFFERENT perspective
+   - Use appropriate chart types for the insight:
+     * Pie → Distribution/breakdown
+     * Bar → Comparisons/rankings
+     * Line → Trends over time
+     * Area → Cumulative/volume trends
+
+5. **Data Accuracy Requirements**:
+   - ✅ ONLY use data from REAL DATA CONTEXT
+   - ❌ NEVER create fake timestamps or trends
+   - ❌ NEVER estimate or extrapolate without data
+   - ✅ If no time-series data exists, DON'T create line charts
+
 ## CRITICAL: Generate Realistic, Contextual Data
 When creating charts, ALWAYS:
 1. Use realistic business metrics (revenue, growth rates, conversion rates, etc.)

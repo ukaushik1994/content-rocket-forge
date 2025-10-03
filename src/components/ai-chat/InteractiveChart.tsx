@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { useChartIntelligence } from '@/hooks/useChartIntelligence';
+import { useChartActions } from '@/hooks/useChartActions';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,9 @@ interface InteractiveChartProps {
   showIntelligentSuggestions?: boolean;
   onDataUpdate?: (data: any[]) => void;
   onExport?: () => void;
-  allVisualData?: any[]; // NEW: For multi-chart modal
+  allVisualData?: any[];
+  onSendMessage?: (message: string) => void; // NEW: For deep dive prompts
+  onActionTrigger?: (action: string) => void; // NEW: For actionable items
 }
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   chartConfig,
@@ -33,7 +36,9 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   showIntelligentSuggestions = false,
   onDataUpdate,
   onExport,
-  allVisualData = [] // NEW: For multi-chart modal
+  allVisualData = [],
+  onSendMessage,
+  onActionTrigger
 }) => {
   // Enhanced chart intelligence
   const {
@@ -42,6 +47,12 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     detectDataPatterns,
     recommendations
   } = useChartIntelligence();
+
+  // Chart actions hook for handling callbacks
+  const { handleActionClick, handleDeepDiveClick } = useChartActions({
+    onSendMessage,
+    onActionTrigger
+  });
 
   // Generate intelligent suggestions when data changes
   const chartSuggestions = React.useMemo(() => {
@@ -432,6 +443,10 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       currentChartConfig={{ ...chartConfig, type: currentType, data: filteredData }}
       title={title}
       description={description}
+      actionableItems={allVisualData.flatMap(vd => vd.actionableItems || [])}
+      deepDivePrompts={allVisualData.flatMap(vd => vd.deepDivePrompts || [])}
+      onDeepDiveClick={handleDeepDiveClick}
+      onActionClick={handleActionClick}
     />
   </>;
 };

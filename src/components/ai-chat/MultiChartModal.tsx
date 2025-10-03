@@ -31,6 +31,10 @@ interface MultiChartModalProps {
   currentChartConfig?: ChartConfiguration;
   title?: string;
   description?: string;
+  actionableItems?: any[];
+  deepDivePrompts?: string[];
+  onDeepDiveClick?: (prompt: string) => void;
+  onActionClick?: (action: any) => void;
 }
 
 interface MetricCardData {
@@ -48,7 +52,11 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   allVisualData = [],
   currentChartConfig,
   title,
-  description
+  description,
+  actionableItems = [],
+  deepDivePrompts = [],
+  onDeepDiveClick,
+  onActionClick
 }) => {
   const { toast } = useToast();
   const [chartTypes, setChartTypes] = useState<Record<number, 'line' | 'bar' | 'area' | 'pie'>>({});
@@ -462,9 +470,19 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                     className="glass-panel bg-glass border border-white/10 rounded-lg p-4"
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-semibold">
-                        Chart {index + 1}
-                      </h4>
+                      <div>
+                        <h4 className="text-sm font-semibold">
+                          {chart.title || `Chart ${index + 1}`}
+                        </h4>
+                        {chart.subtitle && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{chart.subtitle}</p>
+                        )}
+                        {chart.dataContext && (
+                          <Badge variant="outline" className="mt-1 text-xs">
+                            {chart.dataContext}
+                          </Badge>
+                        )}
+                      </div>
                       
                       <div className="flex items-center gap-2">
                         <ChartTypeSwitcher
@@ -514,6 +532,70 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                       setSelectedComparisons([]);
                     }}
                   />
+                </motion.div>
+              )}
+
+              {/* Actionable Items Panel */}
+              {actionableItems && actionableItems.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                  className="mt-6 bg-gradient-to-r from-indigo-500/10 to-blue-500/10 border border-indigo-500/30 rounded-lg p-4"
+                >
+                  <h3 className="text-md font-semibold mb-3 flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Actionable Insights
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {actionableItems.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-background/50 p-3 rounded-md cursor-pointer hover:bg-background/70 transition-colors"
+                        onClick={() => onActionClick?.(item)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <Badge variant={item.priority === 'high' ? 'default' : 'outline'} className="mb-1 text-xs">
+                              {item.priority} priority
+                            </Badge>
+                            <h4 className="font-medium text-sm">{item.title}</h4>
+                            <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                          </div>
+                          <TrendingUp className="h-4 w-4 text-muted-foreground ml-2" />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Deep Dive Conversation Section */}
+              {deepDivePrompts && deepDivePrompts.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1 }}
+                  className="mt-6 border-t border-white/10 pt-4"
+                >
+                  <h3 className="text-md font-semibold mb-3 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    Explore Further
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {deepDivePrompts.map((prompt, idx) => (
+                      <Button
+                        key={idx}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onDeepDiveClick?.(prompt)}
+                        className="text-xs hover:bg-gradient-to-r hover:from-indigo-500/20 hover:to-blue-500/20 transition-all duration-200"
+                      >
+                        {prompt}
+                      </Button>
+                    ))}
+                  </div>
                 </motion.div>
               )}
             </div>
