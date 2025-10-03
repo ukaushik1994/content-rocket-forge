@@ -13,7 +13,8 @@ import {
   TrendingDown,
   ZoomIn,
   ZoomOut,
-  Activity
+  Activity,
+  PieChart as PieIcon
 } from 'lucide-react';
 import { VisualData, ChartConfiguration } from '@/types/enhancedChat';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -67,7 +68,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   const [selectedComparisons, setSelectedComparisons] = useState<any[]>([]);
   const [zoomLevel, setZoomLevel] = useState<Record<number, number>>({});
 
-  // Extract charts from visual data
+  // Extract charts from visual data with Phase 2 client-side deduplication
   const charts = useMemo(() => {
     const chartConfigs: ChartConfiguration[] = [];
     
@@ -80,6 +81,27 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
         chartConfigs.push(vd.chartConfig);
       }
     });
+    
+    // Phase 2: Client-side diversity validation
+    const chartTypes = chartConfigs.map(c => c.type);
+    const uniqueTypes = new Set(chartTypes);
+    
+    if (uniqueTypes.size < chartTypes.length) {
+      console.warn('⚠️ Client detected duplicate chart types, deduplicating...', {
+        types: chartTypes,
+        unique: Array.from(uniqueTypes)
+      });
+      
+      // Keep only first occurrence of each type
+      const seen = new Set();
+      const deduplicated = chartConfigs.filter(config => {
+        if (seen.has(config.type)) return false;
+        seen.add(config.type);
+        return true;
+      });
+      
+      return deduplicated.slice(0, 4); // Max 4 charts
+    }
     
     return chartConfigs.slice(0, 4); // Max 4 charts for 2x2 grid
   }, [allVisualData, currentChartConfig]);
@@ -167,30 +189,48 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     });
   };
 
-  // Phase 1: Normalize pie chart data
+  // Phase 1: Enhanced pie chart data normalization with intelligent key detection
   const normalizePieChartData = (data: any[]): any[] => {
     if (!data || data.length === 0) return [];
     
-    // Check if data already has "name" and "value" keys
-    if (data[0].name && data[0].value) {
+    console.log('🔍 PIE CHART DEBUG - Raw data received:', JSON.stringify(data[0], null, 2));
+    
+    // Already normalized?
+    if (data[0].name && data[0].value !== undefined) {
+      console.log('✅ Data already in correct format');
       return data;
     }
     
-    // Find the name key (solution, label, category, etc.)
-    const nameKey = Object.keys(data[0]).find(key => 
-      typeof data[0][key] === 'string' && !['type', 'category'].includes(key)
-    ) || 'name';
+    // Find ALL string keys (potential name fields)
+    const stringKeys = Object.keys(data[0]).filter(key => 
+      typeof data[0][key] === 'string'
+    );
     
-    // Find the value key (impressions, clicks, value, etc.)
-    const valueKey = Object.keys(data[0]).find(key => 
+    // Find ALL number keys (potential value fields)
+    const numberKeys = Object.keys(data[0]).filter(key => 
       typeof data[0][key] === 'number'
-    ) || 'value';
+    );
     
-    console.log('🔄 Normalizing pie chart data:', { nameKey, valueKey, sample: data[0] });
+    // Priority order for name keys
+    const namePriority = ['name', 'label', 'solution', 'category', 'title', 'key'];
+    const nameKey = namePriority.find(key => stringKeys.includes(key)) || stringKeys[0] || 'name';
+    
+    // Priority order for value keys
+    const valuePriority = ['value', 'impressions', 'clicks', 'count', 'total', 'amount'];
+    const valueKey = valuePriority.find(key => numberKeys.includes(key)) || numberKeys[0] || 'value';
+    
+    console.log('🔄 Normalizing with keys:', { nameKey, valueKey });
+    console.log('📊 Sample transformation:', {
+      before: data[0],
+      after: {
+        name: data[0][nameKey] || 'Unknown',
+        value: data[0][valueKey] || 0
+      }
+    });
     
     return data.map(item => ({
       name: item[nameKey] || item.name || 'Unknown',
-      value: item[valueKey] || item.value || 0
+      value: Number(item[valueKey] || item.value || 0)
     }));
   };
 
@@ -341,9 +381,24 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
         );
 
       case 'pie':
-        // Phase 1: Normalize data for pie charts
+        // Phase 1: Normalize data for pie charts with validation
         const normalizedPieData = normalizePieChartData(config.data);
         console.log('📊 Pie chart rendering with normalized data:', normalizedPieData);
+        
+        // Validation check
+        if (normalizedPieData.length === 0 || normalizedPieData.every(item => item.value === 0)) {
+          console.error('❌ PIE CHART FAILED - No valid data after normalization:', {
+            originalData: config.data,
+            normalizedData: normalizedPieData
+          });
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <PieIcon className="w-12 h-12 mb-2 opacity-50" />
+              <p>Unable to display pie chart</p>
+              <p className="text-xs">Data format not compatible</p>
+            </div>
+          );
+        }
         
         return (
           <div style={chartStyle}>

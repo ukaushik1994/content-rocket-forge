@@ -1268,17 +1268,47 @@ Generate 3-4 DIFFERENT charts, each with unique insights:
    - subtitle (optional): Additional context
    - dataContext: Explain what the data represents
 
-2. **Phase 4: Enhanced actionableItems** (2-5 items per response):
-   - Specific actions user can take with rich metadata
-   - Priority levels (high/medium/low)
-   - **estimatedImpact**: Quantify expected result (e.g., "+20% CTR")
-   - **timeRequired**: Set user expectations (e.g., "30 minutes", "2 hours")
-   - **actionType**: 'navigate' (internal page), 'workflow' (trigger automation), 'external' (open link), 'info' (show details)
-   - **targetUrl**: /content-hub or https://example.com
-   - **icon**: Lucide icon name (TrendingUp, Zap, ExternalLink, etc.)
-   - **prerequisites**: Array of required steps (optional)
+2. **Phase 3: MANDATORY Rich Actionable Items Requirements**:
 
-Example actionableItem:
+### ⚠️ MANDATORY: Rich Actionable Items Requirements
+
+**EVERY actionableItem MUST include ALL these fields:**
+
+\`\`\`json
+{
+  "id": "unique-id",              // REQUIRED
+  "title": "Action title",        // REQUIRED
+  "description": "Details",       // REQUIRED
+  "priority": "high|medium|low",  // REQUIRED
+  "estimatedImpact": "+20% CTR (~300 clicks)",  // REQUIRED - quantify result
+  "timeRequired": "30 minutes",   // REQUIRED - set expectations
+  "actionType": "navigate",       // REQUIRED - navigate|workflow|external|info
+  "targetUrl": "/content-hub",    // REQUIRED if actionType is navigate/external
+  "icon": "TrendingUp",          // REQUIRED - Lucide icon name
+  "prerequisites": []             // OPTIONAL - array of required steps
+}
+\`\`\`
+
+**Common Icons by Action Type:**
+- navigate → "ArrowRight", "ExternalLink", "FolderOpen"
+- workflow → "Zap", "Play", "FastForward"
+- external → "ExternalLink", "Globe"
+- info → "Info", "HelpCircle", "BookOpen"
+- optimization → "TrendingUp", "Target", "Sparkles"
+
+**Estimated Impact Examples:**
+- "+20% CTR (~300 more clicks)"
+- "15% increase in organic traffic"
+- "Save 2 hours per week"
+- "Potential 500+ new impressions"
+
+**Time Required Examples:**
+- "5 minutes" (quick wins)
+- "30 minutes" (moderate tasks)
+- "2-3 hours" (substantial work)
+- "1 week" (long-term projects)
+
+Example actionableItem with ALL required fields:
 \`\`\`json
 {
   "id": "optimize_gl_connect",
@@ -1299,15 +1329,42 @@ Example actionableItem:
    - Related insights to explore
    - Next logical steps in the analysis
 
-4. **Phase 2: Chart Diversity Rules (CRITICAL)**:
-   - When showing multiple charts (2-4), EACH must be DIFFERENT type
-   - NEVER show duplicate chart types (no two pie charts, no two bar charts)
-   - Each chart shows a DIFFERENT perspective of the data
-   - Use appropriate chart types for the insight:
-     * Pie → Distribution/breakdown (market share, composition)
-     * Bar → Comparisons/rankings (solution performance, category comparison)
-     * Line → Trends over time (growth, historical patterns)
-     * Table → Detailed breakdown (exact numbers, comprehensive data)
+4. **Phase 2: MANDATORY Chart Diversity Rules (CRITICAL - ENFORCED)**:
+
+### ⚠️ MANDATORY CHART DIVERSITY ENFORCEMENT:
+
+**CRITICAL RULE: When generating 2-4 charts, EACH MUST BE A DIFFERENT TYPE**
+
+✅ ALLOWED Combinations:
+- 2 charts: Pie + Bar OR Bar + Line OR Pie + Table
+- 3 charts: Pie + Bar + Line OR Pie + Bar + Table OR Bar + Line + Table
+- 4 charts: Pie + Bar + Line + Table (IDEAL)
+
+❌ FORBIDDEN Combinations (will be REJECTED):
+- Pie + Pie (NEVER generate two pie charts)
+- Bar + Bar (NEVER generate two bar charts)
+- Line + Line (NEVER generate two line charts)
+- Any duplicate chart types
+
+**Enforcement:** If you generate duplicate chart types, the system will reject your response and force regeneration. Always ensure diversity.
+
+**Chart Type Selection Guide:**
+1. **Pie Chart** → Use for: Distribution, market share, composition, percentages
+   - Example: "How impressions are distributed across solutions"
+   
+2. **Bar Chart** → Use for: Comparisons, rankings, head-to-head analysis
+   - Example: "Which solution has more impressions than others"
+   
+3. **Line Chart** → Use for: Trends over time, growth patterns, historical data
+   - Example: "How impressions changed month-over-month"
+   - ⚠️ ONLY use if you have time-series data (dates/months/weeks)
+   
+4. **Table** → Use for: Detailed breakdowns, exact numbers, comprehensive data
+   - Example: "All metrics for each solution in detail"
+
+**If you only have static data (no time component):**
+- Generate: Pie + Bar + Table (3 charts)
+- DO NOT create fake time-series data for a line chart
 
 Example of 4 DIVERSE charts:
 \`\`\`json

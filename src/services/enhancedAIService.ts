@@ -433,20 +433,42 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
   private validateVisualData(visualData?: VisualData | VisualData[]): VisualData | VisualData[] | undefined {
     if (!visualData) return undefined;
     
-    // Phase 2: Chart diversity validation
+    // Phase 2: Chart diversity ENFORCEMENT (not just warning)
     if (Array.isArray(visualData)) {
       const chartTypes = visualData
         .map(vd => vd.chartConfig?.type)
         .filter(type => type !== undefined);
       
       const uniqueTypes = new Set(chartTypes);
+      
       if (uniqueTypes.size < chartTypes.length) {
-        console.warn('⚠️ Duplicate chart types detected:', {
+        console.error('❌ CRITICAL: Duplicate chart types detected:', {
           total: chartTypes.length,
           unique: uniqueTypes.size,
-          types: chartTypes
+          types: chartTypes,
+          duplicates: chartTypes.filter((type, index) => chartTypes.indexOf(type) !== index)
         });
-        console.warn('💡 AI should generate diverse chart types (pie, bar, line, table)');
+        
+        // ENFORCE: Remove duplicate charts, keep only first of each type
+        const seenTypes = new Set();
+        const deduplicatedData = visualData.filter(vd => {
+          const chartType = vd.chartConfig?.type;
+          if (!chartType || seenTypes.has(chartType)) {
+            console.warn(`⚠️ Removing duplicate ${chartType} chart`);
+            return false;
+          }
+          seenTypes.add(chartType);
+          return true;
+        });
+        
+        console.log('✅ Deduplication complete:', {
+          before: chartTypes.length,
+          after: deduplicatedData.length,
+          types: Array.from(seenTypes)
+        });
+        
+        // Continue with deduplicated data
+        visualData = deduplicatedData;
       }
     }
     
@@ -458,7 +480,9 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
         title: vd.chartConfig.title || vd.title || `Chart ${index + 1}`,
         dataContext: vd.chartConfig.dataContext || 'Data visualization'
       } : undefined,
-      actionableItems: vd.actionableItems && vd.actionableItems.length > 0 ? vd.actionableItems : [
+      actionableItems: vd.actionableItems && vd.actionableItems.length > 0 
+        ? this.enrichActionableItems(vd.actionableItems)
+        : [
         {
           id: 'explore-more',
           title: 'Explore this data further',
@@ -478,6 +502,29 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
     }
     
     return validateSingleVisualData(visualData);
+  }
+
+  // Phase 3: Enrich actionable items with defaults for missing metadata
+  private enrichActionableItems(items: any[]): any[] {
+    if (!items || items.length === 0) return [];
+    
+    return items.map(item => ({
+      ...item,
+      // Add defaults for missing fields
+      estimatedImpact: item.estimatedImpact || 'Potential improvement',
+      timeRequired: item.timeRequired || '30 minutes',
+      actionType: item.actionType || 'info',
+      icon: item.icon || this.getDefaultIcon(item.actionType, item.priority),
+      prerequisites: item.prerequisites || []
+    }));
+  }
+
+  private getDefaultIcon(actionType?: string, priority?: string): string {
+    if (actionType === 'navigate') return 'ArrowRight';
+    if (actionType === 'external') return 'ExternalLink';
+    if (actionType === 'workflow') return 'Zap';
+    if (priority === 'high') return 'TrendingUp';
+    return 'Info';
   }
 
   // NEW: Automatic Workflow Detection
