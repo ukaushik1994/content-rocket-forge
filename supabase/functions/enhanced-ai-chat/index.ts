@@ -956,12 +956,10 @@ Every response MUST follow this exact structure:
 - Acknowledge what the user is asking for
 - Confirm what data you have access to
 
-**2. Data Analysis** (Use markdown tables for organizing information)
-Example format:
-| Metric | Value | Source |
-| --- | --- | --- |
-| Total Proposals | 89 | From your AI proposals |
-| Available Opportunities | 67 | Status: Available |
+**2. Data Analysis** 
+- Use visualData JSON format for ALL tables (see examples below)
+- Tables can appear at the START, MIDDLE, or END of your response based on context
+- Place tables where they make the most sense conversationally
 
 **3. Key Observations** (3-5 bullet points with specific data)
 * Observation 1 with actual numbers from REAL DATA CONTEXT
@@ -980,9 +978,10 @@ Example format:
 ## CONTENT FORMATTING RULES:
 1. **NEVER include raw CSV data, spreadsheet formats, or comma-separated values in your text response**
 2. **NEVER display JSON structures or technical data formats in your text content**
-3. **ALWAYS use markdown tables for structured information**
+3. **ALWAYS use visualData JSON format for tables - NEVER use markdown pipe tables (| --- |)**
 4. **Keep your text response conversational and professional**
-5. **Use visual data structures for complex data displays**
+5. **Use visual data structures for ALL tabular data displays**
+6. **Place tables contextually: at START (show data first), MIDDLE (support explanation), or END (conclude with data)**
 
 ## SERP Data Integration
 ${serpContext ? `You have access to REAL-TIME SERP DATA that MUST be used in your response:${serpContext}` : 'No SERP data available for this query.'}
@@ -1017,17 +1016,66 @@ When users ask for "spreadsheet format" or "table format", create download actio
 }
 \`\`\`
 
-### For Table Display (Use Visual Data for Clean Tables):
+### For Table Display (MANDATORY - Use Visual Data for ALL Tables):
+**CRITICAL: ALWAYS use this JSON format for tables. NEVER use markdown pipe tables.**
+
+**Example 1 - Table at START (when user asks "show me the data"):**
+Here's the data you requested:
+
 \`\`\`json
 {
   "visualData": {
     "type": "table",
     "tableData": {
-      "title": "Data Overview", 
+      "title": "Your Top Keywords", 
       "headers": ["Keyword", "Impressions", "Content Type", "Priority"],
       "rows": [
         ["AI Enhanced People Analytics Platform", "34,245", "Guide", "Critical"],
         ["Workforce Planning Analytics Software", "44,505", "Blog", "High"]
+      ]
+    }
+  }
+}
+\`\`\`
+
+Looking at this data, I can see you have strong opportunities in the workforce planning space...
+
+**Example 2 - Table in MIDDLE (when supporting your explanation):**
+Let me break down your content performance. You have three main content types performing at different levels:
+
+\`\`\`json
+{
+  "visualData": {
+    "type": "table",
+    "tableData": {
+      "title": "Performance by Content Type", 
+      "headers": ["Type", "Count", "Avg Impressions"],
+      "rows": [
+        ["Blog Posts", "15", "8,230"],
+        ["Guides", "8", "12,450"],
+        ["Case Studies", "5", "6,100"]
+      ]
+    }
+  }
+}
+\`\`\`
+
+Based on this performance data, I recommend focusing on guides since they generate the highest engagement...
+
+**Example 3 - Table at END (when building up to the data):**
+After analyzing your strategy, I've identified the top opportunities you should prioritize. Here's the breakdown:
+
+\`\`\`json
+{
+  "visualData": {
+    "type": "table",
+    "tableData": {
+      "title": "Recommended Next Steps", 
+      "headers": ["Action", "Impact", "Effort", "Priority"],
+      "rows": [
+        ["Create workforce planning guide", "High", "Medium", "1"],
+        ["Optimize analytics content", "Medium", "Low", "2"],
+        ["Launch case study series", "Medium", "High", "3"]
       ]
     }
   }
