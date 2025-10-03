@@ -14,7 +14,19 @@ import {
   ZoomIn,
   ZoomOut,
   Activity,
-  PieChart as PieIcon
+  PieChart as PieIcon,
+  ArrowRight,
+  ExternalLink,
+  Zap,
+  Info,
+  Target,
+  Globe,
+  FolderOpen,
+  Play,
+  FastForward,
+  BookOpen,
+  HelpCircle,
+  Clock
 } from 'lucide-react';
 import { VisualData, ChartConfiguration } from '@/types/enhancedChat';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -46,6 +58,26 @@ interface MetricCardData {
   sparklineData: number[];
   color: string;
 }
+
+// Icon mapping for dynamic icon loading from actionable items
+const ICON_MAP: Record<string, any> = {
+  TrendingUp,
+  TrendingDown,
+  ArrowRight,
+  ExternalLink,
+  Zap,
+  Info,
+  Target,
+  Globe,
+  FolderOpen,
+  Play,
+  FastForward,
+  BookOpen,
+  HelpCircle,
+  Sparkles,
+  Activity,
+  Clock
+};
 
 export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   isOpen,
@@ -630,9 +662,8 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {actionableItems.map((item) => {
-                      // Import icons dynamically based on item.icon
-                      const iconName = item.icon || 'TrendingUp';
-                      const IconComponent = require('lucide-react')[iconName] || TrendingUp;
+                      // Get icon from mapping
+                      const IconComponent = ICON_MAP[item.icon] || TrendingUp;
                       
                       return (
                         <motion.div
