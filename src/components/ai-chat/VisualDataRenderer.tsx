@@ -27,15 +27,14 @@ import {
 } from 'lucide-react';
 
 interface VisualDataRendererProps {
-  data: VisualData | VisualData[];
+  data: VisualData;
 }
 
 export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) => {
   console.log('📊 VisualDataRenderer: Received data:', {
     hasData: !!data,
-    isArray: Array.isArray(data),
     dataType: typeof data,
-    visualDataType: Array.isArray(data) ? data.map(d => d.type) : data?.type,
+    visualDataType: data?.type,
     keys: data ? Object.keys(data) : [],
     fullData: data
   });
@@ -43,18 +42,6 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   if (!data) {
     console.log('❌ VisualDataRenderer: No data provided');
     return null;
-  }
-
-  // Handle array of visual data objects (multi-chart support)
-  if (Array.isArray(data)) {
-    console.log('📊 VisualDataRenderer: Rendering multiple visualData blocks:', data.length);
-    return (
-      <div className="space-y-4">
-        {data.map((visualData, index) => (
-          <VisualDataRenderer key={index} data={visualData} />
-        ))}
-      </div>
-    );
   }
 
   // Validate data structure

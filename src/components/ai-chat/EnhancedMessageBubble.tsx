@@ -155,47 +155,35 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {message.visualData && (
             <div className="mt-3">
               {(() => {
-                const visualData = Array.isArray(message.visualData) 
-                  ? message.visualData[0] 
-                  : message.visualData;
-                  
                 console.log('🎨 EnhancedMessageBubble: Rendering visual data:', {
                   messageId: message.id,
-                  isArray: Array.isArray(message.visualData),
-                  visualDataType: visualData?.type,
-                  hasChartConfig: !!visualData?.chartConfig,
-                  hasMetrics: !!visualData?.metrics,
-                  hasSerpData: !!visualData?.serpData,
+                  visualDataType: message.visualData?.type,
+                  hasChartConfig: !!message.visualData?.chartConfig,
+                  hasMetrics: !!message.visualData?.metrics,
+                  hasSerpData: !!message.visualData?.serpData,
                   fullVisualData: message.visualData
                 });
                 return null;
               })()}
               
-              {/* Handle SERP data first */}
-              {(() => {
-                const visualData = Array.isArray(message.visualData) 
-                  ? message.visualData[0] 
-                  : message.visualData;
-                return visualData?.type === 'serp_analysis' && visualData.serpData && (
-                  <SerpVisualData 
-                    serpData={visualData.serpData} 
-                    onActionClick={(action, data) => {
-                      console.log('🔄 SerpVisualData action clicked:', { action, data });
-                      // Convert to contextual action and trigger
-                      onAction?.({
-                        id: `serp-action-${Date.now()}`,
-                        type: 'button',
-                        label: action,
-                        action: 'send_message',
-                        data: {
-                          message: getActionPrompt(action, data)
-                        }
-                      });
-                    }}
-                  />
-                );
-              })()}
-              
+              {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
+                <SerpVisualData 
+                  serpData={message.visualData.serpData} 
+                  onActionClick={(action, data) => {
+                    console.log('🔄 SerpVisualData action clicked:', { action, data });
+                    // Convert to contextual action and trigger
+                    onAction?.({
+                      id: `serp-action-${Date.now()}`,
+                      type: 'button',
+                      label: action,
+                      action: 'send_message',
+                      data: { 
+                        message: getActionPrompt(action, data)
+                      }
+                    });
+                  }}
+                />
+              )}
               <VisualDataRenderer data={message.visualData} />
             </div>
           )}

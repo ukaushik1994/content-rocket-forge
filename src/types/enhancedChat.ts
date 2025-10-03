@@ -86,7 +86,7 @@ export interface EnhancedChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
-  visualData?: VisualData | VisualData[]; // Support multiple charts per message
+  visualData?: VisualData;
   serpData?: any[]; // Added SERP data support
   actions?: ContextualAction[];
   progressIndicator?: ProgressState;
