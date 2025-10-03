@@ -1264,9 +1264,9 @@ Generate 3-4 DIFFERENT charts, each with unique insights:
 ### MANDATORY Chart Requirements:
 
 1. **Every chart MUST have**:
-   - `title`: Clear, descriptive title
-   - `subtitle` (optional): Additional context
-   - `dataContext`: Explain what the data represents
+   - title: Clear, descriptive title
+   - subtitle (optional): Additional context
+   - dataContext: Explain what the data represents
 
 2. **Include actionableItems** (2-5 items per response):
    - Specific actions user can take
