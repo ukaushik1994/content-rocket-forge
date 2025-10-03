@@ -216,11 +216,21 @@ export class WorkflowAutomationService {
   
   private async executeCreateContentAction(action: WorkflowAction, trigger: AutomationTrigger): Promise<void> {
     // Create content item based on trigger data
+    // Extract keywords from automation parameters (if provided)
+    const keywords = action.parameters.keywords || [];
+    const mainKeyword = action.parameters.mainKeyword || keywords[0] || null;
+    const secondaryKeywords = action.parameters.secondaryKeywords || keywords.slice(1) || [];
+    
     const contentData = {
       title: action.parameters.titleTemplate || 'Auto-generated Content',
       content_type: action.parameters.contentType || 'blog',
       status: action.parameters.initialStatus || 'draft',
-      user_id: trigger.userId
+      user_id: trigger.userId,
+      keywords: keywords,
+      metadata: {
+        mainKeyword: mainKeyword,
+        secondaryKeywords: secondaryKeywords
+      }
     };
     
     await supabase.from('content_items').insert(contentData);

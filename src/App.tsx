@@ -16,6 +16,7 @@ import ContentApproval from "./pages/ContentApproval";
 import GlossaryBuilder from "./pages/GlossaryBuilder";
 import Solutions from "./pages/Solutions";
 import KeywordsPage from "./pages/keywords/KeywordsPage";
+import { migrateKeywordsToArray } from "@/utils/migration/keywordArrayMigration";
 
 import Analytics from "./pages/Analytics";
 import ContentStrategy from "./pages/research/ContentStrategy";
@@ -64,12 +65,44 @@ const GlobalSettingsBridge = () => {
   return null;
 };
 
+// Silent background migration for keywords
+const KeywordMigrationRunner = () => {
+  useEffect(() => {
+    const runMigration = async () => {
+      const migrationCompleted = localStorage.getItem('keywords_migration_completed');
+      
+      if (migrationCompleted === 'true') {
+        return; // Already migrated, skip silently
+      }
+
+      try {
+        console.log('🔄 Running one-time keyword migration...');
+        const result = await migrateKeywordsToArray();
+        
+        if (result.success) {
+          localStorage.setItem('keywords_migration_completed', 'true');
+          console.log(`✅ Keyword migration completed: ${result.migratedCount} items migrated`);
+        } else {
+          console.error('❌ Keyword migration had errors:', result.errors);
+        }
+      } catch (error) {
+        console.error('❌ Keyword migration failed:', error);
+      }
+    };
+
+    runMigration();
+  }, []);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <SettingsProvider>
           <GlobalSettingsBridge />
+          <KeywordMigrationRunner />
           <ContentProvider>
               <TourProvider>
                 <ChatContextBridgeProvider>
