@@ -52,23 +52,39 @@ const detectCSVPattern = (content: string): boolean => {
   return commaLinesCount / lines.length >= 0.7;
 };
 
-// Clean malformed pipe characters before processing
+// AGGRESSIVE pipe removal - only keep perfect markdown tables
 const cleanMalformedPipes = (content: string): string => {
-  console.log('🧹 Cleaning malformed pipes from content');
-  let cleaned = content;
+  console.log('🧹 AGGRESSIVE pipe cleaning started');
   
-  // Remove broken table separator patterns like | --- | or |---|
-  cleaned = cleaned.replace(/\|\s*-+\s*\|/g, '');
+  const lines = content.split('\n');
+  const cleanedLines = lines.map(line => {
+    // Check if this line is part of a valid markdown table
+    const pipeCount = (line.match(/\|/g) || []).length;
+    
+    // Valid table lines have 2+ pipes and consistent structure
+    if (pipeCount >= 2) {
+      const segments = line.split('|').map(s => s.trim());
+      // Check if it's a separator line (all dashes)
+      const isSeparator = segments.every(s => s === '' || /^-+$/.test(s));
+      // Check if next/prev lines also have pipes (proper table context)
+      const hasTableContext = lines.some((l, i) => 
+        l !== line && l.includes('|') && (l.match(/\|/g) || []).length >= 2
+      );
+      
+      // Only keep pipes if it's a proper table with context
+      if (isSeparator && hasTableContext) {
+        return line; // Keep separator lines
+      } else if (hasTableContext && segments.length >= 2) {
+        return line; // Keep data rows in tables
+      }
+    }
+    
+    // Remove ALL pipes from non-table lines
+    return line.replace(/\|/g, '');
+  });
   
-  // Remove empty pipe patterns like | | | or |  |  |
-  cleaned = cleaned.replace(/\|\s+\|\s+\|/g, '');
-  
-  // Remove standalone pipes that aren't part of proper markdown tables
-  // This regex looks for pipes not surrounded by other pipes (not part of table structure)
-  cleaned = cleaned.replace(/(?<!\|)\|(?!\|)(?![^\n]*\|)/g, '');
-  
-  console.log('✅ Pipe cleaning complete');
-  return cleaned;
+  console.log('✅ Aggressive pipe cleaning complete');
+  return cleanedLines.join('\n');
 };
 
 // Convert CSV content to markdown table
