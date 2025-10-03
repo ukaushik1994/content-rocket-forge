@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from './DataTable';
-import { ChartActionModal } from './ChartActionModal';
+import { MultiChartModal } from './MultiChartModal';
 
 import { cn } from '@/lib/utils';
 import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2, Table as TableIcon, CheckCircle2 } from 'lucide-react';
@@ -22,6 +22,7 @@ interface InteractiveChartProps {
   showIntelligentSuggestions?: boolean;
   onDataUpdate?: (data: any[]) => void;
   onExport?: () => void;
+  allVisualData?: any[]; // NEW: For multi-chart modal
 }
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   chartConfig,
@@ -31,7 +32,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   allowDataFilter = false,
   showIntelligentSuggestions = false,
   onDataUpdate,
-  onExport
+  onExport,
+  allVisualData = [] // NEW: For multi-chart modal
 }) => {
   // Enhanced chart intelligence
   const {
@@ -423,21 +425,13 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       </Card>
     </motion.div>
 
-    <ChartActionModal
+    <MultiChartModal
       isOpen={showModal}
       onClose={() => setShowModal(false)}
-      chartConfig={{ ...chartConfig, type: currentType, data: filteredData }}
+      allVisualData={allVisualData}
+      currentChartConfig={{ ...chartConfig, type: currentType, data: filteredData }}
       title={title}
       description={description}
-      chatContext={`Chart showing ${currentType} visualization with ${filteredData.length} data points. ${description || ''}`}
-      conversationHistory={[]}
-      onContinueChat={(prompt) => {
-        // This could be enhanced to integrate with actual chat context
-        console.log('Continue chat with prompt:', prompt);
-        window.dispatchEvent(new CustomEvent('continueChat', { 
-          detail: { prompt } 
-        }));
-      }}
     />
   </>;
 };

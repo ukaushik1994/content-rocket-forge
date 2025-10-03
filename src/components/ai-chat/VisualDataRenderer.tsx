@@ -142,6 +142,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
             allowTypeSwitch={true}
             allowDataFilter={true}
             showIntelligentSuggestions={true}
+            allVisualData={[data]}
             onDataUpdate={(newData) => {
               console.log('📈 Enhanced chart data updated:', newData);
               // Handle real-time data updates with intelligence
