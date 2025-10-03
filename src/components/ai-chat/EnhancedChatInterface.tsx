@@ -47,7 +47,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     clearSearch
   } = useEnhancedAIChatDB();
 
-  const [showWelcome, setShowWelcome] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
@@ -60,12 +59,6 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     });
   }, [messages, isTyping]);
 
-  // Hide welcome when first message is sent
-  useEffect(() => {
-    if (messages.length > 0) {
-      setShowWelcome(false);
-    }
-  }, [messages.length]);
 
   // Handle escape key to close sidebar
   useEffect(() => {
@@ -160,7 +153,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           <div className="max-w-6xl mx-auto py-6 space-y-8">
             {/* Welcome State */}
             <AnimatePresence mode="wait">
-              {showWelcome && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+              {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
                   {/* Welcome Hero */}
                   <motion.div className="text-center py-8" initial={{
                   opacity: 0,
