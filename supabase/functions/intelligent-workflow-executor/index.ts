@@ -819,21 +819,54 @@ return {
 }
 
 async function executeSolutionPerformanceWorkflow(query: string, context: any, user: any, supabase: any): Promise<any> {
-  // Get user's active AI provider
-  const { data: provider, error: providerError } = await supabase
-    .from('ai_service_providers')
-    .select('provider, api_key, preferred_model, status')
+  // Get active providers using same logic as Content Builder (AIServiceController)
+  // 1. Check user_llm_keys for OpenRouter
+  let openrouterKey = null;
+  const { data: llmKey } = await supabase
+    .from('user_llm_keys')
+    .select('api_key, provider')
     .eq('user_id', user.id)
-    .eq('status', 'active')
-    .order('priority', { ascending: true })
-    .limit(1)
-    .single();
+    .eq('provider', 'openrouter')
+    .eq('is_active', true)
+    .maybeSingle();
+  
+  if (llmKey?.api_key) {
+    openrouterKey = llmKey.api_key;
+  }
 
-  if (providerError || !provider) {
+  // 2. Get all AI service providers
+  const { data: allProviders } = await supabase
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status, priority')
+    .eq('user_id', user.id)
+    .order('priority', { ascending: true });
+
+  // 3. Filter and find first valid provider (same logic as AIServiceController)
+  const validProviders = (allProviders || []).filter(p => {
+    // Must have a model configured
+    if (!p.preferred_model || p.preferred_model.trim() === '') {
+      return false;
+    }
+    
+    // Check if has valid API key
+    if (p.provider === 'openrouter' && openrouterKey) {
+      return true; // Use user_llm_keys key
+    }
+    
+    // For other providers, must have api_key in ai_service_providers
+    return p.api_key && p.api_key.trim() !== '';
+  });
+
+  const provider = validProviders[0];
+  
+  if (!provider) {
     throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
   }
 
-  console.log(`Using AI provider: ${provider.provider} for performance workflow`);
+  // Use OpenRouter key if available, otherwise use provider's key
+  const apiKey = provider.provider === 'openrouter' && openrouterKey ? openrouterKey : provider.api_key;
+  
+  console.log(`🔑 Using AI provider: ${provider.provider} (model: ${provider.preferred_model}) for performance workflow`);
 
   // Fetch actual performance data from database
   let performanceData: any = {};
