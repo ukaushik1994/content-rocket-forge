@@ -951,9 +951,34 @@ When you analyze structured data (proposals, analytics, performance metrics, SER
 - ✅ For comparisons: Require real categories and numeric values (no estimates)
 - ⚠️ If data is insufficient: Explain what's missing and suggest how to obtain it
 
+## 🚨 CRITICAL RULE: Multi-Chart Generation
+
+For ANY data analysis question, you MUST generate 3-4 DIFFERENT chart types in separate JSON blocks:
+
+✅ ALWAYS DO THIS:
+- Chart 1: Pie chart (distribution/composition) - Shows proportions and market share
+- Chart 2: Bar chart (comparison/performance) - Compares values across categories
+- Chart 3: Line chart (trends over time) OR Table (detailed breakdown)
+- Chart 4 (optional): Table for comprehensive data view with drill-down details
+
+❌ NEVER DO THIS:
+- Generate only 1 chart when multiple perspectives exist
+- Generate multiple charts of the same type
+- Generate charts showing identical data without new insights
+- Overwrite previous chart JSON blocks
+
+**Each chart MUST be in a SEPARATE JSON code block and provide a DIFFERENT perspective on the data.**
+
+### Smart Chart Selection Based on Question Type:
+
+**"Show me X per solution"** → Pie (distribution) + Bar (comparison) + Table (details)
+**"Analyze content performance"** → Pie (status) + Bar (SEO scores) + Line (trends) + Table (gaps)
+**"What's my SEO status"** → Pie (score distribution) + Bar (by solution) + Table (recommendations)
+**"Tell me everything about content"** → Pie (status) + Bar (SEO) + Table (gaps) + Line (monthly trends)
+
 **Your Presentation Style:**
 - Lead with insight, then visualization: "I notice [pattern] in your data - let me visualize this for you"
-- Explain WHY you're showing a chart: "This chart makes it easier to see [specific insight]"
+- Explain WHY you're showing multiple charts: "These 3 charts provide different perspectives: distribution, comparison, and trends"
 - Provide both text analysis AND visual representation when patterns exist
 
 ## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:
@@ -1590,6 +1615,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     // If no structured data was found, try legacy parsing
     if (!actions && !visualData) {
       const jsonBlocks = extractJSONBlocks(aiMessage);
+      const allVisualData: any[] = []; // Collect ALL charts instead of overwriting
       
       for (const block of jsonBlocks) {
         console.log('🔍 Processing JSON block:', JSON.stringify(block).substring(0, 200));
@@ -1597,15 +1623,16 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
         // Check for visual data (direct or nested)
         if (block.visualData) {
           try {
-            visualData = typeof block.visualData === 'string' ? JSON.parse(block.visualData) : block.visualData;
-            console.log('📊 Found nested visual data:', visualData);
+            const parsed = typeof block.visualData === 'string' ? JSON.parse(block.visualData) : block.visualData;
+            allVisualData.push(parsed); // PUSH instead of overwrite
+            console.log('📊 Found nested visual data:', parsed);
           } catch (e) {
             console.log('Failed to parse nested visual data:', e);
           }
-        } else if (block.type && (block.metrics || block.charts || block.data)) {
+        } else if (block.type && (block.metrics || block.charts || block.data || block.chartConfig || block.tableData)) {
           // Direct visual data object
-          visualData = block;
-          console.log('📊 Found direct visual data:', visualData);
+          allVisualData.push(block); // PUSH instead of overwrite
+          console.log('📊 Found direct visual data:', block);
         }
         
         // Check for actions (direct or nested)
@@ -1617,6 +1644,20 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
             console.log('Failed to parse actions:', e);
           }
         }
+      }
+      
+      // Deduplicate charts based on title or data similarity
+      const uniqueCharts = allVisualData.filter((chart, index, self) => 
+        index === self.findIndex(c => 
+          c.title === chart.title || 
+          JSON.stringify(c.chartConfig?.data) === JSON.stringify(chart.chartConfig?.data)
+        )
+      );
+      
+      // Set visualData to first chart for backward compatibility
+      if (uniqueCharts.length > 0) {
+        visualData = uniqueCharts[0];
+        console.log(`✅ Collected ${uniqueCharts.length} unique charts (displaying first inline)`);
       }
       
       // If still no response from legacy parsing, use sanitized original content
@@ -1662,16 +1703,21 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       });
     }
 
+    // Access uniqueCharts from scope (defined in legacy parsing section)
+    const allCharts = typeof uniqueCharts !== 'undefined' && uniqueCharts.length > 1 ? uniqueCharts : undefined;
+    
     const responseData = {
       message: finalContent,
       content: finalContent, // Fallback for different response formats
       actions: actions || undefined,
-      visualData: visualData || undefined,
+      visualData: visualData || undefined, // First chart for inline display
+      allVisualData: allCharts, // All charts for modal (only if multiple exist)
       serpData: serpData || undefined, // Include SERP data from our analysis
       metadata: {
         processed_at: new Date().toISOString(),
         has_actions: !!actions,
         has_visual_data: !!visualData,
+        visual_data_count: allCharts ? allCharts.length : (visualData ? 1 : 0),
         has_serp_data: !!serpData,
         serp_keywords: serpData?.keywords || []
       }
