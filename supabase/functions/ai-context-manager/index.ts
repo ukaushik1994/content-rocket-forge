@@ -208,10 +208,9 @@ async function getContextState(userId: string) {
         created_at,
         updated_at,
         metadata,
-        main_keyword,
-        meta_title,
-        meta_description,
-        approval_status
+        keywords,
+        approval_status,
+        solution_id
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -222,16 +221,19 @@ async function getContextState(userId: string) {
       console.log(`📝 Found ${contentItems?.length || 0} content items for user ${userId}`);
     }
 
-    // Get content keywords for enhanced analysis
+    // Get unified keywords linked to content via content_keywords junction table
     const { data: contentKeywords, error: keywordsError } = await supabase
       .from('content_keywords')
       .select(`
         content_id,
-        keywords (
+        keyword_id,
+        unified_keywords!inner (
           id,
-          keyword_text,
+          keyword,
           search_volume,
-          difficulty
+          difficulty,
+          competition_score,
+          intent
         )
       `)
       .in('content_id', contentItems?.map(item => item.id) || []);
@@ -240,6 +242,31 @@ async function getContextState(userId: string) {
       console.error('❌ Error fetching content keywords:', keywordsError);
     } else {
       console.log(`🔑 Found keywords for ${contentKeywords?.length || 0} content items`);
+    }
+
+    // Get AI strategy proposals (the proposals ready for content creation)
+    const { data: aiProposals, error: proposalsError } = await supabase
+      .from('ai_strategy_proposals')
+      .select(`
+        id,
+        title,
+        description,
+        primary_keyword,
+        related_keywords,
+        content_type,
+        priority_tag,
+        estimated_impressions,
+        status,
+        created_at
+      `)
+      .eq('user_id', userId)
+      .eq('status', 'available')
+      .order('estimated_impressions', { ascending: false });
+
+    if (proposalsError) {
+      console.error('❌ Error fetching AI proposals:', proposalsError);
+    } else {
+      console.log(`💡 Found ${aiProposals?.length || 0} AI proposals`);
     }
 
     // Implement solution-content mapping logic
@@ -258,7 +285,7 @@ async function getContextState(userId: string) {
       content?.forEach(contentItem => {
         const itemKeywords = keywords
           ?.filter(k => k.content_id === contentItem.id)
-          ?.flatMap(k => k.keywords?.keyword_text || []) || [];
+          ?.map(k => k.unified_keywords?.keyword || '') || [];
         
         let bestMatch = { solution: null, score: 0 };
         
@@ -274,7 +301,10 @@ async function getContextState(userId: string) {
             solution.short_description || solution.description
           ].join(' ').toLowerCase();
           
-          const contentText = `${contentItem.title} ${contentItem.content || ''} ${contentItem.main_keyword || ''}`.toLowerCase();
+          const mainKeywords = Array.isArray(contentItem.keywords) 
+            ? contentItem.keywords 
+            : (contentItem.keywords ? [contentItem.keywords] : []);
+          const contentText = `${contentItem.title} ${contentItem.content || ''} ${mainKeywords.join(' ')}`.toLowerCase();
           
           // Keyword matching
           itemKeywords.forEach(keyword => {
@@ -370,6 +400,7 @@ async function getContextState(userId: string) {
       totalContent: contentItems?.length || 0,
       published: contentItems?.filter(item => item.status === 'published')?.length || 0,
       draft: contentItems?.filter(item => item.status === 'draft')?.length || 0,
+      proposals: aiProposals?.length || 0,
       avgSeoScore: (contentItems && contentItems.length > 0) 
         ? Math.round(contentItems.reduce((sum, item) => sum + (item.seo_score || 0), 0) / contentItems.length)
         : 0,
@@ -380,7 +411,12 @@ async function getContextState(userId: string) {
         const daysOld = (Date.now() - itemDate.getTime()) / (1000 * 60 * 60 * 24);
         return daysOld <= 30;
       })?.length || 0,
-      keywordCoverage: contentKeywords?.length || 0
+      keywordCoverage: contentKeywords?.length || 0,
+      proposalsByPriority: {
+        high: aiProposals?.filter(p => p.priority_tag === 'quick-win' || p.priority_tag === 'high-priority')?.length || 0,
+        medium: aiProposals?.filter(p => p.priority_tag === 'evergreen')?.length || 0,
+        low: aiProposals?.filter(p => p.priority_tag === 'long-tail')?.length || 0
+      }
     };
 
     const comprehensiveContext = {
@@ -392,6 +428,7 @@ async function getContextState(userId: string) {
         updated_at: new Date().toISOString()
       },
       solutions: solutions || [],
+      proposals: aiProposals || [],
       analytics: enhancedAnalytics,
       companyInfo: contextState?.context?.companyInfo || null,
       lastFetched: new Date().toISOString()
