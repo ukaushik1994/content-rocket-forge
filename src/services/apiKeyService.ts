@@ -344,6 +344,36 @@ class ApiKeyService {
           toast.error(`Failed to ${isActive ? 'enable' : 'disable'} ${service}`);
           return false;
         }
+
+        // Also update ai_service_providers table to set default model when enabling
+        if (isActive) {
+          // First check if record exists
+          const { data: existingProvider } = await supabase
+            .from('ai_service_providers')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('provider', 'openrouter')
+            .single();
+
+          if (existingProvider) {
+            // Update existing record
+            const { error: providerError } = await supabase
+              .from('ai_service_providers')
+              .update({
+                preferred_model: 'openai/gpt-4o-mini',
+                status: 'active',
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id)
+              .eq('provider', 'openrouter');
+
+            if (providerError) {
+              console.warn(`⚠️ Failed to update ai_service_providers for OpenRouter:`, providerError);
+            } else {
+              console.log(`✅ Set default model for OpenRouter: openai/gpt-4o-mini`);
+            }
+          }
+        }
       } else {
         // Standard api_keys table for all other services
         const { error } = await supabase
