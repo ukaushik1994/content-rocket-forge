@@ -315,6 +315,7 @@ class ApiKeyService {
 
   /**
    * Toggles the active status of an API key without deleting it
+   * Note: OpenRouter uses user_llm_keys table instead of api_keys
    */
   static async toggleApiKeyStatus(service: ApiProvider, isActive: boolean): Promise<boolean> {
     try {
@@ -327,27 +328,46 @@ class ApiKeyService {
         return false;
       }
 
-      const { error } = await supabase
-        .from('api_keys')
-        .update({ 
-          is_active: isActive,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .eq('service', service);
+      // OpenRouter uses different table structure
+      if (service === 'openrouter') {
+        const { error } = await supabase
+          .from('user_llm_keys')
+          .update({ 
+            is_active: isActive,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('provider', 'openrouter');
 
-      if (error) {
-        console.error(`❌ Error toggling ${service} API key status:`, error);
-        toast.error(`Failed to ${isActive ? 'enable' : 'disable'} ${service} API key`);
-        return false;
+        if (error) {
+          console.error(`❌ Error toggling ${service} API key status:`, error);
+          toast.error(`Failed to ${isActive ? 'enable' : 'disable'} ${service}`);
+          return false;
+        }
+      } else {
+        // Standard api_keys table for all other services
+        const { error } = await supabase
+          .from('api_keys')
+          .update({ 
+            is_active: isActive,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('service', service);
+
+        if (error) {
+          console.error(`❌ Error toggling ${service} API key status:`, error);
+          toast.error(`Failed to ${isActive ? 'enable' : 'disable'} ${service}`);
+          return false;
+        }
       }
 
-      console.log(`✅ ${service} API key ${isActive ? 'enabled' : 'disabled'} successfully`);
-      toast.success(`${service} API key ${isActive ? 'enabled' : 'disabled'}`);
+      console.log(`✅ ${service} ${isActive ? 'enabled' : 'disabled'} successfully`);
+      toast.success(`${service} ${isActive ? 'enabled' : 'disabled'}`);
       return true;
     } catch (error: any) {
       console.error(`❌ Error in toggleApiKeyStatus for ${service}:`, error);
-      toast.error(`Failed to update ${service} API key status: ${error.message}`);
+      toast.error(`Failed to update ${service} status: ${error.message}`);
       return false;
     }
   }

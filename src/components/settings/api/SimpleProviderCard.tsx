@@ -20,6 +20,7 @@ import {
   type ApiProvider 
 } from "@/services/apiKeyService";
 import { ApiProvider as ApiProviderType } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SimpleProviderCardProps {
   provider: ApiProviderType;
@@ -45,11 +46,45 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
       
       if (key) {
         setApiKey(key);
-        setStatus('testing');
         
-        // Test the key
-        const success = await testApiKey(provider.serviceKey as ApiProvider, key);
-        setStatus(success ? 'connected' : 'error');
+        // Check if the key is enabled (check correct table based on provider)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          if (provider.serviceKey === 'openrouter') {
+            // OpenRouter uses user_llm_keys table
+            const { data } = await supabase
+              .from('user_llm_keys')
+              .select('is_active')
+              .eq('user_id', user.id)
+              .eq('provider', 'openrouter')
+              .single();
+            
+            if (data) {
+              setIsEnabled(data.is_active ?? true);
+              setStatus(data.is_active ? 'testing' : 'disabled');
+            }
+          } else {
+            // Other providers use api_keys table
+            const { data } = await supabase
+              .from('api_keys')
+              .select('is_active')
+              .eq('user_id', user.id)
+              .eq('service', provider.serviceKey)
+              .single();
+            
+            if (data) {
+              setIsEnabled(data.is_active ?? true);
+              setStatus(data.is_active ? 'testing' : 'disabled');
+            }
+          }
+        }
+        
+        // Only test if enabled
+        if (isEnabled) {
+          setStatus('testing');
+          const success = await testApiKey(provider.serviceKey as ApiProvider, key);
+          setStatus(success ? 'connected' : 'error');
+        }
       } else {
         setStatus('unconfigured');
       }

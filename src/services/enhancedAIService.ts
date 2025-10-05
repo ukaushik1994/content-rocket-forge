@@ -66,7 +66,7 @@ class EnhancedAIService {
       console.log('🔑 Retrieving API keys for edge function...');
       const apiKeys: Record<string, string> = {};
       
-      const providers = ['openrouter', 'openai', 'anthropic', 'gemini', 'mistral'];
+      const providers = ['openrouter', 'openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'];
       for (const provider of providers) {
         try {
           const key = await getApiKey(provider as any);
