@@ -201,11 +201,12 @@ serve(async (req) => {
       openrouterKey = llmKey.api_key;
     }
 
-    // 2. Get all AI service providers
+    // 2. Get active AI service providers only
     const { data: allProviders } = await supabase
       .from('ai_service_providers')
       .select('provider, api_key, preferred_model, status, priority')
       .eq('user_id', user.id)
+      .eq('status', 'active')
       .order('priority', { ascending: true });
 
     // 3. Filter and find first valid provider (same logic as AIServiceController)
@@ -866,11 +867,12 @@ async function executeSolutionPerformanceWorkflow(query: string, context: any, u
     openrouterKey = llmKey.api_key;
   }
 
-  // 2. Get all AI service providers
+  // 2. Get active AI service providers only
   const { data: allProviders } = await supabase
     .from('ai_service_providers')
     .select('provider, api_key, preferred_model, status, priority')
     .eq('user_id', user.id)
+    .eq('status', 'active')
     .order('priority', { ascending: true });
 
   // 3. Filter and find first valid provider (same logic as AIServiceController)
