@@ -204,7 +204,7 @@ class AIServiceController {
 
       // Use unified API key detection - check all supported providers
       const { getApiKey } = await import('@/services/apiKeys/crud');
-      const supportedProviders = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
+      const supportedProviders = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
       const validProviders: AIProvider[] = [];
       
       console.log('🔍 Using unified API key detection service...');
@@ -213,7 +213,37 @@ class AIServiceController {
         const providerId = supportedProviders[i];
         
         try {
-          // Use the unified API key service that checks both tables
+          // LM Studio: Check if server URL is configured
+          if (providerId === 'lmstudio') {
+            const { default: LMStudioService } = await import('@/services/lmStudioService');
+            const serverUrl = await LMStudioService.getServerUrl();
+            
+            // If it's not the default URL, it means user has configured it
+            if (serverUrl !== 'http://localhost:1234') {
+              const metadata = AIServiceController.PROVIDER_METADATA[providerId];
+              if (metadata) {
+                validProviders.push({
+                  id: `provider-${i}`,
+                  provider: providerId,
+                  api_key: serverUrl, // Store server URL in api_key field
+                  preferred_model: metadata.available_models[0],
+                  priority: i + 1,
+                  status: 'active',
+                  description: metadata.description,
+                  setup_url: metadata.setup_url,
+                  icon_name: metadata.icon_name,
+                  category: metadata.category,
+                  capabilities: metadata.capabilities,
+                  available_models: metadata.available_models,
+                  is_required: metadata.is_required
+                });
+                console.log(`✅ Found LM Studio configuration: ${serverUrl}`);
+              }
+            }
+            continue;
+          }
+          
+          // All other providers: Use the unified API key service
           const apiKey = await getApiKey(providerId as any);
           if (apiKey && apiKey.trim()) {
             const metadata = AIServiceController.PROVIDER_METADATA[providerId];
@@ -431,6 +461,33 @@ class AIServiceController {
         formatType
       );
       
+      // LM Studio: Use direct browser connection (bypass edge function)
+      if (provider.provider === 'lmstudio') {
+        console.log('🖥️ Using LM Studio direct browser connection...');
+        const { default: LMStudioService } = await import('@/services/lmStudioService');
+        
+        // Check if LM Studio is available
+        const isAvailable = await LMStudioService.isAvailable();
+        if (!isAvailable) {
+          throw new Error('LM Studio is not running or not configured. Please start LM Studio and configure the server URL in Settings.');
+        }
+        
+        // Build messages for chat request
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: request.input }
+        ];
+        
+        // Send request directly to LM Studio (no streaming callback)
+        const response = await LMStudioService.sendChatRequest(messages);
+        
+        return {
+          content: response,
+          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+        };
+      }
+      
+      // All other providers: Use edge function
       // Get decrypted API keys from new unified service
       const { getApiKey } = await import('@/services/apiKeys/crud');
       const apiKeys: Record<string, string> = {};
