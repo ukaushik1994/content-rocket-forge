@@ -1092,6 +1092,7 @@ serve(async (req) => {
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    const userQuery = lastUserMessage?.content || '';
     
     console.log("🧠 Analyzing query for context and SERP opportunities:", userQuery);
     
