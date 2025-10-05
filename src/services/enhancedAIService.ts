@@ -62,34 +62,6 @@ class EnhancedAIService {
         hasWorkflowIntelligence: !!enhancedContext?.workflowIntelligence
       });
 
-      // Check if LM Studio should be used (direct browser connection)
-      const lmStudioUrl = await getApiKey('lmstudio');
-      if (lmStudioUrl) {
-        console.log('🖥️ LM Studio detected, using direct browser connection');
-        try {
-          const LMStudioService = (await import('./lmStudioService')).default;
-          const content = await LMStudioService.sendChatRequest([
-            { role: 'system', content: systemPrompt },
-            ...conversationHistory.slice(-10).map(msg => ({
-              role: msg.role,
-              content: msg.content
-            })),
-            { role: 'user', content: message }
-          ]);
-
-          return {
-            id: Date.now().toString(),
-            role: 'assistant',
-            content,
-            timestamp: new Date(),
-            actions: []
-          };
-        } catch (error: any) {
-          console.error('LM Studio error:', error);
-          return this.createErrorMessage(error.message || 'Failed to connect to LM Studio');
-        }
-      }
-
       // Retrieve API keys for the edge function
       console.log('🔑 Retrieving API keys for edge function...');
       const apiKeys: Record<string, string> = {};

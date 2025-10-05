@@ -20,7 +20,6 @@ import {
   type ApiProvider 
 } from "@/services/apiKeyService";
 import { ApiProvider as ApiProviderType } from './types';
-import { supabase } from '@/integrations/supabase/client';
 
 interface SimpleProviderCardProps {
   provider: ApiProviderType;
@@ -46,50 +45,11 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
       
       if (key) {
         setApiKey(key);
+        setStatus('testing');
         
-        // Check if the key is enabled (check correct table based on provider)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          let isActive = true; // Default to enabled
-          
-          if (provider.serviceKey === 'openrouter') {
-            // OpenRouter uses user_llm_keys table
-            const { data } = await supabase
-              .from('user_llm_keys')
-              .select('is_active')
-              .eq('user_id', user.id)
-              .eq('provider', 'openrouter')
-              .single();
-            
-            if (data) {
-              isActive = data.is_active ?? true;
-            }
-          } else {
-            // Other providers use api_keys table
-            const { data } = await supabase
-              .from('api_keys')
-              .select('is_active')
-              .eq('user_id', user.id)
-              .eq('service', provider.serviceKey)
-              .single();
-            
-            if (data) {
-              isActive = data.is_active ?? true;
-            }
-          }
-          
-          // Update state with database value
-          setIsEnabled(isActive);
-          
-          // Only test if enabled
-          if (isActive) {
-            setStatus('testing');
-            const success = await testApiKey(provider.serviceKey as ApiProvider, key);
-            setStatus(success ? 'connected' : 'error');
-          } else {
-            setStatus('disabled');
-          }
-        }
+        // Test the key
+        const success = await testApiKey(provider.serviceKey as ApiProvider, key);
+        setStatus(success ? 'connected' : 'error');
       } else {
         setStatus('unconfigured');
       }
@@ -261,39 +221,28 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
           </div>
         )}
 
-        {/* API Key / Server URL Input */}
+        {/* API Key Input */}
         <div className="space-y-2">
           <div className="relative">
             <Input
               type={showKey ? "text" : "password"}
-              placeholder={
-                provider.serviceKey === 'lmstudio' 
-                  ? "Enter server URL (e.g., http://localhost:1234)" 
-                  : `Enter ${provider.name} API key`
-              }
+              placeholder={`Enter ${provider.name} API key`}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               className="pr-10 text-sm"
               disabled={!isEnabled && status !== 'unconfigured'}
             />
-            {provider.serviceKey !== 'lmstudio' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-2"
-                onClick={() => setShowKey(!showKey)}
-                type="button"
-                disabled={!isEnabled && status !== 'unconfigured'}
-              >
-                {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-2"
+              onClick={() => setShowKey(!showKey)}
+              type="button"
+              disabled={!isEnabled && status !== 'unconfigured'}
+            >
+              {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+            </Button>
           </div>
-          {provider.serviceKey === 'lmstudio' && (
-            <p className="text-xs text-muted-foreground">
-              Enter your LM Studio local server URL. Make sure LM Studio is running and CORS is enabled.
-            </p>
-          )}
         </div>
 
         {/* Actions */}

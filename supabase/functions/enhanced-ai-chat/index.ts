@@ -1,4 +1,4 @@
-// Force redeploy: 2025-06-05T16:00:00Z - LM Studio & OpenRouter Toggle Fix
+// Force redeploy: 2025-06-05T14:30:00Z - NUCLEAR CACHE CLEAR
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
