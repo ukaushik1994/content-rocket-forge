@@ -58,9 +58,10 @@ export function detectApiKeyType(apiKey: string): ApiProvider | null {
     return 'mistral';
   }
   
-  // LM Studio keys - local/custom patterns
-  if (cleanKey.startsWith('lms-') || cleanKey.includes('localhost') || cleanKey.includes('127.0.0.1')) {
-    console.log('✅ Detected LM Studio API key format');
+  // LM Studio keys - must be URLs with localhost or IP addresses
+  if ((cleanKey.startsWith('http://') || cleanKey.startsWith('https://')) && 
+      (cleanKey.includes('localhost') || cleanKey.includes('127.0.0.1') || /\d+\.\d+\.\d+\.\d+/.test(cleanKey))) {
+    console.log('✅ Detected LM Studio API key format (URL)');
     return 'lmstudio';
   }
   
@@ -165,9 +166,11 @@ export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: str
         break;
       
       case 'lmstudio':
+        const isLmStudioUrl = cleanKey.startsWith('http://') || cleanKey.startsWith('https://');
+        const hasPort = /:\d+/.test(cleanKey);
         const isLmStudioLength = cleanKey.length >= 8;
-        validationDetails = `length >= 8: ${isLmStudioLength}`;
-        isValid = isLmStudioLength;
+        validationDetails = `is URL: ${isLmStudioUrl}, has port: ${hasPort}, length >= 8: ${isLmStudioLength}`;
+        isValid = isLmStudioUrl && isLmStudioLength;
         break;
       
       case 'openrouter':
@@ -260,6 +263,15 @@ export function getValidationErrorMessage(provider: ApiProvider, apiKey: string)
       }
       if (cleanKey.length <= 20) {
         return 'OpenRouter API keys must be longer than 20 characters';
+      }
+      break;
+    
+    case 'lmstudio':
+      if (!cleanKey.startsWith('http://') && !cleanKey.startsWith('https://')) {
+        return 'LM Studio endpoint must be a URL (example: http://localhost:1234)';
+      }
+      if (cleanKey.length < 8) {
+        return 'LM Studio endpoint URL is too short';
       }
       break;
     

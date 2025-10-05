@@ -39,6 +39,38 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
     loadApiKey();
   }, [provider]);
 
+  // Subscribe to real-time changes in ai_service_providers
+  useEffect(() => {
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const channel = supabase
+        .channel(`provider-${provider.serviceKey}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'ai_service_providers',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            if (payload.new && (payload.new as any).provider === provider.serviceKey) {
+              setIsEnabled((payload.new as any).status === 'active');
+            }
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+    
+    setupSubscription();
+  }, [provider.serviceKey]);
+
   const loadApiKey = async () => {
     try {
       setIsLoading(true);
@@ -113,6 +145,10 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
       if (success) {
         setIsEnabled(newStatus);
         setStatus(newStatus ? (status === 'disabled' ? 'connected' : status) : 'disabled');
+        toast.success(`${provider.name} ${newStatus ? 'enabled' : 'disabled'}`);
+        
+        // Reload to sync database state
+        await loadApiKey();
       }
     } catch (error) {
       toast.error('Failed to update API key status');
@@ -283,6 +319,21 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
             </Button>
           </div>
         </div>
+        
+        {/* LM Studio Setup Guide */}
+        {provider.serviceKey === 'lmstudio' && (
+          <div className="mx-4 mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <p className="text-sm text-blue-400 mb-2 font-medium">
+              LM Studio Setup:
+            </p>
+            <ol className="text-xs text-muted-foreground space-y-1 ml-4 list-decimal">
+              <li>Download and install LM Studio from <a href="https://lmstudio.ai" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">lmstudio.ai</a></li>
+              <li>Load a model in LM Studio</li>
+              <li>Start the local server (usually on port 1234)</li>
+              <li>Enter the server URL above (e.g., http://localhost:1234)</li>
+            </ol>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -732,15 +732,22 @@ async function testLMStudio(apiKey: string) {
   try {
     // LM Studio typically runs on localhost:1234 by default
     const baseUrl = apiKey.startsWith('http') ? apiKey : 'http://localhost:1234';
+    console.log(`🔍 LM Studio testing connection to: ${baseUrl}`);
+    
     const response = await fetch(`${baseUrl}/v1/models`, {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(5000) // 5 second timeout
     });
 
     if (!response.ok) {
       const errorData = await response.text();
       console.error('❌ LM Studio test failed:', response.status, errorData);
+      
+      if (response.status === 404) {
+        throw new Error(`LM Studio not found at ${baseUrl}. Make sure LM Studio is running and the server is started.`);
+      }
       throw new Error(`LM Studio API test failed: ${response.statusText}`);
     }
 
@@ -753,6 +760,14 @@ async function testLMStudio(apiKey: string) {
     };
   } catch (error: any) {
     console.error('💥 LM Studio test exception:', error);
+    
+    // Connection-specific error messages
+    if (error.name === 'AbortError' || error.message.includes('timeout')) {
+      throw new Error(`LM Studio connection timed out. Is LM Studio running at ${apiKey.startsWith('http') ? apiKey : 'http://localhost:1234'}?`);
+    }
+    if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED')) {
+      throw new Error(`Cannot connect to LM Studio at ${apiKey.startsWith('http') ? apiKey : 'http://localhost:1234'}. Make sure the server is running.`);
+    }
     throw new Error(`LM Studio API error: ${error.message}`);
   }
 }
