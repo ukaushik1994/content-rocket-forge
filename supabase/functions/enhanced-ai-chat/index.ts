@@ -327,7 +327,9 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent) {
         body: {
           action: 'get_tiered_context',
           userId: userId,
-          intent: queryIntent
+          data: {
+            intent: queryIntent
+          }
         }
       }
     );
