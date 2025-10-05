@@ -1,3 +1,4 @@
+// Force redeploy: 2025-01-05T12:00:00Z
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { corsHeaders } from '../shared/cors.ts';
