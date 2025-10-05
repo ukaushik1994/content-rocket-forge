@@ -401,9 +401,16 @@ class ApiKeyService {
             updated_at: new Date().toISOString()
           };
           
-          // Sync api_key field when activating
+          // Sync DECRYPTED api_key field when activating (edge functions need plain text)
           if (isActive && apiKeyData) {
-            updateData.api_key = apiKeyData.encrypted_key;
+            try {
+              const decryptedKey = await decryptApiKey(apiKeyData.encrypted_key, user.id);
+              updateData.api_key = decryptedKey;
+              console.log(`🔓 Decrypted ${service} API key for ai_service_providers sync`);
+            } catch (decryptError) {
+              console.error(`❌ Failed to decrypt ${service} key for sync:`, decryptError);
+              // Don't update api_key if decryption fails
+            }
           }
 
           const { error: providerError } = await supabase
@@ -415,10 +422,21 @@ class ApiKeyService {
           if (providerError) {
             console.error('❌ Error updating ai_service_providers:', providerError);
           } else {
-            console.log(`✅ ${service} synced in ai_service_providers`);
+            console.log(`✅ ${service} synced in ai_service_providers with plain text key`);
           }
         } else if (isActive && apiKeyData) {
           // Insert new provider record only if activating
+          // Decrypt the key before storing (edge functions need plain text)
+          let plainTextKey = '';
+          try {
+            plainTextKey = await decryptApiKey(apiKeyData.encrypted_key, user.id);
+            console.log(`🔓 Decrypted ${service} API key for ai_service_providers insert`);
+          } catch (decryptError) {
+            console.error(`❌ Failed to decrypt ${service} key for insert:`, decryptError);
+            toast.error(`Failed to configure ${service}. Please re-enter your API key.`);
+            return false;
+          }
+
           const { error: insertError } = await supabase
             .from('ai_service_providers')
             .insert({
@@ -427,7 +445,7 @@ class ApiKeyService {
               status: 'active',
               priority: DEFAULT_PRIORITIES[service] ?? 99,
               preferred_model: DEFAULT_MODELS[service],
-              api_key: apiKeyData.encrypted_key,
+              api_key: plainTextKey,
               capabilities: ['chat', 'completion'],
               available_models: [DEFAULT_MODELS[service]]
             });
