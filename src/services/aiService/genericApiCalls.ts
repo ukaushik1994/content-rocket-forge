@@ -55,7 +55,7 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
     let requestBody: any;
     
     // Check if it's an AI provider (part of AiProvider union type)
-    const aiProviders: string[] = ['openai', 'anthropic', 'gemini', 'mistral'];
+    const aiProviders: string[] = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'];
     if (aiProviders.includes(config.provider)) {
       proxyFunction = 'ai-proxy';
       requestBody = {
