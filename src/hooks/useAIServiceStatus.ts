@@ -32,7 +32,7 @@ export function useAIServiceStatus() {
 
       // Check if we have any API keys configured using the unified service
       const { getApiKey } = await import('@/services/apiKeys/crud');
-      const providers = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral'] as const;
+      const providers = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'] as const;
       
       let activeProviders = 0;
       const providerStatus: Array<{name: string, status: string}> = [];
