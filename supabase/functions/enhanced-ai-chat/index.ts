@@ -1203,11 +1203,7 @@ serve(async (req) => {
   - Modules: ${preliminaryTotal > 20000 ? 'MINIMAL' : 'BASE + conditional modules'}
   - Estimated prompt tokens: ${estimateTokens(systemPrompt)}`);
 
-    // Token budget check BEFORE calling AI
-    const contextTokens = estimateTokens(JSON.stringify(realDataContext));
-    const messagesTokens = messages.reduce((sum: number, msg: any) => 
-      sum + estimateTokens(msg.content), 0
-    );
+    // Token budget check BEFORE calling AI (reusing variables from preliminary check)
     const systemPromptTokens = estimateTokens(systemPrompt);
     const totalTokens = contextTokens + messagesTokens + systemPromptTokens;
 
