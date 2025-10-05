@@ -50,6 +50,8 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
         // Check if the key is enabled (check correct table based on provider)
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          let isActive = true; // Default to enabled
+          
           if (provider.serviceKey === 'openrouter') {
             // OpenRouter uses user_llm_keys table
             const { data } = await supabase
@@ -60,8 +62,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
               .single();
             
             if (data) {
-              setIsEnabled(data.is_active ?? true);
-              setStatus(data.is_active ? 'testing' : 'disabled');
+              isActive = data.is_active ?? true;
             }
           } else {
             // Other providers use api_keys table
@@ -73,17 +74,21 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
               .single();
             
             if (data) {
-              setIsEnabled(data.is_active ?? true);
-              setStatus(data.is_active ? 'testing' : 'disabled');
+              isActive = data.is_active ?? true;
             }
           }
-        }
-        
-        // Only test if enabled
-        if (isEnabled) {
-          setStatus('testing');
-          const success = await testApiKey(provider.serviceKey as ApiProvider, key);
-          setStatus(success ? 'connected' : 'error');
+          
+          // Update state with database value
+          setIsEnabled(isActive);
+          
+          // Only test if enabled
+          if (isActive) {
+            setStatus('testing');
+            const success = await testApiKey(provider.serviceKey as ApiProvider, key);
+            setStatus(success ? 'connected' : 'error');
+          } else {
+            setStatus('disabled');
+          }
         }
       } else {
         setStatus('unconfigured');
@@ -256,28 +261,39 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
           </div>
         )}
 
-        {/* API Key Input */}
+        {/* API Key / Server URL Input */}
         <div className="space-y-2">
           <div className="relative">
             <Input
               type={showKey ? "text" : "password"}
-              placeholder={`Enter ${provider.name} API key`}
+              placeholder={
+                provider.serviceKey === 'lmstudio' 
+                  ? "Enter server URL (e.g., http://localhost:1234)" 
+                  : `Enter ${provider.name} API key`
+              }
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               className="pr-10 text-sm"
               disabled={!isEnabled && status !== 'unconfigured'}
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-0 top-0 h-full px-2"
-              onClick={() => setShowKey(!showKey)}
-              type="button"
-              disabled={!isEnabled && status !== 'unconfigured'}
-            >
-              {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-            </Button>
+            {provider.serviceKey !== 'lmstudio' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-2"
+                onClick={() => setShowKey(!showKey)}
+                type="button"
+                disabled={!isEnabled && status !== 'unconfigured'}
+              >
+                {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+              </Button>
+            )}
           </div>
+          {provider.serviceKey === 'lmstudio' && (
+            <p className="text-xs text-muted-foreground">
+              Enter your LM Studio local server URL. Make sure LM Studio is running and CORS is enabled.
+            </p>
+          )}
         </div>
 
         {/* Actions */}
