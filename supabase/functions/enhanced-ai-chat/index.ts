@@ -2139,7 +2139,7 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
         has_visual_data: !!visualData,
         visual_data_count: allCharts ? allCharts.length : (visualData ? 1 : 0),
         has_serp_data: !!serpData,
-        insights_generated: aiInsights.length
+        insights_generated: aiInsights.length,
         serp_keywords: serpData?.keywords || []
       }
     };
