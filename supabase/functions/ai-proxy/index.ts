@@ -731,7 +731,9 @@ async function testLMStudio(apiKey: string) {
   
   try {
     // LM Studio typically runs on localhost:1234 by default
-    const baseUrl = apiKey.startsWith('http') ? apiKey : 'http://localhost:1234';
+    let baseUrl = apiKey.startsWith('http') ? apiKey : 'http://localhost:1234';
+    // Normalize: remove trailing /v1 or /v1/ to prevent double /v1/v1
+    baseUrl = baseUrl.replace(/\/v1\/?$/, '');
     console.log(`🔍 LM Studio testing connection to: ${baseUrl}`);
     
     const response = await fetch(`${baseUrl}/v1/models`, {
@@ -775,7 +777,9 @@ async function testLMStudio(apiKey: string) {
 async function chatLMStudio(apiKey: string, params: any) {
   console.log('💬 Processing LM Studio chat request');
   
-  const baseUrl = apiKey.startsWith('http') ? apiKey : 'http://localhost:1234';
+  let baseUrl = apiKey.startsWith('http') ? apiKey : 'http://localhost:1234';
+  // Normalize: remove trailing /v1 or /v1/ to prevent double /v1/v1
+  baseUrl = baseUrl.replace(/\/v1\/?$/, '');
   
   const requestBody = {
     model: params.model || 'local-model',
