@@ -406,6 +406,50 @@ serve(async (req) => {
   }
 });
 
+async function getActiveProvider(userId: string, supabase: any): Promise<{provider: string, apiKey: string, model: string}> {
+  // Try ai_service_providers first
+  const { data: serviceProvider } = await supabase
+    .from('ai_service_providers')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+  
+  if (serviceProvider?.api_key) {
+    console.log(`✅ Using ai_service_providers: ${serviceProvider.provider}`);
+    return {
+      provider: serviceProvider.provider,
+      apiKey: serviceProvider.api_key,
+      model: serviceProvider.preferred_model || 'gpt-4'
+    };
+  }
+  
+  // Fallback to user_llm_keys
+  console.log('⚠️ No ai_service_providers found, falling back to user_llm_keys');
+  
+  const { data: llmKey } = await supabase
+    .from('user_llm_keys')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  
+  if (!llmKey?.api_key) {
+    throw new Error('No active AI provider configured. Please configure your AI service in Settings.');
+  }
+  
+  console.log(`✅ Using user_llm_keys: ${llmKey.provider}`);
+  return {
+    provider: llmKey.provider,
+    apiKey: llmKey.api_key,
+    model: llmKey.default_model || 'gpt-4'
+  };
+}
+
 async function executeAITask(step: WorkflowStep, context: any): Promise<any> {
   // Get user ID from context (should be passed in by caller)
   const userId = context.userId;
@@ -419,21 +463,9 @@ async function executeAITask(step: WorkflowStep, context: any): Promise<any> {
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Get user's active AI provider
-  const { data: provider, error: providerError } = await supabase
-    .from('ai_service_providers')
-    .select('provider, api_key, preferred_model, status')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .order('priority', { ascending: true })
-    .limit(1)
-    .single();
-
-  if (providerError || !provider) {
-    throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
-  }
-
-  console.log(`Using AI provider: ${provider.provider} for workflow task: ${step.name}`);
+  // Get user's active AI provider with fallback
+  const providerConfig = await getActiveProvider(userId, supabase);
+  console.log(`Using AI provider: ${providerConfig.provider} for workflow task: ${step.name}`);
 
   const prompt = step.aiPrompt || step.description;
   const contextualPrompt = `
@@ -447,11 +479,11 @@ Please provide a structured response that can be used by subsequent workflow ste
   // Call ai-proxy edge function
   const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
     body: {
-      service: provider.provider,
+      service: providerConfig.provider,
       endpoint: 'chat',
-      apiKey: provider.api_key,
+      apiKey: providerConfig.apiKey,
       params: {
-        model: provider.preferred_model,
+        model: providerConfig.model,
         messages: [
           {
             role: "system",

@@ -4,6 +4,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
 import { analyzeQueryIntent } from './query-analyzer.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
+import { estimateTokens } from '../shared/token-counter.ts';
 import { 
   analyzeSerpIntent, 
   executeSerpAnalysis, 
@@ -1950,6 +1951,28 @@ When generating chart data, also suggest optimal viewing mode:
 ${context ? `## User Context:\n${JSON.stringify(context, null, 2)}` : ''}
 
 Provide comprehensive, data-driven responses that ALWAYS include relevant actions and visual insights. Remember: Every response should help the user take action and understand data visually.`;
+
+    // Token budget check BEFORE calling AI
+    const contextTokens = estimateTokens(JSON.stringify(realContext));
+    const messagesTokens = messages.reduce((sum: number, msg: any) => 
+      sum + estimateTokens(msg.content), 0
+    );
+    const systemPromptTokens = estimateTokens(systemPrompt);
+    const totalTokens = contextTokens + messagesTokens + systemPromptTokens;
+
+    console.log(`📊 Token Budget Check:
+  - Context: ${contextTokens} tokens
+  - Messages: ${messagesTokens} tokens
+  - System Prompt: ${systemPromptTokens} tokens
+  - Total: ${totalTokens} tokens
+  - OpenAI Limit: 30,000 TPM
+  - Status: ${totalTokens < 28000 ? '✅ SAFE' : '⚠️ NEAR LIMIT'}
+`);
+
+    if (totalTokens > 28000) {
+      console.error('🚨 TOKEN LIMIT EXCEEDED! Request would fail with 429 error');
+      throw new Error('Context too large. Please try a more specific query or ask for summary data.');
+    }
 
     // Call ai-proxy edge function with user's provider
     const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {

@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { estimateTokens, estimateObjectTokens } from '../shared/token-counter.ts';
+import { truncateContentItem } from '../shared/content-optimizer.ts';
+import { truncateProposal } from '../shared/proposal-optimizer.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -288,6 +291,25 @@ async function buildTieredContext(userId: string, intent: any) {
   });
 }
 
+// Token budget configuration
+const TOKEN_BUDGETS = {
+  summary: {
+    maxTotal: 4500,
+    perContent: 200,
+    perProposal: 50
+  },
+  detailed: {
+    maxTotal: 20000,
+    perContent: 500,
+    perProposal: 150
+  },
+  full: {
+    maxTotal: 28000,
+    perContent: 1000,
+    perProposal: 300
+  }
+};
+
 async function getContextState(userId: string) {
   console.log(`🔄 Getting context state for user: ${userId}`);
   
@@ -312,8 +334,8 @@ async function getContextState(userId: string) {
       console.log(`📋 Found ${solutions?.length || 0} solutions for user ${userId}`);
     }
 
-    // Get comprehensive user content data
-    const { data: contentItems, error: contentError } = await supabase
+    // Get comprehensive user content data with smart truncation
+    const { data: rawContentItems, error: contentError } = await supabase
       .from('content_items')
       .select(`
         id,
@@ -330,12 +352,34 @@ async function getContextState(userId: string) {
         solution_id
       `)
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(50); // Limit to recent 50
 
     if (contentError) {
       console.error('❌ Error fetching content items:', contentError);
+    }
+
+    // Apply intelligent truncation IMMEDIATELY
+    const budget = TOKEN_BUDGETS.summary; // Default to summary
+    let contentItems = rawContentItems;
+
+    if (rawContentItems && rawContentItems.length > 0) {
+      console.log(`📝 Found ${rawContentItems.length} content items - applying truncation`);
+      
+      contentItems = rawContentItems.map(item => {
+        const truncated = truncateContentItem(item, {
+          maxContentLength: Math.floor(budget.perContent * 3.5),
+          keepMetadataFields: ['mainKeyword', 'seoScore']
+        });
+        return truncated;
+      });
+      
+      const totalTokens = contentItems.reduce((sum, item) => 
+        sum + estimateObjectTokens(item), 0
+      );
+      console.log(`✅ Content optimized: ${totalTokens} total tokens (${rawContentItems.length} items)`);
     } else {
-      console.log(`📝 Found ${contentItems?.length || 0} content items for user ${userId}`);
+      console.log(`📝 Found ${rawContentItems?.length || 0} content items for user ${userId}`);
     }
 
     // Get unified keywords linked to content via content_keywords junction table
@@ -378,8 +422,8 @@ async function getContextState(userId: string) {
       console.log(`📊 Fetched ${unifiedKeywords?.length || 0} unique keywords from unified_keywords table`);
     }
 
-    // Get AI strategy proposals (the proposals ready for content creation)
-    const { data: aiProposals, error: proposalsError } = await supabase
+    // Get AI strategy proposals with smart truncation
+    const { data: rawProposals, error: proposalsError } = await supabase
       .from('ai_strategy_proposals')
       .select(`
         id,
@@ -395,12 +439,27 @@ async function getContextState(userId: string) {
       `)
       .eq('user_id', userId)
       .eq('status', 'available')
-      .order('estimated_impressions', { ascending: false });
+      .order('estimated_impressions', { ascending: false })
+      .limit(100); // Limit to top 100
 
     if (proposalsError) {
       console.error('❌ Error fetching AI proposals:', proposalsError);
+    }
+
+    // Apply intelligent truncation IMMEDIATELY
+    let aiProposals = rawProposals;
+
+    if (rawProposals && rawProposals.length > 0) {
+      console.log(`💡 Found ${rawProposals.length} proposals - applying truncation`);
+      
+      aiProposals = rawProposals.map(proposal => truncateProposal(proposal));
+      
+      const totalTokens = aiProposals.reduce((sum, p) => 
+        sum + estimateObjectTokens(p), 0
+      );
+      console.log(`✅ Proposals optimized: ${totalTokens} total tokens (${rawProposals.length} items)`);
     } else {
-      console.log(`💡 Found ${aiProposals?.length || 0} AI proposals`);
+      console.log(`💡 Found ${rawProposals?.length || 0} AI proposals`);
     }
 
     // Implement solution-content mapping logic
@@ -622,6 +681,22 @@ async function getContextState(userId: string) {
       hasSeoData: contentItems?.filter(item => item.seo_score && item.seo_score > 0)?.length || 0,
       hasCompanyInfo: !!contextState?.context?.companyInfo
     });
+
+    // Calculate and log total token usage
+    const solutionsTokens = estimateObjectTokens(solutions);
+    const contentTokens = contentItems?.reduce((sum, item) => sum + estimateObjectTokens(item), 0) || 0;
+    const proposalsTokens = aiProposals?.reduce((sum, p) => sum + estimateObjectTokens(p), 0) || 0;
+    const totalTokens = solutionsTokens + contentTokens + proposalsTokens;
+
+    console.log(`
+📊 CONTEXT MANAGER TOKEN ANALYSIS:
+  - Solutions: ${solutions?.length || 0} items, ~${solutionsTokens} tokens
+  - Content: ${contentItems?.length || 0} items, ~${contentTokens} tokens
+  - Proposals: ${aiProposals?.length || 0} items, ~${proposalsTokens} tokens
+  - Keywords: ${unifiedKeywords?.length || 0} unique keywords
+  - Total Context: ~${totalTokens} tokens
+  - Status: ${totalTokens < 28000 ? '✅ SAFE' : '🚨 EXCEEDS LIMIT'}
+`);
 
     return new Response(JSON.stringify(comprehensiveContext), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
