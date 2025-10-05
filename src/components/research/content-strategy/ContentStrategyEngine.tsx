@@ -246,11 +246,14 @@ export const ContentStrategyEngine = ({
     }
   };
 
-  // Load data on mount
+  // Load data on mount - load historical first to populate initial view
   useEffect(() => {
-    loadClusters();
-    loadHistoricalProposals();
-    loadCompletedProposalIds();
+    const initData = async () => {
+      await loadHistoricalProposals(); // Load historical first
+      await loadClusters();
+      await loadCompletedProposalIds();
+    };
+    initData();
   }, []);
 
   // Combine current and historical proposals

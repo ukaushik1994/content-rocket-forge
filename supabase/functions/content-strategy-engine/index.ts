@@ -730,26 +730,44 @@ async function generateAIStrategy(supabase: any, payload: any) {
   ]);
 
   // 2) Ask AI (via unified proxy) to propose untapped keywords
-  console.log('🤖 Calling OpenAI to generate keywords...');
+  console.log('🤖 Fetching active AI provider for keyword generation...');
   
-  // Extract API key from payload
-  const openaiApiKey = api_keys?.openai;
-  if (!openaiApiKey) {
-    console.error('❌ No OpenAI API key provided in payload');
+  // Fetch active AI providers (priority order)
+  const { data: providers, error: providerError } = await supabase
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status, priority')
+    .eq('user_id', user_id)
+    .eq('status', 'active')
+    .order('priority', { ascending: true });
+
+  if (providerError || !providers || providers.length === 0) {
+    console.error('❌ No active AI provider found:', providerError);
     return new Response(
-      JSON.stringify({ error: 'OpenAI API key is required. Please configure your API key in Settings.' }),
+      JSON.stringify({ error: 'No active AI provider configured. Please configure an API key in Settings.' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
+
+  // Select first active provider with valid API key
+  const selectedProvider = providers.find(p => p.api_key && p.preferred_model);
+  if (!selectedProvider) {
+    console.error('❌ No valid API key found for active providers');
+    return new Response(
+      JSON.stringify({ error: 'AI provider configured but missing API key. Please check your Settings.' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  console.log(`✅ Using ${selectedProvider.provider} for keyword generation`);
   
   const kwProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      service: 'openai',
+      service: selectedProvider.provider,
       endpoint: 'chat',
-      apiKey: openaiApiKey,
+      apiKey: selectedProvider.api_key,
       params: {
-        model: 'gpt-4.1-mini-2025-04-14', // More efficient model
-        max_completion_tokens: 1500, // Reduce token usage
+        model: selectedProvider.preferred_model,
+        max_completion_tokens: 1500,
         messages: [
           {
             role: 'system',
@@ -771,14 +789,14 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
     }
   });
 
-  console.log('🔍 OpenAI keyword response received:', {
+  console.log(`🔍 ${selectedProvider.provider} keyword response received:`, {
     hasError: !!kwProxy.error,
     dataType: typeof kwProxy.data,
     dataKeys: kwProxy.data ? Object.keys(kwProxy.data) : null
   });
 
   if (kwProxy.error) {
-    console.error('❌ OpenAI keyword generation failed:', kwProxy.error);
+    console.error(`❌ ${selectedProvider.provider} keyword generation failed:`, kwProxy.error);
     const errorMessage = kwProxy.error?.message || kwProxy.error || 'AI service error';
     return new Response(
       JSON.stringify({ error: `Failed to generate strategy: ${errorMessage}` }),
@@ -786,7 +804,7 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
     );
   }
 
-  // Better response handling for OpenAI via api-proxy
+  // Better response handling for AI via api-proxy
   let kwText = '{}';
   try {
     // Handle different response structures from api-proxy
