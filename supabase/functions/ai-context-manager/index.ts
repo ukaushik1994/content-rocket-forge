@@ -339,26 +339,43 @@ async function getContextState(userId: string) {
     }
 
     // Get unified keywords linked to content via content_keywords junction table
-    const { data: contentKeywords, error: keywordsError } = await supabase
+    // Step 1: Get content_keywords junction table data
+    const { data: contentKeywordLinks, error: linksError } = await supabase
       .from('content_keywords')
-      .select(`
-        content_id,
-        keyword_id,
-        unified_keywords!inner (
-          id,
-          keyword,
-          search_volume,
-          difficulty,
-          competition_score,
-          intent
-        )
-      `)
+      .select('content_id, keyword_id')
       .in('content_id', contentItems?.map(item => item.id) || []);
 
-    if (keywordsError) {
-      console.error('❌ Error fetching content keywords:', keywordsError);
+    if (linksError) {
+      console.error('❌ Error fetching content keyword links:', linksError);
+    }
+
+    // Step 2: Get unique keyword IDs to fetch
+    const keywordIds = [...new Set(contentKeywordLinks?.map(ck => ck.keyword_id) || [])];
+
+    // Step 3: Fetch unified_keywords data separately
+    const { data: unifiedKeywords, error: unifiedError } = await supabase
+      .from('unified_keywords')
+      .select('id, keyword, search_volume, difficulty, competition_score, intent')
+      .in('id', keywordIds);
+
+    if (unifiedError) {
+      console.error('❌ Error fetching unified keywords:', unifiedError);
+    }
+
+    // Step 4: Manually join the data to match the expected structure
+    const contentKeywords = contentKeywordLinks?.map(link => ({
+      content_id: link.content_id,
+      keyword_id: link.keyword_id,
+      unified_keywords: unifiedKeywords?.find(k => k.id === link.keyword_id) || null
+    })) || [];
+
+    // Enhanced logging
+    if (linksError || unifiedError) {
+      console.error('❌ Error fetching keywords:', { linksError, unifiedError });
+      console.log('⚠️ Continuing with empty keywords array');
     } else {
-      console.log(`🔑 Found keywords for ${contentKeywords?.length || 0} content items`);
+      console.log(`🔑 Successfully joined ${contentKeywords?.length || 0} content-keyword relationships`);
+      console.log(`📊 Fetched ${unifiedKeywords?.length || 0} unique keywords from unified_keywords table`);
     }
 
     // Get AI strategy proposals (the proposals ready for content creation)
