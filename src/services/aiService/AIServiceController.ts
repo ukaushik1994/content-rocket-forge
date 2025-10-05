@@ -232,8 +232,8 @@ class AIServiceController {
           setup_url: p.setup_url || '',
           icon_name: p.icon_name || 'zap',
           category: p.category || 'AI Services',
-          capabilities: Array.isArray(p.capabilities) ? p.capabilities : [],
-          available_models: Array.isArray(p.available_models) ? p.available_models : [],
+          capabilities: Array.isArray(p.capabilities) ? p.capabilities.map(c => String(c)) : [],
+          available_models: Array.isArray(p.available_models) ? p.available_models.map(m => String(m)) : [],
           is_required: p.is_required || false,
           error_message: p.error_message || undefined,
           last_verified: p.last_verified || undefined

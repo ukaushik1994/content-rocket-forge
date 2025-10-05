@@ -183,6 +183,26 @@ export function ProviderManagement() {
       setTestingAll(false);
     }
   };
+  const handleActivateAllWithKeys = async () => {
+    setActivatingAll(true);
+    try {
+      const updates = providers
+        .filter(p => p.api_key && p.api_key.trim())
+        .map(provider => AIServiceController.updateProvider(provider.id, {
+          status: 'active'
+        }));
+      
+      await Promise.all(updates);
+      await loadProviders();
+      toast.success('All providers with API keys activated');
+    } catch (error) {
+      console.error('Failed to activate providers:', error);
+      toast.error('Failed to activate providers');
+    } finally {
+      setActivatingAll(false);
+    }
+  };
+
   const handleToggleAllProviders = async (enabled: boolean) => {
     try {
       const updates = providers.map(provider => AIServiceController.updateProvider(provider.id, {
