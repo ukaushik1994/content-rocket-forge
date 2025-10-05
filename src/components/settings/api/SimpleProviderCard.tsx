@@ -319,21 +319,6 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
             </Button>
           </div>
         </div>
-        
-        {/* LM Studio Setup Guide */}
-        {provider.serviceKey === 'lmstudio' && (
-          <div className="mx-4 mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <p className="text-sm text-blue-400 mb-2 font-medium">
-              LM Studio Setup:
-            </p>
-            <ol className="text-xs text-muted-foreground space-y-1 ml-4 list-decimal">
-              <li>Download and install LM Studio from <a href="https://lmstudio.ai" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">lmstudio.ai</a></li>
-              <li>Load a model in LM Studio</li>
-              <li>Start the local server (usually on port 1234)</li>
-              <li>Enter the server URL above (e.g., http://localhost:1234)</li>
-            </ol>
-          </div>
-        )}
       </div>
     </div>
   );
