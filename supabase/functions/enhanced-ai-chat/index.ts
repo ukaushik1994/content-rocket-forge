@@ -1182,7 +1182,7 @@ serve(async (req) => {
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       
       // Add visualization modules based on intent
-      if (intent.requiresVisualData || intent.scope === 'detailed' || intent.scope === 'full') {
+      if (queryIntent.requiresVisualData || queryIntent.scope === 'detailed' || queryIntent.scope === 'full') {
         systemPrompt += '\n\n' + CHART_MODULE;
         systemPrompt += '\n\n' + TABLE_MODULE;
       }
@@ -1194,7 +1194,7 @@ serve(async (req) => {
       }
       
       // Add action module for complex queries
-      if (intent.scope !== 'summary') {
+      if (queryIntent.scope !== 'summary') {
         systemPrompt += '\n\n' + ACTION_MODULE;
       }
     }
@@ -1203,7 +1203,7 @@ serve(async (req) => {
     systemPrompt += `\n\n## REAL DATA CONTEXT - USE THIS FACTUAL INFORMATION:\n${realDataContext}`;
     
     console.log(`✅ Dynamic system prompt built:
-  - Scope: ${intent.scope}
+  - Scope: ${queryIntent.scope}
   - Modules: ${preliminaryTotal > 20000 ? 'MINIMAL' : 'BASE + conditional modules'}
   - Estimated prompt tokens: ${estimateTokens(systemPrompt)}`);
 
