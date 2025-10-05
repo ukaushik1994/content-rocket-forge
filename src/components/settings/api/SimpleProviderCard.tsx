@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   Loader2, 
   Eye, 
@@ -13,7 +15,8 @@ import { toast } from 'sonner';
 import { 
   saveApiKey, 
   getApiKey, 
-  testApiKey, 
+  testApiKey,
+  toggleApiKeyStatus,
   type ApiProvider 
 } from "@/services/apiKeyService";
 import { ApiProvider as ApiProviderType } from './types';
@@ -25,10 +28,11 @@ interface SimpleProviderCardProps {
 export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
-  const [status, setStatus] = useState<'unconfigured' | 'connected' | 'error' | 'testing'>('unconfigured');
+  const [status, setStatus] = useState<'unconfigured' | 'connected' | 'error' | 'testing' | 'disabled'>('unconfigured');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(true);
 
   useEffect(() => {
     loadApiKey();
@@ -87,10 +91,26 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
     }
   };
 
+  const handleToggleStatus = async () => {
+    const newStatus = !isEnabled;
+    
+    try {
+      const success = await toggleApiKeyStatus(provider.serviceKey as ApiProvider, newStatus);
+      if (success) {
+        setIsEnabled(newStatus);
+        setStatus(newStatus ? (status === 'disabled' ? 'connected' : status) : 'disabled');
+      }
+    } catch (error) {
+      toast.error('Failed to update API key status');
+    }
+  };
+
   const getStatusIndicator = () => {
     switch (status) {
       case 'connected': 
         return <div className="w-2 h-2 bg-green-500 rounded-full" />;
+      case 'disabled':
+        return <div className="w-2 h-2 bg-muted-foreground/40 rounded-full" />;
       case 'error': 
         return <div className="w-2 h-2 bg-destructive rounded-full" />;
       case 'testing': 
@@ -103,6 +123,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
   const getStatusText = () => {
     switch (status) {
       case 'connected': return 'Connected';
+      case 'disabled': return 'Disabled';
       case 'error': return 'Error';
       case 'testing': return 'Testing...';
       default: return 'Not configured';
@@ -185,7 +206,21 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
       </Button>
 
       {/* Configuration section */}
-      <div className="px-4 pb-4 space-y-4 border-t bg-muted/20">
+      <div className={`px-4 pb-4 space-y-4 border-t bg-muted/20 transition-opacity ${!isEnabled ? 'opacity-60' : ''}`}>
+        {/* Enable/Disable Toggle - Only show if key exists */}
+        {status !== 'unconfigured' && (
+          <div className="flex items-center justify-between pt-3 pb-2 border-b">
+            <Label htmlFor={`enable-${provider.serviceKey}`} className="text-sm font-medium">
+              Enable Service
+            </Label>
+            <Switch
+              id={`enable-${provider.serviceKey}`}
+              checked={isEnabled}
+              onCheckedChange={handleToggleStatus}
+            />
+          </div>
+        )}
+
         {/* API Key Input */}
         <div className="space-y-2">
           <div className="relative">
@@ -195,6 +230,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               className="pr-10 text-sm"
+              disabled={!isEnabled && status !== 'unconfigured'}
             />
             <Button
               variant="ghost"
@@ -202,6 +238,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
               className="absolute right-0 top-0 h-full px-2"
               onClick={() => setShowKey(!showKey)}
               type="button"
+              disabled={!isEnabled && status !== 'unconfigured'}
             >
               {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
             </Button>
@@ -213,7 +250,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
           <div className="flex items-center gap-2">
             <Button
               onClick={handleSave}
-              disabled={isSaving || !apiKey.trim()}
+              disabled={isSaving || !apiKey.trim() || (!isEnabled && status !== 'unconfigured')}
               size="sm"
             >
               {isSaving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}

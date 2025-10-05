@@ -314,6 +314,45 @@ class ApiKeyService {
   }
 
   /**
+   * Toggles the active status of an API key without deleting it
+   */
+  static async toggleApiKeyStatus(service: ApiProvider, isActive: boolean): Promise<boolean> {
+    try {
+      console.log(`🔄 Toggling ${service} API key status to ${isActive ? 'active' : 'inactive'}...`);
+      
+      // Validate user authentication
+      const { user, error: authError } = await ApiKeyService.validateUserAuth();
+      if (authError) {
+        toast.error(authError);
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('api_keys')
+        .update({ 
+          is_active: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .eq('service', service);
+
+      if (error) {
+        console.error(`❌ Error toggling ${service} API key status:`, error);
+        toast.error(`Failed to ${isActive ? 'enable' : 'disable'} ${service} API key`);
+        return false;
+      }
+
+      console.log(`✅ ${service} API key ${isActive ? 'enabled' : 'disabled'} successfully`);
+      toast.success(`${service} API key ${isActive ? 'enabled' : 'disabled'}`);
+      return true;
+    } catch (error: any) {
+      console.error(`❌ Error in toggleApiKeyStatus for ${service}:`, error);
+      toast.error(`Failed to update ${service} API key status: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
    * Migrates all user's API keys to new encryption format
    */
   static async migrateAllUserKeys(): Promise<void> {
@@ -366,6 +405,7 @@ export const saveApiKey = ApiKeyService.storeApiKey;
 export const storeApiKey = ApiKeyService.storeApiKey;
 export const getApiKey = ApiKeyService.getApiKey;
 export const deleteApiKey = ApiKeyService.deleteApiKey;
+export const toggleApiKeyStatus = ApiKeyService.toggleApiKeyStatus;
 export const getConfiguredServices = ApiKeyService.getConfiguredServices;
 export const migrateAllUserKeys = ApiKeyService.migrateAllUserKeys;
 
