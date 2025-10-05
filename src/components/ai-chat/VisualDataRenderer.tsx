@@ -40,8 +40,13 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   });
   
   if (!data) {
-    console.log('❌ VisualDataRenderer: No data provided');
-    return null;
+    console.warn('❌ VisualDataRenderer: No data provided');
+    return (
+      <div className="p-4 border border-dashed border-muted-foreground/30 rounded-lg text-center">
+        <Activity className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+        <p className="text-sm text-muted-foreground">Visual data not available</p>
+      </div>
+    );
   }
 
   // Validate data structure

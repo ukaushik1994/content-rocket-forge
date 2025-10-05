@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bot, RefreshCw } from 'lucide-react';
+import { User, Bot, RefreshCw, BarChart3, Sparkles } from 'lucide-react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { VisualDataRenderer } from './VisualDataRenderer';
@@ -191,22 +191,44 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 />
               )}
               <VisualDataRenderer data={message.visualData} />
-              
-              {/* Phase 1: Show "View all charts" link when multiple charts exist */}
-              {message.allVisualData && message.allVisualData.length > 1 && (
-                <div className="mt-2 text-center">
-                  <button
-                    onClick={() => setShowMultiChartModal(true)}
-                    className="text-sm text-primary hover:text-primary/80 transition-colors underline-offset-4 hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>View all {message.allVisualData.length} charts</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
             </div>
+          )}
+
+          {/* Show visual analysis card for ANY visual data */}
+          {message.type === 'assistant' && (
+            message.visualData || (message.allVisualData && message.allVisualData.length > 0)
+          ) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 mb-3"
+            >
+              <div className="p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg border border-primary/20 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/20">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        Visual Analysis Available
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {message.allVisualData?.length || 1} chart(s) • Interactive insights • Actionable recommendations
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowMultiChartModal(true)}
+                    className="bg-primary hover:bg-primary/90 gap-2 shadow-lg"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    View Insights
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
           )}
 
           {/* Action Buttons */}
@@ -271,16 +293,18 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       )}
 
       {/* Multi-Chart Modal */}
-      {message.allVisualData && message.allVisualData.length > 1 && (
+      {(message.visualData || (message.allVisualData && message.allVisualData.length > 0)) && (
         <MultiChartModal
           isOpen={showMultiChartModal}
           onClose={() => setShowMultiChartModal(false)}
           allVisualData={message.allVisualData}
           currentChartConfig={message.visualData?.chartConfig}
-          title={message.visualData?.title || 'Data Visualization'}
+          title={message.visualData?.title || 'Insights Hub'}
           description={message.visualData?.description}
           actionableItems={message.visualData?.actionableItems}
           deepDivePrompts={message.visualData?.deepDivePrompts}
+          insights={(message as any).insights || []}
+          context={(message as any).context || {}}
           onDeepDiveClick={(prompt) => {
             setShowMultiChartModal(false);
             onSendMessage?.(prompt);

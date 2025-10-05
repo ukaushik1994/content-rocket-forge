@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Download, 
   Share2, 
@@ -22,7 +24,8 @@ import {
   Target,
   Clock,
   Filter,
-  Edit
+  Edit,
+  AlertTriangle
 } from 'lucide-react';
 import { VisualData, ChartConfiguration, ActionableItem } from '@/types/enhancedChat';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -39,6 +42,8 @@ interface MultiChartModalProps {
   description?: string;
   actionableItems?: ActionableItem[];
   deepDivePrompts?: string[];
+  insights?: string[];
+  context?: any;
   onDeepDiveClick?: (prompt: string) => void;
   onActionClick?: (action: any) => void;
 }
@@ -58,6 +63,153 @@ const CHART_TYPE_ICONS: Record<string, any> = {
   'table': TableIcon
 };
 
+// Key Metrics Panel Component
+const KeyMetricsPanel: React.FC<{ context: any }> = ({ context }) => {
+  const analytics = context?.analytics || {};
+  
+  const metrics = [
+    {
+      label: 'Total Content',
+      value: analytics.totalContent || 0,
+      icon: TableIcon,
+      trend: '+12%',
+      trendUp: true
+    },
+    {
+      label: 'Avg SEO Score',
+      value: analytics.avgSeoScore || 0,
+      icon: TrendingUp,
+      suffix: '/100'
+    },
+    {
+      label: 'Needs Attention',
+      value: analytics.lowPerformers || 0,
+      icon: AlertTriangle,
+      color: 'warning'
+    },
+    {
+      label: 'Top Performer',
+      value: analytics.topContent?.title || 'N/A',
+      icon: Target,
+      isText: true
+    }
+  ];
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      {metrics.map((metric, idx) => (
+        <Card key={idx} className="p-4 glass-panel bg-glass border border-white/10">
+          <div className="flex items-center gap-2 mb-2">
+            <metric.icon className="w-4 h-4 text-primary" />
+            <span className="text-xs text-muted-foreground">{metric.label}</span>
+          </div>
+          <div className="text-2xl font-bold">
+            {metric.isText ? metric.value : `${metric.value}${metric.suffix || ''}`}
+          </div>
+          {metric.trend && (
+            <div className={`text-xs mt-1 ${metric.trendUp ? 'text-success' : 'text-destructive'}`}>
+              {metric.trend}
+            </div>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+// AI Insights Panel Component
+const AIInsightsPanel: React.FC<{ insights: string[]; onDeepDiveClick?: (insight: string) => void }> = ({ insights, onDeepDiveClick }) => {
+  if (!insights || insights.length === 0) return null;
+  
+  return (
+    <Card className="p-4 glass-panel bg-glass border border-white/10 mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="w-5 h-5 text-primary" />
+        <h3 className="text-lg font-semibold">AI Insights</h3>
+      </div>
+      <ul className="space-y-2">
+        {insights.map((insight, idx) => (
+          <motion.li
+            key={idx}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="flex items-start gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-2 rounded hover:bg-white/5"
+            onClick={() => onDeepDiveClick?.(insight)}
+          >
+            <span className="text-primary mt-0.5">•</span>
+            <span>{insight}</span>
+          </motion.li>
+        ))}
+      </ul>
+    </Card>
+  );
+};
+
+// Action Buttons Panel Component
+const ActionButtonsPanel: React.FC<{
+  actionableItems: ActionableItem[];
+  deepDivePrompts: string[];
+  onActionClick?: (action: any) => void;
+  onClose: () => void;
+}> = ({ actionableItems, deepDivePrompts, onActionClick, onClose }) => {
+  const navigate = useNavigate();
+
+  const handleAction = (action: ActionableItem) => {
+    onClose(); // Close modal
+    
+    if (action.action?.includes('navigate') && action.targetUrl) {
+      navigate(action.targetUrl);
+    } else if (action.action === 'send_message') {
+      onActionClick?.(action);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {actionableItems && actionableItems.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium mb-3">Quick Actions</h4>
+          <div className="grid grid-cols-2 gap-3">
+            {actionableItems.map((action, idx) => (
+              <Button
+                key={idx}
+                variant="outline"
+                className="justify-start gap-2"
+                onClick={() => handleAction(action)}
+              >
+                <ArrowRight className="w-4 h-4" />
+                {action.title}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {deepDivePrompts && deepDivePrompts.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium mb-3">Deep Dive Questions</h4>
+          <div className="space-y-2">
+            {deepDivePrompts.map((prompt, idx) => (
+              <Button
+                key={idx}
+                variant="ghost"
+                className="w-full justify-start text-sm"
+                onClick={() => {
+                  onActionClick?.({ action: 'send_message', data: { message: prompt } });
+                  onClose();
+                }}
+              >
+                {prompt}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   isOpen,
   onClose,
@@ -67,11 +219,14 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   description,
   actionableItems = [],
   deepDivePrompts = [],
+  insights = [],
+  context = {},
   onDeepDiveClick,
   onActionClick
 }) => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<string>('0');
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [activeChartTab, setActiveChartTab] = useState<string>('0');
   const [selectedChartType, setSelectedChartType] = useState<Record<number, string>>({});
   const [selectedFilter, setSelectedFilter] = useState<Record<number, string>>({});
 
@@ -97,16 +252,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
       return true;
     }).slice(0, 4);
   }, [allVisualData, currentChartConfig]);
-
-  // Set default active tab to the chart shown inline
-  React.useEffect(() => {
-    if (currentChartConfig && charts.length > 1) {
-      const index = charts.findIndex(c => c.type === currentChartConfig.type);
-      if (index >= 0) {
-        setActiveTab(index.toString());
-      }
-    }
-  }, [currentChartConfig, charts]);
 
   // Normalize pie chart data
   const normalizePieChartData = (data: any[]): any[] => {
@@ -166,7 +311,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     const commonProps = {
       data: data,
       onClick: (data: any) => {
-        // Phase 5: Click-to-drill-down
         console.log('Chart clicked:', data);
         if (onDeepDiveClick && data.activeLabel) {
           onDeepDiveClick(`Tell me more about ${data.activeLabel}`);
@@ -335,34 +479,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     return Array.from(categories);
   };
 
-  // Generate contextual prompts based on chart data
-  const generateContextualPrompts = (config: ChartConfiguration): string[] => {
-    const prompts: string[] = [];
-    
-    if (config.type === 'pie') {
-      const data = normalizePieChartData(config.data);
-      const maxItem = data.reduce((max, item) => item.value > max.value ? item : max, data[0]);
-      if (maxItem) {
-        prompts.push(`Why is ${maxItem.name} the largest segment?`);
-        prompts.push(`How can I improve other segments?`);
-      }
-    }
-    
-    if (config.type === 'line' || config.type === 'area') {
-      prompts.push(`What caused the trends in this data?`);
-      prompts.push(`How can I optimize growth?`);
-    }
-    
-    if (config.type === 'bar') {
-      prompts.push(`Which items need the most attention?`);
-      prompts.push(`What are the top performers?`);
-    }
-    
-    prompts.push(`Show me detailed analysis of this data`);
-    
-    return prompts;
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border border-white/10">
@@ -380,7 +496,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   <Activity className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-semibold">{title || 'Data Visualization'}</h2>
+                  <h2 className="text-2xl font-semibold">{title || 'Insights Hub'}</h2>
                   {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
                 </div>
               </div>
@@ -390,180 +506,131 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
             </div>
           </div>
 
-          {/* Content */}
+          {/* Content with 3-Tab Structure */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
-            {/* Phase 2: Tabbed Interface with Icon-Only Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-4 w-full mb-6">
-                {charts.map((chart, index) => {
-                  const Icon = CHART_TYPE_ICONS[chart.type] || Activity;
-                  const isActive = activeTab === index.toString();
-                  return (
-                    <TabsTrigger 
-                      key={index} 
-                      value={index.toString()}
-                      className={cn(
-                        "flex items-center justify-center gap-2 transition-all",
-                        isActive && "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                      )}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </TabsTrigger>
-                  );
-                })}
+            <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="overview">
+              <TabsList className="grid grid-cols-3 w-full mb-6">
+                <TabsTrigger value="overview">
+                  <Target className="w-4 h-4 mr-2" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="charts">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Charts ({charts.length})
+                </TabsTrigger>
+                <TabsTrigger value="actions">
+                  <Zap className="w-4 h-4 mr-2" />
+                  Actions
+                </TabsTrigger>
               </TabsList>
 
-              {charts.map((chart, index) => (
-                <TabsContent key={index} value={index.toString()} className="mt-0">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-6"
-                  >
-                    {/* Chart Card */}
-                    <div className="glass-panel bg-glass border border-white/10 rounded-lg p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h4 className="text-lg font-semibold">{chart.title || `Chart ${index + 1}`}</h4>
-                          {chart.subtitle && <p className="text-sm text-muted-foreground">{chart.subtitle}</p>}
-                        </div>
-                        
-                        {/* Phase 7: Chart Type Switcher & Filters */}
-                        <div className="flex items-center gap-2">
-                          {/* Chart Type Switcher */}
-                          <Select value={selectedChartType[index] || chart.type} onValueChange={(value) => setSelectedChartType(prev => ({ ...prev, [index]: value }))}>
-                            <SelectTrigger className="w-32">
-                              <Edit className="w-4 h-4 mr-2" />
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="line">Line</SelectItem>
-                              <SelectItem value="bar">Bar</SelectItem>
-                              <SelectItem value="area">Area</SelectItem>
-                              <SelectItem value="pie">Pie</SelectItem>
-                            </SelectContent>
-                          </Select>
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="mt-0">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-6"
+                >
+                  <KeyMetricsPanel context={context} />
+                  <AIInsightsPanel insights={insights} onDeepDiveClick={onDeepDiveClick} />
+                </motion.div>
+              </TabsContent>
 
-                          {/* Data Filter */}
-                          {getAvailableCategories(chart).length > 0 && (
-                            <Select value={selectedFilter[index] || 'all'} onValueChange={(value) => setSelectedFilter(prev => ({ ...prev, [index]: value }))}>
-                              <SelectTrigger className="w-32">
-                                <Filter className="w-4 h-4 mr-2" />
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                {getAvailableCategories(chart).map(cat => (
-                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {renderChart(chart, index)}
-                    </div>
-
-                    {/* Phase 3: Enhanced Actionable Insights (only show for first chart) */}
-                    {index === 0 && actionableItems.length > 0 && (
-                      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-4">
-                        <h3 className="text-md font-semibold mb-3 flex items-center gap-2">
-                          <Sparkles className="h-5 w-5 text-primary" />
-                          Actionable Insights
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {actionableItems.map((item) => {
-                            const IconComponent = ICON_MAP[item.icon || 'Target'] || Target;
-                            
-                            return (
-                              <motion.div
-                                key={item.id}
-                                whileHover={{ scale: 1.02 }}
-                                className="bg-background/50 p-4 rounded-md cursor-pointer hover:bg-background/70 transition-all border border-white/5"
-                                onClick={() => {
-                                  onActionClick?.(item);
-                                  if (item.actionType === 'navigate' || item.actionType === 'workflow') {
-                                    onClose();
-                                  }
-                                }}
-                              >
-                                <div className="flex items-start gap-3 mb-2">
-                                  <div className="p-2 rounded-lg bg-primary/10">
-                                    <IconComponent className="h-4 w-4 text-primary" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <h4 className="font-semibold text-sm">{item.title}</h4>
-                                      <Badge 
-                                        variant={item.priority === 'high' ? 'default' : 'outline'} 
-                                        className="text-xs"
-                                      >
-                                        {item.priority}
-                                      </Badge>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">{item.description}</p>
-                                  </div>
-                                </div>
-                                
-                                {(item.estimatedImpact || item.timeRequired) && (
-                                  <div className="space-y-1 mb-2">
-                                    {item.estimatedImpact && (
-                                      <div className="flex items-center gap-2 text-xs">
-                                        <TrendingUp className="w-3 h-3 text-success" />
-                                        <span className="text-success font-medium">{item.estimatedImpact}</span>
-                                      </div>
-                                    )}
-                                    {item.timeRequired && (
-                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Clock className="w-3 h-3" />
-                                        <span>{item.timeRequired}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                <Button size="sm" className="w-full" variant="outline">
-                                  {item.actionType === 'navigate' ? 'Go There' :
-                                   item.actionType === 'workflow' ? 'Start' :
-                                   item.actionType === 'external' ? 'Open Link' : 'Learn More'}
-                                  <ArrowRight className="w-3 h-3 ml-2" />
-                                </Button>
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Phase 4: Contextual Explore Prompts */}
-                    <div className="border-t border-white/10 pt-4">
-                      <h3 className="text-md font-semibold mb-3 flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
-                        Explore Further
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {(deepDivePrompts.length > 0 ? deepDivePrompts : generateContextualPrompts(chart)).map((prompt, idx) => (
-                          <motion.button
-                            key={idx}
-                            whileHover={{ scale: 1.02 }}
-                            onClick={() => {
-                              onDeepDiveClick?.(prompt);
-                              onClose();
-                            }}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-background/50 hover:bg-background/70 border border-white/10 hover:border-primary/30 transition-all text-left"
+              {/* Charts Tab */}
+              <TabsContent value="charts" className="mt-0">
+                {charts.length > 0 ? (
+                  <Tabs value={activeChartTab} onValueChange={setActiveChartTab}>
+                    <TabsList className="grid grid-cols-4 w-full mb-6">
+                      {charts.map((chart, index) => {
+                        const Icon = CHART_TYPE_ICONS[chart.type] || Activity;
+                        const isActive = activeChartTab === index.toString();
+                        return (
+                          <TabsTrigger 
+                            key={index} 
+                            value={index.toString()}
+                            className={cn(
+                              "flex items-center justify-center gap-2 transition-all",
+                              isActive && "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                            )}
                           >
-                            <div className="p-2 rounded-lg bg-primary/10">
-                              <Sparkles className="w-4 h-4 text-primary" />
+                            <Icon className="w-4 h-4" />
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+
+                    {charts.map((chart, index) => (
+                      <TabsContent key={index} value={index.toString()} className="mt-0">
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="space-y-6"
+                        >
+                          <div className="glass-panel bg-glass border border-white/10 rounded-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <h4 className="text-lg font-semibold">{chart.title || `Chart ${index + 1}`}</h4>
+                                {chart.subtitle && <p className="text-sm text-muted-foreground">{chart.subtitle}</p>}
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Select value={selectedChartType[index] || chart.type} onValueChange={(value) => setSelectedChartType(prev => ({ ...prev, [index]: value }))}>
+                                  <SelectTrigger className="w-32">
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="line">Line</SelectItem>
+                                    <SelectItem value="bar">Bar</SelectItem>
+                                    <SelectItem value="area">Area</SelectItem>
+                                    <SelectItem value="pie">Pie</SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                {getAvailableCategories(chart).length > 0 && (
+                                  <Select value={selectedFilter[index] || 'all'} onValueChange={(value) => setSelectedFilter(prev => ({ ...prev, [index]: value }))}>
+                                    <SelectTrigger className="w-32">
+                                      <Filter className="w-4 h-4 mr-2" />
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="all">All</SelectItem>
+                                      {getAvailableCategories(chart).map(cat => (
+                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
                             </div>
-                            <span className="text-sm">{prompt}</span>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                </TabsContent>
-              ))}
+                            
+                            {renderChart(chart, index)}
+                          </div>
+                        </motion.div>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                    No charts available
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Actions Tab */}
+              <TabsContent value="actions" className="mt-0">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <ActionButtonsPanel
+                    actionableItems={actionableItems}
+                    deepDivePrompts={deepDivePrompts}
+                    onActionClick={onActionClick}
+                    onClose={onClose}
+                  />
+                </motion.div>
+              </TabsContent>
             </Tabs>
           </div>
 

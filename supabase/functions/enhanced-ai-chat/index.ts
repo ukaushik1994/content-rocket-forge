@@ -1193,7 +1193,34 @@ When you analyze structured data (proposals, analytics, performance metrics, SER
 - ✅ For comparisons: Require real categories and numeric values (no estimates)
 - ⚠️ If data is insufficient: Explain what's missing and suggest how to obtain it
 
-## 📊 CHART GENERATION PHILOSOPHY:
+## 📊 CHART GENERATION PHILOSOPHY & CRITICAL DATA ACCURACY RULES:
+
+**CRITICAL: Chart Data Accuracy Rules**
+
+When generating chart data, you MUST:
+
+1. **Quote Exact Source:** Every data point must come directly from REAL DATA CONTEXT
+2. **Include Data Source Field:** Add "dataSource" explaining where each value came from
+3. **Use Exact Values:** Never estimate, round, or approximate values
+4. **Cross-Reference:** Verify each name/label exists in context before using
+
+### Correct Format:
+{
+  "chartConfig": {
+    "data": [
+      {
+        "name": "Solution A",
+        "value": 23,
+        "dataSource": "realDataContext.analytics.contentBySolution['Solution A'].mappedContent.length"
+      }
+    ]
+  }
+}
+
+### Incorrect (will be rejected):
+- Using estimated values like "~20 items"
+- Names not in context like "Product X" when only "Solution A" exists
+- Aggregated values without showing calculation
 
 **Auto-Generation Handled by System:**
 The backend automatically transforms your single chart into multiple perspectives (pie → bar, line → area, + table views). Your responsibility:
@@ -1909,6 +1936,36 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
     const parsedResponse = parseResponseWithFallback(aiMessage);
     let { message: cleanedResponse, actions, visualData } = parsedResponse;
     
+    // Import validation functions
+    const { validateChartData, extractDataSource } = await import('./chart-validator.ts');
+    
+    // Validate chart data accuracy
+    if (visualData && visualData.chartConfig) {
+      console.log('🔍 Validating chart data accuracy...');
+      
+      const validation = validateChartData(visualData.chartConfig, context);
+      
+      if (!validation.isValid) {
+        console.error('❌ Chart validation failed:', validation.errors);
+        // Hard validation - reject chart
+        visualData = null;
+        
+        // Add feedback message for user
+        cleanedResponse = (cleanedResponse || aiMessage) + "\n\n⚠️ Chart data validation failed. Please ensure all data comes from your actual content.";
+      } else if (validation.warnings.length > 0) {
+        console.warn('⚠️ Chart validation warnings:', validation.warnings);
+        // Add warning banner to chart
+        visualData.warnings = validation.warnings;
+      }
+      
+      // Add data source attribution
+      if (visualData) {
+        visualData = extractDataSource(visualData, context);
+      }
+      
+      console.log('✅ Chart validation complete');
+    }
+    
     // Chart validation - Only convert existing visual data, never force generation
     if (chartRequest.requested && visualData && visualData.type !== 'chart') {
       console.log(`📊 Chart requested but AI generated ${visualData.type}. Attempting intelligent conversion...`);
@@ -1994,6 +2051,46 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       originalLength: aiMessage.length,
       cleanedLength: cleanedResponse?.length || aiMessage.length
     });
+    
+    // Generate contextual insights from chart data
+    function generateInsights(visualData: any, context: any): string[] {
+      const insights: string[] = [];
+      
+      if (visualData?.chartConfig?.data) {
+        const data = visualData.chartConfig.data;
+        
+        // Find max value
+        const maxItem = data.reduce((max: any, item: any) => {
+          const value = Object.values(item).find(v => typeof v === 'number') as number;
+          const maxValue = Object.values(max).find(v => typeof v === 'number') as number;
+          return value > maxValue ? item : max;
+        }, data[0]);
+        
+        if (maxItem) {
+          insights.push(`Top performer: "${maxItem.name}" with highest values`);
+        }
+        
+        // Count low performers
+        const lowPerformers = data.filter((item: any) => {
+          const value = Object.values(item).find(v => typeof v === 'number') as number;
+          return value < 60;
+        });
+        
+        if (lowPerformers.length > 0) {
+          insights.push(`${lowPerformers.length} items below 60 need optimization`);
+        }
+        
+        // Distribution insight
+        const total = data.length;
+        insights.push(`Content distribution: ${total} items across ${Object.keys(context.analytics?.contentBySolution || {}).length} solutions`);
+      }
+      
+      return insights.slice(0, 5);
+    }
+    
+    // Generate AI insights for visual data
+    const aiInsights = visualData ? generateInsights(visualData, context) : [];
+    console.log(`🤖 Generated ${aiInsights.length} AI insights`);
 
     // Only provide basic contextual actions if AI didn't return structured data
     // NO MOCK DATA GENERATION - Let the AI create appropriate responses based on real data
@@ -2035,12 +2132,14 @@ Provide comprehensive, data-driven responses that ALWAYS include relevant action
       visualData: visualData || undefined, // First chart for inline display
       allVisualData: allCharts, // All charts for modal (only if multiple exist)
       serpData: serpData || undefined, // Include SERP data from our analysis
+      insights: aiInsights.length > 0 ? aiInsights : undefined, // Include AI-generated insights
       metadata: {
         processed_at: new Date().toISOString(),
         has_actions: !!actions,
         has_visual_data: !!visualData,
         visual_data_count: allCharts ? allCharts.length : (visualData ? 1 : 0),
         has_serp_data: !!serpData,
+        insights_generated: aiInsights.length
         serp_keywords: serpData?.keywords || []
       }
     };
