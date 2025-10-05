@@ -36,6 +36,10 @@ serve(async (req) => {
       case 'get_context_state':
         return await getContextState(userId);
       
+      case 'get_tiered_context':
+        const intent = data.intent || { scope: 'summary', categories: ['content', 'solutions', 'proposals'] };
+        return await buildTieredContext(userId, intent);
+      
       case 'merge_contexts':
         return await mergeContexts(userId, data);
       
@@ -168,6 +172,119 @@ async function updateContextState(userId: string, data: any) {
     message: 'Context state updated successfully'
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function buildTieredContext(userId: string, intent: any) {
+  console.log(`🎯 Building ${intent.scope} context for categories:`, intent.categories);
+  
+  // Get full context first
+  const fullContextResponse = await getContextState(userId);
+  const fullContext = await fullContextResponse.json();
+  
+  // Apply tiered filtering based on intent
+  const filtered: any = {
+    analytics: {
+      ...fullContext.analytics,
+      dataAvailability: fullContext.analytics.dataAvailability
+    },
+    contextState: fullContext.contextState
+  };
+  
+  // Summary Scope: Top 3-5 items per category
+  if (intent.scope === 'summary') {
+    if (intent.categories.includes('solutions')) {
+      filtered.solutions = fullContext.solutions?.slice(0, 3).map((s: any) => ({
+        name: s.name,
+        description: s.short_description || s.description?.substring(0, 200),
+        category: s.category
+      }));
+      filtered.analytics.solutionsCount = fullContext.solutions?.length || 0;
+    }
+    
+    if (intent.categories.includes('content')) {
+      const contentBySolution = fullContext.analytics.contentBySolution || {};
+      filtered.analytics.contentBySolution = Object.fromEntries(
+        Object.entries(contentBySolution)
+          .slice(0, 3)
+          .map(([solution, data]: [string, any]) => [
+            solution,
+            {
+              solution: data.solution,
+              mappedContent: data.mappedContent.slice(0, 2).map((c: any) => ({
+                title: c.title,
+                content_type: c.content_type,
+                seo_score: c.seo_score,
+                created_at: c.created_at
+              })),
+              contentCount: data.mappedContent.length
+            }
+          ])
+      );
+    }
+    
+    if (intent.categories.includes('proposals')) {
+      filtered.proposals = fullContext.proposals?.slice(0, 5).map((p: any) => ({
+        title: p.title,
+        primary_keyword: p.primary_keyword,
+        content_type: p.content_type,
+        priority_tag: p.priority_tag,
+        estimated_impressions: p.estimated_impressions
+      }));
+      filtered.analytics.proposalsCount = fullContext.proposals?.length || 0;
+    }
+    
+    console.log(`✅ Summary context built: ~5K tokens`);
+    return new Response(JSON.stringify(filtered), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  // Detailed Scope: Top 10 items for requested categories only
+  if (intent.scope === 'detailed') {
+    if (intent.categories.includes('solutions')) {
+      filtered.solutions = fullContext.solutions?.slice(0, 10);
+    }
+    
+    if (intent.categories.includes('content')) {
+      const contentBySolution = fullContext.analytics.contentBySolution || {};
+      filtered.analytics.contentBySolution = Object.fromEntries(
+        Object.entries(contentBySolution)
+          .slice(0, 5)
+          .map(([solution, data]: [string, any]) => [
+            solution,
+            {
+              ...data,
+              mappedContent: data.mappedContent.slice(0, 5)
+            }
+          ])
+      );
+    }
+    
+    if (intent.categories.includes('proposals')) {
+      filtered.proposals = fullContext.proposals?.slice(0, 15);
+    }
+    
+    if (intent.categories.includes('keywords')) {
+      filtered.analytics.keywordCoverage = fullContext.analytics.keywordCoverage || 0;
+    }
+    
+    console.log(`✅ Detailed context built: ~25K tokens`);
+    return new Response(JSON.stringify(filtered), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  // Full Scope: Everything (use sparingly)
+  if (intent.scope === 'full') {
+    console.log(`⚠️ Full context requested: ~80K tokens`);
+    return new Response(JSON.stringify(fullContext), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  
+  return new Response(JSON.stringify(filtered), {
+    headers: { 'Content-Type': 'application/json' }
   });
 }
 

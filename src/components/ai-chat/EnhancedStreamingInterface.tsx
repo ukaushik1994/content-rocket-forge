@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, Activity } from 'lucide-react';
+import { BarChart3, Activity, Database } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EnhancedStreamingInterfaceProps {
@@ -27,6 +27,10 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
   const { toast } = useToast();
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
+  const [contextScope, setContextScope] = useState<{
+    scope: 'summary' | 'detailed' | 'full';
+    estimatedTokens: number;
+  }>({ scope: 'summary', estimatedTokens: 5000 });
 
   // Monitor connection status
   useEffect(() => {
@@ -56,6 +60,14 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
 
   const handleShowAnalytics = () => {
     setShowAnalytics(true);
+  };
+
+  const handleLoadMoreContext = () => {
+    setContextScope({ scope: 'full', estimatedTokens: 80000 });
+    toast({
+      title: "Loading Full Context",
+      description: "All data will be available in your next message",
+    });
   };
 
   const getAnalytics = async () => {
@@ -104,6 +116,36 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
           </Button>
         </div>
       </div>
+
+      {/* Context Scope Indicator */}
+      {contextScope && (
+        <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <Database size={14} className="text-muted-foreground" />
+              <div className={`w-2 h-2 rounded-full ${
+                contextScope.scope === 'summary' ? 'bg-green-500' :
+                contextScope.scope === 'detailed' ? 'bg-yellow-500' :
+                'bg-red-500'
+              }`} />
+              <span className="text-muted-foreground">
+                Context: <strong className="text-foreground">{contextScope.scope}</strong> 
+                <span className="ml-2 text-xs opacity-75">
+                  (~{(contextScope.estimatedTokens / 1000).toFixed(1)}K tokens)
+                </span>
+              </span>
+            </div>
+            {contextScope.scope !== 'full' && (
+              <button 
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium transition-colors"
+                onClick={handleLoadMoreContext}
+              >
+                Load More Data →
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <StreamingChatInterface
         onClearConversation={handleClear}

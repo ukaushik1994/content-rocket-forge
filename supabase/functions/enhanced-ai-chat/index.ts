@@ -312,17 +312,125 @@ function parseResponseWithFallback(content: string): { message: string; actions?
   }
 }
 
-// Enhanced real data fetching function with Phase 1 & Phase 2 intelligence including GSC
-async function fetchRealDataContext() {
+// Enhanced real data fetching function with Smart Context Loading (Option B)
+async function fetchRealDataContext(userId: string, queryIntent: QueryIntent) {
   try {
-    // PHASE 1: GOOGLE SEARCH CONSOLE INTEGRATION
-    const { data: gscData } = await supabase
-      .from('content_analytics')
-      .select('*')
-      .order('last_fetched_at', { ascending: false })
-      .limit(20);
+    console.log(`📊 Fetching ${queryIntent.scope} scope context (~${queryIntent.estimatedTokens} tokens)`);
+    
+    // ✅ NEW: Fetch tiered context based on query intent
+    const { data: tieredContext, error: contextError } = await supabase.functions.invoke(
+      'ai-context-manager',
+      {
+        body: {
+          action: 'get_tiered_context',
+          userId: userId,
+          intent: queryIntent
+        }
+      }
+    );
 
-    // Calculate GSC insights
+    if (contextError) {
+      console.error('❌ Error fetching tiered context:', contextError);
+      return `## REAL DATA UNAVAILABLE\nError fetching current data: ${contextError.message}`;
+    }
+
+    const context = tieredContext || {};
+    
+    // Build lightweight context string based on scope
+    const analytics = context.analytics || {};
+    const dataAvailability = analytics.dataAvailability || {};
+    
+    let contextString = `
+## REAL DATA CONTEXT (${queryIntent.scope.toUpperCase()} SCOPE - ~${queryIntent.estimatedTokens} tokens) - ${new Date().toISOString()}
+
+### 📊 Context Scope & Progressive Disclosure
+
+You currently have access to **${queryIntent.scope.toUpperCase()} SCOPE** data (~${queryIntent.estimatedTokens} tokens):
+${queryIntent.categories.map(c => `- ${c.toUpperCase()} data`).join('\n')}
+
+### 🎯 Data Availability Status:
+${Object.entries(dataAvailability).map(([key, value]: [string, any]) => 
+  `${value.available ? '✅' : '⚠️'} **${key}**: ${value.status}`
+).join('\n')}
+
+`;
+
+    // Add category-specific data based on query intent
+    if (queryIntent.categories.includes('solutions') && context.solutions) {
+      contextString += `
+### 💼 SOLUTIONS (${queryIntent.scope === 'summary' ? 'Top 3' : 'Detailed'}):
+${context.solutions.map((s: any, i: number) => 
+  `${i + 1}. "${s.name}" - ${s.category || 'Uncategorized'}\n   ${s.description || 'No description'}`
+).join('\n')}
+${queryIntent.scope === 'summary' && analytics.solutionsCount > 3 ? 
+  `\n💡 **${analytics.solutionsCount - 3} more solutions available** - ask "show all solutions" for complete list` : ''}
+`;
+    }
+
+    if (queryIntent.categories.includes('content') && analytics.contentBySolution) {
+      const contentData = Object.entries(analytics.contentBySolution);
+      contextString += `
+### 📝 CONTENT BY SOLUTION (${queryIntent.scope === 'summary' ? 'Summary' : 'Detailed'}):
+${contentData.map(([solution, data]: [string, any]) => {
+  const mappedContent = data.mappedContent || [];
+  return `
+**${solution}** (${data.contentCount || mappedContent.length} items):
+${mappedContent.slice(0, queryIntent.scope === 'summary' ? 2 : 5).map((c: any, i: number) => 
+  `  ${i + 1}. "${c.title}" (${c.content_type}) - SEO: ${c.seo_score || 0}/100`
+).join('\n')}`;
+}).join('\n')}
+${queryIntent.scope === 'summary' ? '\n💡 **Ask for details to see more content items**' : ''}
+`;
+    }
+
+    if (queryIntent.categories.includes('proposals') && context.proposals) {
+      contextString += `
+### 💡 AI STRATEGY PROPOSALS (${queryIntent.scope === 'summary' ? 'Top 5' : 'Top 15'}):
+- Total Available: ${analytics.proposalsCount || context.proposals.length}
+${context.proposals.map((p: any, i: number) => 
+  `${i + 1}. "${p.title}" - ${p.primary_keyword} (${p.estimated_impressions?.toLocaleString() || 0} impressions, ${p.priority_tag})`
+).join('\n')}
+${queryIntent.scope === 'summary' && analytics.proposalsCount > 5 ? 
+  `\n💡 **${analytics.proposalsCount - 5} more proposals available** - ask "show all proposals" for complete list` : ''}
+`;
+    }
+
+    if (queryIntent.categories.includes('seo')) {
+      contextString += `
+### 🎯 SEO & PERFORMANCE:
+- Average SEO Score: ${analytics.avgSeoScore || 0}/100
+- Published Content: ${analytics.published || 0}
+- Draft Content: ${analytics.draft || 0}
+- Recent Content (30 days): ${analytics.recentContent || 0}
+${analytics.avgSeoScore === 0 ? '⚠️ **No SEO scores available** - analyze content in SEO Optimizer' : ''}
+`;
+    }
+
+    // Always include summary analytics
+    contextString += `
+### 📊 Quick Stats:
+- Total Content: ${analytics.totalContent || 0}
+- Published: ${analytics.published || 0}
+- Draft: ${analytics.draft || 0}
+- AI Proposals: ${analytics.proposals || 0}
+- Avg SEO Score: ${analytics.avgSeoScore || 0}/100
+
+### 🔄 Need More Data?
+When the user asks for comprehensive analysis or more details than currently available, respond with:
+
+"I currently have ${queryIntent.scope} level data loaded. To provide a more comprehensive analysis, would you like me to:
+${!queryIntent.categories.includes('content') ? '- Load detailed content data' : ''}
+${!queryIntent.categories.includes('proposals') ? '- Show all strategy proposals' : ''}
+${!queryIntent.categories.includes('solutions') ? '- Include full solutions data' : ''}
+${queryIntent.scope !== 'full' ? '- Load complete dataset for in-depth analysis' : ''}
+
+Just ask! Examples: 'Show me all content' or 'Load full data'"
+
+**REMEMBER:** All data is available - you just need to ask the user which details they want to explore further.
+`;
+
+    console.log(`✅ Context string built successfully (${queryIntent.scope} scope)`);
+    return contextString;
     const totalImpressions = gscData?.reduce((sum, item) => sum + (item.search_console_data?.impressions || 0), 0) || 0;
     const totalClicks = gscData?.reduce((sum, item) => sum + (item.search_console_data?.clicks || 0), 0) || 0;
     const averageCTR = totalClicks > 0 && totalImpressions > 0 ? (totalClicks / totalImpressions * 100) : 0;
@@ -903,6 +1011,17 @@ serve(async (req) => {
       });
     }
 
+    // ✅ NEW: Analyze query intent BEFORE fetching context
+    const userQuery = messages[messages.length - 1]?.content || '';
+    console.log('🎯 Analyzing query intent...');
+    const queryIntent = analyzeQueryIntent(userQuery);
+    console.log(`📊 Intent Analysis:`, {
+      scope: queryIntent.scope,
+      categories: queryIntent.categories,
+      estimatedTokens: queryIntent.estimatedTokens,
+      confidence: queryIntent.confidence
+    });
+
     // Get active providers using same logic as Content Builder (AIServiceController)
     // 1. Check user_llm_keys for OpenRouter
     let openrouterKey = null;
@@ -1001,8 +1120,8 @@ serve(async (req) => {
     }
 
     // Build enhanced system prompt with context
-    // Fetch real data from database
-    const realDataContext = await fetchRealDataContext();
+    // Fetch real data from database using tiered context
+    const realDataContext = await fetchRealDataContext(user.id, queryIntent);
     
     const systemPrompt = `You are an enterprise-grade intelligent workflow orchestration assistant with comprehensive expertise across content strategy, business solutions, data analysis, team collaboration, and process optimization.
 
