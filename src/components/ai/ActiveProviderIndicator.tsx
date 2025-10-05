@@ -36,7 +36,6 @@ export function ActiveProviderIndicator() {
         .from('ai_service_providers')
         .select('provider, preferred_model')
         .eq('status', 'active')
-        .order('priority', { ascending: true })
         .limit(1)
         .maybeSingle();
 
@@ -57,16 +56,24 @@ export function ActiveProviderIndicator() {
   useEffect(() => {
     fetchActiveProvider();
 
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchActiveProvider, 30000);
-
-    // Refresh on window focus
-    const handleFocus = () => fetchActiveProvider();
-    window.addEventListener('focus', handleFocus);
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('active-provider-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ai_service_providers'
+        },
+        () => {
+          fetchActiveProvider();
+        }
+      )
+      .subscribe();
 
     return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
+      supabase.removeChannel(channel);
     };
   }, []);
 
