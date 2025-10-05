@@ -89,6 +89,48 @@ export type Database = {
         }
         Relationships: []
       }
+      adaptive_ui_state: {
+        Row: {
+          collapsed_sections: Json | null
+          created_at: string | null
+          dashboard_config: Json | null
+          favorite_features: Json | null
+          id: string
+          preferred_layout: string | null
+          quick_access_items: Json | null
+          theme_preferences: Json | null
+          updated_at: string | null
+          user_id: string
+          widget_positions: Json | null
+        }
+        Insert: {
+          collapsed_sections?: Json | null
+          created_at?: string | null
+          dashboard_config?: Json | null
+          favorite_features?: Json | null
+          id?: string
+          preferred_layout?: string | null
+          quick_access_items?: Json | null
+          theme_preferences?: Json | null
+          updated_at?: string | null
+          user_id: string
+          widget_positions?: Json | null
+        }
+        Update: {
+          collapsed_sections?: Json | null
+          created_at?: string | null
+          dashboard_config?: Json | null
+          favorite_features?: Json | null
+          id?: string
+          preferred_layout?: string | null
+          quick_access_items?: Json | null
+          theme_preferences?: Json | null
+          updated_at?: string | null
+          user_id?: string
+          widget_positions?: Json | null
+        }
+        Relationships: []
+      }
       ai_chat_contexts: {
         Row: {
           context_data: Json
@@ -870,6 +912,111 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      automation_triggers: {
+        Row: {
+          action_config: Json
+          action_type: string
+          confidence_threshold: number | null
+          created_at: string | null
+          execution_count: number | null
+          id: string
+          is_active: boolean | null
+          last_executed_at: string | null
+          success_count: number | null
+          trigger_conditions: Json
+          trigger_name: string
+          trigger_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          confidence_threshold?: number | null
+          created_at?: string | null
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_executed_at?: string | null
+          success_count?: number | null
+          trigger_conditions?: Json
+          trigger_name: string
+          trigger_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          confidence_threshold?: number | null
+          created_at?: string | null
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_executed_at?: string | null
+          success_count?: number | null
+          trigger_conditions?: Json
+          trigger_name?: string
+          trigger_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      behavioral_analytics_sessions: {
+        Row: {
+          actions_performed: Json | null
+          ai_interactions_count: number | null
+          content_created: number | null
+          created_at: string | null
+          engagement_score: number | null
+          features_used: Json | null
+          id: string
+          pages_visited: Json | null
+          productivity_score: number | null
+          session_duration: number | null
+          session_end: string | null
+          session_metadata: Json | null
+          session_start: string
+          user_id: string
+          workflows_completed: Json | null
+        }
+        Insert: {
+          actions_performed?: Json | null
+          ai_interactions_count?: number | null
+          content_created?: number | null
+          created_at?: string | null
+          engagement_score?: number | null
+          features_used?: Json | null
+          id?: string
+          pages_visited?: Json | null
+          productivity_score?: number | null
+          session_duration?: number | null
+          session_end?: string | null
+          session_metadata?: Json | null
+          session_start: string
+          user_id: string
+          workflows_completed?: Json | null
+        }
+        Update: {
+          actions_performed?: Json | null
+          ai_interactions_count?: number | null
+          content_created?: number | null
+          created_at?: string | null
+          engagement_score?: number | null
+          features_used?: Json | null
+          id?: string
+          pages_visited?: Json | null
+          productivity_score?: number | null
+          session_duration?: number | null
+          session_end?: string | null
+          session_metadata?: Json | null
+          session_start?: string
+          user_id?: string
+          workflows_completed?: Json | null
+        }
+        Relationships: []
       }
       brand_guidelines: {
         Row: {
@@ -2004,6 +2151,57 @@ export type Database = {
         }
         Relationships: []
       }
+      content_performance_predictions: {
+        Row: {
+          confidence_interval: Json | null
+          content_id: string | null
+          created_at: string | null
+          factors: Json | null
+          id: string
+          keyword: string | null
+          predicted_clicks: number | null
+          predicted_ctr: number | null
+          predicted_engagement_score: number | null
+          predicted_impressions: number | null
+          predicted_position: number | null
+          prediction_date: string
+          prediction_horizon: string
+          user_id: string
+        }
+        Insert: {
+          confidence_interval?: Json | null
+          content_id?: string | null
+          created_at?: string | null
+          factors?: Json | null
+          id?: string
+          keyword?: string | null
+          predicted_clicks?: number | null
+          predicted_ctr?: number | null
+          predicted_engagement_score?: number | null
+          predicted_impressions?: number | null
+          predicted_position?: number | null
+          prediction_date: string
+          prediction_horizon: string
+          user_id: string
+        }
+        Update: {
+          confidence_interval?: Json | null
+          content_id?: string | null
+          created_at?: string | null
+          factors?: Json | null
+          id?: string
+          keyword?: string | null
+          predicted_clicks?: number | null
+          predicted_ctr?: number | null
+          predicted_engagement_score?: number | null
+          predicted_impressions?: number | null
+          predicted_position?: number | null
+          prediction_date?: string
+          prediction_horizon?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_pipeline: {
         Row: {
           assigned_to: string | null
@@ -2943,6 +3141,54 @@ export type Database = {
           },
         ]
       }
+      ml_models: {
+        Row: {
+          accuracy_score: number | null
+          created_at: string | null
+          id: string
+          last_trained_at: string | null
+          model_config: Json
+          model_name: string
+          model_type: string
+          model_version: string
+          status: string
+          training_data_source: string
+          training_metrics: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          created_at?: string | null
+          id?: string
+          last_trained_at?: string | null
+          model_config?: Json
+          model_name: string
+          model_type: string
+          model_version?: string
+          status?: string
+          training_data_source: string
+          training_metrics?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          created_at?: string | null
+          id?: string
+          last_trained_at?: string | null
+          model_config?: Json
+          model_name?: string
+          model_type?: string
+          model_version?: string
+          status?: string
+          training_data_source?: string
+          training_metrics?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       mobile_settings: {
         Row: {
           created_at: string
@@ -3343,6 +3589,113 @@ export type Database = {
         }
         Relationships: []
       }
+      personalization_profiles: {
+        Row: {
+          ai_personality_preference: string | null
+          automation_preference: string | null
+          created_at: string | null
+          custom_ai_instructions: string | null
+          expertise_level: string | null
+          id: string
+          learning_style: string | null
+          notification_preferences: Json | null
+          preferred_content_types: Json | null
+          preferred_workflows: Json | null
+          success_metrics: Json | null
+          ui_preferences: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_personality_preference?: string | null
+          automation_preference?: string | null
+          created_at?: string | null
+          custom_ai_instructions?: string | null
+          expertise_level?: string | null
+          id?: string
+          learning_style?: string | null
+          notification_preferences?: Json | null
+          preferred_content_types?: Json | null
+          preferred_workflows?: Json | null
+          success_metrics?: Json | null
+          ui_preferences?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_personality_preference?: string | null
+          automation_preference?: string | null
+          created_at?: string | null
+          custom_ai_instructions?: string | null
+          expertise_level?: string | null
+          id?: string
+          learning_style?: string | null
+          notification_preferences?: Json | null
+          preferred_content_types?: Json | null
+          preferred_workflows?: Json | null
+          success_metrics?: Json | null
+          ui_preferences?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prediction_results: {
+        Row: {
+          actual_values: Json | null
+          confidence_score: number | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          model_id: string | null
+          predicted_values: Json
+          prediction_accuracy: number | null
+          prediction_type: string
+          target_entity_id: string | null
+          target_entity_type: string | null
+          user_id: string
+        }
+        Insert: {
+          actual_values?: Json | null
+          confidence_score?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          model_id?: string | null
+          predicted_values?: Json
+          prediction_accuracy?: number | null
+          prediction_type: string
+          target_entity_id?: string | null
+          target_entity_type?: string | null
+          user_id: string
+        }
+        Update: {
+          actual_values?: Json | null
+          confidence_score?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          model_id?: string | null
+          predicted_values?: Json
+          prediction_accuracy?: number | null
+          prediction_type?: string
+          target_entity_id?: string | null
+          target_entity_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prediction_results_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "ml_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3510,6 +3863,45 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recommendation_cache: {
+        Row: {
+          cache_expires_at: string
+          created_at: string | null
+          generation_method: string
+          id: string
+          interaction_tracking: Json | null
+          personalization_factors: Json | null
+          recommendation_type: string
+          recommendations: Json
+          relevance_scores: Json | null
+          user_id: string
+        }
+        Insert: {
+          cache_expires_at: string
+          created_at?: string | null
+          generation_method: string
+          id?: string
+          interaction_tracking?: Json | null
+          personalization_factors?: Json | null
+          recommendation_type: string
+          recommendations?: Json
+          relevance_scores?: Json | null
+          user_id: string
+        }
+        Update: {
+          cache_expires_at?: string
+          created_at?: string | null
+          generation_method?: string
+          id?: string
+          interaction_tracking?: Json | null
+          personalization_factors?: Json | null
+          recommendation_type?: string
+          recommendations?: Json
+          relevance_scores?: Json | null
           user_id?: string
         }
         Relationships: []
@@ -4915,6 +5307,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_behavior_patterns: {
+        Row: {
+          created_at: string | null
+          day_of_week_pattern: Json | null
+          features_used: Json | null
+          frequency_score: number | null
+          id: string
+          importance_score: number | null
+          pattern_data: Json
+          pattern_type: string
+          recency_score: number | null
+          session_duration_avg: number | null
+          time_of_day_pattern: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week_pattern?: Json | null
+          features_used?: Json | null
+          frequency_score?: number | null
+          id?: string
+          importance_score?: number | null
+          pattern_data?: Json
+          pattern_type: string
+          recency_score?: number | null
+          session_duration_avg?: number | null
+          time_of_day_pattern?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week_pattern?: Json | null
+          features_used?: Json | null
+          frequency_score?: number | null
+          id?: string
+          importance_score?: number | null
+          pattern_data?: Json
+          pattern_type?: string
+          recency_score?: number | null
+          session_duration_avg?: number | null
+          time_of_day_pattern?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_content_instructions: {
         Row: {
           applied_count: number
@@ -5283,6 +5723,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_predictions: {
+        Row: {
+          created_at: string | null
+          id: string
+          optimization_suggestions: Json | null
+          predicted_bottlenecks: Json | null
+          predicted_completion_date: string | null
+          predicted_duration: number | null
+          predicted_resource_needs: Json | null
+          predicted_success_probability: number | null
+          risk_factors: Json | null
+          user_id: string
+          workflow_id: string | null
+          workflow_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          optimization_suggestions?: Json | null
+          predicted_bottlenecks?: Json | null
+          predicted_completion_date?: string | null
+          predicted_duration?: number | null
+          predicted_resource_needs?: Json | null
+          predicted_success_probability?: number | null
+          risk_factors?: Json | null
+          user_id: string
+          workflow_id?: string | null
+          workflow_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          optimization_suggestions?: Json | null
+          predicted_bottlenecks?: Json | null
+          predicted_completion_date?: string | null
+          predicted_duration?: number | null
+          predicted_resource_needs?: Json | null
+          predicted_success_probability?: number | null
+          risk_factors?: Json | null
+          user_id?: string
+          workflow_id?: string | null
+          workflow_type?: string
+        }
+        Relationships: []
       }
       workflow_schedules: {
         Row: {

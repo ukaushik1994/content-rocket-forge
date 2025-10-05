@@ -9,6 +9,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { toast } from 'sonner';
 import NavItems from './NavItems';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { ActiveProviderIndicator } from '@/components/ai/ActiveProviderIndicator';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 
 const Navbar = () => {
@@ -59,6 +60,9 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Active AI Provider Indicator */}
+          <ActiveProviderIndicator />
+          
           {/* Notifications bell replaces Feedback icon */}
           <NotificationBell />
 

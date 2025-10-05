@@ -315,8 +315,27 @@ class ApiKeyService {
 
   /**
    * Toggles the active status of an API key without deleting it
+   * Also syncs with ai_service_providers table for AI providers
    */
   static async toggleApiKeyStatus(service: ApiProvider, isActive: boolean): Promise<boolean> {
+    // Default models for each provider
+    const DEFAULT_MODELS: Record<string, string> = {
+      openrouter: 'openai/gpt-4o-mini',
+      gemini: 'gemini-2.0-flash-exp',
+      openai: 'gpt-4o-mini',
+      anthropic: 'claude-3-5-sonnet-20241022',
+      mistral: 'mistral-large-latest'
+    };
+
+    // Default priorities for providers
+    const DEFAULT_PRIORITIES: Record<string, number> = {
+      openrouter: 0,
+      gemini: 1,
+      openai: 2,
+      anthropic: 3,
+      mistral: 4
+    };
+
     try {
       console.log(`🔄 Toggling ${service} API key status to ${isActive ? 'active' : 'inactive'}...`);
       
@@ -327,7 +346,8 @@ class ApiKeyService {
         return false;
       }
 
-      const { error } = await supabase
+      // Update the api_keys table
+      const { error: updateError } = await supabase
         .from('api_keys')
         .update({ 
           is_active: isActive,
@@ -336,10 +356,82 @@ class ApiKeyService {
         .eq('user_id', user.id)
         .eq('service', service);
 
-      if (error) {
-        console.error(`❌ Error toggling ${service} API key status:`, error);
+      if (updateError) {
+        console.error(`❌ Error toggling ${service} API key status:`, updateError);
         toast.error(`Failed to ${isActive ? 'enable' : 'disable'} ${service} API key`);
         return false;
+      }
+
+      // Sync with ai_service_providers table if this is an AI provider
+      if (DEFAULT_MODELS[service]) {
+        console.log(`🔄 Syncing ${service} with ai_service_providers...`);
+        
+        // Fetch the API key for this service
+        const { data: apiKeyData } = await supabase
+          .from('api_keys')
+          .select('encrypted_key')
+          .eq('user_id', user.id)
+          .eq('service', service)
+          .maybeSingle();
+
+        if (!apiKeyData) {
+          console.error('❌ No API key found for service:', service);
+          return false;
+        }
+
+        // Check if provider record exists
+        const { data: existingProvider } = await supabase
+          .from('ai_service_providers')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('provider', service)
+          .maybeSingle();
+
+        if (existingProvider) {
+          // Update existing provider
+          const updateData: any = {
+            status: isActive ? 'active' : 'inactive',
+            error_message: null,
+            updated_at: new Date().toISOString()
+          };
+          
+          // Only set preferred_model when activating
+          if (isActive) {
+            updateData.preferred_model = DEFAULT_MODELS[service];
+          }
+
+          const { error: providerError } = await supabase
+            .from('ai_service_providers')
+            .update(updateData)
+            .eq('user_id', user.id)
+            .eq('provider', service);
+
+          if (providerError) {
+            console.error('❌ Error updating ai_service_providers:', providerError);
+          } else {
+            console.log(`✅ ${service} synced in ai_service_providers`);
+          }
+        } else if (isActive) {
+          // Insert new provider record only if activating
+          const { error: insertError } = await supabase
+            .from('ai_service_providers')
+            .insert({
+              user_id: user.id,
+              provider: service,
+              status: 'active',
+              priority: DEFAULT_PRIORITIES[service] ?? 99,
+              preferred_model: DEFAULT_MODELS[service],
+              api_key: apiKeyData.encrypted_key,
+              capabilities: ['chat', 'completion'],
+              available_models: [DEFAULT_MODELS[service]]
+            });
+
+          if (insertError) {
+            console.error('❌ Error inserting ai_service_providers:', insertError);
+          } else {
+            console.log(`✅ ${service} added to ai_service_providers`);
+          }
+        }
       }
 
       console.log(`✅ ${service} API key ${isActive ? 'enabled' : 'disabled'} successfully`);
