@@ -36,7 +36,6 @@ export function ActiveProviderIndicator() {
         .from('ai_service_providers')
         .select('provider, preferred_model')
         .eq('status', 'active')
-        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -56,7 +55,7 @@ export function ActiveProviderIndicator() {
   useEffect(() => {
     fetchActiveProvider();
 
-    // Subscribe to real-time changes
+    // Subscribe to real-time changes on ai_service_providers
     const channel = supabase
       .channel('active-provider-changes')
       .on(
@@ -64,7 +63,8 @@ export function ActiveProviderIndicator() {
         {
           event: '*',
           schema: 'public',
-          table: 'ai_service_providers'
+          table: 'ai_service_providers',
+          filter: 'status=eq.active'
         },
         () => {
           fetchActiveProvider();
