@@ -1953,7 +1953,7 @@ ${context ? `## User Context:\n${JSON.stringify(context, null, 2)}` : ''}
 Provide comprehensive, data-driven responses that ALWAYS include relevant actions and visual insights. Remember: Every response should help the user take action and understand data visually.`;
 
     // Token budget check BEFORE calling AI
-    const contextTokens = estimateTokens(JSON.stringify(realContext));
+    const contextTokens = estimateTokens(JSON.stringify(realDataContext));
     const messagesTokens = messages.reduce((sum: number, msg: any) => 
       sum + estimateTokens(msg.content), 0
     );
