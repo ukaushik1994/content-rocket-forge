@@ -6,7 +6,8 @@ import {
   analyzeSerpIntent, 
   executeSerpAnalysis, 
   generateSerpContext, 
-  generateSmartSuggestions 
+  generateSmartSuggestions,
+  generateStructuredSerpData
 } from './serp-intelligence.ts';
 
 // Enhanced chart detection patterns
@@ -1106,13 +1107,24 @@ serve(async (req) => {
         const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType);
         if (serpResults.length > 0) {
           serpContext = generateSerpContext(serpResults);
+          
+          // Generate structured SERP data for chart generation
+          const structuredSerpData = generateStructuredSerpData(serpResults);
+          
           serpData = {
             keywords: serpIntelligence.keywords,
             results: serpResults,
             analysisType: serpIntelligence.queryType,
-            suggestions: generateSmartSuggestions(serpResults)
+            suggestions: generateSmartSuggestions(serpResults),
+            structured: structuredSerpData
           };
-          console.log("✅ SERP data successfully integrated into AI context");
+          
+          // Add structured data to context as JSON for easy AI parsing
+          if (structuredSerpData) {
+            serpContext += `\n\n📊 STRUCTURED SERP DATA FOR CHARTS:\n\`\`\`json\n${JSON.stringify(structuredSerpData, null, 2)}\n\`\`\`\n`;
+          }
+          
+          console.log("✅ SERP data successfully integrated into AI context with structured data");
         }
       } catch (error) {
         console.error("❌ SERP analysis failed, continuing without SERP data:", error);
@@ -1385,6 +1397,72 @@ Every response MUST follow this exact structure:
 
 ## SERP Data Integration
 ${serpContext ? `You have access to REAL-TIME SERP DATA that MUST be used in your response:${serpContext}` : 'No SERP data available for this query.'}
+
+${serpContext ? `
+### 🔍 SERP DATA VISUALIZATION REQUIREMENTS (MANDATORY WHEN SERP DATA IS PRESENT):
+
+When REAL-TIME SERP DATA is included in your context, you MUST generate these visualizations:
+
+**1. Keyword Metrics Chart (Bar Chart - REQUIRED):**
+\`\`\`json
+{
+  "visualData": {
+    "type": "chart",
+    "title": "Keyword Analysis: [keyword]",
+    "chartConfig": {
+      "type": "bar",
+      "data": [
+        {
+          "name": "Search Volume",
+          "value": [from SERP data],
+          "dataSource": "SERP API - Search Volume"
+        },
+        {
+          "name": "Keyword Difficulty",
+          "value": [from SERP data],
+          "dataSource": "SERP API - KD Score"
+        },
+        {
+          "name": "Competition Score",
+          "value": [from SERP data],
+          "dataSource": "SERP API - Competition"
+        }
+      ]
+    }
+  }
+}
+\`\`\`
+
+**2. People Also Ask Table (Table - REQUIRED if PAA exists):**
+\`\`\`json
+{
+  "visualData": {
+    "type": "table",
+    "title": "Popular Questions About [keyword]",
+    "tableData": {
+      "headers": ["Question", "Source"],
+      "rows": [
+        ["[question 1]", "[source domain]"],
+        ["[question 2]", "[source domain]"]
+      ]
+    }
+  }
+}
+\`\`\`
+
+**3. Content Gaps Analysis (Bar Chart - REQUIRED if gaps exist):**
+Show distribution of content gap topics or top 5 gaps as bar chart
+
+**4. Top Ranking Pages Table (Table - OPTIONAL):**
+Show top 10 results with title, snippet, position
+
+**CRITICAL SERP VISUALIZATION RULES:**
+- Generate ALL applicable charts (don't pick just one)
+- Use EXACT data from SERP DATA ANALYSIS section
+- Include dataSource attribution for transparency
+- Add actionable insights based on SERP metrics
+- Create multiple visualData objects if you have multiple chart types
+` : ''}
 
 ## Response Content Guidelines:
 - Write conversational, business-focused responses

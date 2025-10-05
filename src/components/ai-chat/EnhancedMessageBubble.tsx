@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bot, RefreshCw, BarChart3, Sparkles } from 'lucide-react';
+import { User, Bot, RefreshCw, BarChart3, Sparkles, Search, FileText, HelpCircle, Users } from 'lucide-react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { VisualDataRenderer } from './VisualDataRenderer';
@@ -237,6 +237,80 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
               actions={message.actions} 
               onAction={onAction || (() => {})} 
             />
+          )}
+
+          {/* SERP Data Visualization */}
+          {message.serpData && typeof message.serpData === 'object' && 'structured' in message.serpData && message.serpData.structured && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 space-y-3"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Search className="w-5 h-5 text-primary" />
+                <h4 className="text-sm font-semibold">SERP Analysis Results</h4>
+              </div>
+              
+              {/* Keyword Metrics Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="p-3 bg-gradient-to-br from-primary/10 to-transparent">
+                  <div className="text-xs text-muted-foreground">Avg Search Volume</div>
+                  <div className="text-2xl font-bold">
+                    {(message.serpData as any).structured.aggregateMetrics.avgSearchVolume.toLocaleString()}
+                  </div>
+                </Card>
+                <Card className="p-3 bg-gradient-to-br from-warning/10 to-transparent">
+                  <div className="text-xs text-muted-foreground">Avg Difficulty</div>
+                  <div className="text-2xl font-bold">
+                    {(message.serpData as any).structured.aggregateMetrics.avgKeywordDifficulty}%
+                  </div>
+                </Card>
+                <Card className="p-3 bg-gradient-to-br from-success/10 to-transparent">
+                  <div className="text-xs text-muted-foreground">Competition</div>
+                  <div className="text-2xl font-bold">
+                    {(message.serpData as any).structured.aggregateMetrics.avgCompetitionScore}%
+                  </div>
+                </Card>
+              </div>
+              
+              {/* Quick Actions for SERP */}
+              <div className="flex gap-2 flex-wrap">
+                {(message.serpData as any).structured.aggregateMetrics.totalContentGaps > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      onSendMessage?.(`Show me content gaps for ${(message.serpData as any).keywords.join(', ')}`);
+                    }}
+                  >
+                    <FileText className="w-3 h-3 mr-1" />
+                    {(message.serpData as any).structured.aggregateMetrics.totalContentGaps} Content Gaps
+                  </Button>
+                )}
+                {(message.serpData as any).structured.aggregateMetrics.totalQuestions > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      onSendMessage?.(`What are people asking about ${(message.serpData as any).keywords.join(', ')}?`);
+                    }}
+                  >
+                    <HelpCircle className="w-3 h-3 mr-1" />
+                    {(message.serpData as any).structured.aggregateMetrics.totalQuestions} Questions
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    onSendMessage?.(`Who's ranking for ${(message.serpData as any).keywords.join(', ')}?`);
+                  }}
+                >
+                  <Users className="w-3 h-3 mr-1" />
+                  Top Competitors
+                </Button>
+              </div>
+            </motion.div>
           )}
 
           {/* Retry Button for AI messages */}

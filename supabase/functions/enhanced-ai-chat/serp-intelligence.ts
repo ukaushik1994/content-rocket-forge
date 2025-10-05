@@ -327,6 +327,130 @@ export function generateSerpContext(results: SerpQueryResult[]): string {
 }
 
 /**
+ * Generate structured SERP data for AI chart generation
+ */
+export function generateStructuredSerpData(results: SerpQueryResult[]): any {
+  if (results.length === 0) return null;
+
+  const structuredData: any = {
+    keywords: [],
+    aggregateMetrics: {
+      avgSearchVolume: 0,
+      avgKeywordDifficulty: 0,
+      avgCompetitionScore: 0,
+      totalContentGaps: 0,
+      totalQuestions: 0
+    },
+    chartData: {
+      keywordMetrics: [],
+      peopleAlsoAsk: [],
+      contentGaps: [],
+      topResults: [],
+      entities: []
+    }
+  };
+
+  let totalVolume = 0;
+  let totalDifficulty = 0;
+  let totalCompetition = 0;
+  let volumeCount = 0;
+  let difficultyCount = 0;
+  let competitionCount = 0;
+
+  results.forEach((result) => {
+    const data = result.data;
+    
+    // Add keyword to list
+    structuredData.keywords.push(result.keyword);
+    
+    // Aggregate metrics
+    if (data.searchVolume) {
+      totalVolume += data.searchVolume;
+      volumeCount++;
+    }
+    
+    if (data.keywordDifficulty) {
+      totalDifficulty += data.keywordDifficulty;
+      difficultyCount++;
+    }
+    
+    if (data.competitionScore) {
+      totalCompetition += data.competitionScore;
+      competitionCount++;
+    }
+    
+    // Build chart-ready data for keyword metrics
+    structuredData.chartData.keywordMetrics.push({
+      name: result.keyword,
+      searchVolume: data.searchVolume || 0,
+      keywordDifficulty: data.keywordDifficulty || 0,
+      competitionScore: (data.competitionScore || 0) * 100,
+      dataSource: `SERP API - ${result.keyword}`
+    });
+    
+    // People Also Ask
+    if (data.peopleAlsoAsk && data.peopleAlsoAsk.length > 0) {
+      structuredData.aggregateMetrics.totalQuestions += data.peopleAlsoAsk.length;
+      data.peopleAlsoAsk.forEach((q: any) => {
+        structuredData.chartData.peopleAlsoAsk.push({
+          question: q.question,
+          answer: q.answer?.substring(0, 150) || '',
+          source: q.source || 'Unknown'
+        });
+      });
+    }
+    
+    // Content Gaps
+    if (data.contentGaps && data.contentGaps.length > 0) {
+      structuredData.aggregateMetrics.totalContentGaps += data.contentGaps.length;
+      data.contentGaps.forEach((gap: any) => {
+        structuredData.chartData.contentGaps.push({
+          topic: gap.topic,
+          description: gap.description,
+          recommendation: gap.recommendation
+        });
+      });
+    }
+    
+    // Top Results
+    if (data.topResults && data.topResults.length > 0) {
+      data.topResults.slice(0, 10).forEach((result: any) => {
+        structuredData.chartData.topResults.push({
+          position: result.position,
+          title: result.title,
+          snippet: result.snippet?.substring(0, 120) || '',
+          link: result.link
+        });
+      });
+    }
+    
+    // Entities
+    if (data.entities && data.entities.length > 0) {
+      data.entities.slice(0, 5).forEach((entity: any) => {
+        structuredData.chartData.entities.push({
+          name: entity.name,
+          type: entity.type,
+          description: entity.description?.substring(0, 100) || ''
+        });
+      });
+    }
+  });
+
+  // Calculate averages
+  structuredData.aggregateMetrics.avgSearchVolume = volumeCount > 0 
+    ? Math.round(totalVolume / volumeCount) 
+    : 0;
+  structuredData.aggregateMetrics.avgKeywordDifficulty = difficultyCount > 0 
+    ? Math.round(totalDifficulty / difficultyCount) 
+    : 0;
+  structuredData.aggregateMetrics.avgCompetitionScore = competitionCount > 0 
+    ? Math.round((totalCompetition / competitionCount) * 100) 
+    : 0;
+
+  return structuredData;
+}
+
+/**
  * Smart suggestions based on SERP analysis
  */
 export function generateSmartSuggestions(results: SerpQueryResult[]): string[] {
