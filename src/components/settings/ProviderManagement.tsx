@@ -53,6 +53,7 @@ export function ProviderManagement() {
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [testingAll, setTestingAll] = useState(false);
   const [bulkEnabled, setBulkEnabled] = useState(true);
+  const [activatingAll, setActivatingAll] = useState(false);
   useEffect(() => {
     loadProviders();
   }, []);

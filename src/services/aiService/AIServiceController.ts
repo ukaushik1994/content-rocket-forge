@@ -187,6 +187,7 @@ class AIServiceController {
 
   /**
    * Get active providers sorted by priority
+   * PHASE 2 FIX: Query ai_service_providers directly for active providers
    */
   async getActiveProviders(): Promise<AIProvider[]> {
     const now = Date.now();
@@ -202,55 +203,50 @@ class AIServiceController {
         return [];
       }
 
-      // Use unified API key detection - check all supported providers
-      const { getApiKey } = await import('@/services/apiKeys/crud');
-      const supportedProviders = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
-      const validProviders: AIProvider[] = [];
+      console.log('🔍 Querying ai_service_providers for active providers...');
       
-      console.log('🔍 Using unified API key detection service...');
-      
-      for (let i = 0; i < supportedProviders.length; i++) {
-        const providerId = supportedProviders[i];
-        
-        try {
-          // Use the unified API key service that checks both tables
-          const apiKey = await getApiKey(providerId as any);
-          if (apiKey && apiKey.trim()) {
-            const metadata = AIServiceController.PROVIDER_METADATA[providerId];
-            if (metadata) {
-              validProviders.push({
-                id: `provider-${i}`,
-                provider: providerId,
-                api_key: apiKey, // This will be handled securely by the service
-                preferred_model: metadata.available_models[0],
-                priority: i + 1,
-                status: 'active',
-                description: metadata.description,
-                setup_url: metadata.setup_url,
-                icon_name: metadata.icon_name,
-                category: metadata.category,
-                capabilities: metadata.capabilities,
-                available_models: metadata.available_models,
-                is_required: metadata.is_required
-              });
-              console.log(`✅ Found API key for ${providerId} via unified service`);
-            }
-          } else {
-            console.log(`❌ No API key found for ${providerId}`);
-          }
-        } catch (error) {
-          console.warn(`❌ Error checking API key for ${providerId}:`, error);
-        }
+      // Query ai_service_providers directly for active providers with valid keys
+      const { data: dbProviders, error } = await supabase
+        .from('ai_service_providers')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .not('api_key', 'is', null)
+        .order('priority', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error fetching active providers:', error);
+        return [];
       }
+
+      const validProviders: AIProvider[] = (dbProviders || [])
+        .filter(p => p.api_key && p.api_key.trim())
+        .map(p => ({
+          id: p.id,
+          provider: p.provider,
+          api_key: p.api_key,
+          preferred_model: p.preferred_model || '',
+          priority: p.priority,
+          status: p.status as 'active' | 'error' | 'inactive',
+          description: p.description || '',
+          setup_url: p.setup_url || '',
+          icon_name: p.icon_name || 'zap',
+          category: p.category || 'AI Services',
+          capabilities: Array.isArray(p.capabilities) ? p.capabilities : [],
+          available_models: Array.isArray(p.available_models) ? p.available_models : [],
+          is_required: p.is_required || false,
+          error_message: p.error_message || undefined,
+          last_verified: p.last_verified || undefined
+        }));
 
       this.providersCache = validProviders;
       this.lastCacheUpdate = now;
       
-      console.log(`🔄 Loaded ${validProviders.length} active providers via unified API key service`);
-      console.log('🔍 Active providers:', validProviders.map(p => `${p.provider} (${p.api_key ? 'key present' : 'no key'})`));
+      console.log(`✅ Found ${validProviders.length} active providers from ai_service_providers`);
+      console.log('🔍 Active providers:', validProviders.map(p => `${p.provider} (priority: ${p.priority})`));
       return this.providersCache;
     } catch (error) {
-      console.error('Error getting active providers:', error);
+      console.error('❌ Error getting active providers:', error);
       return [];
     }
   }
