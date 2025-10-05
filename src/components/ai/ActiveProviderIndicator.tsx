@@ -13,7 +13,8 @@ const PROVIDER_LABELS: Record<string, string> = {
   gemini: "Gemini",
   openai: "OpenAI",
   anthropic: "Anthropic",
-  mistral: "Mistral"
+  mistral: "Mistral",
+  lmstudio: "LM Studio"
 };
 
 const PROVIDER_ICONS: Record<string, string> = {
@@ -21,7 +22,8 @@ const PROVIDER_ICONS: Record<string, string> = {
   gemini: "✨",
   openai: "🤖",
   anthropic: "🧠",
-  mistral: "🌪️"
+  mistral: "🌪️",
+  lmstudio: "🖥️"
 };
 
 export function ActiveProviderIndicator() {

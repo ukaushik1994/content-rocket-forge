@@ -324,7 +324,8 @@ class ApiKeyService {
       gemini: 'gemini-2.0-flash-exp',
       openai: 'gpt-4o-mini',
       anthropic: 'claude-3-5-sonnet-20241022',
-      mistral: 'mistral-large-latest'
+      mistral: 'mistral-large-latest',
+      lmstudio: 'local-model'
     };
 
     // Default priorities for providers
@@ -333,7 +334,8 @@ class ApiKeyService {
       gemini: 1,
       openai: 2,
       anthropic: 3,
-      mistral: 4
+      mistral: 4,
+      lmstudio: 5
     };
 
     try {
@@ -343,6 +345,21 @@ class ApiKeyService {
       const { user, error: authError } = await ApiKeyService.validateUserAuth();
       if (authError) {
         toast.error(authError);
+        return false;
+      }
+
+      // Fetch the API key FIRST to validate before updating
+      const { data: apiKeyData } = await supabase
+        .from('api_keys')
+        .select('encrypted_key')
+        .eq('user_id', user.id)
+        .eq('service', service)
+        .maybeSingle();
+
+      // If toggling ON, require API key to exist
+      if (isActive && !apiKeyData) {
+        console.error('❌ Cannot activate provider without API key:', service);
+        toast.error(`No API key found for ${service}. Please add one first.`);
         return false;
       }
 
@@ -365,19 +382,6 @@ class ApiKeyService {
       // Sync with ai_service_providers table if this is an AI provider
       if (DEFAULT_MODELS[service]) {
         console.log(`🔄 Syncing ${service} with ai_service_providers...`);
-        
-        // Fetch the API key for this service
-        const { data: apiKeyData } = await supabase
-          .from('api_keys')
-          .select('encrypted_key')
-          .eq('user_id', user.id)
-          .eq('service', service)
-          .maybeSingle();
-
-        if (!apiKeyData) {
-          console.error('❌ No API key found for service:', service);
-          return false;
-        }
 
         // Check if provider record exists
         const { data: existingProvider } = await supabase
@@ -391,13 +395,15 @@ class ApiKeyService {
           // Update existing provider
           const updateData: any = {
             status: isActive ? 'active' : 'inactive',
+            preferred_model: DEFAULT_MODELS[service],
+            priority: DEFAULT_PRIORITIES[service] ?? 99,
             error_message: null,
             updated_at: new Date().toISOString()
           };
           
-          // Only set preferred_model when activating
-          if (isActive) {
-            updateData.preferred_model = DEFAULT_MODELS[service];
+          // Sync api_key field when activating
+          if (isActive && apiKeyData) {
+            updateData.api_key = apiKeyData.encrypted_key;
           }
 
           const { error: providerError } = await supabase
@@ -411,7 +417,7 @@ class ApiKeyService {
           } else {
             console.log(`✅ ${service} synced in ai_service_providers`);
           }
-        } else if (isActive) {
+        } else if (isActive && apiKeyData) {
           // Insert new provider record only if activating
           const { error: insertError } = await supabase
             .from('ai_service_providers')

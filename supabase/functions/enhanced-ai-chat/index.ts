@@ -1043,11 +1043,12 @@ serve(async (req) => {
       openrouterKey = llmKey.api_key;
     }
 
-    // 2. Get all AI service providers
+    // 2. Get active AI service providers only
     const { data: allProviders, error: providerError } = await supabase
       .from('ai_service_providers')
       .select('provider, api_key, preferred_model, status, priority')
       .eq('user_id', user.id)
+      .eq('status', 'active')
       .order('priority', { ascending: true });
 
     if (providerError) {
@@ -1060,26 +1061,29 @@ serve(async (req) => {
       });
     }
 
-    // 3. Filter and find first valid provider (same logic as AIServiceController)
+    // 3. Filter valid providers with API keys and models
     const validProviders = (allProviders || []).filter(p => {
       // Must have a model configured
       if (!p.preferred_model || p.preferred_model.trim() === '') {
         return false;
       }
       
-      // Check if has valid API key
+      // OpenRouter uses user_llm_keys table
       if (p.provider === 'openrouter' && openrouterKey) {
-        return true; // Use user_llm_keys key
+        return true;
       }
       
-      // For other providers, must have api_key in ai_service_providers
+      // Other providers must have api_key in ai_service_providers
       return p.api_key && p.api_key.trim() !== '';
     });
 
     if (validProviders.length === 0) {
-      console.error("❌ No valid AI provider with API key and model configured");
+      console.error("❌ No active AI provider with valid API key found");
+      const hasInactive = (allProviders || []).length > 0;
       return new Response(JSON.stringify({ 
-        error: "No valid AI provider configured. Please add and test an API key in Settings → AI Service Hub, and set a model." 
+        error: hasInactive 
+          ? "No active AI provider found. Please enable a provider in Settings → AI Service Hub." 
+          : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub."
       }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -20,6 +20,7 @@ import {
   type ApiProvider 
 } from "@/services/apiKeyService";
 import { ApiProvider as ApiProviderType } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SimpleProviderCardProps {
   provider: ApiProviderType;
@@ -46,6 +47,19 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
       if (key) {
         setApiKey(key);
         setStatus('testing');
+        
+        // Check provider status in ai_service_providers table
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: providerData } = await supabase
+            .from('ai_service_providers')
+            .select('status')
+            .eq('user_id', user.id)
+            .eq('provider', provider.serviceKey)
+            .maybeSingle();
+          
+          setIsEnabled(providerData?.status === 'active');
+        }
         
         // Test the key
         const success = await testApiKey(provider.serviceKey as ApiProvider, key);
