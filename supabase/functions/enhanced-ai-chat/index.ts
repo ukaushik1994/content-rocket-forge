@@ -1043,13 +1043,13 @@ serve(async (req) => {
       openrouterKey = llmKey.api_key;
     }
 
-    // 2. Get active AI service providers only
+    // 2. Get the single active AI service provider (Single Active Provider Mode)
     const { data: allProviders, error: providerError } = await supabase
       .from('ai_service_providers')
       .select('provider, api_key, preferred_model, status, priority')
       .eq('user_id', user.id)
       .eq('status', 'active')
-      .order('priority', { ascending: true });
+      .limit(1); // Only one provider should be active at a time
 
     if (providerError) {
       console.error("❌ Error fetching providers:", providerError);
@@ -1082,7 +1082,7 @@ serve(async (req) => {
       const hasInactive = (allProviders || []).length > 0;
       return new Response(JSON.stringify({ 
         error: hasInactive 
-          ? "No active AI provider found. Please enable a provider in Settings → AI Service Hub." 
+          ? "No active AI provider found. Please toggle ON a provider in Settings → AI Service Hub." 
           : "No AI provider configured. Please add and test an API key in Settings → AI Service Hub."
       }), {
         status: 400,
@@ -1090,6 +1090,7 @@ serve(async (req) => {
       });
     }
 
+    // Get the single active provider (only one should be active at a time)
     const provider = validProviders[0];
     
     // Use openrouter key from user_llm_keys if available
@@ -1097,7 +1098,7 @@ serve(async (req) => {
       provider.api_key = openrouterKey;
     }
 
-    console.log(`🔑 Using provider: ${provider.provider} (priority: ${provider.priority}, model: ${provider.preferred_model})`)
+    console.log(`🔑 Using active provider: ${provider.provider} (model: ${provider.preferred_model})`)
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();

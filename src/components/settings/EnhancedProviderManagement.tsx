@@ -109,8 +109,9 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
             <div className="flex items-center gap-2">
               {getStatusIcon()}
               <Switch 
-                checked={provider.is_configured} 
+                checked={provider.status === 'active'} 
                 onCheckedChange={onToggle}
+                disabled={!provider.is_configured}
               />
             </div>
           </div>
@@ -347,12 +348,21 @@ export const EnhancedProviderManagement: React.FC = () => {
 
   const handleProviderToggle = async (provider: ProviderInfo) => {
     if (provider.is_configured) {
-      // Remove provider
+      // Toggle provider status (Single Active Provider Mode)
       try {
-        // This would need to be implemented in AIServiceController
-        toast.info('Provider removal not yet implemented');
+        const newStatus = provider.status === 'active' ? 'inactive' : 'active';
+        await AIServiceController.toggleProvider(provider.id, newStatus);
+        
+        if (newStatus === 'active') {
+          toast.success(`${provider.name} is now active (all others deactivated)`);
+        } else {
+          toast.success(`${provider.name} deactivated`);
+        }
+        
+        await loadProviders();
       } catch (error) {
-        toast.error('Failed to remove provider');
+        console.error('Failed to toggle provider:', error);
+        toast.error('Failed to toggle provider');
       }
     } else {
       // Configure provider

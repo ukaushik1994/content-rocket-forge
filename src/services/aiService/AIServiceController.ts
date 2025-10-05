@@ -326,6 +326,55 @@ class AIServiceController {
   }
 
   /**
+   * Toggle provider status (Single Active Provider Mode)
+   * When activating a provider, all others are automatically deactivated
+   */
+  async toggleProvider(providerId: string, targetStatus: 'active' | 'inactive'): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User authentication required');
+      }
+
+      if (targetStatus === 'active') {
+        // SINGLE ACTIVE PROVIDER MODE: Deactivate all other providers first
+        const { error: deactivateError } = await supabase
+          .from('ai_service_providers')
+          .update({ status: 'inactive', updated_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .neq('id', providerId);
+
+        if (deactivateError) {
+          console.error('Failed to deactivate other providers:', deactivateError);
+        }
+      }
+
+      // Now activate/deactivate the target provider
+      const { error } = await supabase
+        .from('ai_service_providers')
+        .update({ 
+          status: targetStatus,
+          error_message: targetStatus === 'active' ? null : undefined,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', providerId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Clear cache to force fresh data
+      this.clearCache();
+      
+      console.log(`✅ Provider ${providerId} set to ${targetStatus}, all others deactivated`);
+    } catch (error) {
+      console.error('Failed to toggle provider:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Main generation function that handles fallback logic with SERP intelligence integration
    */
   async generate(
