@@ -1201,7 +1201,7 @@ serve(async (req) => {
     console.log(`✅ Dynamic system prompt built:
   - Scope: ${intent.scope}
   - Modules: ${preliminaryTotal > 20000 ? 'MINIMAL' : 'BASE + conditional modules'}
-  - Estimated prompt tokens: ${estimateTokens(systemPrompt)}`;
+  - Estimated prompt tokens: ${estimateTokens(systemPrompt)}`);
 
     // Token budget check BEFORE calling AI
     const contextTokens = estimateTokens(JSON.stringify(realDataContext));
