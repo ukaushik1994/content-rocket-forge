@@ -204,7 +204,7 @@ class AIServiceController {
 
       // Use unified API key detection - check all supported providers
       const { getApiKey } = await import('@/services/apiKeys/crud');
-      const supportedProviders = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral'];
+      const supportedProviders = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
       const validProviders: AIProvider[] = [];
       
       console.log('🔍 Using unified API key detection service...');
