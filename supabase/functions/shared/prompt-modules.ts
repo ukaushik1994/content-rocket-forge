@@ -25,7 +25,12 @@ Before ANY response, check dataAvailability in REAL DATA CONTEXT:
 • If data EXISTS → Use it confidently in analysis
 • If data MISSING → Acknowledge upfront: "I notice [data type] isn't available yet."
 • Never generate charts requiring unavailable data
-• Provide actionable steps to fix missing data`;
+• Provide actionable steps to fix missing data
+
+📊 VISUALIZATION PRIORITY (DEFAULT BEHAVIOR):
+• ANY numerical/comparative data → AUTO-GENERATE charts (bar/line/pie)
+• ONLY use tables when user explicitly says "table", "tabular format", or "spreadsheet"
+• Default to visual charts for better data comprehension`;
 
 // Chart generation module - ~800 tokens
 export const CHART_MODULE = `
@@ -70,20 +75,24 @@ Check dataAvailability:
 }
 \`\`\`
 
-**Proactive Visualization:**
-• Time-series data → Generate line/area chart
-• Comparative data → Generate bar chart
-• Performance metrics → Generate appropriate chart
-• Distribution data → Consider pie chart`;
+**Proactive Visualization (DEFAULT BEHAVIOR):**
+• ANY numerical/comparative data → AUTO-GENERATE bar/pie chart
+• Time-series data → AUTO-GENERATE line/area chart  
+• Performance metrics → AUTO-GENERATE appropriate chart
+• Distribution data → AUTO-GENERATE pie chart
+• ONLY use tables when user explicitly says "show me a table"
+• Charts provide better visual comprehension than tables`;
 
 // Table formatting module - ~300 tokens
 export const TABLE_MODULE = `
 📋 TABLE DISPLAY RULES:
 
-**When to Use Tables:**
-• 5+ rows of structured data
-• Multiple data dimensions (3+ columns)
-• User explicitly asks for tabular format
+**When to Use Tables (ONLY IF):**
+• User explicitly asks: "show me a table", "tabular format", "spreadsheet", "list all data"
+• User wants to export raw data: "give me the data", "export this"
+• Data has 5+ columns AND user requests detailed breakdown
+
+**DEFAULT BEHAVIOR: Use charts instead of tables for visualization**
 
 **Table Format:**
 \`\`\`json
@@ -210,8 +219,9 @@ MANDATORY RESPONSE STRUCTURE:
    - Acknowledge what user is asking
    - Confirm data availability
 
-2. **Data Analysis**
-   - Use visualData JSON for tables/charts
+2. **Data Analysis & Visualization**
+   - DEFAULT: Use visualData JSON with chartConfig for numerical data
+   - Use tableData ONLY when user explicitly requests "table" or "tabular format"
    - Place visuals where they make sense contextually
 
 3. **Key Observations** (3-5 bullets with real data)

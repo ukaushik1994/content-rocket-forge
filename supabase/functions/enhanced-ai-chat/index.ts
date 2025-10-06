@@ -13,12 +13,28 @@ import {
   generateStructuredSerpData
 } from './serp-intelligence.ts';
 
-// Enhanced chart detection patterns
+// Enhanced chart detection patterns - DEFAULT TO CHARTS
 function detectChartRequest(query: string): { requested: boolean, type: string | null, confidence: number } {
   const lowerQuery = query.toLowerCase();
   
+  // Check for EXPLICIT TABLE requests first (these override default chart behavior)
+  const explicitTablePatterns = [
+    /\b(show|give|list|display)\s+(me\s+)?(a\s+)?(table|tabular|spreadsheet)/,
+    /\btable\s+(of|for|showing|with)/,
+    /\blist\s+all\s+(data|items|records|rows)/,
+    /\bexport\s+(data|this|the)/,
+    /\b(raw|detailed)\s+data/
+  ];
+  
+  for (const pattern of explicitTablePatterns) {
+    if (pattern.test(lowerQuery)) {
+      console.log('🚫 Explicit TABLE request detected - skipping chart generation');
+      return { requested: false, type: 'table_explicit', confidence: 0.95 };
+    }
+  }
+  
   // Explicit chart requests (high confidence)
-  const explicitPatterns = [
+  const explicitChartPatterns = [
     /\b(show|create|generate|make|build|display)\s+(me\s+)?(a\s+)?(chart|graph|plot|visualization|visual)/,
     /\b(chart|graph|plot)\s+(of|for|showing|displaying)/,
     /\bvisuali[sz]e\s+(this|the|my)/,
@@ -26,14 +42,15 @@ function detectChartRequest(query: string): { requested: boolean, type: string |
     /\bgraph\s+(this|the|my)/
   ];
   
-  for (const pattern of explicitPatterns) {
+  for (const pattern of explicitChartPatterns) {
     if (pattern.test(lowerQuery)) {
+      console.log('📊 Explicit CHART request detected');
       return { requested: true, type: 'explicit', confidence: 0.9 };
     }
   }
   
-  // Implicit chart patterns (medium confidence)
-  const implicitPatterns = [
+  // Implicit chart patterns (medium-high confidence)
+  const implicitChartPatterns = [
     /\b(trend|trending|growth|decline|increase|decrease|over time|timeline|progression)/,
     /\b(comparison|compare|vs|versus|against|between)/,
     /\b(breakdown|distribution|split|composition)/,
@@ -42,12 +59,23 @@ function detectChartRequest(query: string): { requested: boolean, type: string |
     /\b(analyze|analysis)\s+(trends|growth|performance)/
   ];
   
-  for (const pattern of implicitPatterns) {
+  for (const pattern of implicitChartPatterns) {
     if (pattern.test(lowerQuery)) {
-      return { requested: true, type: 'implicit', confidence: 0.6 };
+      console.log('📊 Implicit CHART pattern detected');
+      return { requested: true, type: 'implicit', confidence: 0.7 };
     }
   }
   
+  // DEFAULT: Any data query should return a chart
+  const dataKeywords = ['show', 'how many', 'what', 'analyze', 'data', 'metrics', 'stats', 'count', 'total', 'performance', 'content', 'keyword', 'solution', 'proposal'];
+  const hasDataKeyword = dataKeywords.some(kw => lowerQuery.includes(kw));
+  
+  if (hasDataKeyword) {
+    console.log('📊 Data query detected - defaulting to CHART (default behavior)');
+    return { requested: true, type: 'implicit_data', confidence: 0.6 };
+  }
+  
+  console.log('❓ No specific visualization type detected');
   return { requested: false, type: null, confidence: 0 };
 }
 
@@ -1322,9 +1350,9 @@ serve(async (req) => {
       console.log('✅ Chart validation complete');
     }
     
-    // Chart validation - Only convert existing visual data, never force generation
-    if (chartRequest.requested && visualData && visualData.type !== 'chart') {
-      console.log(`📊 Chart requested but AI generated ${visualData.type}. Attempting intelligent conversion...`);
+    // AUTO-CONVERT TO CHARTS (unless user explicitly asked for table)
+    if (visualData && visualData.type !== 'chart' && chartRequest.type !== 'table_explicit') {
+      console.log(`📊 Auto-converting ${visualData.type} to chart (default behavior)...`);
       
       // Try metrics to chart conversion
       if (visualData.type === 'metrics' && visualData.metrics) {
@@ -1335,14 +1363,19 @@ serve(async (req) => {
         }
       }
       
-      // Try table to chart conversion
+      // Try table to chart conversion (unless explicitly requested table)
       else if (visualData.type === 'table' && visualData.tableData) {
         const chartData = convertTableToChart(visualData.tableData);
         if (chartData) {
-          console.log('✅ Successfully converted table to chart');
+          console.log('✅ Successfully auto-converted table to chart');
           visualData = { type: 'chart', chartConfig: chartData };
         }
       }
+    }
+    
+    // If user explicitly requested table, keep it as table
+    else if (chartRequest.type === 'table_explicit' && visualData) {
+      console.log('📋 Keeping table format as explicitly requested by user');
     }
     
     // If no structured data was found, try legacy parsing
