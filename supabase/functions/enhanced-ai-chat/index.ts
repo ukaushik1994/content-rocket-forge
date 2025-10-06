@@ -472,21 +472,31 @@ Just ask! Examples: 'Show me all content' or 'Load full data'"
       .sort((a, b) => (b.search_console_data?.clicks || 0) - (a.search_console_data?.clicks || 0))
       .slice(0, 5) || [];
 
+    // SMART LIMITS based on query scope
+    const limits = {
+      summary: { main: 5, related: 3, logs: 5 },
+      detailed: { main: 10, related: 8, logs: 10 },
+      full: { main: 20, related: 15, logs: 20 }
+    };
+    
+    const scope = queryIntent.scope || 'summary';
+    const limit = limits[scope];
+    
+    console.log(`📊 Fetching context with ${scope} scope (limits: main=${limit.main}, related=${limit.related}, logs=${limit.logs})`);
+
     // PHASE 1: ENHANCED AI STRATEGY PROPOSALS INTEGRATION
     const { data: strategyProposals } = await supabase
       .from('ai_strategy_proposals')
-      .select('id, title, primary_keyword, description, status, priority_tag, estimated_impressions, content_type, related_keywords, created_at')
+      .select('id, title, primary_keyword, description, status, priority_tag, estimated_impressions, content_type, created_at')
       .order('estimated_impressions', { ascending: false })
-      .limit(20);
+      .limit(limit.main);
 
-    // PHASE 1: CONTENT PIPELINE AWARENESS
+    // PHASE 1: CONTENT PIPELINE AWARENESS (Smart Limited)
     const { data: contentWithPipeline } = await supabase
       .from('content_items')
-      .select(`
-        id, title, status, created_at, seo_score, content_type,
-        solutions(name, description)
-      `)
-      .order('created_at', { ascending: false });
+      .select('id, title, status, created_at, seo_score, content_type')
+      .order('created_at', { ascending: false })
+      .limit(limit.main);
 
     // Get pipeline data separately and join manually
     const { data: pipelineData } = await supabase
@@ -501,11 +511,12 @@ Just ask! Examples: 'Show me all content' or 'Load full data'"
       .order('scheduled_date', { ascending: true })
       .limit(10);
 
-    // Fetch solutions data
+    // Fetch solutions data (Smart Limited)
     const { data: solutions } = await supabase
       .from('solutions')
-      .select('id, name, description, created_at')
-      .order('created_at', { ascending: false });
+      .select('id, name, description')
+      .order('created_at', { ascending: false })
+      .limit(limit.related);
 
     // Calculate enhanced statistics
     const totalContent = contentWithPipeline?.length || 0;
@@ -622,33 +633,33 @@ CRITICAL: This is REAL data from the user's actual strategy proposals and conten
      `;
 
     // PHASE 2: PERFORMANCE & ANALYTICS INTELLIGENCE
-    // Fetch performance analytics data
+    // Fetch performance analytics data (Smart Limited)
     const { data: performanceMetrics } = await supabase
       .from('performance_metrics')
-      .select('*')
+      .select('metric_name, value, timestamp')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(limit.logs);
 
-    // Fetch action analytics for user behavior insights
+    // Fetch action analytics for user behavior insights (Smart Limited)
     const { data: actionAnalytics } = await supabase
       .from('action_analytics')
-      .select('*')
+      .select('action_type, action_label, success, triggered_at')
       .order('triggered_at', { ascending: false })
-      .limit(20);
+      .limit(limit.logs);
 
-    // Fetch content activity logs for engagement tracking
+    // Fetch content activity logs for engagement tracking (Smart Limited)
     const { data: activityLogs } = await supabase
       .from('content_activity_log')
-      .select('*')
+      .select('action, content_type, module, timestamp')
       .order('timestamp', { ascending: false })
-      .limit(15);
+      .limit(limit.logs);
 
-    // Fetch SERP usage logs for competitive intelligence
+    // Fetch SERP usage logs for competitive intelligence (Smart Limited)
     const { data: serpUsage } = await supabase
       .from('serp_usage_logs')
-      .select('*')
+      .select('provider, operation, success, created_at')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(limit.logs);
 
     // Calculate Phase 2 analytics
     const totalActions = actionAnalytics?.length || 0;
@@ -676,76 +687,77 @@ CRITICAL: This is REAL data from the user's actual strategy proposals and conten
     const serpSuccessRate = serpApiCalls > 0 ? (serpSuccess / serpApiCalls * 100) : 0;
 
     // PHASE 3: RESEARCH & INTELLIGENCE ENHANCEMENT
-    // Fetch keywords research data
+    // Fetch keywords research data (Smart Limited)
     const { data: keywords } = await supabase
       .from('keywords')
-      .select('*')
+      .select('keyword, volume, difficulty, created_at')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(limit.main);
 
-    // Fetch content clusters data
+    // Fetch content clusters data (Smart Limited)
     const { data: contentClusters } = await supabase
       .from('content_clusters')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id, name, description, status')
+      .order('created_at', { ascending: false })
+      .limit(limit.related);
 
-    // Fetch cluster keywords relationships
+    // Fetch cluster keywords relationships (Smart Limited)
     const { data: clusterKeywords } = await supabase
       .from('cluster_keywords')
-      .select('*, content_clusters(name), keywords(keyword)')
-      .order('created_at', { ascending: false });
+      .select('cluster_id, keyword_id, is_primary')
+      .order('created_at', { ascending: false })
+      .limit(limit.related);
 
-    // Fetch SERP analysis history for competitive intelligence
+    // Fetch SERP analysis history for competitive intelligence (Smart Limited)
     const { data: serpAnalysisHistory } = await supabase
       .from('serp_analysis_history')
-      .select('*')
+      .select('keyword, analysis_type, created_at')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(limit.logs);
 
-    // Fetch keyword position tracking for ranking insights
+    // Fetch keyword position tracking for ranking insights (Smart Limited)
     const { data: keywordPositions } = await supabase
       .from('keyword_position_history')
-      .select('*')
+      .select('keyword, position, tracked_at')
       .order('tracked_at', { ascending: false })
-      .limit(15);
+      .limit(limit.logs);
 
-    // Fetch opportunity seeds for content gap analysis
+    // Fetch opportunity seeds for content gap analysis (Smart Limited)
     const { data: opportunitySeeds } = await supabase
       .from('opportunity_seeds')
-      .select('*')
+      .select('seed_keyword, opportunity_score, created_at')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(limit.logs);
 
     // PHASE 4: ENTERPRISE & WORKFLOW INTELLIGENCE
-    // Fetch AI workflow states for process intelligence
+    // Fetch AI workflow states for process intelligence (Smart Limited)
     const { data: workflowStates } = await supabase
       .from('ai_workflow_states')
-      .select('*')
+      .select('workflow_type, current_step, updated_at')
       .order('updated_at', { ascending: false })
-      .limit(20);
+      .limit(limit.logs);
 
-    // Fetch team collaboration sessions
+    // Fetch team collaboration sessions (Smart Limited)
     const { data: collaborationSessions } = await supabase
       .from('collaboration_sessions')
-      .select('*')
+      .select('session_name, status, started_at')
       .eq('status', 'active')
-      .order('updated_at', { ascending: false });
+      .order('updated_at', { ascending: false })
+      .limit(limit.related);
 
-    // Fetch workflow executions for optimization insights
+    // Fetch workflow executions for optimization insights (Smart Limited)
     const { data: workflowExecutions } = await supabase
       .from('workflow_executions')
-      .select('*')
+      .select('workflow_type, status, started_at')
       .order('started_at', { ascending: false })
-      .limit(30);
+      .limit(limit.logs);
 
-    // Fetch team workspaces for collaboration context
+    // Fetch team workspaces for collaboration context (Smart Limited)
     const { data: teamWorkspaces } = await supabase
       .from('team_workspaces')
-      .select(`
-        *,
-        workspace_members(user_id, role, permissions)
-      `)
-      .eq('is_active', true);
+      .select('name, is_active')
+      .eq('is_active', true)
+      .limit(limit.related);
 
     // Calculate Phase 3 research intelligence metrics
     const totalKeywords = keywords?.length || 0;
@@ -1199,12 +1211,26 @@ serve(async (req) => {
   - Messages: ${messagesTokens} tokens
   - Total (before system prompt): ${preliminaryTotal} tokens`);
     
-    // Use minimal prompt if we're already close to limit
-    if (preliminaryTotal > 20000) {
-      console.warn('⚠️ Using MINIMAL PROMPT due to high token usage');
+    // GRADUATED PROMPT FALLBACK SYSTEM (Phase 3 Fix)
+    if (preliminaryTotal > 40000) {
+      // EXTREME: Strip everything for token emergency (very rare)
+      console.error('🚨 EXTREME token usage (>40k) - using MINIMAL_PROMPT');
       systemPrompt = MINIMAL_PROMPT;
+    } else if (preliminaryTotal > 25000) {
+      // HIGH: Keep essentials + charts (preserve visualization)
+      console.warn('⚠️ High token usage (25k-40k) - using BASE + CHART_MODULE only');
+      systemPrompt = BASE_PROMPT;
+      systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
+      systemPrompt += '\n\n' + CHART_MODULE;
+      
+      // Add SERP module if SERP data present (critical for SERP queries)
+      if (serpContext) {
+        systemPrompt += '\n\n' + SERP_MODULE;
+        systemPrompt += `\n\n### 🔍 SERP DATA (USE THIS REAL DATA):\n${serpContext}`;
+      }
     } else {
-      // Build dynamic prompt based on intent
+      // NORMAL: Full prompt with all modules
+      console.log('✅ Normal token usage (<25k) - using full dynamic prompt');
       systemPrompt = BASE_PROMPT;
       
       // Add data transparency and response structure (always needed)

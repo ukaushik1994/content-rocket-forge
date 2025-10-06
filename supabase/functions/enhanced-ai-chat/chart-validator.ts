@@ -55,12 +55,39 @@ export function validateChartData(
 }
 
 export function extractDataSource(chartConfig: any, realContext: any): any {
-  // Add data source attribution to each data point
+  // NULL SAFETY: Handle all visualData structures
+  if (!chartConfig) {
+    console.warn('⚠️ extractDataSource: chartConfig is null/undefined');
+    return null;
+  }
+  
+  // Handle chart data (has chartConfig.data array)
+  if (chartConfig.data && Array.isArray(chartConfig.data)) {
+    return {
+      ...chartConfig,
+      data: chartConfig.data.map((point: any) => ({
+        ...point,
+        dataSource: `Extracted from ${point.category || 'context'} data`
+      }))
+    };
+  }
+  
+  // Handle table data (has tableData instead)
+  if (chartConfig.tableData) {
+    console.log('✅ Table data structure detected');
+    return {
+      ...chartConfig,
+      tableData: {
+        ...chartConfig.tableData,
+        dataSource: 'Extracted from database context'
+      }
+    };
+  }
+  
+  // Handle metrics or other structures
+  console.log('✅ Other visual data structure detected');
   return {
     ...chartConfig,
-    data: chartConfig.data.map((point: any) => ({
-      ...point,
-      dataSource: `Extracted from ${point.category || 'context'} data`
-    }))
+    dataSource: 'Extracted from real-time context'
   };
 }
