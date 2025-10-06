@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Download, 
   Share2, 
@@ -25,7 +25,9 @@ import {
   Clock,
   Filter,
   Edit,
-  AlertTriangle
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { VisualData, ChartConfiguration, ActionableItem } from '@/types/enhancedChat';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -63,6 +65,57 @@ const CHART_TYPE_ICONS: Record<string, any> = {
   'table': TableIcon
 };
 
+// Animated Metric Card Component
+const AnimatedMetricCard: React.FC<{ 
+  label: string; 
+  value: any; 
+  icon: any; 
+  trend?: string; 
+  trendUp?: boolean;
+  suffix?: string;
+  isText?: boolean;
+  index: number;
+}> = ({ label, value, icon: Icon, trend, trendUp, suffix, isText, index }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      <Card className="p-4 glass-panel bg-gradient-to-br from-card/50 to-card/30 border border-white/10 hover:border-primary/30 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="p-1.5 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
+            <Icon className="w-4 h-4 text-primary" />
+          </div>
+          <span className="text-xs text-muted-foreground">{label}</span>
+        </div>
+        <motion.div 
+          className="text-2xl font-bold"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
+        >
+          {isText ? value : `${value}${suffix || ''}`}
+        </motion.div>
+        {trend && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: index * 0.1 + 0.3 }}
+            className={cn(
+              "text-xs mt-1 flex items-center gap-1",
+              trendUp ? 'text-success' : 'text-destructive'
+            )}
+          >
+            {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {trend}
+          </motion.div>
+        )}
+      </Card>
+    </motion.div>
+  );
+};
+
 // Key Metrics Panel Component
 const KeyMetricsPanel: React.FC<{ context: any }> = ({ context }) => {
   const analytics = context?.analytics || {};
@@ -98,56 +151,71 @@ const KeyMetricsPanel: React.FC<{ context: any }> = ({ context }) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       {metrics.map((metric, idx) => (
-        <Card key={idx} className="p-4 glass-panel bg-glass border border-white/10">
-          <div className="flex items-center gap-2 mb-2">
-            <metric.icon className="w-4 h-4 text-primary" />
-            <span className="text-xs text-muted-foreground">{metric.label}</span>
-          </div>
-          <div className="text-2xl font-bold">
-            {metric.isText ? metric.value : `${metric.value}${metric.suffix || ''}`}
-          </div>
-          {metric.trend && (
-            <div className={`text-xs mt-1 ${metric.trendUp ? 'text-success' : 'text-destructive'}`}>
-              {metric.trend}
-            </div>
-          )}
-        </Card>
+        <AnimatedMetricCard key={idx} {...metric} index={idx} />
       ))}
     </div>
   );
 };
 
-// AI Insights Panel Component
+// AI Insights Panel Component (Collapsible)
 const AIInsightsPanel: React.FC<{ insights: string[]; onDeepDiveClick?: (insight: string) => void }> = ({ insights, onDeepDiveClick }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   if (!insights || insights.length === 0) return null;
   
+  const displayedInsights = isExpanded ? insights : insights.slice(0, 3);
+  
   return (
-    <Card className="p-4 glass-panel bg-glass border border-white/10 mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-5 h-5 text-primary" />
-        <h3 className="text-lg font-semibold">AI Insights</h3>
-      </div>
-      <ul className="space-y-2">
-        {insights.map((insight, idx) => (
-          <motion.li
-            key={idx}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="flex items-start gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-2 rounded hover:bg-white/5"
-            onClick={() => onDeepDiveClick?.(insight)}
-          >
-            <span className="text-primary mt-0.5">•</span>
-            <span>{insight}</span>
-          </motion.li>
-        ))}
-      </ul>
-    </Card>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+    >
+      <Card className="p-5 glass-panel bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 mb-6 overflow-hidden">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold">AI Insights</h3>
+          </div>
+          {insights.length > 3 && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-xs"
+            >
+              {isExpanded ? 'Show Less' : `+${insights.length - 3} More`}
+            </Button>
+          )}
+        </div>
+        <ul className="space-y-2">
+          <AnimatePresence>
+            {displayedInsights.map((insight, idx) => (
+              <motion.li
+                key={idx}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ delay: idx * 0.05 }}
+                className="flex items-start gap-3 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-3 rounded-lg hover:bg-white/5 group"
+                onClick={() => onDeepDiveClick?.(insight)}
+              >
+                <span className="text-primary mt-0.5 group-hover:scale-125 transition-transform">✦</span>
+                <span className="flex-1">{insight}</span>
+                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.li>
+            ))}
+          </AnimatePresence>
+        </ul>
+      </Card>
+    </motion.div>
   );
 };
 
-// Action Buttons Panel Component
-const ActionButtonsPanel: React.FC<{
+// Quick Actions Component
+const QuickActionsPanel: React.FC<{
   actionableItems: ActionableItem[];
   deepDivePrompts: string[];
   onActionClick?: (action: any) => void;
@@ -156,7 +224,7 @@ const ActionButtonsPanel: React.FC<{
   const navigate = useNavigate();
 
   const handleAction = (action: ActionableItem) => {
-    onClose(); // Close modal
+    onClose();
     
     if (action.action?.includes('navigate') && action.targetUrl) {
       navigate(action.targetUrl);
@@ -165,22 +233,38 @@ const ActionButtonsPanel: React.FC<{
     }
   };
 
+  if (!actionableItems?.length && !deepDivePrompts?.length) return null;
+
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.6 }}
+      className="space-y-6"
+    >
       {actionableItems && actionableItems.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium mb-3">Quick Actions</h4>
-          <div className="grid grid-cols-2 gap-3">
+          <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-primary" />
+            Quick Actions
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {actionableItems.map((action, idx) => (
-              <Button
+              <motion.div
                 key={idx}
-                variant="outline"
-                className="justify-start gap-2"
-                onClick={() => handleAction(action)}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
               >
-                <ArrowRight className="w-4 h-4" />
-                {action.title}
-              </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 hover:bg-primary/10 hover:border-primary/30 transition-all group"
+                  onClick={() => handleAction(action)}
+                >
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  {action.title}
+                </Button>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -188,25 +272,34 @@ const ActionButtonsPanel: React.FC<{
 
       {deepDivePrompts && deepDivePrompts.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium mb-3">Deep Dive Questions</h4>
-          <div className="space-y-2">
+          <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Target className="w-4 h-4 text-primary" />
+            Deep Dive Questions
+          </h4>
+          <div className="flex flex-wrap gap-2">
             {deepDivePrompts.map((prompt, idx) => (
-              <Button
+              <motion.div
                 key={idx}
-                variant="ghost"
-                className="w-full justify-start text-sm"
-                onClick={() => {
-                  onActionClick?.({ action: 'send_message', data: { message: prompt } });
-                  onClose();
-                }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 + idx * 0.05 }}
               >
-                {prompt}
-              </Button>
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer hover:bg-primary/20 transition-colors px-3 py-1.5 text-xs"
+                  onClick={() => {
+                    onActionClick?.({ action: 'send_message', data: { message: prompt } });
+                    onClose();
+                  }}
+                >
+                  {prompt}
+                </Badge>
+              </motion.div>
             ))}
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 
@@ -225,10 +318,10 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   onActionClick
 }) => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<string>('overview');
-  const [activeChartTab, setActiveChartTab] = useState<string>('0');
   const [selectedChartType, setSelectedChartType] = useState<Record<number, string>>({});
   const [selectedFilter, setSelectedFilter] = useState<Record<number, string>>({});
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'start' });
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Extract all charts
   const charts = useMemo(() => {
@@ -252,6 +345,29 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
       return true;
     }).slice(0, 4);
   }, [allVisualData, currentChartConfig]);
+
+  // Carousel navigation
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  React.useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi, onSelect]);
 
   // Normalize pie chart data
   const normalizePieChartData = (data: any[]): any[] => {
@@ -489,14 +605,20 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
           className="flex flex-col h-full"
         >
           {/* Header */}
-          <div className="px-6 pt-6 pb-4 border-b border-white/10">
-            <div className="flex items-center justify-between mb-2">
+          <div className="px-6 pt-6 pb-4 border-b border-white/10 bg-gradient-to-r from-primary/5 via-accent/5 to-secondary/5">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20">
-                  <Activity className="w-5 h-5 text-primary" />
-                </div>
+                <motion.div 
+                  className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30"
+                  whileHover={{ scale: 1.05, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <Activity className="w-6 h-6 text-primary" />
+                </motion.div>
                 <div>
-                  <h2 className="text-2xl font-semibold">{title || 'Insights Hub'}</h2>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    {title || 'Insights Hub'}
+                  </h2>
                   {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
                 </div>
               </div>
@@ -506,77 +628,90 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
             </div>
           </div>
 
-          {/* Content with 3-Tab Structure */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="overview">
-              <TabsList className="grid grid-cols-3 w-full mb-6">
-                <TabsTrigger value="overview">
-                  <Target className="w-4 h-4 mr-2" />
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="charts">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Charts ({charts.length})
-                </TabsTrigger>
-                <TabsTrigger value="actions">
-                  <Zap className="w-4 h-4 mr-2" />
-                  Actions
-                </TabsTrigger>
-              </TabsList>
+          {/* Unified Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+            {/* Key Metrics Section */}
+            <KeyMetricsPanel context={context} />
 
-              {/* Overview Tab */}
-              <TabsContent value="overview" className="mt-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-6"
-                >
-                  <KeyMetricsPanel context={context} />
-                  <AIInsightsPanel insights={insights} onDeepDiveClick={onDeepDiveClick} />
-                </motion.div>
-              </TabsContent>
+            {/* AI Insights Section */}
+            <AIInsightsPanel insights={insights} onDeepDiveClick={onDeepDiveClick} />
 
-              {/* Charts Tab */}
-              <TabsContent value="charts" className="mt-0">
-                {charts.length > 0 ? (
-                  <Tabs value={activeChartTab} onValueChange={setActiveChartTab}>
-                    <TabsList className="grid grid-cols-4 w-full mb-6">
-                      {charts.map((chart, index) => {
-                        const Icon = CHART_TYPE_ICONS[chart.type] || Activity;
-                        const isActive = activeChartTab === index.toString();
-                        return (
-                          <TabsTrigger 
-                            key={index} 
-                            value={index.toString()}
-                            className={cn(
-                              "flex items-center justify-center gap-2 transition-all",
-                              isActive && "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                            )}
-                          >
-                            <Icon className="w-4 h-4" />
-                          </TabsTrigger>
-                        );
-                      })}
-                    </TabsList>
+            {/* Interactive Chart Carousel Section */}
+            {charts.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    Interactive Charts
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={scrollPrev}
+                      disabled={selectedIndex === 0}
+                      className="h-8 w-8 hover:bg-primary/10"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <div className="flex gap-1">
+                      {charts.map((_, idx) => (
+                        <div
+                          key={idx}
+                          className={cn(
+                            "h-1.5 rounded-full transition-all duration-300",
+                            selectedIndex === idx 
+                              ? "w-6 bg-primary" 
+                              : "w-1.5 bg-muted-foreground/30"
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={scrollNext}
+                      disabled={selectedIndex === charts.length - 1}
+                      className="h-8 w-8 hover:bg-primary/10"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
 
-                    {charts.map((chart, index) => (
-                      <TabsContent key={index} value={index.toString()} className="mt-0">
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="space-y-6"
+                {/* Embla Carousel */}
+                <div className="overflow-hidden" ref={emblaRef}>
+                  <div className="flex gap-4">
+                    {charts.map((chart, index) => {
+                      const Icon = CHART_TYPE_ICONS[chart.type] || Activity;
+                      return (
+                        <div
+                          key={index}
+                          className="flex-[0_0_100%] min-w-0"
                         >
-                          <div className="glass-panel bg-glass border border-white/10 rounded-lg p-6">
+                          <Card className="glass-panel bg-gradient-to-br from-card/50 to-card/30 border border-white/10 p-6 hover:border-primary/30 transition-all duration-300">
                             <div className="flex items-center justify-between mb-4">
-                              <div>
-                                <h4 className="text-lg font-semibold">{chart.title || `Chart ${index + 1}`}</h4>
-                                {chart.subtitle && <p className="text-sm text-muted-foreground">{chart.subtitle}</p>}
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                  <Icon className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                  <h4 className="text-lg font-semibold">{chart.title || `Chart ${index + 1}`}</h4>
+                                  {chart.subtitle && <p className="text-sm text-muted-foreground">{chart.subtitle}</p>}
+                                </div>
                               </div>
                               
                               <div className="flex items-center gap-2">
-                                <Select value={selectedChartType[index] || chart.type} onValueChange={(value) => setSelectedChartType(prev => ({ ...prev, [index]: value }))}>
-                                  <SelectTrigger className="w-32">
-                                    <Edit className="w-4 h-4 mr-2" />
+                                <Select 
+                                  value={selectedChartType[index] || chart.type} 
+                                  onValueChange={(value) => setSelectedChartType(prev => ({ ...prev, [index]: value }))}
+                                >
+                                  <SelectTrigger className="w-32 h-8 text-xs">
+                                    <Edit className="w-3 h-3 mr-1" />
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -588,9 +723,12 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                                 </Select>
 
                                 {getAvailableCategories(chart).length > 0 && (
-                                  <Select value={selectedFilter[index] || 'all'} onValueChange={(value) => setSelectedFilter(prev => ({ ...prev, [index]: value }))}>
-                                    <SelectTrigger className="w-32">
-                                      <Filter className="w-4 h-4 mr-2" />
+                                  <Select 
+                                    value={selectedFilter[index] || 'all'} 
+                                    onValueChange={(value) => setSelectedFilter(prev => ({ ...prev, [index]: value }))}
+                                  >
+                                    <SelectTrigger className="w-28 h-8 text-xs">
+                                      <Filter className="w-3 h-3 mr-1" />
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -604,57 +742,58 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                               </div>
                             </div>
                             
-                            {renderChart(chart, index)}
-                          </div>
-                        </motion.div>
-                      </TabsContent>
-                    ))}
-                  </Tabs>
-                ) : (
-                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                    No charts available
+                            <div className="bg-background/30 rounded-lg p-4">
+                              {renderChart(chart, index)}
+                            </div>
+                          </Card>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-              </TabsContent>
+                </div>
+              </motion.div>
+            )}
 
-              {/* Actions Tab */}
-              <TabsContent value="actions" className="mt-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <ActionButtonsPanel
-                    actionableItems={actionableItems}
-                    deepDivePrompts={deepDivePrompts}
-                    onActionClick={onActionClick}
-                    onClose={onClose}
-                  />
-                </motion.div>
-              </TabsContent>
-            </Tabs>
+            {/* Quick Actions Section */}
+            <QuickActionsPanel
+              actionableItems={actionableItems}
+              deepDivePrompts={deepDivePrompts}
+              onActionClick={onActionClick}
+              onClose={onClose}
+            />
           </div>
 
           {/* Footer */}
-          <div className="border-t border-white/10 px-6 py-4 bg-background/50">
+          <div className="border-t border-white/10 px-6 py-4 bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => {
-                  toast({ title: "Export", description: "Export functionality coming soon!" });
-                }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="hover:bg-primary/10 hover:border-primary/30 transition-all"
+                  onClick={() => {
+                    toast({ title: "Export", description: "Export functionality coming soon!" });
+                  }}
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Export
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => {
-                  toast({ title: "Share", description: "Share functionality coming soon!" });
-                }}>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="hover:bg-primary/10 hover:border-primary/30 transition-all"
+                  onClick={() => {
+                    toast({ title: "Share", description: "Share functionality coming soon!" });
+                  }}
+                >
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
                 </Button>
               </div>
               
-              <Badge variant="outline" className="bg-primary/10 text-primary">
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
                 <Sparkles className="w-3 h-3 mr-1" />
-                {charts.length} Chart{charts.length > 1 ? 's' : ''}
+                {charts.length} Insight{charts.length !== 1 ? 's' : ''}
               </Badge>
             </div>
           </div>
