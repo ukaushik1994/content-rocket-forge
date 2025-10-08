@@ -170,9 +170,13 @@ function convertTableToChart(tableData: any): any | null {
 
 // Content sanitization function to prevent raw data leakage
 function sanitizeResponseContent(content: string): string {
-  // Remove any raw CSV-like patterns
+  // Remove <think> tags FIRST (both complete blocks and orphaned tags)
   let cleaned = content
-    // Remove CSV headers and data rows
+    // Remove complete <think>...</think> blocks with their content
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    // Remove any orphaned or malformed <think> or </think> tags
+    .replace(/<\/?think>/gi, '')
+    // Remove any raw CSV-like patterns
     .replace(/^[A-Za-z\s,]+(?:,\s*[A-Za-z\s]+)*\n(?:[^,\n]*,\s*)*[^,\n]*$/gm, '')
     // Remove quoted CSV data patterns
     .replace(/^"[^"]*"(?:,\s*"[^"]*")*$/gm, '')

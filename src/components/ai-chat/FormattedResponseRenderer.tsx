@@ -667,16 +667,19 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
   const processedResult = React.useMemo(() => {
     setIsProcessing(true);
     try {
+      // ALWAYS clean malformed pipes first (even with visual data)
+      let processedContent = cleanMalformedPipes(content);
+      
       // Skip table processing if visual data already handles the tables
       if (hasVisualData) {
         return { 
-          processedContent: content, 
+          processedContent, 
           hasErrors: false, 
           errorCount: 0 
         };
       }
       
-      const result = detectAndConvertTables(content);
+      const result = detectAndConvertTables(processedContent);
       return result;
     } catch (error) {
       console.error('Content processing error:', error);
