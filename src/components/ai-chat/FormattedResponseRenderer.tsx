@@ -52,38 +52,58 @@ const detectCSVPattern = (content: string): boolean => {
   return commaLinesCount / lines.length >= 0.7;
 };
 
-// AGGRESSIVE pipe removal - only keep perfect markdown tables
+// Helper to check if a line is a valid markdown table row
+const isValidMarkdownTableRow = (line: string): boolean => {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return false;
+  
+  const segments = trimmed.split('|').filter(s => s.trim());
+  return segments.length >= 2;
+};
+
+// INTELLIGENT pipe removal - only keep proper markdown tables
 const cleanMalformedPipes = (content: string): string => {
-  console.log('🧹 AGGRESSIVE pipe cleaning started');
+  console.log('🧹 INTELLIGENT pipe cleaning started');
   
   const lines = content.split('\n');
-  const cleanedLines = lines.map(line => {
-    // Check if this line is part of a valid markdown table
-    const pipeCount = (line.match(/\|/g) || []).length;
-    
-    // Valid table lines have 2+ pipes and consistent structure
-    if (pipeCount >= 2) {
-      const segments = line.split('|').map(s => s.trim());
-      // Check if it's a separator line (all dashes)
-      const isSeparator = segments.every(s => s === '' || /^-+$/.test(s));
-      // Check if next/prev lines also have pipes (proper table context)
-      const hasTableContext = lines.some((l, i) => 
-        l !== line && l.includes('|') && (l.match(/\|/g) || []).length >= 2
-      );
+  
+  // First pass: identify table blocks (2+ consecutive valid table rows)
+  const tableBlocks: Set<number> = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    if (isValidMarkdownTableRow(lines[i])) {
+      // Check if next or previous line is also a valid table row
+      const hasTableContext = 
+        (i > 0 && isValidMarkdownTableRow(lines[i - 1])) ||
+        (i < lines.length - 1 && isValidMarkdownTableRow(lines[i + 1]));
       
-      // Only keep pipes if it's a proper table with context
-      if (isSeparator && hasTableContext) {
-        return line; // Keep separator lines
-      } else if (hasTableContext && segments.length >= 2) {
-        return line; // Keep data rows in tables
+      if (hasTableContext) {
+        tableBlocks.add(i);
+        // Also mark adjacent table rows
+        if (i > 0 && isValidMarkdownTableRow(lines[i - 1])) {
+          tableBlocks.add(i - 1);
+        }
+        if (i < lines.length - 1 && isValidMarkdownTableRow(lines[i + 1])) {
+          tableBlocks.add(i + 1);
+        }
       }
     }
+  }
+  
+  // Second pass: clean pipes from non-table lines
+  const cleanedLines = lines.map((line, index) => {
+    if (tableBlocks.has(index)) {
+      return line; // Keep table lines as-is
+    }
     
-    // Remove ALL pipes from non-table lines
-    return line.replace(/\|/g, '');
+    // Remove all pipe patterns from conversational text
+    return line
+      .replace(/\|\s*-+\s*\|/g, '---') // Replace pipe separators with dashes
+      .replace(/\|\|/g, '') // Remove double pipes
+      .replace(/\s+\|\s+/g, ' ') // Remove isolated pipes
+      .replace(/\|/g, ''); // Remove any remaining pipes
   });
   
-  console.log('✅ Aggressive pipe cleaning complete');
+  console.log(`✅ Intelligent pipe cleaning complete. Preserved ${tableBlocks.size} table lines.`);
   return cleanedLines.join('\n');
 };
 

@@ -1377,6 +1377,30 @@ serve(async (req) => {
     console.log('🔍 Parsing AI response for structured data...');
     
     // Phase 5: Enhanced parsing with graceful degradation
+    // Helper function to clean pipe characters from AI responses
+    const cleanAIPipes = (text: string): string => {
+      if (!text) return text;
+      
+      // Only remove pipes that aren't part of valid markdown tables
+      const lines = text.split('\n');
+      const cleanedLines = lines.map(line => {
+        const trimmed = line.trim();
+        
+        // Keep lines that are clearly markdown table rows (start and end with |)
+        if (trimmed.startsWith('|') && trimmed.endsWith('|') && (trimmed.match(/\|/g) || []).length >= 3) {
+          return line;
+        }
+        
+        // Remove pipe patterns from conversational text
+        return line
+          .replace(/\|\s*-+\s*\|/g, '---') // Replace | --- | with ---
+          .replace(/\|\|/g, '') // Remove double pipes
+          .replace(/\s+\|\s+/g, ' '); // Remove isolated pipes with spaces
+      });
+      
+      return cleanedLines.join('\n');
+    };
+    
     let cleanedResponse: string;
     let actions: any[] | undefined;
     let visualData: any | undefined;
@@ -1387,17 +1411,22 @@ serve(async (req) => {
       actions = parsedResponse.actions;
       visualData = parsedResponse.visualData;
       
+      // Clean pipe characters from the response text
+      if (cleanedResponse) {
+        cleanedResponse = cleanAIPipes(cleanedResponse);
+      }
+      
       // If parsing fails but response is valid text, use it anyway
       if (!cleanedResponse && aiMessage.length > 50) {
         console.warn('⚠️ JSON parsing failed, using raw response as fallback');
-        cleanedResponse = aiMessage;
+        cleanedResponse = cleanAIPipes(aiMessage);
         visualData = undefined;
         actions = undefined;
       }
     } catch (parseError) {
       console.error('❌ Critical parsing error:', parseError);
-      // Fallback to raw message
-      cleanedResponse = aiMessage;
+      // Fallback to raw message with pipe cleaning
+      cleanedResponse = cleanAIPipes(aiMessage);
       visualData = undefined;
       actions = undefined;
     }
