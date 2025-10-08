@@ -43,7 +43,7 @@ class SecureEncryption {
   /**
    * Derives an AES key from a password using PBKDF2
    */
-  private static async deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  private static async deriveKey(password: string, salt: BufferSource): Promise<CryptoKey> {
     if (!SecureEncryption.isWebCryptoAvailable()) {
       throw new Error('Web Crypto API is not available in this browser');
     }
