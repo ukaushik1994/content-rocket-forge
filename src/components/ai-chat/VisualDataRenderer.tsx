@@ -49,10 +49,60 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     );
   }
 
-  // Validate data structure
+  // Phase 2: Enhanced validation with specific error messages
   if (typeof data !== 'object') {
     console.warn('❌ VisualDataRenderer: Invalid visual data type:', typeof data);
     return null;
+  }
+
+  // Validate data.type exists and is a string
+  if (!data.type || typeof data.type !== 'string') {
+    console.error('❌ VisualDataRenderer: Invalid or missing data.type:', data);
+    return (
+      <Card className="p-4 border-warning/50 bg-warning/5">
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-warning" />
+          <div>
+            <p className="text-sm font-medium text-warning">Invalid Visual Data Format</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Received type: {data.type || 'undefined'} | Expected: chart, metrics, table, workflow, summary, serp_analysis
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Validate type is one of the expected values
+  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis'];
+  if (!validTypes.includes(data.type)) {
+    console.warn(`⚠️ Unknown visual data type: "${data.type}" - attempting graceful degradation`);
+    
+    // Attempt to infer type from structure
+    if (data.chartConfig) {
+      console.log('🔍 Inferred type: chart (has chartConfig)');
+      data.type = 'chart';
+    } else if (data.metrics) {
+      console.log('🔍 Inferred type: metrics (has metrics array)');
+      data.type = 'metrics';
+    } else if (data.tableData) {
+      console.log('🔍 Inferred type: table (has tableData)');
+      data.type = 'table';
+    } else {
+      return (
+        <Card className="p-4 border-muted-foreground/30 bg-muted/20">
+          <div className="flex items-center gap-3">
+            <Info className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">Unsupported Visualization Type</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Type "{data.type}" is not currently supported. Expected: {validTypes.join(', ')}
+              </p>
+            </div>
+          </div>
+        </Card>
+      );
+    }
   }
 
   const getChartIcon = (type: string) => {

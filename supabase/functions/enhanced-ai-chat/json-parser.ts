@@ -42,6 +42,31 @@ export function extractJSONBlocks(text: string): any[] {
     }
   }
   
+  // Phase 3: Detect and repair truncated JSON blocks
+  const truncatedJsonPattern = /```json\s*(\{[\s\S]*?)$/gm;
+  let truncatedMatch;
+  
+  while ((truncatedMatch = truncatedJsonPattern.exec(text)) !== null) {
+    try {
+      // Attempt to close open brackets
+      let jsonStr = truncatedMatch[1].trim();
+      const openBraces = (jsonStr.match(/\{/g) || []).length;
+      const closeBraces = (jsonStr.match(/\}/g) || []).length;
+      
+      if (openBraces > closeBraces) {
+        jsonStr += '}'.repeat(openBraces - closeBraces);
+        console.warn('⚠️ Repaired truncated JSON block by adding closing braces');
+        
+        const parsed = JSON.parse(jsonStr);
+        if (isValidStructuredData(parsed)) {
+          jsonBlocks.push(parsed);
+        }
+      }
+    } catch (e) {
+      console.error('❌ Failed to repair truncated JSON:', e);
+    }
+  }
+  
   return jsonBlocks;
 }
 

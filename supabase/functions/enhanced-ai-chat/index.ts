@@ -1266,12 +1266,22 @@ serve(async (req) => {
     const systemPromptTokens = estimateTokens(systemPrompt);
     const totalTokens = contextTokens + messagesTokens + systemPromptTokens;
 
+    // Phase 6: Dynamic token budget scaling for large context models (260K)
+    const estimatedModelContext = 260000; // LM Studio model context window
+    const outputTokenRatio = 0.03; // Allow 3% of context for output
+    const dynamicMaxTokens = Math.min(
+      Math.floor(estimatedModelContext * outputTokenRatio),
+      8000 // Cap at 8000 for safety and comprehensive responses
+    );
+
     console.log(`📊 Token Budget Check:
   - Context: ${contextTokens} tokens
   - Messages: ${messagesTokens} tokens
   - System Prompt: ${systemPromptTokens} tokens
   - Total: ${totalTokens} tokens
-  - OpenAI Limit: 30,000 TPM
+  - Model Context Window: ${estimatedModelContext}
+  - Dynamic Max Tokens: ${dynamicMaxTokens}
+  - Remaining Budget: ${estimatedModelContext - totalTokens}
   - Status: ${totalTokens < 28000 ? '✅ SAFE' : '⚠️ NEAR LIMIT'}
 `);
 
@@ -1296,7 +1306,7 @@ serve(async (req) => {
             ...messages,
           ],
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: dynamicMaxTokens, // Phase 1: Increased from 2000 to support 260K context models
         }
       }
     });
@@ -1332,6 +1342,17 @@ serve(async (req) => {
     console.log(`📝 AI Response received (${aiMessage.length} characters)`);
     console.log("🔍 Response preview:", aiMessage.substring(0, 300));
 
+    // Phase 4: Response size monitoring for large context models
+    if (aiMessage.length > 15000) {
+      console.warn(`⚠️ Very long AI response (${aiMessage.length} chars) - may contain truncation issues`);
+      console.warn('💡 Consider adjusting max_tokens or using streaming for better UX');
+    }
+
+    // Check if response appears truncated mid-code-block
+    if (aiMessage.endsWith('```') && !aiMessage.endsWith('```\n')) {
+      console.error('🚨 Response appears truncated mid-code-block!');
+    }
+
     // Enhanced chart request detection
     const chartRequest = detectChartRequest(userQuery);
     
@@ -1342,9 +1363,31 @@ serve(async (req) => {
     // Parse the response for structured data
     console.log('🔍 Parsing AI response for structured data...');
     
-    // Use enhanced parsing with fallback
-    const parsedResponse = parseResponseWithFallback(aiMessage);
-    let { message: cleanedResponse, actions, visualData } = parsedResponse;
+    // Phase 5: Enhanced parsing with graceful degradation
+    let cleanedResponse: string;
+    let actions: any[] | undefined;
+    let visualData: any | undefined;
+    
+    try {
+      const parsedResponse = parseResponseWithFallback(aiMessage);
+      cleanedResponse = parsedResponse.message;
+      actions = parsedResponse.actions;
+      visualData = parsedResponse.visualData;
+      
+      // If parsing fails but response is valid text, use it anyway
+      if (!cleanedResponse && aiMessage.length > 50) {
+        console.warn('⚠️ JSON parsing failed, using raw response as fallback');
+        cleanedResponse = aiMessage;
+        visualData = undefined;
+        actions = undefined;
+      }
+    } catch (parseError) {
+      console.error('❌ Critical parsing error:', parseError);
+      // Fallback to raw message
+      cleanedResponse = aiMessage;
+      visualData = undefined;
+      actions = undefined;
+    }
     
     // Import validation functions
     const { validateChartData, extractDataSource } = await import('./chart-validator.ts');
