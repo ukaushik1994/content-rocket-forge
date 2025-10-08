@@ -1268,31 +1268,40 @@ serve(async (req) => {
 
     // Phase 6: Dynamic token budget scaling for large context models (260K)
     const estimatedModelContext = 260000; // LM Studio model context window
-    const outputTokenRatio = 0.40; // Allow up to 40% of context for output (generous for comprehensive responses)
+    const outputTokenRatio = 0.15; // Allow ~15% for output (~39K), enabling ~220K input
     const dynamicMaxTokens = Math.min(
       Math.max(
         Math.floor(estimatedModelContext * outputTokenRatio),
-        100000 // Minimum 100K tokens for detailed responses
+        30000 // Minimum 30K tokens for detailed responses
       ),
-      240000 // Maximum 240K tokens (leave buffer for system prompt)
+      100000 // Maximum 100K tokens (reasonable cap)
     );
 
     console.log(`📊 Token Budget Check:
   - Context: ${contextTokens} tokens
   - Messages: ${messagesTokens} tokens
   - System Prompt: ${systemPromptTokens} tokens
-  - Total Input: ${totalTokens} tokens
+  - Total Input: ${totalTokens} tokens (Max: 220,000)
   - Model Context Window: ${estimatedModelContext}
   - Dynamic Max Output Tokens: ${dynamicMaxTokens}
   - Total With Output: ${totalTokens + dynamicMaxTokens}
   - Remaining Budget: ${estimatedModelContext - (totalTokens + dynamicMaxTokens)}
-  - Status: ${(totalTokens + dynamicMaxTokens) < estimatedModelContext ? '✅ SAFE' : '⚠️ EXCEEDS CONTEXT'}
+  - Input Utilization: ${((totalTokens / 220000) * 100).toFixed(1)}%
+  - Status: ${totalTokens < 220000 ? '✅ INPUT SAFE' : '⚠️ INPUT EXCEEDS 220K'}
 `);
 
-    if (totalTokens > 28000) {
-      console.error('🚨 TOKEN LIMIT EXCEEDED! Request would fail with 429 error');
-      throw new Error('Context too large. Please try a more specific query or ask for summary data.');
+    // Validate input token limit (220K max)
+    const maxInputTokens = 220000;
+    if (totalTokens > maxInputTokens) {
+      console.error(`🚨 INPUT TOKEN LIMIT EXCEEDED: ${totalTokens} > ${maxInputTokens}`);
+      throw new Error(`Context too large (${totalTokens} tokens). Maximum input: ${maxInputTokens.toLocaleString()} tokens. Please reduce context or use more specific queries.`);
     }
+
+    // Safety check: total (input + output) shouldn't exceed model context
+    if ((totalTokens + dynamicMaxTokens) > estimatedModelContext) {
+      console.warn(`⚠️ Total tokens (${totalTokens + dynamicMaxTokens}) approaches model limit (${estimatedModelContext})`);
+    }
+
 
     // Call ai-proxy edge function with user's provider
     const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
