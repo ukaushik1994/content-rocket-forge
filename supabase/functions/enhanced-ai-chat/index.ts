@@ -1268,21 +1268,25 @@ serve(async (req) => {
 
     // Phase 6: Dynamic token budget scaling for large context models (260K)
     const estimatedModelContext = 260000; // LM Studio model context window
-    const outputTokenRatio = 0.03; // Allow 3% of context for output
+    const outputTokenRatio = 0.40; // Allow up to 40% of context for output (generous for comprehensive responses)
     const dynamicMaxTokens = Math.min(
-      Math.floor(estimatedModelContext * outputTokenRatio),
-      8000 // Cap at 8000 for safety and comprehensive responses
+      Math.max(
+        Math.floor(estimatedModelContext * outputTokenRatio),
+        100000 // Minimum 100K tokens for detailed responses
+      ),
+      240000 // Maximum 240K tokens (leave buffer for system prompt)
     );
 
     console.log(`📊 Token Budget Check:
   - Context: ${contextTokens} tokens
   - Messages: ${messagesTokens} tokens
   - System Prompt: ${systemPromptTokens} tokens
-  - Total: ${totalTokens} tokens
+  - Total Input: ${totalTokens} tokens
   - Model Context Window: ${estimatedModelContext}
-  - Dynamic Max Tokens: ${dynamicMaxTokens}
-  - Remaining Budget: ${estimatedModelContext - totalTokens}
-  - Status: ${totalTokens < 28000 ? '✅ SAFE' : '⚠️ NEAR LIMIT'}
+  - Dynamic Max Output Tokens: ${dynamicMaxTokens}
+  - Total With Output: ${totalTokens + dynamicMaxTokens}
+  - Remaining Budget: ${estimatedModelContext - (totalTokens + dynamicMaxTokens)}
+  - Status: ${(totalTokens + dynamicMaxTokens) < estimatedModelContext ? '✅ SAFE' : '⚠️ EXCEEDS CONTEXT'}
 `);
 
     if (totalTokens > 28000) {
