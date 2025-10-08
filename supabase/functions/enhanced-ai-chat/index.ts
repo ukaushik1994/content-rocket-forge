@@ -12,6 +12,7 @@ import {
   generateSmartSuggestions,
   generateStructuredSerpData
 } from './serp-intelligence.ts';
+import { generateChartPerspectives } from './chart-intelligence.ts';
 
 // Enhanced chart detection patterns - DEFAULT TO CHARTS
 function detectChartRequest(query: string): { requested: boolean, type: string | null, confidence: number } {
@@ -1591,6 +1592,37 @@ serve(async (req) => {
     // Generate AI insights for visual data
     const aiInsights = visualData ? generateInsights(visualData, context) : [];
     console.log(`🤖 Generated ${aiInsights.length} AI insights`);
+    
+    // Phase 3: Generate multi-perspective chart context when we have chart data
+    if (visualData?.chartConfig && visualData.type === 'chart') {
+      console.log('🧠 Generating multi-perspective chart insights...');
+      try {
+        const perspectives = await generateChartPerspectives(
+          visualData.chartConfig,
+          userQuery,
+          supabase
+        );
+        
+        if (perspectives) {
+          // Attach perspectives to chart config
+          visualData.chartConfig.perspectives = perspectives;
+          visualData.chartPerspectives = perspectives;
+          
+          // Generate insights array from perspectives for display
+          visualData.insights = [
+            `📊 ${perspectives.descriptive}`,
+            `💡 ${perspectives.strategic}`,
+            `📈 ${perspectives.analytical}`,
+            `🎯 ${perspectives.comparative}`
+          ];
+          
+          console.log('✅ Chart perspectives generated and attached');
+        }
+      } catch (error) {
+        console.error('Failed to generate chart perspectives:', error);
+        // Non-critical - continue without perspectives
+      }
+    }
 
     // Only provide basic contextual actions if AI didn't return structured data
     // NO MOCK DATA GENERATION - Let the AI create appropriate responses based on real data

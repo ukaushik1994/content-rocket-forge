@@ -150,7 +150,10 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
                         transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
                       />
                     </div>
-                    AI is analyzing and preparing your response...
+                    {/* Phase 2: Enhanced status messages */}
+                    <span className="animate-pulse">
+                      Analyzing your data and generating intelligent visualizations...
+                    </span>
                   </div>
                 </motion.div>
               )}

@@ -65,7 +65,7 @@ const CHART_TYPE_ICONS: Record<string, any> = {
   'table': TableIcon
 };
 
-// Animated Metric Card Component
+// Animated Metric Card Component - Phase 1: Fixed uniform sizing
 const AnimatedMetricCard: React.FC<{ 
   label: string; 
   value: any; 
@@ -82,28 +82,35 @@ const AnimatedMetricCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card className="p-4 glass-panel bg-gradient-to-br from-card/50 to-card/30 border border-white/10 hover:border-primary/30 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10">
-        <div className="flex items-center gap-2 mb-2">
+      <Card className="p-4 glass-panel bg-gradient-to-br from-card/50 to-card/30 border border-white/10 hover:border-primary/30 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10 min-h-[120px] flex flex-col justify-between">
+        {/* Icon + Label - Fixed height */}
+        <div className="flex items-center gap-2 mb-2 min-h-[24px]">
           <div className="p-1.5 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
             <Icon className="w-4 h-4 text-primary" />
           </div>
-          <span className="text-xs text-muted-foreground">{label}</span>
+          <span className="text-xs text-muted-foreground line-clamp-1">{label}</span>
         </div>
-        <motion.div 
-          className="text-2xl font-bold"
-          initial={{ scale: 0.8 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
-        >
-          {isText ? value : `${value}${suffix || ''}`}
-        </motion.div>
+        
+        {/* Value - Flex grow to fill space */}
+        <div className="flex-1 flex items-center">
+          <motion.div 
+            className="text-2xl font-bold line-clamp-2"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
+          >
+            {isText ? value : `${value}${suffix || ''}`}
+          </motion.div>
+        </div>
+        
+        {/* Trend - Fixed height at bottom */}
         {trend && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: index * 0.1 + 0.3 }}
             className={cn(
-              "text-xs mt-1 flex items-center gap-1",
+              "text-xs mt-1 flex items-center gap-1 min-h-[20px]",
               trendUp ? 'text-success' : 'text-destructive'
             )}
           >
@@ -149,11 +156,99 @@ const KeyMetricsPanel: React.FC<{ context: any }> = ({ context }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 auto-rows-fr">
       {metrics.map((metric, idx) => (
         <AnimatedMetricCard key={idx} {...metric} index={idx} />
       ))}
     </div>
+  );
+};
+
+// Chart Context Panel - Phase 4: Multi-perspective information display
+const ChartContextPanel: React.FC<{ 
+  perspectives: any;
+  chartTitle: string;
+}> = ({ perspectives, chartTitle }) => {
+  if (!perspectives) return null;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="mb-6"
+    >
+      <Card className="p-5 glass-panel bg-gradient-to-br from-accent/5 to-primary/5 border border-accent/20">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Activity className="w-5 h-5 text-accent" />
+          Understanding "{chartTitle}"
+        </h3>
+        
+        <div className="space-y-4">
+          {/* Descriptive Perspective */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <span className="text-lg">📊</span>
+              What This Shows
+            </div>
+            <p className="text-sm text-muted-foreground pl-6">
+              {perspectives.descriptive}
+            </p>
+          </div>
+          
+          {/* Strategic Perspective */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <span className="text-lg">💡</span>
+              Why It Matters
+            </div>
+            <p className="text-sm text-muted-foreground pl-6">
+              {perspectives.strategic}
+            </p>
+          </div>
+          
+          {/* Analytical Perspective */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <span className="text-lg">📈</span>
+              Key Patterns
+            </div>
+            <p className="text-sm text-muted-foreground pl-6">
+              {perspectives.analytical}
+            </p>
+          </div>
+          
+          {/* Comparative Perspective */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <span className="text-lg">🎯</span>
+              Benchmark Comparison
+            </div>
+            <p className="text-sm text-muted-foreground pl-6">
+              {perspectives.comparative}
+            </p>
+          </div>
+          
+          {/* Actionable Perspective */}
+          {perspectives.actionable && perspectives.actionable.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <span className="text-lg">⚡</span>
+                Recommended Actions
+              </div>
+              <ul className="space-y-1 pl-6">
+                {perspectives.actionable.map((action: string, idx: number) => (
+                  <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                    <span className="text-primary mt-0.5">•</span>
+                    {action}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </Card>
+    </motion.div>
   );
 };
 
@@ -632,6 +727,14 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {/* Key Metrics Section */}
             <KeyMetricsPanel context={context} />
+
+            {/* Phase 4: Chart Context Panel - Multi-perspective insights */}
+            {currentChartConfig?.perspectives && (
+              <ChartContextPanel 
+                perspectives={currentChartConfig.perspectives}
+                chartTitle={title || currentChartConfig.title || 'Chart Analysis'}
+              />
+            )}
 
             {/* AI Insights Section */}
             <AIInsightsPanel insights={insights} onDeepDiveClick={onDeepDiveClick} />

@@ -15,6 +15,7 @@ export interface ChartConfiguration {
   colors?: string[];
   valueFormatter?: (value: number) => string;
   height?: number;
+  perspectives?: ChartPerspective; // Multi-perspective analysis of chart
 }
 
 export interface ActionableItem {
@@ -82,6 +83,14 @@ export interface TableData {
   caption?: string;
 }
 
+export interface ChartPerspective {
+  descriptive: string;
+  strategic: string;
+  actionable: string[];
+  analytical: string;
+  comparative: string;
+}
+
 export interface VisualData {
   type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table';
   title?: string; // Descriptive title for the visual
@@ -94,6 +103,8 @@ export interface VisualData {
   tableData?: TableData;
   actionableItems?: ActionableItem[]; // Actions user can take
   deepDivePrompts?: string[]; // Follow-up questions
+  chartPerspectives?: ChartPerspective; // Multi-perspective chart context
+  insights?: string[]; // AI-generated insights from perspectives
   summary?: {
     title: string;
     items: Array<{

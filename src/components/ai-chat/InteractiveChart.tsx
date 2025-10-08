@@ -509,11 +509,17 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       isOpen={showModal}
       onClose={() => setShowModal(false)}
       allVisualData={allVisualData}
-      currentChartConfig={{ ...chartConfig, type: currentType, data: filteredData }}
+      currentChartConfig={{ 
+        ...chartConfig, 
+        type: currentType, 
+        data: filteredData,
+        perspectives: (chartConfig as any).perspectives // Phase 5: Pass chart perspectives
+      }}
       title={title}
       description={description}
       actionableItems={allVisualData.flatMap(vd => vd.actionableItems || [])}
       deepDivePrompts={allVisualData.flatMap(vd => vd.deepDivePrompts || [])}
+      insights={allVisualData.flatMap(vd => vd.insights || [])}
       onDeepDiveClick={handleDeepDiveClick}
       onActionClick={handleActionClick}
     />
