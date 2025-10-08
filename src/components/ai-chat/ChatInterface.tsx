@@ -35,6 +35,8 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     messages,
     isLoading,
     isTyping,
+    thinkingContent,
+    isThinking,
     sendMessage,
     handleAction
   } = useEnhancedAIChat();
@@ -109,14 +111,20 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
             {/* Messages */}
             {messages.length > 0 && (
               <div className="space-y-8">
-                {messages.map((message, index) => (
-                  <EnhancedMessageBubble
-                    key={message.id}
-                    message={message}
-                    isLatest={index === messages.length - 1}
-                    onAction={handleContextualAction}
-                  />
-                ))}
+                {messages.map((message, index) => {
+                  const isLatestMessage = index === messages.length - 1;
+                  return (
+                    <EnhancedMessageBubble
+                      key={message.id}
+                      message={message}
+                      isLatest={isLatestMessage}
+                      onAction={handleContextualAction}
+                      onSendMessage={handleSendMessage}
+                      thinkingContent={isLatestMessage && message.role === 'assistant' ? thinkingContent : ''}
+                      isThinking={isLatestMessage && message.role === 'assistant' ? isThinking : false}
+                    />
+                  );
+                })}
               </div>
             )}
 

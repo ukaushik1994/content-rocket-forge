@@ -13,6 +13,8 @@ export const useEnhancedAIChat = () => {
   const [messages, setMessages] = useState<EnhancedChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [thinkingContent, setThinkingContent] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { openSettings } = useSettings();
@@ -30,6 +32,8 @@ export const useEnhancedAIChat = () => {
 
     setIsLoading(true);
     setIsTyping(true);
+    setIsThinking(true);
+    setThinkingContent('');
 
     // Add user message
     const userMessage: EnhancedChatMessage = {
@@ -59,6 +63,26 @@ export const useEnhancedAIChat = () => {
         user.id
       );
 
+      // Extract thinking content if present
+      const thinkMatch = aiResponse.content.match(/<think>([\s\S]*?)<\/think>/);
+      if (thinkMatch) {
+        const thinking = thinkMatch[1].trim();
+        
+        // Show thinking with typewriter effect
+        setThinkingContent(thinking);
+        
+        // Wait for typewriter to complete (estimate time)
+        const typingDuration = thinking.length * 15; // 15ms per character
+        await new Promise(resolve => setTimeout(resolve, typingDuration));
+        
+        // Hide thinking and show actual response
+        setIsThinking(false);
+        setThinkingContent('');
+        
+        // Remove <think> tags from final content
+        aiResponse.content = aiResponse.content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+
       // Update with final response
       setMessages(prev => prev.map(msg => 
         msg.id === placeholderAI.id ? aiResponse : msg
@@ -77,6 +101,8 @@ export const useEnhancedAIChat = () => {
     } finally {
       setIsLoading(false);
       setIsTyping(false);
+      setIsThinking(false);
+      setThinkingContent('');
     }
   }, [messages, toast, user]);
 
@@ -220,6 +246,8 @@ export const useEnhancedAIChat = () => {
     messages,
     isLoading,
     isTyping,
+    thinkingContent,
+    isThinking,
     sendMessage,
     handleAction,
     handleSerpAction,

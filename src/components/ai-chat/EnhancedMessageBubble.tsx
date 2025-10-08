@@ -14,6 +14,7 @@ import { ErrorMessageBubble } from './ErrorMessageBubble';
 import { FormattedResponseRenderer } from './FormattedResponseRenderer';
 import { MultiChartModal } from './MultiChartModal';
 import { Button } from '@/components/ui/button';
+import { ThinkingIndicator } from './ThinkingIndicator';
 
 interface EnhancedMessageBubbleProps {
   message: EnhancedChatMessage;
@@ -21,7 +22,9 @@ interface EnhancedMessageBubbleProps {
   onAction?: (action: ContextualAction) => void;
   onRetry?: () => void;
   isRetrying?: boolean;
-  onSendMessage?: (message: string) => void; // For deep dive prompts
+  onSendMessage?: (message: string) => void;
+  thinkingContent?: string;
+  isThinking?: boolean;
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
@@ -30,7 +33,9 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   onAction,
   onRetry,
   isRetrying = false,
-  onSendMessage
+  onSendMessage,
+  thinkingContent,
+  isThinking = false
 }) => {
   const [showMultiChartModal, setShowMultiChartModal] = useState(false);
   
@@ -111,6 +116,14 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       {/* Message Content */}
       <div className="max-w-md sm:max-w-xl lg:max-w-2xl">
         <div className="relative">
+          {/* Thinking Indicator - shown while AI is processing */}
+          {!isUser && isThinking && thinkingContent && (
+            <ThinkingIndicator
+              thinkingText={thinkingContent}
+              isActive={isThinking}
+            />
+          )}
+
           {/* AI Processing Indicator */}
           {message.progressIndicator && (
             <InlineProgress
