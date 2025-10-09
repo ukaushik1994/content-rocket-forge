@@ -186,8 +186,9 @@ function sanitizeResponseContent(content: string): string {
     .replace(/\n\s*\n\s*\n/g, '\n\n')
     .trim();
 
-  // If content becomes too short after cleaning, return a friendly message
-  if (cleaned.length < 50 && content.length > 200) {
+  // Only replace if content is virtually empty after cleaning
+  if (cleaned.length < 10 && content.length > 500) {
+    console.log('⚠️ Content too short after sanitization, using fallback message');
     return "I've prepared the data you requested. Please use the action buttons below to access the formatted information.";
   }
 
@@ -1342,7 +1343,20 @@ serve(async (req) => {
     }
 
     const data = aiProxyResult.data;
-    const aiMessage = data?.choices?.[0]?.message?.content;
+    let aiMessage = data?.choices?.[0]?.message?.content;
+
+    // Remove <think> tags IMMEDIATELY before any other processing
+    if (aiMessage) {
+      console.log(`🧠 Original AI message length: ${aiMessage.length}, has <think>: ${aiMessage.includes('<think>')}`);
+      
+      aiMessage = aiMessage
+        .replace(/<\s*think\s*>[\s\S]*?<\s*\/\s*think\s*>/gi, '') // Handle tags with spaces
+        .replace(/<think>[\s\S]*?<\/think>/gi, '') // Standard tags
+        .replace(/<\/?think>/gi, '') // Orphaned tags
+        .trim();
+      
+      console.log(`✅ Cleaned AI message length: ${aiMessage.length}, still has <think>: ${aiMessage.includes('<think>')}`);
+    }
 
     if (!aiMessage) {
       console.error("No response from AI", data);
