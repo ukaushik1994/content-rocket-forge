@@ -4,6 +4,7 @@ import { VisualData } from '@/types/enhancedChat';
 import { LineChart, BarChart, PieChartComponent } from '@/components/ui/chart';
 import { InteractiveChart } from './InteractiveChart';
 import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { MultiChartAnalysis } from './visualization/MultiChartAnalysis';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -74,7 +75,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   }
 
   // Validate type is one of the expected values
-  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis'];
+  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis'];
   if (!validTypes.includes(data.type)) {
     console.warn(`⚠️ Unknown visual data type: "${data.type}" - attempting graceful degradation`);
     
@@ -681,6 +682,15 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     case 'table':
       console.log('📋 VisualDataRenderer: Rendering table');
       return renderTable();
+    case 'multi_chart_analysis':
+      console.log('📊 VisualDataRenderer: Rendering multi-chart analysis');
+      return (
+        <MultiChartAnalysis
+          visualData={data}
+          onClose={() => console.log('Multi-chart analysis closed')}
+          onDeepDive={(question) => console.log('Deep dive:', question)}
+        />
+      );
     case 'serp_analysis':
       console.log('🔍 VisualDataRenderer: SERP analysis handled by SerpVisualData component');
       return null; // Handled by SerpVisualData component
