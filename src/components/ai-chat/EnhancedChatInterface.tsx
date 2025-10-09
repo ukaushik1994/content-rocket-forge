@@ -215,7 +215,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
             {/* Messages */}
             {messages.length > 0 && <div className="space-y-8">
-                {messages.map((message, index) => <EnhancedMessageBubble key={message.id} message={message} isLatest={index === messages.length - 1} onAction={handleAction} />)}
+                {messages.map((message, index) => <EnhancedMessageBubble key={message.id} message={message} isLatest={index === messages.length - 1} onAction={handleAction} onSendMessage={sendMessage} />)}
               </div>}
 
             {/* Typing Indicator */}
