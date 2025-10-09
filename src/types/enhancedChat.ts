@@ -5,9 +5,9 @@ export interface ChartConfiguration {
   type: 'line' | 'bar' | 'pie' | 'area';
   data: any[];
   categories: string[];
-  title: string; // Chart title
-  subtitle?: string; // Additional context
-  dataContext?: string; // Explain what data represents
+  title: string; // Individual chart title
+  subtitle?: string; // Chart-specific context
+  dataContext?: string; // Explain what this chart shows
   series?: Array<{
     dataKey: string;
     name: string;
@@ -16,6 +16,10 @@ export interface ChartConfiguration {
   valueFormatter?: (value: number) => string;
   height?: number;
   perspectives?: ChartPerspective; // Multi-perspective analysis of chart
+  
+  // Individual chart insights and actions
+  chartInsights?: string[]; // Specific insights for this chart
+  chartActions?: ActionableItem[]; // Actions specific to this chart
 }
 
 export interface ActionableItem {
@@ -92,17 +96,33 @@ export interface ChartPerspective {
 }
 
 export interface VisualData {
-  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table';
-  title?: string; // Descriptive title for the visual
+  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis';
+  title?: string; // AI-generated title based on user query
+  subtitle?: string; // AI-generated subtitle/description
   description?: string;
   insightTitle?: string; // Key insight headline
+  
+  // Multi-chart support
+  charts?: ChartConfiguration[]; // Array of 2-4 charts showing different perspectives
+  
+  // Summary section with multiple types of insights
+  summaryInsights?: {
+    metricCards?: MetricCard[]; // Key stats
+    bulletPoints?: string[]; // Quick insights list
+    paragraphSummary?: string; // Narrative summary
+    alerts?: Array<{
+      type: 'success' | 'warning' | 'error';
+      message: string;
+    }>;
+  };
+  
   chartConfig?: ChartConfiguration;
   metrics?: MetricCard[];
   workflowStep?: WorkflowStep;
   serpData?: any;
   tableData?: TableData;
-  actionableItems?: ActionableItem[]; // Actions user can take
-  deepDivePrompts?: string[]; // Follow-up questions
+  actionableItems?: ActionableItem[]; // Context-specific quick actions with navigation
+  deepDivePrompts?: string[]; // AI-generated follow-up questions
   chartPerspectives?: ChartPerspective; // Multi-perspective chart context
   insights?: string[]; // AI-generated insights from perspectives
   summary?: {
@@ -112,6 +132,13 @@ export interface VisualData {
       value: string;
       status: 'good' | 'warning' | 'needs-attention';
     }>;
+  };
+  
+  // Validation metadata
+  validationStatus?: {
+    isValid: boolean;
+    confidence: number; // 0-100
+    warnings?: string[];
   };
 }
 

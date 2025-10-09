@@ -314,6 +314,13 @@ export const useEnhancedAIChatDB = () => {
     console.log('🎬 Handling action:', action);
     
     try {
+      // Handle send_message action for deep dive questions
+      if (action.action === 'send_message' && action.data?.message) {
+        console.log('💬 Sending deep dive message:', action.data.message);
+        await sendMessage(action.data.message);
+        return;
+      }
+      
       const actionString = action.action;
       console.log('🎯 Action string:', actionString);
       

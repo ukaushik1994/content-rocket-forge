@@ -13,6 +13,7 @@ import { MessageStatus } from './MessageStatus';
 import { ErrorMessageBubble } from './ErrorMessageBubble';
 import { FormattedResponseRenderer } from './FormattedResponseRenderer';
 import { MultiChartModal } from './MultiChartModal';
+import { MultiChartAnalysis } from './visualization/MultiChartAnalysis';
 import { Button } from '@/components/ui/button';
 import { ThinkingIndicator } from './ThinkingIndicator';
 
@@ -38,6 +39,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   isThinking = false
 }) => {
   const [showMultiChartModal, setShowMultiChartModal] = useState(false);
+  const [showMultiChart, setShowMultiChart] = useState(false);
   
   // Check if this is an error message
   if (message.messageStatus === 'error' && onRetry) {
@@ -172,38 +174,47 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {/* Visual Data Rendering */}
           {message.visualData && (
             <div className="mt-3">
-              {(() => {
-                console.log('🎨 EnhancedMessageBubble: Rendering visual data:', {
-                  messageId: message.id,
-                  visualDataType: message.visualData?.type,
-                  hasChartConfig: !!message.visualData?.chartConfig,
-                  hasMetrics: !!message.visualData?.metrics,
-                  hasSerpData: !!message.visualData?.serpData,
-                  fullVisualData: message.visualData,
-                  allVisualDataCount: message.allVisualData?.length
-                });
-                return null;
-              })()}
-              
-              {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
-                <SerpVisualData 
-                  serpData={message.visualData.serpData} 
-                  onActionClick={(action, data) => {
-                    console.log('🔄 SerpVisualData action clicked:', { action, data });
-                    // Convert to contextual action and trigger
-                    onAction?.({
-                      id: `serp-action-${Date.now()}`,
-                      type: 'button',
-                      label: action,
-                      action: 'send_message',
-                      data: { 
-                        message: getActionPrompt(action, data)
-                      }
-                    });
-                  }}
-                />
+              {message.visualData.type === 'multi_chart_analysis' ? (
+                <>
+                  <Button 
+                    onClick={() => setShowMultiChart(true)}
+                    className="w-full"
+                  >
+                    View Analysis ({message.visualData.charts?.length || 0} charts)
+                  </Button>
+                  
+                  {showMultiChart && (
+                    <MultiChartAnalysis
+                      visualData={message.visualData}
+                      onClose={() => setShowMultiChart(false)}
+                      onDeepDive={(question) => {
+                        setShowMultiChart(false);
+                        onSendMessage?.(question);
+                      }}
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
+                    <SerpVisualData 
+                      serpData={message.visualData.serpData} 
+                      onActionClick={(action, data) => {
+                        onAction?.({
+                          id: `serp-action-${Date.now()}`,
+                          type: 'button',
+                          label: action,
+                          action: 'send_message',
+                          data: { 
+                            message: getActionPrompt(action, data)
+                          }
+                        });
+                      }}
+                    />
+                  )}
+                  <VisualDataRenderer data={message.visualData} />
+                </>
               )}
-              <VisualDataRenderer data={message.visualData} />
             </div>
           )}
 

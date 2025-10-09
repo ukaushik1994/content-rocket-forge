@@ -196,6 +196,121 @@ function sanitizeResponseContent(content: string): string {
 }
 
 /**
+ * Build multi-chart system prompt for structured AI responses
+ */
+function buildMultiChartSystemPrompt(): string {
+  return `You are an advanced business intelligence AI assistant. When users ask data-related questions, you MUST return a structured JSON response with the following format:
+
+{
+  "visualData": {
+    "type": "multi_chart_analysis",
+    "title": "AI-Generated Title Based on User Query",
+    "subtitle": "Brief description of what this analysis shows",
+    
+    "summaryInsights": {
+      "metricCards": [
+        { "id": "1", "title": "Key Metric", "value": "123", "change": { "value": 12, "type": "increase", "period": "vs last month" }, "icon": "TrendingUp", "color": "green" }
+      ],
+      "bulletPoints": [
+        "Key insight with specific data",
+        "Trend or comparison insight",
+        "Opportunity or issue highlight"
+      ],
+      "paragraphSummary": "Narrative summary connecting insights with strategic context.",
+      "alerts": [
+        { "type": "warning", "message": "Items needing attention" }
+      ]
+    },
+    
+    "charts": [
+      {
+        "type": "line",
+        "title": "Trend Over Time",
+        "subtitle": "Performance progression",
+        "data": [...],
+        "categories": ["Jan", "Feb"],
+        "series": [{ "dataKey": "value", "name": "Performance" }],
+        "chartInsights": ["25% upward trend", "Peak in March"]
+      }
+    ],
+    
+    "actionableItems": [
+      {
+        "id": "1",
+        "title": "Action Title",
+        "description": "Action description",
+        "priority": "high",
+        "actionType": "navigate",
+        "targetUrl": "/content-builder",
+        "icon": "FileText",
+        "estimatedImpact": "+20% engagement",
+        "timeRequired": "15 minutes"
+      }
+    ],
+    
+    "deepDivePrompts": [
+      "How does this compare to previous period?",
+      "What factors contributed to changes?",
+      "Show detailed breakdown"
+    ]
+  }
+}
+
+CRITICAL: Include 2-4 charts, all summary types, 3-5 actions with targetUrl, 3-5 deep dive questions. Use accurate data.`;
+}
+
+/**
+ * Validate AI-generated data
+ */
+async function validateAIGeneratedData(visualData: any, supabase: any): Promise<any> {
+  console.log('🔍 Validating AI-generated data...');
+  
+  const warnings: string[] = [];
+  let confidence = 100;
+  
+  if (!visualData.charts || visualData.charts.length === 0) {
+    warnings.push('No charts generated');
+    confidence -= 20;
+  }
+  
+  if (visualData.charts) {
+    for (const chart of visualData.charts) {
+      if (!chart.data || chart.data.length === 0) {
+        warnings.push(`Chart "${chart.title}" has no data`);
+        confidence -= 15;
+      }
+    }
+  }
+  
+  if (!visualData.summaryInsights) {
+    warnings.push('Missing summary insights');
+    confidence -= 15;
+  }
+  
+  if (visualData.actionableItems) {
+    visualData.actionableItems = visualData.actionableItems.map((item: any) => {
+      if (item.actionType === 'navigate' && !item.targetUrl) {
+        warnings.push(`Action "${item.title}" missing targetUrl`);
+        confidence -= 5;
+        item.targetUrl = '/';
+      }
+      return item;
+    });
+  }
+  
+  console.log(`✅ Validation: ${confidence}% confidence, ${warnings.length} warnings`);
+  
+  return {
+    ...visualData,
+    validationStatus: {
+      isValid: confidence > 60,
+      confidence,
+      warnings: warnings.length > 0 ? warnings : undefined
+    }
+  };
+}
+
+/**
  * Generate multiple chart perspectives from a single chart
  * This ensures we always show data from multiple angles
  */
