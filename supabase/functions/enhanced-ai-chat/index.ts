@@ -1636,6 +1636,43 @@ serve(async (req) => {
           visualData = { type: 'chart', chartConfig: chartData };
         }
       }
+      
+      // Auto-convert chart types (line, bar, pie, area) to proper chart structure
+      else if (['line', 'bar', 'pie', 'area'].includes(visualData.type)) {
+        console.log(`📊 Auto-converting ${visualData.type} chart type to proper structure...`);
+        
+        // The AI generated data with chart type as main type - restructure it
+        const chartType = visualData.type;
+        const chartConfig = {
+          type: chartType,
+          data: visualData.data || [],
+          categories: visualData.categories || [],
+          series: visualData.series || [],
+          title: visualData.title || `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`,
+          subtitle: visualData.subtitle || '',
+          colors: visualData.colors,
+          height: visualData.height || 300,
+          dataContext: visualData.dataContext,
+          perspectives: visualData.perspectives,
+          chartInsights: visualData.chartInsights,
+          chartActions: visualData.chartActions
+        };
+        
+        // Restructure to proper format
+        visualData = {
+          type: 'chart',
+          chartConfig: chartConfig,
+          title: visualData.title,
+          subtitle: visualData.subtitle,
+          actionableItems: visualData.actionableItems,
+          deepDivePrompts: visualData.deepDivePrompts,
+          insights: visualData.insights,
+          chartPerspectives: visualData.chartPerspectives,
+          validationStatus: visualData.validationStatus
+        };
+        
+        console.log('✅ Successfully converted chart type to proper structure');
+      }
     }
     
     // If user explicitly requested table, keep it as table
