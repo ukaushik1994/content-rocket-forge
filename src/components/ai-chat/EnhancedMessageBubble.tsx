@@ -39,7 +39,10 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   isThinking = false
 }) => {
   const [showMultiChartModal, setShowMultiChartModal] = useState(false);
-  const [showMultiChart, setShowMultiChart] = useState(false);
+  // Auto-show multi-chart analysis when present
+  const [showMultiChart, setShowMultiChart] = useState(
+    message.visualData?.type === 'multi_chart_analysis'
+  );
   
   // Check if this is an error message
   if (message.messageStatus === 'error' && onRetry) {
@@ -175,25 +178,16 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           {message.visualData && (
             <div className="mt-3">
               {message.visualData.type === 'multi_chart_analysis' ? (
-                <>
-                  <Button 
-                    onClick={() => setShowMultiChart(true)}
-                    className="w-full"
-                  >
-                    View Analysis ({message.visualData.charts?.length || 0} charts)
-                  </Button>
-                  
-                  {showMultiChart && (
-                    <MultiChartAnalysis
-                      visualData={message.visualData}
-                      onClose={() => setShowMultiChart(false)}
-                      onDeepDive={(question) => {
-                        setShowMultiChart(false);
-                        onSendMessage?.(question);
-                      }}
-                    />
-                  )}
-                </>
+                showMultiChart && (
+                  <MultiChartAnalysis
+                    visualData={message.visualData}
+                    onClose={() => setShowMultiChart(false)}
+                    onDeepDive={(question) => {
+                      setShowMultiChart(false);
+                      onSendMessage?.(question);
+                    }}
+                  />
+                )
               ) : (
                 <>
                   {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (

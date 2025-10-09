@@ -683,14 +683,10 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
       console.log('📋 VisualDataRenderer: Rendering table');
       return renderTable();
     case 'multi_chart_analysis':
-      console.log('📊 VisualDataRenderer: Rendering multi-chart analysis');
-      return (
-        <MultiChartAnalysis
-          visualData={data}
-          onClose={() => console.log('Multi-chart analysis closed')}
-          onDeepDive={(question) => console.log('Deep dive:', question)}
-        />
-      );
+      // Multi-chart analysis is handled by EnhancedMessageBubble component
+      // to ensure proper modal behavior and callback handling
+      console.log('📊 VisualDataRenderer: multi_chart_analysis handled by parent component');
+      return null;
     case 'serp_analysis':
       console.log('🔍 VisualDataRenderer: SERP analysis handled by SerpVisualData component');
       return null; // Handled by SerpVisualData component
