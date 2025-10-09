@@ -1352,13 +1352,18 @@ serve(async (req) => {
     } else {
       // NORMAL: Full prompt with all modules
       console.log('✅ Normal token usage (<25k) - using full dynamic prompt');
-      systemPrompt = BASE_PROMPT;
       
-      // Add data transparency and response structure (always needed)
-      systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
-      
-      // Add visualization modules based on intent
+      // Use multi-chart system prompt for data visualization queries
       if (queryIntent.requiresVisualData || queryIntent.scope === 'detailed' || queryIntent.scope === 'full') {
+        console.log('📊 Using multi-chart analysis prompt');
+        systemPrompt = buildMultiChartSystemPrompt();
+      } else {
+        systemPrompt = BASE_PROMPT;
+        systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
+      }
+      
+      // Add visualization modules based on intent (for non-multi-chart cases)
+      if (!queryIntent.requiresVisualData && queryIntent.scope !== 'detailed' && queryIntent.scope !== 'full') {
         systemPrompt += '\n\n' + CHART_MODULE;
         systemPrompt += '\n\n' + TABLE_MODULE;
       }
@@ -1568,8 +1573,23 @@ serve(async (req) => {
     // Import validation functions
     const { validateChartData, extractDataSource } = await import('./chart-validator.ts');
     
-    // Validate chart data accuracy
-    if (visualData && visualData.chartConfig) {
+    // Validate multi-chart analysis data
+    if (visualData && visualData.type === 'multi_chart_analysis') {
+      console.log('🔍 Validating multi-chart analysis data...');
+      try {
+        visualData = await validateAIGeneratedData(visualData, supabase);
+        console.log('✅ Multi-chart validation complete');
+      } catch (validationError) {
+        console.error('❌ Multi-chart validation failed:', validationError);
+        // Keep visualData but mark as low confidence
+        if (visualData.validationStatus) {
+          visualData.validationStatus.confidence = 0;
+          visualData.validationStatus.isValid = false;
+        }
+      }
+    }
+    // Validate single chart data accuracy
+    else if (visualData && visualData.chartConfig) {
       console.log('🔍 Validating chart data accuracy...');
       
       const validation = validateChartData(visualData.chartConfig, context);
