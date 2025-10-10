@@ -1725,9 +1725,34 @@ serve(async (req) => {
       // Generate multiple chart perspectives from the first chart
       if (uniqueCharts.length > 0) {
         const expandedCharts = generateMultipleChartPerspectives(uniqueCharts[0]);
-        visualData = expandedCharts[0];
-        allVisualData = expandedCharts; // Always include expanded array
-        console.log(`✅ Generated ${expandedCharts.length} chart perspectives from ${uniqueCharts.length} original chart(s)`);
+        
+        // Auto-convert legacy chart objects to proper structure
+        const convertedCharts = expandedCharts.map(chart => {
+          // If it's a direct chart type, convert to proper chart structure
+          if (chart.type && ['line', 'bar', 'pie', 'area'].includes(chart.type)) {
+            console.log(`📊 Auto-converting legacy ${chart.type} chart to proper structure`);
+            return {
+              type: 'chart',
+              chartConfig: {
+                type: chart.type,
+                data: chart.data || [],
+                categories: chart.categories || [],
+                series: chart.series || [],
+                title: chart.title || `${chart.type} Chart`,
+                subtitle: chart.subtitle || '',
+                colors: chart.colors,
+                height: chart.height || 300
+              },
+              title: chart.title,
+              subtitle: chart.subtitle
+            };
+          }
+          return chart;
+        });
+        
+        visualData = convertedCharts[0];
+        allVisualData = convertedCharts; // Always include expanded array
+        console.log(`✅ Generated ${convertedCharts.length} chart perspectives from ${uniqueCharts.length} original chart(s)`);
       }
       
       // If still no response from legacy parsing, use sanitized original content
