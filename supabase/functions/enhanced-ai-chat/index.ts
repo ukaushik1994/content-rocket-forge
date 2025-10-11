@@ -1680,10 +1680,13 @@ serve(async (req) => {
       console.log('📋 Keeping table format as explicitly requested by user');
     }
     
+    // Declare allVisualData in outer scope so it's accessible later for multi-chart modal
+    let allVisualData: any[] = [];
+    
     // If no structured data was found, try legacy parsing
     if (!actions && !visualData) {
       const jsonBlocks = extractJSONBlocks(aiMessage);
-      const allVisualData: any[] = []; // Collect ALL charts instead of overwriting
+      allVisualData = []; // Reset and collect ALL charts instead of overwriting
       
       for (const block of jsonBlocks) {
         console.log('🔍 Processing JSON block:', JSON.stringify(block).substring(0, 200));
