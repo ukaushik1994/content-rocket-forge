@@ -31,8 +31,7 @@ import {
   Save,
   History,
   Link2,
-  Info,
-  Check
+  Info
 } from 'lucide-react';
 import { ChartInteractiveWrapper } from './ChartInteractiveWrapper';
 import { supabase } from '@/integrations/supabase/client';
@@ -430,10 +429,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   const [syncZoom, setSyncZoom] = useState(false);
   const [linkedHoverData, setLinkedHoverData] = useState<any>(null);
   
-  // Phase 3: Persistence states
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  // Phase 3: Persistence states (TODO: Enable after DB setup)
   const [showDataInfo, setShowDataInfo] = useState(false);
 
   // Extract all charts
@@ -458,6 +454,15 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
       return true;
     }).slice(0, 4);
   }, [allVisualData, currentChartConfig]);
+
+  // Carousel navigation - Define before use in useEffect
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
 
   // Phase 1: Keyboard navigation
   useEffect(() => {
@@ -498,63 +503,24 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   }, [syncZoom, charts]);
 
-  // Phase 3: Save analysis
+  // Phase 3: Save analysis (TODO: Requires database migration)
   const handleSaveAnalysis = async () => {
-    try {
-      setIsSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const analysisData = {
-        user_id: user.id,
-        title: title || 'Untitled Analysis',
-        description,
-        charts_data: charts,
-        insights,
-        actionable_items: actionableItems,
-        deep_dive_prompts: deepDivePrompts,
-        context
-      };
-
-      const { data, error } = await supabase
-        .from('saved_chart_analyses')
-        .insert(analysisData)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setAnalysisId(data.id);
-      setIsSaved(true);
-      toast({ title: 'Analysis saved', description: 'Your analysis has been saved successfully' });
-    } catch (error) {
-      console.error('Save error:', error);
-      toast({ title: 'Error', description: 'Failed to save analysis', variant: 'destructive' });
-    } finally {
-      setIsSaving(false);
-    }
+    toast({ 
+      title: 'Feature Coming Soon', 
+      description: 'Analysis saving will be available after database setup',
+      variant: 'default'
+    });
+    // TODO: Implement after saved_chart_analyses table is created
   };
 
   // Phase 3: Share analysis
   const handleShare = async () => {
-    if (!analysisId) {
-      toast({ title: 'Save first', description: 'Please save the analysis before sharing' });
-      return;
-    }
-    
-    const shareUrl = `${window.location.origin}/analysis/${analysisId}`;
-    await navigator.clipboard.writeText(shareUrl);
-    toast({ title: 'Link copied', description: 'Analysis link copied to clipboard' });
+    toast({ 
+      title: 'Feature Coming Soon', 
+      description: 'Sharing will be available after save functionality is implemented',
+      variant: 'default'
+    });
   };
-
-  // Carousel navigation
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
-  }, [emblaApi]);
-
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
@@ -981,17 +947,15 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   size="sm" 
                   className="hover:bg-primary/10 hover:border-primary/30 transition-all"
                   onClick={handleSaveAnalysis}
-                  disabled={isSaving || isSaved}
                 >
-                  {isSaved ? <Check className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                  {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
+                  <Save className="w-4 h-4 mr-2" />
+                  Save
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
                   className="hover:bg-primary/10 hover:border-primary/30 transition-all"
                   onClick={handleShare}
-                  disabled={!analysisId}
                 >
                   <Link2 className="w-4 h-4 mr-2" />
                   Share
