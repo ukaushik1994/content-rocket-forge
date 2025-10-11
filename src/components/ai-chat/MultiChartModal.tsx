@@ -40,6 +40,8 @@ import {
 import { ChartInteractiveWrapper } from './ChartInteractiveWrapper';
 import { AIRecommendationsPanel } from './AIRecommendationsPanel';
 import { SavedAnalysesList } from './SavedAnalysesList';
+import { AnalysisVersionHistory } from './AnalysisVersionHistory';
+import { VersionComparisonModal } from './VersionComparisonModal';
 import { supabase } from '@/integrations/supabase/client';
 import html2canvas from 'html2canvas';
 import { VisualData, ChartConfiguration, ActionableItem } from '@/types/enhancedChat';
@@ -448,6 +450,11 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   const [loadedInsights, setLoadedInsights] = useState<string[] | null>(null);
   const [loadedActionableItems, setLoadedActionableItems] = useState<ActionableItem[] | null>(null);
   const [loadedDeepDivePrompts, setLoadedDeepDivePrompts] = useState<string[] | null>(null);
+
+  // Phase 4: Version history states
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showVersionComparison, setShowVersionComparison] = useState(false);
+  const [comparisonVersions, setComparisonVersions] = useState<[any, any] | null>(null);
   
   // Phase 4: AI-powered insights state
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
@@ -578,6 +585,13 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
         variant: "destructive"
       });
     }
+  };
+
+  // Phase 4: Handle version comparison
+  const handleCompareVersions = (v1: any, v2: any) => {
+    setComparisonVersions([v1, v2]);
+    setShowVersionComparison(true);
+    setShowVersionHistory(false);
   };
 
   // Phase 3: Save analysis (Real implementation)
@@ -1235,6 +1249,37 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
               )}
             </AnimatePresence>
 
+            {/* Phase 4: Version History */}
+            <AnimatePresence>
+              {showVersionHistory && analysisId && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                >
+                  <AnalysisVersionHistory
+                    analysisId={analysisId}
+                    onLoadVersion={handleLoadAnalysis}
+                    onCompareVersions={handleCompareVersions}
+                    onClose={() => setShowVersionHistory(false)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Phase 4: Version Comparison Modal */}
+            {comparisonVersions && (
+              <VersionComparisonModal
+                isOpen={showVersionComparison}
+                onClose={() => {
+                  setShowVersionComparison(false);
+                  setComparisonVersions(null);
+                }}
+                version1={comparisonVersions[0]}
+                version2={comparisonVersions[1]}
+              />
+            )}
+
             {/* Interactive Chart Carousel Section */}
             {charts.length > 0 && (
               <motion.div
@@ -1396,6 +1441,17 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   <FolderOpen className="w-4 h-4 mr-2" />
                   Load
                 </Button>
+                {analysisId && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="hover:bg-primary/10 hover:border-primary/30 transition-all"
+                    onClick={() => setShowVersionHistory(!showVersionHistory)}
+                  >
+                    <History className="w-4 h-4 mr-2" />
+                    History
+                  </Button>
+                )}
                 <Button 
                   variant="outline" 
                   size="sm"

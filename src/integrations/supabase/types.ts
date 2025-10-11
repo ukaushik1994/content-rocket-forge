@@ -4055,6 +4055,62 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_chart_analyses_versions: {
+        Row: {
+          actionable_items: Json
+          analysis_id: string
+          change_summary: string | null
+          charts_data: Json
+          context: Json
+          created_at: string
+          created_by: string
+          deep_dive_prompts: Json
+          description: string | null
+          id: string
+          insights: Json
+          title: string
+          version_number: number
+        }
+        Insert: {
+          actionable_items?: Json
+          analysis_id: string
+          change_summary?: string | null
+          charts_data?: Json
+          context?: Json
+          created_at?: string
+          created_by: string
+          deep_dive_prompts?: Json
+          description?: string | null
+          id?: string
+          insights?: Json
+          title: string
+          version_number?: number
+        }
+        Update: {
+          actionable_items?: Json
+          analysis_id?: string
+          change_summary?: string | null
+          charts_data?: Json
+          context?: Json
+          created_at?: string
+          created_by?: string
+          deep_dive_prompts?: Json
+          description?: string | null
+          id?: string
+          insights?: Json
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_chart_analyses_versions_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "saved_chart_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       serp_alerts: {
         Row: {
           alert_data: Json | null
