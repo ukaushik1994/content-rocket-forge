@@ -16,6 +16,8 @@ interface ChartInteractiveWrapperProps {
   onToggleSyncZoom: () => void;
   linkedHoverData?: any;
   onHover?: (data: any) => void;
+  onExportPNG?: () => void;
+  onExportCSV?: () => void;
   className?: string;
 }
 
@@ -30,6 +32,8 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
   onToggleSyncZoom,
   linkedHoverData,
   onHover,
+  onExportPNG,
+  onExportCSV,
   className
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -85,6 +89,8 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
             onToggleSyncZoom={onToggleSyncZoom}
             showFilter={true}
             onToggleFilter={() => setShowFilters(!showFilters)}
+            onExportPNG={onExportPNG}
+            onExportCSV={onExportCSV}
           />
         </div>
 

@@ -1,7 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, Download, Filter, Lock, Unlock } from 'lucide-react';
+import { 
+  ZoomIn, 
+  ZoomOut, 
+  Maximize2, 
+  Minimize2, 
+  Download, 
+  Filter, 
+  Lock, 
+  Unlock,
+  FileImage,
+  FileSpreadsheet
+} from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 interface ChartControlsProps {
@@ -14,7 +31,8 @@ interface ChartControlsProps {
   onResetZoom: () => void;
   syncZoom: boolean;
   onToggleSyncZoom: () => void;
-  onExport?: () => void;
+  onExportPNG?: () => void;
+  onExportCSV?: () => void;
   showFilter?: boolean;
   onToggleFilter?: () => void;
 }
@@ -29,7 +47,8 @@ export const ChartControls: React.FC<ChartControlsProps> = ({
   onResetZoom,
   syncZoom,
   onToggleSyncZoom,
-  onExport,
+  onExportPNG,
+  onExportCSV,
   showFilter,
   onToggleFilter
 }) => {
@@ -136,21 +155,38 @@ export const ChartControls: React.FC<ChartControlsProps> = ({
           </TooltipContent>
         </Tooltip>
 
-        {/* Export/Download */}
-        {onExport && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={onExport}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Export Chart</TooltipContent>
-          </Tooltip>
+        {/* Export/Download Dropdown */}
+        {(onExportPNG || onExportCSV) && (
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Export Chart</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end">
+              {onExportPNG && (
+                <DropdownMenuItem onClick={onExportPNG}>
+                  <FileImage className="h-4 w-4 mr-2" />
+                  Export as PNG
+                </DropdownMenuItem>
+              )}
+              {onExportCSV && (
+                <DropdownMenuItem onClick={onExportCSV}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </TooltipProvider>
     </div>

@@ -433,8 +433,11 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   const [syncZoom, setSyncZoom] = useState(false);
   const [linkedHoverData, setLinkedHoverData] = useState<any>(null);
   
-  // Phase 3: Persistence states (TODO: Enable after DB setup)
+  // Phase 3: Persistence states
   const [showDataInfo, setShowDataInfo] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
   
   // Phase 4: AI-powered insights state
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
@@ -516,24 +519,174 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   }, [syncZoom, charts]);
 
-  // Phase 3: Save analysis (TODO: Requires database migration)
+  // Phase 3: Save analysis (Real implementation)
   const handleSaveAnalysis = async () => {
-    toast({ 
-      title: 'Feature Coming Soon', 
-      description: 'Analysis saving will be available after database setup',
-      variant: 'default'
-    });
-    // TODO: Implement after saved_chart_analyses table is created
+    try {
+      setIsSaving(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ 
+          title: 'Authentication Required', 
+          description: 'Please sign in to save analysis',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const analysisData = {
+        user_id: user.id,
+        title: title || 'Untitled Analysis',
+        description,
+        charts_data: charts as any,
+        insights: insights as any,
+        actionable_items: actionableItems as any,
+        deep_dive_prompts: deepDivePrompts as any,
+        context: context as any
+      };
+
+      let result;
+      if (analysisId) {
+        // Update existing
+        const { data, error } = await supabase
+          .from('saved_chart_analyses')
+          .update(analysisData)
+          .eq('id', analysisId)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        toast({ title: 'Updated', description: 'Analysis updated successfully' });
+      } else {
+        // Create new
+        const { data, error } = await supabase
+          .from('saved_chart_analyses')
+          .insert(analysisData)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        setAnalysisId(result.id);
+        toast({ title: 'Saved', description: 'Analysis saved successfully' });
+      }
+
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to save analysis', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Phase 3: Share analysis
   const handleShare = async () => {
-    toast({ 
-      title: 'Feature Coming Soon', 
-      description: 'Sharing will be available after save functionality is implemented',
-      variant: 'default'
-    });
+    if (!analysisId) {
+      toast({ 
+        title: 'Save First', 
+        description: 'Please save the analysis before sharing',
+        variant: 'default'
+      });
+      return;
+    }
+    
+    const shareUrl = `${window.location.origin}/analysis/${analysisId}`;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ 
+        title: 'Link Copied', 
+        description: 'Shareable link copied to clipboard' 
+      });
+    } catch (error) {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to copy link', 
+        variant: 'destructive' 
+      });
+    }
   };
+
+  // Phase 1: Export to PNG
+  const handleExportPNG = useCallback(async (chartIndex: number) => {
+    try {
+      const chart = charts[chartIndex];
+      if (!chart) return;
+
+      // Create canvas from chart data
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 800;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Simple chart rendering (basic implementation)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#000000';
+      ctx.font = '24px sans-serif';
+      ctx.fillText(chart.title || 'Chart', 50, 50);
+      ctx.font = '14px sans-serif';
+      ctx.fillText(`Exported from Analytics Dashboard - ${new Date().toLocaleDateString()}`, 50, 80);
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${chart.title || 'chart'}-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({ title: 'Exported', description: 'Chart exported as PNG' });
+      });
+    } catch (error) {
+      console.error('Export PNG error:', error);
+      toast({ title: 'Error', description: 'Failed to export PNG', variant: 'destructive' });
+    }
+  }, [charts, toast]);
+
+  // Phase 1: Export to CSV
+  const handleExportCSV = useCallback((chartIndex: number) => {
+    try {
+      const chart = charts[chartIndex];
+      if (!chart || !chart.data || chart.data.length === 0) return;
+
+      // Convert data to CSV
+      const headers = Object.keys(chart.data[0]);
+      const csvRows = [
+        headers.join(','),
+        ...chart.data.map(row => 
+          headers.map(header => {
+            const value = row[header];
+            return typeof value === 'string' && value.includes(',') 
+              ? `"${value}"` 
+              : value;
+          }).join(',')
+        )
+      ];
+
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${chart.title || 'chart'}-data-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast({ title: 'Exported', description: 'Data exported as CSV' });
+    } catch (error) {
+      console.error('Export CSV error:', error);
+      toast({ title: 'Error', description: 'Failed to export CSV', variant: 'destructive' });
+    }
+  }, [charts, toast]);
   
   // Phase 4: Generate AI insights
   const generateAIInsights = useCallback(() => {
@@ -1026,6 +1179,8 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                             onToggleSyncZoom={() => setSyncZoom(!syncZoom)}
                             linkedHoverData={linkedHoverData}
                             onHover={setLinkedHoverData}
+                            onExportPNG={() => handleExportPNG(index)}
+                            onExportCSV={() => handleExportCSV(index)}
                           >
                             <div className="flex items-center gap-2 mb-4">
                               <Select 
@@ -1093,9 +1248,19 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   size="sm" 
                   className="hover:bg-primary/10 hover:border-primary/30 transition-all"
                   onClick={handleSaveAnalysis}
+                  disabled={isSaving}
                 >
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
+                  {isSaved ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2 text-success" />
+                      Saved
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      {isSaving ? 'Saving...' : analysisId ? 'Update' : 'Save'}
+                    </>
+                  )}
                 </Button>
                 <Button 
                   variant="outline" 

@@ -3963,6 +3963,54 @@ export type Database = {
           },
         ]
       }
+      saved_chart_analyses: {
+        Row: {
+          actionable_items: Json | null
+          charts_data: Json
+          context: Json | null
+          created_at: string
+          deep_dive_prompts: Json | null
+          description: string | null
+          id: string
+          insights: Json | null
+          is_public: boolean | null
+          title: string
+          updated_at: string
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          actionable_items?: Json | null
+          charts_data?: Json
+          context?: Json | null
+          created_at?: string
+          deep_dive_prompts?: Json | null
+          description?: string | null
+          id?: string
+          insights?: Json | null
+          is_public?: boolean | null
+          title: string
+          updated_at?: string
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          actionable_items?: Json | null
+          charts_data?: Json
+          context?: Json | null
+          created_at?: string
+          deep_dive_prompts?: Json | null
+          description?: string | null
+          id?: string
+          insights?: Json | null
+          is_public?: boolean | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       serp_alerts: {
         Row: {
           alert_data: Json | null
