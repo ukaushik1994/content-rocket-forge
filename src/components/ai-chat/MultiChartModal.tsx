@@ -545,6 +545,18 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   }, [syncZoom, charts]);
 
+  // Show success toast when valid charts are ready
+  useEffect(() => {
+    if (isOpen && validCharts.length > 0) {
+      const dataQuality = (validCharts.length / charts.length) * 100;
+      toast({
+        title: 'Charts Loaded Successfully',
+        description: `${validCharts.length} chart${validCharts.length > 1 ? 's' : ''} ready for analysis${dataQuality < 100 ? ` (${Math.round(dataQuality)}% data quality)` : ''}`,
+        variant: 'default'
+      });
+    }
+  }, [isOpen]); // Only trigger when modal opens
+
   // Handle load analysis
   const handleLoadAnalysis = (analysis: any) => {
     try {
@@ -1089,14 +1101,26 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
 
   // Validate and filter charts with valid data
   const validCharts = useMemo(() => {
-    return charts.filter(chart => 
+    const filtered = charts.filter(chart => 
       chart.data && 
       Array.isArray(chart.data) && 
       chart.data.length > 0 &&
       chart.categories && 
       chart.categories.length > 0
     );
-  }, [charts]);
+    
+    // Show toast notification if charts were filtered out
+    const invalidCount = charts.length - filtered.length;
+    if (invalidCount > 0 && isOpen) {
+      toast({
+        title: 'Data Quality Notice',
+        description: `${invalidCount} chart${invalidCount > 1 ? 's' : ''} ${invalidCount > 1 ? 'were' : 'was'} filtered out due to missing or invalid data.`,
+        variant: 'default'
+      });
+    }
+    
+    return filtered;
+  }, [charts, isOpen]);
 
   // Get available categories for filtering
   const getAvailableCategories = (config: ChartConfiguration): string[] => {
@@ -1148,9 +1172,19 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   <Activity className="w-6 h-6 text-primary" />
                 </motion.div>
                 <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                    {title || 'Insights Hub'}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                      {title || 'Insights Hub'}
+                    </h2>
+                    {/* Data Quality Indicator */}
+                    <Badge 
+                      variant={validCharts.length === charts.length ? 'default' : 'secondary'}
+                      className="gap-1 px-2 py-0.5"
+                    >
+                      <CheckCircle2 className="w-3 h-3" />
+                      {validCharts.length}/{charts.length} valid
+                    </Badge>
+                  </div>
                   {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
                 </div>
               </div>
