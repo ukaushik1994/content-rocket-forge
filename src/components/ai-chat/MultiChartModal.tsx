@@ -613,27 +613,32 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   };
 
-  // Phase 1: Export to PNG
+  // Phase 2: Enhanced Export to PNG with html2canvas
   const handleExportPNG = useCallback(async (chartIndex: number) => {
     try {
       const chart = charts[chartIndex];
       if (!chart) return;
 
-      // Create canvas from chart data
-      const canvas = document.createElement('canvas');
-      canvas.width = 1200;
-      canvas.height = 800;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      // Dynamic import html2canvas
+      const html2canvas = (await import('html2canvas')).default;
 
-      // Simple chart rendering (basic implementation)
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#000000';
-      ctx.font = '24px sans-serif';
-      ctx.fillText(chart.title || 'Chart', 50, 50);
-      ctx.font = '14px sans-serif';
-      ctx.fillText(`Exported from Analytics Dashboard - ${new Date().toLocaleDateString()}`, 50, 80);
+      // Find the chart container element
+      const chartElements = document.querySelectorAll('[role="tabpanel"]');
+      const chartElement = chartElements[chartIndex] as HTMLElement;
+      
+      if (!chartElement) {
+        throw new Error('Chart element not found');
+      }
+
+      toast({ title: 'Exporting...', description: 'Generating high-quality image' });
+
+      // Capture the chart with html2canvas
+      const canvas = await html2canvas(chartElement, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Higher resolution
+        logging: false,
+        useCORS: true
+      });
 
       // Convert to blob and download
       canvas.toBlob((blob) => {
@@ -644,11 +649,15 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
         a.download = `${chart.title || 'chart'}-${Date.now()}.png`;
         a.click();
         URL.revokeObjectURL(url);
-        toast({ title: 'Exported', description: 'Chart exported as PNG' });
+        toast({ title: 'Exported', description: 'Chart exported as high-quality PNG' });
       });
     } catch (error) {
       console.error('Export PNG error:', error);
-      toast({ title: 'Error', description: 'Failed to export PNG', variant: 'destructive' });
+      toast({ 
+        title: 'Export Failed', 
+        description: 'Could not export chart. Try again or use CSV export.',
+        variant: 'destructive' 
+      });
     }
   }, [charts, toast]);
 
@@ -688,54 +697,91 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   }, [charts, toast]);
   
-  // Phase 4: Generate AI insights
-  const generateAIInsights = useCallback(() => {
-    // Mock AI analysis - in production, this would call an AI service
-    const mockInsights = {
-      predictions: [
-        "Based on current trends, expect 15% growth in next quarter",
-        "Seasonal patterns suggest peak performance in Q3",
-        "User engagement likely to increase by 20% with proposed changes"
-      ],
-      anomalies: [
-        { 
-          type: "Outlier Detected", 
-          description: "Unusual spike in traffic on March 15th", 
-          severity: 'medium' as const
-        },
-        { 
-          type: "Pattern Break", 
-          description: "Conversion rate deviation from historical average", 
-          severity: 'low' as const
-        }
-      ],
-      recommendations: [
-        {
-          title: "Optimize High-Impact Pages",
-          description: "Focus on pages with 70+ SEO score for maximum ROI",
-          impact: "+25% organic traffic"
-        },
-        {
-          title: "Address Low Performers",
-          description: "3 pages scoring below 50 need immediate attention",
-          impact: "Prevent ranking loss"
-        },
-        {
-          title: "Expand Top Keywords",
-          description: "Create content clusters around your top 5 performing keywords",
-          impact: "+40% keyword coverage"
-        }
-      ],
-      trends: [
-        "Upward trajectory in user engagement metrics",
-        "Consistent improvement in page load times",
-        "Growing mobile traffic share (now 65%)"
-      ]
-    };
-    
-    setAIInsights(mockInsights);
+  // Phase 4: Generate AI insights (Real AI implementation)
+  const generateAIInsights = useCallback(async () => {
+    if (charts.length === 0) {
+      toast({ 
+        title: 'No Data', 
+        description: 'No charts available to analyze',
+        variant: 'default'
+      });
+      return;
+    }
+
     setShowAIRecommendations(true);
-  }, []);
+    setAIInsights({
+      predictions: ['Analyzing data...'],
+      anomalies: [],
+      recommendations: [],
+      trends: []
+    });
+
+    try {
+      const { data: functionData, error: functionError } = await supabase.functions.invoke(
+        'analyze-chart-data',
+        {
+          body: { 
+            charts: charts.map(c => ({
+              title: c.title,
+              type: c.type,
+              data: c.data?.slice(0, 50) // Limit data points for API
+            })),
+            context: context,
+            userQuery: title || description
+          }
+        }
+      );
+
+      if (functionError) {
+        console.error('Function error:', functionError);
+        throw new Error(functionError.message || 'Failed to generate insights');
+      }
+
+      if (functionData?.error) {
+        throw new Error(functionData.error);
+      }
+
+      if (functionData?.insights) {
+        setAIInsights(functionData.insights);
+        toast({ 
+          title: 'AI Analysis Complete', 
+          description: `Generated ${functionData.insights.predictions?.length || 0} predictions and ${functionData.insights.recommendations?.length || 0} recommendations`,
+          duration: 3000
+        });
+      } else {
+        throw new Error('No insights returned from AI');
+      }
+
+    } catch (error: any) {
+      console.error('AI insights error:', error);
+      
+      // Show user-friendly error
+      toast({ 
+        title: 'AI Analysis Failed', 
+        description: error.message || 'Could not generate insights. Please try again.',
+        variant: 'destructive'
+      });
+
+      // Set fallback mock insights
+      const mockInsights = {
+        predictions: [
+          "Unable to generate predictions at this time",
+          "Please try again or check your connection"
+        ],
+        anomalies: [],
+        recommendations: [
+          {
+            title: "Try Again Later",
+            description: "AI analysis temporarily unavailable. Your chart data is saved.",
+            impact: "Resume analysis when service is available"
+          }
+        ],
+        trends: []
+      };
+      
+      setAIInsights(mockInsights);
+    }
+  }, [charts, context, title, description, toast, supabase]);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
