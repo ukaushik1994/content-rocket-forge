@@ -545,18 +545,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   }, [syncZoom, charts]);
 
-  // Show success toast when valid charts are ready
-  useEffect(() => {
-    if (isOpen && validCharts.length > 0) {
-      const dataQuality = (validCharts.length / charts.length) * 100;
-      toast({
-        title: 'Charts Loaded Successfully',
-        description: `${validCharts.length} chart${validCharts.length > 1 ? 's' : ''} ready for analysis${dataQuality < 100 ? ` (${Math.round(dataQuality)}% data quality)` : ''}`,
-        variant: 'default'
-      });
-    }
-  }, [isOpen]); // Only trigger when modal opens
-
   // Handle load analysis
   const handleLoadAnalysis = (analysis: any) => {
     try {
@@ -1099,28 +1087,42 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   };
 
-  // Validate and filter charts with valid data
+  // Validate and filter charts with valid data (pure computation, no side effects)
   const validCharts = useMemo(() => {
-    const filtered = charts.filter(chart => 
+    return charts.filter(chart => 
       chart.data && 
       Array.isArray(chart.data) && 
       chart.data.length > 0 &&
       chart.categories && 
       chart.categories.length > 0
     );
+  }, [charts]);
+
+  // Show data quality notification in separate effect
+  useEffect(() => {
+    if (!isOpen) return;
     
-    // Show toast notification if charts were filtered out
-    const invalidCount = charts.length - filtered.length;
-    if (invalidCount > 0 && isOpen) {
+    const invalidCount = charts.length - validCharts.length;
+    if (invalidCount > 0) {
       toast({
         title: 'Data Quality Notice',
         description: `${invalidCount} chart${invalidCount > 1 ? 's' : ''} ${invalidCount > 1 ? 'were' : 'was'} filtered out due to missing or invalid data.`,
         variant: 'default'
       });
     }
-    
-    return filtered;
-  }, [charts, isOpen]);
+  }, [isOpen, charts.length, validCharts.length]); // Only when modal opens or chart validity changes
+
+  // Show success toast when valid charts are ready (only when charts actually change)
+  useEffect(() => {
+    if (isOpen && validCharts.length > 0 && charts.length > 0) {
+      const dataQuality = (validCharts.length / charts.length) * 100;
+      toast({
+        title: 'Charts Loaded Successfully',
+        description: `${validCharts.length} chart${validCharts.length > 1 ? 's' : ''} ready for analysis${dataQuality < 100 ? ` (${Math.round(dataQuality)}% data quality)` : ''}`,
+        variant: 'default'
+      });
+    }
+  }, [isOpen, validCharts.length, charts.length]); // Trigger when modal opens or charts change
 
   // Get available categories for filtering
   const getAvailableCategories = (config: ChartConfiguration): string[] => {
