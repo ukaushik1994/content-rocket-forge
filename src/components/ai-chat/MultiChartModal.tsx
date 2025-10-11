@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,8 +27,15 @@ import {
   Edit,
   AlertTriangle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Save,
+  History,
+  Link2,
+  Info,
+  Check
 } from 'lucide-react';
+import { ChartInteractiveWrapper } from './ChartInteractiveWrapper';
+import { supabase } from '@/integrations/supabase/client';
 import { VisualData, ChartConfiguration, ActionableItem } from '@/types/enhancedChat';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -417,6 +424,17 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   const [selectedFilter, setSelectedFilter] = useState<Record<number, string>>({});
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'start' });
   const [selectedIndex, setSelectedIndex] = useState(0);
+  
+  // Phase 2: Interactive states
+  const [zoomLevels, setZoomLevels] = useState<Record<number, number>>({});
+  const [syncZoom, setSyncZoom] = useState(false);
+  const [linkedHoverData, setLinkedHoverData] = useState<any>(null);
+  
+  // Phase 3: Persistence states
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [showDataInfo, setShowDataInfo] = useState(false);
 
   // Extract all charts
   const charts = useMemo(() => {
@@ -440,6 +458,94 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
       return true;
     }).slice(0, 4);
   }, [allVisualData, currentChartConfig]);
+
+  // Phase 1: Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch(e.key) {
+        case 'Escape':
+          onClose();
+          break;
+        case 'ArrowLeft':
+          scrollPrev();
+          break;
+        case 'ArrowRight':
+          scrollNext();
+          break;
+        case 'Home':
+          emblaApi?.scrollTo(0);
+          break;
+        case 'End':
+          emblaApi?.scrollTo(charts.length - 1);
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, scrollPrev, scrollNext, emblaApi, charts.length]);
+
+  // Phase 2: Zoom handlers
+  const handleZoomChange = useCallback((index: number, level: number) => {
+    if (syncZoom) {
+      const newLevels: Record<number, number> = {};
+      charts.forEach((_, i) => newLevels[i] = level);
+      setZoomLevels(newLevels);
+    } else {
+      setZoomLevels(prev => ({ ...prev, [index]: level }));
+    }
+  }, [syncZoom, charts]);
+
+  // Phase 3: Save analysis
+  const handleSaveAnalysis = async () => {
+    try {
+      setIsSaving(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const analysisData = {
+        user_id: user.id,
+        title: title || 'Untitled Analysis',
+        description,
+        charts_data: charts,
+        insights,
+        actionable_items: actionableItems,
+        deep_dive_prompts: deepDivePrompts,
+        context
+      };
+
+      const { data, error } = await supabase
+        .from('saved_chart_analyses')
+        .insert(analysisData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAnalysisId(data.id);
+      setIsSaved(true);
+      toast({ title: 'Analysis saved', description: 'Your analysis has been saved successfully' });
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({ title: 'Error', description: 'Failed to save analysis', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Phase 3: Share analysis
+  const handleShare = async () => {
+    if (!analysisId) {
+      toast({ title: 'Save first', description: 'Please save the analysis before sharing' });
+      return;
+    }
+    
+    const shareUrl = `${window.location.origin}/analysis/${analysisId}`;
+    await navigator.clipboard.writeText(shareUrl);
+    toast({ title: 'Link copied', description: 'Analysis link copied to clipboard' });
+  };
 
   // Carousel navigation
   const scrollPrev = useCallback(() => {
@@ -795,60 +901,60 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                         <div
                           key={index}
                           className="flex-[0_0_100%] min-w-0"
+                          role="tabpanel"
+                          aria-label={`Chart ${index + 1}: ${chart.title}`}
                         >
-                          <Card className="glass-panel bg-gradient-to-br from-card/50 to-card/30 border border-white/10 p-6 hover:border-primary/30 transition-all duration-300">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-primary/10">
-                                  <Icon className="w-5 h-5 text-primary" />
-                                </div>
-                                <div>
-                                  <h4 className="text-lg font-semibold">{chart.title || `Chart ${index + 1}`}</h4>
-                                  {chart.subtitle && <p className="text-sm text-muted-foreground">{chart.subtitle}</p>}
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
+                          <ChartInteractiveWrapper
+                            chartIndex={index}
+                            title={chart.title || `Chart ${index + 1}`}
+                            description={chart.subtitle}
+                            zoomLevel={zoomLevels[index] || 1}
+                            onZoomChange={(level) => handleZoomChange(index, level)}
+                            syncZoom={syncZoom}
+                            onToggleSyncZoom={() => setSyncZoom(!syncZoom)}
+                            linkedHoverData={linkedHoverData}
+                            onHover={setLinkedHoverData}
+                          >
+                            <div className="flex items-center gap-2 mb-4">
+                              <Select 
+                                value={selectedChartType[index] || chart.type} 
+                                onValueChange={(value) => setSelectedChartType(prev => ({ ...prev, [index]: value }))}
+                              >
+                                <SelectTrigger className="w-32 h-8 text-xs">
+                                  <Edit className="w-3 h-3 mr-1" />
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="line">Line</SelectItem>
+                                  <SelectItem value="bar">Bar</SelectItem>
+                                  <SelectItem value="area">Area</SelectItem>
+                                  <SelectItem value="pie">Pie</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {getAvailableCategories(chart).length > 0 && (
                                 <Select 
-                                  value={selectedChartType[index] || chart.type} 
-                                  onValueChange={(value) => setSelectedChartType(prev => ({ ...prev, [index]: value }))}
+                                  value={selectedFilter[index] || 'all'} 
+                                  onValueChange={(value) => setSelectedFilter(prev => ({ ...prev, [index]: value }))}
                                 >
-                                  <SelectTrigger className="w-32 h-8 text-xs">
-                                    <Edit className="w-3 h-3 mr-1" />
+                                  <SelectTrigger className="w-28 h-8 text-xs">
+                                    <Filter className="w-3 h-3 mr-1" />
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="line">Line</SelectItem>
-                                    <SelectItem value="bar">Bar</SelectItem>
-                                    <SelectItem value="area">Area</SelectItem>
-                                    <SelectItem value="pie">Pie</SelectItem>
+                                    <SelectItem value="all">All</SelectItem>
+                                    {getAvailableCategories(chart).map(cat => (
+                                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
-
-                                {getAvailableCategories(chart).length > 0 && (
-                                  <Select 
-                                    value={selectedFilter[index] || 'all'} 
-                                    onValueChange={(value) => setSelectedFilter(prev => ({ ...prev, [index]: value }))}
-                                  >
-                                    <SelectTrigger className="w-28 h-8 text-xs">
-                                      <Filter className="w-3 h-3 mr-1" />
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="all">All</SelectItem>
-                                      {getAvailableCategories(chart).map(cat => (
-                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              </div>
+                              )}
                             </div>
                             
                             <div className="bg-background/30 rounded-lg p-4">
                               {renderChart(chart, index)}
                             </div>
-                          </Card>
+                          </ChartInteractiveWrapper>
                         </div>
                       );
                     })}
@@ -874,23 +980,30 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   variant="outline" 
                   size="sm" 
                   className="hover:bg-primary/10 hover:border-primary/30 transition-all"
-                  onClick={() => {
-                    toast({ title: "Export", description: "Export functionality coming soon!" });
-                  }}
+                  onClick={handleSaveAnalysis}
+                  disabled={isSaving || isSaved}
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
+                  {isSaved ? <Check className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
                   className="hover:bg-primary/10 hover:border-primary/30 transition-all"
-                  onClick={() => {
-                    toast({ title: "Share", description: "Share functionality coming soon!" });
-                  }}
+                  onClick={handleShare}
+                  disabled={!analysisId}
                 >
-                  <Share2 className="w-4 h-4 mr-2" />
+                  <Link2 className="w-4 h-4 mr-2" />
                   Share
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="hover:bg-primary/10 hover:border-primary/30 transition-all"
+                  onClick={() => setShowDataInfo(!showDataInfo)}
+                >
+                  <Info className="w-4 h-4 mr-2" />
+                  Data Info
                 </Button>
               </div>
               
