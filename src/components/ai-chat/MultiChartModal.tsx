@@ -34,11 +34,14 @@ import {
   Info,
   Brain,
   Shield,
-  CheckCircle2
+  CheckCircle2,
+  FolderOpen
 } from 'lucide-react';
 import { ChartInteractiveWrapper } from './ChartInteractiveWrapper';
 import { AIRecommendationsPanel } from './AIRecommendationsPanel';
+import { SavedAnalysesList } from './SavedAnalysesList';
 import { supabase } from '@/integrations/supabase/client';
+import html2canvas from 'html2canvas';
 import { VisualData, ChartConfiguration, ActionableItem } from '@/types/enhancedChat';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -438,6 +441,13 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [showSavedList, setShowSavedList] = useState(false);
+  
+  // Phase 3: Loaded analysis data (overrides props when loaded)
+  const [loadedCharts, setLoadedCharts] = useState<ChartConfiguration[] | null>(null);
+  const [loadedInsights, setLoadedInsights] = useState<string[] | null>(null);
+  const [loadedActionableItems, setLoadedActionableItems] = useState<ActionableItem[] | null>(null);
+  const [loadedDeepDivePrompts, setLoadedDeepDivePrompts] = useState<string[] | null>(null);
   
   // Phase 4: AI-powered insights state
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
@@ -448,8 +458,12 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     trends?: string[];
   }>({});
 
-  // Extract all charts
+  // Extract all charts - use loaded charts if available
   const charts = useMemo(() => {
+    if (loadedCharts) {
+      return loadedCharts;
+    }
+    
     const chartConfigs: ChartConfiguration[] = [];
     
     if (currentChartConfig) {
@@ -469,7 +483,12 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
       seen.add(config.type);
       return true;
     }).slice(0, 4);
-  }, [allVisualData, currentChartConfig]);
+  }, [allVisualData, currentChartConfig, loadedCharts]);
+
+  // Use loaded data if available, otherwise use props
+  const displayInsights = loadedInsights || insights;
+  const displayActionableItems = loadedActionableItems || actionableItems;
+  const displayDeepDivePrompts = loadedDeepDivePrompts || deepDivePrompts;
 
   // Carousel navigation - Define before use in useEffect
   const scrollPrev = useCallback(() => {
@@ -519,6 +538,48 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   }, [syncZoom, charts]);
 
+  // Handle load analysis
+  const handleLoadAnalysis = (analysis: any) => {
+    try {
+      // Restore charts
+      if (analysis.charts_data) {
+        setLoadedCharts(analysis.charts_data);
+      }
+      
+      // Restore insights
+      if (analysis.insights) {
+        setLoadedInsights(analysis.insights);
+      }
+      
+      // Restore action items
+      if (analysis.actionable_items) {
+        setLoadedActionableItems(analysis.actionable_items);
+      }
+      
+      // Restore deep dive prompts
+      if (analysis.deep_dive_prompts) {
+        setLoadedDeepDivePrompts(analysis.deep_dive_prompts);
+      }
+      
+      // Set analysis metadata
+      setAnalysisId(analysis.id);
+      setIsSaved(true);
+      setShowSavedList(false);
+      
+      toast({
+        title: "Analysis loaded",
+        description: `Loaded "${analysis.title}"`
+      });
+    } catch (error: any) {
+      console.error('Error loading analysis:', error);
+      toast({
+        title: "Error loading analysis",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   // Phase 3: Save analysis (Real implementation)
   const handleSaveAnalysis = async () => {
     try {
@@ -538,9 +599,9 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
         title: title || 'Untitled Analysis',
         description,
         charts_data: charts as any,
-        insights: insights as any,
-        actionable_items: actionableItems as any,
-        deep_dive_prompts: deepDivePrompts as any,
+        insights: displayInsights as any,
+        actionable_items: displayActionableItems as any,
+        deep_dive_prompts: displayDeepDivePrompts as any,
         context: context as any
       };
 
@@ -1138,7 +1199,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
             )}
 
             {/* AI Insights Section */}
-            <AIInsightsPanel insights={insights} onDeepDiveClick={onDeepDiveClick} />
+            <AIInsightsPanel insights={displayInsights} onDeepDiveClick={onDeepDiveClick} />
 
             {/* Phase 4: AI Recommendations Panel */}
             <AnimatePresence>
@@ -1154,6 +1215,23 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                     });
                   }}
                 />
+              )}
+            </AnimatePresence>
+
+            {/* Phase 3: Saved Analyses List */}
+            <AnimatePresence>
+              {showSavedList && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                >
+                  <SavedAnalysesList
+                    onLoad={handleLoadAnalysis}
+                    onClose={() => setShowSavedList(false)}
+                    currentAnalysisId={analysisId}
+                  />
+                </motion.div>
               )}
             </AnimatePresence>
 
@@ -1279,8 +1357,8 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
 
             {/* Quick Actions Section */}
             <QuickActionsPanel
-              actionableItems={actionableItems}
-              deepDivePrompts={deepDivePrompts}
+              actionableItems={displayActionableItems}
+              deepDivePrompts={displayDeepDivePrompts}
               onActionClick={onActionClick}
               onClose={onClose}
             />
@@ -1308,6 +1386,15 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                       {isSaving ? 'Saving...' : analysisId ? 'Update' : 'Save'}
                     </>
                   )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="hover:bg-primary/10 hover:border-primary/30 transition-all"
+                  onClick={() => setShowSavedList(!showSavedList)}
+                >
+                  <FolderOpen className="w-4 h-4 mr-2" />
+                  Load
                 </Button>
                 <Button 
                   variant="outline" 
