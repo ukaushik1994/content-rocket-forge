@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, AreaChart, Area, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell 
 } from 'recharts';
 import { ChartConfiguration } from '@/types/enhancedChat';
+import { AlertTriangle } from 'lucide-react';
 
 interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
@@ -11,6 +12,26 @@ interface InteractiveChartProps {
 
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({ chartConfig }) => {
   const { type, data, categories, series, colors, height = 300 } = chartConfig;
+
+  // Validate data before rendering
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    console.warn('⚠️ InteractiveChart: No valid data provided', { type, dataLength: data?.length });
+    return (
+      <div className="flex items-center justify-center h-full min-h-[300px]">
+        <div className="text-center text-muted-foreground">
+          <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No data available for this chart</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('🎯 InteractiveChart: Rendering chart', {
+    type,
+    dataLength: data?.length,
+    hasCategories: categories?.length > 0,
+    hasSeries: series?.length > 0
+  });
 
   const defaultColors = colors || [
     'hsl(var(--primary))', 

@@ -267,13 +267,13 @@ const ChartContextPanel: React.FC<{
   );
 };
 
-// AI Insights Panel Component (Collapsible)
+// AI Insights Panel Component (Collapsible) - Minimal by default
 const AIInsightsPanel: React.FC<{ insights: string[]; onDeepDiveClick?: (insight: string) => void }> = ({ insights, onDeepDiveClick }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
   if (!insights || insights.length === 0) return null;
   
-  const displayedInsights = isExpanded ? insights : insights.slice(0, 3);
+  const displayedInsights = isExpanded ? insights : insights.slice(0, 2);
   
   return (
     <motion.div
@@ -289,14 +289,14 @@ const AIInsightsPanel: React.FC<{ insights: string[]; onDeepDiveClick?: (insight
             </div>
             <h3 className="text-lg font-semibold">AI Insights</h3>
           </div>
-          {insights.length > 3 && (
+          {insights.length > 2 && (
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-xs"
             >
-              {isExpanded ? 'Show Less' : `+${insights.length - 3} More`}
+              {isExpanded ? 'Show Less' : `+${insights.length - 2} More`}
             </Button>
           )}
         </div>
@@ -1087,6 +1087,17 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   };
 
+  // Validate and filter charts with valid data
+  const validCharts = useMemo(() => {
+    return charts.filter(chart => 
+      chart.data && 
+      Array.isArray(chart.data) && 
+      chart.data.length > 0 &&
+      chart.categories && 
+      chart.categories.length > 0
+    );
+  }, [charts]);
+
   // Get available categories for filtering
   const getAvailableCategories = (config: ChartConfiguration): string[] => {
     const categories = new Set<string>();
@@ -1097,6 +1108,24 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     });
     return Array.from(categories);
   };
+
+  // Early return for no valid charts
+  if (validCharts.length === 0) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <div className="text-center py-8">
+            <AlertTriangle className="w-12 h-12 mx-auto text-warning mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Charts cannot be generated without valid data. Please ensure your data source is properly configured.
+            </p>
+            <Button onClick={onClose} className="mt-4">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -1212,76 +1241,8 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
               />
             )}
 
-            {/* AI Insights Section */}
-            <AIInsightsPanel insights={displayInsights} onDeepDiveClick={onDeepDiveClick} />
-
-            {/* Phase 4: AI Recommendations Panel */}
-            <AnimatePresence>
-            {showAIRecommendations && (
-                <AIRecommendationsPanel
-                  insights={aiInsights}
-                  onClose={() => setShowAIRecommendations(false)}
-                  analysisId={analysisId}
-                  onApplyRecommendation={(rec) => {
-                    toast({ 
-                      title: 'Recommendation Applied', 
-                      description: rec.title 
-                    });
-                  }}
-                />
-              )}
-            </AnimatePresence>
-
-            {/* Phase 3: Saved Analyses List */}
-            <AnimatePresence>
-              {showSavedList && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                >
-                  <SavedAnalysesList
-                    onLoad={handleLoadAnalysis}
-                    onClose={() => setShowSavedList(false)}
-                    currentAnalysisId={analysisId}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Phase 4: Version History */}
-            <AnimatePresence>
-              {showVersionHistory && analysisId && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                >
-                  <AnalysisVersionHistory
-                    analysisId={analysisId}
-                    onLoadVersion={handleLoadAnalysis}
-                    onCompareVersions={handleCompareVersions}
-                    onClose={() => setShowVersionHistory(false)}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Phase 4: Version Comparison Modal */}
-            {comparisonVersions && (
-              <VersionComparisonModal
-                isOpen={showVersionComparison}
-                onClose={() => {
-                  setShowVersionComparison(false);
-                  setComparisonVersions(null);
-                }}
-                version1={comparisonVersions[0]}
-                version2={comparisonVersions[1]}
-              />
-            )}
-
-            {/* Interactive Chart Carousel Section */}
-            {charts.length > 0 && (
+            {/* Interactive Chart Carousel Section - MOVED BEFORE AI INSIGHTS */}
+            {validCharts.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1303,7 +1264,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     <div className="flex gap-1">
-                      {charts.map((_, idx) => (
+                      {validCharts.map((_, idx) => (
                         <div
                           key={idx}
                           className={cn(
@@ -1319,7 +1280,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                       variant="ghost"
                       size="icon"
                       onClick={scrollNext}
-                      disabled={selectedIndex === charts.length - 1}
+                      disabled={selectedIndex === validCharts.length - 1}
                       className="h-8 w-8 hover:bg-primary/10"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -1330,7 +1291,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                 {/* Embla Carousel */}
                 <div className="overflow-hidden" ref={emblaRef}>
                   <div className="flex gap-4">
-                    {charts.map((chart, index) => {
+                    {validCharts.map((chart, index) => {
                       const Icon = CHART_TYPE_ICONS[chart.type] || Activity;
                       return (
                         <div
@@ -1398,6 +1359,74 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   </div>
                 </div>
               </motion.div>
+            )}
+
+            {/* AI Insights Section - MOVED AFTER CHARTS */}
+            <AIInsightsPanel insights={displayInsights} onDeepDiveClick={onDeepDiveClick} />
+
+            {/* Phase 4: AI Recommendations Panel - MOVED AFTER CHARTS */}
+            <AnimatePresence>
+            {showAIRecommendations && (
+                <AIRecommendationsPanel
+                  insights={aiInsights}
+                  onClose={() => setShowAIRecommendations(false)}
+                  analysisId={analysisId}
+                  onApplyRecommendation={(rec) => {
+                    toast({ 
+                      title: 'Recommendation Applied', 
+                      description: rec.title 
+                    });
+                  }}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Phase 3: Saved Analyses List */}
+            <AnimatePresence>
+              {showSavedList && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                >
+                  <SavedAnalysesList
+                    onLoad={handleLoadAnalysis}
+                    onClose={() => setShowSavedList(false)}
+                    currentAnalysisId={analysisId}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Phase 4: Version History */}
+            <AnimatePresence>
+              {showVersionHistory && analysisId && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                >
+                  <AnalysisVersionHistory
+                    analysisId={analysisId}
+                    onLoadVersion={handleLoadAnalysis}
+                    onCompareVersions={handleCompareVersions}
+                    onClose={() => setShowVersionHistory(false)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Phase 4: Version Comparison Modal */}
+            {comparisonVersions && (
+              <VersionComparisonModal
+                isOpen={showVersionComparison}
+                onClose={() => {
+                  setShowVersionComparison(false);
+                  setComparisonVersions(null);
+                }}
+                version1={comparisonVersions[0]}
+                version2={comparisonVersions[1]}
+              />
             )}
 
             {/* Quick Actions Section */}

@@ -13,13 +13,53 @@ serve(async (req) => {
   try {
     const { charts, context, userQuery } = await req.json();
     
+    // Validate charts have data
+    const validCharts = charts?.filter((chart: any) => 
+      chart.data && 
+      Array.isArray(chart.data) && 
+      chart.data.length > 0
+    ) || [];
+    
+    console.log('📊 Chart data validation:', {
+      totalCharts: charts?.length || 0,
+      validCharts: validCharts.length,
+      invalidCharts: (charts?.length || 0) - validCharts.length
+    });
+
+    if (validCharts.length === 0) {
+      console.warn('⚠️ No valid chart data provided for analysis');
+      return new Response(
+        JSON.stringify({ 
+          error: 'No valid chart data provided for analysis',
+          insights: {
+            predictions: [],
+            anomalies: [{
+              type: "Data Quality Issue",
+              description: "No data available in charts for analysis. Please ensure your data source is properly configured and contains valid data points.",
+              severity: "high"
+            }],
+            recommendations: [{
+              title: "Configure Data Source",
+              description: "Set up a valid data source with actual data to enable chart analysis and insights",
+              impact: "Enable data-driven insights and recommendations"
+            }],
+            trends: []
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Prepare data summary for AI
-    const dataSummary = charts.map((chart: any, idx: number) => {
+    // Prepare data summary for AI (only from valid charts)
+    const dataSummary = validCharts.map((chart: any, idx: number) => {
       const dataPoints = chart.data?.length || 0;
       const dataKeys = chart.data?.[0] ? Object.keys(chart.data[0]) : [];
       
