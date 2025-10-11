@@ -1142,10 +1142,11 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
 
             {/* Phase 4: AI Recommendations Panel */}
             <AnimatePresence>
-              {showAIRecommendations && (
+            {showAIRecommendations && (
                 <AIRecommendationsPanel
                   insights={aiInsights}
                   onClose={() => setShowAIRecommendations(false)}
+                  analysisId={analysisId}
                   onApplyRecommendation={(rec) => {
                     toast({ 
                       title: 'Recommendation Applied', 

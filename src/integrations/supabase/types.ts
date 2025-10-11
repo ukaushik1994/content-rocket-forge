@@ -1104,6 +1104,50 @@ export type Database = {
           },
         ]
       }
+      chart_insight_analytics: {
+        Row: {
+          action_taken: string | null
+          analysis_id: string | null
+          chart_index: number | null
+          created_at: string
+          id: string
+          insight_content: string
+          insight_type: string
+          interaction_data: Json | null
+          user_id: string
+        }
+        Insert: {
+          action_taken?: string | null
+          analysis_id?: string | null
+          chart_index?: number | null
+          created_at?: string
+          id?: string
+          insight_content: string
+          insight_type: string
+          interaction_data?: Json | null
+          user_id: string
+        }
+        Update: {
+          action_taken?: string | null
+          analysis_id?: string | null
+          chart_index?: number | null
+          created_at?: string
+          id?: string
+          insight_content?: string
+          insight_type?: string
+          interaction_data?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_insight_analytics_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "saved_chart_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cluster_keywords: {
         Row: {
           cluster_id: string

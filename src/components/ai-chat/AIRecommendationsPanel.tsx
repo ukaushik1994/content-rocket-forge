@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import {
   Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AIInsights {
   predictions?: string[];
@@ -34,6 +35,7 @@ interface AIRecommendationsPanelProps {
   insights: AIInsights;
   onClose: () => void;
   onApplyRecommendation?: (recommendation: any) => void;
+  analysisId?: string | null;
 }
 
 const severityColors = {
@@ -45,8 +47,78 @@ const severityColors = {
 export const AIRecommendationsPanel: React.FC<AIRecommendationsPanelProps> = ({
   insights,
   onClose,
-  onApplyRecommendation
+  onApplyRecommendation,
+  analysisId
 }) => {
+  // Track when insights are viewed
+  useEffect(() => {
+    const trackInsightView = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Track each type of insight
+        const trackPromises = [];
+        
+        if (insights.predictions?.length) {
+          trackPromises.push(
+            supabase.from('chart_insight_analytics').insert({
+              user_id: user.id,
+              analysis_id: analysisId,
+              insight_type: 'prediction',
+              insight_content: `${insights.predictions.length} predictions viewed`,
+              action_taken: 'viewed',
+              interaction_data: { count: insights.predictions.length }
+            })
+          );
+        }
+
+        if (insights.recommendations?.length) {
+          trackPromises.push(
+            supabase.from('chart_insight_analytics').insert({
+              user_id: user.id,
+              analysis_id: analysisId,
+              insight_type: 'recommendation',
+              insight_content: `${insights.recommendations.length} recommendations viewed`,
+              action_taken: 'viewed',
+              interaction_data: { count: insights.recommendations.length }
+            })
+          );
+        }
+
+        await Promise.all(trackPromises);
+      } catch (error) {
+        console.error('Error tracking insight view:', error);
+      }
+    };
+
+    trackInsightView();
+  }, [insights, analysisId]);
+
+  // Track when user applies a recommendation
+  const handleApplyRecommendation = async (rec: any, index: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('chart_insight_analytics').insert({
+          user_id: user.id,
+          analysis_id: analysisId,
+          insight_type: 'recommendation',
+          insight_content: rec.title,
+          action_taken: 'applied',
+          chart_index: index,
+          interaction_data: { recommendation: rec }
+        });
+      }
+    } catch (error) {
+      console.error('Error tracking recommendation application:', error);
+    }
+
+    if (onApplyRecommendation) {
+      onApplyRecommendation(rec);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -173,12 +245,12 @@ export const AIRecommendationsPanel: React.FC<AIRecommendationsPanelProps> = ({
                     </div>
                   </div>
                   {onApplyRecommendation && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => onApplyRecommendation(rec)}
-                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleApplyRecommendation(rec, idx)}
+                      >
                       Apply
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
