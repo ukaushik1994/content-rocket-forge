@@ -1100,12 +1100,12 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border border-white/10">
+      <DialogContent className="max-w-6xl max-h-[90vh] p-0 bg-background/95 backdrop-blur-xl border border-white/10">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="flex flex-col h-full"
+          className="flex flex-col max-h-[calc(90vh-2rem)]"
         >
           {/* Header */}
           <div className="px-6 pt-6 pb-4 border-b border-white/10 bg-gradient-to-r from-primary/5 via-accent/5 to-secondary/5">
@@ -1132,7 +1132,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
           </div>
 
           {/* Unified Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6 space-y-6">
             {/* Phase 1: Data Validation & Confidence Indicators */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
