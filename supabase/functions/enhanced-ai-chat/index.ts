@@ -1869,8 +1869,8 @@ serve(async (req) => {
       });
     }
 
-    // Access uniqueCharts from scope (defined in legacy parsing section)
-    const allCharts = typeof uniqueCharts !== 'undefined' && uniqueCharts.length > 1 ? uniqueCharts : undefined;
+    // Access allVisualData from scope (includes expanded multi-perspective charts)
+    const allCharts = typeof allVisualData !== 'undefined' && allVisualData.length > 1 ? allVisualData : undefined;
     
     const responseData = {
       message: finalContent,
