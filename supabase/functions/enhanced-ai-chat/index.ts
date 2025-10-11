@@ -256,6 +256,35 @@ function buildMultiChartSystemPrompt(): string {
   }
 }
 
+CRITICAL FORMATTING RULES FOR CONVERSATIONAL RESPONSES:
+1. NEVER use pipe characters (|) in conversational text - they break markdown rendering
+2. Use markdown headers (## Section, ### Subsection) to structure content
+3. Use bullet lists (- item) or numbered lists (1. item) for data presentation
+4. Use **bold** for emphasis, not surrounded by ASCII separators
+5. Separate sections with blank lines, not with | --- | or similar patterns
+6. When presenting data in lists, use clean formatting:
+   
+   GOOD EXAMPLE:
+   ## Content Analysis
+   
+   ### Key Findings:
+   1. **Content Status**: 6 draft articles, 1 published (total 7)
+   2. **SEO Health**: All content has 0/100 SEO scores
+   3. **Top Performing Topic**: People Analytics with 6 pieces
+   
+   ### Recommendations:
+   - Optimize SEO scores across all content
+   - Publish draft articles
+   - Focus on high-performing topics
+   
+   BAD EXAMPLE (NEVER DO THIS):
+   | --- | --- |
+   | Topic | Content pieces |
+   | SEO Health | 0/100 scores |
+
+7. Only use proper markdown tables when explicitly asked or when data has 3+ columns
+8. Keep responses clean, scannable, and professional
+
 CRITICAL: Include 2-4 charts, all summary types, 3-5 actions with targetUrl, 3-5 deep dive questions. Use accurate data.`;
 }
 
@@ -1516,28 +1545,56 @@ serve(async (req) => {
     console.log('🔍 Parsing AI response for structured data...');
     
     // Phase 5: Enhanced parsing with graceful degradation
-    // Helper function to clean pipe characters from AI responses
+    // Minimal pipe cleaning - trust AI formatting from improved prompt
     const cleanAIPipes = (text: string): string => {
       if (!text) return text;
       
-      // Only remove pipes that aren't part of valid markdown tables
+      // Only remove TRULY malformed patterns (accidental AI artifacts)
+      return text
+        // Remove orphaned triple+ pipes (definitely malformed)
+        .replace(/\|\|\|+/g, '')
+        // Remove separator patterns with only dashes between pipes
+        .replace(/\|\s*-{3,}\s*\|/g, '---')
+        // Keep everything else - trust the AI's improved formatting
+    };
+    
+    // Response validation to catch formatting issues
+    const validateResponseFormatting = (text: string): { isValid: boolean; issues: string[] } => {
+      const issues: string[] = [];
+      
+      // Check for repeated pipe separators (sign of malformation)
+      const separatorPattern = /\|\s*-+\s*\|\s*-+\s*\|/g;
+      if (separatorPattern.test(text)) {
+        issues.push('Repeated pipe separators detected');
+      }
+      
+      // Check for excessive pipes in non-table context
       const lines = text.split('\n');
-      const cleanedLines = lines.map(line => {
+      const suspiciousLines = lines.filter(line => {
         const trimmed = line.trim();
-        
-        // Keep lines that are clearly markdown table rows (start and end with |)
-        if (trimmed.startsWith('|') && trimmed.endsWith('|') && (trimmed.match(/\|/g) || []).length >= 3) {
-          return line;
-        }
-        
-        // Remove pipe patterns from conversational text
-        return line
-          .replace(/\|\s*-+\s*\|/g, '---') // Replace | --- | with ---
-          .replace(/\|\|/g, '') // Remove double pipes
-          .replace(/\s+\|\s+/g, ' '); // Remove isolated pipes with spaces
+        const pipeCount = (line.match(/\|/g) || []).length;
+        // Suspicious if has pipes but not a proper table row
+        return pipeCount > 0 && pipeCount < 3 && 
+               !(trimmed.startsWith('|') && trimmed.endsWith('|'));
       });
       
-      return cleanedLines.join('\n');
+      if (suspiciousLines.length > 3) {
+        issues.push(`Excessive pipe characters in conversational text (${suspiciousLines.length} lines)`);
+      }
+      
+      // Check for duplicate sections (same header appearing twice)
+      const headers = lines.filter(l => l.trim().startsWith('##'));
+      const headerTexts = headers.map(h => h.trim());
+      const uniqueHeaders = new Set(headerTexts);
+      if (headerTexts.length > uniqueHeaders.size) {
+        const duplicates = headerTexts.filter((h, i) => headerTexts.indexOf(h) !== i);
+        issues.push(`Duplicate sections detected: ${[...new Set(duplicates)].join(', ')}`);
+      }
+      
+      return {
+        isValid: issues.length === 0,
+        issues
+      };
     };
     
     let cleanedResponse: string;
@@ -1552,7 +1609,17 @@ serve(async (req) => {
       
       // Clean pipe characters from the response text
       if (cleanedResponse) {
+        const beforeClean = cleanedResponse;
         cleanedResponse = cleanAIPipes(cleanedResponse);
+        
+        // Validate formatting quality
+        const validation = validateResponseFormatting(cleanedResponse);
+        if (!validation.isValid) {
+          console.warn('⚠️ Response formatting issues detected:', validation.issues);
+          console.warn('📝 Response preview:', cleanedResponse.substring(0, 200));
+        } else {
+          console.log('✅ Response formatting validation passed');
+        }
       }
       
       // If parsing fails but response is valid text, use it anyway

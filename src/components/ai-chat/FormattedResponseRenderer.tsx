@@ -61,50 +61,17 @@ const isValidMarkdownTableRow = (line: string): boolean => {
   return segments.length >= 2;
 };
 
-// INTELLIGENT pipe removal - only keep proper markdown tables
+// Simplified pipe removal - trust backend formatting
 const cleanMalformedPipes = (content: string): string => {
-  console.log('🧹 INTELLIGENT pipe cleaning started');
+  console.log('🧹 Frontend pipe cleaning (minimal)');
   
-  const lines = content.split('\n');
+  // Only remove obvious malformed patterns, trust markdown parser for tables
+  const cleaned = content
+    .replace(/\|\|\|+/g, '') // Remove triple+ pipes
+    .replace(/\|\s*-{3,}\s*\|/g, '---'); // Remove orphaned separators
   
-  // First pass: identify table blocks (2+ consecutive valid table rows)
-  const tableBlocks: Set<number> = new Set();
-  for (let i = 0; i < lines.length; i++) {
-    if (isValidMarkdownTableRow(lines[i])) {
-      // Check if next or previous line is also a valid table row
-      const hasTableContext = 
-        (i > 0 && isValidMarkdownTableRow(lines[i - 1])) ||
-        (i < lines.length - 1 && isValidMarkdownTableRow(lines[i + 1]));
-      
-      if (hasTableContext) {
-        tableBlocks.add(i);
-        // Also mark adjacent table rows
-        if (i > 0 && isValidMarkdownTableRow(lines[i - 1])) {
-          tableBlocks.add(i - 1);
-        }
-        if (i < lines.length - 1 && isValidMarkdownTableRow(lines[i + 1])) {
-          tableBlocks.add(i + 1);
-        }
-      }
-    }
-  }
-  
-  // Second pass: clean pipes from non-table lines
-  const cleanedLines = lines.map((line, index) => {
-    if (tableBlocks.has(index)) {
-      return line; // Keep table lines as-is
-    }
-    
-    // Remove all pipe patterns from conversational text
-    return line
-      .replace(/\|\s*-+\s*\|/g, '---') // Replace pipe separators with dashes
-      .replace(/\|\|/g, '') // Remove double pipes
-      .replace(/\s+\|\s+/g, ' ') // Remove isolated pipes
-      .replace(/\|/g, ''); // Remove any remaining pipes
-  });
-  
-  console.log(`✅ Intelligent pipe cleaning complete. Preserved ${tableBlocks.size} table lines.`);
-  return cleanedLines.join('\n');
+  console.log('✅ Frontend pipe cleaning complete');
+  return cleaned;
 };
 
 // Convert CSV content to markdown table
@@ -718,37 +685,37 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 className="text-lg font-semibold text-foreground mb-3 mt-4 first:mt-0">
+            <h1 className="text-lg font-semibold text-foreground mb-4 mt-6 first:mt-0 border-b border-border pb-2">
               {children}
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-base font-semibold text-foreground mb-2 mt-3 first:mt-0">
+            <h2 className="text-base font-semibold text-foreground mb-3 mt-5 first:mt-0">
               {children}
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-sm font-medium text-foreground mb-2 mt-2 first:mt-0">
+            <h3 className="text-sm font-semibold text-foreground mb-2 mt-4 first:mt-0">
               {children}
             </h3>
           ),
           p: ({ children }) => (
-            <p className="text-sm text-foreground mb-2 leading-relaxed">
+            <p className="text-sm text-foreground/90 mb-3 leading-relaxed">
               {children}
             </p>
           ),
           ul: ({ children }) => (
-            <ul className="list-disc list-inside space-y-1 mb-3 text-sm text-foreground ml-2">
+            <ul className="list-disc list-inside space-y-2 mb-4 text-sm text-foreground/90 ml-2">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal list-inside space-y-1 mb-3 text-sm text-foreground ml-2">
+            <ol className="list-decimal list-inside space-y-2 mb-4 text-sm text-foreground/90 ml-2">
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="text-sm text-foreground">
+            <li className="ml-1 leading-relaxed">
               {children}
             </li>
           ),
@@ -758,9 +725,19 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
             </strong>
           ),
           em: ({ children }) => (
-            <em className="italic text-foreground">
+            <em className="italic text-foreground/90">
               {children}
             </em>
+          ),
+          hr: () => (
+            <hr className="my-4 border-border" />
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-4 border-primary/30 pl-4 py-2 bg-muted/20 rounded-r-md mb-3">
+              <div className="text-sm text-muted-foreground italic">
+                {children}
+              </div>
+            </blockquote>
           ),
           table: ({ children }) => (
             <EnhancedTableRenderer rawTableData={processedResult.processedContent}>
@@ -793,13 +770,6 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
             <td className="px-4 py-3 text-sm text-foreground border-b border-border/50">
               {children}
             </td>
-          ),
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-primary/30 pl-4 py-2 bg-muted/20 rounded-r-md mb-3">
-              <div className="text-sm text-muted-foreground italic">
-                {children}
-              </div>
-            </blockquote>
           ),
           code: ({ children, className }) => {
             const isInline = !className;
