@@ -599,6 +599,37 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
 
   const renderTable = () => {
     console.log('📋 renderTable: Starting table render, hasTableData:', !!data.tableData);
+    
+    // PHASE 4: Fallback rendering for malformed tables
+    if (!data.tableData && typeof data === 'object' && JSON.stringify(data).includes('|')) {
+      console.warn('⚠️ Malformed table detected - attempting markdown parse');
+      try {
+        const content = JSON.stringify(data);
+        const lines = content.split('\\n').filter(l => l.includes('|'));
+        if (lines.length > 2) {
+          const headers = lines[0].split('|').filter(h => h.trim()).map(h => h.trim().replace(/[\\*"]/g, ''));
+          const rows = lines.slice(2).map(line => 
+            line.split('|').filter(c => c.trim()).map(c => c.trim().replace(/[\\*"]/g, ''))
+          );
+          data.tableData = { headers, rows, title: "Recovered Data" };
+          console.log('✅ Successfully recovered table from malformed data');
+        }
+      } catch (e) {
+        console.error('❌ Failed to parse malformed table:', e);
+        return (
+          <Card className="p-4 border-destructive/30 bg-destructive/10">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              <div>
+                <p className="font-medium">Table format error</p>
+                <p className="text-xs text-muted-foreground mt-1">AI generated invalid table structure</p>
+              </div>
+            </div>
+          </Card>
+        );
+      }
+    }
+    
     if (!data.tableData) {
       console.log('❌ renderTable: No table data found');
       return null;
@@ -626,13 +657,15 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
           summary={`Table with ${headers.length} columns and ${rows.length} rows`}
         >
           <EnhancedTableRenderer rawTableData={markdownTable}>
-            <table className="w-full text-sm">
+            <table className="w-full text-sm border-separate border-spacing-0">
               <thead>
-                <tr className="border-b border-border">
+                <tr className="bg-muted/80 backdrop-blur-sm">
                   {headers.map((header, index) => (
                     <th
                       key={index}
-                      className="px-3 py-2 text-left font-medium text-muted-foreground bg-muted/30"
+                      className="px-4 py-3 text-left font-semibold text-foreground 
+                                 first:rounded-tl-lg last:rounded-tr-lg
+                                 border-b-2 border-border/50"
                     >
                       {header}
                     </th>
@@ -643,14 +676,30 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
                 {rows.map((row, rowIndex) => (
                   <tr
                     key={rowIndex}
-                    className="border-b border-border/50 hover:bg-muted/20 transition-colors"
+                    className="bg-card/50 hover:bg-muted/40 transition-colors duration-200
+                               border-b border-border/30 last:border-b-0"
                   >
                     {row.map((cell, cellIndex) => (
                       <td
                         key={cellIndex}
-                        className="px-3 py-2 text-foreground"
+                        className="px-4 py-3 text-foreground/90
+                                   first:font-medium first:text-primary"
                       >
-                        {cell}
+                        {(() => {
+                          // PHASE 5: Smart number formatting
+                          const cellValue = String(cell);
+                          const numValue = cellValue.replace(/,/g, '');
+                          
+                          // Check if it's a number (not starting with #, and has 4+ digits)
+                          if (!cellValue.startsWith('#') && 
+                              !isNaN(Number(numValue)) && 
+                              numValue.length >= 4 && 
+                              !cellValue.includes('%')) {
+                            return Number(numValue).toLocaleString();
+                          }
+                          
+                          return cellValue;
+                        })()}
                       </td>
                     ))}
                   </tr>

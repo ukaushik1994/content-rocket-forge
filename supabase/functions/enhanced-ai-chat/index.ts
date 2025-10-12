@@ -664,9 +664,29 @@ ${queryIntent.scope === 'summary' ? '\n💡 **Ask for details to see more conten
           .sort((a: any, b: any) => (b.estimated_impressions || 0) - (a.estimated_impressions || 0));
         
         contextString += `
-### 💡 AI STRATEGY PROPOSALS - RANKING DATA (${sortedProposals.length} total)
-**Note: Pre-sorted by impressions (highest to lowest)**
+### 💡 AI STRATEGY PROPOSALS - TABLE FORMAT REQUIRED (${sortedProposals.length} total)
 
+**🚨 CRITICAL: User expects a FORMATTED HTML TABLE, NOT plain text or markdown!**
+
+Generate response using this EXACT JSON structure:
+\`\`\`json
+{
+  "visualData": {
+    "type": "table",
+    "tableData": {
+      "title": "🏆 Your AI Proposals Overview (Top ${Math.min(10, sortedProposals.length)} by Impressions)",
+      "headers": ["#", "Proposal Title", "Est. Impressions", "Priority Tier", "Linked Solution", "Status"],
+      "rows": [
+        ["1", "Maximizing Workforce Insights...", "44,505", "Evergreen", "People Analytics", "Available"],
+        ["2", "Harnessing AI Enhanced...", "34,245", "High", "People Analytics", "Scheduled"]
+      ],
+      "caption": "Pre-sorted by estimated impressions (highest to lowest)"
+    }
+  }
+}
+\`\`\`
+
+**Proposals Data (pre-sorted):**
 ${sortedProposals.map((p: any, i: number) => `
 ${i + 1}. "${p.title}"
    - Primary Keyword: ${p.primary_keyword}
@@ -1895,9 +1915,10 @@ serve(async (req) => {
       
       // Try table to chart conversion ONLY if user didn't explicitly ask for table
       else if (visualData.type === 'table' && visualData.tableData) {
-        const wantsTable = /table|list|top \d+|rank|compare|show me all/i.test(userQuery);
+        const wantsTable = /table|list|top \d+|rank|compare|show me all|tell me about|what are|show my|proposals|content items/i.test(userQuery);
+        const isProposalQuery = /proposals|proposal list/i.test(userQuery);
         
-        if (!wantsTable) {
+        if (!wantsTable && !isProposalQuery) {
           const chartData = convertTableToChart(visualData.tableData);
           if (chartData) {
             console.log('✅ Successfully auto-converted table to chart');

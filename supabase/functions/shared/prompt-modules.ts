@@ -75,12 +75,31 @@ export const CHART_MODULE = `
 
 If query matches ANY of these patterns → Generate TABLE:
 • "top [number]" (e.g., "top 5 proposals", "top 10 content")
-• "list all", "show me all", "list every"
+• "list all", "show me all", "list every", "show my", "tell me about"
 • "rank", "ranking", "ranked by"
 • "compare [items]" with 3+ attributes
+• "proposals", "content items", "what are my" (when asking about multiple items)
 • Explicitly says "table", "spreadsheet", "tabular"
 
 Otherwise → Generate CHART (default behavior)
+
+**EXAMPLE - User Query: "can you tell me about my ai proposals"**
+\`\`\`json
+{
+  "visualData": {
+    "type": "table",
+    "tableData": {
+      "title": "🏆 Your AI Proposals Overview",
+      "headers": ["#", "Proposal Title", "Impressions", "Priority Tier", "Linked Solution"],
+      "rows": [
+        ["1", "Maximizing Workforce Insights", "44,505", "Evergreen", "People Analytics"],
+        ["2", "Harnessing AI Enhanced", "34,245", "High", "People Analytics"]
+      ],
+      "caption": "Sorted by estimated impressions (highest to lowest)"
+    }
+  }
+}
+\`\`\`
 
 **TABLE FORMAT (use ONLY for table queries):**
 \`\`\`json
