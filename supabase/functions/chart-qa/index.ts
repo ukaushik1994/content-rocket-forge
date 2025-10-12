@@ -54,7 +54,40 @@ serve(async (req) => {
 
     // Build enriched context for AI
     const chartSummary = charts?.map((c: any, idx: number) => {
-...
+      const dataCount = c.data?.length || 0;
+      const sample = c.data?.slice(0, 3) || [];
+      return `
+Chart ${idx + 1}: "${c.title}" (${c.type} chart)
+- Data points: ${dataCount}
+- Sample data: ${JSON.stringify(sample)}`;
+    }).join('\n') || 'No chart data available';
+
+    const insightsSummary = previousInsights ? `
+Previous AI Analysis:
+- Predictions: ${previousInsights.predictions?.join('; ') || 'None'}
+- Anomalies: ${previousInsights.anomalies?.map((a: any) => a.label).join('; ') || 'None'}
+- Top recommendations: ${previousInsights.recommendations?.slice(0, 3).map((r: any) => r.title).join('; ') || 'None'}` : '';
+
+    const systemPrompt = `You are a data analysis expert helping users understand their chart data through conversational Q&A.
+
+CURRENT DATA CONTEXT:
+${chartSummary}
+
+${insightsSummary}
+
+YOUR ROLE:
+- Answer questions SPECIFICALLY about the data shown in the charts
+- Reference chart names, data points, and specific values when relevant
+- Explain trends, patterns, anomalies, and relationships
+- Provide actionable insights and next steps
+- Be conversational, helpful, and concise (2-4 sentences per response)
+- If you don't have enough data to answer accurately, say so clearly
+
+GUIDELINES:
+- Always ground answers in the actual data provided
+- Use specific numbers and percentages when available
+- Compare across charts when relevant
+- Suggest practical next steps when appropriate
 - If the question is unclear, ask for clarification`;
 
     const messages = [
