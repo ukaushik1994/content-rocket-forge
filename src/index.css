@@ -453,47 +453,85 @@
   }
 }
 
-/* Prose styles for markdown content */
+/* Prose styles for markdown content - ChatGPT-style enhanced */
 .prose h1 {
-  @apply text-2xl font-bold mb-4 mt-6;
+  @apply text-2xl font-bold mb-5 mt-8 first:mt-0 leading-tight tracking-tight;
 }
 
 .prose h2 {
-  @apply text-xl font-bold mb-3 mt-5;
+  @apply text-xl font-semibold mb-4 mt-6 first:mt-0 pb-2 border-b border-border/40 leading-snug;
 }
 
 .prose h3 {
-  @apply text-lg font-bold mb-2 mt-4;
+  @apply text-lg font-semibold mb-3 mt-5 first:mt-0 leading-snug;
+}
+
+.prose h4 {
+  @apply text-base font-semibold mb-2 mt-4 first:mt-0;
 }
 
 .prose p {
-  @apply mb-4;
+  @apply mb-4 leading-7 text-foreground/90;
 }
 
 .prose ul {
-  @apply list-disc pl-5 mb-4;
+  @apply list-disc pl-6 mb-4 space-y-2;
 }
 
 .prose ol {
-  @apply list-decimal pl-5 mb-4;
+  @apply list-decimal pl-6 mb-4 space-y-2;
 }
 
 .prose li {
-  @apply mb-1;
+  @apply mb-2 leading-7 pl-1;
+}
+
+.prose li > ul,
+.prose li > ol {
+  @apply mt-2 mb-2;
 }
 
 .prose a {
-  @apply text-primary underline;
+  @apply text-primary underline hover:text-primary/80 transition-colors;
 }
 
 .prose blockquote {
-  @apply pl-4 border-l-4 border-muted italic;
+  @apply pl-5 border-l-[3px] border-primary/40 bg-muted/30 rounded-r py-3 my-4 italic text-muted-foreground;
 }
 
 .prose code {
-  @apply bg-secondary/30 rounded px-1 font-mono text-sm;
+  @apply bg-muted/80 rounded px-1.5 py-0.5 font-mono text-sm text-foreground;
 }
 
 .prose pre {
-  @apply bg-secondary/20 p-3 rounded-lg overflow-auto font-mono text-sm mb-4;
+  @apply bg-muted/60 p-4 rounded-lg overflow-auto font-mono text-sm mb-4 border border-border/50;
+}
+
+.prose hr {
+  @apply my-8 border-t-2 border-border/60;
+}
+
+.prose strong {
+  @apply font-semibold text-foreground;
+}
+
+.prose em {
+  @apply italic;
+}
+
+/* Alert boxes for warnings and info */
+.prose-alert {
+  @apply rounded-lg p-4 mb-4 border-l-4 flex gap-3;
+}
+
+.prose-alert-warning {
+  @apply bg-warning/10 border-warning/50 text-foreground;
+}
+
+.prose-alert-info {
+  @apply bg-info/10 border-info/50 text-foreground;
+}
+
+.prose-alert-error {
+  @apply bg-destructive/10 border-destructive/50 text-foreground;
 }
