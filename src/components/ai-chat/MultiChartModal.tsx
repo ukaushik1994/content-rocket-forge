@@ -110,14 +110,9 @@ const AnimatedMetricCard: React.FC<{
         
         {/* Value - Flex grow to fill space */}
         <div className="flex-1 flex items-center">
-          <motion.div 
-            className="text-2xl font-bold line-clamp-2"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
-          >
+          <div className="text-2xl font-bold line-clamp-2">
             {isText ? value : `${value}${suffix || ''}`}
-          </motion.div>
+          </div>
         </div>
         
         {/* Trend - Fixed height at bottom */}

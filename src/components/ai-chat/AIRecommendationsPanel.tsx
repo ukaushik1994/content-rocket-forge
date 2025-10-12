@@ -167,7 +167,7 @@ export const AIRecommendationsPanel: React.FC<AIRecommendationsPanelProps> = ({
                 className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
               >
                 <Activity className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm">{prediction}</p>
+                <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{prediction}</p>
               </motion.div>
             ))}
           </div>
@@ -206,7 +206,7 @@ export const AIRecommendationsPanel: React.FC<AIRecommendationsPanelProps> = ({
                     {anomaly.severity}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{anomaly.description}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words overflow-wrap-anywhere">{anomaly.description}</p>
               </motion.div>
             ))}
           </div>
@@ -235,7 +235,7 @@ export const AIRecommendationsPanel: React.FC<AIRecommendationsPanelProps> = ({
                       <Target className="w-4 h-4 text-accent" />
                       <h5 className="font-semibold text-sm">{rec.title}</h5>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap break-words overflow-wrap-anywhere">
                       {rec.description}
                     </p>
                     <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export const AIRecommendationsPanel: React.FC<AIRecommendationsPanelProps> = ({
                 className="flex items-start gap-3 text-sm"
               >
                 <span className="text-primary mt-0.5">▸</span>
-                <span>{trend}</span>
+                <span className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{trend}</span>
               </motion.div>
             ))}
           </div>
