@@ -1685,7 +1685,6 @@ serve(async (req) => {
           }
         }
       }
-      }
       
       return {
         isValid: issues.length === 0,
