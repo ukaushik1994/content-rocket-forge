@@ -1353,7 +1353,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                                 value={selectedChartType[index] || chart.type} 
                                 onValueChange={(value) => setSelectedChartType(prev => ({ ...prev, [index]: value }))}
                               >
-                                <SelectTrigger className="w-10 h-8 text-xs [&_svg.lucide-check]:hidden">
+                                <SelectTrigger className="w-10 h-8 text-xs [&_svg.lucide-check]:hidden [&>span]:hidden">
                                   <Edit className="w-4 h-4" />
                                 </SelectTrigger>
                                 <SelectContent>
