@@ -1526,15 +1526,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   <Link2 className="w-4 h-4 mr-2" />
                   Share
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="hover:bg-primary/10 hover:border-primary/30 transition-all"
-                  onClick={() => setShowDataInfo(!showDataInfo)}
-                >
-                  <Info className="w-4 h-4 mr-2" />
-                  Data Info
-                </Button>
                 {/* Phase 4: AI Insights Button */}
                 <Button 
                   variant={showAIRecommendations ? 'default' : 'outline'}
