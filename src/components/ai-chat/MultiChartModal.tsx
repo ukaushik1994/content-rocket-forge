@@ -171,7 +171,7 @@ const KeyMetricsPanel: React.FC<{ context: any }> = ({ context }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 grid-auto-rows-[140px]">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 auto-rows-[140px]">
       {metrics.map((metric, idx) => (
         <AnimatedMetricCard key={idx} {...metric} index={idx} />
       ))}
