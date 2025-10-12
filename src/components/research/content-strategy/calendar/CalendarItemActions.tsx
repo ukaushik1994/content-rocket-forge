@@ -216,18 +216,6 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
     return (
       <>
         <div className="flex items-center gap-1">
-          {isOverdue && (
-            <Button
-              onClick={() => setPostponeDialogOpen(true)}
-              size="sm"
-              variant="outline"
-              className="h-6 px-2 text-xs bg-orange-500/20 border-orange-400/30 text-orange-400 hover:bg-orange-500/30"
-            >
-              <Clock className="h-3 w-3 mr-1" />
-              Overdue
-            </Button>
-          )}
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -272,13 +260,6 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
   return (
     <>
       <div className="flex items-center gap-2">
-        {isOverdue && (
-          <div className="flex items-center gap-1 text-orange-400 text-sm">
-            <AlertTriangle className="h-4 w-4" />
-            <span>Overdue</span>
-          </div>
-        )}
-        
         <Button
           onClick={() => setPostponeDialogOpen(true)}
           size="sm"
