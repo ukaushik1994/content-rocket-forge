@@ -605,6 +605,12 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
     }
 
     const context = tieredContext || {};
+    console.log('✅ Context loaded successfully:', {
+      hasProposals: !!context.proposals,
+      proposalCount: context.proposals?.length || 0,
+      hasAnalytics: !!context.analytics,
+      categories: Object.keys(context)
+    });
     
     // Build lightweight context string based on scope
     const analytics = context.analytics || {};
@@ -655,7 +661,7 @@ ${queryIntent.scope === 'summary' ? '\n💡 **Ask for details to see more conten
     }
 
     // Detect ranking/listing queries for special data formatting
-    const isRankingQuery = /top \d+|best|worst|highest|lowest|rank|list all|show me all/i.test(query || '');
+    const isRankingQuery = /top \d+|best|worst|highest|lowest|rank|list all|show me all/i.test(userQuery || '');
     
     if (queryIntent.categories.includes('proposals') && context.proposals) {
       if (isRankingQuery) {
