@@ -798,83 +798,37 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 className="text-2xl font-bold text-foreground mb-5 mt-8 first:mt-0 leading-tight tracking-tight">
+            <h1 className="text-lg font-semibold text-foreground mb-4 mt-6 first:mt-0 border-b border-border pb-2">
               {children}
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-xl font-semibold text-foreground mb-4 mt-6 first:mt-0 pb-2 border-b border-border/40 leading-snug">
+            <h2 className="text-base font-semibold text-foreground mb-3 mt-5 first:mt-0">
               {children}
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-lg font-semibold text-foreground mb-3 mt-5 first:mt-0 leading-snug">
+            <h3 className="text-sm font-semibold text-foreground mb-2 mt-4 first:mt-0">
               {children}
             </h3>
           ),
-          h4: ({ children }) => (
-            <h4 className="text-base font-semibold text-foreground mb-2 mt-4 first:mt-0">
+          p: ({ children }) => (
+            <p className="text-sm text-foreground/90 mb-3 leading-relaxed">
               {children}
-            </h4>
+            </p>
           ),
-          p: ({ children }) => {
-            // Detect alert patterns in paragraphs
-            const text = String(children);
-            const isWarning = text.includes('⚠️') || text.toLowerCase().includes('warning') || text.toLowerCase().includes('data limitation');
-            const isInfo = text.includes('ℹ️') || text.includes('💡');
-            const isError = text.includes('❌') || text.toLowerCase().includes('error');
-            
-            if (isWarning) {
-              return (
-                <div className="prose-alert prose-alert-warning">
-                  <span className="text-xl">⚠️</span>
-                  <p className="text-sm text-foreground/90 mb-0 leading-7 flex-1">
-                    {children}
-                  </p>
-                </div>
-              );
-            }
-            
-            if (isInfo) {
-              return (
-                <div className="prose-alert prose-alert-info">
-                  <span className="text-xl">ℹ️</span>
-                  <p className="text-sm text-foreground/90 mb-0 leading-7 flex-1">
-                    {children}
-                  </p>
-                </div>
-              );
-            }
-            
-            if (isError) {
-              return (
-                <div className="prose-alert prose-alert-error">
-                  <span className="text-xl">❌</span>
-                  <p className="text-sm text-foreground/90 mb-0 leading-7 flex-1">
-                    {children}
-                  </p>
-                </div>
-              );
-            }
-            
-            return (
-              <p className="text-sm text-foreground/90 mb-4 leading-7">
-                {children}
-              </p>
-            );
-          },
           ul: ({ children }) => (
-            <ul className="list-disc pl-6 space-y-2 mb-4 text-sm text-foreground/90">
+            <ul className="list-disc list-inside space-y-2 mb-4 text-sm text-foreground/90 ml-2">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal pl-6 space-y-2 mb-4 text-sm text-foreground/90">
+            <ol className="list-decimal list-inside space-y-2 mb-4 text-sm text-foreground/90 ml-2">
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="leading-7 pl-1">
+            <li className="ml-1 leading-relaxed">
               {children}
             </li>
           ),
@@ -889,64 +843,55 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
             </em>
           ),
           hr: () => (
-            <hr className="my-8 border-t-2 border-border/60" />
+            <hr className="my-4 border-border" />
           ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-[3px] border-primary/40 pl-5 py-3 my-4 bg-muted/30 rounded-r italic text-muted-foreground">
-              <div className="text-sm">
+            <blockquote className="border-l-4 border-primary/30 pl-4 py-2 bg-muted/20 rounded-r-md mb-3">
+              <div className="text-sm text-muted-foreground italic">
                 {children}
               </div>
             </blockquote>
           ),
           table: ({ children }) => (
             <EnhancedTableRenderer rawTableData={processedResult.processedContent}>
-              <div className="my-4 overflow-hidden rounded-lg border border-border shadow-sm">
-                <table className="min-w-full divide-y divide-border bg-card">
-                  {children}
-                </table>
-              </div>
+              <table className="min-w-full border border-border rounded-lg bg-card">
+                {children}
+              </table>
             </EnhancedTableRenderer>
           ),
           thead: ({ children }) => (
-            <thead className="bg-muted/70">
+            <thead className="bg-muted/50">
               {children}
             </thead>
           ),
           tbody: ({ children }) => (
-            <tbody className="divide-y divide-border bg-card">
+            <tbody className="divide-y divide-border">
               {children}
             </tbody>
           ),
-          tr: ({ children, ...props }) => {
-            // Check if this is a body row
-            const isBodyRow = props.node?.tagName === 'tr' && props.node?.position;
-            return (
-              <tr className={cn(
-                "transition-colors",
-                isBodyRow && "hover:bg-muted/40 even:bg-muted/20"
-              )}>
-                {children}
-              </tr>
-            );
-          },
+          tr: ({ children }) => (
+            <tr className="hover:bg-muted/30 transition-colors">
+              {children}
+            </tr>
+          ),
           th: ({ children }) => (
-            <th className="px-4 py-3 text-left text-xs font-bold text-foreground uppercase tracking-wider bg-muted/70">
+            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-4 py-3 text-sm text-foreground/90">
+            <td className="px-4 py-3 text-sm text-foreground border-b border-border/50">
               {children}
             </td>
           ),
           code: ({ children, className }) => {
             const isInline = !className;
             return isInline ? (
-              <code className="bg-muted/80 px-1.5 py-0.5 rounded text-xs font-mono text-foreground border border-border/30">
+              <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-foreground">
                 {children}
               </code>
             ) : (
-              <pre className="bg-muted/60 p-4 rounded-lg overflow-x-auto mb-4 border border-border/50">
+              <pre className="bg-muted p-3 rounded-lg overflow-x-auto mb-3">
                 <code className="text-xs font-mono text-foreground">
                   {children}
                 </code>
