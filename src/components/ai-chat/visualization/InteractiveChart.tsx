@@ -34,11 +34,14 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({ chartConfig 
   });
 
   const defaultColors = colors || [
-    'hsl(var(--primary))', 
-    'hsl(var(--secondary))', 
-    'hsl(var(--accent))',
-    'hsl(var(--chart-1))',
-    'hsl(var(--chart-2))'
+    '#8B5CF6',  // Vibrant Purple
+    '#06B6D4',  // Cyan Blue
+    '#F59E0B',  // Amber Orange
+    '#10B981',  // Emerald Green
+    '#EC4899',  // Hot Pink
+    '#6366F1',  // Indigo
+    '#14B8A6',  // Teal
+    '#F97316',  // Bright Orange
   ];
 
   const renderChart = () => {
