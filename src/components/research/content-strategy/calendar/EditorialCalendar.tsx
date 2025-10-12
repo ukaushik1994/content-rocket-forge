@@ -311,12 +311,13 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                               </button>
                                {/* Add CalendarItemActions for delete functionality */}
                                <div onClick={(e) => e.stopPropagation()}>
-                                 <CalendarItemActions 
-                                   calendarItem={item}
-                                   onRefresh={refreshData}
-                                   compact={true}
-                                 />
-                               </div>
+                                  <CalendarItemActions 
+                                    calendarItem={item}
+                                    onRefresh={refreshData}
+                                    compact={true}
+                                    onGenerateContent={handleGenerateContent}
+                                  />
+                                </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
@@ -410,6 +411,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                           calendarItem={item}
                           onRefresh={refreshData}
                           compact={true}
+                          onGenerateContent={handleGenerateContent}
                         />
                         <Badge variant="outline" className={getStatusColor(item.status)}>
                           {item.status}

@@ -18,7 +18,8 @@ import {
   ArrowRight, 
   Clock,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  Send
 } from 'lucide-react';
 import { calendarActionsService } from '@/services/calendarActionsService';
 import { toast } from 'sonner';
@@ -28,9 +29,10 @@ interface CalendarItemActionsProps {
   calendarItem: any;
   onRefresh?: () => void;
   compact?: boolean;
+  onGenerateContent?: (item: any) => void;
 }
 
-export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }: CalendarItemActionsProps) => {
+export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false, onGenerateContent }: CalendarItemActionsProps) => {
   const [postponeDialogOpen, setPostponeDialogOpen] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
@@ -223,6 +225,11 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-gray-900 border-white/20">
+              <DropdownMenuItem onClick={() => onGenerateContent?.(calendarItem)}>
+                <Send className="h-4 w-4 mr-2" />
+                Create Content
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setPostponeDialogOpen(true)}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Postpone
@@ -260,6 +267,16 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false }
   return (
     <>
       <div className="flex items-center gap-2">
+        <Button
+          onClick={() => onGenerateContent?.(calendarItem)}
+          size="sm"
+          variant="outline"
+          className="gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/30 text-blue-400 hover:bg-blue-500/30"
+        >
+          <Send className="h-4 w-4" />
+          Create Content
+        </Button>
+        
         <Button
           onClick={() => setPostponeDialogOpen(true)}
           size="sm"
