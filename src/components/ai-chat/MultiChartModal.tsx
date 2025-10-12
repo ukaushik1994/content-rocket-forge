@@ -1190,9 +1190,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                   {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="w-5 h-5" />
-              </Button>
             </div>
           </div>
 
