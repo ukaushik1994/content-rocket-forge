@@ -88,15 +88,16 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   };
 
   const bubbleVariants = {
-    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    hidden: { opacity: 0, y: 10, scale: 0.98 },
     visible: { 
       opacity: 1, 
       y: 0,
       scale: 1,
       transition: {
         type: "spring",
-        stiffness: 200,
-        damping: 20
+        stiffness: 300,
+        damping: 25,
+        mass: 0.5
       }
     }
   };
@@ -119,7 +120,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       )}
 
       {/* Message Content */}
-      <div className="max-w-md sm:max-w-xl lg:max-w-2xl">
+      <div className="w-full max-w-4xl">
         <div className="relative">
           {/* Thinking Indicator - shown while AI is processing */}
           {!isUser && isThinking && thinkingContent && (
@@ -142,10 +143,10 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           )}
 
           {/* Message Content */}
-          <Card className={`shadow-sm border backdrop-blur-sm ${
+          <Card className={`shadow-sm border backdrop-blur-sm overflow-auto max-h-[80vh] ${
             isUser 
-              ? 'bg-primary text-primary-foreground border-primary/20 ml-4 max-w-4xl' 
-              : 'bg-background/80 border-border/50 mr-4 max-w-5xl'
+              ? 'bg-primary text-primary-foreground border-primary/20 ml-4' 
+              : 'bg-background/80 border-border/50 mr-4'
           }`}>
             <div className="px-6 py-3">
               <div className={`text-sm leading-relaxed ${

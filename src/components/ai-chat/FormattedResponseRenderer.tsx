@@ -794,8 +794,9 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
   }
   
   return (
-    <div className={cn("prose prose-sm max-w-none", className)}>
-      <ReactMarkdown
+    <div className="overflow-auto max-h-[70vh] pr-2">
+      <div className={cn("prose prose-sm max-w-none", className)}>
+        <ReactMarkdown
         components={{
           h1: ({ children }) => (
             <h1 className="text-lg font-semibold text-foreground mb-4 mt-6 first:mt-0 border-b border-border pb-2">
@@ -902,6 +903,7 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
       >
         {processedResult.processedContent}
       </ReactMarkdown>
+      </div>
     </div>
   );
 };

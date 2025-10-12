@@ -80,7 +80,7 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
     <div className="relative flex-1">
       <ScrollArea 
         ref={scrollAreaRef}
-        className="h-full p-6"
+        className="h-full p-6 pb-safe"
         onScrollCapture={handleScroll}
       >
         <div className="space-y-6">

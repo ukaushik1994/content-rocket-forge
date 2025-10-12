@@ -119,6 +119,11 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, rgba(155, 135, 245, 0.5), rgba(51, 195, 240, 0.3));
   }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .glass-panel {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(16px);
