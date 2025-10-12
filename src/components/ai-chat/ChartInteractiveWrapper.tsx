@@ -10,10 +10,6 @@ interface ChartInteractiveWrapperProps {
   title: string;
   description?: string;
   children: React.ReactNode;
-  zoomLevel: number;
-  onZoomChange: (level: number) => void;
-  syncZoom: boolean;
-  onToggleSyncZoom: () => void;
   linkedHoverData?: any;
   onHover?: (data: any) => void;
   onExportPNG?: () => void;
@@ -26,10 +22,6 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
   title,
   description,
   children,
-  zoomLevel,
-  onZoomChange,
-  syncZoom,
-  onToggleSyncZoom,
   linkedHoverData,
   onHover,
   onExportPNG,
@@ -37,20 +29,6 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
   className
 }) => {
   const [showFilters, setShowFilters] = useState(false);
-
-  const handleZoomIn = () => {
-    const newZoom = Math.min(zoomLevel + 0.25, 2);
-    onZoomChange(newZoom);
-  };
-
-  const handleZoomOut = () => {
-    const newZoom = Math.max(zoomLevel - 0.25, 0.5);
-    onZoomChange(newZoom);
-  };
-
-  const handleResetZoom = () => {
-    onZoomChange(1);
-  };
 
   return (
     <motion.div
@@ -70,17 +48,8 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
           
           {/* Chart Controls */}
           <ChartControls
-            chartIndex={chartIndex}
-            zoomLevel={zoomLevel}
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onResetZoom={handleResetZoom}
-            syncZoom={syncZoom}
-            onToggleSyncZoom={onToggleSyncZoom}
             showFilter={true}
             onToggleFilter={() => setShowFilters(!showFilters)}
-            onExportPNG={onExportPNG}
-            onExportCSV={onExportCSV}
           />
         </div>
 
@@ -105,14 +74,8 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
           )}
         </AnimatePresence>
 
-        {/* Chart Content with Zoom */}
-        <div 
-          className="p-4 transition-transform duration-200"
-          style={{ 
-            transform: `scale(${zoomLevel})`,
-            transformOrigin: 'center center'
-          }}
-        >
+        {/* Chart Content */}
+        <div className="p-4">
           {children}
         </div>
       </Card>

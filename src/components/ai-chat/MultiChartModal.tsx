@@ -1343,10 +1343,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                             chartIndex={index}
                             title={chart.title || `Chart ${index + 1}`}
                             description={chart.subtitle}
-                            zoomLevel={zoomLevels[index] || 1}
-                            onZoomChange={(level) => handleZoomChange(index, level)}
-                            syncZoom={syncZoom}
-                            onToggleSyncZoom={() => setSyncZoom(!syncZoom)}
                             linkedHoverData={linkedHoverData}
                             onHover={setLinkedHoverData}
                             onExportPNG={() => handleExportPNG(index)}
