@@ -654,8 +654,32 @@ ${queryIntent.scope === 'summary' ? '\n💡 **Ask for details to see more conten
 `;
     }
 
+    // Detect ranking/listing queries for special data formatting
+    const isRankingQuery = /top \d+|best|worst|highest|lowest|rank|list all|show me all/i.test(query || '');
+    
     if (queryIntent.categories.includes('proposals') && context.proposals) {
-      contextString += `
+      if (isRankingQuery) {
+        // For ranking queries, provide pre-sorted complete data
+        const sortedProposals = [...context.proposals]
+          .sort((a: any, b: any) => (b.estimated_impressions || 0) - (a.estimated_impressions || 0));
+        
+        contextString += `
+### 💡 AI STRATEGY PROPOSALS - RANKING DATA (${sortedProposals.length} total)
+**Note: Pre-sorted by impressions (highest to lowest)**
+
+${sortedProposals.map((p: any, i: number) => `
+${i + 1}. "${p.title}"
+   - Primary Keyword: ${p.primary_keyword}
+   - Estimated Impressions: ${p.estimated_impressions?.toLocaleString() || 0}
+   - Priority: ${p.priority_tag || 'N/A'}
+   - Status: ${p.status}
+   - Content Type: ${p.content_type || 'N/A'}
+   - ID: ${p.id}`
+).join('\n')}
+`;
+      } else {
+        // For other queries, use summary format
+        contextString += `
 ### 💡 AI STRATEGY PROPOSALS (${queryIntent.scope === 'summary' ? 'Top 5' : 'Top 15'}):
 - Total Available: ${analytics.proposalsCount || context.proposals.length}
 ${context.proposals.map((p: any, i: number) => 
@@ -664,6 +688,7 @@ ${context.proposals.map((p: any, i: number) =>
 ${queryIntent.scope === 'summary' && analytics.proposalsCount > 5 ? 
   `\n💡 **${analytics.proposalsCount - 5} more proposals available** - ask "show all proposals" for complete list` : ''}
 `;
+      }
     }
 
     if (queryIntent.categories.includes('seo')) {
@@ -1837,6 +1862,23 @@ serve(async (req) => {
       
       console.log('✅ Chart validation complete');
     }
+    // Validate table data
+    else if (visualData && visualData.type === 'table' && visualData.tableData) {
+      console.log('🔍 Validating table data...');
+      
+      const { validateTableData } = await import('./chart-validator.ts');
+      const validation = validateTableData(visualData.tableData);
+      
+      if (!validation.isValid) {
+        console.error('❌ Table validation failed:', validation.errors);
+        visualData = null;
+        cleanedResponse = (cleanedResponse || aiMessage) + "\n\n⚠️ Table data validation failed. The AI may have used incorrect format.";
+      } else if (validation.warnings.length > 0) {
+        console.warn('⚠️ Table validation warnings:', validation.warnings);
+      }
+      
+      console.log('✅ Table validation complete');
+    }
     
     // AUTO-CONVERT TO CHARTS (unless user explicitly asked for table)
     if (visualData && visualData.type !== 'chart' && chartRequest.type !== 'table_explicit') {
@@ -1851,12 +1893,18 @@ serve(async (req) => {
         }
       }
       
-      // Try table to chart conversion (unless explicitly requested table)
+      // Try table to chart conversion ONLY if user didn't explicitly ask for table
       else if (visualData.type === 'table' && visualData.tableData) {
-        const chartData = convertTableToChart(visualData.tableData);
-        if (chartData) {
-          console.log('✅ Successfully auto-converted table to chart');
-          visualData = { type: 'chart', chartConfig: chartData };
+        const wantsTable = /table|list|top \d+|rank|compare|show me all/i.test(userQuery);
+        
+        if (!wantsTable) {
+          const chartData = convertTableToChart(visualData.tableData);
+          if (chartData) {
+            console.log('✅ Successfully auto-converted table to chart');
+            visualData = { type: 'chart', chartConfig: chartData };
+          }
+        } else {
+          console.log('✅ User requested table format - keeping as table');
         }
       }
       

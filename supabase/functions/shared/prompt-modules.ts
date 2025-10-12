@@ -51,35 +51,64 @@ Before ANY response, check dataAvailability in REAL DATA CONTEXT:
 • Never generate charts requiring unavailable data
 • Provide actionable steps to fix missing data
 
-📊 VISUALIZATION PRIORITY (DEFAULT BEHAVIOR):
-• ANY numerical/comparative data → AUTO-GENERATE charts (bar/line/pie)
-• ONLY use tables when user explicitly says "table", "tabular format", or "spreadsheet"
-• Default to visual charts for better data comprehension`;
+📊 VISUALIZATION PRIORITY:
+
+**When to use TABLES (PRIORITY for these queries):**
+• User says: "top 5", "top 10", "list", "rank", "show me all", "compare"
+• Ranking/sorting data (e.g., "which proposals have most impressions?")
+• Multi-attribute comparisons (3+ columns of mixed data types)
+• When precision matters more than visual patterns
+
+**When to use CHARTS (for all other queries):**
+• Trends over time → Line/Area chart
+• Comparing values → Bar chart
+• Proportions → Pie chart
+• Visual patterns → Any appropriate chart
+
+**Default behavior**: Use charts UNLESS query indicates ranking/listing needs`;
 
 // Chart generation module - ~800 tokens
 export const CHART_MODULE = `
-📊 CHART GENERATION RULES:
+📊 VISUALIZATION GENERATION RULES:
 
-**Chart Data Accuracy Requirements:**
-1. Every data point MUST come from REAL DATA CONTEXT
-2. Include "dataSource" field explaining where each value came from
-3. Use exact values - never estimate or round
-4. Cross-reference: Verify each name/label exists in context
+**CRITICAL: Detect Table vs Chart Intent**
 
-**Chart Type Selection:**
-• Pie Chart: Proportions/distribution (2+ categories with percentages)
-• Bar Chart: Comparing values across categories (2+ items with numeric values)
-• Line Chart: Trends over time (requires timestamps + values)
-• Table: Detailed breakdowns (3+ data dimensions)
+If query matches ANY of these patterns → Generate TABLE:
+• "top [number]" (e.g., "top 5 proposals", "top 10 content")
+• "list all", "show me all", "list every"
+• "rank", "ranking", "ranked by"
+• "compare [items]" with 3+ attributes
+• Explicitly says "table", "spreadsheet", "tabular"
 
-**Before Generating Charts:**
-Check dataAvailability:
-• Solutions data? → Check dataAvailability.solutions.available
-• Keyword data? → Check dataAvailability.keywords.available
-• SEO scores? → Check dataAvailability.seoData.available
-• Proposals? → Check dataAvailability.proposals.available
+Otherwise → Generate CHART (default behavior)
 
-**Chart Format:**
+**TABLE FORMAT (use ONLY for table queries):**
+\`\`\`json
+{
+  "visualData": {
+    "type": "table",
+    "tableData": {
+      "title": "🏆 Top 5 AI Proposals by Impressions",
+      "headers": ["Rank", "Title", "Impressions", "Category", "Status"],
+      "rows": [
+        ["1", "Proposal Title Here", "44,505", "High Priority", "Active"],
+        ["2", "Another Proposal", "34,245", "Medium", "Scheduled"]
+      ],
+      "caption": "Sorted by estimated impressions (highest to lowest)"
+    }
+  }
+}
+\`\`\`
+
+**CRITICAL TABLE RULES:**
+• NEVER use pipe characters (|) or markdown table syntax
+• ALWAYS use the exact JSON structure above
+• Pre-sort data in correct order (e.g., highest to lowest)
+• Add rank numbers in first column
+• Include descriptive title with emoji
+• Add caption explaining sort order
+
+**CHART FORMAT (use for all other queries):**
 \`\`\`json
 {
   "visualData": {
@@ -99,13 +128,16 @@ Check dataAvailability:
 }
 \`\`\`
 
-**Proactive Visualization (DEFAULT BEHAVIOR):**
-• ANY numerical/comparative data → AUTO-GENERATE bar/pie chart
-• Time-series data → AUTO-GENERATE line/area chart  
-• Performance metrics → AUTO-GENERATE appropriate chart
-• Distribution data → AUTO-GENERATE pie chart
-• ONLY use tables when user explicitly says "show me a table"
-• Charts provide better visual comprehension than tables`;
+**Chart Type Selection:**
+• Bar Chart: Comparing values across categories (2+ items)
+• Line Chart: Trends over time (requires time series data)
+• Pie Chart: Proportions/distribution (shows percentages)
+
+**Data Accuracy Requirements (applies to BOTH tables and charts):**
+1. Every value MUST come from REAL DATA CONTEXT
+2. Use exact values - never estimate or round
+3. Cross-reference: Verify each name/label exists in context
+4. Include "dataSource" or caption explaining data source`;
 
 // PHASE 2: Multi-chart intelligence module - ~1200 tokens
 export const MULTI_CHART_MODULE = `

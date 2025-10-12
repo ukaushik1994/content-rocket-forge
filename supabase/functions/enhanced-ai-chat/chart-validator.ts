@@ -135,6 +135,61 @@ export function validateMultiChartAnalysis(
   };
 }
 
+// Validate table data structure
+export function validateTableData(tableData: any): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  
+  if (!tableData) {
+    return { isValid: false, errors: ['Table data is missing'], warnings: [] };
+  }
+  
+  // Check structure
+  if (!tableData.headers || !Array.isArray(tableData.headers)) {
+    errors.push('Missing or invalid headers array');
+  }
+  
+  if (!tableData.rows || !Array.isArray(tableData.rows)) {
+    errors.push('Missing or invalid rows array');
+  }
+  
+  if (errors.length > 0) {
+    return { isValid: false, errors, warnings };
+  }
+  
+  // Check data consistency
+  const columnCount = tableData.headers.length;
+  
+  if (columnCount === 0) {
+    errors.push('Headers array is empty');
+  }
+  
+  tableData.rows.forEach((row: any[], index: number) => {
+    if (!Array.isArray(row)) {
+      errors.push(`Row ${index} is not an array`);
+    } else if (row.length !== columnCount) {
+      warnings.push(`Row ${index} has ${row.length} columns, expected ${columnCount}`);
+    }
+  });
+  
+  // Check for pipe characters (indicates markdown instead of JSON)
+  const tableJson = JSON.stringify(tableData);
+  if (tableJson.includes('|')) {
+    errors.push('Table contains pipe characters - AI likely used markdown syntax instead of JSON structure');
+  }
+  
+  // Validate title
+  if (!tableData.title || typeof tableData.title !== 'string') {
+    warnings.push('Table is missing a title');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings
+  };
+}
+
 export function extractDataSource(chartConfig: any, realContext: any): any {
   // NULL SAFETY: Handle all visualData structures
   if (!chartConfig) {
