@@ -19,17 +19,12 @@ export const EnhancedTableRenderer: React.FC<EnhancedTableRendererProps> = ({
     <div className={cn("space-y-3", className)}>
       {/* Table wrapper without export buttons */}
 
-      {/* Enhanced Table with Horizontal Scroll */}
+      {/* Enhanced Table */}
       <div className="relative">
-        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-          <div className="min-w-full">
+        <div className="overflow-visible">
+          <div className="w-full">
             {children}
           </div>
-        </div>
-        
-        {/* Scroll Indicator for mobile */}
-        <div className="block md:hidden text-xs text-muted-foreground mt-2 text-center">
-          ← Scroll horizontally to see more columns →
         </div>
       </div>
     </div>

@@ -143,7 +143,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           )}
 
           {/* Message Content */}
-          <Card className={`shadow-sm border backdrop-blur-sm overflow-auto max-h-[80vh] ${
+          <Card className={`shadow-sm border backdrop-blur-sm ${
             isUser 
               ? 'bg-primary text-primary-foreground border-primary/20 ml-4' 
               : 'bg-background/80 border-border/50 mr-4'
