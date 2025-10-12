@@ -42,6 +42,7 @@ import { AIRecommendationsPanel } from './AIRecommendationsPanel';
 import { SavedAnalysesList } from './SavedAnalysesList';
 import { AnalysisVersionHistory } from './AnalysisVersionHistory';
 import { VersionComparisonModal } from './VersionComparisonModal';
+import { ChartQAPanel } from './ChartQAPanel';
 import { supabase } from '@/integrations/supabase/client';
 import html2canvas from 'html2canvas';
 import { VisualData, ChartConfiguration, ActionableItem } from '@/types/enhancedChat';
@@ -1444,6 +1445,15 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                 />
               )}
             </AnimatePresence>
+
+            {/* Conversational AI Chat Panel */}
+            {showAIRecommendations && (
+              <ChartQAPanel
+                charts={charts}
+                context={context}
+                initialInsights={aiInsights}
+              />
+            )}
 
             {/* Phase 3: Saved Analyses List */}
             <AnimatePresence>

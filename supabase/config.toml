@@ -100,3 +100,6 @@ verify_jwt = false
 
 [functions.analyze-chart-data]
 verify_jwt = true
+
+[functions.chart-qa]
+verify_jwt = false
