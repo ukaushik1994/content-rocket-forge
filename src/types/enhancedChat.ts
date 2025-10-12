@@ -17,6 +17,15 @@ export interface ChartConfiguration {
   height?: number;
   perspectives?: ChartPerspective; // Multi-perspective analysis of chart
   
+  // Data representation metadata (Phase 2)
+  dataRepresentation?: {
+    xAxis?: string; // What the X axis represents
+    yAxis?: string; // What the Y axis represents
+    dataPoints?: string; // Explanation of what each data point means
+    interpretation?: string; // How to read this chart
+    keyInsights?: string[]; // Key insights from this chart
+  };
+  
   // Individual chart insights and actions
   chartInsights?: string[]; // Specific insights for this chart
   chartActions?: ActionableItem[]; // Actions specific to this chart
