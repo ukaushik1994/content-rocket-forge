@@ -634,8 +634,14 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
   const processedResult = React.useMemo(() => {
     setIsProcessing(true);
     try {
-      // ALWAYS clean malformed pipes first (even with visual data)
-      let processedContent = cleanMalformedPipes(content);
+      // Frontend safety net: Remove any <think> tags that leaked through
+      let processedContent = content
+        .replace(/<\s*think\s*>[\s\S]*?<\s*\/\s*think\s*>/gi, '')
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/<\/?think>/gi, '');
+      
+      // ALWAYS clean malformed pipes after <think> removal
+      processedContent = cleanMalformedPipes(processedContent);
       
       // Skip table processing if visual data already handles the tables
       if (hasVisualData) {

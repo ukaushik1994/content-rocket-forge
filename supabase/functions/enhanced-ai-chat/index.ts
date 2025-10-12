@@ -285,6 +285,18 @@ CRITICAL FORMATTING RULES FOR CONVERSATIONAL RESPONSES:
 7. Only use proper markdown tables when explicitly asked or when data has 3+ columns
 8. Keep responses clean, scannable, and professional
 
+CRITICAL CHART DATA FORMAT RULES:
+9. **Pie Charts** require STRICT data format:
+   - MANDATORY format: [{ name: 'Category Name', value: 123 }]
+   - 'name' field: string category label (REQUIRED)
+   - 'value' field: numeric value (REQUIRED, must be number type, not string)
+   - NO nested objects, NO additional fields in data array
+   - Example CORRECT: [{ name: 'Draft', value: 6 }, { name: 'Published', value: 1 }]
+   - Example WRONG: [{ label: 'Draft', count: '6' }] (wrong keys, string value)
+   - If data doesn't match this exact format, use a bar chart instead
+10. **Bar/Line Charts**: Use consistent dataKey names across series
+11. **All Charts**: Ensure numeric values are numbers, not strings
+
 CRITICAL: Include 2-4 charts, all summary types, 3-5 actions with targetUrl, 3-5 deep dive questions. Use accurate data.`;
 }
 
@@ -1494,17 +1506,34 @@ serve(async (req) => {
     const data = aiProxyResult.data;
     let aiMessage = data?.choices?.[0]?.message?.content;
 
-    // Remove <think> tags IMMEDIATELY before any other processing
+    // Remove <think> tags AGGRESSIVELY before any other processing
     if (aiMessage) {
-      console.log(`🧠 Original AI message length: ${aiMessage.length}, has <think>: ${aiMessage.includes('<think>')}`);
+      const originalLength = aiMessage.length;
+      const hadThinkTags = aiMessage.includes('<think>') || aiMessage.includes('< think>');
       
+      // Multiple passes to catch all variations
       aiMessage = aiMessage
-        .replace(/<\s*think\s*>[\s\S]*?<\s*\/\s*think\s*>/gi, '') // Handle tags with spaces
-        .replace(/<think>[\s\S]*?<\/think>/gi, '') // Standard tags
-        .replace(/<\/?think>/gi, '') // Orphaned tags
+        // Remove with any amount of whitespace in tags
+        .replace(/<\s*think\s*>[\s\S]*?<\s*\/\s*think\s*>/gi, '')
+        // Standard tags
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        // With newlines
+        .replace(/<think>\n[\s\S]*?\n<\/think>/gi, '')
+        // Orphaned opening/closing tags
+        .replace(/<\/?think>/gi, '')
+        // Any remaining variations
+        .replace(/< ?\/?think ?>/gi, '')
         .trim();
       
-      console.log(`✅ Cleaned AI message length: ${aiMessage.length}, still has <think>: ${aiMessage.includes('<think>')}`);
+      if (hadThinkTags) {
+        console.log(`🧠 Removed <think> tags: ${originalLength} → ${aiMessage.length} chars`);
+      }
+      
+      // Final safety check
+      if (aiMessage.includes('think>')) {
+        console.warn('⚠️ WARNING: <think> tag remnants still detected in response!');
+        console.log('Problematic content:', aiMessage.substring(0, 500));
+      }
     }
 
     if (!aiMessage) {

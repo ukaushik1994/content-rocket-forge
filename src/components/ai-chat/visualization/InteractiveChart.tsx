@@ -84,12 +84,42 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({ chartConfig 
         );
 
       case 'pie':
+        // Validate pie chart data format
+        const nameKey = categories[0] || 'name';
+        const valueKey = series?.[0]?.dataKey || 'value';
+        
+        const isValidPieData = data.every(item => 
+          item.hasOwnProperty(nameKey) && 
+          item.hasOwnProperty(valueKey) &&
+          typeof item[valueKey] === 'number'
+        );
+        
+        if (!isValidPieData) {
+          console.error('❌ Invalid pie chart data format:', { 
+            data, 
+            expectedNameKey: nameKey, 
+            expectedValueKey: valueKey,
+            sample: data[0]
+          });
+          return (
+            <div className="flex items-center justify-center h-full min-h-[300px]">
+              <div className="text-center text-muted-foreground">
+                <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-destructive opacity-50" />
+                <p className="text-sm font-medium">Data format not compatible</p>
+                <p className="text-xs mt-2 max-w-[250px]">
+                  Expected format: <code className="bg-muted px-1 py-0.5 rounded">[{`{ ${nameKey}: 'Category', ${valueKey}: 123 }`}]</code>
+                </p>
+              </div>
+            </div>
+          );
+        }
+        
         return (
           <PieChart>
             <Pie 
               data={data} 
-              dataKey={series?.[0]?.dataKey || 'value'} 
-              nameKey={categories[0] || 'name'} 
+              dataKey={valueKey} 
+              nameKey={nameKey} 
               cx="50%" 
               cy="50%" 
               outerRadius={80} 

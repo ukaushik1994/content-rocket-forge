@@ -97,13 +97,13 @@ const AnimatedMetricCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card className="p-4 glass-panel bg-gradient-to-br from-card/50 to-card/30 border border-white/10 hover:border-primary/30 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10 min-h-[120px] flex flex-col justify-between">
+      <Card className="p-4 glass-panel bg-gradient-to-br from-card/50 to-card/30 border border-white/10 hover:border-primary/30 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10 h-[140px] flex flex-col justify-between overflow-hidden">
         {/* Icon + Label - Fixed height */}
-        <div className="flex items-center gap-2 mb-2 min-h-[24px]">
+        <div className="flex items-center gap-2 mb-2 h-[28px]">
           <div className="p-1.5 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
             <Icon className="w-4 h-4 text-primary" />
           </div>
-          <span className="text-xs text-muted-foreground line-clamp-1">{label}</span>
+          <span className="text-xs text-muted-foreground truncate">{label}</span>
         </div>
         
         {/* Value - Flex grow to fill space */}
@@ -125,7 +125,7 @@ const AnimatedMetricCard: React.FC<{
             animate={{ opacity: 1 }}
             transition={{ delay: index * 0.1 + 0.3 }}
             className={cn(
-              "text-xs mt-1 flex items-center gap-1 min-h-[20px]",
+              "text-xs mt-1 flex items-center gap-1 h-[24px]",
               trendUp ? 'text-success' : 'text-destructive'
             )}
           >
@@ -171,7 +171,7 @@ const KeyMetricsPanel: React.FC<{ context: any }> = ({ context }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 auto-rows-fr">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 grid-auto-rows-[140px]">
       {metrics.map((metric, idx) => (
         <AnimatedMetricCard key={idx} {...metric} index={idx} />
       ))}
