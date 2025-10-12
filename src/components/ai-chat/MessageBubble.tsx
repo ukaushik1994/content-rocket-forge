@@ -76,7 +76,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       )}
 
       {/* Message Content */}
-      <div className={`max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl ${isUser ? 'order-first' : ''}`}>
+      <div className={`${isUser ? 'max-w-[50%]' : 'max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl'} ${isUser ? 'order-first' : ''}`}>
         {/* Message Bubble */}
         <motion.div
           className={`

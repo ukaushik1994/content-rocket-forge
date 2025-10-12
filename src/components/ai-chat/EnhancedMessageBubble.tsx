@@ -120,7 +120,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       )}
 
       {/* Message Content */}
-      <div className="w-full max-w-4xl">
+      <div className={`${isUser ? 'max-w-[50%]' : 'w-full max-w-4xl'}`}>
         <div className="relative">
           {/* Thinking Indicator - shown while AI is processing */}
           {!isUser && isThinking && thinkingContent && (
