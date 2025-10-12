@@ -497,13 +497,19 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   const displayActionableItems = loadedActionableItems || actionableItems;
   const displayDeepDivePrompts = loadedDeepDivePrompts || deepDivePrompts;
 
-  // Carousel navigation - Define before use in useEffect
+  // Carousel navigation - Define before use in useEffect (scroll by 2 for side-by-side view)
   const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
+    if (emblaApi) {
+      const currentIndex = emblaApi.selectedScrollSnap();
+      emblaApi.scrollTo(Math.max(currentIndex - 2, 0));
+    }
   }, [emblaApi]);
 
   const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
+    if (emblaApi) {
+      const currentIndex = emblaApi.selectedScrollSnap();
+      emblaApi.scrollTo(currentIndex + 2);
+    }
   }, [emblaApi]);
 
   // Phase 1: Keyboard navigation
@@ -1302,7 +1308,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                           key={idx}
                           className={cn(
                             "h-1.5 rounded-full transition-all duration-300",
-                            selectedIndex === idx 
+                            (selectedIndex === idx || selectedIndex + 1 === idx)
                               ? "w-6 bg-primary" 
                               : "w-1.5 bg-muted-foreground/30"
                           )}
@@ -1313,7 +1319,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                       variant="ghost"
                       size="icon"
                       onClick={scrollNext}
-                      disabled={selectedIndex === validCharts.length - 1}
+                      disabled={selectedIndex >= validCharts.length - 2}
                       className="h-8 w-8 hover:bg-primary/10"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -1329,7 +1335,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                       return (
                         <div
                           key={index}
-                          className="flex-[0_0_100%] min-w-0"
+                          className="flex-[0_0_calc(50%-0.5rem)] min-w-0"
                           role="tabpanel"
                           aria-label={`Chart ${index + 1}: ${chart.title}`}
                         >
