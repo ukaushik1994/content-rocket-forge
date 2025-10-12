@@ -61,17 +61,10 @@ const isValidMarkdownTableRow = (line: string): boolean => {
   return segments.length >= 2;
 };
 
-// Simplified pipe removal - trust backend formatting
+// Frontend does ZERO cleaning - let validation layer handle issues
 const cleanMalformedPipes = (content: string): string => {
-  console.log('🧹 Frontend pipe cleaning (minimal)');
-  
-  // Only remove obvious malformed patterns, trust markdown parser for tables
-  const cleaned = content
-    .replace(/\|\|\|+/g, '') // Remove triple+ pipes
-    .replace(/\|\s*-{3,}\s*\|/g, '---'); // Remove orphaned separators
-  
-  console.log('✅ Frontend pipe cleaning complete');
-  return cleaned;
+  // Trust backend cleaning and validation layer
+  return content;
 };
 
 // Convert CSV content to markdown table
@@ -122,6 +115,89 @@ const convertCSVToMarkdownTable = (csvContent: string): string => {
 };
 
 
+
+/**
+ * Validate if content contains a PROPERLY FORMATTED markdown table
+ * Returns: { isValid: boolean, reason: string }
+ */
+const validateMarkdownTable = (content: string): { isValid: boolean; reason: string } => {
+  const lines = content.split('\n').map(l => l.trim()).filter(l => l);
+  
+  // Find table boundaries
+  const tableLines = lines.filter(line => line.startsWith('|') && line.endsWith('|'));
+  
+  if (tableLines.length < 3) {
+    return { isValid: false, reason: 'Insufficient table rows (need header + separator + data)' };
+  }
+  
+  // Validate structure
+  const header = tableLines[0];
+  const separator = tableLines[1];
+  const dataRows = tableLines.slice(2);
+  
+  // Check separator row (must be only dashes and pipes)
+  const isSeparator = /^\|[\s\-|]+\|$/.test(separator) && separator.includes('---');
+  if (!isSeparator) {
+    return { isValid: false, reason: 'Missing or invalid separator row' };
+  }
+  
+  // Count columns (must be consistent)
+  const headerCols = (header.match(/\|/g) || []).length - 1;
+  const separatorCols = (separator.match(/\|/g) || []).length - 1;
+  
+  if (headerCols !== separatorCols) {
+    return { isValid: false, reason: `Column mismatch: header=${headerCols}, separator=${separatorCols}` };
+  }
+  
+  // Validate all data rows have same column count
+  for (const row of dataRows) {
+    const rowCols = (row.match(/\|/g) || []).length - 1;
+    if (rowCols !== headerCols) {
+      return { isValid: false, reason: `Inconsistent columns in data row` };
+    }
+  }
+  
+  return { isValid: true, reason: 'Valid markdown table' };
+};
+
+/**
+ * CRITICAL: If table is invalid, convert to formatted list instead
+ * This prevents corruption from attempting to "fix" unfixable structures
+ */
+const convertInvalidTableToList = (content: string): string => {
+  const lines = content.split('\n');
+  const pipeLines = lines.filter(line => line.includes('|'));
+  
+  if (pipeLines.length === 0) return content;
+  
+  // Extract all cell content
+  const extractedData: string[] = [];
+  
+  for (const line of pipeLines) {
+    const cells = line
+      .split('|')
+      .map(cell => cell.trim())
+      .filter(cell => cell && cell !== '---' && !cell.match(/^-+$/));
+    
+    if (cells.length > 0) {
+      // Format as bulleted list
+      if (cells.length === 1) {
+        extractedData.push(`- ${cells[0]}`);
+      } else {
+        extractedData.push(`- **${cells[0]}**: ${cells.slice(1).join(' | ')}`);
+      }
+    }
+  }
+  
+  // Replace table content with list
+  let result = content;
+  for (const pipeLine of pipeLines) {
+    result = result.replace(pipeLine, '');
+  }
+  
+  // Insert formatted list
+  return result.trim() + '\n\n' + extractedData.join('\n') + '\n';
+};
 
 // Enhanced malformed table detection with better pattern recognition
 const detectMalformedTable = (content: string): boolean => {
@@ -286,37 +362,56 @@ const processTableLines = (lines: string[]): string => {
   }
 };
 
-// Streamlined table detection with single-pass processing
-const detectAndConvertTables = (content: string): { processedContent: string; hasErrors: boolean; errorCount: number } => {
+// Streamlined table detection with validation-first approach
+const detectAndConvertTables = (content: string): { processedContent: string; hasErrors: boolean; errorCount: number; hasTableConversion?: boolean } => {
   let errorCount = 0;
   let hasErrors = false;
+  let hasTableConversion = false;
   
   console.log('🔄 Starting table detection and conversion process');
   
-  // Step 0: Clean malformed pipes before any processing
-  let processedContent = cleanMalformedPipes(content);
-  console.log('🧹 Malformed pipes cleaned');
+  // Step 0: No frontend cleaning - trust backend
+  let processedContent = content;
   
   // Step 1: Pre-process code blocks to convert CSV to tables
   processedContent = processCodeBlocks(processedContent);
   console.log('📋 Code blocks processed');
   
-  // Step 2: Check if content has malformed tables and repair them first
+  // Step 2: NEW - Validate table BEFORE attempting repair
   if (detectMalformedTable(processedContent)) {
-    console.log('🔧 Malformed table detected, attempting repair');
+    console.log('🔍 Table-like content detected, validating structure...');
+    
+    const validation = validateMarkdownTable(processedContent);
+    
+    if (!validation.isValid) {
+      console.warn('⚠️ Invalid table detected:', validation.reason);
+      console.log('🔄 Converting to formatted list instead...');
+      
+      processedContent = convertInvalidTableToList(processedContent);
+      hasTableConversion = true;
+      
+      return { 
+        processedContent,
+        hasErrors: false, // Not an error - we handled it gracefully
+        errorCount: 0,
+        hasTableConversion: true
+      };
+    }
+    
+    // Only proceed with repair if validation passes
+    console.log('✅ Table structure valid, proceeding with repair if needed');
     try {
       processedContent = repairMalformedTable(processedContent);
-      console.log('✅ Malformed table repaired successfully');
+      console.log('✅ Table processed successfully');
       
-      // If we successfully repaired malformed tables, skip further processing
-      // to avoid double-processing the same content
       return { 
         processedContent,
         hasErrors: false,
-        errorCount: 0
+        errorCount: 0,
+        hasTableConversion: false
       };
     } catch (error) {
-      console.warn('❌ Failed to repair malformed table:', error);
+      console.warn('❌ Failed to process table:', error);
       hasErrors = true;
       errorCount++;
       // Continue with regular processing as fallback
@@ -676,6 +771,18 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
       });
     }
   }, [processedResult.hasErrors, processedResult.errorCount, toast]);
+  
+  // Phase 4: User feedback for table conversions
+  React.useEffect(() => {
+    if (processedResult.hasTableConversion) {
+      toast({
+        title: "Table Formatting Adjusted",
+        description: "Some tabular data was reformatted as a list for better readability",
+        variant: "default",
+        duration: 3000,
+      });
+    }
+  }, [processedResult.hasTableConversion, toast]);
   
   if (isProcessing) {
     return (

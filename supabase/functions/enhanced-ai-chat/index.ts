@@ -257,12 +257,46 @@ function buildMultiChartSystemPrompt(): string {
 }
 
 CRITICAL FORMATTING RULES FOR CONVERSATIONAL RESPONSES:
+
+## MARKDOWN TABLE RULES (EXTREMELY IMPORTANT)
+
+When presenting tabular data, you MUST follow this EXACT format:
+
+✅ CORRECT MARKDOWN TABLE FORMAT:
+| Header 1 | Header 2 | Header 3 |
+| --- | --- | --- |
+| Data 1 | Data 2 | Data 3 |
+| Data 4 | Data 5 | Data 6 |
+
+MANDATORY TABLE RULES:
+1. Line 1: Header row with pipes at start and end: | Header | Header |
+2. Line 2: Separator row with ONLY dashes: | --- | --- |
+3. Line 3+: Data rows, ONE per line: | Data | Data |
+4. Each cell MUST be on the SAME ROW, separated by single pipes |
+5. NEVER put header separator (---) on the same line as data
+6. NEVER mix header content and data on one line
+7. Empty cells: Use spaces between pipes: |  | Data |
+8. Column count MUST be consistent across all rows
+
+❌ NEVER DO THIS (these break rendering):
+| Header | Data --- More Data | Values |
+| Mixed content --- separator | all | wrong |
+| Query Type | Impressions | What This Means | --- | --- | --- |
+
+📝 WHEN TO USE TABLES vs LISTS:
+- Tables: Comparing 3+ data points across 2+ distinct categories
+- Lists: Sequential information, single-column data, narratives
+
+IF DATA DOESN'T FIT TABLE FORMAT, use bulleted lists:
+- **Item 1**: Value (description)
+- **Item 2**: Value (description)
+
+## GENERAL TEXT FORMATTING RULES:
 1. NEVER use pipe characters (|) in conversational text - they break markdown rendering
 2. Use markdown headers (## Section, ### Subsection) to structure content
 3. Use bullet lists (- item) or numbered lists (1. item) for data presentation
 4. Use **bold** for emphasis, not surrounded by ASCII separators
 5. Separate sections with blank lines, not with | --- | or similar patterns
-6. When presenting data in lists, use clean formatting:
    
    GOOD EXAMPLE:
    ## Content Analysis
@@ -1573,18 +1607,14 @@ serve(async (req) => {
     // Parse the response for structured data
     console.log('🔍 Parsing AI response for structured data...');
     
-    // Phase 5: Enhanced parsing with graceful degradation
-    // Minimal pipe cleaning - trust AI formatting from improved prompt
+    // Phase 5: Minimal pipe cleaning - trust AI formatting from strict prompt
     const cleanAIPipes = (text: string): string => {
       if (!text) return text;
       
-      // Only remove TRULY malformed patterns (accidental AI artifacts)
+      // ONLY remove truly impossible patterns - trust everything else
       return text
-        // Remove orphaned triple+ pipes (definitely malformed)
-        .replace(/\|\|\|+/g, '')
-        // Remove separator patterns with only dashes between pipes
-        .replace(/\|\s*-{3,}\s*\|/g, '---')
-        // Keep everything else - trust the AI's improved formatting
+        .replace(/\|\|\|+/g, '|') // Triple pipes → single pipe
+        .replace(/\|\s*\|\s*\|/g, '| |'); // Empty repeated pipes → single empty cell
     };
     
     // Response validation to catch formatting issues
@@ -1618,6 +1648,43 @@ serve(async (req) => {
       if (headerTexts.length > uniqueHeaders.size) {
         const duplicates = headerTexts.filter((h, i) => headerTexts.indexOf(h) !== i);
         issues.push(`Duplicate sections detected: ${[...new Set(duplicates)].join(', ')}`);
+      }
+      
+      // Phase 5: Check for invalid table structures (telemetry)
+      const tableLines = lines.filter(line => {
+        const trimmed = line.trim();
+        return trimmed.startsWith('|') && trimmed.endsWith('|');
+      });
+      
+      if (tableLines.length >= 3) {
+        // Basic table validation
+        const header = tableLines[0];
+        const separator = tableLines[1];
+        
+        const headerCols = (header.match(/\|/g) || []).length - 1;
+        const isSeparator = /^\|[\s\-|]+\|$/.test(separator) && separator.includes('---');
+        
+        if (!isSeparator) {
+          issues.push('table_missing_separator');
+          console.error('🚨 AI GENERATED INVALID TABLE - Missing separator row', {
+            userQuery: userQuery.substring(0, 100),
+            tablePreview: tableLines.slice(0, 3).join('\n'),
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          const separatorCols = (separator.match(/\|/g) || []).length - 1;
+          if (headerCols !== separatorCols) {
+            issues.push('table_column_mismatch');
+            console.error('🚨 AI GENERATED INVALID TABLE - Column mismatch', {
+              userQuery: userQuery.substring(0, 100),
+              headerCols,
+              separatorCols,
+              tablePreview: tableLines.slice(0, 3).join('\n'),
+              timestamp: new Date().toISOString()
+            });
+          }
+        }
+      }
       }
       
       return {
