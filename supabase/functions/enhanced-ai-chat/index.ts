@@ -14,6 +14,33 @@ import {
 } from './serp-intelligence.ts';
 import { generateChartPerspectives } from './chart-intelligence.ts';
 
+// PHASE 1: Multi-chart detection - detects when user needs multiple perspectives
+function shouldGenerateMultipleCharts(query: string): boolean {
+  const lowerQuery = query.toLowerCase();
+  
+  const multiChartTriggers = [
+    /\b(performance|performing|how (is|are|did|does))\b.*\b(solution|content|keyword|proposal)/i,
+    /\b(analyze|analysis|deep dive|comprehensive|detailed)\b/i,
+    /\b(overview|summary|show (me |)all|everything about)\b/i,
+    /\b(compare|comparison|vs|versus|against|between)\b/i,
+    /\b(trend|breakdown|distribution|split)\b.*\b(by|across|for)\b/i,
+    /\b(what('s| is) (my|the)|how (many|much))\b.*\b(total|all|entire)\b/i,
+    /\blast (month|week|quarter|30 days)\b/i
+  ];
+  
+  const hasMultiChartTrigger = multiChartTriggers.some(pattern => pattern.test(lowerQuery));
+  
+  // Check for data breadth indicators (multiple entities = multiple charts)
+  const hasBreadthIndicators = /\b(all|multiple|various|different|across)\b/i.test(lowerQuery);
+  
+  if (hasMultiChartTrigger || hasBreadthIndicators) {
+    console.log('📊📊📊 MULTI-CHART MODE ACTIVATED - Will generate 2-4 related charts');
+    return true;
+  }
+  
+  return false;
+}
+
 // Enhanced chart detection patterns - DEFAULT TO CHARTS
 function detectChartRequest(query: string): { requested: boolean, type: string | null, confidence: number } {
   const lowerQuery = query.toLowerCase();
@@ -541,9 +568,22 @@ function parseResponseWithFallback(content: string): { message: string; actions?
 }
 
 // Enhanced real data fetching function with Smart Context Loading (Option B)
-async function fetchRealDataContext(userId: string, queryIntent: QueryIntent) {
+async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, userQuery: string = '') {
   try {
     console.log(`📊 Fetching ${queryIntent.scope} scope context (~${queryIntent.estimatedTokens} tokens)`);
+    
+    // PHASE 3: Detect if multi-chart mode should enhance context
+    const needsMultiChart = shouldGenerateMultipleCharts(userQuery);
+    
+    if (needsMultiChart) {
+      console.log('📊📊📊 MULTI-CHART MODE: Loading enhanced context with time-series and comparison data');
+      // Upgrade to 'detailed' scope for multi-chart queries to get richer data
+      queryIntent = {
+        ...queryIntent,
+        scope: queryIntent.scope === 'summary' ? 'detailed' : queryIntent.scope,
+        estimatedTokens: queryIntent.scope === 'summary' ? 25000 : queryIntent.estimatedTokens
+      };
+    }
     
     // ✅ NEW: Fetch tiered context based on query intent
     const { data: tieredContext, error: contextError } = await supabase.functions.invoke(
@@ -577,6 +617,7 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent) {
 
 You currently have access to **${queryIntent.scope.toUpperCase()} SCOPE** data (~${queryIntent.estimatedTokens} tokens):
 ${queryIntent.categories.map(c => `- ${c.toUpperCase()} data`).join('\n')}
+${needsMultiChart ? '\n\n🎯 **MULTI-CHART MODE ACTIVE**: Generate 2-4 charts showing different perspectives on this data' : ''}
 
 ### 🎯 Data Availability Status:
 ${Object.entries(dataAvailability).map(([key, value]: [string, any]) => 
@@ -1378,12 +1419,13 @@ serve(async (req) => {
 
     // Build enhanced system prompt with context
     // Fetch real data from database using tiered context
-    const realDataContext = await fetchRealDataContext(user.id, queryIntent);
+    const realDataContext = await fetchRealDataContext(user.id, queryIntent, userQuery);
     
     // Import prompt modules
     const {
       BASE_PROMPT,
       CHART_MODULE,
+      MULTI_CHART_MODULE,
       TABLE_MODULE,
       SERP_MODULE,
       ACTION_MODULE,
@@ -1428,17 +1470,22 @@ serve(async (req) => {
       // NORMAL: Full prompt with all modules
       console.log('✅ Normal token usage (<25k) - using full dynamic prompt');
       
-      // Use multi-chart system prompt for data visualization queries
-      if (queryIntent.requiresVisualData || queryIntent.scope === 'detailed' || queryIntent.scope === 'full') {
-        console.log('📊 Using multi-chart analysis prompt');
+      // PHASE 3: Check if multi-chart mode should be activated
+      const needsMultiChart = shouldGenerateMultipleCharts(userQuery);
+      
+      if (needsMultiChart) {
+        console.log('📊📊📊 MULTI-CHART MODE ACTIVATED - Enhanced analysis with multiple perspectives');
+        systemPrompt = BASE_PROMPT;
+        systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
+        systemPrompt += '\n\n' + MULTI_CHART_MODULE; // Use multi-chart module instead of regular CHART_MODULE
+        systemPrompt += '\n\n' + TABLE_MODULE;
+        systemPrompt += '\n\n' + ACTION_MODULE;
+      } else if (queryIntent.requiresVisualData || queryIntent.scope === 'detailed' || queryIntent.scope === 'full') {
+        console.log('📊 Using standard chart analysis prompt');
         systemPrompt = buildMultiChartSystemPrompt();
       } else {
         systemPrompt = BASE_PROMPT;
         systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
-      }
-      
-      // Add visualization modules based on intent (for non-multi-chart cases)
-      if (!queryIntent.requiresVisualData && queryIntent.scope !== 'detailed' && queryIntent.scope !== 'full') {
         systemPrompt += '\n\n' + CHART_MODULE;
         systemPrompt += '\n\n' + TABLE_MODULE;
       }
@@ -1733,21 +1780,35 @@ serve(async (req) => {
     }
     
     // Import validation functions
-    const { validateChartData, extractDataSource } = await import('./chart-validator.ts');
+    const { validateChartData, validateMultiChartAnalysis, extractDataSource } = await import('./chart-validator.ts');
     
     // Validate multi-chart analysis data
     if (visualData && visualData.type === 'multi_chart_analysis') {
       console.log('🔍 Validating multi-chart analysis data...');
       try {
-        visualData = await validateAIGeneratedData(visualData, supabase);
-        console.log('✅ Multi-chart validation complete');
-      } catch (validationError) {
-        console.error('❌ Multi-chart validation failed:', validationError);
-        // Keep visualData but mark as low confidence
-        if (visualData.validationStatus) {
-          visualData.validationStatus.confidence = 0;
-          visualData.validationStatus.isValid = false;
+        // Use the new comprehensive multi-chart validator
+        const multiChartValidation = validateMultiChartAnalysis(visualData, context);
+        
+        if (!multiChartValidation.isValid) {
+          console.error('❌ Multi-chart validation failed:', multiChartValidation.errors);
+          // Downgrade to basic validation
+          visualData = await validateAIGeneratedData(visualData, supabase);
+        } else {
+          console.log(`✅ Multi-chart validation passed with ${multiChartValidation.warnings.length} warnings`);
+          if (multiChartValidation.warnings.length > 0) {
+            console.warn('⚠️ Multi-chart warnings:', multiChartValidation.warnings);
+          }
+          // Add validation metadata
+          visualData.validationStatus = {
+            isValid: true,
+            confidence: 100 - (multiChartValidation.warnings.length * 10),
+            warnings: multiChartValidation.warnings.length > 0 ? multiChartValidation.warnings : undefined
+          };
         }
+      } catch (validationError) {
+        console.error('❌ Multi-chart validation error:', validationError);
+        // Fallback to basic validation
+        visualData = await validateAIGeneratedData(visualData, supabase);
       }
     }
     // Validate single chart data accuracy

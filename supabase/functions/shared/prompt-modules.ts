@@ -107,6 +107,148 @@ Check dataAvailability:
 • ONLY use tables when user explicitly says "show me a table"
 • Charts provide better visual comprehension than tables`;
 
+// PHASE 2: Multi-chart intelligence module - ~1200 tokens
+export const MULTI_CHART_MODULE = `
+📊📊📊 MULTI-CHART ANALYSIS MODE (ACTIVATED FOR: performance, analyze, overview, compare queries)
+
+**When This Mode Activates:**
+• User asks about "performance", "analyze", "overview", or "show me all"
+• User wants comparisons or comprehensive analysis
+• User asks about time periods ("last month", "this quarter")
+• Query indicates need for multiple perspectives
+
+**Multi-Chart Response Format:**
+\`\`\`json
+{
+  "visualData": {
+    "type": "multi_chart_analysis",
+    "title": "AI-Generated Analysis Title (based on user query)",
+    "subtitle": "What this analysis reveals (1 sentence)",
+    
+    "summaryInsights": {
+      "metricCards": [
+        {
+          "id": "1",
+          "title": "Total Content",
+          "value": "24",
+          "change": { "value": 15, "type": "increase", "period": "vs last month" },
+          "icon": "FileText",
+          "color": "green"
+        }
+      ],
+      "bulletPoints": [
+        "Key finding with specific numbers from data",
+        "Trend or pattern identified",
+        "Opportunity or issue highlighted"
+      ],
+      "paragraphSummary": "Narrative connecting all insights with strategic context",
+      "alerts": [
+        { "type": "warning", "message": "Items needing immediate attention" }
+      ]
+    },
+    
+    "charts": [
+      {
+        "type": "line",
+        "title": "Performance Trend Over Time",
+        "subtitle": "Last 30 days performance progression",
+        "data": [...real data from context...],
+        "categories": ["Week 1", "Week 2", "Week 3", "Week 4"],
+        "series": [{ "dataKey": "value", "name": "Performance Score" }],
+        "chartInsights": [
+          "25% upward trend detected",
+          "Peak performance in week 3"
+        ]
+      },
+      {
+        "type": "bar",
+        "title": "Top Performing Solutions",
+        "subtitle": "Solutions ranked by content count",
+        "data": [...real data from context...],
+        "chartInsights": [
+          "Solution A leads with 12 pieces",
+          "3 solutions above average"
+        ]
+      },
+      {
+        "type": "pie",
+        "title": "Content Distribution",
+        "subtitle": "Breakdown by status",
+        "data": [{ "name": "Published", "value": 5 }, { "name": "Draft", "value": 19 }],
+        "chartInsights": [
+          "79% content still in draft",
+          "Publishing pipeline needs attention"
+        ]
+      }
+    ],
+    
+    "actionableItems": [
+      {
+        "id": "1",
+        "title": "Publish Draft Content",
+        "description": "19 draft articles ready for review and publishing",
+        "priority": "high",
+        "actionType": "navigate",
+        "targetUrl": "/content",
+        "icon": "FileText",
+        "estimatedImpact": "+40% visibility",
+        "timeRequired": "2 hours"
+      }
+    ],
+    
+    "deepDivePrompts": [
+      "Which solution has the best content performance?",
+      "Show me SEO scores for published content",
+      "What topics are underperforming?"
+    ]
+  }
+}
+\`\`\`
+
+**Multi-Chart Generation Rules:**
+1. **Generate 2-4 charts** showing different perspectives:
+   - Chart 1: Trend/timeline (line/area chart)
+   - Chart 2: Comparison (bar chart)
+   - Chart 3: Distribution (pie chart)
+   - Chart 4: Details/breakdown (table or secondary metric)
+
+2. **Each chart MUST have:**
+   - Unique perspective on the data
+   - Clear title & subtitle explaining what it shows
+   - 2-5 specific insights derived from that chart
+   - Real data from REAL DATA CONTEXT
+
+3. **Summary Insights Structure:**
+   - 2-4 metric cards with key numbers
+   - 3-5 bullet points highlighting patterns
+   - 1 paragraph narrative summary
+   - 0-2 alerts for critical items
+
+4. **Actionable Items (3-5 actions):**
+   - Each with clear title, description, priority
+   - Include targetUrl for navigation actions
+   - Add estimatedImpact and timeRequired
+   - Use appropriate icons (FileText, TrendingUp, AlertCircle, etc.)
+
+5. **Deep Dive Prompts (3-5 questions):**
+   - Follow-up questions user might want to ask
+   - More specific analysis paths
+   - Related insights to explore
+
+**Smart Chart Type Selection:**
+• **Line/Area** → Time-series, trends, progression over days/weeks/months
+• **Bar (vertical)** → Comparing items, rankings, top/bottom performers
+• **Bar (horizontal)** → Long category names, easier reading
+• **Pie** → Percentages, proportions, distribution (limit to 5 slices max)
+• **Multiple series** → Use when comparing 2-3 metrics side-by-side
+
+**Data Requirements:**
+• NEVER generate fake data - use ONLY what's in REAL DATA CONTEXT
+• If insufficient data for multi-chart → fall back to single chart + explanation
+• Minimum 6 data points needed for meaningful multi-chart analysis
+• Always include dataSource attribution for transparency`;
+
+
 // Table formatting module - ~300 tokens
 export const TABLE_MODULE = `
 📋 TABLE DISPLAY RULES:
