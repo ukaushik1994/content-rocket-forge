@@ -760,14 +760,14 @@ async function generateAIStrategy(supabase: any, payload: any) {
 
   console.log(`✅ Using ${selectedProvider.provider} for keyword generation`);
   
-  const kwProxy = await supabase.functions.invoke('api-proxy', {
+  const kwProxy = await supabase.functions.invoke('ai-proxy', {
     body: {
       service: selectedProvider.provider,
       endpoint: 'chat',
       apiKey: selectedProvider.api_key,
       params: {
         model: selectedProvider.preferred_model,
-        max_completion_tokens: 1500,
+        max_tokens: 1500,
         messages: [
           {
             role: 'system',
@@ -804,10 +804,10 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
     );
   }
 
-  // Better response handling for AI via api-proxy
+  // Better response handling for AI via ai-proxy
   let kwText = '{}';
   try {
-    // Handle different response structures from api-proxy
+    // Handle different response structures from ai-proxy
     if (kwProxy.data?.choices?.[0]?.message?.content) {
       kwText = kwProxy.data.choices[0].message.content;
     } else if (kwProxy.data?.data?.choices?.[0]?.message?.content) {
@@ -815,7 +815,7 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
     } else if (typeof kwProxy.data === 'string') {
       kwText = kwProxy.data;
     } else {
-      console.warn('⚠️ Unexpected OpenAI response structure for keywords:', JSON.stringify(kwProxy.data, null, 2));
+      console.warn('⚠️ Unexpected AI response structure for keywords:', JSON.stringify(kwProxy.data, null, 2));
       kwText = '{}';
     }
     console.log('📝 Extracted keyword text:', kwText.substring(0, 200) + '...');
@@ -951,14 +951,14 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
 
   console.log('🎯 Generating content strategy from enriched data...');
   const stratProxy = await retryWithBackoff(async () => {
-    return await supabase.functions.invoke('api-proxy', {
+    return await supabase.functions.invoke('ai-proxy', {
       body: {
-        service: 'openai',
+        service: selectedProvider.provider,
         endpoint: 'chat',
-        apiKey: openaiApiKey,
+        apiKey: selectedProvider.api_key,
         params: {
-          model: 'gpt-4.1-mini-2025-04-14', // More efficient model
-          max_completion_tokens: 2000, // Limit output tokens
+          model: selectedProvider.preferred_model,
+          max_tokens: 2000,
           messages: [
             {
               role: 'system',
@@ -980,7 +980,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     });
   });
 
-  console.log('🔍 OpenAI strategy response received:', {
+  console.log(`🔍 ${selectedProvider.provider} strategy response received:`, {
     hasError: !!stratProxy.error,
     dataType: typeof stratProxy.data,
     dataKeys: stratProxy.data ? Object.keys(stratProxy.data) : null
@@ -995,10 +995,10 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     );
   }
 
-  // Better response handling for OpenAI via api-proxy
+  // Better response handling for AI via ai-proxy
   let stratText = '{}';
   try {
-    // Handle different response structures from api-proxy
+    // Handle different response structures from ai-proxy
     if (stratProxy.data?.choices?.[0]?.message?.content) {
       stratText = stratProxy.data.choices[0].message.content;
     } else if (stratProxy.data?.data?.choices?.[0]?.message?.content) {
@@ -1006,7 +1006,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     } else if (typeof stratProxy.data === 'string') {
       stratText = stratProxy.data;
     } else {
-      console.warn('⚠️ Unexpected OpenAI response structure:', JSON.stringify(stratProxy.data, null, 2));
+      console.warn('⚠️ Unexpected AI response structure:', JSON.stringify(stratProxy.data, null, 2));
       stratText = '{}';
     }
     console.log('📝 Extracted strategy text:', stratText.substring(0, 200) + '...');
