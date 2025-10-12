@@ -269,7 +269,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </ScrollArea>
 
         {/* Input Area */}
-        <div className={`fixed bottom-0 right-0 z-50 border-t border-border/50 bg-background/80 backdrop-blur-xl transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'}`}>
+        <div className={`fixed bottom-0 right-0 z-40 border-t border-border/50 bg-background/80 backdrop-blur-xl transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'}`}>
           <div className="max-w-6xl mx-auto px-6 py-4">
             {/* Context Indicator */}
             {showContextIndicator && (

@@ -77,7 +77,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
   return (
     <motion.header 
-      className="flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-background/95 to-background/90 backdrop-blur-sm"
+      className="relative z-10 flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-background/95 to-background/90 backdrop-blur-sm"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}

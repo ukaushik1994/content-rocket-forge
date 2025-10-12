@@ -46,7 +46,7 @@ export const MultiChartAnalysis: React.FC<MultiChartAnalysisProps> = ({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: isClosing ? 0 : 1, scale: isClosing ? 0.95 : 1 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={handleClose}
     >
       <Card 
