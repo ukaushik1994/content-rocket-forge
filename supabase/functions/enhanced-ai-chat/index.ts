@@ -540,166 +540,126 @@ function parseResponseWithFallback(content: string): { message: string; actions?
   }
 }
 
-// Build minimal context for greetings (Tier 1)
-async function buildMinimalContext(userId: string): Promise<string> {
-  try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', userId)
-      .single();
-    
-    return `
-## MINIMAL CONTEXT (Greeting Mode) - ${new Date().toISOString()}
-
-User: ${profile?.full_name || 'User'}
-Current Time: ${new Date().toLocaleString()}
-
-**Instructions:** This is a simple greeting/acknowledgment. Respond warmly and briefly without providing unsolicited data. 
-Keep response under 2 sentences. Be friendly and conversational.
-    `.trim();
-  } catch (error) {
-    console.error('Error building minimal context:', error);
-    return `## MINIMAL CONTEXT\nCurrent Time: ${new Date().toLocaleString()}\n\n**Instructions:** Simple greeting - respond warmly and briefly.`;
-  }
-}
-
-// Enhanced real data fetching function with Smart Context Loading (Tier 2 & 3)
+// Enhanced real data fetching function with Smart Context Loading (Option B)
 async function fetchRealDataContext(userId: string, queryIntent: QueryIntent) {
   try {
     console.log(`📊 Fetching ${queryIntent.scope} scope context (~${queryIntent.estimatedTokens} tokens)`);
     
-    // For minimal scope (greetings), use minimal context
-    if (queryIntent.scope === 'minimal') {
-      console.log('💬 Using minimal context for greeting');
-      return await buildMinimalContext(userId);
-    }
-    
-    // SMART LIMITS based on query scope
-    const limits = {
-      summary: { main: 5, related: 3, logs: 5 },
-      detailed: { main: 10, related: 8, logs: 10 },
-      full: { main: 50, related: 20, logs: 20 }
-    };
-    
-    const scope = queryIntent.scope || 'summary';
-    const limit = limits[scope];
-    
-    console.log(`📊 Fetching context with ${scope} scope (limits: main=${limit.main}, related=${limit.related})`);
+    // ✅ NEW: Fetch tiered context based on query intent
+    const { data: tieredContext, error: contextError } = await supabase.functions.invoke(
+      'ai-context-manager',
+      {
+        body: {
+          action: 'get_tiered_context',
+          userId: userId,
+          data: {
+            intent: queryIntent
+          }
+        }
+      }
+    );
 
+    if (contextError) {
+      console.error('❌ Error fetching tiered context:', contextError);
+      return `## REAL DATA UNAVAILABLE\nError fetching current data: ${contextError.message}`;
+    }
+
+    const context = tieredContext || {};
+    
+    // Build lightweight context string based on scope
+    const analytics = context.analytics || {};
+    const dataAvailability = analytics.dataAvailability || {};
+    
     let contextString = `
 ## REAL DATA CONTEXT (${queryIntent.scope.toUpperCase()} SCOPE - ~${queryIntent.estimatedTokens} tokens) - ${new Date().toISOString()}
 
-### 📊 Context Scope
-You have access to **${queryIntent.scope.toUpperCase()} SCOPE** data:
-${queryIntent.categories.length > 0 ? queryIntent.categories.map(c => `- ${c.toUpperCase()} data`).join('\n') : '- Minimal page-aware context'}
+### 📊 Context Scope & Progressive Disclosure
+
+You currently have access to **${queryIntent.scope.toUpperCase()} SCOPE** data (~${queryIntent.estimatedTokens} tokens):
+${queryIntent.categories.map(c => `- ${c.toUpperCase()} data`).join('\n')}
+
+### 🎯 Data Availability Status:
+${Object.entries(dataAvailability).map(([key, value]: [string, any]) => 
+  `${value.available ? '✅' : '⚠️'} **${key}**: ${value.status}`
+).join('\n')}
 
 `;
 
-    // Only fetch data for requested categories
-    const shouldFetchSolutions = queryIntent.categories.includes('solutions') || queryIntent.scope === 'full';
-    const shouldFetchContent = queryIntent.categories.includes('content') || queryIntent.scope === 'full';
-    const shouldFetchProposals = queryIntent.categories.includes('proposals') || queryIntent.scope === 'full';
-    const shouldFetchSEO = queryIntent.categories.includes('seo') || queryIntent.scope === 'full';
-
-    // TARGETED DATA FETCHING - only load what's needed
-    const [solutionsData, contentData, proposalsData] = await Promise.all([
-      shouldFetchSolutions ? supabase
-        .from('solutions')
-        .select('id, name, description, category')
-        .order('created_at', { ascending: false })
-        .limit(limit.related) : Promise.resolve({ data: null }),
-      
-      shouldFetchContent ? supabase
-        .from('content_items')
-        .select('id, title, status, created_at, seo_score, content_type')
-        .order('created_at', { ascending: false })
-        .limit(limit.main) : Promise.resolve({ data: null }),
-      
-      shouldFetchProposals ? supabase
-        .from('ai_strategy_proposals')
-        .select('id, title, primary_keyword, description, status, priority_tag, estimated_impressions, content_type')
-        .order('estimated_impressions', { ascending: false })
-        .limit(limit.main) : Promise.resolve({ data: null }),
-    ]);
-
-    const solutions = solutionsData.data;
-    const content = contentData.data;
-    const proposals = proposalsData.data;
-
-    // Calculate statistics only for fetched data
-    const totalContent = content?.length || 0;
-    const publishedContent = content?.filter(item => item.status === 'published').length || 0;
-    const draftContent = content?.filter(item => item.status === 'draft').length || 0;
-    const avgSeoScore = totalContent > 0 
-      ? (content?.reduce((sum, item) => sum + (item.seo_score || 0), 0) || 0) / totalContent 
-      : 0;
-
-    const availableProposals = proposals?.filter(p => p.status === 'available').length || 0;
-    const proposalTotalImpressions = proposals?.reduce((sum, p) => sum + (p.estimated_impressions || 0), 0) || 0;
-
-    // Build context based on loaded data
-    if (shouldFetchSolutions && solutions && solutions.length > 0) {
+    // Add category-specific data based on query intent
+    if (queryIntent.categories.includes('solutions') && context.solutions) {
       contextString += `
-### 💼 SOLUTIONS (${solutions.length} loaded):
-${solutions.map((s: any, i: number) => 
-  `${i + 1}. "${s.name}" ${s.category ? `- ${s.category}` : ''}\n   ${s.description?.substring(0, 100) || 'No description'}...`
+### 💼 SOLUTIONS (${queryIntent.scope === 'summary' ? 'Top 3' : 'Detailed'}):
+${context.solutions.map((s: any, i: number) => 
+  `${i + 1}. "${s.name}" - ${s.category || 'Uncategorized'}\n   ${s.description || 'No description'}`
 ).join('\n')}
-${queryIntent.scope === 'summary' ? '\n💡 Ask "show all solutions" for complete list' : ''}
+${queryIntent.scope === 'summary' && analytics.solutionsCount > 3 ? 
+  `\n💡 **${analytics.solutionsCount - 3} more solutions available** - ask "show all solutions" for complete list` : ''}
 `;
     }
 
-    if (shouldFetchContent && content && content.length > 0) {
+    if (queryIntent.categories.includes('content') && analytics.contentBySolution) {
+      const contentData = Object.entries(analytics.contentBySolution);
       contextString += `
-### 📝 CONTENT (${totalContent} items loaded):
-- Published: ${publishedContent} (${totalContent > 0 ? Math.round((publishedContent/totalContent)*100) : 0}%)
-- Draft: ${draftContent} (${totalContent > 0 ? Math.round((draftContent/totalContent)*100) : 0}%)
-- Average SEO Score: ${avgSeoScore.toFixed(1)}/100
-
-Recent content:
-${content.slice(0, queryIntent.scope === 'summary' ? 3 : 7).map((c: any, i: number) => 
-  `${i + 1}. "${c.title}" (${c.content_type}) - ${c.status} - SEO: ${c.seo_score || 0}/100`
-).join('\n')}
-${queryIntent.scope === 'summary' ? '\n💡 Ask "show all content" for complete list' : ''}
+### 📝 CONTENT BY SOLUTION (${queryIntent.scope === 'summary' ? 'Summary' : 'Detailed'}):
+${contentData.map(([solution, data]: [string, any]) => {
+  const mappedContent = data.mappedContent || [];
+  return `
+**${solution}** (${data.contentCount || mappedContent.length} items):
+${mappedContent.slice(0, queryIntent.scope === 'summary' ? 2 : 5).map((c: any, i: number) => 
+  `  ${i + 1}. "${c.title}" (${c.content_type}) - SEO: ${c.seo_score || 0}/100`
+).join('\n')}`;
+}).join('\n')}
+${queryIntent.scope === 'summary' ? '\n💡 **Ask for details to see more content items**' : ''}
 `;
     }
 
-    if (shouldFetchProposals && proposals && proposals.length > 0) {
+    if (queryIntent.categories.includes('proposals') && context.proposals) {
       contextString += `
-### 💡 AI STRATEGY PROPOSALS (${proposals.length} loaded):
-- Available Opportunities: ${availableProposals}
-- Total Potential Impressions: ${proposalTotalImpressions.toLocaleString()}
-
-Top opportunities:
-${proposals.slice(0, queryIntent.scope === 'summary' ? 3 : 7).map((p: any, i: number) => 
-  `${i + 1}. "${p.primary_keyword}" - ${p.estimated_impressions?.toLocaleString() || 0} impressions (${p.priority_tag})`
+### 💡 AI STRATEGY PROPOSALS (${queryIntent.scope === 'summary' ? 'Top 5' : 'Top 15'}):
+- Total Available: ${analytics.proposalsCount || context.proposals.length}
+${context.proposals.map((p: any, i: number) => 
+  `${i + 1}. "${p.title}" - ${p.primary_keyword} (${p.estimated_impressions?.toLocaleString() || 0} impressions, ${p.priority_tag})`
 ).join('\n')}
-${queryIntent.scope === 'summary' && proposals.length >= limit.main ? '\n💡 Ask "show all proposals" for complete list' : ''}
+${queryIntent.scope === 'summary' && analytics.proposalsCount > 5 ? 
+  `\n💡 **${analytics.proposalsCount - 5} more proposals available** - ask "show all proposals" for complete list` : ''}
 `;
     }
 
-    // Add summary stats
+    if (queryIntent.categories.includes('seo')) {
+      contextString += `
+### 🎯 SEO & PERFORMANCE:
+- Average SEO Score: ${analytics.avgSeoScore || 0}/100
+- Published Content: ${analytics.published || 0}
+- Draft Content: ${analytics.draft || 0}
+- Recent Content (30 days): ${analytics.recentContent || 0}
+${analytics.avgSeoScore === 0 ? '⚠️ **No SEO scores available** - analyze content in SEO Optimizer' : ''}
+`;
+    }
+
+    // Always include summary analytics
     contextString += `
 ### 📊 Quick Stats:
-${shouldFetchContent ? `- Total Content: ${totalContent} (${publishedContent} published, ${draftContent} draft)` : ''}
-${shouldFetchContent && shouldFetchSEO ? `- Avg SEO Score: ${avgSeoScore.toFixed(1)}/100` : ''}
-${shouldFetchProposals ? `- AI Proposals: ${proposals?.length || 0} (${availableProposals} available)` : ''}
-${shouldFetchSolutions ? `- Solutions: ${solutions?.length || 0}` : ''}
+- Total Content: ${analytics.totalContent || 0}
+- Published: ${analytics.published || 0}
+- Draft: ${analytics.draft || 0}
+- AI Proposals: ${analytics.proposals || 0}
+- Avg SEO Score: ${analytics.avgSeoScore || 0}/100
 
-### 🔄 Progressive Data Loading:
-${queryIntent.scope === 'summary' ? '💡 Currently showing summary data. Ask for "detailed analysis" or "show everything" for more information.' : ''}
-${queryIntent.scope === 'detailed' ? '💡 Currently showing detailed data. Ask for "full report" to see everything.' : ''}
-${queryIntent.scope === 'full' ? '✅ All available data loaded.' : ''}
+### 🔄 Need More Data?
+When the user asks for comprehensive analysis or more details than currently available, respond with:
+
+"I currently have ${queryIntent.scope} level data loaded. To provide a more comprehensive analysis, would you like me to:
+${!queryIntent.categories.includes('content') ? '- Load detailed content data' : ''}
+${!queryIntent.categories.includes('proposals') ? '- Show all strategy proposals' : ''}
+${!queryIntent.categories.includes('solutions') ? '- Include full solutions data' : ''}
+${queryIntent.scope !== 'full' ? '- Load complete dataset for in-depth analysis' : ''}
+
+Just ask! Examples: 'Show me all content' or 'Load full data'"
+
+**REMEMBER:** All data is available - you just need to ask the user which details they want to explore further.
 `;
 
-    const actualTokens = estimateTokens(contextString);
-    console.log(`✅ Context built: ${actualTokens} tokens (estimated: ${queryIntent.estimatedTokens})`);
-    
-    // Warning if context exceeds estimate
-    if (actualTokens > queryIntent.estimatedTokens * 1.5) {
-      console.warn(`⚠️ Context size (${actualTokens}) exceeds estimate (${queryIntent.estimatedTokens}) by >50%`);
-    }
-
+    console.log(`✅ Context string built successfully (${queryIntent.scope} scope)`);
     return contextString;
     const totalImpressions = gscData?.reduce((sum, item) => sum + (item.search_console_data?.impressions || 0), 0) || 0;
     const totalClicks = gscData?.reduce((sum, item) => sum + (item.search_console_data?.clicks || 0), 0) || 0;
@@ -1283,9 +1243,8 @@ serve(async (req) => {
       });
     }
 
-    const { messages, context, currentRoute } = await req.json();
+    const { messages, context } = await req.json();
     console.log("🚀 Processing enhanced AI chat request for user:", user.id);
-    console.log(`📍 Current route: ${currentRoute || 'not provided'}`);
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Messages array is required" }), {
@@ -1294,16 +1253,15 @@ serve(async (req) => {
       });
     }
 
-    // ✅ NEW: Analyze query intent BEFORE fetching context (with route awareness)
+    // ✅ NEW: Analyze query intent BEFORE fetching context
     const userQuery = messages[messages.length - 1]?.content || '';
     console.log('🎯 Analyzing query intent...');
-    const queryIntent = analyzeQueryIntent(userQuery, currentRoute);
+    const queryIntent = analyzeQueryIntent(userQuery);
     console.log(`📊 Intent Analysis:`, {
       scope: queryIntent.scope,
       categories: queryIntent.categories,
       estimatedTokens: queryIntent.estimatedTokens,
-      confidence: queryIntent.confidence,
-      route: currentRoute || 'N/A'
+      confidence: queryIntent.confidence
     });
 
     // Get active providers using same logic as Content Builder (AIServiceController)
