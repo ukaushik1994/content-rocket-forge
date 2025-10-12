@@ -303,13 +303,35 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
                           <div className="flex items-center gap-1">
                             <span>{getTypeIcon(item.content_type)}</span>
                             <span className="text-white/80 truncate flex-1">{item.title}</span>
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <CalendarItemActions 
-                                calendarItem={item}
-                                onRefresh={refreshData}
-                                compact={true}
-                                onGenerateContent={handleGenerateContent}
-                              />
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleGenerateContent(item);
+                                }}
+                                className="hover:text-green-400"
+                                title="Generate Content"
+                              >
+                                <Send className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditItem(item);
+                                }}
+                                className="hover:text-blue-400"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </button>
+                               {/* Add CalendarItemActions for delete functionality */}
+                               <div onClick={(e) => e.stopPropagation()}>
+                                  <CalendarItemActions 
+                                    calendarItem={item}
+                                    onRefresh={refreshData}
+                                    compact={true}
+                                    onGenerateContent={handleGenerateContent}
+                                  />
+                                </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
