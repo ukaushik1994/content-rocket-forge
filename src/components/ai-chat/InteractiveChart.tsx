@@ -433,13 +433,12 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
               </Select>}
             
             {allowTypeSwitch && <Select value={currentType} onValueChange={value => setCurrentType(value as 'line' | 'bar' | 'pie' | 'area')}>
-                <SelectTrigger className="w-36">
-                  <div className="flex items-center gap-2">
-                    <SelectValue placeholder="Chart Type" />
-                    {chartSuggestions.some(s => s.type === currentType && s.confidence >= 0.7) && (
-                      <CheckCircle2 className="w-3 h-3 text-success" />
-                    )}
-                  </div>
+                <SelectTrigger className="w-10 h-9">
+                  {(() => {
+                    const selectedChartType = chartTypes.find(t => t.value === currentType);
+                    const Icon = selectedChartType?.icon || BarChart3;
+                    return <Icon className="w-4 h-4" />;
+                  })()}
                 </SelectTrigger>
                 <SelectContent>
                   {chartTypes.map(type => {

@@ -5,9 +5,6 @@ import {
 } from 'recharts';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { AlertTriangle } from 'lucide-react';
-import { useChartTypeValidator } from '@/hooks/useChartTypeValidator';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 
 interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
@@ -15,8 +12,6 @@ interface InteractiveChartProps {
 
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({ chartConfig }) => {
   const { type, data, categories, series, colors, height = 300 } = chartConfig;
-  const { validateChartType } = useChartTypeValidator();
-  const [currentType, setCurrentType] = useState(type);
 
   // Validate data before rendering
   if (!data || !Array.isArray(data) || data.length === 0) {
@@ -50,36 +45,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({ chartConfig 
   ];
 
   const renderChart = () => {
-    // Chart type validation
-    const validation = validateChartType({ ...chartConfig, type: currentType }, 0);
-    
-    // Show error if chart cannot be rendered
-    if (!validation.canProceed) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-          <AlertTriangle className="w-12 h-12 mb-3 text-warning" />
-          <p className="font-semibold text-foreground">Chart Data Issue</p>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md">{validation.reason}</p>
-          {validation.suggestedType && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={() => setCurrentType(validation.suggestedType!)}
-            >
-              Switch to {validation.suggestedType} chart
-            </Button>
-          )}
-        </div>
-      );
-    }
-    
-    // Show warning in console if suboptimal
-    if (!validation.isOptimal && validation.suggestedType) {
-      console.warn(`⚠️ Chart type suboptimal: ${validation.reason}`);
-    }
-    
-    switch (currentType) {
+    switch (type) {
       case 'line':
         return (
           <LineChart data={data}>
@@ -197,20 +163,9 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({ chartConfig 
     }
   };
 
-  const validation = validateChartType({ ...chartConfig, type: currentType }, 0);
-
   return (
-    <div className="relative w-full h-full">
-      {!validation.isOptimal && validation.suggestedType && (
-        <div className="absolute top-2 right-2 z-10">
-          <Badge variant="outline" className="text-xs bg-background/95 backdrop-blur">
-            💡 Consider {validation.suggestedType} chart
-          </Badge>
-        </div>
-      )}
-      <ResponsiveContainer width="100%" height={height}>
-        {renderChart()}
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height={height}>
+      {renderChart()}
+    </ResponsiveContainer>
   );
 };

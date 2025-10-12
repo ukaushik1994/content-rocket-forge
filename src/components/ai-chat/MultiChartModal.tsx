@@ -38,7 +38,6 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { ChartInteractiveWrapper } from './ChartInteractiveWrapper';
-import { DataRepresentationPanel } from './DataRepresentationPanel';
 import { AIRecommendationsPanel } from './AIRecommendationsPanel';
 import { SavedAnalysesList } from './SavedAnalysesList';
 import { AnalysisVersionHistory } from './AnalysisVersionHistory';
@@ -55,7 +54,6 @@ interface MultiChartModalProps {
   isOpen: boolean;
   onClose: () => void;
   allVisualData?: VisualData[];
-  visualData?: VisualData; // Primary visual data with AI instructions
   currentChartConfig?: ChartConfiguration;
   title?: string;
   description?: string;
@@ -140,68 +138,42 @@ const AnimatedMetricCard: React.FC<{
   );
 };
 
-// Key Metrics Panel Component - AI-DRIVEN
-const KeyMetricsPanel: React.FC<{ 
-  visualData: VisualData;
-  context?: any 
-}> = ({ visualData, context }) => {
-  // Extract metrics from AI response
-  const metricCards = visualData.summaryInsights?.metricCards || [];
+// Key Metrics Panel Component
+const KeyMetricsPanel: React.FC<{ context: any }> = ({ context }) => {
+  const analytics = context?.analytics || {};
   
-  // Fallback: If AI didn't provide metrics, try to extract from context
-  const generateFallbackMetrics = (context: any): any[] => {
-    if (!context?.analytics) return [];
-    
-    const analytics = context.analytics;
-    return [
-      {
-        id: 'total_content',
-        title: 'Total Content',
-        value: analytics.totalContent || 0,
-        icon: 'TableIcon'
-      },
-      {
-        id: 'avg_seo',
-        title: 'Avg SEO Score',
-        value: analytics.avgSeoScore || 0,
-        icon: 'TrendingUp'
-      }
-    ].filter(m => m.value !== 0);
-  };
-  
-  const fallbackMetrics = metricCards.length === 0 ? generateFallbackMetrics(context) : [];
-  const metrics = metricCards.length > 0 ? metricCards : fallbackMetrics;
-  
-  if (metrics.length === 0) {
-    console.warn('No metrics available to display');
-    return null;
-  }
-  
-  // Dynamic grid calculation based on metric count
-  const getGridClass = (count: number) => {
-    if (count === 2) return 'grid-cols-2';
-    if (count === 3) return 'grid-cols-3';
-    if (count === 4) return 'grid-cols-2 md:grid-cols-4';
-    if (count === 5) return 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5';
-    if (count === 6) return 'grid-cols-2 md:grid-cols-3';
-    return 'grid-cols-2 md:grid-cols-4'; // Default
-  };
-  
-  console.log(`📊 Rendering ${metrics.length} metric cards in dynamic grid`);
+  const metrics = [
+    {
+      label: 'Total Content',
+      value: analytics.totalContent || 0,
+      icon: TableIcon,
+      trend: '+12%',
+      trendUp: true
+    },
+    {
+      label: 'Avg SEO Score',
+      value: analytics.avgSeoScore || 0,
+      icon: TrendingUp,
+      suffix: '/100'
+    },
+    {
+      label: 'Needs Attention',
+      value: analytics.lowPerformers || 0,
+      icon: AlertTriangle,
+      color: 'warning'
+    },
+    {
+      label: 'Top Performer',
+      value: analytics.topContent?.title || 'N/A',
+      icon: Target,
+      isText: true
+    }
+  ];
 
   return (
-    <div className={`grid ${getGridClass(metrics.length)} gap-4 mb-6 auto-rows-[140px]`}>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 auto-rows-[140px]">
       {metrics.map((metric, idx) => (
-        <AnimatedMetricCard 
-          key={metric.id || idx} 
-          label={metric.title}
-          value={metric.value}
-          icon={ICON_MAP[metric.icon] || Activity}
-          trend={metric.change?.value ? `${metric.change.value > 0 ? '+' : ''}${metric.change.value}% ${metric.change.period || ''}` : undefined}
-          trendUp={metric.change?.type === 'increase'}
-          isText={typeof metric.value === 'string' && isNaN(Number(metric.value))}
-          index={idx}
-        />
+        <AnimatedMetricCard key={idx} {...metric} index={idx} />
       ))}
     </div>
   );
@@ -445,7 +417,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   isOpen,
   onClose,
   allVisualData = [],
-  visualData,
   currentChartConfig,
   title,
   description,
@@ -1299,13 +1270,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
             </AnimatePresence>
 
             {/* Key Metrics Section */}
-            <KeyMetricsPanel 
-              visualData={visualData || allVisualData?.[0] || { 
-                type: 'multi_chart_analysis',
-                summaryInsights: { metricCards: [] }
-              } as VisualData} 
-              context={context} 
-            />
+            <KeyMetricsPanel context={context} />
 
             {/* Phase 4: Chart Context Panel - Multi-perspective insights */}
             {currentChartConfig?.perspectives && (
@@ -1420,14 +1385,6 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
                             
                             <div className="bg-background/30 rounded-lg p-4">
                               {renderChart(chart, index)}
-                              
-                              {/* Data Representation Explainer */}
-                              {chart.dataRepresentation && (
-                                <DataRepresentationPanel 
-                                  dataRepresentation={chart.dataRepresentation}
-                                  chartTitle={chart.title || `Chart ${index + 1}`}
-                                />
-                              )}
                             </div>
                           </ChartInteractiveWrapper>
                         </div>
