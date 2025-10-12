@@ -1,15 +1,43 @@
 export interface QueryIntent {
-  scope: 'summary' | 'detailed' | 'full';
+  scope: 'minimal' | 'summary' | 'detailed' | 'full';
   categories: string[]; // ['content', 'keywords', 'solutions', 'proposals', 'seo']
   estimatedTokens: number;
   requiresVisualData: boolean;
   confidence: number;
 }
 
-export function analyzeQueryIntent(query: string): QueryIntent {
-  const q = query.toLowerCase();
+export function analyzeQueryIntent(query: string, currentRoute?: string): QueryIntent {
+  const q = query.toLowerCase().trim();
   
-  // Detect what data categories user needs
+  // TIER 1: GREETING DETECTION - Minimal Context
+  const isGreeting = /^(hi|hello|hey|thanks|thank you|ok|okay|got it|sure|yes|no|yep|nope|cool|great|awesome|👍|👋|🙏|✅)$/i.test(q);
+  
+  if (isGreeting) {
+    console.log('💬 Greeting detected - using minimal context (Tier 1)');
+    return {
+      scope: 'minimal',
+      categories: [],
+      estimatedTokens: 100,
+      requiresVisualData: false,
+      confidence: 1.0
+    };
+  }
+  
+  // TIER 3: COMPREHENSIVE REQUEST DETECTION - Full Context
+  const isComprehensive = /all|everything|complete|full|comprehensive|entire|summary of everything|analyze everything|show me all|full report|complete analysis/i.test(q);
+  
+  if (isComprehensive) {
+    console.log('📊 Comprehensive request detected - loading full context (Tier 3)');
+    return {
+      scope: 'full',
+      categories: ['content', 'keywords', 'solutions', 'proposals', 'seo'],
+      estimatedTokens: 80000,
+      requiresVisualData: true,
+      confidence: 0.95
+    };
+  }
+  
+  // TIER 2: SPECIFIC DATA NEEDS - Targeted Context
   const needsContent = /content|article|blog|post|writing|publish/i.test(q);
   const needsKeywords = /keyword|seo|search|rank|serp|search engine/i.test(q);
   const needsSolutions = /solution|product|service|compare|offering/i.test(q);
@@ -19,9 +47,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   // Detect scope level
   let scope: 'summary' | 'detailed' | 'full' = 'summary';
   
-  if (/all|everything|complete|full|comprehensive|detailed|entire/i.test(q)) {
-    scope = 'full';
-  } else if (/detail|specific|deep|analyze|compare|breakdown|in-depth/i.test(q)) {
+  if (/detail|specific|deep|analyze|compare|breakdown|in-depth/i.test(q)) {
     scope = 'detailed';
   }
   
@@ -33,23 +59,56 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   if (needsProposals) categories.push('proposals');
   if (needsSEO) categories.push('seo');
   
-  // If no specific category detected, include core data at summary level
+  // SMART FALLBACK: Page-aware context (instead of dumping everything)
   if (categories.length === 0) {
-    categories.push('content', 'solutions', 'proposals');
+    console.log('🎯 No specific category detected - using page-aware context');
+    
+    // Map current route to relevant data categories
+    const routeToContext: Record<string, string[]> = {
+      '/': ['solutions', 'proposals'],
+      '/content': ['content', 'seo'],
+      '/solutions': ['solutions', 'content'],
+      '/proposals': ['proposals', 'keywords'],
+      '/keywords': ['keywords', 'seo'],
+      '/analytics': ['content', 'solutions', 'proposals'],
+      '/content-builder': ['content', 'seo'],
+      '/seo-optimizer': ['seo', 'content'],
+    };
+    
+    const pageCategories = currentRoute ? routeToContext[currentRoute] : undefined;
+    
+    if (pageCategories && pageCategories.length > 0) {
+      categories.push(...pageCategories);
+      console.log(`📍 Loading page-specific context for route: ${currentRoute}`);
+    } else {
+      // Default minimal fallback: only solutions
+      categories.push('solutions');
+      console.log('🔹 Using default minimal context: solutions only');
+    }
+    
     scope = 'summary';
   }
   
   // Estimate token usage
   const tokenEstimates = {
+    minimal: 100,
     summary: 5000,
     detailed: 25000,
     full: 80000
   };
   
+  const estimatedTokens = scope === 'minimal' ? 100 : tokenEstimates[scope];
+  
+  console.log(`📊 Query Intent Analysis:
+  - Type: ${scope}
+  - Categories: ${categories.join(', ') || 'none'}
+  - Estimated tokens: ${estimatedTokens}
+  - Confidence: ${(categories.length > 0 ? 0.8 : 0.5) * 100}%`);
+  
   return {
     scope,
     categories,
-    estimatedTokens: tokenEstimates[scope],
+    estimatedTokens,
     requiresVisualData: /chart|graph|visual|show|display|visuali[sz]e/i.test(q),
     confidence: categories.length > 0 ? 0.8 : 0.5
   };

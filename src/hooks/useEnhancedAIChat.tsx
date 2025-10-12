@@ -32,12 +32,14 @@ export const useEnhancedAIChat = () => {
         throw new Error('User not authenticated');
       }
 
-      // Call enhanced AI chat function
+      // Call enhanced AI chat function with current route
       const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
           message: content,
           conversationHistory: messages,
-          userId: user.id
+          userId: user.id,
+          currentRoute: window.location.pathname,
+          timestamp: new Date().toISOString()
         }
       });
 
