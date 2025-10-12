@@ -225,7 +225,16 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false, 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-gray-900 border-white/20">
-              <DropdownMenuItem onClick={() => onGenerateContent?.(calendarItem)}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                console.log('🔘 Compact Create Content button clicked for item:', calendarItem?.id);
+                if (onGenerateContent) {
+                  console.log('✅ Calling onGenerateContent...');
+                  onGenerateContent(calendarItem);
+                } else {
+                  console.error('❌ onGenerateContent is not defined!');
+                }
+              }}>
                 <Send className="h-4 w-4 mr-2" />
                 Create Content
               </DropdownMenuItem>
@@ -268,7 +277,16 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false, 
     <>
       <div className="flex items-center gap-2">
         <Button
-          onClick={() => onGenerateContent?.(calendarItem)}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('🔘 Full-size Create Content button clicked for item:', calendarItem?.id);
+            if (onGenerateContent) {
+              console.log('✅ Calling onGenerateContent...');
+              onGenerateContent(calendarItem);
+            } else {
+              console.error('❌ onGenerateContent is not defined!');
+            }
+          }}
           size="sm"
           variant="outline"
           className="gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-400/30 text-blue-400 hover:bg-blue-500/30"

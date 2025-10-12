@@ -136,11 +136,21 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
   };
 
   const handleGenerateContent = (item: any) => {
+    console.log('🚀 handleGenerateContent called with item:', {
+      id: item?.id,
+      title: item?.title,
+      notes: item?.notes,
+      content_type: item?.content_type
+    });
+    
     try {
       const notes = item.notes ? JSON.parse(item.notes) : {};
       const proposalData = notes.proposal_data;
+      
+      console.log('📝 Parsed notes:', { proposalData, notes });
 
       if (proposalData) {
+        console.log('✅ Using proposal data from calendar item');
         // Use StrategyBuilderDialog with proposal data
         setSelectedCalendarItem({
           ...proposalData,
@@ -148,6 +158,7 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
           fromCalendar: true
         });
       } else {
+        console.log('✅ Creating new proposal data from calendar item');
         // Create proposal-like data structure from calendar item for StrategyBuilderDialog
         setSelectedCalendarItem({
           title: item.title,
@@ -159,10 +170,13 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
           tags: item.tags
         });
       }
+      
+      console.log('✅ Opening strategy dialog...');
       setStrategyDialogOpen(true);
+      toast.success('Opening content builder...');
     } catch (error) {
-      console.error('Error generating content:', error);
-      toast.error('Failed to generate content');
+      console.error('❌ Error generating content:', error);
+      toast.error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
