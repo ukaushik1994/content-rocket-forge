@@ -53,6 +53,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface MultiChartModalProps {
   isOpen: boolean;
   onClose: () => void;
+  visualData?: VisualData;
   allVisualData?: VisualData[];
   currentChartConfig?: ChartConfiguration;
   title?: string;
@@ -139,41 +140,69 @@ const AnimatedMetricCard: React.FC<{
 };
 
 // Key Metrics Panel Component
-const KeyMetricsPanel: React.FC<{ context: any }> = ({ context }) => {
-  const analytics = context?.analytics || {};
+const KeyMetricsPanel: React.FC<{ visualData?: VisualData; context?: any }> = ({ visualData, context }) => {
+  // Use AI-provided metricCards
+  const aiMetrics = visualData?.summaryInsights?.metricCards || [];
   
-  const metrics = [
+  // Fallback to hardcoded only if AI didn't provide any
+  const analytics = context?.analytics || {};
+  const fallbackMetrics = aiMetrics.length === 0 ? [
     {
-      label: 'Total Content',
+      id: 'total-content',
+      title: 'Total Content',
       value: analytics.totalContent || 0,
-      icon: TableIcon,
-      trend: '+12%',
-      trendUp: true
+      icon: 'TableIcon',
+      change: { value: 12, type: 'increase' as const, period: 'vs last month' }
     },
     {
-      label: 'Avg SEO Score',
+      id: 'avg-seo',
+      title: 'Avg SEO Score',
       value: analytics.avgSeoScore || 0,
-      icon: TrendingUp,
-      suffix: '/100'
+      icon: 'TrendingUp'
     },
     {
-      label: 'Needs Attention',
+      id: 'needs-attention',
+      title: 'Needs Attention',
       value: analytics.lowPerformers || 0,
-      icon: AlertTriangle,
-      color: 'warning'
+      icon: 'AlertTriangle',
+      color: 'warning' as const
     },
     {
-      label: 'Top Performer',
+      id: 'top-performer',
+      title: 'Top Performer',
       value: analytics.topContent?.title || 'N/A',
-      icon: Target,
-      isText: true
+      icon: 'Target'
     }
-  ];
+  ] : [];
+  
+  const metrics = aiMetrics.length > 0 ? aiMetrics : fallbackMetrics;
+  
+  // Dynamic grid based on metric count
+  const getGridClass = (count: number) => {
+    if (count === 1) return 'grid-cols-1';
+    if (count === 2) return 'grid-cols-2';
+    if (count === 3) return 'grid-cols-3';
+    if (count === 4) return 'grid-cols-2 md:grid-cols-4';
+    if (count === 5) return 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5';
+    if (count === 6) return 'grid-cols-2 md:grid-cols-3';
+    return 'grid-cols-2 md:grid-cols-4';
+  };
+  
+  if (metrics.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 auto-rows-[140px]">
+    <div className={`grid ${getGridClass(metrics.length)} gap-4 mb-6 auto-rows-[140px]`}>
       {metrics.map((metric, idx) => (
-        <AnimatedMetricCard key={idx} {...metric} index={idx} />
+        <AnimatedMetricCard 
+          key={metric.id || idx}
+          label={metric.title}
+          value={metric.value}
+          icon={ICON_MAP[metric.icon || 'Activity'] || Activity}
+          trend={metric.change?.value ? `${metric.change.value > 0 ? '+' : ''}${metric.change.value}% ${metric.change.period || ''}` : undefined}
+          trendUp={metric.change?.type === 'increase'}
+          isText={typeof metric.value === 'string' && isNaN(Number(metric.value))}
+          index={idx}
+        />
       ))}
     </div>
   );
@@ -416,6 +445,7 @@ const QuickActionsPanel: React.FC<{
 export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   isOpen,
   onClose,
+  visualData,
   allVisualData = [],
   currentChartConfig,
   title,
@@ -1270,7 +1300,7 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
             </AnimatePresence>
 
             {/* Key Metrics Section */}
-            <KeyMetricsPanel context={context} />
+            <KeyMetricsPanel visualData={visualData} context={context} />
 
             {/* Phase 4: Chart Context Panel - Multi-perspective insights */}
             {currentChartConfig?.perspectives && (

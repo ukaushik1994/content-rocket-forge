@@ -390,6 +390,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         <MultiChartModal
           isOpen={showMultiChartModal}
           onClose={() => setShowMultiChartModal(false)}
+          visualData={message.visualData}
           allVisualData={message.allVisualData}
           currentChartConfig={message.visualData?.chartConfig}
           title={message.visualData?.title || 'Insights Hub'}
