@@ -36,7 +36,6 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
   onExportCSV,
   className
 }) => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const handleZoomIn = () => {
@@ -55,18 +54,11 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
 
   return (
     <motion.div
-      className={cn(
-        "relative",
-        isFullscreen && "fixed inset-0 z-50 bg-background p-8",
-        className
-      )}
+      className={cn("relative", className)}
       layout
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      <Card className={cn(
-        "overflow-hidden",
-        isFullscreen && "h-full"
-      )}>
+      <Card className="overflow-hidden">
         {/* Header with Controls */}
         <div className="p-4 border-b flex items-start justify-between gap-4">
           <div className="flex-1">
@@ -79,8 +71,6 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
           {/* Chart Controls */}
           <ChartControls
             chartIndex={chartIndex}
-            isFullscreen={isFullscreen}
-            onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
             zoomLevel={zoomLevel}
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
@@ -117,10 +107,7 @@ export const ChartInteractiveWrapper: React.FC<ChartInteractiveWrapperProps> = (
 
         {/* Chart Content with Zoom */}
         <div 
-          className={cn(
-            "p-4 transition-transform duration-200",
-            isFullscreen && "h-[calc(100%-80px)]"
-          )}
+          className="p-4 transition-transform duration-200"
           style={{ 
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'center center'

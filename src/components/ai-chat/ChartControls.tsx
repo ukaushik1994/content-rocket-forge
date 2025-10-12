@@ -4,8 +4,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { 
   ZoomIn, 
   ZoomOut, 
-  Maximize2, 
-  Minimize2, 
   Download, 
   Filter, 
   Lock, 
@@ -23,8 +21,6 @@ import { cn } from '@/lib/utils';
 
 interface ChartControlsProps {
   chartIndex: number;
-  isFullscreen: boolean;
-  onToggleFullscreen: () => void;
   zoomLevel: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -39,8 +35,6 @@ interface ChartControlsProps {
 
 export const ChartControls: React.FC<ChartControlsProps> = ({
   chartIndex,
-  isFullscreen,
-  onToggleFullscreen,
   zoomLevel,
   onZoomIn,
   onZoomOut,
@@ -137,23 +131,6 @@ export const ChartControls: React.FC<ChartControlsProps> = ({
             <TooltipContent>Toggle Filters</TooltipContent>
           </Tooltip>
         )}
-
-        {/* Fullscreen Toggle */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={onToggleFullscreen}
-            >
-              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-          </TooltipContent>
-        </Tooltip>
 
         {/* Export/Download Dropdown */}
         {(onExportPNG || onExportCSV) && (
