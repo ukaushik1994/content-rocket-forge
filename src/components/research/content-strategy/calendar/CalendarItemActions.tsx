@@ -217,52 +217,67 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false, 
   if (compact) {
     return (
       <>
-        <div className="flex items-center gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <MoreHorizontal className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-gray-900 border-white/20">
-              <DropdownMenuItem onClick={(e) => {
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button 
+              className="hover:text-white/80 inline-flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            className="bg-gray-900 border-white/20 z-[9999]" 
+            align="end"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <DropdownMenuItem 
+              onClick={(e) => {
                 e.stopPropagation();
-                console.log('🔘 Compact Create Content button clicked for item:', calendarItem?.id);
-                if (onGenerateContent) {
-                  console.log('✅ Calling onGenerateContent...');
-                  onGenerateContent(calendarItem);
-                } else {
-                  console.error('❌ onGenerateContent is not defined!');
-                }
-              }}>
-                <Send className="h-4 w-4 mr-2" />
-                Create Content
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setPostponeDialogOpen(true)}>
-                <Calendar className="h-4 w-4 mr-2" />
-                Postpone
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
+                console.log('🔘 Create Content clicked for:', calendarItem?.title);
+                onGenerateContent?.(calendarItem);
+              }}
+              className="cursor-pointer"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Create Content
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.stopPropagation();
+                setPostponeDialogOpen(true);
+              }}
+              className="cursor-pointer"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Postpone
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.stopPropagation();
+                setRemoveDialogOpen(true);
+              }}
+              className="text-red-400 focus:text-red-400 cursor-pointer"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Remove
+            </DropdownMenuItem>
+            {hasProposal && (
               <DropdownMenuItem 
-                onClick={() => setRemoveDialogOpen(true)}
-                className="text-red-400 focus:text-red-400"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRestoreDialogOpen(true);
+                }}
+                className="text-green-400 focus:text-green-400 cursor-pointer"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Remove
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Remove & Restore
               </DropdownMenuItem>
-              {hasProposal && (
-                <DropdownMenuItem 
-                  onClick={() => setRestoreDialogOpen(true)}
-                  className="text-green-400 focus:text-green-400"
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Remove & Restore
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Dialogs */}
         {renderPostponeDialog()}
