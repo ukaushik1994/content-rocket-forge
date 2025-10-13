@@ -10,16 +10,11 @@ import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/Simple
 import { SimpleSerpServiceIndicator } from '@/components/content-builder/ai/SimpleSerpServiceIndicator';
 import { StrategyGoalsModal } from '@/components/research/content-strategy/simplified/StrategyGoalsModal';
 import { ContentStrategyTabs } from '@/components/research/content-strategy/simplified/ContentStrategyTabs';
-
 const ContentStrategy = () => {
-  const canonicalUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/research/content-strategy` 
-    : '/research/content-strategy';
+  const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/research/content-strategy` : '/research/content-strategy';
   const [creatorOpen, setCreatorOpen] = useState(false);
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
-  
-  return (
-    <ContentStrategyProvider>
+  return <ContentStrategyProvider>
       <div className="min-h-screen bg-background relative overflow-hidden">
         <Helmet>
           <title>Content Strategy — AI-Powered Content Planning & Production</title>
@@ -31,21 +26,20 @@ const ContentStrategy = () => {
         
         {/* Service Status Indicators */}
         <div className="relative z-20 flex justify-center pt-20 pb-2">
-          <div className="flex items-center gap-4 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2 shadow-sm">
-            <SimpleAIServiceIndicator size="sm" />
-            <SimpleSerpServiceIndicator size="sm" />
-          </div>
+          
         </div>
         
         {/* Animated Background - matching Repository design */}
         <AnimatedBackground intensity="medium" />
         
         <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} className="space-y-8">
             <ContentStrategyHero onCreate={() => setGoalsModalOpen(true)} />
             
             <ContentStrategyTabs onEditGoals={() => setGoalsModalOpen(true)} />
@@ -58,8 +52,7 @@ const ContentStrategy = () => {
         {/* Strategy Goals Modal (New Simplified) - Inside Provider */}
         <StrategyGoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
       </div>
-    </ContentStrategyProvider>
-  );
+    </ContentStrategyProvider>;
 };
 
 // Removed ContentStrategyContent - now using simplified tabs approach
