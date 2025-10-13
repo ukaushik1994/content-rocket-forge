@@ -274,23 +274,6 @@ const Analytics = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
-          {/* Progress Indicator */}
-          <motion.div 
-            className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <div className="flex items-center gap-2 px-6 py-3 bg-background/80 backdrop-blur-xl rounded-full border border-border/50">
-              <div className={`w-2 h-2 rounded-full ${realMetrics ? 'bg-primary' : 'bg-primary/30'}`} />
-              <div className={`w-2 h-2 rounded-full ${!error ? 'bg-primary' : 'bg-primary/30'}`} />
-              <div className={`w-2 h-2 rounded-full ${!loading ? 'bg-primary' : 'bg-primary/30'}`} />
-              <span className="text-xs font-medium text-muted-foreground ml-2">
-                {loading ? 'Loading' : 'Active'}
-              </span>
-            </div>
-          </motion.div>
-
           <div className="relative z-10 w-full px-6 pt-24 pb-12">
             <motion.div 
               className="text-center mb-16 relative"
