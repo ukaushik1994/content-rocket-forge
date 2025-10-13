@@ -78,7 +78,6 @@ export const ContentStrategyEngine = ({
   const [loading, setLoading] = useState(false);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   // Strategy Builder Dialog state
   const [showBuilderDialog, setShowBuilderDialog] = useState(false);
@@ -233,7 +232,8 @@ export const ContentStrategyEngine = ({
     }
 
     try {
-      setLoadingMore(true);
+      setGenerating(true);
+      startProgress();
       
       const result = await aiStrategyService.generateNewStrategy({
         goals: {
@@ -282,7 +282,8 @@ export const ContentStrategyEngine = ({
         variant: 'destructive'
       });
     } finally {
-      setLoadingMore(false);
+      setGenerating(false);
+      setShowGenModal(false);
     }
   };
 
@@ -534,14 +535,14 @@ export const ContentStrategyEngine = ({
                 {allProposals.length > 0 && (
                   <Button 
                     onClick={handleGenerateMore}
-                    disabled={loadingMore}
+                    disabled={generating}
                     variant="outline" 
                     size="sm" 
                     className="border-primary/20 text-primary hover:bg-primary/10 gap-2"
                     title="Generate more proposals"
                   >
                     <Plus className="h-4 w-4" />
-                    {loadingMore ? 'Generating...' : 'Generate More'}
+                    {generating ? 'Generating...' : 'Generate More'}
                   </Button>
                 )}
                 
