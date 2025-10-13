@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Brain, Zap, Info, CheckCircle, HelpCircle } from 'lucide-react';
+import { Brain, Zap, Info, CheckCircle, HelpCircle, FileEdit, XCircle } from 'lucide-react';
 import { computeAvailableActions } from '@/services/smart-actions/resolver';
 import type { SmartContext, SmartRecommendation, SmartAction } from '@/services/smart-actions/types';
 import { logApprovalAction } from '@/services/smart-actions/logging';
@@ -88,10 +88,9 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
             disabled={disabledFollow}
             aria-label={recommendation ? `Follow AI: ${recommendation.action.replace('_',' ')} at ${recommendation.confidence}% confidence` : 'Follow AI recommendation'}
             variant="secondary"
-            className="inline-flex items-center"
+            size="icon"
           >
-            <Zap className="mr-2 h-4 w-4" aria-hidden="true" />
-            Follow AI ({recommendation?.confidence}% )
+            <Zap className="h-4 w-4" aria-hidden="true" />
           </Button>
           <Popover>
             <PopoverTrigger asChild>
@@ -127,10 +126,10 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
           onClick={() => openConfirm('submit_for_review', recommendation?.action === 'submit_for_review')}
           disabled={!!disabled}
           aria-label="Submit content for review"
+          size="icon"
           className="bg-blue-600 hover:bg-blue-700 text-white"
         >
-          <CheckCircle className="mr-2 h-4 w-4" aria-hidden="true" />
-          Submit for Review
+          <CheckCircle className="h-4 w-4" aria-hidden="true" />
         </Button>
       )}
 
@@ -139,10 +138,10 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
           onClick={() => openConfirm('approve', recommendation?.action === 'approve')}
           disabled={!!disabled}
           aria-label="Approve and publish content"
+          size="icon"
           className="bg-green-600 hover:bg-green-700 text-white"
         >
-          <CheckCircle className="mr-2 h-4 w-4" aria-hidden="true" />
-          Approve & Publish
+          <CheckCircle className="h-4 w-4" aria-hidden="true" />
         </Button>
       )}
       {available.includes('request_changes') && (
@@ -150,20 +149,22 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
           onClick={() => openConfirm('request_changes', recommendation?.action === 'request_changes')}
           disabled={!!disabled || !hasNotes}
           aria-label="Request changes from author"
+          size="icon"
           variant="outline"
           className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20"
         >
-          Request Changes
+          <FileEdit className="h-4 w-4" aria-hidden="true" />
         </Button>
       )}
       {available.includes('reject') && (
         <Button
           onClick={() => openConfirm('reject', recommendation?.action === 'reject')}
           disabled={!!disabled || !hasNotes}
+          size="icon"
           variant="destructive"
           className="bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20"
         >
-          Reject
+          <XCircle className="h-4 w-4" aria-hidden="true" />
         </Button>
       )}
 
