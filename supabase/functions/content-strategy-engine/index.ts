@@ -720,7 +720,7 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 
 // New AI-first strategy generation (no clusters)
 async function generateAIStrategy(supabase: any, payload: any) {
-  const { user_id, goals = {}, location = 'United States', excludeKeywords = [], api_keys = {}, preferredProvider = null } = payload;
+  const { user_id, goals = {}, location = 'United States', excludeKeywords = [], api_keys = {} } = payload;
 
   // 1) Fetch minimal user context
   const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
@@ -748,29 +748,8 @@ async function generateAIStrategy(supabase: any, payload: any) {
     );
   }
 
-  // Select provider: try preferred first, then fall back to first active
-  let selectedProvider;
-
-  if (preferredProvider) {
-    // Try to find the preferred provider first
-    selectedProvider = providers.find(p => 
-      p.provider === preferredProvider && 
-      p.api_key && 
-      p.preferred_model
-    );
-    
-    if (selectedProvider) {
-      console.log(`✅ Using preferred provider: ${preferredProvider}`);
-    } else {
-      console.log(`⚠️ Preferred provider ${preferredProvider} not available, falling back to default`);
-    }
-  }
-
-  // Fall back to first active provider if preferred not found
-  if (!selectedProvider) {
-    selectedProvider = providers.find(p => p.api_key && p.preferred_model);
-  }
-
+  // Select first active provider with valid API key
+  const selectedProvider = providers.find(p => p.api_key && p.preferred_model);
   if (!selectedProvider) {
     console.error('❌ No valid API key found for active providers');
     return new Response(
@@ -779,7 +758,7 @@ async function generateAIStrategy(supabase: any, payload: any) {
     );
   }
 
-  console.log(`✅ Using ${selectedProvider.provider} for AI strategy generation`);
+  console.log(`✅ Using ${selectedProvider.provider} for keyword generation`);
   
   const kwProxy = await supabase.functions.invoke('ai-proxy', {
     body: {

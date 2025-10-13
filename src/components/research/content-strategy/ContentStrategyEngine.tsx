@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { getUserPreference } from '@/services/userPreferencesService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -236,8 +235,6 @@ export const ContentStrategyEngine = ({
       setGenerating(true);
       startProgress();
       
-      const preferredProvider = getUserPreference('defaultAiProvider') || 'openrouter';
-      
       const result = await aiStrategyService.generateNewStrategy({
         goals: {
           monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
@@ -246,8 +243,7 @@ export const ContentStrategyEngine = ({
           mainKeyword: goals.mainKeyword || ''
         },
         location: 'United States',
-        excludeKeywords: [],
-        preferredProvider
+        excludeKeywords: []
       });
 
       const newProposals = result.proposals || [];
@@ -325,8 +321,6 @@ export const ContentStrategyEngine = ({
       setGenerating(true);
       startProgress();
 
-      const preferredProvider = getUserPreference('defaultAiProvider') || 'openrouter';
-
       const result = await contentStrategyService.generateAIStrategy({
         goals: {
           monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
@@ -335,8 +329,7 @@ export const ContentStrategyEngine = ({
           mainKeyword: goals.mainKeyword || ''
         },
         location: 'United States',
-        excludeKeywords: [],
-        preferredProvider
+        excludeKeywords: []
       });
 
       const generatedProposals = result.proposals || [];
