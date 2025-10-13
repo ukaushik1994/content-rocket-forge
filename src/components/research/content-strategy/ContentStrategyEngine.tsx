@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,6 +64,15 @@ export const ContentStrategyEngine = ({
   const [viewMode, setViewMode] = useState<ViewMode>('tiles');
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
+  
+  const [loading, setLoading] = useState(false);
+  const [loadingHistorical, setLoadingHistorical] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<string>('');
+  
   // Consolidated filtering
   const {
     filters,
@@ -74,11 +83,17 @@ export const ContentStrategyEngine = ({
     hasActiveFilters,
     clearAllFilters
   } = useConsolidatedFilters(allProposals);
+  
+  // Calculate paginated proposals
+  const paginatedProposals = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredProposals.slice(startIndex, endIndex);
+  }, [filteredProposals, currentPage, ITEMS_PER_PAGE]);
 
-  const [loading, setLoading] = useState(false);
-  const [loadingHistorical, setLoadingHistorical] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [activeProvider, setActiveProvider] = useState<string>('');
+  const totalPages = Math.ceil(filteredProposals.length / ITEMS_PER_PAGE);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   // Strategy Builder Dialog state
   const [showBuilderDialog, setShowBuilderDialog] = useState(false);
@@ -408,6 +423,11 @@ export const ContentStrategyEngine = ({
     );
     setAllProposals(active);
   }, [proposals, historicalProposals, completedProposalIds]);
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const loadClusters = async () => {
     try {
@@ -608,31 +628,35 @@ export const ContentStrategyEngine = ({
             {/* Render based on view mode */}
             {viewMode === 'tiles' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProposals.map((proposal, index) => (
-                  <ProposalCard
-                    key={proposal.id || index}
-                    proposal={proposal}
-                    index={index}
-                    isSelected={selected[index] || false}
-                    onSelectionChange={(idx, isSelected) => {
-                      const newSelected = { ...selected, [idx]: isSelected };
-                      setSelected(newSelected);
-                      setSelectedProposals(newSelected);
-                    }}
-                    onSendToBuilder={(proposal) => {
-                      setSelectedProposal(proposal);
-                      setShowBuilderDialog(true);
-                    }}
-                    isNew={newProposalIds.has(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'))}
-                  />
-                ))}
+                {paginatedProposals.map((proposal, index) => {
+                  const actualIndex = (currentPage - 1) * ITEMS_PER_PAGE + index;
+                  return (
+                    <ProposalCard
+                      key={proposal.id || actualIndex}
+                      proposal={proposal}
+                      index={actualIndex}
+                      isSelected={selected[actualIndex] || false}
+                      onSelectionChange={(idx, isSelected) => {
+                        const newSelected = { ...selected, [idx]: isSelected };
+                        setSelected(newSelected);
+                        setSelectedProposals(newSelected);
+                      }}
+                      onSendToBuilder={(proposal) => {
+                        setSelectedProposal(proposal);
+                        setShowBuilderDialog(true);
+                      }}
+                      isNew={newProposalIds.has(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'))}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <ProposalRowView
-                proposals={filteredProposals}
+                proposals={paginatedProposals}
                 selected={selected}
                 onToggleSelection={(index) => {
-                  const newSelected = { ...selected, [index]: !selected[index] };
+                  const actualIndex = (currentPage - 1) * ITEMS_PER_PAGE + index;
+                  const newSelected = { ...selected, [actualIndex]: !selected[actualIndex] };
                   setSelected(newSelected);
                   setSelectedProposals(newSelected);
                 }}
@@ -645,6 +669,66 @@ export const ContentStrategyEngine = ({
                 }}
                 newProposalIds={newProposalIds}
               />
+            )}
+            
+            {/* Pagination Controls */}
+            {filteredProposals.length > ITEMS_PER_PAGE && (
+              <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-6">
+                {/* Info Text */}
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to{' '}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, filteredProposals.length)} of{' '}
+                  {filteredProposals.length} proposals
+                </div>
+
+                {/* Navigation Buttons */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={!hasPreviousPage}
+                    className="gap-2"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Previous
+                  </Button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`min-w-[40px] ${
+                          currentPage === pageNum 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'hover:bg-white/10'
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={!hasNextPage}
+                    className="gap-2"
+                  >
+                    Next
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </CardContent>
