@@ -336,39 +336,6 @@ export const AnalyticsOverview = () => {
         </Card>
       </div>
 
-      {/* Top Performing Queries */}
-      {searchConsoleData.length > 0 && (
-        <Card className="glass-panel bg-glass">
-          <CardHeader>
-            <CardTitle>Top Performing Search Queries</CardTitle>
-            <CardDescription>
-              Search queries driving the most traffic to your content
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {searchConsoleData
-                .flatMap(data => data.topQueries)
-                .sort((a, b) => b.clicks - a.clicks)
-                .slice(0, 10)
-                .map((query, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{query.query}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {query.impressions.toLocaleString()} impressions
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{query.clicks}</p>
-                      <p className="text-sm text-muted-foreground">clicks</p>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { AnalyticsHero } from '@/components/analytics/AnalyticsHero';
+import { ContentAnalyticsTab } from '@/components/analytics/ContentAnalyticsTab';
 import { DrilldownChart } from '@/components/analytics/DrilldownChart';
 import { ContentDetailModal } from '@/components/analytics/ContentDetailModal';
 import { CustomDateRangePicker } from '@/components/analytics/CustomDateRangePicker';
@@ -424,141 +425,7 @@ const Analytics = () => {
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-600/30 overflow-hidden">
-                          <CardHeader className="border-b border-slate-600/30 bg-gradient-to-r from-slate-700/50 to-transparent">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <CardTitle className="text-2xl flex items-center gap-3">
-                                  <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500">
-                                    <FileText className="h-5 w-5 text-white" />
-                                  </div>
-                                  Content Performance
-                                </CardTitle>
-                                <CardDescription className="mt-2 text-slate-400">
-                                  Track how your content is performing across all platforms
-                                </CardDescription>
-                              </div>
-                              <Badge className="bg-gradient-to-r from-emerald-500 to-teal-400 text-white border-0">
-                                {loading ? 'Loading...' : 'Real-time'}
-                              </Badge>
-                            </div>
-                          </CardHeader>
-                          
-                          <CardContent className="p-0">
-                            <div className="p-6 border-b border-slate-600/20">
-                              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                <div className="relative flex-1 max-w-sm">
-                                  <Input 
-                                    className="pl-10 bg-slate-700/50 border-slate-600/50 text-white placeholder:text-slate-400 focus:border-blue-500/50 transition-colors" 
-                                    placeholder="Search content..." 
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                  />
-                                  <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                                </div>
-                                <div className="flex gap-2">
-                                  <Select value={sortBy} onValueChange={setSortBy}>
-                                    <SelectTrigger className="bg-slate-700/50 border-slate-600/50 text-white min-w-[120px]">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-slate-800 border-slate-600">
-                                      <SelectItem value="views">Sort by Views</SelectItem>
-                                      <SelectItem value="engagement">Sort by Engagement</SelectItem>
-                                      <SelectItem value="performance">Sort by Performance</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <Button variant="outline" size="sm" className="bg-slate-700/50 border-slate-600/50 text-white">
-                                    <Filter className="h-4 w-4 mr-2" />
-                                    Filter
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="overflow-hidden">
-                              <div className="overflow-x-auto">
-                                <table className="w-full">
-                                  <thead>
-                                    <tr className="border-b border-slate-600/30 bg-slate-700/30">
-                                      <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Content</th>
-                                      <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Views</th>
-                                      <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Engagement</th>
-                                      <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Performance</th>
-                                      <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Revenue</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {loading ? (
-                                      Array.from({ length: 5 }).map((_, i) => (
-                                        <tr key={i} className="border-b border-slate-600/20">
-                                          <td className="p-6 align-middle">
-                                            <div className="animate-pulse">
-                                              <div className="h-4 bg-slate-600 rounded w-3/4 mb-2" />
-                                              <div className="h-3 bg-slate-700 rounded w-1/2" />
-                                            </div>
-                                          </td>
-                                          <td className="p-6 align-middle">
-                                            <div className="animate-pulse h-4 bg-slate-600 rounded w-16" />
-                                          </td>
-                                          <td className="p-6 align-middle">
-                                            <div className="animate-pulse h-6 bg-slate-600 rounded w-12" />
-                                          </td>
-                                          <td className="p-6 align-middle">
-                                            <div className="animate-pulse h-2 bg-slate-600 rounded w-16" />
-                                          </td>
-                                          <td className="p-6 align-middle">
-                                            <div className="animate-pulse h-4 bg-slate-600 rounded w-14" />
-                                          </td>
-                                        </tr>
-                                      ))
-                                    ) : (
-                                      filteredContent.map((item, i) => (
-                                        <motion.tr 
-                                          key={item.id} 
-                                          initial={{ opacity: 0, y: 20 }}
-                                          animate={{ opacity: 1, y: 0 }}
-                                          transition={{ delay: i * 0.1 }}
-                                          className="border-b border-slate-600/20 hover:bg-slate-700/30 transition-all duration-300 group cursor-pointer"
-                                          onClick={() => handleContentClick(item)}
-                                        >
-                                          <td className="p-6 align-middle">
-                                            <div className="font-medium text-white group-hover:text-blue-300 transition-colors">{item.title}</div>
-                                            <div className="text-xs text-slate-500 mt-1">Updated: {item.last_updated}</div>
-                                          </td>
-                                          <td className="p-6 align-middle">
-                                            <div className="flex items-center gap-2">
-                                              <Eye className="h-4 w-4 text-blue-400" />
-                                              <span className="font-medium text-white">{item.views.toLocaleString()}</span>
-                                            </div>
-                                          </td>
-                                          <td className="p-6 align-middle">
-                                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                                              {item.engagement}
-                                            </Badge>
-                                          </td>
-                                          <td className="p-6 align-middle">
-                                            <div className="flex items-center gap-2">
-                                              <div className="w-16 h-2 bg-slate-600 rounded-full overflow-hidden">
-                                                <div 
-                                                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
-                                                  style={{ width: `${item.performance}%` }}
-                                                />
-                                              </div>
-                                              <span className="text-sm font-medium text-white">{item.performance}%</span>
-                                            </div>
-                                          </td>
-                                          <td className="p-6 align-middle">
-                                            <span className="font-medium text-emerald-400">{item.revenue}</span>
-                                          </td>
-                                        </motion.tr>
-                                      ))
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <ContentAnalyticsTab />
                       </motion.div>
                     </TabsContent>
                     
