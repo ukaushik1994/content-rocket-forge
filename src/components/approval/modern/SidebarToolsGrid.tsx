@@ -179,7 +179,7 @@ export const SidebarToolsGrid: React.FC<SidebarToolsGridProps> = ({
   ], [titleMetrics, seoMetrics, sectionsMetrics, timelineMetrics]);
 
   const TitlePopoverContent = () => (
-    <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
+    <PopoverContent className="z-[150] w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-foreground flex items-center gap-2">
@@ -230,7 +230,7 @@ export const SidebarToolsGrid: React.FC<SidebarToolsGridProps> = ({
   );
 
   const SeoPopoverContent = () => (
-    <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
+    <PopoverContent className="z-[150] w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-foreground flex items-center gap-2">
@@ -336,7 +336,7 @@ export const SidebarToolsGrid: React.FC<SidebarToolsGridProps> = ({
   );
 
   const SectionsPopoverContent = () => (
-    <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
+    <PopoverContent className="z-[150] w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-foreground flex items-center gap-2">
@@ -363,7 +363,7 @@ export const SidebarToolsGrid: React.FC<SidebarToolsGridProps> = ({
   );
 
   const TimelinePopoverContent = () => (
-    <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
+    <PopoverContent className="z-[150] w-80 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-2xl" align="start">
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-foreground flex items-center gap-2">
