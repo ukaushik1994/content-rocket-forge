@@ -209,7 +209,7 @@ const Analytics = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <Navbar />
-        <main className="container py-8">
+        <main className="pt-20 container py-8">
           <Card className="bg-red-50 border-red-200">
             <CardContent className="p-6 text-center">
               <p className="text-red-600 mb-4">Error loading analytics: {error}</p>
@@ -231,7 +231,7 @@ const Analytics = () => {
       
       <Navbar />
       
-      <main className="relative z-10 container py-8 space-y-8">
+      <main className="relative z-10 pt-20 container py-8 space-y-8">
         <AnimatePresence mode="wait">
           {!drilldownData.isOpen ? (
             <motion.div 

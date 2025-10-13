@@ -111,8 +111,10 @@ const KeywordsPage = () => {
       {/* Animated Background */}
       <AnimatedBackground intensity="medium" />
       
-      {/* Hero Section */}
-      <KeywordsHero
+      {/* Spacing for fixed navbar */}
+      <div className="pt-16">
+        {/* Hero Section */}
+        <KeywordsHero
         keywordStats={keywordStats}
         onQuickFilter={setStatusFilter}
         activeFilter={statusFilter}
@@ -191,6 +193,7 @@ const KeywordsPage = () => {
             </motion.div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -141,7 +141,7 @@ export default function GlossaryBuilder() {
         
         <Navbar />
         
-        <div className="flex-1">
+        <div className="flex-1 pt-20">
           <GlossaryBuilderContent />
         </div>
       </div>

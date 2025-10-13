@@ -13,7 +13,7 @@ export default function NotificationDemo() {
       
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 pt-24 pb-8">
         <NotificationDemoComponent />
       </main>
     </div>

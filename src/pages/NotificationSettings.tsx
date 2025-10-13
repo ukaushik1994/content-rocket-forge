@@ -146,7 +146,7 @@ const NotificationSettings: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="pt-20 flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading notification settings...</p>
@@ -170,7 +170,7 @@ const NotificationSettings: React.FC = () => {
       
       <Navbar />
       
-      <main className="flex-1 container px-6 pt-10 pb-12 max-w-4xl">
+      <main className="flex-1 container px-6 pt-24 pb-12 max-w-4xl">
         <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">

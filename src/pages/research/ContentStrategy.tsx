@@ -30,7 +30,7 @@ const ContentStrategy = () => {
         <Navbar />
         
         {/* Service Status Indicators */}
-        <div className="relative z-20 flex justify-center pt-4 pb-2">
+        <div className="relative z-20 flex justify-center pt-20 pb-2">
           <div className="flex items-center gap-4 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2 shadow-sm">
             <SimpleAIServiceIndicator size="sm" />
             <SimpleSerpServiceIndicator size="sm" />

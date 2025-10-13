@@ -25,7 +25,7 @@ const ContentApproval = () => {
       
       <Navbar />
       
-      <main className="flex-1 container px-6 pt-10 pb-12 relative z-10">
+      <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
         <ContentProvider>
           <ContentApprovalView />
         </ContentProvider>

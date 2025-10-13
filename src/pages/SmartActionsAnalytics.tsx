@@ -17,7 +17,7 @@ const SmartActionsAnalyticsPage: React.FC = () => {
   }, [analytics]);
 
   return (
-    <main className="p-6 space-y-6">
+    <main className="pt-24 p-6 space-y-6">
       <Helmet>
         <title>Smart Actions Analytics | Approval insights</title>
         <meta name="description" content="Smart Actions analytics: actions, acceptance rate, and latency insights." />

@@ -340,16 +340,16 @@ const Solutions = () => {
   
   if (loading) {
     return (
-      <motion.div className="min-h-screen flex flex-col bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+      <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
         <Navbar />
-        <main className="flex-1 container py-8 rounded-3xl">
+        <main className="pt-20 container py-8 rounded-3xl">
           <LoadingFallback />
         </main>
       </motion.div>
     );
   }
   
-  return <motion.div className="min-h-screen flex flex-col bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+  return <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
       <Helmet>
         <title>Business Solutions | CreAiter</title>
         <meta name="description" content="Manage your business solutions for content creation" />
@@ -357,7 +357,7 @@ const Solutions = () => {
       
       <Navbar />
       
-      <main className="flex-1 container py-8 rounded-3xl">
+      <main className="pt-20 container py-8 rounded-3xl">
         <motion.div variants={itemVariants} className="mb-8 space-y-12">
           {/* Company Section - Moved to top */}
           <CompanySection 

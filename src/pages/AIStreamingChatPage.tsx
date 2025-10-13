@@ -55,7 +55,7 @@ export const AIStreamingChatPage: React.FC = () => {
 
   return (
     <ChatErrorBoundary>
-      <div className="h-screen flex bg-gradient-to-br from-background to-muted/20">
+      <div className="h-screen flex bg-gradient-to-br from-background to-muted/20 pt-16">
         {/* Chat History Sidebar */}
         {isSidebarOpen && (
           <ChatErrorBoundary>

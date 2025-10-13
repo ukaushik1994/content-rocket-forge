@@ -48,7 +48,7 @@ const SerpIntelligence = () => {
       <Navbar />
       <AnimatedBackground intensity="medium" />
       
-      <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
+      <main className="flex-1 container pt-24 pb-8 z-10 relative max-w-7xl mx-auto">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
