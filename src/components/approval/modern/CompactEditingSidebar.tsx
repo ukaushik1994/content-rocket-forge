@@ -123,57 +123,11 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
             placeholder="Enter title..."
             className="h-11 text-base"
           />
-            <div className="text-xs text-muted-foreground">
-              {editedTitle.length}/60 characters
-            </div>
-            {mainKeyword && (
-              <div className={`flex items-center gap-1 text-xs ${titleIncludesKeyword ? 'text-green-400' : 'text-amber-400'}`}>
-                {titleIncludesKeyword ? (
-                  <>
-                    <CheckCircle2 className="h-3 w-3" />
-                    Keyword included
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="h-3 w-3" />
-                    Add keyword: "{mainKeyword}"
-                  </>
-                )}
-              </div>
-            )}
+          <div className="text-xs text-muted-foreground mt-1">
+            {editedTitle.length}/60 characters
           </div>
-
-          {/* Keywords Display */}
-          {content.keywords && content.keywords.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {content.keywords.map((keyword, i) => (
-                <Badge 
-                  key={i} 
-                  variant="secondary" 
-                  className="text-xs bg-neon-purple/20 text-neon-purple border border-neon-purple/30"
-                >
-                  {keyword}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* Title Editing */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Title</label>
-            <span className={`text-xs ${editedTitle.length > 60 ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {editedTitle.length}/60
-            </span>
-          </div>
-          <Input
-            value={editedTitle}
-            onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Enter title..."
-            className="bg-background/50 h-10 md:h-9 text-base md:text-sm"
-          />
           {mainKeyword && (
-            <div className={`flex items-center gap-1 text-xs ${titleIncludesKeyword ? 'text-green-500' : 'text-amber-500'}`}>
+            <div className={`flex items-center gap-1 text-xs ${titleIncludesKeyword ? 'text-success' : 'text-warning'}`}>
               {titleIncludesKeyword ? (
                 <>
                   <CheckCircle2 className="h-3 w-3" />
@@ -182,7 +136,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
               ) : (
                 <>
                   <AlertCircle className="h-3 w-3" />
-                  Add main keyword: "{mainKeyword}"
+                  Add keyword: "{mainKeyword}"
                 </>
               )}
             </div>
