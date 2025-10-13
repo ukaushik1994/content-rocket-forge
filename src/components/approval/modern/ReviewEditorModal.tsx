@@ -75,23 +75,19 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
   };
   return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 border-none overflow-hidden rounded-lg">
-        <div className="h-full bg-background flex">
-          
-          {/* Minimal Header */}
-          <div className="flex-1 flex flex-col">
-            
-
+        <div className="h-full bg-background flex flex-col">
+          <div className="flex-1 min-h-0 flex">
             {/* Content Editor - 70% width */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 flex flex-col min-h-0">
               <ContentApprovalEditor content={content} hideToolsToggle={true} defaultShowSidebar={false} />
             </div>
-          </div>
 
-          {/* Compact Editing Sidebar - 30% width */}
-          <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
-          // Update content logic would go here
-          console.log('Section regenerated:', updatedContent);
-        }} />
+            {/* Compact Editing Sidebar - 30% width */}
+            <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
+            // Update content logic would go here
+            console.log('Section regenerated:', updatedContent);
+          }} />
+          </div>
         </div>
       </DialogContent>
     </Dialog>;
