@@ -25,7 +25,7 @@ import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
 
 import { supabase } from '@/integrations/supabase/client';
 import { contentCompletionTracking } from '@/services/contentCompletionTracking';
-import { useContentReminders } from '@/hooks/useContentReminders';
+import { useDueContentNotifications } from '@/hooks/useDueContentNotifications';
 import { ContentClustersSummary } from './ContentClustersSummary';
 
 interface ContentStrategyEngineProps {
@@ -104,8 +104,8 @@ export const ContentStrategyEngine = ({
   const [newProposalTimestamps, setNewProposalTimestamps] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
-  // Initialize content reminders
-  useContentReminders();
+  // Initialize due content notifications
+  useDueContentNotifications();
 
   // Sync with context and calculate metrics
   useEffect(() => {

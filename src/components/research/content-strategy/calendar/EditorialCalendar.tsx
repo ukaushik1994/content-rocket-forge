@@ -106,6 +106,22 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
 
   // Removed duplicate handleDeleteItem - all deletions now go through CalendarItemActions component
 
+  // Listen for global openContentBuilder events from notifications
+  useEffect(() => {
+    const handleGlobalOpenBuilder = (event: CustomEvent) => {
+      console.log('🌍 Global openContentBuilder event received:', event.detail);
+      const calendarItem = event.detail;
+      if (calendarItem) {
+        handleGenerateContent(calendarItem);
+      }
+    };
+    
+    window.addEventListener('openContentBuilder', handleGlobalOpenBuilder as EventListener);
+    return () => {
+      window.removeEventListener('openContentBuilder', handleGlobalOpenBuilder as EventListener);
+    };
+  }, []);
+
   const handleSaveItem = async (formData: any) => {
     try {
       if (editingItem) {

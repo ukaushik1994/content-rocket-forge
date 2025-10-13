@@ -251,9 +251,20 @@ export async function executeNotificationAction(
     console.warn('executeNotificationAction update error:', updateError);
   }
 
-  // Here you can add specific action handling logic
-  // For example, redirect to URLs, trigger other functions, etc.
+  // Handle specific actions
   console.log('Executing action:', actionId, 'for notification:', notificationId, 'with data:', actionData);
+  
+  if (actionId === 'generate_content') {
+    const calendarItem = actionData?.metadata?.calendarItems?.[0];
+    if (calendarItem) {
+      console.log('🚀 Dispatching openContentBuilder event with item:', calendarItem);
+      window.dispatchEvent(new CustomEvent('openContentBuilder', {
+        detail: calendarItem
+      }));
+    }
+  } else if (actionId === 'view_calendar') {
+    window.location.href = '/research/calendar';
+  }
 }
 
 // Notification settings management
