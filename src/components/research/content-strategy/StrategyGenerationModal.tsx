@@ -75,14 +75,14 @@ export function StrategyGenerationModal({ open, steps, onCancel, activeProvider 
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           {/* Animated backdrop with blur */}
           <motion.div 
-            className="absolute inset-0 bg-background/90 backdrop-blur-md"
+            className="fixed inset-0 bg-background/90 backdrop-blur-md -z-10"
             initial={{ backdropFilter: 'blur(0px)' }}
             animate={{ backdropFilter: 'blur(12px)' }}
             onClick={onCancel}
@@ -118,7 +118,7 @@ export function StrategyGenerationModal({ open, steps, onCancel, activeProvider 
 
           {/* Main modal */}
           <motion.div
-            className="relative w-full max-w-2xl rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden ring-1 ring-white/10"
+            className="relative z-10 w-full max-w-2xl rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden ring-1 ring-white/10"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
