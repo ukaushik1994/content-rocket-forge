@@ -144,39 +144,49 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
     });
     
     try {
-      const notes = item.notes ? JSON.parse(item.notes) : {};
-      const proposalData = notes.proposal_data;
+      let proposalData = null;
+      let notes: any = {};
       
-      console.log('📝 Parsed notes:', { proposalData, notes });
+      // Try to parse notes as JSON, but don't fail if it's plain text
+      if (item.notes) {
+        try {
+          notes = JSON.parse(item.notes);
+          proposalData = notes.proposal_data;
+          console.log('📝 Parsed notes as JSON:', { proposalData });
+        } catch (parseError) {
+          console.log('📝 Notes are plain text, not JSON. Continuing with fallback data.');
+          // Notes are plain text, that's okay - proposalData stays null
+        }
+      }
 
       if (proposalData) {
-        console.log('✅ Using proposal data from calendar item');
-        // Use StrategyBuilderDialog with proposal data
+        console.log('✅ Using proposal data from calendar item notes');
         setSelectedCalendarItem({
           ...proposalData,
           source_proposal_id: notes.source_proposal_id,
-          fromCalendar: true
+          fromCalendar: true,
+          calendarItemId: item.id
         });
       } else {
-        console.log('✅ Creating new proposal data from calendar item');
-        // Create proposal-like data structure from calendar item for StrategyBuilderDialog
+        console.log('✅ Creating fallback proposal data from calendar item');
         setSelectedCalendarItem({
           title: item.title,
-          primary_keyword: item.title.split(' ')[0], // Use first word as primary keyword
+          primary_keyword: item.primary_keyword || item.title.split(' ').slice(0, 2).join(' '),
           description: item.notes || `Content piece about ${item.title}`,
           content_type: item.content_type || 'blog',
           fromCalendar: true,
           calendarItemId: item.id,
-          tags: item.tags
+          tags: item.tags,
+          scheduled_date: item.scheduled_date
         });
       }
       
-      console.log('✅ Opening strategy dialog...');
+      console.log('✅ Opening strategy builder dialog...');
       setStrategyDialogOpen(true);
       toast.success('Opening content builder...');
     } catch (error) {
-      console.error('❌ Error generating content:', error);
-      toast.error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Error opening content builder:', error);
+      toast.error(`Failed to open content builder: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

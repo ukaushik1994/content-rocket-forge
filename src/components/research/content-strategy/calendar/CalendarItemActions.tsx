@@ -225,20 +225,6 @@ export const CalendarItemActions = ({ calendarItem, onRefresh, compact = false, 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-gray-900 border-white/20">
-              <DropdownMenuItem onClick={(e) => {
-                e.stopPropagation();
-                console.log('🔘 Compact Create Content button clicked for item:', calendarItem?.id);
-                if (onGenerateContent) {
-                  console.log('✅ Calling onGenerateContent...');
-                  onGenerateContent(calendarItem);
-                } else {
-                  console.error('❌ onGenerateContent is not defined!');
-                }
-              }}>
-                <Send className="h-4 w-4 mr-2" />
-                Create Content
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setPostponeDialogOpen(true)}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Postpone
