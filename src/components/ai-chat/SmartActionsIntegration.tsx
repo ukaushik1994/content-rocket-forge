@@ -102,7 +102,6 @@ export const SmartActionsIntegration: React.FC<SmartActionsIntegrationProps> = (
         <div className="mb-4">
           <SmartActionBar
             context={context}
-            recommendation={recommendation}
           />
         </div>
       )}

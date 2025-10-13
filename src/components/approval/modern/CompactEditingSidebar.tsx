@@ -18,13 +18,9 @@ interface CompactEditingSidebarProps {
   isSubmitting: boolean;
   isImproving: boolean;
   // SmartActionBar props
-  recommendation?: any;
   approvalNotes?: string;
   setApprovalNotes?: (notes: string) => void;
   onApprove?: () => void;
-  onRequestChanges?: () => void;
-  onReject?: () => void;
-  onSubmitForReview?: () => void;
   // Tools grid props
   onTitleSelect: (title: string) => void;
   onSectionRegenerated: (updatedContent: string) => void;
@@ -38,13 +34,9 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   onImprove,
   isSubmitting,
   isImproving,
-  recommendation,
   approvalNotes,
   setApprovalNotes,
   onApprove,
-  onRequestChanges,
-  onReject,
-  onSubmitForReview,
   onTitleSelect,
   onSectionRegenerated
 }) => {
@@ -252,17 +244,12 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
         )}
 
         {/* Smart Action Bar */}
-        {onApprove && onRequestChanges && onReject && onSubmitForReview && (
+        {onApprove && (
           <div className="space-y-3 p-4 bg-gradient-to-br from-gray-800/20 to-gray-900/20 rounded-lg border border-white/10">
             <SmartActionBar
               context={{ approvalStatus: content.approval_status, contentId: content.id }}
               disabled={isSubmitting}
-              hasNotes={Boolean(approvalNotes?.trim())}
-              recommendation={recommendation}
               onApprove={onApprove}
-              onRequestChanges={onRequestChanges}
-              onReject={onReject}
-              onSubmitForReview={onSubmitForReview}
             />
           </div>
         )}

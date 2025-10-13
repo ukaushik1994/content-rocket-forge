@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { ContentApprovalEditor } from '@/components/approval/ContentApprovalEditor';
 import { CompactEditingSidebar } from './CompactEditingSidebar';
 import { useContent } from '@/contexts/content';
 import { useApproval } from '../context/ApprovalContext';
 import { toast } from 'sonner';
-import { useSmartApprovalRecommendation } from '@/hooks/approval/useSmartApprovalRecommendation';
 interface ReviewEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,25 +28,12 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
   }, [content?.title]);
   const {
     updateContentItem,
-    approveContent,
-    rejectContent,
-    requestChanges,
-    submitForReview
+    approveContent
   } = useContent();
   const {
     improveContentWithAI,
     isImproving
   } = useApproval();
-  const mainKeyword = (content?.metadata?.mainKeyword || content?.keywords?.[0] || '').toString().trim();
-  const {
-    recommendation
-  } = useSmartApprovalRecommendation({
-    content,
-    editedContent: content?.content || '',
-    editedTitle,
-    mainKeyword,
-    notes: approvalNotes
-  });
   if (!content) return null;
   const handleSave = async () => {
     setIsSubmitting(true);
@@ -89,51 +73,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       setIsSubmitting(false);
     }
   };
-  const handleReject = async () => {
-    if (!content || !approvalNotes.trim()) {
-      toast.error('Please provide a reason for rejection');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await rejectContent(content.id, approvalNotes);
-      toast.success('Content rejected with feedback');
-    } catch (error) {
-      toast.error('Failed to reject content');
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  const handleRequestChanges = async () => {
-    if (!content || !approvalNotes.trim()) {
-      toast.error('Please provide specific change requests');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await requestChanges(content.id, approvalNotes);
-      toast.success('Change request sent');
-    } catch (error) {
-      toast.error('Failed to request changes');
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  const handleSubmitForReview = async () => {
-    if (!content) return;
-    setIsSubmitting(true);
-    try {
-      await submitForReview(content.id, approvalNotes || undefined);
-      toast.success('Content submitted for review');
-    } catch (error) {
-      toast.error('Failed to submit for review');
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
   return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 border-none overflow-hidden rounded-lg">
         <div className="h-full bg-background flex">
@@ -149,7 +88,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
           </div>
 
           {/* Compact Editing Sidebar - 30% width */}
-          <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
+          <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
           // Update content logic would go here
           console.log('Section regenerated:', updatedContent);
         }} />
