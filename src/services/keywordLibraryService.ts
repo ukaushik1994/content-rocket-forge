@@ -82,6 +82,140 @@ interface BulkUpdateData {
 }
 
 class KeywordLibraryService {
+  /**
+   * Get keywords ACTUALLY USED in content items
+   * This extracts keywords from content_items and shows content-specific data
+   */
+  async getContentKeywords(filters: KeywordFilters = {}, page = 1, limit = 50) {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not authenticated');
+
+      // Get all content items
+      const { data: contentItems, error } = await supabase
+        .from('content_items')
+        .select('id, title, status, content_type, created_at, updated_at, metadata')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Extract and aggregate keywords from content metadata
+      const keywordMap = new Map<string, {
+        keyword: string;
+        usageCount: number;
+        contentPieces: Array<{
+          id: string;
+          title: string;
+          status: string;
+          type: string;
+        }>;
+        firstUsed: string;
+        lastUsed: string;
+      }>();
+
+      for (const item of contentItems || []) {
+        // Extract keywords from metadata
+        const metadata = item.metadata as any;
+        const mainKeyword = metadata?.mainKeyword;
+        const secondaryKeywords = metadata?.secondaryKeywords || [];
+        
+        const allKeywords = [
+          mainKeyword,
+          ...secondaryKeywords
+        ].filter(Boolean);
+
+        for (const kw of allKeywords) {
+          if (!keywordMap.has(kw)) {
+            keywordMap.set(kw, {
+              keyword: kw,
+              usageCount: 0,
+              contentPieces: [],
+              firstUsed: item.created_at,
+              lastUsed: item.updated_at
+            });
+          }
+          
+          const entry = keywordMap.get(kw)!;
+          entry.usageCount++;
+          entry.contentPieces.push({
+            id: item.id,
+            title: item.title,
+            status: item.status,
+            type: item.content_type
+          });
+          
+          if (item.created_at < entry.firstUsed) entry.firstUsed = item.created_at;
+          if (item.updated_at > entry.lastUsed) entry.lastUsed = item.updated_at;
+        }
+      }
+
+      // Convert to array
+      let keywordsList = Array.from(keywordMap.values());
+
+      // Apply search filter
+      if (filters.search) {
+        keywordsList = keywordsList.filter(k => 
+          k.keyword.toLowerCase().includes(filters.search!.toLowerCase())
+        );
+      }
+
+      // Apply usage filter
+      if (filters.usage_count_min !== undefined) {
+        keywordsList = keywordsList.filter(k => k.usageCount >= filters.usage_count_min!);
+      }
+
+      if (filters.has_usage !== undefined) {
+        if (filters.has_usage) {
+          keywordsList = keywordsList.filter(k => k.usageCount > 0);
+        } else {
+          keywordsList = keywordsList.filter(k => k.usageCount === 0);
+        }
+      }
+
+      // Sort by usage count (most used first)
+      keywordsList.sort((a, b) => b.usageCount - a.usageCount);
+
+      // Pagination
+      const total = keywordsList.length;
+      const offset = (page - 1) * limit;
+      const paginated = keywordsList.slice(offset, offset + limit);
+
+      return {
+        keywords: paginated.map(k => ({
+          id: k.keyword, // Use keyword as ID
+          keyword: k.keyword,
+          usage_count: k.usageCount,
+          content_pieces: k.contentPieces,
+          first_used: k.firstUsed,
+          last_used: k.lastUsed,
+          source_type: 'content',
+          is_active: true,
+          user_id: user.id,
+          first_discovered_at: k.firstUsed,
+          last_updated_at: k.lastUsed,
+          content_usage: null,
+          search_volume: null,
+          difficulty: null,
+          source_id: null,
+          notes: null,
+          serp_last_updated: null,
+          competition_score: null,
+          serp_data_quality: null,
+          cpc: null,
+          trend_direction: null,
+          intent: null,
+          seasonality: null
+        })) as UnifiedKeyword[],
+        total,
+        page,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      console.error('Error fetching content keywords:', error);
+      throw error;
+    }
+  }
+
   async getKeywords(filters: KeywordFilters = {}, page = 1, limit = 50) {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();

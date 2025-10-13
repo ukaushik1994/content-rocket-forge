@@ -8,24 +8,15 @@ import {
   Filter, 
   MoreVertical, 
   Copy, 
-  Trash2, 
-  RefreshCw,
-  Volume2,
-  Target,
+  Trash2,
   Tag,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Clock,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { keywordLibraryService, UnifiedKeyword, KeywordFilters } from '@/services/keywordLibraryService';
-import { KeywordUsageDetail } from '@/components/keyword-library/KeywordUsageDetail';
-import { DuplicateManager } from '@/components/keyword-library/DuplicateManager';
 import { SimplifiedKeywordFilters } from '@/components/keyword-library/SimplifiedKeywordFilters';
-import { AdminActions } from '@/components/keywords/AdminActions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { 
@@ -56,10 +47,8 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
   const [keywords, setKeywords] = useState<UnifiedKeyword[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showDuplicateManager, setShowDuplicateManager] = useState(false);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [refreshingIds, setRefreshingIds] = useState<Set<string>>(new Set());
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const [filters, setFilters] = useState<KeywordFilters>({
@@ -71,7 +60,7 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
     setLoading(true);
     try {
       const currentFilters = { ...filters, search: searchTerm };
-      const result = await keywordLibraryService.getKeywords(currentFilters, 1, 20);
+      const result = await keywordLibraryService.getContentKeywords(currentFilters, 1, 20);
       setKeywords(result.keywords);
     } catch (error) {
       console.error('Error loading keywords:', error);
@@ -96,66 +85,8 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
     }
   };
 
-  const handleRefreshKeyword = async (keywordId: string) => {
-    setRefreshingIds(prev => new Set(prev).add(keywordId));
-    try {
-      await keywordLibraryService.refreshKeywordMetrics(keywordId);
-      await loadKeywords();
-    } catch (error) {
-      // Error is handled in service
-    } finally {
-      setRefreshingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(keywordId);
-        return newSet;
-      });
-    }
-  };
 
-  const handleRefreshStale = async () => {
-    setLoading(true);
-    try {
-      await keywordLibraryService.refreshStaleKeywords();
-      await loadKeywords();
-    } catch (error) {
-      // Error is handled in service
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const getSourceBadgeColor = (source: string) => {
-    switch (source) {
-      case 'manual': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-      case 'research': return 'bg-green-500/20 text-green-300 border-green-500/30';
-      case 'serp': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'glossary': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
-      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
-    }
-  };
-
-  const getDataFreshnessBadge = (keyword: UnifiedKeyword) => {
-    const freshness = keywordLibraryService.getDataFreshness(keyword);
-    switch (freshness) {
-      case 'fresh':
-        return <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">Fresh</Badge>;
-      case 'stale':
-        return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 text-xs">Stale</Badge>;
-      default:
-        return <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/30 text-xs">Unknown</Badge>;
-    }
-  };
-
-  const getTrendIcon = (trend: string | null) => {
-    switch (trend) {
-      case 'rising':
-        return <TrendingUp className="h-3 w-3 text-green-400" />;
-      case 'declining':
-        return <TrendingDown className="h-3 w-3 text-red-400" />;
-      default:
-        return <Minus className="h-3 w-3 text-gray-400" />;
-    }
-  };
 
   const toggleRowExpansion = (keywordId: string) => {
     setExpandedRows(prev => {
@@ -169,7 +100,7 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
     });
   };
 
-  const staleKeywordsCount = keywords.filter(k => keywordLibraryService.getDataFreshness(k) === 'stale').length;
+  
 
   if (keywords.length === 0 && !loading) {
     return (
@@ -185,8 +116,11 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">No keywords saved yet</h3>
-            <p className="text-muted-foreground mb-4">Start researching keywords to build your library</p>
+            <h3 className="text-lg font-semibold mb-2">No keywords in your content yet</h3>
+            <p className="text-muted-foreground mb-4">Start creating content and adding keywords to build your keyword repository</p>
+            <Button onClick={() => window.location.href = '/content-builder'}>
+              Create Content →
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -202,26 +136,6 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
             Keyword Library ({keywords.length})
           </CardTitle>
           <div className="flex items-center gap-2">
-            {staleKeywordsCount > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefreshStale}
-                disabled={loading}
-                className="text-xs"
-              >
-                <RefreshCw className={cn("h-3 w-3 mr-1", loading && "animate-spin")} />
-                Refresh Stale ({staleKeywordsCount})
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDuplicateManager(true)}
-              className="text-xs"
-            >
-              Find Duplicates
-            </Button>
             {selectedKeywords.length > 0 && (
               <Button
                 variant="outline"
@@ -233,7 +147,6 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
                 Delete ({selectedKeywords.length})
               </Button>
             )}
-            <AdminActions onDataChange={loadKeywords} />
           </div>
         </div>
         
@@ -302,54 +215,33 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
                   />
                   
                   <div className="flex items-center gap-2">
-                    <Badge className={getSourceBadgeColor(keyword.source_type)}>
-                      {keyword.source_type}
-                    </Badge>
-                    {getDataFreshnessBadge(keyword)}
+                    {(keyword as any).content_pieces?.length > 1 && (
+                      <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                        Used in {(keyword as any).content_pieces.length} pieces
+                      </Badge>
+                    )}
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{keyword.keyword}</div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      {keyword.search_volume && (
-                        <span className="flex items-center gap-1">
-                          <Volume2 className="h-3 w-3" />
-                          {keyword.search_volume.toLocaleString()}
+                      <span className="flex items-center gap-1">
+                        📄 {(keyword as any).content_pieces?.length || 0} pieces
+                      </span>
+                      {(keyword as any).content_pieces?.filter((p: any) => p.status === 'published').length > 0 && (
+                        <span className="flex items-center gap-1 text-green-400">
+                          ✅ {(keyword as any).content_pieces.filter((p: any) => p.status === 'published').length} published
                         </span>
                       )}
-                      {keyword.difficulty && (
-                        <span className="flex items-center gap-1">
-                          <Target className="h-3 w-3" />
-                          KD {keyword.difficulty}
+                      {(keyword as any).content_pieces?.filter((p: any) => p.status === 'draft').length > 0 && (
+                        <span className="flex items-center gap-1 text-blue-400">
+                          📝 {(keyword as any).content_pieces.filter((p: any) => p.status === 'draft').length} draft
                         </span>
-                      )}
-                      {keyword.competition_score && (
-                        <span className="flex items-center gap-1">
-                          Comp {keyword.competition_score.toFixed(0)}
-                        </span>
-                      )}
-                      {keyword.trend_direction && (
-                        <span className="flex items-center gap-1">
-                          {getTrendIcon(keyword.trend_direction)}
-                        </span>
-                      )}
-                      {keyword.usage_count > 0 && (
-                        <KeywordUsageDetail 
-                          keywordId={keyword.id} 
-                          usageCount={keyword.usage_count}
-                        />
                       )}
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {keyword.serp_last_updated && (
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(keyword.serp_last_updated).toLocaleDateString()}
-                      </div>
-                    )}
-                    
                     <Button
                       variant="ghost"
                       size="sm"
@@ -363,19 +255,6 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
                         <ChevronUp className="h-3 w-3" /> : 
                         <ChevronDown className="h-3 w-3" />
                       }
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRefreshKeyword(keyword.id);
-                      }}
-                      disabled={refreshingIds.has(keyword.id)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <RefreshCw className={cn("h-3 w-3", refreshingIds.has(keyword.id) && "animate-spin")} />
                     </Button>
                     
                     <DropdownMenu>
@@ -408,7 +287,7 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
                   </div>
                 </div>
 
-                {/* Expanded Details */}
+                {/* Expanded Details - Content Pieces */}
                 <AnimatePresence>
                   {expandedRows.has(keyword.id) && (
                     <motion.div
@@ -417,38 +296,42 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
                       exit={{ opacity: 0, height: 0 }}
                       className="px-3 pb-3 border-t border-white/5 bg-white/2"
                     >
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        {keyword.intent && (
-                          <div>
-                            <span className="text-muted-foreground">Intent:</span>
-                            <div className="capitalize">{keyword.intent}</div>
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground font-medium">Used in:</p>
+                        {(keyword as any).content_pieces?.map((piece: any) => (
+                          <div key={piece.id} className="flex items-center justify-between text-xs bg-white/5 p-2 rounded">
+                            <div className="flex items-center gap-2">
+                              <Badge className={
+                                piece.status === 'published' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
+                                piece.status === 'draft' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' :
+                                'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                              }>
+                                {piece.status}
+                              </Badge>
+                              <span className="truncate max-w-[300px]">{piece.title}</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.location.href = `/repository?id=${piece.id}`}
+                              className="h-6 text-xs"
+                            >
+                              View →
+                            </Button>
                           </div>
-                        )}
-                        {keyword.cpc && (
-                          <div>
-                            <span className="text-muted-foreground">CPC:</span>
-                            <div>${keyword.cpc.toFixed(2)}</div>
-                          </div>
-                        )}
-                        {keyword.serp_data_quality && (
-                          <div>
-                            <span className="text-muted-foreground">Data Quality:</span>
-                            <div className="capitalize">{keyword.serp_data_quality}</div>
-                          </div>
-                        )}
-                        {keyword.seasonality && (
-                          <div>
-                            <span className="text-muted-foreground">Seasonal:</span>
-                            <div>{keyword.seasonality ? 'Yes' : 'No'}</div>
+                        ))}
+                        
+                        {/* Cannibalization warning */}
+                        {(keyword as any).content_pieces?.filter((p: any) => p.status === 'published').length > 1 && (
+                          <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs">
+                            <span className="text-yellow-400 font-medium">⚠️ Keyword Cannibalization Warning:</span>
+                            <p className="text-muted-foreground mt-1">
+                              This keyword is used in {(keyword as any).content_pieces.filter((p: any) => p.status === 'published').length} published pieces. 
+                              Consider consolidating or differentiating the content.
+                            </p>
                           </div>
                         )}
                       </div>
-                      {keyword.notes && (
-                        <div className="mt-2 p-2 bg-white/5 rounded text-xs">
-                          <span className="text-muted-foreground">Notes:</span>
-                          <div>{keyword.notes}</div>
-                        </div>
-                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -463,12 +346,6 @@ export const EnhancedEmbeddedKeywordLibrary: React.FC<EnhancedEmbeddedKeywordLib
           </div>
         )}
       </CardContent>
-      
-      <DuplicateManager 
-        open={showDuplicateManager}
-        onClose={() => setShowDuplicateManager(false)}
-        onSuccess={loadKeywords}
-      />
     </Card>
   );
 };
