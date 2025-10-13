@@ -232,7 +232,7 @@ export function SerpAnalysisModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-card border border-border shadow-2xl z-50">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-card border border-border shadow-2xl z-[150]">
 
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
@@ -300,7 +300,7 @@ export function SerpAnalysisModal({
         </DialogTitle>
       </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden relative z-10">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden relative">
           <TabsList className="grid w-full grid-cols-5 bg-muted/50 border border-border/50 p-1 rounded-xl">
             {tabs.map((tab, index) => (
               <TabsTrigger 
@@ -416,7 +416,7 @@ export function SerpAnalysisModal({
           </ScrollArea>
         </Tabs>
         
-        <div className="flex justify-between items-center pt-4 border-t border-white/10 relative z-10">
+        <div className="flex justify-between items-center pt-4 border-t border-white/10 relative">
           <div className="text-sm text-gray-400 flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
             <span className="font-mono">{selectedCount}</span>
