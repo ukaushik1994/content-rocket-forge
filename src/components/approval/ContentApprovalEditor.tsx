@@ -7,7 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
-import { FileText, CheckCircle, Wand, History, ThumbsUp, AlertCircle, Search, Clock, CheckCircle2, AlertCircle as AlertIcon, RotateCcw, Edit3, Globe, Zap, ChevronDown, ChevronRight } from 'lucide-react';
+import { FileText, CheckCircle, Wand, History, ThumbsUp, AlertCircle, Search, Clock, CheckCircle2, AlertCircle as AlertIcon, RotateCcw, Edit3, Globe, Zap, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
@@ -47,6 +51,14 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
   const [titleLoading, setTitleLoading] = useState(false);
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  
+  useEffect(() => {
+    if (saveStatus === 'saved') {
+      const timeout = setTimeout(() => setSaveStatus('idle'), 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [saveStatus]);
 const [undoContent, setUndoContent] = useState<string | null>(null);
 const [safetyCopy, setSafetyCopy] = useState<SafetyCopy | null>(null);
 useEffect(() => {
@@ -326,30 +338,42 @@ useEffect(() => {
       
       {/* Main Editor - Full Width */}
       <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full flex flex-col h-full">
-          <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm px-4 md:px-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm md:text-sm font-medium text-white/80">Generated Content</CardTitle>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
-              </div>
-              <div className="flex gap-2 items-center flex-wrap">
-                  <ToggleGroup type="single" value={activeTab} onValueChange={setActiveTab} size="sm" className="bg-card/60 p-0.5 rounded-md">
-                    <ToggleGroupItem value="edit" className="h-8 md:h-6 px-3 md:px-2 text-xs md:text-[11px] data-[state=on]:bg-neon-purple/20 data-[state=on]:text-neon-purple">
-                      <Edit3 className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Edit</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="preview" className="h-8 md:h-6 px-3 md:px-2 text-xs md:text-[11px] data-[state=on]:bg-neon-purple/20 data-[state=on]:text-neon-purple">
-                      <Globe className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Preview</span>
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                  <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 h-8 md:h-auto">
-                    <Wand className="h-4 w-4 text-neon-purple" />
-                    <span className="hidden sm:inline">{isImproving ? 'Improving...' : 'Improve with AI'}</span>
-                  </Button>
-              </div>
-            </div>
-          </CardHeader>
+      <CardHeader className="sticky top-0 z-10 pb-3 border-b border-border bg-card/95 backdrop-blur-sm px-4 md:px-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <CardTitle className="text-base md:text-base font-semibold text-foreground">Generated Content</CardTitle>
+          <div className="flex gap-2 items-center flex-wrap">
+            <ToggleGroup type="single" value={activeTab} onValueChange={setActiveTab} className="bg-muted/40 p-1 rounded-lg border border-border/50">
+              <ToggleGroupItem 
+                value="edit" 
+                className="h-9 px-4 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all"
+                aria-label="Edit mode"
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="preview" 
+                className="h-9 px-4 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all"
+                aria-label="Preview mode"
+              >
+                <Globe className="h-4 w-4 mr-2" />
+                Preview
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={handleImproveContent} 
+              disabled={isImproving} 
+              className="h-9 px-4"
+              aria-label="Improve content with AI"
+            >
+              <Wand className="h-4 w-4 mr-2" />
+              {isImproving ? 'Improving...' : 'Improve with AI'}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
           
           <CardContent className="p-0 flex-1 flex flex-col">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
@@ -364,22 +388,46 @@ useEffect(() => {
               </TabsContent>
               
               <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0 flex-1">
-                <div className="h-full p-4 md:p-6 overflow-y-auto prose prose-sm md:prose-base prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
-                  {editedContent.split('\n\n').map((paragraph, idx) => paragraph.startsWith('# ') ? <h1 key={idx}>{paragraph.substring(2)}</h1> : paragraph.startsWith('## ') ? <h2 key={idx}>{paragraph.substring(3)}</h2> : paragraph.startsWith('### ') ? <h3 key={idx}>{paragraph.substring(4)}</h3> : paragraph ? <p key={idx}>{paragraph}</p> : <br key={idx} />)}
+                <div className="h-full p-6 md:p-8 pr-8 md:pr-10 overflow-y-auto">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                    className="prose prose-slate dark:prose-invert max-w-none"
+                    components={{
+                      h1: ({children}) => <h1 className="text-3xl font-bold mb-6 mt-0">{children}</h1>,
+                      h2: ({children}) => <h2 className="text-2xl font-bold mb-4 mt-8">{children}</h2>,
+                      h3: ({children}) => <h3 className="text-xl font-semibold mb-3 mt-6">{children}</h3>,
+                      p: ({children}) => <p className="mb-4 leading-relaxed text-base">{children}</p>,
+                      strong: ({children}) => <strong className="font-bold">{children}</strong>,
+                    }}
+                  >
+                    {editedContent}
+                  </ReactMarkdown>
                 </div>
               </TabsContent>
             </Tabs>
           </CardContent>
           
-          {/* Last saved + undo */}
-          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10 mt-auto">
-            <div>{lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}</div>
-            {undoContent && <button className="text-primary hover:underline" onClick={() => {
-            setEditedContent(undoContent);
-            setUndoContent(null);
-          }}>
-                <span className="inline-flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Undo</span>
-              </button>}
+          <div className="sticky bottom-0 px-6 py-3 bg-card/95 backdrop-blur-sm border-t border-border flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Last saved: {lastSavedAt ? lastSavedAt.toLocaleTimeString() : 'just now'}</span>
+            {saveStatus === 'saving' && (
+              <span className="text-sm text-primary flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="text-sm text-success flex items-center gap-2 font-medium">
+                <CheckCircle className="h-4 w-4" />
+                Saved
+              </span>
+            )}
+            {undoContent && <button className="text-primary hover:underline text-sm" onClick={() => {
+              setEditedContent(undoContent);
+              setUndoContent(null);
+            }}>
+              <span className="inline-flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Undo</span>
+            </button>}
           </div>
           
         </Card>

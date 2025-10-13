@@ -134,21 +134,39 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
           
           {/* Mobile: Close button and tabs */}
           <div className="md:hidden sticky top-0 z-30 bg-background border-b">
-            <div className="flex items-center justify-between px-4 py-2">
-              <h2 className="text-sm font-medium">Review Content</h2>
-              <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
-                <X className="h-4 w-4" />
+            <div className="flex items-center justify-between px-4 py-3">
+              <h2 className="text-base font-semibold">Review Content</h2>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onClose} 
+                className="h-11 w-11"
+                aria-label="Close review modal"
+              >
+                <X className="h-5 w-5" />
               </Button>
             </div>
             <Tabs defaultValue="editor" className="w-full">
-              <TabsList className="w-full rounded-none border-t">
-                <TabsTrigger value="editor" className="flex-1">Editor</TabsTrigger>
-                <TabsTrigger value="tools" className="flex-1">Tools</TabsTrigger>
+              <TabsList className="w-full h-12 rounded-none border-t bg-muted/30">
+                <TabsTrigger 
+                  value="editor" 
+                  className="flex-1 h-full text-base data-[state=active]:bg-background"
+                  aria-label="Editor view"
+                >
+                  Editor
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="tools" 
+                  className="flex-1 h-full text-base data-[state=active]:bg-background"
+                  aria-label="Tools view"
+                >
+                  Tools
+                </TabsTrigger>
               </TabsList>
-              <TabsContent value="editor" className="h-[calc(100dvh-96px)] overflow-y-auto m-0">
+              <TabsContent value="editor" className="h-[calc(100dvh-108px)] overflow-y-auto m-0">
                 <ContentApprovalEditor content={content} hideToolsToggle={true} defaultShowSidebar={false} />
               </TabsContent>
-              <TabsContent value="tools" className="h-[calc(100dvh-96px)] overflow-y-auto m-0">
+              <TabsContent value="tools" className="h-[calc(100dvh-108px)] overflow-y-auto m-0">
                 <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
                   console.log('Section regenerated:', updatedContent);
                 }} />
