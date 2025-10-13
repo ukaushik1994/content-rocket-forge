@@ -210,7 +210,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
 
 
   return (
-    <div ref={containerRef} className="relative h-full">
+    <div ref={containerRef} className="relative h-full flex flex-col">
       {selection && toolbarPos && (
         <div
           ref={toolbarRef}
@@ -259,7 +259,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
         onKeyUp={updateSelection}
         onScroll={handleScroll}
         placeholder="Write your content here..."
-        className="min-h-[60vh] border-0 focus-visible:ring-0 resize-none p-4 flex-1 bg-transparent"
+        className="h-full border-0 focus-visible:ring-0 resize-none p-4 flex-1 bg-transparent scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent"
         disabled={disabled}
       />
     </div>

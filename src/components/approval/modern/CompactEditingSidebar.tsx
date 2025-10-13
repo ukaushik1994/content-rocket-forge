@@ -80,7 +80,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   };
 
   return (
-    <div className="w-full md:w-2/5 lg:w-80 bg-card/20 backdrop-blur-md border-l border-white/10 h-full flex flex-col">
+    <div className="w-full md:w-2/5 lg:w-80 bg-black border-l border-white/10 h-full flex flex-col">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Title Display Summary */}
