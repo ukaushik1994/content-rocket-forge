@@ -370,18 +370,19 @@ useEffect(() => {
               </TabsContent>
             </Tabs>
           </CardContent>
-        </Card>
-        
-        {/* Last saved + undo footer - moved outside card */}
-        <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10 bg-background">
-          <div>{lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}</div>
-          {undoContent && <button className="text-primary hover:underline" onClick={() => {
+          
+          {/* Last saved + undo */}
+          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10 mt-auto">
+            <div>{lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}</div>
+            {undoContent && <button className="text-primary hover:underline" onClick={() => {
             setEditedContent(undoContent);
             setUndoContent(null);
           }}>
-            <span className="inline-flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Undo</span>
-          </button>}
-        </div>
+                <span className="inline-flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Undo</span>
+              </button>}
+          </div>
+          
+        </Card>
       </motion.div>
     );
   };
