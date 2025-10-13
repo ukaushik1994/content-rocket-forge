@@ -11,12 +11,12 @@ import { useContent } from '@/contexts/content'; // Added: import the hook that'
 const ContentApproval = () => {
   return (
     <motion.div 
-      className="min-h-screen flex flex-col relative overflow-hidden"
+      className="min-h-screen w-full bg-background relative overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <AnimatedBackground />
+      <AnimatedBackground intensity="medium" />
       
       <Helmet>
         <title>Content Approval | ContentRocketForge</title>
