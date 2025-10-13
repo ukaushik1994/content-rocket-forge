@@ -269,7 +269,7 @@ const Analytics = () => {
       <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
         {/* Hero Section */}
         <motion.div 
-          className="min-h-[60vh] w-full relative mb-12"
+          className="min-h-[5vh] w-full relative mb-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
