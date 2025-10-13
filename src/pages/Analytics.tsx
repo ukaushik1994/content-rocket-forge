@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
+import { AnalyticsHero } from '@/components/analytics/AnalyticsHero';
 import { DrilldownChart } from '@/components/analytics/DrilldownChart';
 import { ContentDetailModal } from '@/components/analytics/ContentDetailModal';
 import { CustomDateRangePicker } from '@/components/analytics/CustomDateRangePicker';
@@ -11,9 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useRealAnalytics } from '@/hooks/useRealAnalytics';
-import { useWorkflowData } from '@/hooks/useWorkflowData';
-import { WorkflowAnalyticsDashboard } from '@/services/workflowAnalyticsDashboard';
 import { DateRange } from 'react-day-picker';
+import { useSettings } from '@/contexts/SettingsContext';
 import { 
   BarChart3, 
   CalendarRange, 
@@ -37,7 +37,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
-import { WorkflowAnalyticsTab } from '@/components/analytics/WorkflowAnalyticsTab';
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -52,6 +51,7 @@ const Analytics = () => {
   const [timeRange, setTimeRange] = useState('7days');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
   const [useCustomRange, setUseCustomRange] = useState(false);
+  const { openSettings } = useSettings();
 
   // Use real analytics data with custom date range support
   const { metrics, contentAnalytics, timelineData, loading, error, refreshAnalytics } = useRealAnalytics(
@@ -60,25 +60,6 @@ const Analytics = () => {
       ? { from: customDateRange.from, to: customDateRange.to } 
       : undefined
   );
-
-  // Add workflow analytics
-  const { executions } = useWorkflowData();
-  const [workflowMetrics, setWorkflowMetrics] = useState<any>(null);
-  
-  // Load workflow analytics
-  React.useEffect(() => {
-    const loadWorkflowMetrics = async () => {
-      try {
-        const userId = 'current-user'; // This should come from auth context
-        const realTimeData = await WorkflowAnalyticsDashboard.getRealTimeMetrics(userId);
-        setWorkflowMetrics(realTimeData);
-      } catch (error) {
-        console.error('Failed to load workflow metrics:', error);
-      }
-    };
-    
-    loadWorkflowMetrics();
-  }, [timeRange]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -242,27 +223,21 @@ const Analytics = () => {
               variants={containerVariants}
               className="space-y-8"
             >
-              {/* Hero Header */}
-              <motion.div 
-                variants={itemVariants}
-                className="text-center space-y-6 py-12"
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 backdrop-blur-sm"
-                >
-                  <BarChart3 className="w-4 h-4 text-blue-400" />
-                  <span className="text-sm text-blue-300">Real-time Analytics</span>
-                </motion.div>
-                
-                 <h1 className="text-6xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
-                   Analytics Hub
-                 </h1>
-                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                   Discover insights, track performance, and optimize your content strategy with real analytics data
-                 </p>
+              {/* Hero Section */}
+              <motion.div variants={itemVariants}>
+                <AnalyticsHero 
+                  loading={loading}
+                  hasData={metrics !== null && metrics.views > 0}
+                  totalViews={metrics?.views || 0}
+                  totalContent={contentAnalytics.length}
+                  avgPerformance={contentAnalytics.length > 0 
+                    ? Math.round(contentAnalytics.reduce((sum, item) => sum + item.performance, 0) / contentAnalytics.length)
+                    : 0
+                  }
+                  onRefresh={refreshAnalytics}
+                  onExport={() => console.log('Export functionality')}
+                  onConfigure={() => openSettings('api')}
+                />
               </motion.div>
 
               {/* Key Metrics Cards - Now using real data */}
@@ -406,7 +381,7 @@ const Analytics = () => {
               {/* Tabs Section */}
               <motion.div variants={itemVariants}>
                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                   <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-4 gap-2">
+                    <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-3 gap-2">
                     <TabsTrigger 
                       value="overview" 
                        className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
@@ -427,13 +402,6 @@ const Analytics = () => {
                      >
                        <Activity className="h-4 w-4" />
                        Performance
-                     </TabsTrigger>
-                     <TabsTrigger 
-                       value="workflows" 
-                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
-                     >
-                       <Zap className="h-4 w-4" />
-                       Workflows
                      </TabsTrigger>
                   </TabsList>
                   
@@ -677,12 +645,6 @@ const Analytics = () => {
                       </motion.div>
                     </TabsContent>
 
-                    <TabsContent value="workflows" className="space-y-6">
-                      <WorkflowAnalyticsTab 
-                        workflowMetrics={workflowMetrics} 
-                        executions={executions || []} 
-                      />
-                    </TabsContent>
                   </AnimatePresence>
                 </Tabs>
               </motion.div>

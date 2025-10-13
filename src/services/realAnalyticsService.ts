@@ -79,7 +79,7 @@ class RealAnalyticsService {
 
       if (error) {
         console.error('Error fetching content metrics:', error);
-        return this.getFallbackMetrics();
+        throw error;
       }
 
       // Calculate metrics from real data
@@ -120,7 +120,13 @@ class RealAnalyticsService {
       return currentMetrics;
     } catch (error) {
       console.error('Analytics service error:', error);
-      return this.getFallbackMetrics();
+      return {
+        views: 0,
+        engagement: 0,
+        conversions: 0,
+        revenue: 0,
+        change: { views: 0, engagement: 0, conversions: 0, revenue: 0 }
+      };
     }
   }
 
@@ -149,13 +155,13 @@ class RealAnalyticsService {
 
       if (error) {
         console.error('Error fetching content analytics:', error);
-        return this.getFallbackContentData();
+        throw error;
       }
 
       return this.transformContentData(contentItems || []);
     } catch (error) {
       console.error('Content analytics error:', error);
-      return this.getFallbackContentData();
+      return [];
     }
   }
 
@@ -181,13 +187,13 @@ class RealAnalyticsService {
 
       if (error) {
         console.error('Error fetching timeline data:', error);
-        return this.getFallbackTimelineData(timeRange);
+        throw error;
       }
 
       return this.generateTimelineFromAnalytics(analytics || [], timeRange);
     } catch (error) {
       console.error('Timeline data error:', error);
-      return this.getFallbackTimelineData(timeRange);
+      return [];
     }
   }
 
@@ -211,9 +217,9 @@ class RealAnalyticsService {
     } catch (error) {
       console.error('Error fetching custom range data:', error);
       return {
-        metrics: this.getFallbackMetrics(),
-        contentAnalytics: this.getFallbackContentData(),
-        timelineData: this.getFallbackTimelineData('7days')
+        metrics: { views: 0, engagement: 0, conversions: 0, revenue: 0, change: { views: 0, engagement: 0, conversions: 0, revenue: 0 } },
+        contentAnalytics: [],
+        timelineData: []
       };
     }
   }
@@ -297,15 +303,10 @@ class RealAnalyticsService {
     contentItems.forEach(item => {
       if (item.content_analytics?.[0]?.analytics_data) {
         const analyticsData = item.content_analytics[0].analytics_data;
-        totalViews += analyticsData.views || Math.floor(Math.random() * 5000) + 1000;
-        totalEngagement += analyticsData.engagement || Math.random() * 10;
-        totalConversions += analyticsData.conversions || Math.floor(Math.random() * 100);
-        totalRevenue += analyticsData.revenue || Math.random() * 1000;
-      } else {
-        totalViews += Math.floor(Math.random() * 5000) + 1000;
-        totalEngagement += Math.random() * 10;
-        totalConversions += Math.floor(Math.random() * 100);
-        totalRevenue += Math.random() * 1000;
+        totalViews += analyticsData.views || 0;
+        totalEngagement += analyticsData.engagement || 0;
+        totalConversions += analyticsData.conversions || 0;
+        totalRevenue += analyticsData.revenue || 0;
       }
     });
 
@@ -326,8 +327,8 @@ class RealAnalyticsService {
   private transformContentData(contentItems: any[]): ContentAnalytics[] {
     return contentItems.map(item => {
       const analyticsData = item.content_analytics?.[0]?.analytics_data || {};
-      const views = analyticsData.views || Math.floor(Math.random() * 20000) + 1000;
-      const engagementRate = analyticsData.engagement || Math.random() * 10;
+      const views = analyticsData.views || 0;
+      const engagementRate = analyticsData.engagement || 0;
       
       return {
         id: item.id,
@@ -335,7 +336,7 @@ class RealAnalyticsService {
         views: views,
         engagement: `${engagementRate.toFixed(1)}%`,
         performance: Math.min(Math.round((views / 200) + (engagementRate * 10)), 100),
-        revenue: `$${Math.round(views * 0.1 + Math.random() * 500)}`,
+        revenue: `$${Math.round(views * 0.1)}`,
         published_url: item.published_url,
         last_updated: new Date(item.updated_at).toLocaleDateString()
       };
@@ -353,10 +354,10 @@ class RealAnalyticsService {
       const dayData = analytics.reduce((acc, item) => {
         const analyticsData = item.analytics_data || {};
         return {
-          views: acc.views + (analyticsData.daily_views || Math.floor(Math.random() * 500) + 100),
-          visitors: acc.visitors + (analyticsData.daily_visitors || Math.floor(Math.random() * 300) + 80),
-          engagement: acc.engagement + (analyticsData.daily_engagement || Math.random() * 2),
-          conversions: acc.conversions + (analyticsData.daily_conversions || Math.floor(Math.random() * 10))
+          views: acc.views + (analyticsData.daily_views || 0),
+          visitors: acc.visitors + (analyticsData.daily_visitors || 0),
+          engagement: acc.engagement + (analyticsData.daily_engagement || 0),
+          conversions: acc.conversions + (analyticsData.daily_conversions || 0)
         };
       }, { views: 0, visitors: 0, engagement: 0, conversions: 0 });
 
@@ -380,51 +381,6 @@ class RealAnalyticsService {
       case '90days': return 90;
       default: return 7;
     }
-  }
-
-  private getFallbackMetrics(): AnalyticsMetrics {
-    return {
-      views: 2400000,
-      engagement: 8.7,
-      conversions: 1247,
-      revenue: 34200,
-      change: {
-        views: 12.5,
-        engagement: 2.3,
-        conversions: 8.1,
-        revenue: 15.7
-      }
-    };
-  }
-
-  private getFallbackContentData(): ContentAnalytics[] {
-    return [
-      { id: '1', title: "Ultimate Project Management Guide", views: 15420, engagement: "8.2%", performance: 92, revenue: "$2,840", last_updated: new Date().toLocaleDateString() },
-      { id: '2', title: "Email Marketing Automation Secrets", views: 12350, engagement: "6.8%", performance: 87, revenue: "$1,920", last_updated: new Date().toLocaleDateString() },
-      { id: '3', title: "CRM Integration Best Practices", views: 9876, engagement: "5.5%", performance: 79, revenue: "$1,450", last_updated: new Date().toLocaleDateString() },
-      { id: '4', title: "Remote Team Management Tips", views: 18532, engagement: "9.4%", performance: 96, revenue: "$3,240", last_updated: new Date().toLocaleDateString() },
-      { id: '5', title: "Data Analytics for Beginners", views: 7420, engagement: "4.9%", performance: 72, revenue: "$1,120", last_updated: new Date().toLocaleDateString() },
-    ];
-  }
-
-  private getFallbackTimelineData(timeRange: string): TimelineData[] {
-    const days = this.getDaysFromRange(timeRange);
-    const timeline: TimelineData[] = [];
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      timeline.push({
-        date: date.toISOString().split('T')[0],
-        views: Math.floor(Math.random() * 1000) + 1200,
-        visitors: Math.floor(Math.random() * 800) + 920,
-        engagement: Math.random() * 3 + 7,
-        conversions: Math.floor(Math.random() * 20) + 24
-      });
-    }
-    
-    return timeline;
   }
 }
 
