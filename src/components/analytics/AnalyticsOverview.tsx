@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -126,11 +126,11 @@ export const AnalyticsOverview = () => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="glass-panel">
+            <Card key={i} className="bg-background/60 backdrop-blur-xl border-border/50">
               <CardContent className="pt-6">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-white/10 rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-white/10 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-muted rounded w-1/2"></div>
                 </div>
               </CardContent>
             </Card>
@@ -143,21 +143,22 @@ export const AnalyticsOverview = () => {
   if (!hasApiKeys) {
     return (
       <div className="space-y-6">
-        <Card className="glass-panel bg-amber-950/20 border-amber-500/30">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-amber-400" />
-              <div>
-                <CardTitle className="text-amber-100">Analytics Setup Required</CardTitle>
-                <CardDescription className="text-amber-200/70">
-                  Configure your Google Analytics and Search Console API keys to view analytics data.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button variant="outline" className="border-amber-500/30 hover:bg-amber-500/10" onClick={() => openSettings('api')}>
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 max-w-md mx-auto">
+          <CardContent className="pt-12 pb-12 text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1, rotate: 360 }}
+              transition={{ duration: 0.5 }}
+              className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
+            >
+              <AlertCircle className="h-8 w-8 text-primary/50" />
+            </motion.div>
+            <h3 className="text-lg font-medium mb-2">Analytics Setup Required</h3>
+            <p className="text-muted-foreground mb-4">
+              Configure your Google Analytics and Search Console API keys to view data.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" onClick={() => openSettings('api')}>
                 <Settings className="h-4 w-4 mr-2" />
                 Configure API Keys
               </Button>
@@ -166,7 +167,6 @@ export const AnalyticsOverview = () => {
                   href="https://console.cloud.google.com/apis/credentials" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-amber-200/70 hover:text-amber-200"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Get Google API Keys
@@ -182,20 +182,21 @@ export const AnalyticsOverview = () => {
   if (analyticsData.length === 0 && searchConsoleData.length === 0) {
     return (
       <div className="space-y-6">
-        <Card className="glass-panel bg-blue-950/20 border-blue-500/30">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <BarChart3 className="h-6 w-6 text-blue-400" />
-              <div>
-                <CardTitle className="text-blue-100">No Analytics Data Available</CardTitle>
-                <CardDescription className="text-blue-200/70">
-                  Publish your content and add published URLs to start tracking analytics data.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-blue-200/60">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 max-w-md mx-auto">
+          <CardContent className="pt-12 pb-12 text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
+            >
+              <BarChart3 className="h-8 w-8 text-primary/50" />
+            </motion.div>
+            <h3 className="text-lg font-medium mb-2">No Analytics Data Available</h3>
+            <p className="text-muted-foreground mb-4">
+              Publish your content and add published URLs to start tracking analytics data.
+            </p>
+            <p className="text-sm text-muted-foreground">
               Once you publish content and provide the published URLs, we'll automatically start 
               collecting Google Analytics and Search Console data for your content.
             </p>
@@ -244,7 +245,7 @@ export const AnalyticsOverview = () => {
     <div className="space-y-6">
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="glass-panel bg-glass">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -259,7 +260,7 @@ export const AnalyticsOverview = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-panel bg-glass">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -274,7 +275,7 @@ export const AnalyticsOverview = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-panel bg-glass">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -289,7 +290,7 @@ export const AnalyticsOverview = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-panel bg-glass">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -307,28 +308,28 @@ export const AnalyticsOverview = () => {
 
       {/* Additional Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="glass-panel bg-glass">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Bounce Rate</p>
             <p className="text-2xl font-bold">{(avgBounceRate * 100).toFixed(1)}%</p>
           </CardContent>
         </Card>
 
-        <Card className="glass-panel bg-glass">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Session Duration</p>
             <p className="text-2xl font-bold">{Math.floor(avgSessionDuration / 60)}:{(avgSessionDuration % 60).toFixed(0).padStart(2, '0')}</p>
           </CardContent>
         </Card>
 
-        <Card className="glass-panel bg-glass">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Click-through Rate</p>
             <p className="text-2xl font-bold">{(avgCTR * 100).toFixed(1)}%</p>
           </CardContent>
         </Card>
 
-        <Card className="glass-panel bg-glass">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-muted-foreground">Avg. Search Position</p>
             <p className="text-2xl font-bold">{avgPosition.toFixed(1)}</p>

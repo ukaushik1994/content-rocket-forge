@@ -172,10 +172,10 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ scale: 1.02, y: -2 }}
       >
-        <Card className="glass-panel bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
-          <CardContent className="p-6 space-y-4">
+        <Card className="bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+          <CardContent className="p-8 space-y-4">
             {/* Header */}
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-3">
@@ -243,7 +243,7 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
           <div className="grid grid-cols-4 gap-3">
             {/* Impressions */}
             <motion.div 
-              className="p-3 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20"
+              className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20"
               whileHover={{ scale: 1.05 }}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -259,7 +259,7 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
 
             {/* Clicks */}
             <motion.div 
-              className="p-3 rounded-lg bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20"
+              className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20"
               whileHover={{ scale: 1.05 }}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -275,7 +275,7 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
 
             {/* CTR */}
             <motion.div 
-              className="p-3 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20"
+              className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20"
               whileHover={{ scale: 1.05 }}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -291,7 +291,7 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
 
             {/* Position */}
             <motion.div 
-              className="p-3 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20"
+              className="p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20"
               whileHover={{ scale: 1.05 }}
             >
               <div className="flex items-center gap-2 mb-1">

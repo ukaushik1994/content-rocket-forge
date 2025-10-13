@@ -256,56 +256,177 @@ const Analytics = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden">
-      {/* Animated background - matching Repository design */}
-      <AnimatedBackground intensity="medium" />
+    <motion.div 
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <AnimatedBackground />
       
       <Navbar />
       
-      <main className="relative z-10 pt-20 container py-8 space-y-8">
-        <AnimatePresence mode="wait">
-          {!drilldownData.isOpen ? (
+      <main className="flex-1 container px-6 pt-24 pb-12 relative z-10">
+        {/* Hero Section */}
+        <motion.div 
+          className="min-h-[60vh] w-full relative mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+        >
+          {/* Progress Indicator */}
+          <motion.div 
+            className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div className="flex items-center gap-2 px-6 py-3 bg-background/80 backdrop-blur-xl rounded-full border border-border/50">
+              <div className={`w-2 h-2 rounded-full ${realMetrics ? 'bg-primary' : 'bg-primary/30'}`} />
+              <div className={`w-2 h-2 rounded-full ${!error ? 'bg-primary' : 'bg-primary/30'}`} />
+              <div className={`w-2 h-2 rounded-full ${!loading ? 'bg-primary' : 'bg-primary/30'}`} />
+              <span className="text-xs font-medium text-muted-foreground ml-2">
+                {loading ? 'Loading' : 'Active'}
+              </span>
+            </div>
+          </motion.div>
+
+          <div className="relative z-10 w-full px-6 pt-24 pb-12">
             <motion.div 
-              key="overview"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={containerVariants}
-              className="space-y-8"
+              className="text-center mb-16 relative"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
             >
-              {/* Hero Section */}
-              <motion.div variants={itemVariants}>
-                <AnalyticsHero 
-                  loading={loading}
-                  hasData={realMetrics !== null}
-                  totalViews={realMetrics?.totalAnalytics.pageViews || 0}
-                  totalContent={0}
-                  avgPerformance={0}
-                  onRefresh={refreshAnalytics}
-                  onExport={handleExport}
-                  onConfigure={() => openSettings('api')}
-                />
-              </motion.div>
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
+                animate={{ opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              />
+              
+              <div className="relative">
+                <motion.div 
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 mb-8"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium">Real-time Performance Tracking</span>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                </motion.div>
+                
+                <motion.h1 
+                  className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent"
+                >
+                  Analytics Hub
+                  <br />
+                  <span className="text-primary">Performance</span>
+                </motion.h1>
+                
+                <motion.p 
+                  className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed"
+                >
+                  Track content performance, discover insights, and optimize your strategy 
+                  with real-time Google Analytics and Search Console data
+                </motion.p>
+
+                <motion.div className="flex gap-4 justify-center mb-12">
+                  <Button
+                    onClick={refreshAnalytics}
+                    disabled={loading}
+                    size="lg"
+                    className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-4 text-lg font-semibold shadow-2xl"
+                  >
+                    <RefreshCcw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh Data
+                    <TrendingUp className="h-5 w-5 ml-2" />
+                  </Button>
+                  <Button
+                    onClick={handleExport}
+                    disabled={!realMetrics}
+                    size="lg"
+                    variant="outline"
+                    className="bg-background/60 backdrop-blur-xl border-border/50 px-8 py-4 text-lg font-semibold"
+                  >
+                    <Download className="h-5 w-5 mr-2" />
+                    Export Report
+                  </Button>
+                </motion.div>
+
+                <motion.div 
+                  className="flex justify-center gap-8 mb-8"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  {[
+                    { icon: Eye, label: "Page Views", value: realMetrics?.totalAnalytics.pageViews.toLocaleString() || '0' },
+                    { icon: Users, label: "Sessions", value: realMetrics?.totalAnalytics.sessions.toLocaleString() || '0' },
+                    { icon: TrendingUp, label: "Impressions", value: realMetrics?.totalSearchConsole.impressions.toLocaleString() || '0' }
+                  ].map((stat) => (
+                    <motion.div 
+                      key={stat.label}
+                      className="text-center"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 mb-2">
+                        <stat.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="text-sm font-bold text-foreground">{stat.value}</div>
+                      <div className="text-xs text-muted-foreground">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              className="flex justify-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0 }}
+            >
+              <div className="flex gap-3 p-2 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50">
+                {[
+                  { key: '24h', label: '24 Hours' },
+                  { key: '7days', label: '7 Days' },
+                  { key: '30days', label: '30 Days' },
+                  { key: '90days', label: '90 Days' }
+                ].map((filter) => (
+                  <motion.button
+                    key={filter.key}
+                    onClick={() => handleTimeRangeChange(filter.key)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                      timeRange === filter.key 
+                        ? 'bg-primary text-primary-foreground shadow-lg' 
+                        : 'hover:bg-background/80'
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <CalendarRange className="h-4 w-4" />
+                    <span className="font-medium">{filter.label}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
 
               {/* Key Metrics Cards - 8 Real Metrics */}
               <motion.div 
-                variants={itemVariants}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
               >
                 {loading ? (
-                  // Loading skeleton
                   Array.from({ length: 8 }).map((_, index) => (
-                    <Card key={`loading-${index}`} className="bg-card/50 backdrop-blur-xl border-border/30">
+                    <Card key={`loading-${index}`} className="bg-background/60 backdrop-blur-xl border-border/50">
                       <CardContent className="p-6">
-                        <div className="animate-pulse">
-                          <div className="flex items-start justify-between mb-4">
-                             <div className="w-12 h-12 bg-muted rounded-xl" />
-                             <div className="w-16 h-6 bg-muted rounded-full" />
-                           </div>
-                           <div className="space-y-2">
-                             <div className="w-20 h-8 bg-muted rounded" />
-                             <div className="w-24 h-4 bg-muted rounded" />
-                          </div>
+                        <div className="animate-pulse space-y-3">
+                          <div className="w-12 h-12 bg-muted rounded-xl" />
+                          <div className="w-20 h-8 bg-muted rounded" />
+                          <div className="w-24 h-4 bg-muted rounded" />
                         </div>
                       </CardContent>
                     </Card>
@@ -314,173 +435,129 @@ const Analytics = () => {
                   metricsDisplay.map((metric, index) => (
                     <motion.div
                       key={metric.id}
-                      variants={{
-                        hover: { 
-                          y: -8,
-                          scale: 1.02,
-                          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                          transition: { duration: 0.3, ease: "easeOut" }
-                        }
-                      }}
-                      whileHover="hover"
-                      initial={{ opacity: 0, y: 50 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="relative group"
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      className="h-full"
                     >
-                      <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${metric.bgPattern} backdrop-blur-xl transition-all duration-300`}>
-                        <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+                      <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300 group h-full">
+                        <motion.div
+                          className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
+                        />
                         
                         <CardContent className="p-6 relative z-10">
                           <div className="flex items-start justify-between mb-4">
                             <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
-                              <metric.icon className="w-6 h-6 text-primary-foreground" />
+                              <metric.icon className="w-6 h-6 text-white" />
                             </div>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs bg-background/40">
                               {metric.source}
                             </Badge>
                           </div>
                           
                           <div className="space-y-1">
-                             <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
-                             <p className="text-sm text-muted-foreground">{metric.label}</p>
+                            <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
+                            <p className="text-sm text-muted-foreground">{metric.label}</p>
                           </div>
                         </CardContent>
+
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                        />
                       </Card>
                     </motion.div>
                   ))
                 )}
               </motion.div>
 
-              {/* Enhanced Control Panel with Custom Date Range */}
-              <motion.div 
-                variants={itemVariants}
-               className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 p-6 rounded-2xl bg-card/50 backdrop-blur-xl border border-border/30"
-             >
-               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/50 border border-border/30">
-                   <CalendarRange className="w-4 h-4 text-muted-foreground" />
-                    <Select 
-                      value={useCustomRange ? "custom" : timeRange} 
-                      onValueChange={(value) => value === "custom" ? null : handleTimeRangeChange(value)}
-                    >
-                      <SelectTrigger className="border-0 bg-transparent text-foreground min-w-[140px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                     <SelectContent className="bg-card border-border">
-                        <SelectItem value="24h">Last 24 hours</SelectItem>
-                        <SelectItem value="7days">Last 7 days</SelectItem>
-                        <SelectItem value="30days">Last 30 days</SelectItem>
-                        <SelectItem value="90days">Last 90 days</SelectItem>
-                        <SelectItem value="custom">Custom Range</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Search and Filters */}
+              <motion.div
+                className="mb-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                      <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search analytics data..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10 bg-background/40 border-border/50"
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                          <SelectTrigger className="w-40 bg-background/40 border-border/50">
+                            <SelectValue placeholder="Sort by" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="views">Most Views</SelectItem>
+                            <SelectItem value="engagement">Engagement</SelectItem>
+                            <SelectItem value="recency">Most Recent</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                  <CustomDateRangePicker
-                    onDateRangeChange={handleCustomDateRangeChange}
-                    className="min-w-[200px]"
-                  />
-                  
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse" />
-                        {getTimeRangeDisplay()}
-                      </>
-                    )}
-                  </Badge>
-                </div>
-
-                <div className="flex gap-3">
-                   <Button 
-                     variant="outline" 
-                     size="sm" 
-                     className="bg-card/50 border-border/30 text-foreground hover:bg-card/70"
-                     onClick={refreshAnalytics}
-                     disabled={loading}
-                   >
-                     <RefreshCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                     Refresh
-                   </Button>
-                   <Button 
-                     variant="outline" 
-                     size="sm" 
-                     className="bg-card/50 border-border/30 text-foreground hover:bg-card/70"
-                     onClick={handleExport}
-                     disabled={!realMetrics}
-                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
+                        <Button
+                          variant="outline"
+                          onClick={refreshAnalytics}
+                          className="bg-background/40 border-border/50 hover:bg-background/60"
+                        >
+                          <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                          Refresh
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
               
               {/* Tabs Section */}
-              <motion.div variants={itemVariants}>
-                   <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                    <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-3 gap-2">
-                    <TabsTrigger 
-                      value="overview" 
-                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                      Overview
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="content" 
-                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
-                    >
-                      <FileText className="h-4 w-4" />
-                      Content
-                    </TabsTrigger>
-                     <TabsTrigger 
-                       value="performance" 
-                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
-                     >
-                       <Activity className="h-4 w-4" />
-                       Performance
-                     </TabsTrigger>
-                  </TabsList>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+                  <CardContent className="p-2">
+                    <TabsList className="w-full grid grid-cols-3 gap-1 bg-transparent">
+                      <TabsTrigger 
+                        value="overview" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                        <span className="font-medium">Overview</span>
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="content" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span className="font-medium">Content</span>
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="performance" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
+                      >
+                        <Activity className="h-4 w-4" />
+                        <span className="font-medium">Performance</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </CardContent>
+                </Card>
                   
-                  <AnimatePresence mode="wait">
-                    <TabsContent value="overview" className="space-y-6">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <AnalyticsOverview />
-                      </motion.div>
-                    </TabsContent>
+                <TabsContent value="overview">
+                  <AnalyticsOverview />
+                </TabsContent>
+                
+                <TabsContent value="content">
+                  <ContentAnalyticsTab />
+                </TabsContent>
                     
-                    <TabsContent value="content" className="space-y-6">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <ContentAnalyticsTab />
-                      </motion.div>
-                    </TabsContent>
-                    
-                    <TabsContent value="performance" className="space-y-6">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
-                        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-                      >
-                        {/* Performance Metrics */}
-                        <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-600/30">
+                <TabsContent value="performance">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="bg-background/60 backdrop-blur-xl border-border/50">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                               <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500">
@@ -513,8 +590,7 @@ const Analytics = () => {
                           </CardContent>
                         </Card>
 
-                        {/* Top Links */}
-                        <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-600/30">
+                    <Card className="bg-background/60 backdrop-blur-xl border-border/50">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                               <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500">
@@ -550,40 +626,17 @@ const Analytics = () => {
                               </motion.div>
                             ))}
                           </CardContent>
-                        </Card>
-                      </motion.div>
-                    </TabsContent>
-
-                  </AnimatePresence>
-                </Tabs>
-              </motion.div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="drilldown"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-            >
-              <DrilldownChart
-                title={drilldownData.title}
-                data={[]}
-                metric={drilldownData.metric}
-                timeRange={getTimeRangeDisplay()}
-                onBack={() => setDrilldownData({ isOpen: false, metric: '', title: '' })}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Content Detail Modal */}
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
         <ContentDetailModal
           isOpen={!!selectedContent}
           onClose={() => setSelectedContent(null)}
           content={selectedContent}
         />
       </main>
-    </div>
+    </motion.div>
   );
 };
 
