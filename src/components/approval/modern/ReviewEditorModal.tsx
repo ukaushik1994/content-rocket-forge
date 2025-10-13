@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
@@ -22,6 +22,13 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
   const [editedTitle, setEditedTitle] = useState(content?.title || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
+
+  // Sync editedTitle with content changes
+  useEffect(() => {
+    if (content?.title) {
+      setEditedTitle(content.title);
+    }
+  }, [content?.title]);
   const {
     updateContentItem,
     approveContent,
