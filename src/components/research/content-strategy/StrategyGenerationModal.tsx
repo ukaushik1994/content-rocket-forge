@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Loader2, Sparkles, Brain, Search, Target, Zap, TrendingUp, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ interface StrategyGenerationModalProps {
   open: boolean;
   steps: GenerationStep[];
   onCancel?: () => void;
+  activeProvider?: string;
 }
 
 const stepIcons = [Brain, Search, Database, Target, TrendingUp, Zap];
@@ -21,7 +22,20 @@ const getStepIcon = (index: number) => {
   return stepIcons[index % stepIcons.length];
 };
 
-export function StrategyGenerationModal({ open, steps, onCancel }: StrategyGenerationModalProps) {
+export function StrategyGenerationModal({ open, steps, onCancel, activeProvider }: StrategyGenerationModalProps) {
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
   const overallProgress = useMemo(() => {
     const doneCount = steps.filter(s => s.status === 'done').length;
     return Math.round((doneCount / steps.length) * 100);
@@ -153,6 +167,11 @@ export function StrategyGenerationModal({ open, steps, onCancel }: StrategyGener
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1 font-inter">
                     {activeStep ? activeStep.hint || activeStep.label : 'Preparing your personalized content strategy...'}
+                    {activeProvider && (
+                      <span className="text-neon-purple ml-2">
+                        • Using {activeProvider}
+                      </span>
+                    )}
                   </p>
                   
                   {/* Overall progress bar */}

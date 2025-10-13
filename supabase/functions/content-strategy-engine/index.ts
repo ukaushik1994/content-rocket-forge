@@ -758,7 +758,8 @@ async function generateAIStrategy(supabase: any, payload: any) {
     );
   }
 
-  console.log(`✅ Using ${selectedProvider.provider} for keyword generation`);
+  console.log(`✅ Using active AI provider: ${selectedProvider.provider} (model: ${selectedProvider.preferred_model})`);
+  console.log(`   Priority: ${selectedProvider.priority}, Status: ${selectedProvider.status}`);
   
   const kwProxy = await supabase.functions.invoke('ai-proxy', {
     body: {

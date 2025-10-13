@@ -78,6 +78,7 @@ export const ContentStrategyEngine = ({
   const [loading, setLoading] = useState(false);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<string>('');
 
   // Strategy Builder Dialog state
   const [showBuilderDialog, setShowBuilderDialog] = useState(false);
@@ -317,7 +318,40 @@ export const ContentStrategyEngine = ({
       });
       return;
     }
+    
     try {
+      // Check for active AI provider before starting
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to generate strategies.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const { data: activeProvider, error: providerError } = await supabase
+        .from('ai_service_providers')
+        .select('provider, preferred_model, status, api_key')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('priority', { ascending: true })
+        .limit(1)
+        .single();
+      
+      if (providerError || !activeProvider || !activeProvider.api_key) {
+        toast({
+          title: "No AI Provider Active",
+          description: "Please activate an AI provider (like LM Studio) in Settings before generating strategies.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      console.log(`🤖 Using active provider: ${activeProvider.provider} (${activeProvider.preferred_model})`);
+      setActiveProvider(activeProvider.provider);
+      
       setGenerating(true);
       startProgress();
 
@@ -338,13 +372,13 @@ export const ContentStrategyEngine = ({
       
       toast({
         title: `${generatedProposals.length} Strategy Proposals Ready`,
-        description: `Generated ${generatedProposals.length} proposals`
+        description: `Generated ${generatedProposals.length} proposals using ${activeProvider.provider}`
       });
     } catch (error) {
       console.error('❌ Error generating AI strategy:', error);
       toast({
         title: 'Strategy Generation Failed',
-        description: 'Failed to generate AI strategy. Please try again.',
+        description: error.message || 'Failed to generate AI strategy. Please try again.',
         variant: 'destructive'
       });
     } finally {
@@ -631,6 +665,7 @@ export const ContentStrategyEngine = ({
         open={showGenModal} 
         steps={genSteps}
         onCancel={() => setShowGenModal(false)}
+        activeProvider={activeProvider}
       />
       <StrategyBuilderDialog 
         open={showBuilderDialog}
