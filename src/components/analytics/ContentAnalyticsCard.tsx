@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { 
   Eye, 
   MousePointer, 
@@ -11,9 +12,17 @@ import {
   Edit, 
   Key, 
   Search,
-  ExternalLink
+  ExternalLink,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  BarChart
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { PublishedUrlDialog } from '@/components/content-builder/steps/save/PublishedUrlDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ContentAnalyticsCardProps {
   contentId: string;
@@ -24,6 +33,7 @@ interface ContentAnalyticsCardProps {
   clicks: number;
   ctr: number;
   averagePosition: number;
+  createdAt?: string;
 }
 
 const getStatusVariant = (ctr: number, position: number): { label: string; className: string } => {
@@ -54,6 +64,55 @@ const getStatusVariant = (ctr: number, position: number): { label: string; class
   };
 };
 
+const getTrackingStatus = (
+  publishedUrl: string | undefined,
+  impressions: number,
+  clicks: number,
+  createdAt?: string
+) => {
+  const hasUrl = !!publishedUrl;
+  const hasData = impressions > 0 || clicks > 0;
+  
+  if (!hasUrl) {
+    return {
+      label: 'No URL Set',
+      icon: AlertCircle,
+      color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+      description: 'Add published URL to enable tracking'
+    };
+  }
+  
+  if (createdAt) {
+    const publishedDate = new Date(createdAt);
+    const daysSincePublished = Math.floor((Date.now() - publishedDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysSincePublished <= 7) {
+      return {
+        label: 'Recently Published',
+        icon: Clock,
+        color: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+        description: 'Analytics data is being collected'
+      };
+    }
+  }
+  
+  if (hasData) {
+    return {
+      label: 'Tracking',
+      icon: CheckCircle,
+      color: 'bg-green-500/20 text-green-400 border-green-500/30',
+      description: 'Active analytics tracking'
+    };
+  }
+  
+  return {
+    label: 'Awaiting Data',
+    icon: BarChart,
+    color: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    description: 'Waiting for analytics data (24-48hrs)'
+  };
+};
+
 export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
   contentId,
   title,
@@ -62,10 +121,31 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
   impressions,
   clicks,
   ctr,
-  averagePosition
+  averagePosition,
+  createdAt
 }) => {
   const navigate = useNavigate();
   const status = getStatusVariant(ctr * 100, averagePosition);
+  const trackingStatus = getTrackingStatus(publishedUrl, impressions, clicks, createdAt);
+  const [showUrlDialog, setShowUrlDialog] = useState(false);
+
+  const handleUrlSubmit = async (url: string) => {
+    try {
+      const { error } = await supabase
+        .from('content_items')
+        .update({ published_url: url })
+        .eq('id', contentId);
+
+      if (error) throw error;
+      
+      toast.success('Published URL added successfully');
+      setShowUrlDialog(false);
+      window.location.reload(); // Refresh to show updated status
+    } catch (error) {
+      console.error('Error updating URL:', error);
+      toast.error('Failed to add URL');
+    }
+  };
 
   const handleEditMeta = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -84,25 +164,41 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
     }
   };
 
+  const StatusIcon = trackingStatus.icon;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
-    >
-      <Card className="glass-panel bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
-        <CardContent className="p-6 space-y-4">
-          {/* Header */}
-          <div className="space-y-2">
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="text-lg font-semibold text-foreground/90 line-clamp-2 flex-1">
-                {title}
-              </h3>
-              <Badge className={`${status.className} shrink-0`}>
-                {status.label}
-              </Badge>
-            </div>
+    <TooltipProvider>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        whileHover={{ scale: 1.02 }}
+      >
+        <Card className="glass-panel bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all duration-300">
+          <CardContent className="p-6 space-y-4">
+            {/* Header */}
+            <div className="space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="text-lg font-semibold text-foreground/90 line-clamp-2 flex-1">
+                  {title}
+                </h3>
+                <div className="flex gap-2 shrink-0">
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge className={cn("text-xs flex items-center gap-1", trackingStatus.color)}>
+                        <StatusIcon className="h-3 w-3" />
+                        {trackingStatus.label}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">{trackingStatus.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Badge className={`${status.className}`}>
+                    {status.label}
+                  </Badge>
+                </div>
+              </div>
             
             {/* URL & Quick Links */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -212,37 +308,58 @@ export const ContentAnalyticsCard: React.FC<ContentAnalyticsCardProps> = ({
 
           {/* Quick Actions */}
           <div className="flex gap-2 pt-2 border-t border-border/30">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1 bg-gradient-to-r from-primary/10 to-blue-500/10 hover:from-primary/20 hover:to-blue-500/20 border-primary/30"
-              onClick={handleEditMeta}
-            >
-              <Edit className="h-3.5 w-3.5 mr-1.5" />
-              Edit Meta
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1 bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border-purple-500/30"
-              onClick={handleAddKeywords}
-            >
-              <Key className="h-3.5 w-3.5 mr-1.5" />
-              Keywords
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1 bg-gradient-to-r from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 border-green-500/30"
-              onClick={handleCheckSERP}
-              disabled={!mainKeyword}
-            >
-              <Search className="h-3.5 w-3.5 mr-1.5" />
-              Check SERP
-            </Button>
+            {trackingStatus.label === 'No URL Set' ? (
+              <Button 
+                size="sm" 
+                className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400"
+                onClick={() => setShowUrlDialog(true)}
+              >
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                Add URL Now
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 bg-gradient-to-r from-primary/10 to-blue-500/10 hover:from-primary/20 hover:to-blue-500/20 border-primary/30"
+                  onClick={handleEditMeta}
+                >
+                  <Edit className="h-3.5 w-3.5 mr-1.5" />
+                  Edit Meta
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border-purple-500/30"
+                  onClick={handleAddKeywords}
+                >
+                  <Key className="h-3.5 w-3.5 mr-1.5" />
+                  Keywords
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 bg-gradient-to-r from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 border-green-500/30"
+                  onClick={handleCheckSERP}
+                  disabled={!mainKeyword}
+                >
+                  <Search className="h-3.5 w-3.5 mr-1.5" />
+                  Check SERP
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      <PublishedUrlDialog
+        open={showUrlDialog}
+        onClose={() => setShowUrlDialog(false)}
+        onSubmit={handleUrlSubmit}
+        contentTitle={title}
+      />
     </motion.div>
+    </TooltipProvider>
   );
 };

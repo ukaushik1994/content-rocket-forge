@@ -15,6 +15,7 @@ interface ContentAnalyticsData {
   title: string;
   published_url?: string;
   keywords?: string[];
+  created_at?: string;
   search_console_data?: {
     impressions: number;
     clicks: number;
@@ -61,6 +62,7 @@ export const ContentAnalyticsTab = () => {
             title,
             published_url,
             keywords,
+            created_at,
             content_analytics!inner(search_console_data)
           `)
           .eq('user_id', user.id)
@@ -80,6 +82,7 @@ export const ContentAnalyticsTab = () => {
           title: item.title,
           published_url: item.published_url,
           keywords: item.keywords,
+          created_at: item.created_at,
           search_console_data: item.content_analytics?.[0]?.search_console_data || {
             impressions: 0,
             clicks: 0,
@@ -221,6 +224,7 @@ export const ContentAnalyticsTab = () => {
           clicks={content.search_console_data?.clicks || 0}
           ctr={content.search_console_data?.ctr || 0}
           averagePosition={content.search_console_data?.averagePosition || 0}
+          createdAt={content.created_at}
         />
       ))}
     </motion.div>
