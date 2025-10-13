@@ -604,6 +604,10 @@ export const ContentStrategyEngine = ({
                 onViewDetails={(proposal) => {
                   console.log('View details:', proposal);
                 }}
+                onSendToBuilder={(proposal) => {
+                  setSelectedProposal(proposal);
+                  setShowBuilderDialog(true);
+                }}
                 newProposalIds={newProposalIds}
               />
             )}

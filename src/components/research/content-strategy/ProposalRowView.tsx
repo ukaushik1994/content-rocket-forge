@@ -1,17 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
-import { Eye, Calendar, CheckCircle2, Clock, Archive, Play, TrendingUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Eye, Calendar, CheckCircle2, Clock, Archive, Play, TrendingUp, MoreHorizontal, CalendarPlus, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { type ProposalStatus } from '@/services/proposalStatusService';
+import { proposalManagement } from '@/services/proposalManagement';
+import { toast } from 'sonner';
 
 interface ProposalRowViewProps {
   proposals: any[];
   selected: Record<string, boolean>;
   onToggleSelection: (index: number) => void;
   onViewDetails: (proposal: any) => void;
+  onSendToBuilder: (proposal: any) => void;
   newProposalIds: Set<string>;
 }
 
@@ -20,8 +28,46 @@ export const ProposalRowView: React.FC<ProposalRowViewProps> = ({
   selected,
   onToggleSelection,
   onViewDetails,
+  onSendToBuilder,
   newProposalIds
 }) => {
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [schedulePriority, setSchedulePriority] = useState('medium');
+  const [scheduleHours, setScheduleHours] = useState(2);
+  const [selectedProposalForSchedule, setSelectedProposalForSchedule] = useState<any>(null);
+
+  const handleScheduleClick = (proposal: any) => {
+    setSelectedProposalForSchedule(proposal);
+    setScheduleDialogOpen(true);
+  };
+
+  const handleScheduleToCalendar = async () => {
+    if (!scheduleDate || !selectedProposalForSchedule) {
+      toast.error('Please select a date');
+      return;
+    }
+
+    try {
+      await proposalManagement.scheduleProposalToCalendar(
+        selectedProposalForSchedule,
+        scheduleDate,
+        schedulePriority as 'low' | 'medium' | 'high',
+        scheduleHours
+      );
+      
+      toast.success('Proposal scheduled to calendar');
+      setScheduleDialogOpen(false);
+      setScheduleDate('');
+      setSchedulePriority('medium');
+      setScheduleHours(2);
+      setSelectedProposalForSchedule(null);
+    } catch (error) {
+      console.error('Error scheduling proposal:', error);
+      toast.error('Failed to schedule proposal');
+    }
+  };
+
   const getStatusBadge = (status: ProposalStatus) => {
     const statusConfig = {
       available: { label: 'Available', icon: Play, className: 'text-blue-400 bg-blue-500/10 border-blue-400/30' },
@@ -132,19 +178,111 @@ export const ProposalRowView: React.FC<ProposalRowViewProps> = ({
 
               {/* Actions Column */}
               <div className="col-span-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onViewDetails(proposal)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-gray-900 border-white/20 z-50">
+                    <DropdownMenuItem 
+                      onClick={() => onViewDetails(proposal)}
+                      className="text-white hover:bg-white/10 cursor-pointer"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleScheduleClick(proposal);
+                      }}
+                      className="text-white hover:bg-white/10 cursor-pointer"
+                    >
+                      <CalendarPlus className="h-4 w-4 mr-2" />
+                      Schedule to Calendar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSendToBuilder(proposal);
+                      }}
+                      className="text-white hover:bg-white/10 cursor-pointer"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Create Content
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </Card>
           </motion.div>
         );
       })}
+
+      {/* Schedule Dialog */}
+      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+        <DialogContent className="bg-gray-900 border-white/20 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Schedule to Calendar</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="schedule_date" className="text-white">Scheduled Date</Label>
+              <Input
+                id="schedule_date"
+                type="date"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                className="bg-white/10 border-white/20 text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="priority" className="text-white">Priority</Label>
+                <Select value={schedulePriority} onValueChange={setSchedulePriority}>
+                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-white/20">
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="hours" className="text-white">Est. Hours</Label>
+                <Input
+                  id="hours"
+                  type="number"
+                  min="1"
+                  max="40"
+                  value={scheduleHours}
+                  onChange={(e) => setScheduleHours(parseInt(e.target.value) || 2)}
+                  className="bg-white/10 border-white/20 text-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleScheduleToCalendar} className="bg-primary/20 hover:bg-primary/30">
+              Schedule
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
