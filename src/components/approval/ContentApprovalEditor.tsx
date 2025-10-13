@@ -294,7 +294,7 @@ useEffect(() => {
     setEditedContent(updatedContent);
   };
   return (
-    <motion.div className="space-y-6" initial={{
+    <motion.div className="h-full flex flex-col" initial={{
       opacity: 0
     }} animate={{
       opacity: 1
@@ -325,7 +325,7 @@ useEffect(() => {
       )}
       
       {/* Main Editor - Full Width */}
-      <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full flex flex-col h-full">
+      <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl flex-1 flex flex-col">
           <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
