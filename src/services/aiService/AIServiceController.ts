@@ -122,12 +122,19 @@ class AIServiceController {
     },
     lmstudio: {
       name: 'LM Studio',
-      description: 'Local AI models running on your machine',
+      description: 'Local AI models running on your machine (requires LM Studio app running with server enabled)',
       icon_name: 'server',
       category: 'AI Services',
       setup_url: 'https://lmstudio.ai/',
-      capabilities: ['chat', 'completion', 'local'],
-      available_models: ['llama-3.2', 'phi-3', 'codellama'],
+      capabilities: ['chat', 'completion', 'local', 'offline'],
+      available_models: [
+        'llama-3.2-3b-instruct',
+        'llama-3.2-1b-instruct', 
+        'phi-3-mini-4k-instruct',
+        'qwen2.5-7b-instruct',
+        'deepseek-r1-distill-qwen-7b',
+        'local-model'
+      ],
       is_required: false
     },
     serp: {
@@ -205,13 +212,13 @@ class AIServiceController {
 
       console.log('🔍 Querying ai_service_providers for active providers...');
       
-      // Query ai_service_providers directly for active providers with valid keys
+      // Query ai_service_providers directly for active providers
+      // Note: LM Studio stores base URL in api_key field (e.g., http://localhost:1234/v1)
       const { data: dbProviders, error } = await supabase
         .from('ai_service_providers')
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .not('api_key', 'is', null)
         .order('priority', { ascending: true });
 
       if (error) {
@@ -220,7 +227,17 @@ class AIServiceController {
       }
 
       const validProviders: AIProvider[] = (dbProviders || [])
-        .filter(p => p.api_key && p.api_key.trim())
+        .filter(p => {
+          // LM Studio uses api_key field to store base_url (e.g., http://localhost:1234/v1)
+          // Other providers need a traditional API key
+          if (p.provider === 'lmstudio') {
+            const hasBaseUrl = p.api_key && p.api_key.trim();
+            console.log(`🔍 Checking LM Studio: has base_url=${!!hasBaseUrl}, value=${p.api_key}`);
+            return hasBaseUrl;
+          }
+          // Traditional providers need api_key
+          return p.api_key && p.api_key.trim();
+        })
         .map(p => ({
           id: p.id,
           provider: p.provider,
