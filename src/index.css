@@ -497,3 +497,48 @@
 .prose pre {
   @apply bg-secondary/20 p-3 rounded-lg overflow-auto font-mono text-sm mb-4;
 }
+
+/* Sonner toast custom animations and styling */
+[data-sonner-toast] {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-sonner-toast][data-mounted] {
+  animation: sonner-slide-in 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-sonner-toast][data-removed] {
+  animation: sonner-slide-out 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes sonner-slide-in {
+  from {
+    transform: translateX(calc(100% + 1rem)) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes sonner-slide-out {
+  from {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(calc(100% + 1rem)) scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Error toast close button styling */
+[data-sonner-toast][data-type="error"] button[data-close-button] {
+  color: rgb(254 202 202); /* red-200 */
+  transition: color 200ms;
+}
+
+[data-sonner-toast][data-type="error"] button[data-close-button]:hover {
+  color: rgb(255 255 255);
+}
