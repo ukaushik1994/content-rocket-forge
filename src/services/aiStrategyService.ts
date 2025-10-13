@@ -173,11 +173,13 @@ class AIStrategyService {
     goals?: any;
     location?: string;
     excludeKeywords?: string[];
+    preferredProvider?: string;
   }): Promise<{ proposals: any[]; message: string }> {
     console.log('🚀 Starting generateNewStrategy with params:', {
       goals: params.goals,
       location: params.location,
-      excludeKeywords: params.excludeKeywords?.length || 0
+      excludeKeywords: params.excludeKeywords?.length || 0,
+      preferredProvider: params.preferredProvider
     });
 
     try {
@@ -193,7 +195,8 @@ class AIStrategyService {
       // Generate new strategy with keyword exclusions
       const result = await contentStrategyService.generateAIStrategy({
         goals: params.goals,
-        location: params.location
+        location: params.location,
+        preferredProvider: params.preferredProvider
       });
 
       console.log('✅ Generated base strategy:', result.proposals?.length || 0, 'proposals');
