@@ -256,13 +256,13 @@ const Analytics = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
-      {/* Animated background - matching Content Builder */}
-      <AnimatedBackground intensity="high" className="opacity-60" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden">
+      {/* Animated background - matching Repository design */}
+      <AnimatedBackground intensity="medium" />
       
       <Navbar />
       
-      <main className="relative z-10 pt-20 container py-12 space-y-12">
+      <main className="relative z-10 pt-20 container py-8 space-y-8">
         <AnimatePresence mode="wait">
           {!drilldownData.isOpen ? (
             <motion.div 
@@ -290,32 +290,25 @@ const Analytics = () => {
               {/* Key Metrics Cards - 8 Real Metrics */}
               <motion.div 
                 variants={itemVariants}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
               >
                 {loading ? (
-                  // Enhanced Loading skeleton
+                  // Loading skeleton
                   Array.from({ length: 8 }).map((_, index) => (
-                    <motion.div
-                      key={`loading-${index}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <Card className="bg-background/60 backdrop-blur-xl border-border/50 rounded-2xl overflow-hidden">
-                        <CardContent className="p-8">
-                          <div className="animate-pulse space-y-4">
-                            <div className="flex items-start justify-between">
-                               <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-2xl" />
-                               <div className="w-20 h-6 bg-muted/30 rounded-full" />
-                             </div>
-                             <div className="space-y-3">
-                               <div className="w-24 h-9 bg-muted/30 rounded" />
-                               <div className="w-32 h-5 bg-muted/20 rounded" />
-                            </div>
+                    <Card key={`loading-${index}`} className="bg-card/50 backdrop-blur-xl border-border/30">
+                      <CardContent className="p-6">
+                        <div className="animate-pulse">
+                          <div className="flex items-start justify-between mb-4">
+                             <div className="w-12 h-12 bg-muted rounded-xl" />
+                             <div className="w-16 h-6 bg-muted rounded-full" />
+                           </div>
+                           <div className="space-y-2">
+                             <div className="w-20 h-8 bg-muted rounded" />
+                             <div className="w-24 h-4 bg-muted rounded" />
                           </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))
                 ) : (
                   metricsDisplay.map((metric, index) => (
@@ -323,58 +316,34 @@ const Analytics = () => {
                       key={metric.id}
                       variants={{
                         hover: { 
-                          y: -12,
-                          scale: 1.03,
-                          transition: { 
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 20
-                          }
+                          y: -8,
+                          scale: 1.02,
+                          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                          transition: { duration: 0.3, ease: "easeOut" }
                         }
                       }}
                       whileHover="hover"
-                      initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ 
-                        delay: index * 0.08,
-                        type: "spring",
-                        stiffness: 100,
-                        damping: 15
-                      }}
-                      className="relative group cursor-pointer"
-                      onClick={() => handleMetricClick(metric)}
+                      initial={{ opacity: 0, y: 50 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="relative group"
                     >
-                      <Card className={`relative overflow-hidden rounded-2xl border border-border/50 bg-background/60 backdrop-blur-xl transition-all duration-500 group-hover:border-primary/40 group-hover:shadow-2xl group-hover:shadow-primary/20`}>
-                        {/* Gradient overlay */}
-                        <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-20 transition-opacity duration-700`} />
+                      <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${metric.bgPattern} backdrop-blur-xl transition-all duration-300`}>
+                        <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
                         
-                        {/* Glow effect */}
-                        <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-30 blur-2xl transition-opacity duration-700`} />
-                        
-                        <CardContent className="p-8 relative z-10">
-                          <div className="flex items-start justify-between mb-6">
-                            <motion.div 
-                              className={`p-4 rounded-2xl bg-gradient-to-br ${metric.color} shadow-xl`}
-                              whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
-                              transition={{ duration: 0.5 }}
-                            >
-                              <metric.icon className="w-7 h-7 text-white" />
-                            </motion.div>
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs bg-background/50 backdrop-blur-sm border-border/50"
-                            >
+                        <CardContent className="p-6 relative z-10">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
+                              <metric.icon className="w-6 h-6 text-primary-foreground" />
+                            </div>
+                            <Badge variant="outline" className="text-xs">
                               {metric.source}
                             </Badge>
                           </div>
                           
-                          <div className="space-y-2">
-                             <h3 className="text-3xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
-                               {metric.value}
-                             </h3>
-                             <p className="text-sm text-muted-foreground font-medium">
-                               {metric.label}
-                             </p>
+                          <div className="space-y-1">
+                             <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
+                             <p className="text-sm text-muted-foreground">{metric.label}</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -386,7 +355,7 @@ const Analytics = () => {
               {/* Enhanced Control Panel with Custom Date Range */}
               <motion.div 
                 variants={itemVariants}
-               className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 p-8 rounded-2xl bg-background/60 backdrop-blur-xl border border-border/50 shadow-xl"
+               className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 p-6 rounded-2xl bg-card/50 backdrop-blur-xl border border-border/30"
              >
                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/50 border border-border/30">
@@ -452,35 +421,30 @@ const Analytics = () => {
                 </div>
               </motion.div>
               
-              {/* Tabs Section - Enhanced */}
-              <motion.div 
-                variants={itemVariants}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
+              {/* Tabs Section */}
+              <motion.div variants={itemVariants}>
                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                    <TabsList className="bg-background/60 backdrop-blur-xl border border-border/50 p-2 h-auto grid grid-cols-3 gap-3 rounded-2xl shadow-lg">
+                    <TabsList className="bg-card/50 backdrop-blur-xl border border-border/30 p-2 h-auto grid grid-cols-3 gap-2">
                     <TabsTrigger 
                       value="overview" 
-                       className="gap-3 py-4 px-8 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl data-[state=active]:shadow-primary/30 hover:bg-background/50 transition-all duration-300"
+                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                     >
-                      <BarChart3 className="h-5 w-5" />
-                      <span className="font-semibold">Overview</span>
+                      <BarChart3 className="h-4 w-4" />
+                      Overview
                     </TabsTrigger>
                     <TabsTrigger 
                       value="content" 
-                       className="gap-3 py-4 px-8 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl data-[state=active]:shadow-primary/30 hover:bg-background/50 transition-all duration-300"
+                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                     >
-                      <FileText className="h-5 w-5" />
-                      <span className="font-semibold">Content</span>
+                      <FileText className="h-4 w-4" />
+                      Content
                     </TabsTrigger>
                      <TabsTrigger 
                        value="performance" 
-                       className="gap-3 py-4 px-8 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl data-[state=active]:shadow-primary/30 hover:bg-background/50 transition-all duration-300"
+                       className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                      >
-                       <Activity className="h-5 w-5" />
-                       <span className="font-semibold">Performance</span>
+                       <Activity className="h-4 w-4" />
+                       Performance
                      </TabsTrigger>
                   </TabsList>
                   
