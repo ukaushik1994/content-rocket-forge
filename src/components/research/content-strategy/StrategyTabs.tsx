@@ -7,13 +7,15 @@ import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 import { Lightbulb, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAnalyticsConnection } from '@/hooks/useAnalyticsConnection';
-import { useRealAnalytics } from '@/hooks/useRealAnalytics';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 
 export const StrategyTabs = React.memo(() => {
   const ctx = useContentStrategyOptional();
   const navigate = useNavigate();
   const analyticsConnection = useAnalyticsConnection();
-  const { metrics, contentAnalytics, loading: analyticsLoading } = useRealAnalytics('30days');
+  const { loading: analyticsLoading } = useAnalyticsData();
+  const metrics = null;
+  const contentAnalytics: any[] = [];
   
   if (!ctx) {
     return null;

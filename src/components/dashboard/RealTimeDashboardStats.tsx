@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { EnhancedStatCard } from './EnhancedStatCard';
 import { motion } from 'framer-motion';
 import { realTimeIntegrationService } from '@/services/realTimeIntegrationService';
-import { useRealAnalytics } from '@/hooks/useRealAnalytics';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 
 interface DashboardStats {
   totalContent: number;
@@ -14,7 +14,9 @@ interface DashboardStats {
 }
 
 export const RealTimeDashboardStats: React.FC = () => {
-  const { metrics, loading: analyticsLoading } = useRealAnalytics();
+  const { loading: analyticsLoading } = useAnalyticsData();
+  // Temp: Using placeholder metrics until dashboard refactor
+  const metrics = { views: 0, engagement: 0, revenue: 0, change: { views: 0, engagement: 0, revenue: 0 } };
   const [stats, setStats] = useState<DashboardStats>({
     totalContent: 0,
     publishedContent: 0,

@@ -335,7 +335,6 @@ export const AnalyticsOverview = () => {
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 };

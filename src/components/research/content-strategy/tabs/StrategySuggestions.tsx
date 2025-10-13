@@ -11,7 +11,7 @@ import { ProposalStatusBadge } from '../components/ProposalStatusBadge';
 import { CrossTabActions } from '../components/CrossTabActions';
 import { EnhancedAIProposalCard } from '../components/EnhancedAIProposalCard';
 import { useAnalyticsConnection } from '@/hooks/useAnalyticsConnection';
-import { useRealAnalytics } from '@/hooks/useRealAnalytics';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 import { useProposalIntegration } from '@/hooks/useProposalIntegration';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { ProposalsLoadingSkeleton } from '../components/ProposalsLoadingSkeleton';
@@ -30,7 +30,9 @@ export const StrategySuggestions = ({
   const [workflowMode, setWorkflowMode] = useState<'estimated' | 'real'>('estimated');
   
   const analyticsConnection = useAnalyticsConnection();
-  const { metrics, contentAnalytics, loading: analyticsLoading } = useRealAnalytics('30days');
+  const { loading: analyticsLoading } = useAnalyticsData();
+  const metrics = null;
+  const contentAnalytics: any[] = [];
   const { aiProposals, loadingProposals } = useContentStrategy();
   const { 
     syncProposalAcrossTabs,

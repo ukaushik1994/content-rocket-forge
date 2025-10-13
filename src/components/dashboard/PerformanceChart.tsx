@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Activity, TrendingUp, BarChart3, Clock, Sparkles, Zap, Eye, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useRealAnalytics } from '@/hooks/useRealAnalytics';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 
 interface PerformanceChartProps {
   className?: string;
@@ -13,7 +13,10 @@ interface PerformanceChartProps {
 }
 
 export function PerformanceChart({ className, timeRange = '7days' }: PerformanceChartProps) {
-  const { metrics, timelineData, loading, error } = useRealAnalytics(timeRange);
+  const { loading, error } = useAnalyticsData();
+  // Temp: Using placeholder metrics until dashboard refactor  
+  const metrics = { views: 0, engagement: 0, conversions: 0, revenue: 0, change: { views: 0, engagement: 0, conversions: 0, revenue: 0 } };
+  const timelineData: any[] = [];
 
   // Format number as compact representation (e.g. 1.5k)
   const formatCompact = (value: number) => {

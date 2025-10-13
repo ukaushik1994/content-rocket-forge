@@ -7,7 +7,7 @@ import { StrategyOverview } from './StrategyOverview';
 import { StrategySuggestions } from '../tabs/StrategySuggestions';
 import { EditorialCalendar } from '../calendar/EditorialCalendar';
 import { useAnalyticsConnection } from '@/hooks/useAnalyticsConnection';
-import { useRealAnalytics } from '@/hooks/useRealAnalytics';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 
 interface ContentStrategyTabsProps {
   onEditGoals: () => void;
@@ -16,7 +16,7 @@ interface ContentStrategyTabsProps {
 export const ContentStrategyTabs: React.FC<ContentStrategyTabsProps> = ({ onEditGoals }) => {
   const ctx = useContentStrategyOptional();
   const analyticsConnection = useAnalyticsConnection();
-  const { metrics, contentAnalytics, loading: analyticsLoading } = useRealAnalytics('30days');
+  const { metrics, loading: analyticsLoading } = useAnalyticsData();
   
   if (!ctx) {
     return null;

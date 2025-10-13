@@ -12,9 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useRealAnalytics } from '@/hooks/useRealAnalytics';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 import { DateRange } from 'react-day-picker';
 import { useSettings } from '@/contexts/SettingsContext';
+import { toast } from 'sonner';
 import { 
   BarChart3, 
   CalendarRange, 
@@ -54,13 +55,8 @@ const Analytics = () => {
   const [useCustomRange, setUseCustomRange] = useState(false);
   const { openSettings } = useSettings();
 
-  // Use real analytics data with custom date range support
-  const { metrics, contentAnalytics, timelineData, loading, error, refreshAnalytics } = useRealAnalytics(
-    timeRange, 
-    useCustomRange && customDateRange?.from && customDateRange?.to 
-      ? { from: customDateRange.from, to: customDateRange.to } 
-      : undefined
-  );
+  // Use real analytics data
+  const { metrics: realMetrics, loading, error, refreshAnalytics } = useAnalyticsData();
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -95,47 +91,79 @@ const Analytics = () => {
     }
   };
 
-  // Convert real metrics to display format
-  const metricsDisplay = metrics ? [
+  // Convert real metrics to display format (8 metrics from GA4 + Search Console)
+  const metricsDisplay = realMetrics ? [
     { 
-      id: 'views', 
-      label: 'Total Views', 
-      value: metrics.views > 1000000 ? `${(metrics.views / 1000000).toFixed(1)}M` : metrics.views.toLocaleString(), 
-      change: `${metrics.change.views >= 0 ? '+' : ''}${metrics.change.views.toFixed(1)}%`, 
-      trend: metrics.change.views >= 0 ? 'up' : 'down',
+      id: 'pageViews', 
+      label: 'Page Views', 
+      value: realMetrics.totalAnalytics.pageViews.toLocaleString(), 
       icon: Eye,
       color: 'from-blue-500 to-cyan-400',
-      bgPattern: 'from-blue-500/5 to-cyan-400/10'
+      bgPattern: 'from-blue-500/5 to-cyan-400/10',
+      source: 'Google Analytics'
     },
     { 
-      id: 'engagement', 
-      label: 'Engagement Rate', 
-      value: `${metrics.engagement.toFixed(1)}%`, 
-      change: `${metrics.change.engagement >= 0 ? '+' : ''}${metrics.change.engagement.toFixed(1)}%`, 
-      trend: metrics.change.engagement >= 0 ? 'up' : 'down',
-      icon: TrendingUp,
+      id: 'sessions', 
+      label: 'Sessions', 
+      value: realMetrics.totalAnalytics.sessions.toLocaleString(), 
+      icon: Users,
       color: 'from-emerald-500 to-teal-400',
-      bgPattern: 'from-emerald-500/5 to-teal-400/10'
+      bgPattern: 'from-emerald-500/5 to-teal-400/10',
+      source: 'Google Analytics'
     },
     { 
-      id: 'conversions', 
-      label: 'Conversions', 
-      value: metrics.conversions.toLocaleString(), 
-      change: `${metrics.change.conversions >= 0 ? '+' : ''}${metrics.change.conversions.toFixed(1)}%`, 
-      trend: metrics.change.conversions >= 0 ? 'up' : 'down',
-      icon: Target,
+      id: 'impressions', 
+      label: 'Search Impressions', 
+      value: realMetrics.totalSearchConsole.impressions.toLocaleString(), 
+      icon: TrendingUp,
       color: 'from-violet-500 to-purple-400',
-      bgPattern: 'from-violet-500/5 to-purple-400/10'
+      bgPattern: 'from-violet-500/5 to-purple-400/10',
+      source: 'Search Console'
     },
     { 
-      id: 'revenue', 
-      label: 'Revenue', 
-      value: `$${(metrics.revenue / 1000).toFixed(1)}K`, 
-      change: `${metrics.change.revenue >= 0 ? '+' : ''}${metrics.change.revenue.toFixed(1)}%`, 
-      trend: metrics.change.revenue >= 0 ? 'up' : 'down',
-      icon: Zap,
+      id: 'clicks', 
+      label: 'Search Clicks', 
+      value: realMetrics.totalSearchConsole.clicks.toLocaleString(), 
+      icon: MousePointer,
       color: 'from-orange-500 to-pink-400',
-      bgPattern: 'from-orange-500/5 to-pink-400/10'
+      bgPattern: 'from-orange-500/5 to-pink-400/10',
+      source: 'Search Console'
+    },
+    { 
+      id: 'bounceRate', 
+      label: 'Avg. Bounce Rate', 
+      value: `${(realMetrics.avgBounceRate * 100).toFixed(1)}%`, 
+      icon: Activity,
+      color: 'from-red-500 to-rose-400',
+      bgPattern: 'from-red-500/5 to-rose-400/10',
+      source: 'Google Analytics'
+    },
+    { 
+      id: 'sessionDuration', 
+      label: 'Avg. Session', 
+      value: `${Math.floor(realMetrics.avgSessionDuration / 60)}:${(realMetrics.avgSessionDuration % 60).toFixed(0).padStart(2, '0')}`, 
+      icon: Clock,
+      color: 'from-yellow-500 to-amber-400',
+      bgPattern: 'from-yellow-500/5 to-amber-400/10',
+      source: 'Google Analytics'
+    },
+    { 
+      id: 'ctr', 
+      label: 'Avg. CTR', 
+      value: `${(realMetrics.avgCTR * 100).toFixed(1)}%`, 
+      icon: Target,
+      color: 'from-green-500 to-emerald-400',
+      bgPattern: 'from-green-500/5 to-emerald-400/10',
+      source: 'Search Console'
+    },
+    { 
+      id: 'position', 
+      label: 'Avg. Position', 
+      value: realMetrics.avgPosition.toFixed(1), 
+      icon: Zap,
+      color: 'from-indigo-500 to-blue-400',
+      bgPattern: 'from-indigo-500/5 to-blue-400/10',
+      source: 'Search Console'
     }
   ] : [];
 
@@ -164,14 +192,35 @@ const Analytics = () => {
     }
   };
 
-  const filteredContent = contentAnalytics.filter(item =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
-  ).sort((a, b) => {
-    if (sortBy === 'views') return b.views - a.views;
-    if (sortBy === 'engagement') return parseFloat(b.engagement) - parseFloat(a.engagement);
-    if (sortBy === 'performance') return b.performance - a.performance;
-    return 0;
-  });
+  const handleExport = () => {
+    if (!realMetrics) {
+      toast.error('No data available to export');
+      return;
+    }
+
+    const exportData = {
+      overview: {
+        pageViews: realMetrics.totalAnalytics.pageViews,
+        sessions: realMetrics.totalAnalytics.sessions,
+        bounceRate: realMetrics.avgBounceRate,
+        sessionDuration: realMetrics.avgSessionDuration,
+        impressions: realMetrics.totalSearchConsole.impressions,
+        clicks: realMetrics.totalSearchConsole.clicks,
+        ctr: realMetrics.avgCTR,
+        position: realMetrics.avgPosition,
+      },
+      exportedAt: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Analytics exported successfully');
+  };
 
   const timeRangeLabels = {
     '24h': 'Last 24 hours',
@@ -228,27 +277,24 @@ const Analytics = () => {
               <motion.div variants={itemVariants}>
                 <AnalyticsHero 
                   loading={loading}
-                  hasData={metrics !== null && metrics.views > 0}
-                  totalViews={metrics?.views || 0}
-                  totalContent={contentAnalytics.length}
-                  avgPerformance={contentAnalytics.length > 0 
-                    ? Math.round(contentAnalytics.reduce((sum, item) => sum + item.performance, 0) / contentAnalytics.length)
-                    : 0
-                  }
+                  hasData={realMetrics !== null}
+                  totalViews={realMetrics?.totalAnalytics.pageViews || 0}
+                  totalContent={0}
+                  avgPerformance={0}
                   onRefresh={refreshAnalytics}
-                  onExport={() => console.log('Export functionality')}
+                  onExport={handleExport}
                   onConfigure={() => openSettings('api')}
                 />
               </motion.div>
 
-              {/* Key Metrics Cards - Now using real data */}
+              {/* Key Metrics Cards - 8 Real Metrics */}
               <motion.div 
                 variants={itemVariants}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
               >
                 {loading ? (
                   // Loading skeleton
-                  Array.from({ length: 4 }).map((_, index) => (
+                  Array.from({ length: 8 }).map((_, index) => (
                     <Card key={`loading-${index}`} className="bg-card/50 backdrop-blur-xl border-border/30">
                       <CardContent className="p-6">
                         <div className="animate-pulse">
@@ -280,8 +326,7 @@ const Analytics = () => {
                       initial={{ opacity: 0, y: 50 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="relative group cursor-pointer"
-                      onClick={() => handleMetricClick(metric)}
+                      className="relative group"
                     >
                       <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${metric.bgPattern} backdrop-blur-xl transition-all duration-300`}>
                         <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
@@ -291,23 +336,14 @@ const Analytics = () => {
                             <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
                               <metric.icon className="w-6 h-6 text-primary-foreground" />
                             </div>
-                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                              metric.trend === 'up' 
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                            }`}>
-                              {metric.trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                              {metric.change}
-                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {metric.source}
+                            </Badge>
                           </div>
                           
                           <div className="space-y-1">
                              <h3 className="text-2xl font-bold text-foreground">{metric.value}</h3>
                              <p className="text-sm text-muted-foreground">{metric.label}</p>
-                          </div>
-                          
-                          <div className="mt-3 text-xs text-muted-foreground">
-                            Click to drill down
                           </div>
                         </CardContent>
                       </Card>
@@ -372,7 +408,13 @@ const Analytics = () => {
                      <RefreshCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                      Refresh
                    </Button>
-                   <Button variant="outline" size="sm" className="bg-card/50 border-border/30 text-foreground hover:bg-card/70">
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     className="bg-card/50 border-border/30 text-foreground hover:bg-card/70"
+                     onClick={handleExport}
+                     disabled={!realMetrics}
+                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export
                   </Button>
@@ -525,7 +567,7 @@ const Analytics = () => {
             >
               <DrilldownChart
                 title={drilldownData.title}
-                data={timelineData}
+                data={[]}
                 metric={drilldownData.metric}
                 timeRange={getTimeRangeDisplay()}
                 onBack={() => setDrilldownData({ isOpen: false, metric: '', title: '' })}

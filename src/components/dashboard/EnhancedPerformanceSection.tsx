@@ -4,9 +4,11 @@ import { EnhancedStatCard } from './EnhancedStatCard';
 import { PerformanceChart } from './PerformanceChart';
 import { Activity, Clock, FileText, Search, BarChart3, Fingerprint, Users, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useRealAnalytics } from '@/hooks/useRealAnalytics';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 export const EnhancedPerformanceSection: React.FC = () => {
-  const { metrics, loading, error } = useRealAnalytics();
+  const {loading, error } = useAnalyticsData();
+  // Temp: Using placeholder metrics until dashboard refactor
+  const metrics = { views: 0, engagement: 0, conversions: 0, revenue: 0, change: { views: 0, engagement: 0, conversions: 0, revenue: 0 } };
   const containerVariants = {
     hidden: {
       opacity: 0
