@@ -191,40 +191,42 @@ export const SidebarToolsGrid: React.FC<SidebarToolsGridProps> = ({
           </Badge>
         </div>
         
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Current Title</label>
-            <Input
-              value={editedTitle}
-              onChange={onTitleChange}
-              className="mt-1"
-              placeholder="Enter your title..."
-            />
-            <div className="flex items-center gap-2 mt-1">
-              {titleMetrics.hasKeyword ? (
-                <div className="flex items-center gap-1 text-xs text-success">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Keyword included
+        <ScrollArea className="h-[400px]">
+          <div className="space-y-3 pr-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Current Title</label>
+              <Input
+                value={editedTitle}
+                onChange={onTitleChange}
+                className="mt-1"
+                placeholder="Enter your title..."
+              />
+              <div className="flex items-center gap-2 mt-1">
+                {titleMetrics.hasKeyword ? (
+                  <div className="flex items-center gap-1 text-xs text-success">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Keyword included
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-xs text-warning">
+                    <AlertCircle className="h-3 w-3" />
+                    Add "{mainKeyword}"
+                  </div>
+                )}
+                <div className={`text-xs ml-auto ${titleMetrics.length > 60 ? 'text-destructive' : titleMetrics.length > 50 ? 'text-warning' : 'text-muted-foreground'}`}>
+                  {titleMetrics.length <= 30 ? 'Too short' : titleMetrics.length > 60 ? 'Too long' : 'Good length'}
                 </div>
-              ) : (
-                <div className="flex items-center gap-1 text-xs text-warning">
-                  <AlertCircle className="h-3 w-3" />
-                  Add "{mainKeyword}"
-                </div>
-              )}
-              <div className={`text-xs ml-auto ${titleMetrics.length > 60 ? 'text-destructive' : titleMetrics.length > 50 ? 'text-warning' : 'text-muted-foreground'}`}>
-                {titleMetrics.length <= 30 ? 'Too short' : titleMetrics.length > 60 ? 'Too long' : 'Good length'}
               </div>
             </div>
-          </div>
 
-          <div className="border-t border-border/50 pt-3">
-            <ApprovalAITitleSuggestions
-              content={content}
-              onSelectTitle={onTitleSelect}
-            />
+            <div className="border-t border-border/50 pt-3">
+              <ApprovalAITitleSuggestions
+                content={content}
+                onSelectTitle={onTitleSelect}
+              />
+            </div>
           </div>
-        </div>
+        </ScrollArea>
       </div>
     </PopoverContent>
   );
@@ -243,94 +245,96 @@ export const SidebarToolsGrid: React.FC<SidebarToolsGridProps> = ({
           </Badge>
         </div>
         
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground flex items-center justify-between">
-              Meta Title
-              <span className={`text-xs ${seoData.metaTitle.length > 60 ? 'text-destructive' : seoData.metaTitle.length > 50 ? 'text-warning' : 'text-muted-foreground'}`}>
-                {seoData.metaTitle.length}/60
-              </span>
-            </label>
-            <Input
-              value={seoData.metaTitle}
-              onChange={(e) => handleSeoUpdate('metaTitle', e.target.value)}
-              className="mt-1"
-              placeholder="SEO title (50-60 characters optimal)"
-            />
-            <div className="flex items-center gap-2 mt-1">
-              {seoData.metaTitle.includes(mainKeyword) ? (
-                <div className="flex items-center gap-1 text-xs text-success">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Keyword included
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 text-xs text-warning">
-                  <AlertCircle className="h-3 w-3" />
-                  Add "{mainKeyword}"
-                </div>
-              )}
+        <ScrollArea className="h-[400px]">
+          <div className="space-y-4 pr-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground flex items-center justify-between">
+                Meta Title
+                <span className={`text-xs ${seoData.metaTitle.length > 60 ? 'text-destructive' : seoData.metaTitle.length > 50 ? 'text-warning' : 'text-muted-foreground'}`}>
+                  {seoData.metaTitle.length}/60
+                </span>
+              </label>
+              <Input
+                value={seoData.metaTitle}
+                onChange={(e) => handleSeoUpdate('metaTitle', e.target.value)}
+                className="mt-1"
+                placeholder="SEO title (50-60 characters optimal)"
+              />
+              <div className="flex items-center gap-2 mt-1">
+                {seoData.metaTitle.includes(mainKeyword) ? (
+                  <div className="flex items-center gap-1 text-xs text-success">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Keyword included
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-xs text-warning">
+                    <AlertCircle className="h-3 w-3" />
+                    Add "{mainKeyword}"
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground flex items-center justify-between">
-              Meta Description
-              <span className={`text-xs ${seoData.metaDescription.length > 160 ? 'text-destructive' : seoData.metaDescription.length > 140 ? 'text-warning' : 'text-muted-foreground'}`}>
-                {seoData.metaDescription.length}/160
-              </span>
-            </label>
-            <Textarea
-              value={seoData.metaDescription}
-              onChange={(e) => handleSeoUpdate('metaDescription', e.target.value)}
-              className="mt-1 resize-none"
-              rows={3}
-              placeholder="SEO description (140-160 characters optimal)"
-            />
-            <div className="flex items-center gap-2 mt-1">
-              {seoData.metaDescription.includes(mainKeyword) ? (
-                <div className="flex items-center gap-1 text-xs text-success">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Keyword included
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 text-xs text-warning">
-                  <AlertCircle className="h-3 w-3" />
-                  Add "{mainKeyword}"
-                </div>
-              )}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground flex items-center justify-between">
+                Meta Description
+                <span className={`text-xs ${seoData.metaDescription.length > 160 ? 'text-destructive' : seoData.metaDescription.length > 140 ? 'text-warning' : 'text-muted-foreground'}`}>
+                  {seoData.metaDescription.length}/160
+                </span>
+              </label>
+              <Textarea
+                value={seoData.metaDescription}
+                onChange={(e) => handleSeoUpdate('metaDescription', e.target.value)}
+                className="mt-1 resize-none"
+                rows={3}
+                placeholder="SEO description (140-160 characters optimal)"
+              />
+              <div className="flex items-center gap-2 mt-1">
+                {seoData.metaDescription.includes(mainKeyword) ? (
+                  <div className="flex items-center gap-1 text-xs text-success">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Keyword included
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-xs text-warning">
+                    <AlertCircle className="h-3 w-3" />
+                    Add "{mainKeyword}"
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2 pt-2 border-t border-border/50">
-            <div className="text-xs font-medium text-muted-foreground mb-2">SEO Score</div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                {seoMetrics.hasMetaTitle ? (
-                  <CheckCircle2 className="h-3 w-3 text-success" />
-                ) : (
-                  <AlertCircle className="h-3 w-3 text-warning" />
-                )}
-                <span className="text-xs text-muted-foreground">Meta Title Present</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {seoMetrics.hasMetaDescription ? (
-                  <CheckCircle2 className="h-3 w-3 text-success" />
-                ) : (
-                  <AlertCircle className="h-3 w-3 text-warning" />
-                )}
-                <span className="text-xs text-muted-foreground">Meta Description Present</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {seoData.metaTitle.includes(mainKeyword) && seoData.metaDescription.includes(mainKeyword) ? (
-                  <CheckCircle2 className="h-3 w-3 text-success" />
-                ) : (
-                  <AlertCircle className="h-3 w-3 text-warning" />
-                )}
-                <span className="text-xs text-muted-foreground">Keywords Optimized</span>
+            <div className="space-y-2 pt-2 border-t border-border/50">
+              <div className="text-xs font-medium text-muted-foreground mb-2">SEO Score</div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {seoMetrics.hasMetaTitle ? (
+                    <CheckCircle2 className="h-3 w-3 text-success" />
+                  ) : (
+                    <AlertCircle className="h-3 w-3 text-warning" />
+                  )}
+                  <span className="text-xs text-muted-foreground">Meta Title Present</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {seoMetrics.hasMetaDescription ? (
+                    <CheckCircle2 className="h-3 w-3 text-success" />
+                  ) : (
+                    <AlertCircle className="h-3 w-3 text-warning" />
+                  )}
+                  <span className="text-xs text-muted-foreground">Meta Description Present</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {seoData.metaTitle.includes(mainKeyword) && seoData.metaDescription.includes(mainKeyword) ? (
+                    <CheckCircle2 className="h-3 w-3 text-success" />
+                  ) : (
+                    <AlertCircle className="h-3 w-3 text-warning" />
+                  )}
+                  <span className="text-xs text-muted-foreground">Keywords Optimized</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </ScrollArea>
       </div>
     </PopoverContent>
   );
@@ -352,7 +356,7 @@ export const SidebarToolsGrid: React.FC<SidebarToolsGridProps> = ({
           {sectionsMetrics.wordCount} words • {sectionsMetrics.status === 'good' ? 'Well structured' : 'Needs more content'}
         </div>
         
-        <ScrollArea className="h-60">
+        <ScrollArea className="h-[400px]">
           <SectionRegenerationTool
             content={content}
             onSectionRegenerated={onSectionRegenerated}
@@ -375,7 +379,7 @@ export const SidebarToolsGrid: React.FC<SidebarToolsGridProps> = ({
           </Badge>
         </div>
         
-        <ScrollArea className="h-60">
+        <ScrollArea className="h-[400px]">
           <ApprovalTimeline 
             contentId={content.id}
           />
