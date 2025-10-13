@@ -1,79 +1,175 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Target, TrendingUp, BarChart3 } from 'lucide-react';
+import { Sparkles, Target, TrendingUp, BarChart3, Brain, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => void }) => {
   return (
-    <div className="text-center space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="relative"
-      >
-        <h1 className="text-6xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent mb-4">
-          Content Strategy
-        </h1>
-        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-          <Sparkles className="h-8 w-8 text-primary animate-pulse" />
-        </div>
-      </motion.div>
-      
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.3 }}
-        className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed"
-      >
-        Complete content strategy workspace with AI proposals, production pipeline, editorial calendar, and performance analytics
-      </motion.p>
+    <motion.div 
+      className="relative min-h-[60vh] flex items-center justify-center w-full"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+    >
+      <div className="relative z-10 w-full px-6 pt-24 pb-12">
+        <div className="text-center space-y-8 max-w-5xl mx-auto">
+          {/* Animated background blur */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 rounded-3xl blur-3xl"
+            animate={{ opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          />
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.3 }}
-        className="flex items-center justify-center"
-      >
-        <Button 
-          size="lg" 
-          className="hover-scale bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg px-8 py-3" 
-          onClick={onCreate}
-        >
-          <Target className="h-4 w-4 mr-2" />
-          Set Strategy Goals
-        </Button>
-      </motion.div>
-      
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.3 }}
-        className="flex items-center justify-center gap-8 text-sm text-white/60"
-      >
-        <motion.div 
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all duration-300"
-          whileHover={{ scale: 1.05 }}
-        >
-          <Target className="h-4 w-4 text-blue-400" />
-          <span>AI Proposals</span>
-        </motion.div>
-        <motion.div 
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all duration-300"
-          whileHover={{ scale: 1.05 }}
-        >
-          <TrendingUp className="h-4 w-4 text-purple-400" />
-          <span>Production Pipeline</span>
-        </motion.div>
-        <motion.div 
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all duration-300"
-          whileHover={{ scale: 1.05 }}
-        >
-          <BarChart3 className="h-4 w-4 text-green-400" />
-          <span>Editorial Calendar</span>
-        </motion.div>
-      </motion.div>
-    </div>
+          {/* Status Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="flex items-center justify-center"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 hover:scale-105 transition-transform duration-300">
+              <Brain className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">AI-Powered Strategy Planning</span>
+              <motion.div
+                className="w-2 h-2 rounded-full bg-green-500"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </div>
+          </motion.div>
+
+          {/* Title */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+            className="relative space-y-2"
+          >
+            <h1 className="text-4xl md:text-6xl font-bold">
+              <span className="bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+                Content Strategy
+              </span>
+              <br />
+              <span className="text-primary">Workspace</span>
+            </h1>
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+              <Sparkles className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+          </motion.div>
+          
+          {/* Description */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.4 }}
+            className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-12"
+          >
+            Complete content strategy workspace with AI proposals, production pipeline, editorial calendar, and performance analytics
+          </motion.p>
+
+          {/* Main Action Button */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+            className="flex items-center justify-center"
+          >
+            <Button 
+              size="lg" 
+              className="relative overflow-hidden group bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-primary-foreground border-0 shadow-2xl px-8 py-4 text-lg h-auto"
+              onClick={onCreate}
+            >
+              {/* Shimmer effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{ x: ['-100%', '100%'] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              />
+              <Target className="h-5 w-5 mr-2 relative z-10" />
+              <span className="relative z-10">Set Strategy Goals</span>
+              <Sparkles className="h-5 w-5 ml-2 relative z-10" />
+            </Button>
+          </motion.div>
+          
+          {/* Quick Stats Cards */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.4 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12"
+          >
+            <motion.div 
+              className="flex items-center gap-4 p-6 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 hover:bg-background/80 transition-all duration-300"
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="p-3 rounded-lg bg-primary/10 backdrop-blur-xl">
+                <TrendingUp className="h-6 w-6 text-primary" />
+              </div>
+              <div className="text-left">
+                <div className="text-2xl font-bold text-foreground">12</div>
+                <div className="text-sm text-muted-foreground">Active Strategies</div>
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              className="flex items-center gap-4 p-6 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 hover:bg-background/80 transition-all duration-300"
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="p-3 rounded-lg bg-blue-500/10 backdrop-blur-xl">
+                <BarChart3 className="h-6 w-6 text-blue-500" />
+              </div>
+              <div className="text-left">
+                <div className="text-2xl font-bold text-foreground">48</div>
+                <div className="text-sm text-muted-foreground">Content Proposals</div>
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              className="flex items-center gap-4 p-6 bg-background/60 backdrop-blur-xl rounded-xl border border-border/50 hover:bg-background/80 transition-all duration-300"
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="p-3 rounded-lg bg-purple-500/10 backdrop-blur-xl">
+                <Zap className="h-6 w-6 text-purple-500" />
+              </div>
+              <div className="text-left">
+                <div className="text-2xl font-bold text-foreground">156</div>
+                <div className="text-sm text-muted-foreground">Pipeline Items</div>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Feature Filters */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.0, duration: 0.4 }}
+            className="flex items-center justify-center gap-4 text-sm pt-8"
+          >
+            <motion.div 
+              className="flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 hover:bg-background/80 transition-all duration-300"
+              whileHover={{ scale: 1.05 }}
+            >
+              <Target className="h-4 w-4 text-blue-400" />
+              <span className="text-muted-foreground">AI Proposals</span>
+            </motion.div>
+            <motion.div 
+              className="flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 hover:bg-background/80 transition-all duration-300"
+              whileHover={{ scale: 1.05 }}
+            >
+              <TrendingUp className="h-4 w-4 text-purple-400" />
+              <span className="text-muted-foreground">Production Pipeline</span>
+            </motion.div>
+            <motion.div 
+              className="flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 hover:bg-background/80 transition-all duration-300"
+              whileHover={{ scale: 1.05 }}
+            >
+              <BarChart3 className="h-4 w-4 text-green-400" />
+              <span className="text-muted-foreground">Editorial Calendar</span>
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
   );
 });
