@@ -79,62 +79,55 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
     : 'Submit for Review';
 
   return (
-    <div className="flex flex-wrap items-center gap-2 md:gap-3">
+    <div className="flex items-center gap-2">
       {/* AI Recommendation CTA */}
       {canFollow && (
-        <>
+        <div className="flex items-center gap-2">
           <Button
             onClick={followRecommendation}
             disabled={disabledFollow}
             aria-label={recommendation ? `Follow AI: ${recommendation.action.replace('_',' ')} at ${recommendation.confidence}% confidence` : 'Follow AI recommendation'}
             variant="secondary"
-            size="default"
-            className="h-11 px-4 md:px-5"
+            className="inline-flex items-center"
           >
             <Zap className="mr-2 h-4 w-4" aria-hidden="true" />
-            <span className="font-medium">Follow AI ({recommendation?.confidence}%)</span>
+            Follow AI ({recommendation?.confidence}% )
           </Button>
           <Popover>
             <PopoverTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-11 w-11" 
-                aria-label="Why this recommendation?"
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Why this recommendation?">
                 <Info className="h-4 w-4" aria-hidden="true" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Brain className="h-5 w-5 text-primary" />
-                <span className="font-semibold text-base">Why this recommendation?</span>
-                <Badge variant="outline" className="ml-auto">{recommendation?.confidence}%</Badge>
+            <PopoverContent className="w-72 text-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Brain className="h-4 w-4" />
+                <span className="font-medium">Why this recommendation?</span>
+                <Badge variant="outline">{recommendation?.confidence}%</Badge>
               </div>
-              <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                 <span>Model</span>
-                <span className="font-mono">heuristic-v1</span>
+                <span>heuristic-v1</span>
               </div>
-              <div className="text-sm text-muted-foreground mb-3">
+              <div className="text-xs text-muted-foreground mb-2">
                 {(() => {
                   const secs = recommendedAtRef.current ? Math.max(0, Math.round((Date.now() - recommendedAtRef.current) / 1000)) : 0;
                   return `Generated ${secs}s ago`;
                 })()}
               </div>
-              <p className="text-sm text-foreground/90 leading-relaxed">{recommendation?.reasoning}</p>
+              <p className="text-muted-foreground">{recommendation?.reasoning}</p>
             </PopoverContent>
           </Popover>
-        </>
+        </div>
       )}
 
-      {/* Primary actions */}
+      {/* Primary actions (unchanged behavior) */}
       {available.includes('submit_for_review') && (
         <Button
           onClick={() => openConfirm('submit_for_review', recommendation?.action === 'submit_for_review')}
           disabled={!!disabled}
           aria-label="Submit content for review"
-          size="default"
-          className="h-11 px-4 md:px-5 bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-blue-600 hover:bg-blue-700 text-white"
         >
           <CheckCircle className="mr-2 h-4 w-4" aria-hidden="true" />
           Submit for Review
@@ -146,77 +139,54 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
           onClick={() => openConfirm('approve', recommendation?.action === 'approve')}
           disabled={!!disabled}
           aria-label="Approve and publish content"
-          size="default"
-          className="h-11 px-4 md:px-5 bg-green-600 hover:bg-green-700 text-white"
+          className="bg-green-600 hover:bg-green-700 text-white"
         >
           <CheckCircle className="mr-2 h-4 w-4" aria-hidden="true" />
           Approve & Publish
         </Button>
       )}
-      
       {available.includes('request_changes') && (
         <Button
           onClick={() => openConfirm('request_changes', recommendation?.action === 'request_changes')}
           disabled={!!disabled || !hasNotes}
-          aria-label={!hasNotes ? "Request changes (notes required)" : "Request changes from author"}
+          aria-label="Request changes from author"
           variant="outline"
-          size="default"
-          className="h-11 px-4 md:px-5 bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20"
+          className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20"
         >
           Request Changes
         </Button>
       )}
-      
       {available.includes('reject') && (
         <Button
           onClick={() => openConfirm('reject', recommendation?.action === 'reject')}
           disabled={!!disabled || !hasNotes}
-          aria-label={!hasNotes ? "Reject content (notes required)" : "Reject content"}
           variant="destructive"
-          size="default"
-          className="h-11 px-4 md:px-5 bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20"
+          className="bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20"
         >
           Reject
         </Button>
       )}
 
-      {/* Help - Integrated inline */}
+      {/* In-app Help */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-11 w-11 ml-auto" 
-            aria-label="Smart Actions help"
-          >
-            <HelpCircle className="h-5 w-5" aria-hidden="true" />
+          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Smart Actions help">
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-4">
-          <div className="font-semibold text-base mb-3">Smart Actions Help</div>
-          <ul className="space-y-2 text-sm text-muted-foreground mb-4">
-            <li className="flex items-start gap-2">
-              <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Cmd/Ctrl+Enter</kbd>
-              <span>Approve (or Submit if draft)</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Shift+Cmd/Ctrl+R</kbd>
-              <span>Request changes</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <kbd className="px-2 py-1 bg-muted rounded text-xs font-mono">Shift+Cmd/Ctrl+X</kbd>
-              <span>Reject</span>
-            </li>
+        <PopoverContent className="w-80 text-sm">
+          <div className="font-medium mb-2">Smart Actions Help</div>
+          <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+            <li>Cmd/Ctrl+Enter: Approve (or Submit if draft)</li>
+            <li>Shift+Cmd/Ctrl+R: Request changes</li>
+            <li>Shift+Cmd/Ctrl+X: Reject</li>
+            <li>Notes required for Request changes/Reject</li>
           </ul>
-          <div className="pt-3 border-t">
-            <p className="text-sm text-muted-foreground mb-2">Notes required for Request changes/Reject</p>
-            <Link to="/smart-actions/analytics" className="text-sm text-primary hover:underline font-medium">
-              View approvals analytics →
-            </Link>
+          <div className="mt-3 text-xs">
+            <Link to="/smart-actions/analytics" className="story-link text-primary">View approvals analytics</Link>
           </div>
         </PopoverContent>
       </Popover>
-      
       {/* Confirm Dialog */}
       <AlertDialog open={!!pendingAction} onOpenChange={(open) => !open && closeConfirm()}>
         <AlertDialogContent>

@@ -88,46 +88,83 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   };
 
   return (
-    <div className="w-full md:w-96 lg:w-80 bg-card/20 backdrop-blur-md md:border-l border-white/10 h-full flex flex-col">
+    <div className="w-full md:w-2/5 lg:w-80 bg-card/20 backdrop-blur-md border-l border-white/10 h-full flex flex-col">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <div className="mt-4 md:mt-8 space-y-4 p-4 md:p-5 bg-gradient-to-br from-card/60 to-card/40 rounded-xl border border-border/50">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold">Content Overview</h3>
-            <StatusBadge status={content.approval_status || 'draft'} className="text-xs px-3 py-1" />
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Title Display Summary */}
+        <div className="mt-8 space-y-3 p-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-white/10">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">Content Overview</h3>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={onSave}
+                disabled={isSubmitting}
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/80"
+                title={isSubmitting ? 'Saving...' : 'Save Draft'}
+              >
+                <History className="h-3 w-3" />
+              </Button>
+              <StatusBadge status={content.approval_status} showIcon={true} />
+            </div>
           </div>
           
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">Title</label>
-            <div className="text-base font-medium leading-snug line-clamp-2" title={editedTitle}>
+            <div className="text-sm text-white/90 truncate" title={editedTitle}>
               {editedTitle}
             </div>
-            <Button
-              onClick={onSave}
-              disabled={isSubmitting}
-              variant="ghost"
-              size="sm"
-              className="h-9 w-full mt-2 bg-muted/50 hover:bg-muted"
-            >
-              <History className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Saving...' : 'Save Draft'}
-            </Button>
+            <div className="text-xs text-muted-foreground">
+              {editedTitle.length}/60 characters
+            </div>
+            {mainKeyword && (
+              <div className={`flex items-center gap-1 text-xs ${titleIncludesKeyword ? 'text-green-400' : 'text-amber-400'}`}>
+                {titleIncludesKeyword ? (
+                  <>
+                    <CheckCircle2 className="h-3 w-3" />
+                    Keyword included
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-3 w-3" />
+                    Add keyword: "{mainKeyword}"
+                  </>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Keywords Display */}
+          {content.keywords && content.keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {content.keywords.map((keyword, i) => (
+                <Badge 
+                  key={i} 
+                  variant="secondary" 
+                  className="text-xs bg-neon-purple/20 text-neon-purple border border-neon-purple/30"
+                >
+                  {keyword}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
-        
+        {/* Title Editing */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Edit Title</label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Title</label>
+            <span className={`text-xs ${editedTitle.length > 60 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {editedTitle.length}/60
+            </span>
+          </div>
           <Input
             value={editedTitle}
             onChange={(e) => onTitleChange(e.target.value)}
             placeholder="Enter title..."
-            className="h-11 text-base"
+            className="bg-background/50"
           />
-          <div className="text-xs text-muted-foreground mt-1">
-            {editedTitle.length}/60 characters
-          </div>
           {mainKeyword && (
-            <div className={`flex items-center gap-1 text-xs ${titleIncludesKeyword ? 'text-success' : 'text-warning'}`}>
+            <div className={`flex items-center gap-1 text-xs ${titleIncludesKeyword ? 'text-green-500' : 'text-amber-500'}`}>
               {titleIncludesKeyword ? (
                 <>
                   <CheckCircle2 className="h-3 w-3" />
@@ -136,7 +173,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
               ) : (
                 <>
                   <AlertCircle className="h-3 w-3" />
-                  Add keyword: "{mainKeyword}"
+                  Add main keyword: "{mainKeyword}"
                 </>
               )}
             </div>
@@ -193,7 +230,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
                   value={approvalNotes || ''}
                   onChange={handleNotesChange}
                   placeholder={getNotesPlaceholder()}
-                  className="min-h-[100px] md:min-h-[80px] bg-gray-900/40 border-white/10 focus-visible:ring-neon-purple/50 text-white/90 placeholder:text-white/40 resize-none text-base md:text-sm"
+                  className="min-h-[80px] bg-gray-900/40 border-white/10 focus-visible:ring-neon-purple/50 text-white/90 placeholder:text-white/40 resize-none"
                   onFocus={() => setNotesExpanded(true)}
                 />
                 <div className="flex items-center justify-between text-xs text-white/50">

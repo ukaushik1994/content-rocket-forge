@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { X } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { ContentApprovalEditor } from '@/components/approval/ContentApprovalEditor';
@@ -129,63 +128,24 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
     }
   };
   return <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full h-[100dvh] md:w-[90vw] md:h-[90vh] lg:w-[85vw] lg:h-[85vh] max-w-7xl p-0 border-none overflow-hidden md:rounded-lg">
-        <div className="h-full bg-background flex flex-col md:flex-row">
+      <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 border-none overflow-hidden rounded-lg">
+        <div className="h-full bg-background flex">
           
-          {/* Mobile: Close button and tabs */}
-          <div className="md:hidden sticky top-0 z-30 bg-background border-b">
-            <div className="flex items-center justify-between px-4 py-3">
-              <h2 className="text-base font-semibold">Review Content</h2>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onClose} 
-                className="h-11 w-11"
-                aria-label="Close review modal"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            <Tabs defaultValue="editor" className="w-full">
-              <TabsList className="w-full h-12 rounded-none border-t bg-muted/30">
-                <TabsTrigger 
-                  value="editor" 
-                  className="flex-1 h-full text-base data-[state=active]:bg-background"
-                  aria-label="Editor view"
-                >
-                  Editor
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="tools" 
-                  className="flex-1 h-full text-base data-[state=active]:bg-background"
-                  aria-label="Tools view"
-                >
-                  Tools
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="editor" className="h-[calc(100dvh-108px)] overflow-y-auto m-0">
-                <ContentApprovalEditor content={content} hideToolsToggle={true} defaultShowSidebar={false} />
-              </TabsContent>
-              <TabsContent value="tools" className="h-[calc(100dvh-108px)] overflow-y-auto m-0">
-                <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
-                  console.log('Section regenerated:', updatedContent);
-                }} />
-              </TabsContent>
-            </Tabs>
-          </div>
+          {/* Minimal Header */}
+          <div className="flex-1 flex flex-col">
+            
 
-          {/* Desktop: Side-by-side layout */}
-          <div className="hidden md:flex md:flex-1 md:flex-col">
+            {/* Content Editor - 70% width */}
             <div className="flex-1 overflow-y-auto">
               <ContentApprovalEditor content={content} hideToolsToggle={true} defaultShowSidebar={false} />
             </div>
           </div>
 
-          <div className="hidden md:block">
-            <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
-              console.log('Section regenerated:', updatedContent);
-            }} />
-          </div>
+          {/* Compact Editing Sidebar - 30% width */}
+          <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
+          // Update content logic would go here
+          console.log('Section regenerated:', updatedContent);
+        }} />
         </div>
       </DialogContent>
     </Dialog>;
