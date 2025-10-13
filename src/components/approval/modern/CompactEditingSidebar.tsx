@@ -88,11 +88,11 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
   };
 
   return (
-    <div className="w-full md:w-2/5 lg:w-80 bg-card/20 backdrop-blur-md border-l border-white/10 h-full flex flex-col">
+    <div className="w-full md:w-96 lg:w-80 bg-card/20 backdrop-blur-md md:border-l border-white/10 h-full flex flex-col">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Title Display Summary */}
-        <div className="mt-8 space-y-3 p-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-white/10">
+        <div className="mt-4 md:mt-8 space-y-3 p-3 md:p-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-white/10">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Content Overview</h3>
             <div className="flex items-center gap-2">
@@ -101,17 +101,17 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
                 disabled={isSubmitting}
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/80"
+                className="h-8 w-8 md:h-6 md:w-6 p-0 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/80"
                 title={isSubmitting ? 'Saving...' : 'Save Draft'}
               >
-                <History className="h-3 w-3" />
+                <History className="h-4 w-4 md:h-3 md:w-3" />
               </Button>
               <StatusBadge status={content.approval_status} showIcon={true} />
             </div>
           </div>
           
           <div className="space-y-2">
-            <div className="text-sm text-white/90 truncate" title={editedTitle}>
+            <div className="text-sm md:text-sm text-white/90 break-words line-clamp-2 md:truncate" title={editedTitle}>
               {editedTitle}
             </div>
             <div className="text-xs text-muted-foreground">
@@ -161,7 +161,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
             value={editedTitle}
             onChange={(e) => onTitleChange(e.target.value)}
             placeholder="Enter title..."
-            className="bg-background/50"
+            className="bg-background/50 h-10 md:h-9 text-base md:text-sm"
           />
           {mainKeyword && (
             <div className={`flex items-center gap-1 text-xs ${titleIncludesKeyword ? 'text-green-500' : 'text-amber-500'}`}>
@@ -230,7 +230,7 @@ export const CompactEditingSidebar: React.FC<CompactEditingSidebarProps> = ({
                   value={approvalNotes || ''}
                   onChange={handleNotesChange}
                   placeholder={getNotesPlaceholder()}
-                  className="min-h-[80px] bg-gray-900/40 border-white/10 focus-visible:ring-neon-purple/50 text-white/90 placeholder:text-white/40 resize-none"
+                  className="min-h-[100px] md:min-h-[80px] bg-gray-900/40 border-white/10 focus-visible:ring-neon-purple/50 text-white/90 placeholder:text-white/40 resize-none text-base md:text-sm"
                   onFocus={() => setNotesExpanded(true)}
                 />
                 <div className="flex items-center justify-between text-xs text-white/50">

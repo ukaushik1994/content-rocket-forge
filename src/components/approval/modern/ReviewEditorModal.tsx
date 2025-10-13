@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { X } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { ContentApprovalEditor } from '@/components/approval/ContentApprovalEditor';
@@ -128,24 +129,45 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
     }
   };
   return <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[85vw] h-[85vh] max-w-[85vw] max-h-[85vh] p-0 border-none overflow-hidden rounded-lg">
-        <div className="h-full bg-background flex">
+      <DialogContent className="w-full h-[100dvh] md:w-[90vw] md:h-[90vh] lg:w-[85vw] lg:h-[85vh] max-w-7xl p-0 border-none overflow-hidden md:rounded-lg">
+        <div className="h-full bg-background flex flex-col md:flex-row">
           
-          {/* Minimal Header */}
-          <div className="flex-1 flex flex-col">
-            
+          {/* Mobile: Close button and tabs */}
+          <div className="md:hidden sticky top-0 z-30 bg-background border-b">
+            <div className="flex items-center justify-between px-4 py-2">
+              <h2 className="text-sm font-medium">Review Content</h2>
+              <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <Tabs defaultValue="editor" className="w-full">
+              <TabsList className="w-full rounded-none border-t">
+                <TabsTrigger value="editor" className="flex-1">Editor</TabsTrigger>
+                <TabsTrigger value="tools" className="flex-1">Tools</TabsTrigger>
+              </TabsList>
+              <TabsContent value="editor" className="h-[calc(100dvh-96px)] overflow-y-auto m-0">
+                <ContentApprovalEditor content={content} hideToolsToggle={true} defaultShowSidebar={false} />
+              </TabsContent>
+              <TabsContent value="tools" className="h-[calc(100dvh-96px)] overflow-y-auto m-0">
+                <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
+                  console.log('Section regenerated:', updatedContent);
+                }} />
+              </TabsContent>
+            </Tabs>
+          </div>
 
-            {/* Content Editor - 70% width */}
+          {/* Desktop: Side-by-side layout */}
+          <div className="hidden md:flex md:flex-1 md:flex-col">
             <div className="flex-1 overflow-y-auto">
               <ContentApprovalEditor content={content} hideToolsToggle={true} defaultShowSidebar={false} />
             </div>
           </div>
 
-          {/* Compact Editing Sidebar - 30% width */}
-          <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
-          // Update content logic would go here
-          console.log('Section regenerated:', updatedContent);
-        }} />
+          <div className="hidden md:block">
+            <CompactEditingSidebar content={content} editedTitle={editedTitle} onTitleChange={setEditedTitle} onSave={handleSave} onImprove={handleImprove} isSubmitting={isSubmitting} isImproving={isImproving} recommendation={recommendation} approvalNotes={approvalNotes} setApprovalNotes={setApprovalNotes} onApprove={handleApprove} onRequestChanges={handleRequestChanges} onReject={handleReject} onSubmitForReview={handleSubmitForReview} onTitleSelect={(title: string) => setEditedTitle(title)} onSectionRegenerated={(updatedContent: string) => {
+              console.log('Section regenerated:', updatedContent);
+            }} />
+          </div>
         </div>
       </DialogContent>
     </Dialog>;

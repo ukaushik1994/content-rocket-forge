@@ -326,26 +326,26 @@ useEffect(() => {
       
       {/* Main Editor - Full Width */}
       <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl w-full flex flex-col h-full">
-          <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
+          <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm px-4 md:px-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
+                <CardTitle className="text-sm md:text-sm font-medium text-white/80">Generated Content</CardTitle>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
               </div>
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center flex-wrap">
                   <ToggleGroup type="single" value={activeTab} onValueChange={setActiveTab} size="sm" className="bg-card/60 p-0.5 rounded-md">
-                    <ToggleGroupItem value="edit" className="h-6 px-2 text-[11px] data-[state=on]:bg-neon-purple/20 data-[state=on]:text-neon-purple">
+                    <ToggleGroupItem value="edit" className="h-8 md:h-6 px-3 md:px-2 text-xs md:text-[11px] data-[state=on]:bg-neon-purple/20 data-[state=on]:text-neon-purple">
                       <Edit3 className="h-3 w-3 mr-1" />
-                      Edit
+                      <span className="hidden sm:inline">Edit</span>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="preview" className="h-6 px-2 text-[11px] data-[state=on]:bg-neon-purple/20 data-[state=on]:text-neon-purple">
+                    <ToggleGroupItem value="preview" className="h-8 md:h-6 px-3 md:px-2 text-xs md:text-[11px] data-[state=on]:bg-neon-purple/20 data-[state=on]:text-neon-purple">
                       <Globe className="h-3 w-3 mr-1" />
-                      Preview
+                      <span className="hidden sm:inline">Preview</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
-                  <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10">
+                  <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 h-8 md:h-auto">
                     <Wand className="h-4 w-4 text-neon-purple" />
-                    {isImproving ? 'Improving...' : 'Improve with AI'}
+                    <span className="hidden sm:inline">{isImproving ? 'Improving...' : 'Improve with AI'}</span>
                   </Button>
               </div>
             </div>
@@ -355,7 +355,7 @@ useEffect(() => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0 flex-1">
-                <div className="h-full">
+                <div className="h-full px-4 md:px-0">
                   <InlineAiEditor value={editedContent} onChange={handleContentChange} onAiApplied={prev => {
                   setUndoContent(prev);
                   setTimeout(() => setUndoContent(null), 5000);
@@ -364,7 +364,7 @@ useEffect(() => {
               </TabsContent>
               
               <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0 flex-1">
-                <div className="h-full p-6 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
+                <div className="h-full p-4 md:p-6 overflow-y-auto prose prose-sm md:prose-base prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
                   {editedContent.split('\n\n').map((paragraph, idx) => paragraph.startsWith('# ') ? <h1 key={idx}>{paragraph.substring(2)}</h1> : paragraph.startsWith('## ') ? <h2 key={idx}>{paragraph.substring(3)}</h2> : paragraph.startsWith('### ') ? <h3 key={idx}>{paragraph.substring(4)}</h3> : paragraph ? <p key={idx}>{paragraph}</p> : <br key={idx} />)}
                 </div>
               </TabsContent>
