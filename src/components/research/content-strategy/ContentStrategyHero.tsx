@@ -12,7 +12,7 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
     >
-      <div className="relative z-10 w-full px-6 pt-24 pb-12">
+      <div className="relative z-10 w-full px-6 pt-8 pb-12">
         <div className="text-center space-y-8 max-w-5xl mx-auto">
           {/* Animated background blur */}
           <motion.div
