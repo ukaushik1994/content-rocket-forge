@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RefreshCw, Send, TrendingUp, Calendar, Target, BarChart3, Lightbulb, Trash2, Eye, FileText, AlertCircle, TreePine, Filter } from 'lucide-react';
+import { RefreshCw, Send, TrendingUp, Calendar, Target, BarChart3, Lightbulb, Trash2, Eye, FileText, AlertCircle, TreePine, Filter, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { aiStrategyService } from '@/services/aiStrategyService';
@@ -178,6 +178,112 @@ export const ContentStrategyEngine = ({
   const handleClearSelection = () => {
     setSelected({});
     setSelectedProposals({});
+  };
+
+  const handleDeleteSelected = async () => {
+    const selectedProposalsList = filteredProposals.filter((_, index) => selected[index]);
+    if (selectedProposalsList.length === 0) {
+      return;
+    }
+
+    const proposalIds = selectedProposalsList
+      .map(p => p.id)
+      .filter(Boolean);
+
+    if (proposalIds.length === 0) {
+      toast({
+        title: "Cannot Delete",
+        description: "Selected proposals don't have valid IDs.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await aiStrategyService.bulkDeleteProposals(proposalIds);
+      
+      // Update state
+      setAllProposals(prev => prev.filter(p => !proposalIds.includes(p.id)));
+      setHistoricalProposals(prev => prev.filter(p => !proposalIds.includes(p.id)));
+      setSelected({});
+      setSelectedProposals({});
+
+      toast({
+        title: "Proposals Deleted",
+        description: `Successfully deleted ${proposalIds.length} proposal${proposalIds.length > 1 ? 's' : ''}.`
+      });
+    } catch (error) {
+      console.error('Error deleting proposals:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete proposals. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleGenerateMore = async () => {
+    if (!goals?.monthlyTraffic) {
+      toast({
+        title: "Set Your Traffic Goal First",
+        description: "Please set your monthly traffic goal before generating proposals.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setLoadingMore(true);
+      
+      const result = await aiStrategyService.generateNewStrategy({
+        goals: {
+          monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
+          contentPieces: 6,
+          timeline: goals.timeline || '3 months',
+          mainKeyword: goals.mainKeyword || ''
+        },
+        location: 'United States',
+        excludeKeywords: []
+      });
+
+      const newProposals = result.proposals || [];
+      
+      // Mark new proposals for highlighting
+      const newIds = new Set(newProposals.map(p => p.id || p.title.toLowerCase().replace(/\s+/g, '-')));
+      setNewProposalIds(newIds);
+      
+      // Set timestamps for fade-out animation
+      const timestamps: Record<string, number> = {};
+      newProposals.forEach(p => {
+        const id = p.id || p.title.toLowerCase().replace(/\s+/g, '-');
+        timestamps[id] = Date.now();
+      });
+      setNewProposalTimestamps(timestamps);
+
+      // Add to proposals arrays
+      setProposals(prev => [...prev, ...newProposals]);
+      setAiProposals([...(aiProposals || []), ...newProposals]);
+      
+      toast({
+        title: `${newProposals.length} New Proposals Generated`,
+        description: result.message
+      });
+
+      // Remove "new" highlighting after 10 seconds
+      setTimeout(() => {
+        setNewProposalIds(new Set());
+        setNewProposalTimestamps({});
+      }, 10000);
+    } catch (error) {
+      console.error('Error generating more proposals:', error);
+      toast({
+        title: 'Generation Failed',
+        description: error.message || 'Failed to generate more proposals. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   // Generation modal state
@@ -391,20 +497,54 @@ export const ContentStrategyEngine = ({
             {filteredProposals.length > 0 && (
               <div className="flex items-center gap-2">
                 <ViewToggle view={viewMode} onViewChange={setViewMode} />
+                
+                {/* Icon-only Filter button with tooltip */}
                 <Button 
                   onClick={() => setShowFilterDialog(true)} 
                   variant="outline" 
                   size="sm" 
-                  className="border-white/20 text-white/80 hover:bg-white/10 gap-2"
+                  className="border-white/20 text-white/80 hover:bg-white/10 relative"
+                  title="Filter proposals"
                 >
                   <Filter className="h-4 w-4" />
-                  Filters
                   {hasActiveFilters() && (
-                    <Badge variant="secondary" className="text-xs bg-primary/20">
+                    <Badge variant="secondary" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-primary">
                       {filters.statuses.length + filters.categories.length + (filters.dateRange ? 1 : 0)}
                     </Badge>
                   )}
                 </Button>
+
+                {/* Delete button - only visible when items selected */}
+                {selectedCount > 0 && (
+                  <Button 
+                    onClick={handleDeleteSelected}
+                    variant="outline" 
+                    size="sm" 
+                    className="border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 relative"
+                    title="Delete selected proposals"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <Badge variant="secondary" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500">
+                      {selectedCount}
+                    </Badge>
+                  </Button>
+                )}
+
+                {/* Generate More button - visible when proposals exist */}
+                {allProposals.length > 0 && (
+                  <Button 
+                    onClick={handleGenerateMore}
+                    disabled={loadingMore}
+                    variant="outline" 
+                    size="sm" 
+                    className="border-primary/20 text-primary hover:bg-primary/10 gap-2"
+                    title="Generate more proposals"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {loadingMore ? 'Generating...' : 'Generate More'}
+                  </Button>
+                )}
+                
                 <Button onClick={handleSelectAllProposals} variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10">
                   Select All
                 </Button>

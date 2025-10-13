@@ -306,6 +306,31 @@ class AIStrategyService {
     }
   }
 
+  async bulkDeleteProposals(proposalIds: string[]): Promise<void> {
+    try {
+      console.log('🗑️ Bulk deleting proposals:', proposalIds.length);
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('ai_strategy_proposals')
+        .delete()
+        .in('id', proposalIds)
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error('Database error deleting proposals:', error);
+        throw error;
+      }
+      
+      console.log('✅ Proposals deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete proposals:', error);
+      throw error;
+    }
+  }
+
   // Content Builder integration
   async prepareContentBuilderPayload(proposal: StrategyProposal): Promise<{
     source: string;
