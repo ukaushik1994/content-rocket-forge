@@ -41,7 +41,7 @@ export const InvestorSection = () => {
               <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-clip-text text-transparent"> Content Intelligence</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We've built the platform. Now we're seeking seed investment to launch, scale, and revolutionize how creators worldwide approach content creation.
+              We've built a complete AI-powered content platform in 60 days. Now we're seeking seed investment to launch, scale, and revolutionize how creators worldwide approach content creation.
             </p>
           </motion.div>
 
@@ -143,7 +143,7 @@ export const InvestorSection = () => {
               <GlassCard className="p-6 border-primary/30">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <h4 className="font-bold text-primary">Built (Q1-Q3 2025)</h4>
+                  <h4 className="font-bold text-primary">Built (Sept-Oct 2025)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
@@ -169,7 +169,7 @@ export const InvestorSection = () => {
               <GlassCard className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Calendar className="h-4 w-4 text-primary" />
-                  <h4 className="font-bold text-primary">Current Phase (Q4 2025)</h4>
+                  <h4 className="font-bold text-primary">Current Phase (Oct-Nov 2025)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
@@ -195,7 +195,7 @@ export const InvestorSection = () => {
               <GlassCard className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="h-4 w-4 text-neon-pink" />
-                  <h4 className="font-bold text-neon-pink">Launch & Scale (Q1 2026+)</h4>
+                  <h4 className="font-bold text-neon-pink">Launch & Scale (Dec 2025+)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
