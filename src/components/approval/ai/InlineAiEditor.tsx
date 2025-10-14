@@ -10,9 +10,10 @@ interface InlineAiEditorProps {
   onChange: (newValue: string) => void;
   onAiApplied?: (prevValue: string) => void;
   disabled?: boolean;
+  className?: string;
 }
 
-export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange, onAiApplied, disabled }) => {
+export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange, onAiApplied, disabled, className }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -210,7 +211,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
 
 
   return (
-    <div ref={containerRef} className="relative h-full flex flex-col">
+    <div ref={containerRef} className={`relative h-full flex flex-col ${className || ''}`}>
       {selection && toolbarPos && (
         <div
           ref={toolbarRef}
