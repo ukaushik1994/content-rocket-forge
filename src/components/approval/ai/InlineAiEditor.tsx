@@ -251,18 +251,20 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
           {isProcessing && <Loader2 className="h-3 w-3 ml-1 animate-spin" />}
         </div>
       )}
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onSelect={updateSelection}
-        onClick={updateSelection}
-        onKeyUp={updateSelection}
-        onScroll={handleScroll}
-        placeholder="Write your content here..."
-        className="flex-1 min-h-0 border-0 focus-visible:ring-0 resize-none p-4 bg-transparent scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent"
-        disabled={disabled}
-      />
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent">
+        <Textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onSelect={updateSelection}
+          onClick={updateSelection}
+          onKeyUp={updateSelection}
+          onScroll={handleScroll}
+          placeholder="Write your content here..."
+          className="w-full h-full min-h-full border-0 focus-visible:ring-0 resize-none p-4 bg-transparent"
+          disabled={disabled}
+        />
+      </div>
     </div>
   );
 };
