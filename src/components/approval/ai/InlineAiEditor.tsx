@@ -10,10 +10,9 @@ interface InlineAiEditorProps {
   onChange: (newValue: string) => void;
   onAiApplied?: (prevValue: string) => void;
   disabled?: boolean;
-  className?: string;
 }
 
-export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange, onAiApplied, disabled, className }) => {
+export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange, onAiApplied, disabled }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -211,7 +210,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
 
 
   return (
-    <div ref={containerRef} className={`relative h-full flex flex-col ${className || ''}`}>
+    <div ref={containerRef} className="relative h-full flex flex-col">
       {selection && toolbarPos && (
         <div
           ref={toolbarRef}
@@ -260,7 +259,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
         onKeyUp={updateSelection}
         onScroll={handleScroll}
         placeholder="Write your content here..."
-        className="flex-1 border-0 focus-visible:ring-0 resize-none p-4 bg-transparent scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent"
+        className="h-full border-0 focus-visible:ring-0 resize-none p-4 flex-1 bg-transparent scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent"
         disabled={disabled}
       />
     </div>
