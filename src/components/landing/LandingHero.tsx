@@ -89,7 +89,7 @@ export const LandingHero = () => {
             </div>
 
             {/* Main Headline */}
-            <div className="space-y-4">
+            <div className="space-y-4 min-h-[280px] md:min-h-[320px] lg:min-h-[350px]">
               <AnimatePresence mode="wait">
                 <motion.h1 
                   key={currentMessageIndex}
