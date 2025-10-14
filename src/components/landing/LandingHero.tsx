@@ -4,73 +4,54 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DemoModal } from '@/components/landing/DemoModal';
 import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
-import { Play, ArrowRight, Star, Users, Zap } from 'lucide-react';
+import { Play, ArrowRight, Star, Users, Zap, Brain, RefreshCw } from 'lucide-react';
+import { GlassCard } from '@/components/ui/GlassCard';
 
 export const LandingHero = () => {
   const navigate = useNavigate();
   const [isDemoOpen, setIsDemoOpen] = useState(false);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
-  // Dynamic hero messages that rotate every 3 seconds
+  // Dynamic hero messages that rotate every 3 seconds - Self-Learning Engine Focus
   const heroMessages = [
     {
-      headline: "Create Content That",
-      highlightedText: "Converts & Ranks",
-      description: "Transform your content strategy with AI that understands",
+      headline: "Your Self-Learning",
+      highlightedText: "Content Engine",
+      description: "Creates, publishes, analyzes, and",
       highlightedPhrases: [
-        { text: "SERP data", color: "text-primary" },
-        { text: "engaging copy", color: "text-neon-blue" },
-        { text: "measurable results", color: "text-neon-pink" }
+        { text: "learns from results", color: "text-primary" },
+        { text: "adapts to your audience", color: "text-neon-blue" },
+        { text: "improves automatically", color: "text-neon-pink" }
       ]
     },
     {
-      headline: "Generate Content That",
-      highlightedText: "Dominates SERPs",
-      description: "Leverage real-time",
+      headline: "Content That Gets",
+      highlightedText: "Smarter Over Time",
+      description: "Every published post feeds analytics back, creating content that's",
       highlightedPhrases: [
-        { text: "competitor analysis", color: "text-primary" },
-        { text: "keyword intelligence", color: "text-neon-blue" },
-        { text: "SEO optimization", color: "text-neon-pink" }
+        { text: "progressively better", color: "text-primary" },
+        { text: "personalized to YOU", color: "text-neon-blue" },
+        { text: "continuously learning", color: "text-neon-pink" }
       ]
     },
     {
-      headline: "Build Content That",
-      highlightedText: "Drives Revenue",
-      description: "Monitor",
+      headline: "From Research to ROI",
+      highlightedText: "All Automated",
+      description: "SERP research → AI writing → publishing → analytics →",
       highlightedPhrases: [
-        { text: "performance analytics", color: "text-primary" },
-        { text: "ROI metrics", color: "text-neon-blue" },
-        { text: "data-driven insights", color: "text-neon-pink" }
+        { text: "smarter content", color: "text-primary" },
+        { text: "automated workflow", color: "text-neon-blue" },
+        { text: "real results", color: "text-neon-pink" }
       ]
     },
     {
-      headline: "Craft Content That",
-      highlightedText: "Outranks Competitors",
-      description: "Maintain consistent",
+      headline: "AI That Understands",
+      highlightedText: "YOUR Audience",
+      description: "Not generic AI. CreAiter learns what works for",
       highlightedPhrases: [
-        { text: "brand voice", color: "text-primary" },
-        { text: "multi-format content", color: "text-neon-blue" },
-        { text: "multiple platforms", color: "text-neon-pink" }
-      ]
-    },
-    {
-      headline: "Produce Content That",
-      highlightedText: "Scales Your Brand",
-      description: "Research trending",
-      highlightedPhrases: [
-        { text: "keywords", color: "text-primary" },
-        { text: "content gaps", color: "text-neon-blue" },
-        { text: "competitor opportunities", color: "text-neon-pink" }
-      ]
-    },
-    {
-      headline: "Design Content That",
-      highlightedText: "Engages & Converts",
-      description: "Generate",
-      highlightedPhrases: [
-        { text: "high-quality content", color: "text-primary" },
-        { text: "search optimization", color: "text-neon-blue" },
-        { text: "social platforms", color: "text-neon-pink" }
+        { text: "YOUR content", color: "text-primary" },
+        { text: "YOUR audience", color: "text-neon-blue" },
+        { text: "YOUR strategy", color: "text-neon-pink" }
       ]
     }
   ];
@@ -103,8 +84,8 @@ export const LandingHero = () => {
           <div className="text-center space-y-8 animate-fade-in max-w-4xl mx-auto">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
-              <Zap className="h-4 w-4" />
-              AI-Powered Content Creation
+              <Brain className="h-4 w-4" />
+              The Only Self-Learning Content Operating System
             </div>
 
             {/* Main Headline */}
@@ -167,7 +148,7 @@ export const LandingHero = () => {
                   className="border-2 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 text-lg px-8 py-4 backdrop-blur-sm transition-all duration-300"
                 >
                   <Play className="mr-2 h-5 w-5" />
-                  Watch Demo
+                  See How It Learns
                 </Button>
               </div>
 
@@ -175,18 +156,66 @@ export const LandingHero = () => {
               <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 fill-primary text-primary" />
-                  <span>4.9/5 rating</span>
+                  <span>4.9/5 from 2,000+ reviews</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-primary" />
-                  <span>10k+ creators</span>
+                  <span>10,000+ creators</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <span>100M+ words generated</span>
+                  <RefreshCw className="h-4 w-4 text-primary" />
+                  <span>AI learns from every post</span>
                 </div>
               </div>
             </div>
+
+            {/* Intelligence Loop Diagram */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 1 }}
+              className="mt-16 max-w-4xl mx-auto"
+            >
+              <div className="relative">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-neon-blue/20 to-neon-pink/20 blur-3xl" />
+                
+                {/* Dashboard Preview */}
+                <GlassCard className="p-4 relative">
+                  <div className="aspect-video rounded-lg bg-gradient-to-br from-background/50 to-background/20 border border-border/50 overflow-hidden relative">
+                    <div className="absolute inset-0 bg-futuristic-grid bg-grid opacity-20" />
+                    
+                    {/* Simulated Dashboard Content */}
+                    <div className="p-6 space-y-4 relative z-10">
+                      {/* Header Bar */}
+                      <div className="flex items-center justify-between">
+                        <div className="h-8 w-48 bg-primary/20 rounded-lg animate-pulse" />
+                        <div className="flex gap-2">
+                          <div className="h-8 w-24 bg-neon-blue/20 rounded-lg animate-pulse" style={{ animationDelay: '0.2s' }} />
+                          <div className="h-8 w-24 bg-neon-pink/20 rounded-lg animate-pulse" style={{ animationDelay: '0.4s' }} />
+                        </div>
+                      </div>
+                      
+                      {/* Charts Grid */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="h-32 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20 animate-pulse" />
+                        <div className="h-32 bg-gradient-to-br from-neon-blue/10 to-neon-blue/5 rounded-lg border border-neon-blue/20 animate-pulse" style={{ animationDelay: '0.3s' }} />
+                        <div className="h-32 bg-gradient-to-br from-neon-pink/10 to-neon-pink/5 rounded-lg border border-neon-pink/20 animate-pulse" style={{ animationDelay: '0.6s' }} />
+                      </div>
+                      
+                      {/* AI Strategy Coach Section */}
+                      <div className="h-20 bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 flex items-center px-4 gap-3">
+                        <Brain className="h-8 w-8 text-primary animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-primary/30 rounded w-3/4 animate-pulse" />
+                          <div className="h-3 bg-neon-blue/30 rounded w-1/2 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </GlassCard>
+              </div>
+            </motion.div>
           </div>
 
           {/* Stats Section */}

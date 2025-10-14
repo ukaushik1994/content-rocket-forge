@@ -14,58 +14,41 @@ export const FeaturesShowcase = () => {
 
   const features = [
     {
-      id: 'content-builder',
-      title: 'AI Content Builder',
-      description: 'Generate high-quality content 10x faster with AI-powered writing assistance',
-      icon: FileText,
-      benefits: ['AI writing assistant', 'Multiple content formats', 'Brand voice consistency', 'Real-time optimization'],
-      preview: 'Transform ideas into compelling content across blogs, social media, emails, and more.',
-      color: 'from-primary to-neon-blue'
+      id: 'self-learning',
+      title: 'Self-Learning Intelligence Engine',
+      description: 'Creates content, tracks performance, analyzes results, and feeds insights back into future content generation',
+      icon: Brain,
+      benefits: ['Learns from YOUR performance', 'Adapts to YOUR audience', 'Improves quality over time', 'Personalized strategy'],
+      preview: 'Every piece of content you publish teaches the AI what works for YOUR audience. Your 100th post will be exponentially better than your 1st because CreAiter learns from every result.',
+      color: 'from-primary to-neon-pink',
+      isHero: true
     },
     {
-      id: 'research-suite',
-      title: 'SERP Intelligence',
-      description: 'Real-time search engine data integration for content that ranks',
-      icon: Search,
-      benefits: ['Live SERP analysis', 'Keyword clustering', 'Competitor insights', 'Trend prediction'],
-      preview: 'Access real-time search data to create content that dominates search results.',
+      id: 'ai-strategy',
+      title: 'AI Strategy Coach',
+      description: '24/7 business intelligence AI with interactive charts and tables',
+      icon: MessageSquare,
+      benefits: ['Interactive charts & tables', 'Multi-perspective analysis', 'Contextual recommendations', 'Performance predictions'],
+      preview: 'Unlike text-only AI, CreAiter\'s Strategy Coach shows you data visually. See what\'s working, what\'s not, and exactly what to do next - with charts, tables, and actionable insights.',
       color: 'from-neon-blue to-neon-pink'
     },
     {
-      id: 'analytics',
-      title: 'Performance Analytics',
-      description: 'Track real ROI with comprehensive content performance metrics',
-      icon: BarChart3,
-      benefits: ['Content performance tracking', 'ROI measurement', 'Audience insights', 'Growth analytics'],
-      preview: 'Measure what matters with detailed analytics and actionable insights.',
+      id: 'serp-research',
+      title: 'SERP-Powered Research',
+      description: 'Real-time competitive intelligence from live search results',
+      icon: Search,
+      benefits: ['Live SERP analysis', 'Content gap detection', 'Question mining (PAA)', 'Keyword intelligence'],
+      preview: 'Know exactly what will rank before you write. CreAiter analyzes live search results to find gaps, questions, and opportunities that your competitors miss.',
       color: 'from-neon-pink to-neon-orange'
     },
     {
-      id: 'repository',
-      title: 'Content Repository',
-      description: 'Organize and manage all your content assets in one intelligent hub',
+      id: 'content-hub',
+      title: 'Smart Content Hub',
+      description: 'Intelligent repository with performance tracking and repurposing',
       icon: Archive,
-      benefits: ['Smart organization', 'Version control', 'Team collaboration', 'Asset management'],
-      preview: 'Never lose track of your content with intelligent organization and search.',
+      benefits: ['Performance analytics', 'Content repurposing (1→20+)', 'Version control', 'Team collaboration'],
+      preview: 'Never lose track of content. Every piece is tracked, analyzed, and can be repurposed into 20+ formats with one click. See what performs best and do more of it.',
       color: 'from-neon-orange to-primary'
-    },
-    {
-      id: 'repurposing',
-      title: 'Content Repurposing',
-      description: 'Transform one piece of content into 20+ formats across platforms',
-      icon: Repeat,
-      benefits: ['Multi-format conversion', 'Platform optimization', 'Automated adaptation', 'Cross-posting'],
-      preview: 'Maximize your content reach by adapting it for every platform and audience.',
-      color: 'from-primary to-neon-blue'
-    },
-    {
-      id: 'ai-chat',
-      title: 'AI Strategy Assistant',
-      description: '24/7 content strategist that understands your brand and goals',
-      icon: MessageSquare,
-      benefits: ['Strategic guidance', 'Content ideation', 'Brand alignment', 'Instant support'],
-      preview: 'Get expert content strategy advice whenever you need it, powered by AI.',
-      color: 'from-neon-blue to-neon-pink'
     }
   ];
 
@@ -73,12 +56,12 @@ export const FeaturesShowcase = () => {
     <section className="py-16 px-4">
       <Container>
         <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Powerful Features, Simple Experience
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            The Only Content Platform
+            <span className="bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent"> That Learns From Your Results</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Everything you need to create, optimize, and scale your content strategy. 
-            Built for creators who demand excellence.
+            Not just another AI tool. CreAiter creates a personalized content strategy that gets smarter every time you publish.
           </p>
         </div>
 
@@ -92,13 +75,21 @@ export const FeaturesShowcase = () => {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <GlassCard
-                  className={`p-6 cursor-pointer transition-all duration-300 ${
+                  className={`p-6 cursor-pointer transition-all duration-300 relative ${
                     activeFeature === index 
                       ? 'ring-2 ring-primary shadow-neon' 
                       : 'hover:shadow-lg'
                   }`}
                   onClick={() => setActiveFeature(index)}
                 >
+                  {/* Hero Feature Badge */}
+                  {feature.isHero && (
+                    <div className="absolute top-4 right-4">
+                      <div className="bg-gradient-to-r from-primary to-neon-pink text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">
+                        ⭐ CORE DIFFERENTIATOR
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-start gap-4">
                     <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${feature.color} p-0.5 flex-shrink-0`}>
                       <div className="w-full h-full rounded-lg bg-card flex items-center justify-center">

@@ -7,31 +7,44 @@ import { Star, Quote, TrendingUp, Users, Award, Zap } from 'lucide-react';
 export const SocialProof = () => {
   const testimonials = [
     {
-      name: 'Sarah Chen',
-      role: 'Content Creator',
-      company: '@sarahcreates',
+      name: 'Sarah Mitchell',
+      role: 'Content Creator & Blogger',
+      company: 'Blogger',
       image: '👩‍💻',
       rating: 5,
-      quote: 'CreAiter transformed my content strategy. I went from struggling with writer\'s block to publishing daily content that actually ranks. The SERP integration is a game-changer.',
-      metric: '300% increase in organic reach'
+      quote: 'My first 5 blog posts got 200 views total. After 3 months with CreAiter, my posts now average 2,000+ views because the AI learned exactly what my audience wants. The difference is night and day.',
+      metric: '10x traffic growth in 3 months',
+      useCase: 'Blogger'
     },
     {
-      name: 'Marcus Rodriguez',
-      role: 'Marketing Director',
-      company: 'TechFlow Inc.',
+      name: 'Marcus Chen',
+      role: 'Agency Owner',
+      company: 'Digital Agency',
       image: '👨‍💼',
       rating: 5,
-      quote: 'The ROI we\'ve seen from CreAiter is incredible. Our team is now producing 10x more content while maintaining quality. The analytics help us double down on what works.',
-      metric: '450% improvement in content ROI'
+      quote: 'We manage 50 clients. CreAiter learns each client\'s unique audience. Client A\'s AI knows different strategies than Client B\'s. It\'s like having 50 specialized content strategists working 24/7.',
+      metric: '50 personalized AI strategies',
+      useCase: 'Agency'
     },
     {
-      name: 'Emma Thompson',
-      role: 'Influencer',
+      name: 'Jessica Rodriguez',
+      role: 'Social Media Influencer',
       company: '2.5M followers',
       image: '🌟',
       rating: 5,
-      quote: 'I wish I found CreAiter sooner. The content repurposing feature alone has saved me 20+ hours per week. Now I can focus on engaging with my audience instead of creating from scratch.',
-      metric: '50% reduction in content creation time'
+      quote: 'I posted 20 times before CreAiter really understood my audience. Now? Every post hits. The AI knows my voice, my audience\'s preferences, and what time to post. It\'s crazy accurate.',
+      metric: '300% engagement increase',
+      useCase: 'Influencer'
+    },
+    {
+      name: 'David Park',
+      role: 'Marketing Manager',
+      company: 'TechFlow Inc.',
+      image: '💼',
+      rating: 5,
+      quote: 'Traditional AI gives everyone the same generic content. CreAiter learned our B2B audience prefers case studies over listicles, long-form over short. That insight came from analyzing our published content performance.',
+      metric: '2x conversion rate improvement',
+      useCase: 'Business'
     }
   ];
 
@@ -56,12 +69,12 @@ export const SocialProof = () => {
       <Container>
         {/* Header */}
         <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Loved by Creators Worldwide
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            See How CreAiter Gets
+            <span className="bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent"> Smarter For Real Users</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Join thousands of successful creators, influencers, and businesses who trust CreAiter 
-            to power their content strategy and drive real results.
+            Real stories from creators whose content improves exponentially over time
           </p>
         </div>
 
@@ -79,14 +92,21 @@ export const SocialProof = () => {
         </div>
 
         {/* Testimonials */}
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
+        <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8 mb-16">
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
               className="animate-fade-in"
               style={{ animationDelay: `${400 + index * 200}ms` }}
             >
-              <GlassCard className="p-6 h-full hover:shadow-neon transition-all duration-300">
+              <GlassCard className="p-6 h-full hover:shadow-neon transition-all duration-300 relative">
+                {/* Use Case Badge */}
+                <div className="absolute top-4 right-4">
+                  <div className="bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full border border-primary/30">
+                    {testimonial.useCase}
+                  </div>
+                </div>
+                
                 {/* Header */}
                 <div className="flex items-start gap-4 mb-4">
                   <div className="text-3xl">{testimonial.image}</div>
@@ -140,12 +160,12 @@ export const SocialProof = () => {
           <GlassCard className="p-8 max-w-3xl mx-auto">
             <Quote className="h-8 w-8 text-primary mx-auto mb-4" />
             <p className="text-xl font-medium mb-4 leading-relaxed">
-              "CreAiter isn't just a tool, it's a complete content strategy partner. 
-              It's like having a team of expert copywriters, SEO specialists, and data analysts 
-              working around the clock for your success."
+              "CreAiter isn't just a tool, it's a self-learning content partner. 
+              It's like having an AI that actually gets smarter the more you use it. 
+              My content strategy today is 10x better than when I started - and it happened automatically."
             </p>
             <div className="text-primary font-semibold">Alex Johnson, CEO of ContentScale</div>
-            <div className="text-sm text-muted-foreground">Scaled from $0 to $1M ARR using CreAiter</div>
+            <div className="text-sm text-muted-foreground">Scaled from 0 to 10M monthly views with CreAiter</div>
           </GlassCard>
         </div>
       </Container>

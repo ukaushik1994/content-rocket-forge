@@ -61,8 +61,8 @@ export const LandingFooter = () => {
             >
               <CreAiterLogo showText className="mb-6" />
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Empowering creators worldwide with AI-powered content intelligence. 
-                Transform your ideas into high-impact content that drives real results.
+                Empowering creators worldwide with self-learning AI that gets smarter with every post. 
+                Transform your content strategy with an engine that learns from YOUR results and YOUR audience.
               </p>
               
               {/* CTA */}
@@ -112,10 +112,10 @@ export const LandingFooter = () => {
           className="glass-card p-8 rounded-2xl mb-12"
         >
           <div className="text-center max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">Stay in the Loop</h3>
+            <h3 className="text-2xl font-bold mb-4">Join 10,000+ Creators with Self-Learning AI</h3>
             <p className="text-muted-foreground mb-6">
-              Get the latest updates on new features, content strategies, and exclusive tips 
-              directly to your inbox.
+              Get exclusive insights on how to train your AI engine for maximum content performance. 
+              Tips on leveraging the learning loop to 10x your results.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <input
