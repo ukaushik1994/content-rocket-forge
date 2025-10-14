@@ -181,8 +181,8 @@ export const ProblemSolution = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-neon-blue/5 to-neon-pink/5" />
             
             <div className="relative z-10">
-              {/* Circular flow */}
-              <div className="flex flex-wrap justify-center items-center gap-3 mb-8">
+              {/* Circular flow - ONE LINE */}
+              <div className="flex justify-center items-center gap-3 mb-8 overflow-x-auto pb-4">
                 {['Create Content', 'Publish & Track', 'Analyze Results', 'AI Learns', 'Improve'].map((step, index) => (
                   <React.Fragment key={index}>
                     <motion.div
@@ -190,25 +190,25 @@ export const ProblemSolution = () => {
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: 0.7 + index * 0.1 }}
-                      className="relative"
+                      className="relative flex-shrink-0"
                     >
-                      <div className={`px-5 py-3 rounded-full bg-gradient-to-r ${
+                      <div className={`px-3 sm:px-5 py-2 sm:py-3 rounded-full bg-gradient-to-r ${
                         index === 3 
-                          ? 'from-neon-pink to-neon-orange border-2 border-neon-pink shadow-neon' 
+                          ? 'from-neon-pink/90 to-neon-orange/90 bg-background/50 border-2 border-neon-pink shadow-neon' 
                           : 'from-primary/10 to-neon-blue/10 border border-primary/30'
                       } hover:shadow-neon transition-all duration-300`}>
                         <div className="flex items-center gap-2">
                           <RefreshCw className={`h-5 w-5 ${
-                            index === 3 ? 'text-neon-pink animate-spin' : 'text-primary'
+                            index === 3 ? 'text-white animate-spin drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]' : 'text-primary'
                           }`} />
-                          <span className={`text-sm font-semibold ${
-                            index === 3 ? 'text-neon-pink' : ''
+                          <span className={`text-xs sm:text-sm font-semibold whitespace-nowrap ${
+                            index === 3 ? 'text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]' : ''
                           }`}>{step}</span>
                         </div>
                       </div>
                       {index === 3 && (
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                          <div className="bg-gradient-to-r from-neon-pink to-neon-orange text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse whitespace-nowrap">
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                          <div className="bg-gradient-to-r from-neon-pink to-neon-orange text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse whitespace-nowrap shadow-lg border border-white/30 backdrop-blur-sm">
                             ⚡ The Magic Happens Here
                           </div>
                         </div>
@@ -220,6 +220,7 @@ export const ProblemSolution = () => {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.7 + index * 0.1 + 0.05 }}
+                        className="flex-shrink-0"
                       >
                         <ArrowRight className="h-6 w-6 text-primary hidden sm:block" />
                       </motion.div>
