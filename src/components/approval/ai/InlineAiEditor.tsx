@@ -260,7 +260,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
         onKeyUp={updateSelection}
         onScroll={handleScroll}
         placeholder="Write your content here..."
-        className="flex-1 min-h-0 border-0 focus-visible:ring-0 resize-none p-4 bg-transparent scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent"
+        className="flex-1 border-0 focus-visible:ring-0 resize-none p-4 bg-transparent scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent"
         disabled={disabled}
       />
     </div>
