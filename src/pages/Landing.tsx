@@ -6,7 +6,7 @@ import { LandingHero } from '@/components/landing/LandingHero';
 import { ProblemSolution } from '@/components/landing/ProblemSolution';
 import { ValuePropositions } from '@/components/landing/ValuePropositions';
 import { FeaturesCarousel } from '@/components/landing/FeaturesCarousel';
-import { HowItWorks } from '@/components/landing/HowItWorks';
+
 import { ComparisonTable } from '@/components/landing/ComparisonTable';
 import { InvestorSection } from '@/components/landing/InvestorSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
@@ -41,9 +41,6 @@ const Landing = () => {
             <FeaturesCarousel />
           </section>
           
-          <section id="how-it-works" className="scroll-mt-16">
-            <HowItWorks />
-          </section>
           
           <section className="scroll-mt-16">
             <ComparisonTable />
