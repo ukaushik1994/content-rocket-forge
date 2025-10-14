@@ -48,19 +48,6 @@ export const SearchResultsIllustration = () => {
           >
             <Search className="h-16 w-16 text-white" />
           </motion.div>
-
-          {/* Search beam */}
-          <motion.div
-            className="absolute top-full left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-neon-pink to-transparent"
-            initial={{ height: 0 }}
-            animate={{ height: 200 }}
-            transition={{ 
-              duration: 2, 
-              repeat: Infinity,
-              repeatDelay: 1,
-              ease: "easeOut" 
-            }}
-          />
         </motion.div>
 
         {/* Search Results Cards */}
