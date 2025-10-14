@@ -16,6 +16,7 @@ import { ContentBuilderProvider, useContentBuilder } from '@/contexts/ContentBui
 import { EnhancedSolution } from '@/contexts/content-builder/types';
 import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
 import { StrategyContextInitializer } from './dialog/StrategyContextInitializer';
+import { StrategyWorkflowProgress } from './dialog/StrategyWorkflowProgress';
 
 interface StrategyBuilderDialogProps {
   open: boolean;
@@ -36,17 +37,34 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
   const [currentStep, setCurrentStep] = useState(0);
   const [initializationError, setInitializationError] = useState<string | null>(null);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
-  // Reset state when dialog opens with error handling
+  // Reset state and check for saved progress when dialog opens
   useEffect(() => {
     if (open) {
-      setCurrentStep(0);
       setInitializationError(null);
       
       // Validate proposal data
       if (!proposal?.primary_keyword) {
         setInitializationError('Strategy proposal is missing primary keyword');
         return;
+      }
+
+      // Check for saved progress in localStorage
+      const savedProgress = localStorage.getItem(`strategy_builder_draft_${proposal.id}`);
+      if (savedProgress) {
+        try {
+          const { step, completedSteps: saved } = JSON.parse(savedProgress);
+          setCurrentStep(step);
+          setCompletedSteps(saved || []);
+        } catch (error) {
+          console.error('Failed to restore progress:', error);
+          setCurrentStep(0);
+          setCompletedSteps([]);
+        }
+      } else {
+        setCurrentStep(0);
+        setCompletedSteps([]);
       }
     }
   }, [open, proposal]);
@@ -56,72 +74,89 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     return <>{children}</>;
   };
 
-  // Navigation validation logic
-  const canProceedToStep = (step: number, state: any): boolean => {
-    console.log('Checking step', step, 'with state:', {
-      selectedSolution: !!state.selectedSolution,
-      mainKeyword: !!state.mainKeyword,
-      outlineLength: state.outline.length,
-      serpSelectionsLength: state.serpSelections.length,
-      hasContent: !!state.content,
-      proposalData: {
-        hasProposal: !!proposal,
-        primaryKeyword: proposal?.primary_keyword,
-        title: proposal?.title
-      }
-    });
+  // Enhanced navigation validation with detailed error messages
+  const getStepValidation = (step: number, state: any): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
     
     switch (step) {
-      case 0: return true; // Always can access solution selection
-      case 1: return !!state.selectedSolution || !!proposal; // Need solution selected OR have proposal for SERP analysis  
-      case 2: 
-        // For outline generation: need solution/proposal AND keyword (from state or proposal)
-        const hasRequiredSolution = !!state.selectedSolution || !!proposal;
-        const hasRequiredKeyword = !!state.mainKeyword || !!proposal?.primary_keyword;
-        console.log('Step 2 validation:', { hasRequiredSolution, hasRequiredKeyword });
-        return hasRequiredSolution && hasRequiredKeyword;
-      case 3: 
-        // For content generation: need outline OR serp selections
-        const hasContentStructure = state.outline.length > 0 || state.serpSelections.length > 0;
-        const baseRequirements = (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword);
-        console.log('Step 3 validation:', { baseRequirements, hasContentStructure });
-        return baseRequirements && hasContentStructure;
-      case 4: 
-        // For saving: need generated content OR at least an outline
-        const hasSaveableContent = !!state.content || state.outline.length > 0;
-        const saveBaseRequirements = (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword);
-        console.log('Step 4 validation:', { saveBaseRequirements, hasSaveableContent });
-        return saveBaseRequirements && hasSaveableContent;
-      default: return false;
+      case 0:
+        // Solution selection - always accessible
+        return { valid: true, errors: [] };
+        
+      case 1:
+        // SERP Analysis
+        if (!state.selectedSolution && !proposal) {
+          errors.push('Select a solution first');
+        }
+        break;
+        
+      case 2:
+        // Outline Generation
+        if (!state.selectedSolution && !proposal) {
+          errors.push('Select a solution first');
+        }
+        if (!state.mainKeyword && !proposal?.primary_keyword) {
+          errors.push('Set a primary keyword');
+        }
+        break;
+        
+      case 3:
+        // Content Generation
+        if (!state.selectedSolution && !proposal) {
+          errors.push('Select a solution first');
+        }
+        if (!state.mainKeyword && !proposal?.primary_keyword) {
+          errors.push('Set a primary keyword');
+        }
+        if (!state.outline?.length && !state.serpSelections?.length) {
+          errors.push('Generate an outline or select SERP items');
+        }
+        break;
+        
+      case 4:
+        // Save Content
+        if (!state.selectedSolution && !proposal) {
+          errors.push('Select a solution first');
+        }
+        if (!state.mainKeyword && !proposal?.primary_keyword) {
+          errors.push('Set a primary keyword');
+        }
+        if (!state.content && !state.outline?.length) {
+          errors.push('Generate content or create an outline');
+        }
+        break;
     }
+    
+    return { valid: errors.length === 0, errors };
+  };
+
+  const canProceedToStep = (step: number, state: any): boolean => {
+    return getStepValidation(step, state).valid;
   };
 
   const getStepRequirement = (step: number, state: any): string => {
-    const hasSolution = !!state.selectedSolution || !!proposal;
-    const hasKeyword = !!state.mainKeyword || !!proposal?.primary_keyword;
-    
-    switch (step) {
-      case 1: return hasSolution ? 'Ready for SERP analysis' : 'Please select a solution first';
-      case 2: 
-        if (!hasSolution) return 'Select a solution first';
-        if (!hasKeyword) return 'Primary keyword will be set from proposal automatically';
-        return 'Ready to generate outline';
-      case 3: 
-        const hasContentStructure = state.outline.length > 0 || state.serpSelections.length > 0;
-        if (!hasSolution || !hasKeyword) return 'Complete previous steps first';
-        return hasContentStructure ? 'Ready to generate content' : 'Complete outline generation or SERP analysis first';
-      case 4: 
-        const hasSaveableContent = !!state.content || state.outline.length > 0;
-        if (!hasSolution || !hasKeyword) return 'Complete setup steps first';
-        return hasSaveableContent ? 'Ready to save content' : 'Generate content first';
-      default: return 'Step available';
+    const validation = getStepValidation(step, state);
+    if (validation.valid) {
+      return 'Ready';
     }
+    return validation.errors.join(', ');
   };
 
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
+      // Mark current step as completed
+      setCompletedSteps(prev => [...new Set([...prev, currentStep])]);
+      
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
+      
+      // Save progress to localStorage
+      localStorage.setItem(`strategy_builder_draft_${proposal.id}`, JSON.stringify({
+        step: nextStep,
+        completedSteps: [...new Set([...completedSteps, currentStep])],
+        timestamp: Date.now()
+      }));
+      
       toast(`Moved to ${STEPS[nextStep]?.title || `Step ${nextStep + 1}`}`, { 
         description: 'Step completed successfully' 
       });
@@ -136,18 +171,23 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
 
   const handleClose = () => {
     // Check if user has made progress that would be lost
-    const hasProgress = currentStep > 0;
+    const hasProgress = currentStep > 0 || completedSteps.length > 0;
     
     if (hasProgress) {
       setShowExitConfirmation(true);
     } else {
+      // Clear saved progress and close
+      localStorage.removeItem(`strategy_builder_draft_${proposal.id}`);
       onOpenChange(false);
     }
   };
 
   const handleConfirmExit = () => {
+    // Clear saved progress when exiting
+    localStorage.removeItem(`strategy_builder_draft_${proposal.id}`);
     onOpenChange(false);
     setShowExitConfirmation(false);
+    setCompletedSteps([]);
   };
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;
@@ -260,22 +300,33 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
               </div>
             </motion.div>
 
-            {/* Enhanced Step Navigation */}
-            <motion.div 
-              className="flex-shrink-0 mb-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              <div className="grid grid-cols-5 gap-2">
-                <StepNavigationItems 
-                  currentStep={currentStep} 
-                  onStepClick={setCurrentStep}
+            {/* Enhanced Step Navigation with Progress Tracker */}
+            <div className="flex-shrink-0 mb-4 grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="lg:col-span-3">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <div className="grid grid-cols-5 gap-2">
+                    <StepNavigationItems 
+                      currentStep={currentStep} 
+                      onStepClick={setCurrentStep}
+                      steps={STEPS}
+                      proposal={proposal}
+                    />
+                  </div>
+                </motion.div>
+              </div>
+              
+              <div className="hidden lg:block">
+                <StrategyWorkflowProgress 
+                  currentStep={currentStep}
                   steps={STEPS}
-                  proposal={proposal}
+                  completedSteps={completedSteps}
                 />
               </div>
-            </motion.div>
+            </div>
 
             {/* Enhanced Step Content Area with ScrollArea */}
             <motion.div 
