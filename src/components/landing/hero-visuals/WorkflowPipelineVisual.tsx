@@ -1,16 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, Brain, Upload, BarChart3, TrendingUp } from 'lucide-react';
+import { Search, Brain, Upload, Zap } from 'lucide-react';
 
 export const WorkflowPipelineVisual = () => {
-  const stages = [
-    { icon: Search, label: 'Research', color: 'primary', conversion: '100%' },
-    { icon: Brain, label: 'AI Writing', color: 'neon-blue', conversion: '87%' },
-    { icon: Upload, label: 'Publishing', color: 'neon-pink', conversion: '95%' },
-    { icon: BarChart3, label: 'Analytics', color: 'primary', conversion: '82%' },
-    { icon: TrendingUp, label: 'ROI', color: 'neon-blue', conversion: '67%' }
-  ];
-
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -19,136 +11,110 @@ export const WorkflowPipelineVisual = () => {
       transition={{ duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
     >
-      {/* Pipeline Stages */}
-      <div className="space-y-4">
-        {stages.map((stage, index) => (
+      {/* Fully Automated Badge */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, ease: "easeInOut" }}
+        className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-neon-blue/20 border border-primary/30 w-fit mx-auto shadow-md"
+      >
+        <motion.div
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <Zap className="h-4 w-4 text-primary" />
+        </motion.div>
+        <span className="text-xs font-medium text-primary">Fully Automated</span>
+      </motion.div>
+
+      {/* Central Workflow Icon */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.25, duration: 0.5, ease: "easeInOut" }}
+        className="flex justify-center"
+      >
+        <div className="relative">
+          {/* Glow effect */}
+          <motion.div
+            className="absolute inset-0 w-20 h-20 rounded-full bg-primary/20 blur-xl"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-neon-pink mx-auto flex items-center justify-center shadow-2xl shadow-primary/30"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          >
+            <Zap className="h-10 w-10 text-white" />
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* Workflow Stage Cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { icon: Search, value: '100%', label: 'Research Ready' },
+          { icon: Brain, value: '87%', label: 'AI Complete' },
+          { icon: Upload, value: '95%', label: 'Publish Success' }
+        ].map((stage, index) => (
           <motion.div
             key={index}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.15 + index * 0.12, ease: "easeInOut" }}
-            className="relative"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 + index * 0.1, ease: "easeInOut" }}
+            className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-lg p-4 shadow-xl"
           >
-            {/* Stage Card */}
-            <div className={`bg-gradient-to-r from-${stage.color}/20 to-${stage.color}/5 rounded-lg border border-${stage.color}/30 p-4 flex items-center justify-between shadow-md`}>
-              <div className="flex items-center gap-3">
-                <motion.div
-                  animate={{ 
-                    scale: [1, 1.1, 1],
-                    rotate: index === 1 ? [0, 5, -5, 0] : 0
-                  }}
-                  transition={{ 
-                    duration: 2, 
-                    repeat: Infinity,
-                    delay: index * 0.25,
-                    ease: "easeInOut"
-                  }}
-                  className={`w-10 h-10 rounded-lg bg-gradient-to-br from-${stage.color} to-${stage.color}/70 flex items-center justify-center shadow-lg`}
-                >
-                  <stage.icon className="h-5 w-5 text-white" />
-                </motion.div>
-                <div>
-                  <div className="text-sm font-medium text-foreground">{stage.label}</div>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 + index * 0.12, ease: "easeInOut" }}
-                    className={`text-xs text-${stage.color}`}
-                  >
-                    {stage.conversion} Success Rate
-                  </motion.div>
-                </div>
-              </div>
-
-              {/* Data particles */}
-              <motion.div
-                className="flex gap-1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.45 + index * 0.12, ease: "easeInOut" }}
-              >
-                {[...Array(3)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className={`w-1.5 h-1.5 rounded-full bg-${stage.color} shadow-[0_0_4px_rgba(var(--${stage.color}),0.6)]`}
-                    animate={{
-                      scale: [1, 1.5, 1],
-                      opacity: [0.5, 1, 0.5]
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      delay: i * 0.2 + index * 0.1,
-                      ease: "easeInOut"
-                    }}
-                  />
-                ))}
-              </motion.div>
-            </div>
-
-            {/* Connecting Arrow */}
-            {index < stages.length - 1 && (
-              <motion.div
-                initial={{ opacity: 0, scaleY: 0 }}
-                animate={{ opacity: 1, scaleY: 1 }}
-                transition={{ duration: 0.3, delay: 0.25 + index * 0.12, ease: "easeInOut" }}
-                className="absolute left-5 top-full w-px h-4 bg-gradient-to-b from-primary/50 to-transparent origin-top"
-              >
-                {/* Flowing particle */}
-                <motion.div
-                  className="absolute left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_6px_rgba(var(--primary),0.6)]"
-                  animate={{
-                    y: ['0%', '100%'],
-                    opacity: [0, 1, 0]
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: 0.7 + index * 0.35,
-                    ease: 'easeInOut'
-                  }}
-                />
-              </motion.div>
-            )}
+            <stage.icon className="h-5 w-5 text-primary mb-2" />
+            <motion.div 
+              className="text-2xl font-bold text-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
+            >
+              {stage.value}
+            </motion.div>
+            <div className="text-xs text-muted-foreground">{stage.label}</div>
           </motion.div>
         ))}
       </div>
 
-      {/* Automation Badge */}
+      {/* Pipeline Status Panel */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 1.3, ease: "easeInOut" }}
-        className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 shadow-md"
+        transition={{ duration: 0.4, delay: 0.9 }}
+        className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-lg p-4 space-y-3 shadow-xl"
       >
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="text-sm font-medium text-foreground">Fully Automated</div>
-            <div className="text-xs text-muted-foreground">From research to results</div>
-          </div>
-          <motion.div
-            animate={{ 
-              scale: [1, 1.2, 1],
-              rotate: [0, 180, 360]
-            }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
-          >
-            <span className="text-white text-xs font-bold">AI</span>
-          </motion.div>
-        </div>
+        <div className="text-sm font-medium text-foreground mb-3">Pipeline Status</div>
         
-        {/* Progress indicator */}
-        <div className="mt-3 space-y-2">
-          <div className="h-2 bg-background/50 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-primary via-neon-blue to-neon-pink shadow-[0_0_8px_rgba(var(--primary),0.3)]"
-              initial={{ width: 0 }}
-              animate={{ width: '100%' }}
-              transition={{ duration: 2, delay: 1.4, repeat: Infinity, ease: "easeInOut" }}
-            />
+        {[
+          { label: 'Research Phase', progress: 100 },
+          { label: 'AI Processing', progress: 75 },
+          { label: 'Publishing Queue', progress: 30 }
+        ].map((item, index) => (
+          <div key={index} className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-foreground">{item.label}</span>
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.0 + index * 0.15 }}
+                className="text-primary font-medium"
+              >
+                {item.progress}%
+              </motion.span>
+            </div>
+            <div className="h-1.5 bg-background/50 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${item.progress}%` }}
+                transition={{ duration: 1.3, delay: 1.0 + index * 0.15, ease: "easeInOut" }}
+              />
+            </div>
           </div>
-        </div>
+        ))}
       </motion.div>
     </motion.div>
   );
