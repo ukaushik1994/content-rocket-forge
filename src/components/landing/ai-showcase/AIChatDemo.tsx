@@ -24,7 +24,7 @@ export const AIChatDemo = () => {
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % phases.length;
       setAnimationPhase(phases[currentIndex]);
-    }, 2500);
+    }, 1800);
 
     return () => clearInterval(interval);
   }, []);
@@ -151,7 +151,7 @@ export const AIChatDemo = () => {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <motion.span
                         animate={{ opacity: [1, 0.5, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
+                        transition={{ duration: 1, repeat: Infinity }}
                       >
                         🤔 Analyzing your content performance...
                       </motion.span>
@@ -265,7 +265,7 @@ export const AIChatDemo = () => {
                                   strokeWidth={3}
                                   fill="url(#colorImpressions)"
                                   filter="url(#glow)"
-                                  animationDuration={1500}
+                                  animationDuration={1000}
                                   animationBegin={0}
                                 />
                               </AreaChart>
