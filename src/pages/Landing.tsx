@@ -3,18 +3,21 @@ import { Helmet } from 'react-helmet-async';
 import { AnimatedBackground } from '@/components/auth/AnimatedBackground';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingHero } from '@/components/landing/LandingHero';
+import { ProblemSolution } from '@/components/landing/ProblemSolution';
 import { ValuePropositions } from '@/components/landing/ValuePropositions';
-import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
+import { FeaturesCarousel } from '@/components/landing/FeaturesCarousel';
 import { HowItWorks } from '@/components/landing/HowItWorks';
-import { SocialProof } from '@/components/landing/SocialProof';
+import { ComparisonTable } from '@/components/landing/ComparisonTable';
+import { InvestorSection } from '@/components/landing/InvestorSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
-import { SectionSeparator } from '@/components/ui/SectionSeparator';
+
 const Landing = () => {
-  return <>
+  return (
+    <>
       <Helmet>
-        <title>CreAiter - Where Creativity Meets AI Intelligence</title>
-        <meta name="description" content="Generate high-ranking, conversion-driven content by integrating real-time SERP data, keyword clusters, and business solutions. Join thousands of creators scaling their content with AI." />
-        <meta name="keywords" content="AI content creation, SERP data, keyword research, content strategy, influencer marketing, business content" />
+        <title>CreAiter - The Self-Learning Content Engine That Gets Smarter With Every Post</title>
+        <meta name="description" content="Not just AI content creation. CreAiter learns from YOUR results, adapts to YOUR audience, and creates content that gets exponentially better over time. Be among the first creators with personalized AI engines." />
+        <meta name="keywords" content="AI content creation, SERP data, keyword research, content strategy, self-learning AI, business content" />
         <meta property="og:title" content="CreAiter - AI-Powered Content Creation Platform" />
         <meta property="og:description" content="Scale your content creation with AI-powered tools, real-time SERP integration, and intelligent keyword research." />
         <meta property="og:type" content="website" />
@@ -30,27 +33,35 @@ const Landing = () => {
             <LandingHero />
           </section>
           
-          <SectionSeparator />
-          
-          <section id="features" className="py-8 scroll-mt-16">
-            <ValuePropositions />
-            <SectionSeparator className="py-4" />
-            <FeaturesShowcase />
+          <section className="scroll-mt-16">
+            <ProblemSolution />
           </section>
           
-          <SectionSeparator />
+          <section id="features" className="scroll-mt-16">
+            <FeaturesCarousel />
+          </section>
           
+          <section id="how-it-works" className="scroll-mt-16">
+            <HowItWorks />
+          </section>
           
+          <section className="scroll-mt-16">
+            <ComparisonTable />
+          </section>
           
-          <SectionSeparator />
+          <section className="scroll-mt-16">
+            <ValuePropositions />
+          </section>
           
-          <section id="testimonials" className="py-8 scroll-mt-16">
-            <SocialProof />
+          <section id="investors" className="scroll-mt-16">
+            <InvestorSection />
           </section>
         </main>
         
         <LandingFooter />
       </div>
-    </>;
+    </>
+  );
 };
+
 export default Landing;
