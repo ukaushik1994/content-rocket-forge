@@ -1,23 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, Brain, Upload, BarChart3, TrendingUp, Clock, FileEdit, Edit, Zap, Target, ArrowDown, ArrowRight } from 'lucide-react';
-import { CustomBadge } from '@/components/ui/custom-badge';
+import { Search, Brain, Upload, BarChart3, TrendingUp } from 'lucide-react';
 
 export const WorkflowPipelineVisual = () => {
-  const manualStages = [
-    { icon: Search, label: 'Research', time: '60min' },
-    { icon: FileEdit, label: 'Writing', time: '90min' },
-    { icon: Edit, label: 'Editing', time: '45min' },
-    { icon: Upload, label: 'Publishing', time: '30min' },
-    { icon: BarChart3, label: 'Analytics', time: '45min' }
-  ];
-
-  const automatedStages = [
-    { icon: Search, label: 'Research', time: '5min', color: 'primary' },
-    { icon: Brain, label: 'AI Writing', time: '8min', color: 'neon-blue' },
-    { icon: Zap, label: 'Auto-Edit', time: '3min', color: 'neon-pink' },
-    { icon: Upload, label: 'Publishing', time: '2min', color: 'primary' },
-    { icon: TrendingUp, label: 'Analytics', time: '0min', color: 'neon-blue' }
+  const stages = [
+    { icon: Search, label: 'Research', color: 'primary', conversion: '100%' },
+    { icon: Brain, label: 'AI Writing', color: 'neon-blue', conversion: '87%' },
+    { icon: Upload, label: 'Publishing', color: 'neon-pink', conversion: '95%' },
+    { icon: BarChart3, label: 'Analytics', color: 'primary', conversion: '82%' },
+    { icon: TrendingUp, label: 'ROI', color: 'neon-blue', conversion: '67%' }
   ];
 
   return (
@@ -28,185 +19,137 @@ export const WorkflowPipelineVisual = () => {
       transition={{ duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
     >
-      {/* Manual Process Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="opacity-60"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <CustomBadge className="bg-muted text-muted-foreground border-border">
-            Manual Process
-          </CustomBadge>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span className="text-sm font-medium">5 hours</span>
-          </div>
-        </div>
-        
-        {/* Manual workflow compact view */}
-        <div className="flex items-center gap-2 mb-3">
-          {manualStages.map((stage, i) => (
-            <React.Fragment key={i}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 + i * 0.05 }}
-                className="bg-card/50 border border-border/50 rounded-lg p-2"
-              >
-                <stage.icon className="h-4 w-4 text-muted-foreground" />
-              </motion.div>
-              {i < manualStages.length - 1 && (
-                <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-        
-        {/* Slow progress bar */}
-        <div className="h-2 bg-background/50 rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-muted-foreground/40 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: '25%' }}
-            transition={{ duration: 3, repeat: Infinity, repeatType: 'reverse' }}
-          />
-        </div>
-      </motion.div>
-
-      {/* Transformation Arrow */}
-      <motion.div 
-        className="relative flex flex-col items-center gap-2 py-4"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-      >
-        <motion.div
-          animate={{ y: [0, 5, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <ArrowDown className="h-8 w-8 text-primary" />
-        </motion.div>
-        
-        <motion.div 
-          className="px-4 py-2 rounded-full bg-gradient-to-r from-primary via-neon-blue to-neon-pink shadow-lg"
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <span className="text-sm font-bold text-white flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            AI Automation
-          </span>
-        </motion.div>
-        
-        {/* Flowing particles */}
-        {[...Array(3)].map((_, i) => (
+      {/* Pipeline Stages */}
+      <div className="space-y-4">
+        {stages.map((stage, index) => (
           <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-primary rounded-full shadow-[0_0_6px_rgba(var(--primary),0.6)]"
-            style={{ left: `${40 + i * 10}%` }}
-            animate={{
-              y: [-10, 60],
-              opacity: [0, 1, 0]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              delay: i * 0.4,
-              ease: "easeInOut"
-            }}
-          />
-        ))}
-      </motion.div>
-
-      {/* Automated Process Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.4 }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <CustomBadge className="bg-primary text-primary-foreground border-primary">
-            Automated
-          </CustomBadge>
-          <div className="flex items-center gap-2 text-primary">
-            <Zap className="h-4 w-4 text-neon-blue" />
-            <span className="text-sm font-bold">30 minutes</span>
-          </div>
-        </div>
-        
-        {/* Automated workflow with colors */}
-        <div className="flex items-center gap-2 mb-3">
-          {automatedStages.map((stage, i) => (
-            <React.Fragment key={i}>
-              <motion.div 
-                className={`bg-gradient-to-br from-${stage.color}/20 to-${stage.color}/5 border border-${stage.color}/30 rounded-lg p-2 shadow-md`}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 1 + i * 0.1, duration: 0.3 }}
-                whileHover={{ scale: 1.1 }}
-              >
-                <stage.icon className={`h-4 w-4 text-${stage.color}`} />
-              </motion.div>
-              {i < automatedStages.length - 1 && (
+            key={index}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 + index * 0.12, ease: "easeInOut" }}
+            className="relative"
+          >
+            {/* Stage Card */}
+            <div className={`bg-gradient-to-r from-${stage.color}/20 to-${stage.color}/5 rounded-lg border border-${stage.color}/30 p-4 flex items-center justify-between shadow-md`}>
+              <div className="flex items-center gap-3">
                 <motion.div
-                  initial={{ opacity: 0 }}
                   animate={{ 
-                    opacity: 1,
-                    x: [0, 3, 0]
+                    scale: [1, 1.1, 1],
+                    rotate: index === 1 ? [0, 5, -5, 0] : 0
                   }}
                   transition={{ 
-                    opacity: { delay: 1 + i * 0.1 },
-                    x: { duration: 1.5, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }
+                    duration: 2, 
+                    repeat: Infinity,
+                    delay: index * 0.25,
+                    ease: "easeInOut"
                   }}
+                  className={`w-10 h-10 rounded-lg bg-gradient-to-br from-${stage.color} to-${stage.color}/70 flex items-center justify-center shadow-lg`}
                 >
-                  <ArrowRight className="h-3 w-3 text-primary" />
+                  <stage.icon className="h-5 w-5 text-white" />
                 </motion.div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-        
-        {/* Fast progress bar */}
-        <div className="h-2 bg-background/50 rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-gradient-to-r from-primary via-neon-blue to-neon-pink shadow-[0_0_8px_rgba(var(--primary),0.3)]"
-            initial={{ width: 0 }}
-            animate={{ width: '95%' }}
-            transition={{ duration: 2, delay: 1.5, ease: "easeInOut" }}
-          />
-        </div>
-      </motion.div>
+                <div>
+                  <div className="text-sm font-medium text-foreground">{stage.label}</div>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 + index * 0.12, ease: "easeInOut" }}
+                    className={`text-xs text-${stage.color}`}
+                  >
+                    {stage.conversion} Success Rate
+                  </motion.div>
+                </div>
+              </div>
 
-      {/* Improvement Metrics Grid */}
-      <div className="grid grid-cols-2 gap-3 pt-2">
-        {[
-          { label: 'Time Saved', value: '-90%', icon: Clock, color: 'primary' },
-          { label: 'Quality', value: '+45%', icon: TrendingUp, color: 'neon-blue' },
-          { label: 'Output', value: '+300%', icon: Zap, color: 'neon-pink' },
-          { label: 'Effort', value: '-75%', icon: Target, color: 'primary' }
-        ].map((metric, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 2 + i * 0.15, duration: 0.4 }}
-            className={`bg-gradient-to-br from-${metric.color}/20 to-${metric.color}/5 border border-${metric.color}/30 rounded-lg p-3 hover:shadow-md transition-shadow`}
-          >
-            <metric.icon className={`h-4 w-4 text-${metric.color} mb-2`} />
-            <motion.div 
-              className={`text-2xl font-bold text-${metric.color}`}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 2.2 + i * 0.15, duration: 0.3 }}
-            >
-              {metric.value}
-            </motion.div>
-            <div className="text-xs text-muted-foreground">{metric.label}</div>
+              {/* Data particles */}
+              <motion.div
+                className="flex gap-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.45 + index * 0.12, ease: "easeInOut" }}
+              >
+                {[...Array(3)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className={`w-1.5 h-1.5 rounded-full bg-${stage.color} shadow-[0_0_4px_rgba(var(--${stage.color}),0.6)]`}
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.5, 1, 0.5]
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: i * 0.2 + index * 0.1,
+                      ease: "easeInOut"
+                    }}
+                  />
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Connecting Arrow */}
+            {index < stages.length - 1 && (
+              <motion.div
+                initial={{ opacity: 0, scaleY: 0 }}
+                animate={{ opacity: 1, scaleY: 1 }}
+                transition={{ duration: 0.3, delay: 0.25 + index * 0.12, ease: "easeInOut" }}
+                className="absolute left-5 top-full w-px h-4 bg-gradient-to-b from-primary/50 to-transparent origin-top"
+              >
+                {/* Flowing particle */}
+                <motion.div
+                  className="absolute left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_6px_rgba(var(--primary),0.6)]"
+                  animate={{
+                    y: ['0%', '100%'],
+                    opacity: [0, 1, 0]
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: 0.7 + index * 0.35,
+                    ease: 'easeInOut'
+                  }}
+                />
+              </motion.div>
+            )}
           </motion.div>
         ))}
       </div>
+
+      {/* Automation Badge */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 1.3, ease: "easeInOut" }}
+        className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 shadow-md"
+      >
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="text-sm font-medium text-foreground">Fully Automated</div>
+            <div className="text-xs text-muted-foreground">From research to results</div>
+          </div>
+          <motion.div
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 180, 360]
+            }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
+          >
+            <span className="text-white text-xs font-bold">AI</span>
+          </motion.div>
+        </div>
+        
+        {/* Progress indicator */}
+        <div className="mt-3 space-y-2">
+          <div className="h-2 bg-background/50 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-primary via-neon-blue to-neon-pink shadow-[0_0_8px_rgba(var(--primary),0.3)]"
+              initial={{ width: 0 }}
+              animate={{ width: '100%' }}
+              transition={{ duration: 2, delay: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
