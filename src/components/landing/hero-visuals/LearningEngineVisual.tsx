@@ -8,7 +8,7 @@ export const LearningEngineVisual = () => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 1.0, ease: [0.43, 0.13, 0.23, 0.96] }}
+      transition={{ duration: 1.2, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
     >
       {/* AI Learning Badge */}

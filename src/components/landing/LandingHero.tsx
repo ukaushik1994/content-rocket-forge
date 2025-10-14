@@ -56,11 +56,11 @@ export const LandingHero = () => {
     }
   ];
 
-  // Rotate messages every 3 seconds
+  // Rotate messages every 8 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentMessageIndex((prev) => (prev + 1) % heroMessages.length);
-    }, 6000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [heroMessages.length]);

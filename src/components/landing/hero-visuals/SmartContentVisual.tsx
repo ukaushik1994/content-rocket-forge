@@ -8,14 +8,14 @@ export const SmartContentVisual = () => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 1.0, ease: [0.43, 0.13, 0.23, 0.96] }}
+      transition={{ duration: 1.2, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
     >
       {/* AI Learning Badge */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, ease: "easeInOut" }}
+        transition={{ delay: 0.4, ease: "easeInOut" }}
         className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20"
       >
         <motion.div
@@ -32,11 +32,11 @@ export const SmartContentVisual = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1.2, delay: 0.5, ease: "easeInOut" }}
-        className="h-48 bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-6 relative overflow-hidden shadow-lg"
+        transition={{ duration: 1.2, delay: 0.6, ease: "easeInOut" }}
+        className="h-52 bg-gradient-to-br from-background/60 to-background/30 rounded-lg border border-border/40 relative overflow-hidden shadow-xl"
       >
         {/* Chart bars */}
-        <div className="flex items-end justify-around h-full gap-2 relative z-10">
+        <div className="absolute bottom-0 left-0 right-0 h-[calc(100%-3rem)] px-6 flex items-end justify-between gap-1">
           {[
             { height: 45, label: 'Week 1', color: 'from-primary/40 to-primary/60' },
             { height: 52, label: 'Week 2', color: 'from-primary/40 to-primary/60' },
@@ -47,39 +47,39 @@ export const SmartContentVisual = () => {
             { height: 88, label: 'Week 7', color: 'from-neon-blue/60 to-neon-blue/80' },
             { height: 95, label: 'Week 8', color: 'from-neon-blue/70 to-neon-blue/90' }
           ].map((bar, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center gap-1 h-full">
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${bar.height}%` }}
-                transition={{ duration: 1.5, delay: 0.8 + index * 0.15, ease: "easeInOut" }}
-                className={`w-full rounded-t bg-gradient-to-t ${bar.color} relative shadow-lg`}
-              >
-                {/* Value label */}
-                {index === 7 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: -20 }}
-                    transition={{ delay: 2.2, ease: "easeInOut" }}
-                    className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-neon-blue whitespace-nowrap drop-shadow-[0_0_10px_rgba(var(--neon-blue),0.6)]"
-                  >
-                    95%
-                  </motion.div>
-                )}
-              </motion.div>
-            </div>
+            <motion.div
+              key={index}
+              initial={{ height: 0 }}
+              animate={{ height: `${bar.height}%` }}
+              transition={{ duration: 1.8, delay: 1.0 + index * 0.18, ease: "easeInOut" }}
+              className={`w-[11%] rounded-t bg-gradient-to-t ${bar.color} relative shadow-lg`}
+              style={{ minWidth: '8px' }}
+            >
+              {/* Value label */}
+              {index === 7 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: -20 }}
+                  transition={{ delay: 2.8, ease: "easeInOut" }}
+                  className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-neon-blue whitespace-nowrap drop-shadow-[0_0_10px_rgba(var(--neon-blue),0.6)]"
+                >
+                  95%
+                </motion.div>
+              )}
+            </motion.div>
           ))}
         </div>
 
         {/* Trend line overlay */}
-        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }} preserveAspectRatio="none">
           <motion.path
-            d="M 5 55 Q 25 48, 35 42 T 50 35 T 65 28 T 80 20 T 95 5"
+            d="M 8 55 Q 20 48, 30 42 T 45 35 T 60 28 T 75 20 T 92 8"
             stroke="url(#trendGradient)"
-            strokeWidth="3"
+            strokeWidth="2"
             fill="none"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 3.5, delay: 1.5, ease: "easeInOut" }}
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 0.7 }}
+            transition={{ duration: 4.0, delay: 2.0, ease: "easeInOut" }}
           />
           <defs>
             <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -93,7 +93,7 @@ export const SmartContentVisual = () => {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 2 }}
+          transition={{ delay: 2.8 }}
           className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-blue/20 border border-neon-blue/30"
         >
           <TrendingUp className="h-4 w-4 text-neon-blue" />
@@ -105,7 +105,7 @@ export const SmartContentVisual = () => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.8 }}
+        transition={{ duration: 0.8, delay: 3.0 }}
         className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 space-y-3"
       >
         <div className="text-xs font-medium text-muted-foreground mb-2">AI Improvements</div>
@@ -120,7 +120,7 @@ export const SmartContentVisual = () => {
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 2 + index * 0.2 }}
+                transition={{ delay: 3.2 + index * 0.25 }}
                 className="text-primary font-medium"
               >
                 {insight.progress}%
@@ -131,7 +131,7 @@ export const SmartContentVisual = () => {
                 className={`h-full ${insight.color}/60 rounded-full`}
                 initial={{ width: 0 }}
                 animate={{ width: `${insight.progress}%` }}
-                transition={{ duration: 1.5, delay: 2 + index * 0.2 }}
+                transition={{ duration: 2.0, delay: 3.2 + index * 0.25 }}
               />
             </div>
           </div>
