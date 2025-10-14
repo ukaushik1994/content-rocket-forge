@@ -10,6 +10,7 @@ import { FeaturesCarousel } from '@/components/landing/FeaturesCarousel';
 import { ComparisonTable } from '@/components/landing/ComparisonTable';
 import { InvestorSection } from '@/components/landing/InvestorSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
+import { AIIntelligenceShowcase } from '@/components/landing/AIIntelligenceShowcase';
 
 const Landing = () => {
   return (
@@ -35,6 +36,10 @@ const Landing = () => {
           
           <section id="problem" className="scroll-mt-16">
             <ProblemSolution />
+          </section>
+          
+          <section id="ai-showcase" className="scroll-mt-16">
+            <AIIntelligenceShowcase />
           </section>
           
           <section id="features" className="scroll-mt-16">
