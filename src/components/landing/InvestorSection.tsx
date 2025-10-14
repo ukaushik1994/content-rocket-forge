@@ -42,12 +42,12 @@ export const InvestorSection = () => {
               <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-clip-text text-transparent"> Content Intelligence</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We're seeking strategic partners who share our vision of revolutionizing how 10M+ creators worldwide approach content creation.
+              We're seeking seed investment to bring this vision to life and revolutionize how creators worldwide approach content creation.
             </p>
           </motion.div>
 
-          {/* Three Column Grid */}
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+          {/* Two Column Grid */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-16">
             {/* The Opportunity */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -89,62 +89,12 @@ export const InvestorSection = () => {
               </GlassCard>
             </motion.div>
 
-            {/* Our Traction */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-            >
-              <GlassCard className="p-8 h-full border-primary/30 hover:shadow-neon transition-all duration-300 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-neon-blue/10 rounded-full blur-3xl" />
-                <div className="relative z-10">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-r from-neon-blue to-neon-pink p-0.5 mb-6">
-                    <div className="w-full h-full rounded-xl bg-card flex items-center justify-center">
-                      <Rocket className="h-7 w-7 text-primary" />
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-4">Our Traction</h3>
-                  <p className="text-sm text-primary mb-6">Early Momentum & Product-Market Fit</p>
-                  
-                  <div className="space-y-4">
-                    <div className="bg-gradient-to-r from-primary/10 to-neon-blue/10 rounded-lg p-3 border border-primary/20">
-                      <div className="text-2xl font-bold text-primary">
-                        <AnimatedCounter value={10000} suffix="+" />
-                      </div>
-                      <div className="text-xs text-muted-foreground">Active Users</div>
-                    </div>
-                    <div className="bg-gradient-to-r from-primary/10 to-neon-blue/10 rounded-lg p-3 border border-primary/20">
-                      <div className="text-2xl font-bold text-primary">
-                        <AnimatedCounter value={500} suffix="M+" />
-                      </div>
-                      <div className="text-xs text-muted-foreground">Words Generated</div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-gradient-to-r from-primary/10 to-neon-blue/10 rounded-lg p-3 border border-primary/20">
-                        <div className="text-xl font-bold text-primary">
-                          <AnimatedCounter value={67} suffix="%" />
-                        </div>
-                        <div className="text-xs text-muted-foreground">Time Saved</div>
-                      </div>
-                      <div className="bg-gradient-to-r from-primary/10 to-neon-blue/10 rounded-lg p-3 border border-primary/20">
-                        <div className="text-xl font-bold text-primary">
-                          <AnimatedCounter value={40} suffix="%" />
-                        </div>
-                        <div className="text-xs text-muted-foreground">MoM Growth</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-
             {/* The Vision */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.3 }}
             >
               <GlassCard className="p-8 h-full hover:shadow-neon transition-all duration-300 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-neon-pink/10 rounded-full blur-3xl" />
@@ -194,7 +144,7 @@ export const InvestorSection = () => {
               <GlassCard className="p-6 border-primary/30">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <h4 className="font-bold text-primary">Now (Q1 2025)</h4>
+                  <h4 className="font-bold text-primary">Building (Q1-Q2 2025)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
@@ -281,10 +231,10 @@ export const InvestorSection = () => {
             <h3 className="text-2xl font-bold text-center mb-8">Why Now?</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { icon: Brain, title: 'AI Revolution', description: 'ChatGPT proved AI content works. We make it intelligent.' },
-                { icon: BarChart3, title: 'Data-Driven', description: 'Content without analytics is guesswork. We close the loop.' },
-                { icon: Target, title: 'Consolidation', description: 'Creators spend $200-500/mo on 5-10 tools. We\'re all-in-one.' },
-                { icon: Globe, title: 'Global Opportunity', description: 'English-first, but 7.5B people create content worldwide.' }
+                { icon: Brain, title: 'AI Revolution', description: 'ChatGPT proved AI content works. We\'ll make it intelligent.' },
+                { icon: BarChart3, title: 'Data-Driven', description: 'Content without analytics is guesswork. We\'ll close the loop.' },
+                { icon: Target, title: 'Consolidation', description: 'Creators need 5-10 tools. We\'ll be the all-in-one solution.' },
+                { icon: Globe, title: 'Global Opportunity', description: '7.5B people create content worldwide. Massive potential.' }
               ].map((item, index) => (
                 <GlassCard key={index} className="p-6 text-center hover:shadow-neon transition-all duration-300">
                   <item.icon className="h-8 w-8 text-primary mx-auto mb-3" />
@@ -348,9 +298,10 @@ export const InvestorSection = () => {
             <GlassCard className="p-8 max-w-3xl mx-auto text-center border-primary/30 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-neon-blue/5 to-neon-pink/5" />
               <div className="relative z-10">
-                <h3 className="text-3xl font-bold mb-4">Let's Build the Future Together</h3>
+                <h3 className="text-3xl font-bold mb-4">Join Us in Building the Future</h3>
                 <p className="text-lg text-muted-foreground mb-8">
-                  We're in conversations with strategic investors who understand the content creation space. Let's explore if we're a mutual fit.
+                  We're actively seeking our first strategic investors to help us build this vision. 
+                  If you're interested in being a founding investor, we'd love to hear from you.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
@@ -359,7 +310,7 @@ export const InvestorSection = () => {
                     className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 text-lg px-8 py-6 shadow-xl hover:shadow-neon-strong"
                     onClick={() => window.location.href = 'mailto:investors@creaiter.com'}
                   >
-                    Schedule Investment Discussion
+                    Schedule Discussion
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                   <Button
@@ -374,16 +325,16 @@ export const InvestorSection = () => {
 
                 <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground flex-wrap">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    <span>25+ years combined experience</span>
+                    <Brain className="h-4 w-4 text-primary" />
+                    <span>Innovative technology</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-primary" />
-                    <span>Proven traction</span>
+                    <span>Massive market</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4 text-primary" />
-                    <span>Clear vision</span>
+                    <span>Clear roadmap</span>
                   </div>
                 </div>
               </div>

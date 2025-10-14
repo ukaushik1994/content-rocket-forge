@@ -8,7 +8,6 @@ import { ValuePropositions } from '@/components/landing/ValuePropositions';
 import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { ComparisonTable } from '@/components/landing/ComparisonTable';
-import { SocialProof } from '@/components/landing/SocialProof';
 import { InvestorSection } from '@/components/landing/InvestorSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
@@ -18,8 +17,8 @@ const Landing = () => {
     <>
       <Helmet>
         <title>CreAiter - The Self-Learning Content Engine That Gets Smarter With Every Post</title>
-        <meta name="description" content="Not just AI content creation. CreAiter learns from YOUR results, adapts to YOUR audience, and creates content that gets exponentially better over time. Join 10,000+ creators with personalized AI engines." />
-        <meta name="keywords" content="AI content creation, SERP data, keyword research, content strategy, influencer marketing, business content" />
+        <meta name="description" content="Not just AI content creation. CreAiter learns from YOUR results, adapts to YOUR audience, and creates content that gets exponentially better over time. Be among the first creators with personalized AI engines." />
+        <meta name="keywords" content="AI content creation, SERP data, keyword research, content strategy, self-learning AI, business content" />
         <meta property="og:title" content="CreAiter - AI-Powered Content Creation Platform" />
         <meta property="og:description" content="Scale your content creation with AI-powered tools, real-time SERP integration, and intelligent keyword research." />
         <meta property="og:type" content="website" />
@@ -63,12 +62,6 @@ const Landing = () => {
           
           <section className="py-8 scroll-mt-16">
             <ValuePropositions />
-          </section>
-          
-          <SectionSeparator />
-          
-          <section id="testimonials" className="py-8 scroll-mt-16">
-            <SocialProof />
           </section>
           
           <SectionSeparator />

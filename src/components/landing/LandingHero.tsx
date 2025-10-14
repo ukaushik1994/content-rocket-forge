@@ -74,11 +74,11 @@ export const LandingHero = () => {
   ];
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
+    <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-32">
       <div className="container max-w-5xl mx-auto relative">
         {/* Floating Keywords Background */}
         <FloatingKeywords />
-        <div className="flex flex-col items-center justify-center min-h-[80vh]">
+        <div className="flex flex-col items-center justify-center min-h-screen">
           
           {/* Main Content - Centered */}
           <div className="text-center space-y-8 animate-fade-in max-w-4xl mx-auto">
@@ -156,11 +156,11 @@ export const LandingHero = () => {
               <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 fill-primary text-primary" />
-                  <span>4.9/5 from 2,000+ reviews</span>
+                  <span>Be among the first creators</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-primary" />
-                  <span>10,000+ creators</span>
+                  <span>Join the founding members</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <RefreshCw className="h-4 w-4 text-primary" />
