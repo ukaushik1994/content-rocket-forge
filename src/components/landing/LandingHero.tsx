@@ -74,14 +74,14 @@ export const LandingHero = () => {
   ];
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 pt-20 pb-12">
-      <div className="container max-w-5xl mx-auto relative">
+    <section className="min-h-screen flex items-center px-4 pt-20 pb-12">
+      <div className="container max-w-7xl mx-auto relative">
         {/* Floating Keywords Background */}
         <FloatingKeywords />
-        <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-screen">
           
-          {/* Main Content - Centered */}
-          <div className="text-center space-y-8 animate-fade-in max-w-4xl mx-auto">
+          {/* Left Column - Text Content */}
+          <div className="text-left lg:pr-8 space-y-8 animate-fade-in">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
               <Brain className="h-4 w-4" />
@@ -97,7 +97,7 @@ export const LandingHero = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.5 }}
-                  className="text-4xl md:text-6xl xl:text-7xl font-bold leading-tight"
+                  className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
                 >
                   {currentMessage.headline}
                   <br />
@@ -114,7 +114,7 @@ export const LandingHero = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-3xl mx-auto"
+                  className="text-lg md:text-xl text-muted-foreground leading-relaxed"
                 >
                   {currentMessage.description}{' '}
                   {currentMessage.highlightedPhrases.map((phrase, index) => (
@@ -131,7 +131,7 @@ export const LandingHero = () => {
 
             {/* CTA Section */}
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-start">
                 <Button
                   size="lg"
                   onClick={() => navigate('/auth?mode=signup')}
@@ -153,7 +153,7 @@ export const LandingHero = () => {
               </div>
 
               {/* Trust Indicators */}
-              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground flex-wrap">
+              <div className="flex items-center justify-start gap-6 text-sm text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 fill-primary text-primary" />
                   <span>Be among the first creators</span>
@@ -169,27 +169,27 @@ export const LandingHero = () => {
               </div>
             </div>
 
-            {/* Enhanced Dashboard Preview */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 1 }}
-              className="mt-16 max-w-4xl mx-auto"
-            >
-              <HeroDashboardPreview />
-            </motion.div>
+            {/* Stats Section - Always visible on left */}
+            <div className="grid grid-cols-3 gap-4 mt-6 animate-fade-in [animation-delay:400ms]">
+              {stats.map((stat, index) => (
+                <div key={index} className="text-center p-3 glass-card rounded-xl">
+                  <stat.icon className="h-5 w-5 text-primary mx-auto mb-2" />
+                  <div className="text-lg font-bold text-foreground">{stat.value}</div>
+                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Stats Section */}
-          <div className="lg:hidden grid grid-cols-3 gap-4 mt-8 animate-fade-in [animation-delay:400ms]">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center p-4 glass-card rounded-xl">
-                <stat.icon className="h-6 w-6 text-primary mx-auto mb-2" />
-                <div className="text-lg font-bold text-foreground">{stat.value}</div>
-                <div className="text-xs text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+          {/* Right Column - Enhanced Visual */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5, duration: 1 }}
+            className="relative lg:block hidden"
+          >
+            <HeroDashboardPreview />
+          </motion.div>
         </div>
 
 
