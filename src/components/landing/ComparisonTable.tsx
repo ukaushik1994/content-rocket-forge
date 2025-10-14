@@ -210,7 +210,7 @@ export const ComparisonTable = () => {
           className="text-center mt-16"
         >
           <p className="text-xl font-medium text-muted-foreground max-w-3xl mx-auto">
-            "Other AI tools are like renting a car. CreAiter is like buying a Tesla that updates itself."
+            "Traditional AI platforms deliver static results. CreAiter delivers a continuously evolving intelligence engine tailored to your business."
           </p>
         </motion.div>
       </Container>
