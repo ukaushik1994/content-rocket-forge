@@ -20,7 +20,7 @@ export const WorkflowPipelineVisual = () => {
       className="space-y-6"
     >
       {/* Pipeline Stages */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         {stages.map((stage, index) => (
           <motion.div
             key={index}
@@ -30,7 +30,7 @@ export const WorkflowPipelineVisual = () => {
             className="relative"
           >
             {/* Stage Card */}
-            <div className={`bg-gradient-to-r from-${stage.color}/20 to-${stage.color}/5 rounded-lg border border-${stage.color}/30 p-4 flex items-center justify-between shadow-md`}>
+            <div className={`bg-gradient-to-r from-${stage.color}/20 to-${stage.color}/5 rounded-lg border border-${stage.color}/30 p-5 flex items-center justify-between shadow-md`}>
               <div className="flex items-center gap-3">
                 <motion.div
                   animate={{ 
@@ -43,17 +43,17 @@ export const WorkflowPipelineVisual = () => {
                     delay: index * 0.25,
                     ease: "easeInOut"
                   }}
-                  className={`w-10 h-10 rounded-lg bg-gradient-to-br from-${stage.color} to-${stage.color}/70 flex items-center justify-center shadow-lg`}
+                  className={`w-12 h-12 rounded-lg bg-gradient-to-br from-${stage.color} to-${stage.color}/70 flex items-center justify-center shadow-lg`}
                 >
-                  <stage.icon className="h-5 w-5 text-white" />
+                  <stage.icon className="h-6 w-6 text-white" />
                 </motion.div>
                 <div>
-                  <div className="text-sm font-medium text-foreground">{stage.label}</div>
+                  <div className="text-base font-medium text-foreground">{stage.label}</div>
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 + index * 0.12, ease: "easeInOut" }}
-                    className={`text-xs text-${stage.color}`}
+                    className={`text-sm text-${stage.color}`}
                   >
                     {stage.conversion} Success Rate
                   </motion.div>
@@ -119,12 +119,12 @@ export const WorkflowPipelineVisual = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 1.3, ease: "easeInOut" }}
-        className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 shadow-md"
+        className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-6 shadow-md"
       >
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <div className="text-sm font-medium text-foreground">Fully Automated</div>
-            <div className="text-xs text-muted-foreground">From research to results</div>
+            <div className="text-base font-medium text-foreground">Fully Automated</div>
+            <div className="text-sm text-muted-foreground">From research to results</div>
           </div>
           <motion.div
             animate={{ 
@@ -132,15 +132,15 @@ export const WorkflowPipelineVisual = () => {
               rotate: [0, 180, 360]
             }}
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
+            className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
           >
-            <span className="text-white text-xs font-bold">AI</span>
+            <span className="text-white text-sm font-bold">AI</span>
           </motion.div>
         </div>
         
         {/* Progress indicator */}
         <div className="mt-3 space-y-2">
-          <div className="h-2 bg-background/50 rounded-full overflow-hidden">
+          <div className="h-3 bg-background/50 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-primary via-neon-blue to-neon-pink shadow-[0_0_8px_rgba(var(--primary),0.3)]"
               initial={{ width: 0 }}

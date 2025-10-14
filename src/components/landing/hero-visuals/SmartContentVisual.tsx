@@ -25,7 +25,7 @@ export const SmartContentVisual = () => {
     }} transition={{
       delay: 0.15,
       ease: "easeInOut"
-    }} className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20">
+    }} className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20">
         <motion.div animate={{
         scale: [1, 1.2, 1]
       }} transition={{
@@ -33,9 +33,9 @@ export const SmartContentVisual = () => {
         repeat: Infinity,
         ease: "easeInOut"
       }} className="drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]">
-          <Brain className="h-4 w-4 text-primary" />
+          <Brain className="h-5 w-5 text-primary" />
         </motion.div>
-        <span className="text-xs font-medium text-primary">Getting Smarter</span>
+        <span className="text-sm font-medium text-primary">Getting Smarter</span>
       </motion.div>
 
       {/* Progressive Improvement Chart */}
@@ -47,7 +47,7 @@ export const SmartContentVisual = () => {
       duration: 0.6,
       delay: 0.25,
       ease: "easeInOut"
-    }} className="h-52 bg-gradient-to-br from-background/60 to-background/30 rounded-lg border border-border/40 relative overflow-hidden shadow-xl">
+    }} className="h-72 bg-gradient-to-br from-background/60 to-background/30 rounded-lg border border-border/40 relative overflow-hidden shadow-xl">
         {/* Chart bars */}
         <div className="absolute bottom-0 left-0 right-0 h-[calc(100%-3rem)] px-6 flex items-end justify-between gap-1">
           {[{
@@ -130,9 +130,9 @@ export const SmartContentVisual = () => {
         x: 0
       }} transition={{
         delay: 1.2
-      }} className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-blue/20 border border-neon-blue/30">
-          <TrendingUp className="h-4 w-4 text-neon-blue" />
-          <span className="text-xs font-medium text-neon-blue">+111%</span>
+      }} className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-full bg-neon-blue/20 border border-neon-blue/30">
+          <TrendingUp className="h-5 w-5 text-neon-blue" />
+          <span className="text-sm font-bold text-neon-blue">+111%</span>
         </motion.div>
       </motion.div>
 
@@ -146,8 +146,8 @@ export const SmartContentVisual = () => {
     }} transition={{
       duration: 0.4,
       delay: 1.2
-    }} className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 space-y-3">
-        <div className="text-xs font-medium text-muted-foreground mb-2">AI Improvements</div>
+    }} className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-6 space-y-4">
+        <div className="text-sm font-medium text-muted-foreground mb-2">AI Improvements</div>
         {[{
         label: 'Headline Optimization',
         progress: 85,
@@ -161,7 +161,7 @@ export const SmartContentVisual = () => {
         progress: 68,
         color: 'bg-neon-pink'
       }].map((insight, index) => <div key={index} className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-foreground">{insight.label}</span>
               <motion.span initial={{
             opacity: 0
@@ -169,11 +169,11 @@ export const SmartContentVisual = () => {
             opacity: 1
           }} transition={{
             delay: 1.3 + index * 0.15
-          }} className="text-primary font-medium">
+          }} className="text-base font-bold text-primary">
                 {insight.progress}%
               </motion.span>
             </div>
-            <div className="h-2 bg-background/50 rounded-full overflow-hidden">
+            <div className="h-3 bg-background/50 rounded-full overflow-hidden">
               <motion.div className={`h-full ${insight.color}/60 rounded-full`} initial={{
             width: 0
           }} animate={{

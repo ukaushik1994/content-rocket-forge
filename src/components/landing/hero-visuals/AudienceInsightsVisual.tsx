@@ -25,7 +25,7 @@ export const AudienceInsightsVisual = () => {
     }} transition={{
       delay: 0.1,
       ease: "easeInOut"
-    }} className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-neon-blue/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20">
+    }} className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 to-neon-blue/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20">
         <motion.div animate={{
         scale: [1, 1.2, 1]
       }} transition={{
@@ -33,9 +33,9 @@ export const AudienceInsightsVisual = () => {
         repeat: Infinity,
         ease: "easeInOut"
       }} className="drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]">
-          <Brain className="h-4 w-4 text-primary" />
+          <Brain className="h-5 w-5 text-primary" />
         </motion.div>
-        <span className="text-xs font-medium text-primary">Personalized for YOU</span>
+        <span className="text-sm font-medium text-primary">Personalized for YOU</span>
       </motion.div>
 
       {/* Central User Avatar with Insights */}
@@ -58,8 +58,8 @@ export const AudienceInsightsVisual = () => {
         type: 'spring',
         stiffness: 150,
         damping: 12
-      }} className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-neon-blue mx-auto mb-6 flex items-center justify-center relative shadow-lg shadow-primary/30">
-          <Users className="h-10 w-10 text-white" />
+      }} className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-neon-blue mx-auto mb-6 flex items-center justify-center relative shadow-lg shadow-primary/30">
+          <Users className="h-12 w-12 text-white" />
           
           {/* Radiating insight beams */}
           {[0, 1, 2, 3].map(index => (
@@ -100,10 +100,10 @@ export const AudienceInsightsVisual = () => {
           type: "spring",
           stiffness: 150,
           damping: 12
-        }} className={`bg-gradient-to-br from-${metric.color}/20 to-${metric.color}/5 rounded-lg border border-${metric.color}/30 p-3 shadow-md`}>
+        }} className={`bg-gradient-to-br from-${metric.color}/20 to-${metric.color}/5 rounded-lg border border-${metric.color}/30 p-4 shadow-md`}>
               <div className="flex items-center gap-2 mb-2">
-                <metric.icon className={`h-4 w-4 text-${metric.color}`} />
-                <span className="text-xs text-muted-foreground">{metric.label}</span>
+                <metric.icon className={`h-5 w-5 text-${metric.color}`} />
+                <span className="text-sm text-muted-foreground">{metric.label}</span>
               </div>
               <motion.div initial={{
             opacity: 0
@@ -112,7 +112,7 @@ export const AudienceInsightsVisual = () => {
           }} transition={{
             delay: 0.7 + index * 0.12,
             ease: "easeInOut"
-          }} className="text-lg font-bold text-foreground">
+          }} className="text-2xl font-bold text-foreground">
                 {metric.value}
               </motion.div>
             </motion.div>)}
@@ -130,9 +130,9 @@ export const AudienceInsightsVisual = () => {
       duration: 0.4,
       delay: 1.2,
       ease: "easeInOut"
-    }} className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 space-y-3 shadow-md">
+    }} className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-6 space-y-4 shadow-md">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-foreground">Audience Insights</span>
+          <span className="text-base font-medium text-foreground">Audience Insights</span>
           <motion.div animate={{
           rotate: [0, 360]
         }} transition={{
@@ -140,7 +140,7 @@ export const AudienceInsightsVisual = () => {
           repeat: Infinity,
           ease: 'linear'
         }} className="drop-shadow-[0_0_6px_rgba(var(--primary),0.4)]">
-            <Brain className="h-4 w-4 text-primary" />
+            <Brain className="h-5 w-5 text-primary" />
           </motion.div>
         </div>
 
@@ -157,7 +157,7 @@ export const AudienceInsightsVisual = () => {
         value: 92,
         color: 'neon-pink'
       }].map((insight, index) => <div key={index} className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-foreground">{insight.label}</span>
               <motion.span initial={{
             opacity: 0
@@ -166,11 +166,11 @@ export const AudienceInsightsVisual = () => {
           }} transition={{
             delay: 1.4 + index * 0.18,
             ease: "easeInOut"
-          }} className={`text-${insight.color} font-medium`}>
+          }} className={`text-${insight.color} font-bold`}>
                 {insight.value}%
               </motion.span>
             </div>
-            <div className="h-1.5 bg-background/50 rounded-full overflow-hidden">
+            <div className="h-2.5 bg-background/50 rounded-full overflow-hidden">
               <motion.div className={`h-full bg-gradient-to-r from-${insight.color} to-${insight.color}/60 rounded-full shadow-[0_0_6px_rgba(var(--${insight.color}),0.4)]`} initial={{
             width: 0
           }} animate={{

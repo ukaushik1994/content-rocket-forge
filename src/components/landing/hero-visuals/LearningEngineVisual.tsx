@@ -18,7 +18,7 @@ export const LearningEngineVisual = () => {
         transition={{ delay: 0.1, ease: "easeInOut" }}
         className="flex items-center justify-between"
       >
-        <div className="h-8 w-48 bg-gradient-to-r from-primary/30 to-neon-blue/30 rounded-lg overflow-hidden shadow-inner">
+        <div className="h-10 w-48 bg-gradient-to-r from-primary/30 to-neon-blue/30 rounded-lg overflow-hidden shadow-inner">
           <motion.div
             className="h-full bg-gradient-to-r from-primary to-neon-blue shadow-[0_0_10px_rgba(var(--primary),0.3)]"
             initial={{ width: "0%" }}
@@ -26,15 +26,15 @@ export const LearningEngineVisual = () => {
             transition={{ duration: 1.5, delay: 0.2, ease: "easeInOut" }}
           />
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 shadow-md shadow-primary/20">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 shadow-md shadow-primary/20">
           <motion.div
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             className="drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]"
           >
-            <Brain className="h-4 w-4 text-primary" />
+            <Brain className="h-5 w-5 text-primary" />
           </motion.div>
-          <span className="text-xs font-medium text-primary">AI Learning</span>
+          <span className="text-sm font-medium text-primary">AI Learning</span>
         </div>
       </motion.div>
 
@@ -50,20 +50,20 @@ export const LearningEngineVisual = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 + index * 0.1, ease: "easeInOut" }}
-            className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg border border-primary/30 p-4 shadow-md"
+            className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg border border-primary/30 p-6 shadow-md min-h-[140px]"
           >
-            <metric.icon className="h-5 w-5 text-primary mb-2" />
+            <metric.icon className="h-6 w-6 text-primary mb-2" />
             <motion.div 
-              className="text-2xl font-bold text-foreground"
+              className="text-3xl md:text-4xl font-bold text-foreground"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.4 + index * 0.1, ease: "easeInOut" }}
             >
               {metric.value}
             </motion.div>
-            <div className="text-xs text-muted-foreground mb-1">{metric.label}</div>
+            <div className="text-sm text-muted-foreground mb-1">{metric.label}</div>
             <motion.div
-              className="text-xs text-neon-blue font-medium"
+              className="text-sm text-neon-blue font-medium"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 + index * 0.1, ease: "easeInOut" }}
@@ -79,7 +79,7 @@ export const LearningEngineVisual = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.5, ease: "easeInOut" }}
-        className="bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-6 relative overflow-hidden shadow-lg"
+        className="bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-8 relative overflow-hidden shadow-lg min-h-[120px]"
       >
         <div className="flex items-center justify-between relative z-10">
           {['Input', 'AI', 'Output', 'Learn'].map((label, index) => (
@@ -100,9 +100,9 @@ export const LearningEngineVisual = () => {
                   ]
                 }}
                 transition={{ duration: 2, repeat: Infinity, delay: index * 0.4, ease: "easeInOut" }}
-                className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
+                className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
               >
-                <span className="text-xs font-bold text-white">{label}</span>
+                <span className="text-sm font-bold text-white">{label}</span>
               </motion.div>
             </motion.div>
           ))}
@@ -156,16 +156,16 @@ export const LearningEngineVisual = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 1.4, ease: "easeInOut" }}
-        className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 border border-primary/30 shadow-md shadow-primary/20"
+        className="flex items-center justify-center gap-2 px-6 py-4 rounded-lg bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 border border-primary/30 shadow-md shadow-primary/20"
       >
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
           className="drop-shadow-[0_0_6px_rgba(var(--primary),0.4)]"
         >
-          <RefreshCw className="h-5 w-5 text-primary" />
+          <RefreshCw className="h-6 w-6 text-primary" />
         </motion.div>
-        <span className="text-sm font-medium text-foreground">Continuous Learning Active</span>
+        <span className="text-base font-medium text-foreground">Continuous Learning Active</span>
       </motion.div>
     </motion.div>
   );
