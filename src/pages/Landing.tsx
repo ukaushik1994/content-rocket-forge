@@ -4,9 +4,7 @@ import { AnimatedBackground } from '@/components/auth/AnimatedBackground';
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingHero } from '@/components/landing/LandingHero';
 import { ValuePropositions } from '@/components/landing/ValuePropositions';
-import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
 import { HowItWorks } from '@/components/landing/HowItWorks';
-import { SocialProof } from '@/components/landing/SocialProof';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 const Landing = () => {
@@ -32,21 +30,17 @@ const Landing = () => {
           
           <SectionSeparator />
           
-          <section id="features" className="py-8 scroll-mt-16">
+          <section id="features" className="scroll-mt-16">
             <ValuePropositions />
-            <SectionSeparator className="py-4" />
-            <FeaturesShowcase />
           </section>
           
           <SectionSeparator />
           
-          
+          <section id="how-it-works" className="scroll-mt-16">
+            <HowItWorks />
+          </section>
           
           <SectionSeparator />
-          
-          <section id="testimonials" className="py-8 scroll-mt-16">
-            <SocialProof />
-          </section>
         </main>
         
         <LandingFooter />
