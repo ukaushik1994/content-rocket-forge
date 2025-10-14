@@ -51,29 +51,29 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
     <div className="relative">
       {/* Main hero container */}
       <div 
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-black/40 via-black/20 to-transparent backdrop-blur-2xl border border-white/10 shadow-2xl"
+        className="relative overflow-hidden rounded-2xl bg-transparent backdrop-blur-sm border border-white/5 shadow-2xl"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Dynamic background effects */}
         <div className="absolute inset-0">
           <motion.div 
-            className={`absolute inset-0 bg-gradient-to-br ${currentModule.theme.gradient} opacity-10`}
+            className={`absolute inset-0 bg-gradient-to-br ${currentModule.theme.gradient} opacity-5`}
             key={currentModule.id}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.1 }}
+            animate={{ opacity: 0.05 }}
             transition={{ duration: 0.8 }}
           />
           
           {/* Grid pattern overlay */}
-          <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:60px_60px]" />
+          <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:60px_60px]" />
         </div>
 
         <div className="relative z-10 px-6 py-8 md:px-10 md:py-12 lg:px-12 lg:py-14">
           <div className="max-w-5xl mx-auto">
             {/* Status indicator with module category */}
             <motion.div 
-              className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-6"
+              className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -167,7 +167,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   transition={{ duration: 0.8, delay: 0.3 }}
                 >
                   <div className="relative group">
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-300">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300">
                       <Search className="h-5 w-5 text-white/70" />
                       <AnimatePresence mode="wait">
                         <motion.input
@@ -311,7 +311,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   variant="ghost"
                   size="icon"
                   onClick={prevModule}
-                  className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/15 text-white border border-white/10"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -320,7 +320,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                  className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/15 text-white border border-white/10"
                 >
                   {isAutoPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </Button>
@@ -329,7 +329,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   variant="ghost"
                   size="icon"
                   onClick={nextModule}
-                  className="h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/15 text-white border border-white/10"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
