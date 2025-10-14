@@ -16,6 +16,10 @@ import {
   CarouselApi,
 } from '@/components/ui/carousel';
 import { useNavigate } from 'react-router-dom';
+import { BrainNetworkIllustration } from './feature-illustrations/BrainNetworkIllustration';
+import { StrategyDashboardIllustration } from './feature-illustrations/StrategyDashboardIllustration';
+import { SearchResultsIllustration } from './feature-illustrations/SearchResultsIllustration';
+import { ContentHubIllustration } from './feature-illustrations/ContentHubIllustration';
 
 export const FeaturesCarousel = () => {
   const navigate = useNavigate();
@@ -28,6 +32,7 @@ export const FeaturesCarousel = () => {
       title: 'Self-Learning Intelligence Engine',
       description: 'Creates content, tracks performance, analyzes results, and feeds insights back into future content generation',
       icon: Brain,
+      illustration: BrainNetworkIllustration,
       benefits: ['Learns from YOUR performance', 'Adapts to YOUR audience', 'Improves quality over time', 'Personalized strategy'],
       preview: 'Every piece of content you publish teaches the AI what works for YOUR audience. Your 100th post will be exponentially better than your 1st because CreAiter learns from every result.',
       gradient: 'from-primary to-neon-pink',
@@ -38,6 +43,7 @@ export const FeaturesCarousel = () => {
       title: 'AI Strategy Coach',
       description: '24/7 business intelligence AI with interactive charts and tables',
       icon: MessageSquare,
+      illustration: StrategyDashboardIllustration,
       benefits: ['Interactive charts & tables', 'Multi-perspective analysis', 'Contextual recommendations', 'Performance predictions'],
       preview: 'Unlike text-only AI, CreAiter\'s Strategy Coach shows you data visually. See what\'s working, what\'s not, and exactly what to do next - with charts, tables, and actionable insights.',
       gradient: 'from-neon-blue to-neon-pink',
@@ -48,6 +54,7 @@ export const FeaturesCarousel = () => {
       title: 'SERP-Powered Research',
       description: 'Real-time competitive intelligence from live search results',
       icon: Search,
+      illustration: SearchResultsIllustration,
       benefits: ['Live SERP analysis', 'Content gap detection', 'Question mining (PAA)', 'Keyword intelligence'],
       preview: 'Know exactly what will rank before you write. CreAiter analyzes live search results to find gaps, questions, and opportunities that your competitors miss.',
       gradient: 'from-neon-pink to-neon-orange',
@@ -58,6 +65,7 @@ export const FeaturesCarousel = () => {
       title: 'Smart Content Hub',
       description: 'Intelligent repository with performance tracking and repurposing',
       icon: Archive,
+      illustration: ContentHubIllustration,
       benefits: ['Performance analytics', 'Content repurposing (1→20+)', 'Version control', 'Team collaboration'],
       preview: 'Never lose track of content. Every piece is tracked, analyzed, and can be repurposed into 20+ formats with one click. See what performs best and do more of it.',
       gradient: 'from-neon-orange to-primary',
@@ -65,13 +73,13 @@ export const FeaturesCarousel = () => {
     }
   ];
 
-  // Auto-advance carousel
+  // Auto-advance carousel every 8 seconds
   useEffect(() => {
     if (!api) return;
 
     const interval = setInterval(() => {
       api.scrollNext();
-    }, 6000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [api]);
@@ -112,46 +120,56 @@ export const FeaturesCarousel = () => {
                     
                     {/* Badge */}
                     {feature.badge && (
-                      <div className="absolute top-6 right-6">
+                      <div className="absolute top-6 right-6 z-30">
                         <div className={`bg-gradient-to-r ${feature.gradient} text-white text-xs font-bold px-4 py-2 rounded-full animate-pulse`}>
                           {feature.badge}
                         </div>
                       </div>
                     )}
 
-                    <div className="relative z-10">
-                      {/* Icon */}
-                      <div className={`w-20 h-20 rounded-2xl bg-gradient-to-r ${feature.gradient} p-0.5 mb-6`}>
-                        <div className="w-full h-full rounded-2xl bg-card flex items-center justify-center">
-                          <feature.icon className="h-10 w-10 text-primary" />
-                        </div>
+                    {/* Two-column layout */}
+                    <div className="grid lg:grid-cols-2 gap-8 items-center relative z-10">
+                      
+                      {/* LEFT: Animated Illustration */}
+                      <div className="relative h-[350px] md:h-[400px] order-2 lg:order-1">
+                        <feature.illustration />
                       </div>
 
-                      {/* Content */}
-                      <h3 className="text-3xl md:text-4xl font-bold mb-4">{feature.title}</h3>
-                      <p className="text-lg text-muted-foreground mb-6">{feature.description}</p>
-                      <p className="text-muted-foreground mb-8 leading-relaxed">
-                        {feature.preview}
-                      </p>
-
-                      {/* Benefits Grid */}
-                      <div className="grid md:grid-cols-2 gap-3 mb-8">
-                        {feature.benefits.map((benefit, benefitIndex) => (
-                          <div key={benefitIndex} className="flex items-center gap-3">
-                            <CheckCircle className={`h-5 w-5 text-primary flex-shrink-0`} />
-                            <span className="text-sm text-muted-foreground">{benefit}</span>
+                      {/* RIGHT: Content */}
+                      <div className="order-1 lg:order-2">
+                        {/* Icon */}
+                        <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.gradient} p-0.5 mb-6`}>
+                          <div className="w-full h-full rounded-2xl bg-card flex items-center justify-center">
+                            <feature.icon className="h-8 w-8 text-primary" />
                           </div>
-                        ))}
-                      </div>
+                        </div>
 
-                      {/* CTA */}
-                      <Button 
-                        onClick={() => navigate('/auth?mode=signup')}
-                        className={`bg-gradient-to-r ${feature.gradient} hover:opacity-90 text-lg px-8`}
-                      >
-                        Try This Feature
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
+                        {/* Content */}
+                        <h3 className="text-2xl md:text-3xl font-bold mb-3">{feature.title}</h3>
+                        <p className="text-base text-muted-foreground mb-4">{feature.description}</p>
+                        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                          {feature.preview}
+                        </p>
+
+                        {/* Benefits Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
+                          {feature.benefits.map((benefit, benefitIndex) => (
+                            <div key={benefitIndex} className="flex items-center gap-2">
+                              <CheckCircle className={`h-4 w-4 text-primary flex-shrink-0`} />
+                              <span className="text-sm text-muted-foreground">{benefit}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* CTA */}
+                        <Button 
+                          onClick={() => navigate('/auth?mode=signup')}
+                          className={`bg-gradient-to-r ${feature.gradient} hover:opacity-90 px-6`}
+                        >
+                          Try This Feature
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </GlassCard>
                 </CarouselItem>
@@ -159,25 +177,38 @@ export const FeaturesCarousel = () => {
             </CarouselContent>
             
             {/* Navigation */}
-            <div className="flex items-center justify-center gap-4 mt-8">
-              <CarouselPrevious className="static translate-y-0" />
-              
-              {/* Progress dots */}
-              <div className="flex gap-2">
-                {features.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => api?.scrollTo(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      current === index 
-                        ? 'w-8 bg-primary' 
-                        : 'w-2 bg-primary/30'
-                    }`}
-                  />
-                ))}
+            <div className="flex flex-col items-center gap-4 mt-8">
+              <div className="flex items-center justify-center gap-4">
+                <CarouselPrevious className="static translate-y-0" />
+                
+                {/* Progress dots */}
+                <div className="flex gap-2">
+                  {features.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => api?.scrollTo(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        current === index 
+                          ? 'w-8 bg-primary' 
+                          : 'w-2 bg-primary/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+                
+                <CarouselNext className="static translate-y-0" />
               </div>
-              
-              <CarouselNext className="static translate-y-0" />
+
+              {/* Auto-advance progress bar */}
+              <div className="w-64 h-1 bg-primary/10 rounded-full overflow-hidden">
+                <motion.div
+                  key={current}
+                  className="h-full bg-gradient-to-r from-primary to-neon-blue"
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 8, ease: "linear" }}
+                />
+              </div>
             </div>
           </Carousel>
         </div>
