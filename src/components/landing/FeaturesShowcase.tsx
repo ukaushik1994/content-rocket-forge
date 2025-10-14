@@ -6,11 +6,19 @@ import { Button } from '@/components/ui/button';
 import { 
   FileText, Search, BarChart3, Archive, Repeat, 
   MessageSquare, Globe, Target, TrendingUp, 
-  Users, Zap, Brain
+  Users, Zap, Brain, Sparkles, Activity
 } from 'lucide-react';
+import { FloatingElements } from './FloatingElements';
+import { AnimatedCounter } from './AnimatedCounter';
 
 export const FeaturesShowcase = () => {
   const [activeFeature, setActiveFeature] = useState(0);
+  
+  const floatingElements = [
+    { icon: <Brain className="h-6 w-6" />, position: { top: '10%', left: '3%' }, delay: 0, duration: 7 },
+    { icon: <Sparkles className="h-5 w-5" />, position: { top: '30%', right: '5%' }, delay: 1, duration: 6 },
+    { icon: <Activity className="h-5 w-5" />, position: { top: '70%', left: '8%' }, delay: 2, duration: 8 },
+  ];
 
   const features = [
     {
@@ -53,8 +61,13 @@ export const FeaturesShowcase = () => {
   ];
 
   return (
-    <section className="py-16 px-4">
-      <Container>
+    <section className="py-16 px-4 relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-neon-blue/5 to-background" />
+      <div className="absolute inset-0 futuristic-grid opacity-20" />
+      <FloatingElements elements={floatingElements} />
+      
+      <Container className="relative z-10">
         <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             The Only Content Platform
@@ -75,10 +88,10 @@ export const FeaturesShowcase = () => {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <GlassCard
-                  className={`p-6 cursor-pointer transition-all duration-300 relative ${
+                  className={`p-6 cursor-pointer transition-all duration-500 relative group ${
                     activeFeature === index 
-                      ? 'ring-2 ring-primary shadow-neon' 
-                      : 'hover:shadow-lg'
+                      ? 'ring-2 ring-primary shadow-neon scale-105' 
+                      : 'hover:shadow-lg hover:scale-102'
                   }`}
                   onClick={() => setActiveFeature(index)}
                 >
@@ -138,26 +151,43 @@ export const FeaturesShowcase = () => {
                     {features[activeFeature].preview}
                   </p>
                   
-                  {/* Interactive Demo Placeholder */}
-                  <div className="relative h-48 rounded-lg bg-gradient-to-br from-background/50 to-background/20 border border-border/50 mb-6 overflow-hidden">
+                  {/* Enhanced Interactive Preview */}
+                  <div className="relative h-64 rounded-lg bg-gradient-to-br from-background/50 to-background/20 border border-border/50 mb-6 overflow-hidden group">
                     <div className="absolute inset-0 bg-futuristic-grid bg-grid opacity-20"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        {React.createElement(features[activeFeature].icon, { className: "h-12 w-12 text-primary mx-auto mb-3 animate-pulse" })}
-                        <p className="text-sm text-muted-foreground">Interactive Demo Coming Soon</p>
-                      </div>
+                    
+                    {/* Simulated Dashboard Content */}
+                    <div className="absolute inset-0 p-4">
+                      {activeFeature === 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="h-6 w-32 bg-gradient-to-r from-primary/30 to-neon-pink/30 rounded animate-pulse" />
+                            <Brain className="h-6 w-6 text-primary animate-pulse" />
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded border border-primary/30 animate-pulse" />
+                            <div className="h-16 bg-gradient-to-br from-neon-blue/20 to-neon-blue/10 rounded border border-neon-blue/30 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                            <div className="h-16 bg-gradient-to-br from-neon-pink/20 to-neon-pink/10 rounded border border-neon-pink/30 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                          </div>
+                          <div className="h-20 bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded border border-primary/30 flex items-center px-3 gap-2">
+                            <TrendingUp className="h-6 w-6 text-primary animate-pulse" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-2 bg-primary/30 rounded w-3/4 animate-pulse" />
+                              <div className="h-2 bg-neon-blue/30 rounded w-1/2 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {activeFeature !== 0 && (
+                        <div className="flex items-center justify-center h-full">
+                          {React.createElement(features[activeFeature].icon, { className: "h-16 w-16 text-primary animate-pulse" })}
+                        </div>
+                      )}
                     </div>
                     
-                    {/* Animated Elements */}
+                    {/* Floating particles */}
                     <div className="absolute top-4 left-4 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    <div 
-                      className="absolute top-8 right-6 w-1 h-1 bg-neon-blue rounded-full animate-pulse" 
-                      style={{ animationDelay: '0.5s' }}
-                    ></div>
-                    <div 
-                      className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-neon-pink rounded-full animate-pulse" 
-                      style={{ animationDelay: '1s' }}
-                    ></div>
+                    <div className="absolute top-8 right-6 w-1 h-1 bg-neon-blue rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                    <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-neon-pink rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
                   </div>
                   
                   <div className="flex gap-3">
@@ -172,23 +202,32 @@ export const FeaturesShowcase = () => {
           </div>
         </div>
 
-        {/* Bottom Stats */}
-        <div className="mt-16 text-center animate-fade-in [animation-delay:400ms]">
+        {/* Enhanced Bottom Stats */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="mt-16"
+        >
+          <h3 className="text-2xl font-bold text-center mb-8">Platform Impact</h3>
           <div className="grid md:grid-cols-4 gap-6">
             {[
-              { icon: Globe, value: '50+', label: 'Content Types' },
-              { icon: Target, value: '10x', label: 'Faster Creation' },
-              { icon: TrendingUp, value: '300%', label: 'ROI Increase' },
-              { icon: Brain, value: '24/7', label: 'AI Support' },
+              { icon: Globe, value: 50, suffix: '+', label: 'Content Types' },
+              { icon: Target, value: 10, suffix: 'x', label: 'Faster Creation' },
+              { icon: TrendingUp, value: 300, suffix: '%', label: 'ROI Increase' },
+              { icon: Brain, value: 24, suffix: '/7', label: 'AI Support' },
             ].map((stat, index) => (
-              <GlassCard key={index} className="p-6 text-center">
-                <stat.icon className="h-8 w-8 text-primary mx-auto mb-3" />
-                <div className="text-2xl font-bold mb-1">{stat.value}</div>
+              <GlassCard key={index} className="p-6 text-center hover:shadow-neon transition-all duration-300 group">
+                <stat.icon className="h-8 w-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
+                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent">
+                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                </div>
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
               </GlassCard>
             ))}
           </div>
-        </div>
+        </motion.div>
       </Container>
     </section>
   );

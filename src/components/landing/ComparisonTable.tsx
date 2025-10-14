@@ -2,9 +2,17 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Check, X, TrendingUp, Minus } from 'lucide-react';
+import { Check, X, TrendingUp, Minus, Sparkles, Zap, Activity } from 'lucide-react';
+import { FloatingElements } from './FloatingElements';
+import { AnimatedCounter } from './AnimatedCounter';
 
 export const ComparisonTable = () => {
+  const floatingElements = [
+    { icon: <Sparkles className="h-5 w-5" />, position: { top: '20%', left: '5%' }, delay: 0, duration: 7 },
+    { icon: <Zap className="h-4 w-4" />, position: { top: '60%', right: '8%' }, delay: 1.5, duration: 6 },
+    { icon: <Activity className="h-5 w-5" />, position: { top: '80%', left: '10%' }, delay: 2, duration: 8 },
+  ];
+  
   const comparisons = [
     { feature: 'Content Quality', generic: 'Same for everyone', creaiter: 'Improves specifically for YOU', highlight: true },
     { feature: 'Learning Capability', generic: 'No learning', creaiter: 'Learns from YOUR results', highlight: true },
@@ -18,8 +26,13 @@ export const ComparisonTable = () => {
   ];
 
   return (
-    <section className="py-20 px-4 relative">
-      <Container>
+    <section className="py-20 px-4 relative overflow-hidden">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-neon-blue/5 to-background" />
+      <div className="absolute inset-0 futuristic-grid opacity-20" />
+      <FloatingElements elements={floatingElements} />
+      
+      <Container className="relative z-10">
         {/* Section Header */}
         <div className="text-center mb-16 animate-fade-in">
           <motion.h2 
@@ -48,11 +61,13 @@ export const ComparisonTable = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
-          className="max-w-5xl mx-auto"
+          className="max-w-5xl mx-auto relative"
         >
-          <GlassCard className="p-0 overflow-hidden">
+          <GlassCard className="p-0 overflow-hidden relative">
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-neon-blue/5 to-neon-pink/5 pointer-events-none" />
             {/* Table Header */}
-            <div className="grid grid-cols-3 gap-4 p-6 bg-gradient-to-r from-background/50 to-background/20 border-b border-border/50">
+            <div className="grid grid-cols-3 gap-4 p-6 bg-gradient-to-r from-background/80 to-background/40 border-b border-border/50 relative z-10">
               <div className="text-sm font-medium text-muted-foreground">Feature</div>
               <div className="text-center">
                 <div className="text-sm font-medium text-muted-foreground mb-1">Generic AI Tools</div>
@@ -65,7 +80,7 @@ export const ComparisonTable = () => {
             </div>
 
             {/* Table Rows */}
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-border/50 relative z-10">
               {comparisons.map((row, index) => (
                 <motion.div
                   key={index}
@@ -115,27 +130,76 @@ export const ComparisonTable = () => {
             </p>
           </GlassCard>
 
-          {/* CreAiter - Exponential Curve */}
-          <GlassCard className="p-6 border-primary/30">
-            <div className="text-center mb-4">
-              <h3 className="text-lg font-semibold mb-2">CreAiter Learning Engine</h3>
-              <p className="text-sm text-primary">Exponential improvement</p>
+          {/* Enhanced Visual Comparison */}
+          <GlassCard className="p-8 border-primary/30 relative overflow-hidden">
+            {/* Glow effects */}
+            <div className="absolute top-0 left-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-0 w-48 h-48 bg-neon-blue/10 rounded-full blur-3xl" />
+            
+            <div className="relative z-10">
+              <div className="text-center mb-4">
+                <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent">
+                  CreAiter Learning Engine
+                </h3>
+                <p className="text-sm text-primary">Exponential improvement over time</p>
+              </div>
+              <div className="h-40 bg-gradient-to-br from-primary/10 to-neon-blue/10 rounded-lg border border-primary/20 flex items-center justify-center relative overflow-hidden">
+                {/* Animated curve */}
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 100">
+                  <defs>
+                    <linearGradient id="curveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="hsl(var(--neon-blue))" stopOpacity="0.8" />
+                    </linearGradient>
+                  </defs>
+                  <motion.path
+                    d="M 10 90 Q 50 80, 70 50 T 190 10"
+                    stroke="url(#curveGradient)"
+                    strokeWidth="3"
+                    fill="none"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    whileInView={{ pathLength: 1, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 2, ease: "easeInOut" }}
+                  />
+                  {/* Data points */}
+                  {[10, 50, 100, 150, 190].map((x, i) => (
+                    <motion.circle
+                      key={i}
+                      cx={x}
+                      cy={90 - (i * 20)}
+                      r="3"
+                      fill="hsl(var(--primary))"
+                      initial={{ scale: 0, opacity: 0 }}
+                      whileInView={{ scale: 1, opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.4 * i, duration: 0.3 }}
+                    />
+                  ))}
+                </svg>
+                <TrendingUp className="h-12 w-12 text-primary relative z-10 drop-shadow-lg" />
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-primary">
+                    <AnimatedCounter value={100} suffix="%" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Post 1</p>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-neon-blue">
+                    <AnimatedCounter value={200} suffix="%" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Post 50</p>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-neon-pink">
+                    <AnimatedCounter value={300} suffix="%" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Post 100</p>
+                </div>
+              </div>
             </div>
-            <div className="h-32 bg-gradient-to-br from-primary/10 to-neon-blue/10 rounded-lg border border-primary/20 flex items-center justify-center relative overflow-hidden">
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 100">
-                <path
-                  d="M 10 90 Q 50 80, 70 50 T 190 10"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="2"
-                  fill="none"
-                  className="animate-pulse"
-                />
-              </svg>
-              <TrendingUp className="h-8 w-8 text-primary relative z-10" />
-            </div>
-            <p className="text-xs text-primary text-center mt-3">
-              Post 100 = 300% better than Post 1
-            </p>
           </GlassCard>
         </motion.div>
 

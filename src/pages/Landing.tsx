@@ -9,6 +9,7 @@ import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { ComparisonTable } from '@/components/landing/ComparisonTable';
 import { SocialProof } from '@/components/landing/SocialProof';
+import { InvestorSection } from '@/components/landing/InvestorSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 
@@ -68,6 +69,12 @@ const Landing = () => {
           
           <section id="testimonials" className="py-8 scroll-mt-16">
             <SocialProof />
+          </section>
+          
+          <SectionSeparator />
+          
+          <section id="investors" className="py-8 scroll-mt-16">
+            <InvestorSection />
           </section>
         </main>
         
