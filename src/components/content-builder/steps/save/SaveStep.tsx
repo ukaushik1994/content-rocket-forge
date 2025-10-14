@@ -36,25 +36,8 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
     isSubmitting,
     handleDownload,
     saveCompleted
-  } = useSaveStep();
+  } = useSaveStep(onSaveComplete);
   
-  // Set a flag in session storage when saving and handle completion callback
-  useEffect(() => {
-    if (saveCompleted) {
-      console.log('[SaveStep] Save completed, setting session storage flag');
-      // Use consistent flag names across the app
-      sessionStorage.setItem('content_draft_saved', 'true');
-      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
-      
-      // Call the completion callback if provided (we'll need to get contentId from the save operation)
-      if (onSaveComplete) {
-        // For now, we'll call it without contentId - this can be improved later
-        onSaveComplete('');
-      } else {
-        toast.success('Content saved successfully! Navigating to content library...');
-      }
-    }
-  }, [saveCompleted, onSaveComplete]);
   
   // Validate that we have content before showing the form
   if (!content || content.trim().length === 0) {

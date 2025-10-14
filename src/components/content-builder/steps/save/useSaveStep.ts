@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 
-export const useSaveStep = () => {
+export const useSaveStep = (onSaveComplete?: (contentId: string) => Promise<void>) => {
   const { state } = useContentBuilder();
   const { 
     mainKeyword, 
@@ -135,6 +135,8 @@ export const useSaveStep = () => {
       console.log("[SaveStep] Using description:", description);
       console.log("[SaveStep] Applied optimizations:", hasAppliedOptimizations ? "Yes" : "No");
       
+      let savedContentId: string | null = null;
+      
       if (hasSaveActions) {
         // Use ContentBuilder's save function with enhanced params
         const saveParams = {
@@ -153,8 +155,8 @@ export const useSaveStep = () => {
           serpData: state.serpData
         };
         
-        const result = await contentBuilderContext.saveContentToDraft(saveParams);
-        if (!result) {
+        savedContentId = await contentBuilderContext.saveContentToDraft(saveParams);
+        if (!savedContentId) {
           throw new Error('Failed to save content');
         }
       } else {
@@ -179,13 +181,19 @@ export const useSaveStep = () => {
       sessionStorage.setItem('content_save_timestamp', Date.now().toString());
       console.log("[SaveStep] Session storage flags set for draft saved");
       
-      // Navigate to drafts page after a short delay 
-      setTimeout(() => {
-        console.log("[SaveStep] Navigating to drafts page...");
-        navigate('/drafts', { 
-          state: { contentRefresh: true }
-        });
-      }, 1000);
+      // Call completion callback if provided (for strategy builder)
+      if (onSaveComplete && savedContentId) {
+        console.log("[SaveStep] Calling onSaveComplete callback with contentId:", savedContentId);
+        await onSaveComplete(savedContentId);
+      } else {
+        // Navigate to drafts page after a short delay (default behavior)
+        setTimeout(() => {
+          console.log("[SaveStep] Navigating to drafts page...");
+          navigate('/drafts', { 
+            state: { contentRefresh: true }
+          });
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');
