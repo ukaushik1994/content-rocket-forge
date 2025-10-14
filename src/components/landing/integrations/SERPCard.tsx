@@ -5,8 +5,6 @@ import { Search, Zap, Check, Globe, TrendingUp } from 'lucide-react';
 const benefits = [
   'Real-time SERP data',
   'Competitor analysis',
-  'Keyword opportunities',
-  'Live search trends',
 ];
 
 const mockSearchResults = [
@@ -28,7 +26,7 @@ export const SERPCard: React.FC = () => {
       <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500/20 to-violet-500/40 rounded-2xl opacity-30 group-hover:opacity-60 blur transition duration-500" />
       
       {/* Card Content */}
-      <div className="relative h-full bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl border border-violet-500/20 rounded-2xl p-6 overflow-hidden">
+      <div className="relative h-full bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl border border-violet-500/20 rounded-2xl p-5 overflow-hidden">
         {/* Animated Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.3),transparent_50%)]" />
@@ -59,8 +57,8 @@ export const SERPCard: React.FC = () => {
               />
             </motion.div>
             <div>
-              <h3 className="text-xl font-bold text-foreground">Real-Time Web Search</h3>
-              <p className="text-sm text-muted-foreground">SERP API Integration</p>
+              <h3 className="text-lg font-bold text-foreground">Real-Time Web Search</h3>
+              <p className="text-xs text-muted-foreground">SERP API Integration</p>
             </div>
           </div>
 

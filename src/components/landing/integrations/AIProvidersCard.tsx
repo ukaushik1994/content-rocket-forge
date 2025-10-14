@@ -13,8 +13,6 @@ const providers = [
 
 const benefits = [
   'Use your own API keys',
-  'No vendor lock-in',
-  'Cost-effective scaling',
   'Model flexibility',
 ];
 
@@ -31,7 +29,7 @@ export const AIProvidersCard: React.FC = () => {
       <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/40 rounded-2xl opacity-30 group-hover:opacity-60 blur transition duration-500" />
       
       {/* Card Content */}
-      <div className="relative h-full bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 overflow-hidden">
+      <div className="relative h-full bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl border border-primary/20 rounded-2xl p-5 overflow-hidden">
         {/* Animated Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary),0.3),transparent_50%)]" />
@@ -48,13 +46,13 @@ export const AIProvidersCard: React.FC = () => {
               <Brain className="w-6 h-6 text-primary" />
             </motion.div>
             <div>
-              <h3 className="text-xl font-bold text-foreground">AI Provider Freedom</h3>
-              <p className="text-sm text-muted-foreground">Bring Your Own Keys</p>
+              <h3 className="text-lg font-bold text-foreground">AI Provider Freedom</h3>
+              <p className="text-xs text-muted-foreground">Bring Your Own Keys</p>
             </div>
           </div>
 
           {/* Provider Logos Grid */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-6">
             {providers.map((provider, index) => (
               <motion.div
                 key={provider.name}
@@ -63,7 +61,7 @@ export const AIProvidersCard: React.FC = () => {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ scale: 1.05, y: -2 }}
-                className="relative p-4 bg-card/50 border border-border/50 rounded-xl cursor-pointer backdrop-blur-sm hover:border-primary/50 hover:bg-card/70 transition-all duration-300"
+                className="relative p-3 bg-card/50 border border-border/50 rounded-xl cursor-pointer backdrop-blur-sm hover:border-primary/50 hover:bg-card/70 transition-all duration-300"
               >
                 <div className="text-center">
                   <div className="text-2xl font-bold text-foreground mb-1">

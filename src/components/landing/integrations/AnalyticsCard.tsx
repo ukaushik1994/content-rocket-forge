@@ -5,8 +5,6 @@ import { BarChart3, TrendingUp, Check } from 'lucide-react';
 const benefits = [
   'Real-time performance tracking',
   'SEO insights & rankings',
-  'User behavior analytics',
-  'Data-driven optimization',
 ];
 
 export const AnalyticsCard: React.FC = () => {
@@ -22,7 +20,7 @@ export const AnalyticsCard: React.FC = () => {
       <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/40 rounded-2xl opacity-30 group-hover:opacity-60 blur transition duration-500" />
       
       {/* Card Content */}
-      <div className="relative h-full bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 overflow-hidden">
+      <div className="relative h-full bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl border border-primary/20 rounded-2xl p-5 overflow-hidden">
         {/* Animated Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary),0.3),transparent_50%)]" />
@@ -39,8 +37,8 @@ export const AnalyticsCard: React.FC = () => {
               <BarChart3 className="w-6 h-6 text-primary" />
             </motion.div>
             <div>
-              <h3 className="text-xl font-bold text-foreground">Analytics Integration</h3>
-              <p className="text-sm text-muted-foreground">GA4 & Search Console</p>
+              <h3 className="text-lg font-bold text-foreground">Analytics Integration</h3>
+              <p className="text-xs text-muted-foreground">GA4 & Search Console</p>
             </div>
           </div>
 
