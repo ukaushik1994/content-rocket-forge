@@ -65,7 +65,6 @@ export const ValuePropositions = () => {
     <section className="py-16 px-4 relative overflow-hidden">
       {/* Enhanced Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-neon-pink/5 to-background" />
-      <div className="absolute inset-0 futuristic-grid opacity-20" />
       <FloatingElements elements={floatingElements} />
       
       <Container className="relative z-10">

@@ -91,7 +91,6 @@ export const FeaturesCarousel = () => {
     <section className="py-16 px-4 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-neon-blue/5 to-background" />
-      <div className="absolute inset-0 futuristic-grid opacity-20" />
       
       <Container className="relative z-10">
         <div className="text-center mb-12 animate-fade-in">

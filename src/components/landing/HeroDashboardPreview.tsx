@@ -10,7 +10,6 @@ export const HeroDashboardPreview = () => {
       
       {/* Dashboard Container */}
       <div className="relative bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 bg-futuristic-grid opacity-10" />
         
         {/* Dashboard Content */}
         <div className="p-6 md:p-8 space-y-6 relative z-10">
