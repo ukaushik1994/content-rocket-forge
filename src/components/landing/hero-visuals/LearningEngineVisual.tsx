@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, TrendingUp, Target, RefreshCw } from 'lucide-react';
+import { Brain, CheckCircle2, RefreshCw } from 'lucide-react';
 
 export const LearningEngineVisual = () => {
   return (
@@ -9,163 +9,130 @@ export const LearningEngineVisual = () => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
-      className="space-y-6"
+      className="grid lg:grid-cols-[60%_40%] gap-8 min-h-[500px]"
     >
-      {/* AI Learning Badge */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, ease: "easeInOut" }}
-        className="flex items-center justify-between"
-      >
-        <div className="h-8 w-48 bg-gradient-to-r from-primary/30 to-neon-blue/30 rounded-lg overflow-hidden shadow-inner">
+      {/* Left Side - Orbital Visual */}
+      <div className="relative flex items-center justify-center">
+        {/* Orbital dots */}
+        {[0, 1, 2, 3, 4, 5].map((i) => (
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-neon-blue shadow-[0_0_10px_rgba(var(--primary),0.3)]"
-            initial={{ width: "0%" }}
-            animate={{ width: "75%" }}
-            transition={{ duration: 1.5, delay: 0.2, ease: "easeInOut" }}
-          />
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 shadow-md shadow-primary/20">
-          <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]"
-          >
-            <Brain className="h-4 w-4 text-primary" />
-          </motion.div>
-          <span className="text-xs font-medium text-primary">AI Learning</span>
-        </div>
-      </motion.div>
-
-      {/* Performance Metrics Grid */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { icon: TrendingUp, value: '67%', target: '85%', label: 'Performance', delay: 0.3 },
-          { icon: Target, value: '12.4K', target: '18.2K', label: 'Engagement', delay: 0.4 },
-          { icon: Brain, value: '8.2K', target: '12.8K', label: 'Quality', delay: 0.5 }
-        ].map((metric, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 + index * 0.1, ease: "easeInOut" }}
-            className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg border border-primary/30 p-4 shadow-md"
-          >
-            <metric.icon className="h-5 w-5 text-primary mb-2" />
-            <motion.div 
-              className="text-2xl font-bold text-foreground"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.4 + index * 0.1, ease: "easeInOut" }}
-            >
-              {metric.value}
-            </motion.div>
-            <div className="text-xs text-muted-foreground mb-1">{metric.label}</div>
-            <motion.div
-              className="text-xs text-neon-blue font-medium"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 + index * 0.1, ease: "easeInOut" }}
-            >
-              → {metric.target}
-            </motion.div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Feedback Loop Visualization */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.5, ease: "easeInOut" }}
-        className="bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-6 relative overflow-hidden shadow-lg"
-      >
-        <div className="flex items-center justify-between relative z-10">
-          {['Input', 'AI', 'Output', 'Learn'].map((label, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.7 + index * 0.15, type: "spring", stiffness: 150, damping: 12 }}
-              className="flex flex-col items-center gap-2"
-            >
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  boxShadow: [
-                    '0 0 0px rgba(var(--primary), 0)',
-                    '0 0 20px rgba(var(--primary), 0.5)',
-                    '0 0 0px rgba(var(--primary), 0)'
-                  ]
-                }}
-                transition={{ duration: 2, repeat: Infinity, delay: index * 0.4, ease: "easeInOut" }}
-                className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
-              >
-                <span className="text-xs font-bold text-white">{label}</span>
-              </motion.div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Connecting arrows */}
-        <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
-          {[0, 1, 2].map((index) => (
-            <motion.path
-              key={index}
-              d={`M ${25 + index * 25}% 50% L ${50 + index * 25}% 50%`}
-              stroke="url(#flowGradient)"
-              strokeWidth="2"
-              fill="none"
-              strokeDasharray="4 4"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 0.6 }}
-              transition={{ duration: 1, delay: 0.9 + index * 0.2, ease: "easeInOut" }}
-            />
-          ))}
-          <defs>
-            <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="hsl(var(--primary))" />
-              <stop offset="100%" stopColor="hsl(var(--neon-blue))" />
-            </linearGradient>
-          </defs>
-        </svg>
-
-        {/* Flowing particles */}
-        {[0, 1, 2].map((index) => (
-          <motion.div
-            key={index}
-            className="absolute top-1/2 w-2 h-2 bg-primary rounded-full shadow-[0_0_6px_rgba(var(--primary),0.6)]"
-            style={{ left: `${25 + index * 25}%` }}
+            key={i}
+            className="absolute w-3 h-3 rounded-full bg-purple-500/40 blur-sm"
+            style={{
+              left: '50%',
+              top: '50%',
+            }}
             animate={{
-              x: ['0%', '100%'],
-              opacity: [0, 1, 1, 0]
+              x: Math.cos((i * Math.PI * 2) / 6) * 140 - 6,
+              y: Math.sin((i * Math.PI * 2) / 6) * 140 - 6,
+              rotate: 360,
             }}
             transition={{
-              duration: 2,
-              repeat: Infinity,
-              delay: 1.2 + index * 0.4,
-              ease: 'easeInOut'
+              x: { duration: 12, repeat: Infinity, ease: "linear" },
+              y: { duration: 12, repeat: Infinity, ease: "linear" },
+              rotate: { duration: 12, repeat: Infinity, ease: "linear" },
             }}
           />
         ))}
-      </motion.div>
 
-      {/* Continuous Learning Badge */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 1.4, ease: "easeInOut" }}
-        className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 border border-primary/30 shadow-md shadow-primary/20"
-      >
+        {/* Central Brain Icon */}
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-          className="drop-shadow-[0_0_6px_rgba(var(--primary),0.4)]"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: "spring", stiffness: 150, damping: 15 }}
+          className="relative"
         >
-          <RefreshCw className="h-5 w-5 text-primary" />
+          <div className="absolute -inset-4 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-purple-600/30 rounded-full blur-2xl" />
+          <motion.div
+            animate={{
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="relative w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-purple-500/40"
+          >
+            <Brain className="h-16 w-16 text-white" />
+          </motion.div>
         </motion.div>
-        <span className="text-sm font-medium text-foreground">Continuous Learning Active</span>
+      </div>
+
+      {/* Right Side - Content Card */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 0, x: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="relative"
+      >
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur opacity-50" />
+        <div className="relative bg-card/60 backdrop-blur-xl border border-purple-500/20 rounded-xl p-6 shadow-2xl h-full flex flex-col">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-xs font-semibold text-purple-300 mb-4 w-fit"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            SELF-LEARNING
+          </motion.div>
+
+          {/* Title */}
+          <motion.h3
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="text-2xl font-bold text-white mb-3"
+          >
+            Self-Learning Intelligence Engine
+          </motion.h3>
+
+          {/* Description */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="text-sm text-gray-300 leading-relaxed mb-6"
+          >
+            Creates content, tracks performance, and automatically improves based on what works for YOUR audience.
+          </motion.p>
+
+          {/* Feature List */}
+          <div className="space-y-3 mb-6 flex-1">
+            {[
+              'Learns from YOUR performance data',
+              'Improves content quality over time',
+              'Adapts to YOUR audience preferences',
+              'Personalizes strategy automatically'
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9 + index * 0.1 }}
+                className="flex items-start gap-2 text-sm text-gray-300"
+              >
+                <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
+                <span>{feature}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTA Button */}
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.3 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all w-full justify-center"
+          >
+            Try This Feature
+            <span>→</span>
+          </motion.button>
+        </div>
       </motion.div>
     </motion.div>
   );
