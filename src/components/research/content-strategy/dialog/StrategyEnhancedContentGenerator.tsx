@@ -1,66 +1,230 @@
 import React from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { ContentGenerator } from '@/components/content-builder/content/ai/ContentGenerator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { FileText, Loader2, CheckCircle, RefreshCw } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface StrategyEnhancedContentGeneratorProps {
   proposal: any;
 }
 
 export function StrategyEnhancedContentGenerator({ proposal }: StrategyEnhancedContentGeneratorProps) {
-  const { state, setContent } = useContentBuilder();
+  const { 
+    state, 
+    generateContent, 
+    setContentTitle,
+    setContent,
+    setAdditionalInstructions 
+  } = useContentBuilder();
+  
+  const { 
+    selectedSolution, 
+    outline, 
+    content, 
+    contentTitle,
+    isGenerating,
+    serpSelections
+  } = state;
 
-  // Build additional instructions for strategy-specific content
-  const strategyInstructions = `
-Content Strategy Context:
-- Primary Keyword: ${proposal?.primary_keyword || state.mainKeyword}
-- Featured Solution: ${state.selectedSolution?.name || 'N/A'}
-${state.selectedSolution?.features ? `- Solution Features: ${state.selectedSolution.features.join(', ')}` : ''}
-- Content Type: ${proposal?.content_type || state.contentType}
-- Priority: ${proposal?.priority_tag || 'evergreen'}
-${state.serpSelections?.length > 0 ? `- SERP Research Insights: ${state.serpSelections.length} items analyzed` : ''}
-
-Please create comprehensive, SEO-optimized content that:
-1. Naturally features the solution
-2. Targets the primary keyword throughout
-3. Follows the provided outline structure
-4. Incorporates SERP research insights where relevant
-5. Maintains a helpful, authoritative tone
-  `.trim();
-
-  // Convert outline to OutlineSection format - handle mixed types
-  const formattedOutline = (state.outline || []).map((item, index) => {
-    if (!item) {
-      return {
-        id: `section-${index}`,
-        title: `Section ${index + 1}`,
-        level: 1
-      };
+  const handleGenerateContent = async () => {
+    if (!selectedSolution || outline.length === 0) {
+      toast({
+        title: "Missing requirements",
+        description: "Please ensure you have selected a solution and generated an outline",
+        variant: "destructive"
+      });
+      return;
     }
-    
-    if (typeof item === 'string') {
-      return {
+
+    // Enhanced content generation with strategy context
+    try {
+      // Convert outline to OutlineSection format for generateContent
+      const outlineSections = outline.map((item, index) => ({
         id: `section-${index}`,
         title: item,
-        level: 1
-      };
+        level: 1,
+        content: '',
+        order: index,
+        isExpanded: false
+      }));
+
+      // Add strategy-specific instructions to content generation
+      const strategyInstructions = [
+        `Primary focus: ${proposal?.primary_keyword}`,
+        selectedSolution ? `Featured solution: ${selectedSolution.name}` : '',
+        serpSelections.length > 0 ? `Incorporate insights from ${serpSelections.length} SERP research items` : '',
+        proposal?.priority_tag ? `Content priority: ${proposal.priority_tag}` : '',
+        'Ensure content addresses user search intent and provides actionable value',
+        'Integrate the solution naturally throughout relevant sections',
+        'Include specific examples and use cases where appropriate'
+      ].filter(Boolean).join('\n- ');
+
+      // Temporarily set additional instructions for this generation
+      const originalInstructions = state.additionalInstructions;
+      setAdditionalInstructions(strategyInstructions);
+
+      await generateContent(outlineSections);
+
+      // Restore original instructions
+      setAdditionalInstructions(originalInstructions);
+
+      // Success feedback with word count
+      const generatedWordCount = content.split(' ').filter(word => word.length > 0).length;
+      toast({
+        title: "Content Generated",
+        description: `Successfully created ${generatedWordCount > 0 ? generatedWordCount + ' word' : ''} strategy-focused content`,
+      });
+
+    } catch (error) {
+      console.error('Enhanced content generation failed:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate content. Please try again or check your AI configuration.",
+        variant: "destructive"
+      });
     }
-    
-    return {
-      id: `section-${index}`,
-      title: (item as any).title || `Section ${index + 1}`,
-      level: 1,
-      content: (item as any).content
-    };
-  });
+  };
+
+  const selectedSerpCount = serpSelections.filter(item => item.selected).length;
+  const hasContent = content && content.length > 0;
+  const wordCount = hasContent ? content.split(/\s+/).filter(word => word.length > 0).length : 0;
 
   return (
-    <ContentGenerator
-      outline={formattedOutline}
-      solution={state.selectedSolution}
-      serpSelections={state.serpSelections}
-      mainKeyword={proposal?.primary_keyword || state.mainKeyword}
-      additionalInstructions={strategyInstructions}
-      onContentGenerated={(content) => setContent(content)}
-    />
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="text-lg font-semibold mb-2">Generate Content</h3>
+        <p className="text-muted-foreground">
+          Create compelling content about "{proposal?.primary_keyword}" featuring {selectedSolution?.name}
+        </p>
+      </div>
+
+      {/* Content Title */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">Content Title</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Input
+            value={contentTitle || ''}
+            onChange={(e) => setContentTitle(e.target.value)}
+            placeholder="Enter your content title..."
+            className="text-lg"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Generation Context Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Solution</span>
+              <Badge variant="default">{selectedSolution?.name || 'None'}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Outline Sections</span>
+              <Badge variant="default">{outline.length}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">SERP Research</span>
+              <Badge variant="default">{selectedSerpCount} items</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Outline Preview */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">Content Structure</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {outline.map((section, index) => (
+              <div key={index} className="text-sm flex items-start gap-2">
+                <span className="font-mono text-muted-foreground min-w-[2rem]">
+                  {index + 1}.
+                </span>
+                <span>{section}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Generate Button */}
+      {!hasContent && (
+        <div className="text-center">
+          <Button 
+            onClick={handleGenerateContent}
+            disabled={isGenerating || !selectedSolution || outline.length === 0}
+            size="lg"
+            className="gap-2"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating Content...
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4" />
+                Generate Content
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Generated Content */}
+      {hasContent && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                Generated Content
+                <Badge variant="outline" className="text-xs">
+                  {wordCount} words
+                </Badge>
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleGenerateContent}
+                disabled={isGenerating}
+                className="gap-2"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Regenerate
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-96 overflow-y-auto">
+              <div className="prose prose-sm max-w-none">
+                <pre className="whitespace-pre-wrap text-sm font-sans">
+                  {content}
+                </pre>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

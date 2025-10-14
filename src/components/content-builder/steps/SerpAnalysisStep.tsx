@@ -18,7 +18,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, AlertTriangle, Settings } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface SerpAnalysisStepProps {
   proposal?: any;
@@ -39,7 +38,8 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
     const checkApiKeys = async () => {
       try {
         setIsCheckingKeys(true);
-        
+        console.log('🔑 Checking and testing SERP API keys...');
+
         // Check both API keys once
         const serpApiKey = await getApiKey('serp');
         const serpstackKey = await getApiKey('serpstack');
@@ -50,20 +50,22 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
         };
 
         setApiKeysStatus(newStatus);
-        
+        console.log('✅ API keys status:', newStatus);
+
         // Enable enhanced mode if we have API keys OR proposal data
         const hasApiKeys = serpApiKey || serpstackKey;
         const hasProposalData = proposal?.serp_data && Object.keys(proposal.serp_data).length > 0;
+        const targetKeyword = mainKeyword || proposal?.primary_keyword;
         
-        if ((hasApiKeys || hasProposalData)) {
+        if ((hasApiKeys || hasProposalData) && targetKeyword) {
+          console.log('🚀 Enabling enhanced mode:', { hasApiKeys, hasProposalData, targetKeyword });
           setUseEnhancedMode(true);
         }
 
-        // If we have proposal SERP data, convert and inject it with feedback
+        // If we have proposal SERP data, convert and inject it into the context ONCE
         if (hasProposalData && !serpData) {
+          console.log('📥 Converting proposal SERP data to context...');
           injectProposalSerpData();
-        } else if (!hasApiKeys && !hasProposalData) {
-          toast.info('No SERP data available. You can skip this step or add API keys.');
         }
 
       } catch (error) {
@@ -77,8 +79,15 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
       if (!proposal?.serp_data) return;
 
       try {
+        // Use the first available SERP data entry or the main keyword data
         const targetKeyword = mainKeyword || proposal.primary_keyword;
         let serpDataEntry = proposal.serp_data[targetKeyword] || Object.values(proposal.serp_data)[0];
+        
+        console.log('🔄 Converting proposal SERP data:', {
+          targetKeyword,
+          availableKeys: Object.keys(proposal.serp_data),
+          hasEntry: !!serpDataEntry
+        });
 
         if (serpDataEntry) {
           // Convert to expected format
@@ -110,22 +119,14 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
             })),
             keywords: serpDataEntry.keywords || [],
             recommendations: serpDataEntry.recommendations || [],
-            isMockData: serpDataEntry.isMockData !== false
+            isMockData: serpDataEntry.isMockData !== false // Assume mock unless explicitly false
           };
           
-          // Calculate stats for feedback
-          const stats = {
-            paa: convertedData.peopleAlsoAsk?.length || 0,
-            headings: convertedData.headings?.length || 0,
-            results: convertedData.topResults?.length || 0
-          };
-          
+          console.log('✅ Converted proposal SERP data successfully');
           dispatch({ type: 'SET_SERP_DATA', payload: convertedData });
-          toast.success(`Loaded ${stats.paa} PAA questions, ${stats.headings} headings, ${stats.results} top results from proposal`);
         }
       } catch (error) {
         console.error('❌ Error converting proposal SERP data:', error);
-        toast.error('Failed to load SERP data from proposal');
       }
     };
 
@@ -141,9 +142,11 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
       setMainKeyword(proposal.primary_keyword);
     }
 
-    // Only run once when component mounts
-    checkApiKeys();
-  }, []); // Run once on mount only
+    // Only run once when component mounts or when proposal changes
+    if (!serpData) {
+      checkApiKeys();
+    }
+  }, [proposal?.primary_keyword]); // Simplified dependencies to prevent loops
 
   const handleStatusChange = (status: any) => {
     setApiKeysStatus(status);
@@ -352,25 +355,16 @@ export const SerpAnalysisStep = ({ proposal }: SerpAnalysisStepProps = {}) => {
                     </TabsContent>
                   </Tabs>
 
-                  <div className="text-center mt-4 space-y-2">
+                  <div className="text-center mt-4">
                     <p className="text-sm text-muted-foreground">
                       Don&apos;t want to add API keys now?
                     </p>
-                    <div className="flex gap-2 justify-center">
-                      <button 
-                        onClick={handleReanalyze}
-                        className="text-sm text-neon-purple hover:text-neon-blue underline"
-                      >
-                        Continue with basic analysis
-                      </button>
-                      <span className="text-muted-foreground">or</span>
-                      <button 
-                        onClick={() => handleContinueWithSelections()}
-                        className="text-sm text-neon-purple hover:text-neon-blue underline"
-                      >
-                        Skip SERP Analysis
-                      </button>
-                    </div>
+                    <button 
+                      onClick={handleReanalyze}
+                      className="text-sm text-neon-purple hover:text-neon-blue underline mt-1"
+                    >
+                      Continue with basic analysis
+                    </button>
                   </div>
                 </div>
               ) : (
