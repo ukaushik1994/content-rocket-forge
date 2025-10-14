@@ -110,7 +110,7 @@ export const FeaturesCarousel = () => {
         </div>
 
         <div className="max-w-5xl mx-auto">
-          <Carousel setApi={setApi} className="w-full">
+          <Carousel setApi={setApi} className="w-full" opts={{ loop: true }}>
             <CarouselContent>
               {features.map((feature, index) => (
                 <CarouselItem key={feature.id}>
