@@ -5,7 +5,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, Rocket, Brain, Users, Zap, Globe, 
-  Target, BarChart3, Calendar, ArrowRight, Download, Sparkles
+  Target, BarChart3, Calendar, ArrowRight, Download, Sparkles, CheckCircle2
 } from 'lucide-react';
 import { AnimatedCounter } from './AnimatedCounter';
 import { FloatingElements } from './FloatingElements';
@@ -139,80 +139,112 @@ export const InvestorSection = () => {
           >
             <h3 className="text-2xl font-bold text-center mb-8">What We're Building</h3>
             <div className="grid md:grid-cols-3 gap-6">
-              {/* Now */}
-              <GlassCard className="p-6 border-primary/30">
+              {/* Built - Q1-Q3 2025 */}
+              <GlassCard className="p-6 border-green-500/30 bg-green-500/5">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <h4 className="font-bold text-primary">Building (Q1-Q2 2025)</h4>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <h4 className="font-bold text-green-500">Built (Q1-Q3 2025)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    <div className="w-1 h-1 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                     Self-learning content engine
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    <div className="w-1 h-1 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                     AI Strategy Coach with analytics
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    SERP-powered research
+                    <div className="w-1 h-1 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                    SERP-powered research platform
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    <div className="w-1 h-1 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                     Smart content hub
                   </li>
-                </ul>
-              </GlassCard>
-
-              {/* Next */}
-              <GlassCard className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="h-4 w-4 text-neon-blue" />
-                  <h4 className="font-bold text-neon-blue">Next (Q2-Q3 2025)</h4>
-                </div>
-                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-neon-blue mt-2 flex-shrink-0" />
+                    <div className="w-1 h-1 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                     Predictive performance scoring
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-neon-blue mt-2 flex-shrink-0" />
+                    <div className="w-1 h-1 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                     Multi-language support
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-neon-blue mt-2 flex-shrink-0" />
+                    <div className="w-1 h-1 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                     Team collaboration suite
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-neon-blue mt-2 flex-shrink-0" />
+                    <div className="w-1 h-1 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                     Advanced analytics dashboard
                   </li>
                 </ul>
               </GlassCard>
 
-              {/* Future */}
-              <GlassCard className="p-6">
+              {/* Current Phase - Q4 2025 */}
+              <GlassCard className="p-6 border-primary/30 bg-primary/5">
                 <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-4 w-4 text-neon-pink" />
-                  <h4 className="font-bold text-neon-pink">Future (Q4 2025+)</h4>
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <h4 className="font-bold text-primary">Current Phase (Q4 2025)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    Intensive beta testing program
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    Performance optimization & scaling
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    User feedback integration
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    Security & compliance hardening
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    Investor partnerships for launch
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    Go-to-market strategy finalization
+                  </li>
+                </ul>
+              </GlassCard>
+
+              {/* Launch & Scale - Q1 2026+ */}
+              <GlassCard className="p-6 border-neon-pink/30">
+                <div className="flex items-center gap-2 mb-4">
+                  <Rocket className="h-4 w-4 text-neon-pink" />
+                  <h4 className="font-bold text-neon-pink">Launch & Scale (Q1 2026+)</h4>
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
+                    Public platform launch
+                  </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
                     API for third-party integrations
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
-                    White-label solutions
+                    White-label solutions rollout
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
-                    Enterprise features
+                    Enterprise feature deployment
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
-                    Global expansion
+                    Global market expansion
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
+                    Strategic partnership activation
                   </li>
                 </ul>
               </GlassCard>
