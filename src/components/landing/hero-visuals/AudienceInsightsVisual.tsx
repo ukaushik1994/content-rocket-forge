@@ -62,7 +62,9 @@ export const AudienceInsightsVisual = () => {
           <Users className="h-10 w-10 text-white" />
           
           {/* Radiating insight beams */}
-          {[0, 1, 2, 3].map(index => {})}
+          {[0, 1, 2, 3].map(index => (
+            <div key={index} />
+          ))}
         </motion.div>
 
         {/* Insight Metrics Grid */}
