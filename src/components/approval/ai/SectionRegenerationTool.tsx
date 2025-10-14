@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 interface SectionRegenerationToolProps {
   content: ContentItemType;
@@ -51,9 +52,6 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
     setIsRegenerating(true);
     
     try {
-      // This would connect to an AI service in a real app
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
       // Find the selected section in the content
       const sectionIndex = sections.find(s => s.title === selectedSection)?.index;
       
@@ -70,13 +68,35 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
           }
         }
         
-        // Generate new content for the section
-        const newSectionContent = `${contentLines[startIndex]}\n\nThis is regenerated content for the "${selectedSection}" section using the ${tone} tone. In a real app, this would be AI-generated content that matches the selected tone and style preferences while maintaining SEO optimization.\n\nThe content would be well-structured with proper paragraphs and might include relevant statistics, examples, and actionable advice.`;
+        // Extract current section content
+        const currentSectionContent = contentLines.slice(startIndex, endIndex).join('\n');
+        
+        // Build AI prompt
+        const systemPrompt = `You are a professional content writer tasked with regenerating a section of content. 
+Maintain the section heading and structure, but rewrite the content with a ${tone} tone.
+Focus on clarity, engagement, and SEO optimization while preserving the core message.`;
+        
+        const userPrompt = `Regenerate this section with a ${tone} tone:\n\n${currentSectionContent}\n\nProvide only the regenerated section content, starting with the heading.`;
+        
+        // Call AI service
+        const result = await AIServiceController.generate(
+          'content_improvement',
+          systemPrompt,
+          userPrompt,
+          { 
+            temperature: 0.7,
+            maxTokens: 2000
+          }
+        );
+        
+        if (!result?.content) {
+          throw new Error('No content generated');
+        }
         
         // Replace the section content
         const updatedContent = [
           ...contentLines.slice(0, startIndex),
-          newSectionContent,
+          result.content.trim(),
           ...contentLines.slice(endIndex)
         ].join('\n');
         
@@ -85,7 +105,7 @@ export const SectionRegenerationTool: React.FC<SectionRegenerationToolProps> = (
       }
     } catch (error) {
       console.error('Error regenerating section:', error);
-      toast.error('Failed to regenerate section');
+      toast.error('Failed to regenerate section. Please check AI provider settings.');
     } finally {
       setIsRegenerating(false);
     }
