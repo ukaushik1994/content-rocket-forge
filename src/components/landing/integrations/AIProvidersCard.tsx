@@ -1,14 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Check } from 'lucide-react';
+import { ProviderLogo } from '@/components/ui/provider-logo';
 
 const providers = [
-  { name: 'OpenAI', icon: 'O' },
-  { name: 'Anthropic', icon: 'A' },
-  { name: 'Gemini', icon: 'G' },
-  { name: 'LM Studio', icon: 'L' },
-  { name: 'Mistral', icon: 'M' },
-  { name: 'OpenRouter', icon: 'O' },
+  { name: 'OpenAI', id: 'openai' as const },
+  { name: 'Anthropic', id: 'anthropic' as const },
+  { name: 'Gemini', id: 'gemini' as const },
+  { name: 'LM Studio', id: 'lmstudio' as const },
+  { name: 'Mistral', id: 'mistral' as const },
+  { name: 'OpenRouter', id: 'openrouter' as const },
 ];
 
 const benefits = [
@@ -63,11 +64,13 @@ export const AIProvidersCard: React.FC = () => {
                 whileHover={{ scale: 1.05, y: -2 }}
                 className="relative p-3 bg-card/50 border border-border/50 rounded-xl cursor-pointer backdrop-blur-sm hover:border-primary/50 hover:bg-card/70 transition-all duration-300"
               >
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground mb-1">
-                    {provider.icon}
-                  </div>
-                  <div className="text-[10px] font-semibold text-muted-foreground leading-tight">
+                <div className="flex flex-col items-center gap-2">
+                  <ProviderLogo 
+                    provider={provider.id} 
+                    size="lg" 
+                    className="transition-transform duration-300"
+                  />
+                  <div className="text-[10px] font-semibold text-muted-foreground leading-tight text-center">
                     {provider.name}
                   </div>
                 </div>

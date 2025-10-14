@@ -4,13 +4,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Server, Key, AlertTriangle, Bell, Check, Binary, Globe, HardDrive } from 'lucide-react';
+import { AlertTriangle, Check } from 'lucide-react';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 import { testApiKey } from '@/services/apiKeys/testing';
 import { toast } from 'sonner';
 import { AiProvider } from '@/services/aiService/types';
 import { ApiProvider } from '@/services/apiKeyService';
+import { ProviderIcon } from './ProviderIcon';
 
 interface DefaultAiProviderSelectorProps {
   defaultAiProvider?: AiProvider;
@@ -87,32 +88,8 @@ export function DefaultAiProviderSelector({
 
   // Get provider icon and status badge
   const getProviderDetails = (provider: string) => {
-    let icon;
+    const icon = <ProviderIcon provider={provider} />;
     let statusBadge;
-    
-    // Icon based on provider
-    switch (provider) {
-      case 'openai':
-        icon = <Zap className="h-4 w-4 text-blue-400" />;
-        break;
-      case 'anthropic':
-        icon = <Server className="h-4 w-4 text-purple-400" />;
-        break;
-      case 'gemini':
-        icon = <Key className="h-4 w-4 text-emerald-400" />;
-        break;
-      case 'mistral':
-        icon = <Binary className="h-4 w-4 text-indigo-400" />;
-        break;
-      case 'lmstudio':
-        icon = <HardDrive className="h-4 w-4 text-orange-400" />;
-        break;
-      case 'openrouter':
-        icon = <Globe className="h-4 w-4 text-cyan-400" />;
-        break;
-      default:
-        icon = <Bell className="h-4 w-4 text-gray-400" />;
-    }
     
     // Status badge based on API key status
     if (checkingStatus) {

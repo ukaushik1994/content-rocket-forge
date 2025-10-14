@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, TrendingUp, Check } from 'lucide-react';
+import ga4Logo from '@/assets/analytics/ga4.svg';
+import gscLogo from '@/assets/analytics/gsc.svg';
 
 const benefits = [
   'Real-time performance tracking',
@@ -49,8 +51,11 @@ export const AnalyticsCard: React.FC = () => {
               className="p-6 bg-blue-500/5 rounded-xl border border-blue-500/20 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent mb-2">
-                  GA4
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <img src={ga4Logo} alt="Google Analytics 4" className="h-8 w-8 object-contain" />
+                  <div className="text-2xl font-bold text-foreground">
+                    GA4
+                  </div>
                 </div>
                 <div className="text-xs text-muted-foreground">Google Analytics</div>
               </div>
@@ -75,8 +80,11 @@ export const AnalyticsCard: React.FC = () => {
               className="p-6 bg-purple-500/5 rounded-xl border border-purple-500/20 backdrop-blur-sm"
             >
               <div className="text-center">
-                <div className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent mb-2">
-                  GSC
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <img src={gscLogo} alt="Google Search Console" className="h-8 w-8 object-contain" />
+                  <div className="text-2xl font-bold text-foreground">
+                    GSC
+                  </div>
                 </div>
                 <div className="text-xs text-muted-foreground">Search Console</div>
               </div>
