@@ -34,14 +34,14 @@ export const InvestorSection = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
               <Rocket className="h-4 w-4" />
-              Open for Strategic Investment
+              Seeking Seed Investment
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               Building the Future of
               <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-clip-text text-transparent"> Content Intelligence</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We're seeking seed investment to bring this vision to life and revolutionize how creators worldwide approach content creation.
+              We've built the platform. Now we're seeking seed investment to launch, scale, and revolutionize how creators worldwide approach content creation.
             </p>
           </motion.div>
 
@@ -139,11 +139,11 @@ export const InvestorSection = () => {
           >
             <h3 className="text-2xl font-bold text-center mb-8">What We're Building</h3>
             <div className="grid md:grid-cols-3 gap-6">
-              {/* Now */}
+              {/* Built */}
               <GlassCard className="p-6 border-primary/30">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <h4 className="font-bold text-primary">Building (Q1-Q2 2025)</h4>
+                  <h4 className="font-bold text-primary">Built (Q1-Q3 2025)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
@@ -156,63 +156,63 @@ export const InvestorSection = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    SERP-powered research
+                    SERP-powered research platform
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    Smart content hub
+                    Smart content hub & workflows
                   </li>
                 </ul>
               </GlassCard>
 
-              {/* Next */}
+              {/* Current Phase */}
               <GlassCard className="p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="h-4 w-4 text-neon-blue" />
-                  <h4 className="font-bold text-neon-blue">Next (Q2-Q3 2025)</h4>
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <h4 className="font-bold text-primary">Current Phase (Q4 2025)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-neon-blue mt-2 flex-shrink-0" />
-                    Predictive performance scoring
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    Intensive beta testing program
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-neon-blue mt-2 flex-shrink-0" />
-                    Multi-language support
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    Performance optimization & bug fixes
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-neon-blue mt-2 flex-shrink-0" />
-                    Team collaboration suite
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    User feedback integration
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 rounded-full bg-neon-blue mt-2 flex-shrink-0" />
-                    Advanced analytics dashboard
+                    <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
+                    Security & compliance validation
                   </li>
                 </ul>
               </GlassCard>
 
-              {/* Future */}
+              {/* Launch & Scale */}
               <GlassCard className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="h-4 w-4 text-neon-pink" />
-                  <h4 className="font-bold text-neon-pink">Future (Q4 2025+)</h4>
+                  <h4 className="font-bold text-neon-pink">Launch & Scale (Q1 2026+)</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
-                    API for third-party integrations
+                    Public platform launch
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
-                    White-label solutions
+                    Marketing & user acquisition
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
-                    Enterprise features
+                    Partnership & integration rollout
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-neon-pink mt-2 flex-shrink-0" />
-                    Global expansion
+                    Infrastructure scaling for growth
                   </li>
                 </ul>
               </GlassCard>
@@ -256,10 +256,10 @@ export const InvestorSection = () => {
             <GlassCard className="p-8 max-w-4xl mx-auto">
               <div className="grid md:grid-cols-2 gap-6">
                 {[
-                  { percentage: 40, label: 'Product Development', sublabel: 'AI/ML team expansion', color: 'from-primary to-neon-blue' },
-                  { percentage: 25, label: 'Marketing & Acquisition', sublabel: 'User growth & brand', color: 'from-neon-blue to-neon-pink' },
-                  { percentage: 20, label: 'Infrastructure', sublabel: 'Scaling & performance', color: 'from-neon-pink to-neon-orange' },
-                  { percentage: 15, label: 'Partnerships', sublabel: 'Strategic integrations', color: 'from-neon-orange to-primary' }
+                  { percentage: 35, label: 'Marketing & Go-to-Market', sublabel: 'Launch campaign & user acquisition', color: 'from-primary to-neon-blue' },
+                  { percentage: 30, label: 'Operations & Team', sublabel: 'Testing support & customer success', color: 'from-neon-blue to-neon-pink' },
+                  { percentage: 20, label: 'Infrastructure & Scaling', sublabel: 'Cloud infrastructure & performance', color: 'from-neon-pink to-neon-orange' },
+                  { percentage: 15, label: 'Partnerships & Integrations', sublabel: 'Strategic partnerships & API partners', color: 'from-neon-orange to-primary' }
                 ].map((item, index) => (
                   <div key={index} className="flex items-center gap-4">
                     <div className="flex-1">
@@ -297,10 +297,9 @@ export const InvestorSection = () => {
             <GlassCard className="p-8 max-w-3xl mx-auto text-center border-primary/30 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-neon-blue/5 to-neon-pink/5" />
               <div className="relative z-10">
-                <h3 className="text-3xl font-bold mb-4">Join Us in Building the Future</h3>
+                <h3 className="text-3xl font-bold mb-4">Join Us in Launching the Future</h3>
                 <p className="text-lg text-muted-foreground mb-8">
-                  We're actively seeking our first strategic investors to help us build this vision. 
-                  If you're interested in being a founding investor, we'd love to hear from you.
+                  The platform is built and in testing. We're seeking our first strategic investors to fund the launch and scale this vision globally. Be a founding investor and help us revolutionize content creation.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
