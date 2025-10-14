@@ -74,7 +74,7 @@ export const LandingHero = () => {
   ];
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 pt-32 pb-32">
+    <section className="min-h-screen flex items-center justify-center px-4 pt-20 pb-12">
       <div className="container max-w-5xl mx-auto relative">
         {/* Floating Keywords Background */}
         <FloatingKeywords />

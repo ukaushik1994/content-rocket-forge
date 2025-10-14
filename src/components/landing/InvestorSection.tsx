@@ -19,7 +19,7 @@ export const InvestorSection = () => {
   ];
 
   return (
-    <section className="py-20 px-4 relative overflow-hidden">
+    <section className="py-8 px-4 relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
       <FloatingElements elements={floatingElements} />

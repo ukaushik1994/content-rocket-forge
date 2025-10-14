@@ -37,23 +37,23 @@ const Landing = () => {
             <ProblemSolution />
           </section>
           
-          <section id="features" className="py-8 scroll-mt-16">
+          <section id="features" className="scroll-mt-16">
             <FeaturesCarousel />
           </section>
           
-          <section id="how-it-works" className="py-8 scroll-mt-16">
+          <section id="how-it-works" className="scroll-mt-16">
             <HowItWorks />
           </section>
           
-          <section className="py-8 scroll-mt-16">
+          <section className="scroll-mt-16">
             <ComparisonTable />
           </section>
           
-          <section className="py-8 scroll-mt-16">
+          <section className="scroll-mt-16">
             <ValuePropositions />
           </section>
           
-          <section id="investors" className="py-8 scroll-mt-16">
+          <section id="investors" className="scroll-mt-16">
             <InvestorSection />
           </section>
         </main>
