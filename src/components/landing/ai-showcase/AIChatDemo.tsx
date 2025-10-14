@@ -116,9 +116,9 @@ export const AIChatDemo = () => {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="lg:col-span-3"
       >
-        <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl shadow-2xl overflow-hidden">
+        <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl shadow-2xl overflow-visible">
           {/* Chat Container */}
-          <div className="p-6 space-y-4 h-[650px] md:h-[750px] overflow-hidden">
+          <div className="p-6 space-y-4 min-h-[800px]">
             {/* User Message */}
             <AnimatePresence>
               {animationPhase >= 0 && (
