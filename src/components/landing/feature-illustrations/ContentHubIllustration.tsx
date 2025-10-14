@@ -1,275 +1,234 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Twitter, Video, Image, Newspaper, Mail, MessageCircle, CheckCircle2, Sparkles } from 'lucide-react';
+import { FileText, Twitter, Video, Image, Newspaper, Mail, MessageCircle, CheckCircle2 } from 'lucide-react';
 
 export const ContentHubIllustration = () => {
   const contentFormats = [
-    { Icon: Twitter, label: 'Tweet', gradient: 'from-neon-blue to-neon-pink', delay: 0.8 },
-    { Icon: Video, label: 'Video', gradient: 'from-neon-pink to-primary', delay: 0.9 },
-    { Icon: Image, label: 'Image', gradient: 'from-primary to-neon-orange', delay: 1.0 },
-    { Icon: Newspaper, label: 'Blog', gradient: 'from-neon-orange to-neon-pink', delay: 1.1 },
-    { Icon: Mail, label: 'Email', gradient: 'from-neon-blue to-primary', delay: 1.2 },
-    { Icon: MessageCircle, label: 'Post', gradient: 'from-neon-pink to-neon-blue', delay: 1.3 }
+    { Icon: Twitter, label: 'Tweet', angle: 0, delay: 0, color: 'from-neon-blue to-primary' },
+    { Icon: Video, label: 'Video', angle: 45, delay: 0.2, color: 'from-neon-pink to-neon-blue' },
+    { Icon: Image, label: 'Image', angle: 90, delay: 0.4, color: 'from-neon-orange to-neon-pink' },
+    { Icon: Newspaper, label: 'Article', angle: 135, delay: 0.6, color: 'from-primary to-neon-orange' },
+    { Icon: Mail, label: 'Email', angle: 180, delay: 0.8, color: 'from-neon-blue to-neon-pink' },
+    { Icon: MessageCircle, label: 'Post', angle: 225, delay: 1.0, color: 'from-neon-pink to-primary' }
+  ];
+
+  const floatingFiles = [
+    { x: 10, y: 15, delay: 0, rotation: -15 },
+    { x: 85, y: 20, delay: 0.5, rotation: 15 },
+    { x: 15, y: 80, delay: 1, rotation: 10 },
+    { x: 80, y: 75, delay: 1.5, rotation: -10 }
   ];
 
   const versions = [
     { version: 'v1', status: 'completed', delay: 0 },
-    { version: 'v2', status: 'completed', delay: 0.2 },
-    { version: 'v3', status: 'in-progress', delay: 0.4 }
+    { version: 'v2', status: 'completed', delay: 0.3 },
+    { version: 'v3', status: 'in-progress', delay: 0.6 }
   ];
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-8">
+    <div className="relative w-full h-full flex items-center justify-center p-8">
       
-      {/* Top Document Icon */}
+      {/* Central Document */}
       <motion.div
-        className="relative z-20 mb-8"
+        className="relative z-20"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
         <motion.div
-          className="w-28 h-28 rounded-full bg-gradient-to-r from-neon-orange to-neon-pink flex items-center justify-center shadow-2xl"
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ 
+            scale: [1, 1.05, 1],
+            rotateY: [0, 10, -10, 0]
+          }}
+          transition={{ 
+            duration: 4, 
+            repeat: Infinity,
+            ease: "easeInOut" 
+          }}
+          className="bg-gradient-to-r from-neon-orange to-primary p-8 rounded-2xl shadow-2xl"
         >
-          <FileText className="h-14 w-14 text-white" />
+          <FileText className="h-20 w-20 text-white" />
         </motion.div>
 
-        {/* Pulsing glow */}
+        {/* Pulse effect */}
         {[0, 1].map((i) => (
           <motion.div
             key={i}
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: 'radial-gradient(circle, hsl(var(--neon-orange) / 0.4) 0%, transparent 70%)',
-            }}
+            className="absolute inset-0 rounded-2xl border-2 border-primary/30"
             animate={{ 
-              scale: [1, 1.6, 2],
+              scale: [1, 1.5, 2],
               opacity: [0.6, 0.3, 0]
             }}
             transition={{ 
-              duration: 2.5, 
+              duration: 3, 
               repeat: Infinity,
-              delay: i * 1.2,
+              delay: i * 1.5,
               ease: "easeOut" 
             }}
           />
         ))}
       </motion.div>
 
-      {/* Transformation Pipeline */}
-      <div className="w-full max-w-lg">
-        <div className="flex items-center justify-between gap-4 mb-8">
-          
-          {/* Original Content Card */}
-          <motion.div
-            className="flex-1"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <div className="relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-blue to-neon-pink rounded-xl blur opacity-30" />
-              
-              <div className="relative bg-card/80 backdrop-blur-xl border border-primary/20 rounded-xl p-4 shadow-2xl">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-neon-blue to-neon-pink flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold">Original</span>
-                  <span className="text-[10px] text-muted-foreground px-2 py-0.5 rounded-full bg-primary/20">
-                    1 Article
-                  </span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+      {/* Radiating Content Formats */}
+      {contentFormats.map(({ Icon, label, angle, delay, color }, index) => {
+        const radius = 180;
+        const radian = (angle * Math.PI) / 180;
+        const x = Math.cos(radian) * radius;
+        const y = Math.sin(radian) * radius;
 
-          {/* AI Processing */}
-          <motion.div
-            className="flex flex-col items-center gap-2"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-          >
+        return (
+          <React.Fragment key={index}>
+            {/* Connection Line */}
             <motion.div
-              className="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-neon-orange flex items-center justify-center"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            >
-              <Sparkles className="h-6 w-6 text-white" />
-            </motion.div>
-            
-            <div className="flex gap-1">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-primary"
-                  animate={{ 
-                    scale: [1, 1.5, 1],
-                    opacity: [0.3, 1, 0.3]
-                  }}
-                  transition={{ 
-                    duration: 1.5, 
-                    repeat: Infinity,
-                    delay: i * 0.3
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Repurposed Content Card */}
-          <motion.div
-            className="flex-1"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-          >
-            <div className="relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-neon-orange rounded-xl blur opacity-30" />
-              
-              <div className="relative bg-card/80 backdrop-blur-xl border border-primary/20 rounded-xl p-3 shadow-2xl">
-                <div className="grid grid-cols-3 gap-1.5">
-                  {contentFormats.map((format, index) => (
-                    <motion.div
-                      key={index}
-                      className={`aspect-square rounded-lg bg-gradient-to-r ${format.gradient} p-0.5`}
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ 
-                        duration: 0.3, 
-                        delay: format.delay
-                      }}
-                    >
-                      <div className="w-full h-full bg-card/90 rounded-md flex items-center justify-center">
-                        <format.Icon className="h-3 w-3 text-primary" />
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Stats Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.5 }}
-        >
-          <div className="relative">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-orange to-neon-pink rounded-xl blur opacity-30" />
-            
-            <div className="relative bg-card/80 backdrop-blur-xl border border-primary/20 rounded-xl p-4 shadow-2xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="text-2xl font-bold bg-gradient-to-r from-neon-orange to-neon-pink bg-clip-text text-transparent"
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    20+
-                  </motion.div>
-                  <div>
-                    <p className="text-sm font-semibold">Formats Created</p>
-                    <p className="text-xs text-muted-foreground">From 1 source</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-1">
-                  {[0, 1, 2].map((i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 1.7 + i * 0.1 }}
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-neon-orange" />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Version History Panel */}
-        <motion.div
-          className="mt-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.8 }}
-        >
-          <div className="relative">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-blue to-neon-pink rounded-xl blur opacity-20" />
-            
-            <div className="relative bg-card/60 backdrop-blur-xl border border-primary/20 rounded-xl p-3 shadow-xl">
-              <p className="text-xs font-semibold mb-2 text-center">Version History</p>
-              <div className="flex justify-center gap-3">
-                {versions.map((ver, index) => (
-                  <motion.div
-                    key={index}
-                    className="flex flex-col items-center gap-1"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: ver.delay + 2 }}
-                  >
-                    <motion.div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        ver.status === 'completed' 
-                          ? 'bg-gradient-to-r from-neon-blue to-neon-pink' 
-                          : 'bg-primary/20'
-                      }`}
-                      animate={ver.status === 'in-progress' ? { 
-                        scale: [1, 1.15, 1]
-                      } : {}}
-                      transition={{ 
-                        duration: 1.5, 
-                        repeat: Infinity
-                      }}
-                    >
-                      {ver.status === 'completed' ? (
-                        <CheckCircle2 className="h-4 w-4 text-white" />
-                      ) : (
-                        <span className="text-xs font-bold text-primary">{ver.version}</span>
-                      )}
-                    </motion.div>
-                    <span className="text-[10px] text-muted-foreground">{ver.version}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Transformation Counter (Top Right) */}
-      <motion.div
-        className="absolute top-8 right-8"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 2.2 }}
-      >
-        <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-neon-orange to-neon-pink rounded-full blur opacity-60" />
-          
-          <div className="relative bg-gradient-to-r from-neon-orange to-neon-pink text-white px-4 py-2 rounded-full shadow-2xl">
-            <motion.span
-              className="text-xl font-bold"
-              animate={{ scale: [1, 1.15, 1] }}
+              className="absolute left-1/2 top-1/2 origin-left"
+              style={{ 
+                width: radius,
+                height: 2,
+                rotate: `${angle}deg`,
+                transformOrigin: 'left center'
+              }}
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 0.3 }}
               transition={{ 
-                duration: 2, 
+                duration: 0.6, 
+                delay: delay,
                 repeat: Infinity,
-                delay: 2.5
+                repeatDelay: 4
               }}
             >
-              1 → 20+
-            </motion.span>
-          </div>
+              <div className="w-full h-full bg-gradient-to-r from-primary/50 to-transparent" />
+            </motion.div>
+
+            {/* Content Format Card */}
+            <motion.div
+              className="absolute"
+              style={{ 
+                left: '50%',
+                top: '50%',
+                x: x,
+                y: y,
+                transform: 'translate(-50%, -50%)'
+              }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ 
+                duration: 0.6, 
+                delay: delay,
+                repeat: Infinity,
+                repeatDelay: 4
+              }}
+            >
+              <motion.div
+                className={`bg-gradient-to-r ${color} p-0.5 rounded-lg shadow-xl`}
+                animate={{ 
+                  y: [0, -8, 0]
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity,
+                  delay: delay + 1,
+                  ease: "easeInOut" 
+                }}
+              >
+                <div className="bg-card rounded-lg p-3 flex flex-col items-center gap-1">
+                  <Icon className="h-5 w-5 text-primary" />
+                  <span className="text-xs font-medium">{label}</span>
+                </div>
+              </motion.div>
+            </motion.div>
+          </React.Fragment>
+        );
+      })}
+
+      {/* Version Control Panel */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-card/80 backdrop-blur-sm border border-primary/30 rounded-xl p-4 shadow-xl"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.5 }}
+      >
+        <p className="text-xs font-semibold mb-3 text-center">Version History</p>
+        <div className="flex gap-3">
+          {versions.map((ver, index) => (
+            <motion.div
+              key={index}
+              className="flex flex-col items-center gap-1"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: ver.delay + 1.8 }}
+            >
+              <motion.div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  ver.status === 'completed' 
+                    ? 'bg-primary text-white' 
+                    : 'bg-primary/20 text-primary'
+                }`}
+                animate={ver.status === 'in-progress' ? { 
+                  scale: [1, 1.1, 1]
+                } : {}}
+                transition={{ 
+                  duration: 1.5, 
+                  repeat: Infinity
+                }}
+              >
+                {ver.status === 'completed' ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <span className="text-xs font-bold">{ver.version}</span>
+                )}
+              </motion.div>
+              <span className="text-xs text-muted-foreground">{ver.version}</span>
+            </motion.div>
+          ))}
         </div>
+      </motion.div>
+
+      {/* Floating File Icons */}
+      {floatingFiles.map((file, index) => (
+        <motion.div
+          key={index}
+          className="absolute pointer-events-none"
+          style={{ 
+            left: `${file.x}%`, 
+            top: `${file.y}%`,
+            rotate: file.rotation
+          }}
+          animate={{ 
+            y: [0, -20, 0],
+            opacity: [0.2, 0.5, 0.2],
+            rotate: [file.rotation, file.rotation + 10, file.rotation]
+          }}
+          transition={{ 
+            duration: 4, 
+            repeat: Infinity,
+            delay: file.delay,
+            ease: "easeInOut" 
+          }}
+        >
+          <div className="bg-card/40 backdrop-blur-sm border border-primary/20 p-2 rounded-lg">
+            <FileText className="h-4 w-4 text-primary/60" />
+          </div>
+        </motion.div>
+      ))}
+
+      {/* Repurposing Counter */}
+      <motion.div
+        className="absolute top-8 right-8 bg-gradient-to-r from-neon-orange to-primary text-white px-4 py-2 rounded-full shadow-xl"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 2 }}
+      >
+        <motion.span
+          className="text-2xl font-bold"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ 
+            duration: 2, 
+            repeat: Infinity,
+            delay: 2.5
+          }}
+        >
+          1 → 20+
+        </motion.span>
       </motion.div>
     </div>
   );

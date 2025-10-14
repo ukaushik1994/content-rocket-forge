@@ -1,74 +1,51 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, BarChart, TrendingUp, Target, Lightbulb, Zap } from 'lucide-react';
+import { Brain, TrendingUp, Users, FileText, BarChart } from 'lucide-react';
 
 export const BrainNetworkIllustration = () => {
-  const learningSteps = [
-    { 
-      number: 1, 
-      title: 'Analyzing Performance', 
-      progress: 100, 
-      Icon: BarChart, 
-      gradient: 'from-neon-blue to-neon-pink',
-      delay: 0.3 
-    },
-    { 
-      number: 2, 
-      title: 'Identifying Patterns', 
-      progress: 100, 
-      Icon: TrendingUp, 
-      gradient: 'from-neon-pink to-primary',
-      delay: 0.6 
-    },
-    { 
-      number: 3, 
-      title: 'Optimizing Strategy', 
-      progress: 65, 
-      Icon: Target, 
-      gradient: 'from-primary to-neon-orange',
-      delay: 0.9 
-    }
+  const particles = Array.from({ length: 12 }, (_, i) => i);
+  const nodes = [
+    { x: 30, y: 20, delay: 0 },
+    { x: 70, y: 15, delay: 0.3 },
+    { x: 50, y: 50, delay: 0.6 },
+    { x: 20, y: 70, delay: 0.9 },
+    { x: 75, y: 75, delay: 1.2 }
   ];
 
-  const dataParticles = Array.from({ length: 8 }, (_, i) => ({
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    delay: i * 0.5
-  }));
+  const orbitIcons = [
+    { Icon: BarChart, angle: 0, radius: 140, delay: 0 },
+    { Icon: FileText, angle: 90, radius: 140, delay: 1 },
+    { Icon: Users, angle: 180, radius: 140, delay: 2 },
+    { Icon: TrendingUp, angle: 270, radius: 140, delay: 3 }
+  ];
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-8 overflow-hidden">
-      
-      {/* Central AI Brain */}
+    <div className="relative w-full h-full flex items-center justify-center">
+      {/* Central Brain */}
       <motion.div
-        className="relative z-20 mb-12"
+        className="relative z-20"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
         <motion.div
-          className="w-28 h-28 rounded-full bg-gradient-to-r from-neon-pink to-neon-blue flex items-center justify-center shadow-2xl"
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="bg-gradient-to-r from-primary to-neon-pink p-6 rounded-full"
         >
-          <Brain className="h-14 w-14 text-white" />
+          <Brain className="h-24 w-24 text-white" />
         </motion.div>
 
-        {/* Pulsing Glow Rings */}
+        {/* Pulse rings */}
         {[0, 1, 2].map((i) => (
           <motion.div
             key={i}
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: 'radial-gradient(circle, hsl(var(--neon-pink) / 0.4) 0%, transparent 70%)',
-            }}
-            animate={{ 
-              scale: [1, 1.8, 2.2],
-              opacity: [0.6, 0.3, 0]
-            }}
+            className="absolute inset-0 rounded-full border-2 border-primary/30"
+            initial={{ scale: 1, opacity: 0.6 }}
+            animate={{ scale: [1, 2, 2.5], opacity: [0.6, 0.2, 0] }}
             transition={{ 
               duration: 3, 
-              repeat: Infinity,
+              repeat: Infinity, 
               delay: i * 1,
               ease: "easeOut" 
             }}
@@ -76,118 +53,113 @@ export const BrainNetworkIllustration = () => {
         ))}
       </motion.div>
 
-      {/* Learning Progress Cards */}
-      <div className="w-full max-w-md space-y-4 z-10">
-        {learningSteps.map((step, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: step.delay }}
-          >
-            {/* Outer glow */}
-            <div className="relative">
-              <div className={`absolute -inset-0.5 bg-gradient-to-r ${step.gradient} rounded-xl blur opacity-40`} />
-              
-              {/* Card */}
-              <div className="relative bg-card/80 backdrop-blur-xl border border-primary/20 rounded-xl p-4 shadow-2xl">
-                <div className="flex items-center gap-4">
-                  {/* Numbered Badge */}
-                  <motion.div
-                    className={`w-12 h-12 rounded-full bg-gradient-to-r ${step.gradient} flex items-center justify-center font-bold text-white text-lg shrink-0 shadow-lg`}
-                    animate={step.progress < 100 ? { scale: [1, 1.1, 1] } : {}}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    {step.number}
-                  </motion.div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <step.Icon className="h-4 w-4 text-primary shrink-0" />
-                      <h4 className="text-sm font-semibold truncate">{step.title}</h4>
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
-                      <motion.div 
-                        className={`h-full bg-gradient-to-r ${step.gradient}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${step.progress}%` }}
-                        transition={{ 
-                          duration: 1.5, 
-                          delay: step.delay + 0.3,
-                          ease: "easeOut"
-                        }}
-                      />
-                    </div>
-                    
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {step.progress}% Complete
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* New Insight Card */}
-      <motion.div
-        className="w-full max-w-md mt-6 z-10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.5 }}
-      >
-        <div className="relative">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-neon-orange to-neon-pink rounded-xl blur opacity-40" />
-          
-          <div className="relative bg-gradient-to-r from-neon-orange/10 to-neon-pink/10 backdrop-blur-xl border border-neon-orange/30 rounded-xl p-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-neon-orange to-neon-pink flex items-center justify-center shrink-0">
-                <Lightbulb className="h-5 w-5 text-white" />
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold">New Strategy Learned</p>
-                <p className="text-xs text-muted-foreground">
-                  AI detected optimization opportunity
-                </p>
-              </div>
-
-              <motion.div
-                className="text-neon-orange font-bold text-xl shrink-0"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                +12%
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Floating Data Particles */}
-      {dataParticles.map((particle, index) => (
+      {/* Neural Network Nodes */}
+      {nodes.map((node, index) => (
         <motion.div
           key={index}
-          className="absolute w-2 h-2 rounded-full bg-neon-blue/40 pointer-events-none"
+          className="absolute w-4 h-4 rounded-full bg-primary/60"
           style={{ 
-            left: `${particle.x}%`, 
-            top: `${particle.y}%` 
+            left: `${node.x}%`, 
+            top: `${node.y}%`,
+            transform: 'translate(-50%, -50%)'
+          }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+          transition={{ 
+            duration: 2, 
+            repeat: Infinity, 
+            delay: node.delay,
+            ease: "easeInOut" 
+          }}
+        />
+      ))}
+
+      {/* Connecting Lines */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none">
+        {nodes.map((node, index) => {
+          if (index < nodes.length - 1) {
+            return (
+              <motion.line
+                key={index}
+                x1={`${node.x}%`}
+                y1={`${node.y}%`}
+                x2={`${nodes[index + 1].x}%`}
+                y2={`${nodes[index + 1].y}%`}
+                stroke="hsl(var(--primary))"
+                strokeWidth="2"
+                strokeOpacity="0.3"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ 
+                  duration: 2, 
+                  delay: index * 0.3,
+                  repeat: Infinity,
+                  repeatDelay: 1
+                }}
+              />
+            );
+          }
+          return null;
+        })}
+      </svg>
+
+      {/* Floating Data Particles */}
+      {particles.map((particle) => (
+        <motion.div
+          key={particle}
+          className="absolute w-2 h-2 rounded-full bg-neon-pink/40"
+          style={{ 
+            left: `${Math.random() * 100}%`, 
+            top: `${Math.random() * 100}%` 
           }}
           animate={{ 
+            x: [0, Math.random() * 100 - 50],
             y: [0, -100],
-            opacity: [0, 0.6, 0]
+            opacity: [0, 1, 0]
           }}
           transition={{ 
-            duration: 4, 
-            repeat: Infinity,
-            delay: particle.delay,
+            duration: 5, 
+            repeat: Infinity, 
+            delay: particle * 0.4,
             ease: "linear" 
           }}
         />
+      ))}
+
+      {/* Orbiting Icons */}
+      {orbitIcons.map(({ Icon, angle, radius, delay }, index) => (
+        <motion.div
+          key={index}
+          className="absolute"
+          style={{ left: '50%', top: '50%' }}
+          animate={{ 
+            rotate: 360
+          }}
+          transition={{ 
+            duration: 20, 
+            repeat: Infinity, 
+            delay: delay,
+            ease: "linear" 
+          }}
+        >
+          <motion.div
+            className="bg-card/80 backdrop-blur-sm border border-primary/30 p-3 rounded-lg shadow-lg"
+            style={{ 
+              transform: `translate(-50%, -50%) translateX(${radius}px) rotate(-360deg)` 
+            }}
+            animate={{ 
+              y: [0, -10, 0]
+            }}
+            transition={{ 
+              duration: 3, 
+              repeat: Infinity, 
+              delay: delay,
+              ease: "easeInOut" 
+            }}
+          >
+            <Icon className="h-5 w-5 text-primary" />
+          </motion.div>
+        </motion.div>
       ))}
     </div>
   );
