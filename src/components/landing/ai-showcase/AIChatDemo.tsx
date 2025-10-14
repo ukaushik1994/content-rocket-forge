@@ -3,13 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, BarChart3, TrendingUp, Zap, MessageSquare, Sparkles, ExternalLink, Download, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const mockChartData = [
-  { label: 'Article 1', value: 8500, color: 'hsl(var(--primary))' },
-  { label: 'Article 2', value: 7200, color: 'hsl(var(--neon-blue))' },
-  { label: 'Article 3', value: 6800, color: 'hsl(var(--neon-pink))' },
-  { label: 'Article 4', value: 5400, color: 'hsl(var(--primary))' },
-  { label: 'Article 5', value: 4900, color: 'hsl(var(--neon-blue))' },
+  { label: 'Art 1', value: 5200 },
+  { label: 'Art 2', value: 6400 },
+  { label: 'Art 3', value: 7800 },
+  { label: 'Art 4', value: 7200 },
+  { label: 'Art 5', value: 8500 },
 ];
 
 export const AIChatDemo = () => {
@@ -180,41 +181,107 @@ export const AIChatDemo = () => {
                         </p>
                       </div>
 
-                      {/* Chart */}
+                      {/* Chart - Modern Gradient Area Chart */}
                       {animationPhase >= 3 && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="bg-card border border-border/50 rounded-xl p-4"
+                          className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 shadow-2xl"
                         >
-                          <div className="flex items-center gap-2 mb-4">
-                            <BarChart3 className="w-4 h-4 text-primary" />
-                            <h4 className="font-semibold text-sm">Top 5 Content by Impressions</h4>
+                          <div className="flex items-center gap-2 mb-6">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <TrendingUp className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-base">Performance Trend Analysis</h4>
+                              <p className="text-xs text-muted-foreground">Top 5 content impressions over time</p>
+                            </div>
                           </div>
-                          <div className="space-y-3">
-                            {mockChartData.map((item, index) => (
-                              <motion.div
-                                key={item.label}
-                                initial={{ width: 0 }}
-                                animate={{ width: '100%' }}
-                                transition={{ delay: index * 0.1, duration: 0.5 }}
-                                className="space-y-1"
+                          
+                          <div className="h-[280px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart 
+                                data={mockChartData}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                               >
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-muted-foreground">{item.label}</span>
-                                  <span className="font-semibold">{item.value.toLocaleString()}</span>
-                                </div>
-                                <div className="h-8 bg-muted rounded-md overflow-hidden">
-                                  <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${(item.value / 8500) * 100}%` }}
-                                    transition={{ delay: index * 0.1 + 0.2, duration: 0.6 }}
-                                    className="h-full rounded-md"
-                                    style={{ background: item.color }}
-                                  />
-                                </div>
-                              </motion.div>
-                            ))}
+                                {/* Gradient Definition */}
+                                <defs>
+                                  <linearGradient id="colorImpressions" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                                    <stop offset="50%" stopColor="hsl(var(--neon-blue))" stopOpacity={0.2}/>
+                                    <stop offset="100%" stopColor="hsl(var(--neon-pink))" stopOpacity={0.05}/>
+                                  </linearGradient>
+                                  <filter id="glow">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                    <feMerge>
+                                      <feMergeNode in="coloredBlur"/>
+                                      <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                  </filter>
+                                </defs>
+                                
+                                {/* Grid */}
+                                <CartesianGrid 
+                                  strokeDasharray="3 3" 
+                                  stroke="hsl(var(--border))" 
+                                  strokeOpacity={0.3}
+                                  vertical={false}
+                                />
+                                
+                                {/* Axes */}
+                                <XAxis 
+                                  dataKey="label" 
+                                  stroke="hsl(var(--muted-foreground))"
+                                  fontSize={11}
+                                  tickLine={false}
+                                  axisLine={false}
+                                />
+                                <YAxis 
+                                  stroke="hsl(var(--muted-foreground))"
+                                  fontSize={11}
+                                  tickLine={false}
+                                  axisLine={false}
+                                  tickFormatter={(value) => `${(value/1000).toFixed(1)}K`}
+                                />
+                                
+                                {/* Tooltip */}
+                                <Tooltip 
+                                  contentStyle={{
+                                    backgroundColor: 'hsl(var(--card))',
+                                    border: '1px solid hsl(var(--primary))',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                                    padding: '12px'
+                                  }}
+                                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600 }}
+                                  formatter={(value: any) => [`${value.toLocaleString()} impressions`, 'Performance']}
+                                />
+                                
+                                {/* Area with Animation */}
+                                <Area
+                                  type="monotone"
+                                  dataKey="value"
+                                  stroke="hsl(var(--primary))"
+                                  strokeWidth={3}
+                                  fill="url(#colorImpressions)"
+                                  filter="url(#glow)"
+                                  animationDuration={1500}
+                                  animationBegin={0}
+                                />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                          
+                          {/* Legend with Gradient Pills */}
+                          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border/50">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                              <span className="text-xs font-medium">High Performance</span>
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-blue/10 border border-neon-blue/20">
+                              <div className="w-2 h-2 rounded-full bg-neon-blue" />
+                              <span className="text-xs font-medium">Trending Up</span>
+                            </div>
                           </div>
                         </motion.div>
                       )}
