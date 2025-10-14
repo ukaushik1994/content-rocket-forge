@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DemoModal } from '@/components/landing/DemoModal';
 import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
 import { HeroDashboardPreview } from '@/components/landing/HeroDashboardPreview';
-import { Play, ArrowRight, Star, Users, Zap, Brain, RefreshCw, MessageSquare, Sparkles } from 'lucide-react';
+import { Play, ArrowRight, Star, Users, Zap, Brain, RefreshCw } from 'lucide-react';
 
 export const LandingHero = () => {
   const navigate = useNavigate();
@@ -53,16 +53,6 @@ export const LandingHero = () => {
         { text: "YOUR audience", color: "text-neon-blue" },
         { text: "YOUR strategy", color: "text-neon-pink" }
       ]
-    },
-    {
-      headline: "Your Personal AI Team",
-      highlightedText: "Always Available",
-      description: "AI Strategy Coach guides decisions. AI Chat answers questions instantly.",
-      highlightedPhrases: [
-        { text: "24/7 expert guidance", color: "text-primary" },
-        { text: "instant responses", color: "text-neon-blue" },
-        { text: "intelligent insights", color: "text-neon-pink" }
-      ]
     }
   ];
 
@@ -80,8 +70,7 @@ export const LandingHero = () => {
   const stats = [
     { icon: Users, value: '10k+', label: 'Creators' },
     { icon: Star, value: '4.9', label: 'Rating' },
-    { icon: Brain, value: '2 AI', label: 'Assistants' },
-    { icon: MessageSquare, value: '24/7', label: 'AI Support' }
+    { icon: Zap, value: '100M+', label: 'Words Generated' },
   ];
 
   return (
@@ -140,40 +129,6 @@ export const LandingHero = () => {
               </AnimatePresence>
             </div>
 
-            {/* AI Feature Highlights - Most Prominent */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="flex flex-wrap items-center justify-start gap-3"
-            >
-              {/* AI Strategy Coach Pill */}
-              <div className="group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-neon-blue/20 blur-xl group-hover:blur-2xl transition-all duration-300" />
-                <div className="relative flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-primary/10 to-neon-blue/10 hover:from-primary/20 hover:to-neon-blue/20 border border-primary/30 rounded-full backdrop-blur-xl transition-all duration-300 cursor-pointer">
-                  <Brain className="h-5 w-5 text-primary animate-pulse" />
-                  <div className="text-left">
-                    <div className="text-sm font-bold text-foreground">AI Strategy Coach</div>
-                    <div className="text-xs text-muted-foreground">24/7 Business Intelligence</div>
-                  </div>
-                  <Sparkles className="h-4 w-4 text-neon-blue ml-2" />
-                </div>
-              </div>
-
-              {/* AI Chat Pill */}
-              <div className="group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-neon-pink/20 to-purple-500/20 blur-xl group-hover:blur-2xl transition-all duration-300" />
-                <div className="relative flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-neon-pink/10 to-purple-500/10 hover:from-neon-pink/20 hover:to-purple-500/20 border border-neon-pink/30 rounded-full backdrop-blur-xl transition-all duration-300 cursor-pointer">
-                  <MessageSquare className="h-5 w-5 text-neon-pink animate-pulse" />
-                  <div className="text-left">
-                    <div className="text-sm font-bold text-foreground">AI Chat</div>
-                    <div className="text-xs text-muted-foreground">Instant Content Guidance</div>
-                  </div>
-                  <Zap className="h-4 w-4 text-purple-400 ml-2" />
-                </div>
-              </div>
-            </motion.div>
-
             {/* CTA Section */}
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row gap-4 justify-start">
@@ -208,12 +163,8 @@ export const LandingHero = () => {
                   <span>Join the founding members</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-primary" />
-                  <span>AI Strategy Coach included</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-neon-pink" />
-                  <span>24/7 AI Chat support</span>
+                  <RefreshCw className="h-4 w-4 text-primary" />
+                  <span>AI learns from every post</span>
                 </div>
               </div>
             </div>

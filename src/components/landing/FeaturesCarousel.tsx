@@ -89,8 +89,10 @@ export const FeaturesCarousel = () => {
 
   return (
     <section className="py-8 px-4 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-neon-blue/5 to-background" />
       
-      <Container className="relative z-10 backdrop-blur-[2px]">
+      <Container className="relative z-10">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             The Only Content Platform

@@ -27,10 +27,11 @@ export const ComparisonTable = () => {
 
   return (
     <section className="py-8 px-4 relative overflow-hidden">
-      {/* Floating Elements Only - Background inherited from AnimatedBackground */}
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-neon-blue/5 to-background" />
       <FloatingElements elements={floatingElements} />
       
-      <Container className="relative z-10 backdrop-blur-[2px]">
+      <Container className="relative z-10">
         {/* Section Header */}
         <div className="text-center mb-16 animate-fade-in">
           <motion.h2 
