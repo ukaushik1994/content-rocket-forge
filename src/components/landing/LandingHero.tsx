@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DemoModal } from '@/components/landing/DemoModal';
 import { FloatingKeywords } from '@/components/landing/FloatingKeywords';
+import { HeroDashboardPreview } from '@/components/landing/HeroDashboardPreview';
 import { Play, ArrowRight, Star, Users, Zap, Brain, RefreshCw } from 'lucide-react';
-import { GlassCard } from '@/components/ui/GlassCard';
 
 export const LandingHero = () => {
   const navigate = useNavigate();
@@ -169,52 +169,14 @@ export const LandingHero = () => {
               </div>
             </div>
 
-            {/* Intelligence Loop Diagram */}
+            {/* Enhanced Dashboard Preview */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 1 }}
               className="mt-16 max-w-4xl mx-auto"
             >
-              <div className="relative">
-                {/* Glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-neon-blue/20 to-neon-pink/20 blur-3xl" />
-                
-                {/* Dashboard Preview */}
-                <GlassCard className="p-4 relative">
-                  <div className="aspect-video rounded-lg bg-gradient-to-br from-background/50 to-background/20 border border-border/50 overflow-hidden relative">
-                    <div className="absolute inset-0 bg-futuristic-grid bg-grid opacity-20" />
-                    
-                    {/* Simulated Dashboard Content */}
-                    <div className="p-6 space-y-4 relative z-10">
-                      {/* Header Bar */}
-                      <div className="flex items-center justify-between">
-                        <div className="h-8 w-48 bg-primary/20 rounded-lg animate-pulse" />
-                        <div className="flex gap-2">
-                          <div className="h-8 w-24 bg-neon-blue/20 rounded-lg animate-pulse" style={{ animationDelay: '0.2s' }} />
-                          <div className="h-8 w-24 bg-neon-pink/20 rounded-lg animate-pulse" style={{ animationDelay: '0.4s' }} />
-                        </div>
-                      </div>
-                      
-                      {/* Charts Grid */}
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="h-32 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20 animate-pulse" />
-                        <div className="h-32 bg-gradient-to-br from-neon-blue/10 to-neon-blue/5 rounded-lg border border-neon-blue/20 animate-pulse" style={{ animationDelay: '0.3s' }} />
-                        <div className="h-32 bg-gradient-to-br from-neon-pink/10 to-neon-pink/5 rounded-lg border border-neon-pink/20 animate-pulse" style={{ animationDelay: '0.6s' }} />
-                      </div>
-                      
-                      {/* AI Strategy Coach Section */}
-                      <div className="h-20 bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 flex items-center px-4 gap-3">
-                        <Brain className="h-8 w-8 text-primary animate-pulse" />
-                        <div className="flex-1 space-y-2">
-                          <div className="h-3 bg-primary/30 rounded w-3/4 animate-pulse" />
-                          <div className="h-3 bg-neon-blue/30 rounded w-1/2 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </GlassCard>
-              </div>
+              <HeroDashboardPreview />
             </motion.div>
           </div>
 

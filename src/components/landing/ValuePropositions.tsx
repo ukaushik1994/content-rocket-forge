@@ -85,91 +85,42 @@ export const ValuePropositions = () => {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8 items-stretch">
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {audiences.map((audience, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: index * 0.2 }}
+              transition={{ duration: 0.6, delay: index * 0.15 }}
               viewport={{ once: true }}
             >
-              <GlassCard className="p-8 h-full hover:shadow-neon transition-all duration-500 card-3d group relative overflow-hidden">
-                {/* Enhanced Background Glow */}
-                <div className={`absolute top-0 right-0 w-48 h-48 bg-gradient-to-r ${audience.gradient} opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity duration-500`} />
-                <div className={`absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-r ${audience.gradient} opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity duration-500`} />
-                
-                {/* Content */}
-                <div className="relative z-10">
-                {/* Icon and Header */}
-                <div className="mb-6">
-                  <div className="relative">
-                    <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${audience.gradient} p-0.5 mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                      <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                        <audience.icon className="h-8 w-8 text-primary" />
-                      </div>
-                    </div>
-                    <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-r ${audience.gradient} opacity-60 animate-pulse`}></div>
-                    <div className={`absolute -bottom-1 -left-1 w-4 h-4 rounded-full bg-gradient-to-r ${audience.gradient} opacity-40 animate-pulse`} style={{ animationDelay: '0.5s' }}></div>
+              <GlassCard className="p-6 h-full hover:shadow-lg transition-all duration-300 group">
+                {/* Compact Icon */}
+                <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${audience.gradient} p-0.5 mb-4`}>
+                  <div className="w-full h-full rounded-lg bg-card flex items-center justify-center">
+                    <audience.icon className="h-6 w-6 text-primary" />
                   </div>
-                  
-                  <h3 className="text-2xl font-bold mb-2">{audience.title}</h3>
-                  <h4 className={`text-lg font-semibold mb-3 bg-gradient-to-r ${audience.gradient} bg-clip-text text-transparent`}>
-                    {audience.subtitle}
-                  </h4>
-                  <p className="text-muted-foreground mb-6">{audience.description}</p>
-                </div>
-
-                {/* Benefits */}
-                <div className="mb-8">
-                  <ul className="space-y-3">
-                    {audience.benefits.map((benefit, benefitIndex) => (
-                      <motion.li 
-                        key={benefitIndex} 
-                        initial={{ opacity: 0, x: -10 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: benefitIndex * 0.1 }}
-                        className="flex items-start gap-3 group/item"
-                      >
-                        <CheckCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 text-primary group-hover/item:scale-110 transition-transform`} />
-                        <span className="text-sm text-muted-foreground">{benefit}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
                 </div>
                 
-                {/* CTA */}
-                <Button
-                  onClick={() => navigate('/auth?mode=signup')}
-                  className={`w-full bg-gradient-to-r ${audience.gradient} hover:opacity-90 transition-all duration-300 group-hover:shadow-neon`}
-                >
-                  {audience.ctaText}
-                </Button>
-                </div>
+                {/* Title only */}
+                <h3 className="text-xl font-bold mb-3">{audience.title}</h3>
+                
+                {/* Reduced benefits - only 2 */}
+                <ul className="space-y-2">
+                  {audience.benefits.slice(0, 2).map((benefit, benefitIndex) => (
+                    <li 
+                      key={benefitIndex} 
+                      className="flex items-start gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-primary" />
+                      <span className="text-sm text-muted-foreground">{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
               </GlassCard>
             </motion.div>
           ))}
         </div>
-
-        {/* Trust Indicators */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          viewport={{ once: true }}
-          className="mt-16 text-center"
-        >
-          <p className="text-sm text-muted-foreground mb-6">Trusted by creators worldwide</p>
-          <div className="flex justify-center items-center gap-8 flex-wrap">
-            {[Users, BarChart3, Zap].map((Icon, index) => (
-              <div key={index} className="flex items-center gap-2 glass-card px-4 py-2 rounded-full">
-                <Icon className="h-4 w-4 text-primary" />
-                <span className="text-sm text-muted-foreground">Enterprise Ready</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
       </Container>
     </section>
   );

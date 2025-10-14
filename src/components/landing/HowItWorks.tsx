@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/button';
-import { Search, Sparkles, TrendingUp, ArrowRight, Globe, Brain, Users, Zap, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, TrendingUp, ArrowRight, Globe, Brain, ChevronDown } from 'lucide-react';
+import { 
+  Collapsible, 
+  CollapsibleContent, 
+  CollapsibleTrigger 
+} from '@/components/ui/collapsible';
 
 export const HowItWorks = () => {
-  const navigate = useNavigate();
+  const [openStep, setOpenStep] = useState<number | null>(0);
   
   const steps = [
     {
@@ -46,154 +49,109 @@ export const HowItWorks = () => {
   ];
 
   return (
-    <section className="py-16 px-4 relative">
+    <section className="py-12 px-4 relative">
       <Container>
-        <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+        <div className="text-center mb-12 animate-fade-in">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Your Content Gets
-            <span className="bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent"> Smarter Every Time You Hit Publish</span>
+            <span className="bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent"> Smarter Every Time</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             A self-learning system that turns every post into intelligence for the next one
           </p>
         </div>
 
-        <div className="relative">
-          {/* Connection Lines */}
-          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-neon-blue to-neon-pink opacity-30 transform -translate-y-1/2"></div>
-          
-          <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8 relative">
-            {steps.map((step, index) => (
-              <div
-                key={index}
-                className="relative animate-fade-in"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
-                <GlassCard className="p-8 text-center hover:shadow-neon transition-all duration-300 group relative overflow-hidden">
-                  {/* Background Glow */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
-                  
-                  {/* AI Learning Badge */}
-                  {step.highlight && (
-                    <div className="absolute top-4 right-4">
-                      <div className="bg-gradient-to-r from-primary to-neon-pink text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">
-                        ⚡ AI LEARNING
+        {/* Desktop: Horizontal Timeline */}
+        <div className="hidden md:block">
+          <div className="relative">
+            {/* Connection Line */}
+            <div className="absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-neon-blue to-neon-pink opacity-30"></div>
+            
+            <div className="grid md:grid-cols-4 gap-4 relative">
+              {steps.map((step, index) => (
+                <Collapsible
+                  key={index}
+                  open={openStep === index}
+                  onOpenChange={() => setOpenStep(openStep === index ? null : index)}
+                >
+                  <GlassCard className="relative overflow-hidden hover:shadow-lg transition-all duration-300">
+                    <CollapsibleTrigger className="w-full p-4 text-center cursor-pointer">
+                      {/* Step Icon */}
+                      <div className="relative mb-3 mx-auto">
+                        <div className={`w-16 h-16 mx-auto rounded-full bg-gradient-to-r ${step.color} p-0.5`}>
+                          <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                            <step.icon className="h-7 w-7 text-primary" />
+                          </div>
+                        </div>
+                        <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center text-xs font-bold text-background`}>
+                          {step.number}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Step Number */}
-                  <div className="relative mb-6">
-                    <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-r ${step.color} p-0.5`}>
-                      <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                        <step.icon className="h-10 w-10 text-primary" />
+
+                      {/* Title */}
+                      <h3 className="text-lg font-bold mb-2">{step.title}</h3>
+                      
+                      {/* Expand indicator */}
+                      <ChevronDown className={`h-4 w-4 mx-auto text-muted-foreground transition-transform ${openStep === index ? 'rotate-180' : ''}`} />
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent className="px-4 pb-4">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {step.description}
+                      </p>
+                      {step.highlight && (
+                        <div className="bg-gradient-to-r from-primary/20 to-neon-pink/20 text-primary text-xs font-semibold px-2 py-1 rounded-full inline-block mb-2">
+                          ⚡ AI Learning Step
+                        </div>
+                      )}
+                    </CollapsibleContent>
+
+                    {/* Arrow Connector */}
+                    {index < steps.length - 1 && (
+                      <div className="hidden md:block absolute top-16 -right-2 transform -translate-y-1/2">
+                        <ArrowRight className="h-5 w-5 text-primary/60" />
                       </div>
+                    )}
+                  </GlassCard>
+                </Collapsible>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile: Vertical Compact Timeline */}
+        <div className="md:hidden space-y-3">
+          {steps.map((step, index) => (
+            <Collapsible
+              key={index}
+              open={openStep === index}
+              onOpenChange={() => setOpenStep(openStep === index ? null : index)}
+            >
+              <GlassCard className="overflow-hidden">
+                <CollapsibleTrigger className="w-full p-4 flex items-center gap-3 cursor-pointer">
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${step.color} p-0.5 flex-shrink-0 relative`}>
+                    <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                      <step.icon className="h-5 w-5 text-primary" />
                     </div>
-                    <div className={`absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center text-xs font-bold text-background`}>
+                    <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center text-xs font-bold text-background`}>
                       {step.number}
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="relative z-10">
-                    <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
-                    <p className="text-muted-foreground mb-6 leading-relaxed">
-                      {step.description}
-                    </p>
-
-                    {/* Features List */}
-                    <div className="mb-6">
-                      <ul className="space-y-2">
-                        {step.features.map((feature, featureIndex) => (
-                          <li key={featureIndex} className="flex items-center justify-center gap-2">
-                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${step.color}`}></div>
-                            <span className="text-sm text-muted-foreground">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div className="flex-1 text-left">
+                    <h3 className="font-bold">{step.title}</h3>
                   </div>
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform flex-shrink-0 ${openStep === index ? 'rotate-180' : ''}`} />
+                </CollapsibleTrigger>
 
-                  {/* Arrow Connector (Desktop) */}
-                  {index < steps.length - 1 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                      <ArrowRight className="h-6 w-6 text-primary/60" />
-                    </div>
-                  )}
-                </GlassCard>
-              </div>
-            ))}
-          </div>
+                <CollapsibleContent className="px-4 pb-4">
+                  <p className="text-sm text-muted-foreground">
+                    {step.description}
+                  </p>
+                </CollapsibleContent>
+              </GlassCard>
+            </Collapsible>
+          ))}
         </div>
-
-        {/* Stats Section */}
-        <div className="text-center mt-16 mb-16 animate-fade-in [animation-delay:600ms]">
-          <h3 className="text-2xl font-bold mb-8">Results from the Learning Loop</h3>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <GlassCard className="p-6 text-center border-primary/30">
-              <div className="text-3xl font-bold text-primary mb-2">67%</div>
-              <p className="text-sm text-muted-foreground">Average improvement after 10 posts</p>
-            </GlassCard>
-            <GlassCard className="p-6 text-center border-primary/30">
-              <div className="text-3xl font-bold text-primary mb-2">3x</div>
-              <p className="text-sm text-muted-foreground">Better ranking after 20 pieces</p>
-            </GlassCard>
-            <GlassCard className="p-6 text-center border-primary/30">
-              <div className="text-3xl font-bold text-primary mb-2">30 days</div>
-              <p className="text-sm text-muted-foreground">For AI to learn your audience</p>
-            </GlassCard>
-          </div>
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center mt-16 animate-fade-in [animation-delay:800ms]">
-          <GlassCard className="p-8 max-w-3xl mx-auto">
-            <h3 className="text-3xl font-bold mb-4">Start Your Self-Learning Content Engine Today</h3>
-            <p className="text-xl text-muted-foreground mb-2">
-              Your first post teaches the AI. Your 100th post will be exponentially better.
-            </p>
-            <p className="text-sm text-primary mb-8">
-              Free forever plan • No credit card required • The sooner you start, the smarter your AI becomes
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                onClick={() => navigate('/auth?mode=signup')}
-                className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 text-lg px-8 py-6 shadow-xl hover:shadow-neon-strong"
-              >
-                Start Free - Watch It Learn
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/contact')}
-                className="text-lg px-8 py-6 border-2 border-primary/30"
-              >
-                See The Learning Loop
-              </Button>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="flex items-center justify-center gap-6 mt-8 text-sm text-muted-foreground flex-wrap">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                <span>10,000+ Active Users</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" />
-                <span>500M+ Words Analyzed</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                <span>GDPR Compliant</span>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-
-        {/* Floating Elements */}
       </Container>
     </section>
   );

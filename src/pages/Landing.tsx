@@ -5,7 +5,7 @@ import { LandingNavbar } from '@/components/landing/LandingNavbar';
 import { LandingHero } from '@/components/landing/LandingHero';
 import { ProblemSolution } from '@/components/landing/ProblemSolution';
 import { ValuePropositions } from '@/components/landing/ValuePropositions';
-import { FeaturesShowcase } from '@/components/landing/FeaturesShowcase';
+import { FeaturesCarousel } from '@/components/landing/FeaturesCarousel';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { ComparisonTable } from '@/components/landing/ComparisonTable';
 import { InvestorSection } from '@/components/landing/InvestorSection';
@@ -43,7 +43,7 @@ const Landing = () => {
           <SectionSeparator />
           
           <section id="features" className="py-8 scroll-mt-16">
-            <FeaturesShowcase />
+            <FeaturesCarousel />
           </section>
           
           <SectionSeparator />
