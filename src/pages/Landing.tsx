@@ -33,7 +33,7 @@ const Landing = () => {
             <LandingHero />
           </section>
           
-          <section className="scroll-mt-16">
+          <section id="problem" className="scroll-mt-16">
             <ProblemSolution />
           </section>
           
@@ -42,11 +42,11 @@ const Landing = () => {
           </section>
           
           
-          <section className="scroll-mt-16">
+          <section id="comparison" className="scroll-mt-16">
             <ComparisonTable />
           </section>
           
-          <section className="scroll-mt-16">
+          <section id="value" className="scroll-mt-16">
             <ValuePropositions />
           </section>
           
