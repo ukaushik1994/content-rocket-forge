@@ -5,7 +5,7 @@ import anthropicLogo from '@/assets/providers/anthropic.svg';
 import geminiLogo from '@/assets/providers/gemini.webp';
 import lmstudioLogo from '@/assets/providers/lmstudio.png';
 import mistralLogo from '@/assets/providers/mistral.png';
-import openrouterLogo from '@/assets/providers/openrouter.webp';
+import openrouterLogo from '@/assets/providers/openrouter.png';
 
 type Provider = 'openai' | 'anthropic' | 'gemini' | 'lmstudio' | 'mistral' | 'openrouter';
 type Size = 'sm' | 'md' | 'lg' | 'xl';
