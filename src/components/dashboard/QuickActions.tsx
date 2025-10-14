@@ -86,39 +86,6 @@ export const QuickActions = () => {
 
   return (
     <div className="w-full space-y-8 relative">
-      {/* Background Effects */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <motion.div 
-          className="absolute top-[10%] left-[20%] w-[300px] h-[300px] rounded-full bg-gradient-to-r from-neon-blue/20 via-neon-purple/15 to-transparent blur-[100px]"
-          animate={{
-            x: [0, 50, 0],
-            y: [0, -30, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div 
-          className="absolute bottom-[20%] right-[15%] w-[250px] h-[250px] rounded-full bg-gradient-to-l from-neon-pink/15 via-neon-purple/10 to-transparent blur-[80px]"
-          animate={{
-            x: [0, -30, 0],
-            y: [0, 20, 0],
-            scale: [1, 0.8, 1],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut",
-            delay: 5
-          }}
-        />
-      </div>
-
       {/* Header */}
       <div className="flex items-center justify-between w-full">
         <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
@@ -150,7 +117,7 @@ export const QuickActions = () => {
             className="w-full"
           >
             <Card 
-              className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-500 cursor-pointer group overflow-hidden relative h-full w-full min-h-[280px]"
+              className="glass-panel border-white/10 bg-transparent backdrop-blur-sm hover:bg-white/5 transition-all duration-500 cursor-pointer group overflow-hidden relative h-full w-full min-h-[280px]"
               onClick={() => handleActionClick(action.route)}
             >
               {/* Hover gradient overlay */}
