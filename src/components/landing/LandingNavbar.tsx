@@ -21,7 +21,8 @@ export const LandingNavbar = () => {
 
   const navItems = [
     { name: 'Features', href: '#features' },
-    { name: 'How it Works', href: '#how-it-works' }
+    { name: 'How it Works', href: '#how-it-works' },
+    { name: 'Testimonials', href: '#testimonials' }
   ];
 
   const scrollToSection = (href: string) => {
