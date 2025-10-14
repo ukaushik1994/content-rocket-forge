@@ -21,13 +21,10 @@ export const LandingNavbar = () => {
 
   const navItems = [
     { name: 'Home', href: '#hero' },
-    { name: 'Problem', href: '#problem' },
-    { name: 'AI Intelligence', href: '#ai-showcase' },
-    { name: 'Integrations', href: '#integrations' },
-    { name: 'Performance', href: '#performance' },
+    { name: 'Product', href: '#ai-showcase' },
+    { name: 'Why CreAiter', href: '#problem' },
     { name: 'Features', href: '#features' },
-    { name: 'Comparison', href: '#comparison' },
-    { name: 'For You', href: '#value' }
+    { name: 'Get Started', href: '#value' }
   ];
 
   const scrollToSection = (href: string) => {
