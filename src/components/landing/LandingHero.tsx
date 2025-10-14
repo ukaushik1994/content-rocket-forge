@@ -188,7 +188,7 @@ export const LandingHero = () => {
             transition={{ delay: 0.5, duration: 1 }}
             className="relative lg:block hidden"
           >
-            <HeroDashboardPreview />
+            <HeroDashboardPreview currentMessageIndex={currentMessageIndex} />
           </motion.div>
         </div>
 
