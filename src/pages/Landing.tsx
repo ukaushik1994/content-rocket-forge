@@ -40,29 +40,28 @@ const Landing = () => {
             <ProblemSolution />
           </section>
           
+          <section id="value" className="scroll-mt-16">
+            <ValuePropositions />
+          </section>
+          
           <section id="ai-showcase" className="scroll-mt-16">
             <AIIntelligenceShowcase />
-          </section>
-          
-          <section id="integrations" className="scroll-mt-16">
-            <IntegrationsHub />
-          </section>
-          
-          <section id="performance" className="scroll-mt-16">
-            <PerformanceSection />
           </section>
           
           <section id="features" className="scroll-mt-16">
             <FeaturesCarousel />
           </section>
           
-          
           <section id="comparison" className="scroll-mt-16">
             <ComparisonTable />
           </section>
           
-          <section id="value" className="scroll-mt-16">
-            <ValuePropositions />
+          <section id="performance" className="scroll-mt-16">
+            <PerformanceSection />
+          </section>
+          
+          <section id="integrations" className="scroll-mt-16">
+            <IntegrationsHub />
           </section>
           
           <section id="investors" className="scroll-mt-16">
