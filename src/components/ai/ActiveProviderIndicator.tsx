@@ -97,7 +97,6 @@ export function ActiveProviderIndicator() {
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary cursor-default">
-            <span className="text-xs">{providerIcon}</span>
             <span className="text-xs font-medium">{providerLabel}</span>
           </div>
         </TooltipTrigger>
