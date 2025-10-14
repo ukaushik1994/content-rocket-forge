@@ -369,7 +369,7 @@ useEffect(() => {
               </TabsContent>
               
               <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0 flex-1 min-h-0 flex flex-col">
-                <div className="flex-1 min-h-0 p-6 overflow-y-scroll prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90 scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent">
+                <div className="flex-1 min-h-0 px-6 pb-6 overflow-y-scroll prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90 scrollbar-thin scrollbar-thumb-black scrollbar-track-transparent">
                   {editedContent.split('\n\n').map((paragraph, idx) => paragraph.startsWith('# ') ? <h1 key={idx}>{paragraph.substring(2)}</h1> : paragraph.startsWith('## ') ? <h2 key={idx}>{paragraph.substring(3)}</h2> : paragraph.startsWith('### ') ? <h3 key={idx}>{paragraph.substring(4)}</h3> : paragraph ? <p key={idx}>{paragraph}</p> : <br key={idx} />)}
                 </div>
               </TabsContent>
