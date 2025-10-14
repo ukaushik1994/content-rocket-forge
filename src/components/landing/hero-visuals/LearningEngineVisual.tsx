@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, TrendingUp, Target, RefreshCw, Database, CheckCircle, Clock } from 'lucide-react';
+import { Brain, TrendingUp, Target, RefreshCw, Award, Clock, Heart, ThumbsUp } from 'lucide-react';
 
 export const LearningEngineVisual = () => {
   return (
@@ -176,10 +176,10 @@ export const LearningEngineVisual = () => {
         className="grid grid-cols-4 gap-3"
       >
         {[
-          { label: 'Models Trained', value: '847', icon: Brain },
-          { label: 'Data Points', value: '2.4M', icon: Database },
-          { label: 'Accuracy', value: '94.2%', icon: CheckCircle },
-          { label: 'Updated', value: '2s ago', icon: Clock, pulse: true }
+          { label: 'Content Quality', value: 'A+', icon: Award },
+          { label: 'Time Saved', value: '15hrs/wk', icon: Clock },
+          { label: 'Engagement', value: '+127%', icon: Heart },
+          { label: 'Approval Rate', value: '98%', icon: ThumbsUp, pulse: true }
         ].map((stat, index) => (
           <motion.div
             key={index}
