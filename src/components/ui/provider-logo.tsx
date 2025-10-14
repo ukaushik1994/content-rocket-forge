@@ -1,9 +1,11 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import openaiLogo from '@/assets/providers/openai.svg';
+import openaiLogo from '@/assets/providers/openai.png';
 import anthropicLogo from '@/assets/providers/anthropic.svg';
 import geminiLogo from '@/assets/providers/gemini.webp';
 import lmstudioLogo from '@/assets/providers/lmstudio.png';
+import mistralLogo from '@/assets/providers/mistral.png';
+import openrouterLogo from '@/assets/providers/openrouter.webp';
 
 type Provider = 'openai' | 'anthropic' | 'gemini' | 'lmstudio' | 'mistral' | 'openrouter';
 type Size = 'sm' | 'md' | 'lg' | 'xl';
@@ -20,8 +22,8 @@ const logoMap: Record<Provider, string | null> = {
   anthropic: anthropicLogo,
   gemini: geminiLogo,
   lmstudio: lmstudioLogo,
-  mistral: null,
-  openrouter: null,
+  mistral: mistralLogo,
+  openrouter: openrouterLogo,
 };
 
 const sizeMap: Record<Size, string> = {
