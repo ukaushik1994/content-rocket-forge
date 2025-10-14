@@ -60,7 +60,7 @@ export const LandingHero = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentMessageIndex((prev) => (prev + 1) % heroMessages.length);
-    }, 3000);
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [heroMessages.length]);
@@ -96,7 +96,7 @@ export const LandingHero = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: 0.8, ease: [0.43, 0.13, 0.23, 0.96] }}
                   className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
                 >
                   {currentMessage.headline}
@@ -113,7 +113,7 @@ export const LandingHero = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: 0.8, delay: 0.15, ease: [0.43, 0.13, 0.23, 0.96] }}
                   className="text-lg md:text-xl text-muted-foreground leading-relaxed"
                 >
                   {currentMessage.description}{' '}

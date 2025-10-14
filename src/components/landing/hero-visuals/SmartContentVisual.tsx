@@ -8,19 +8,20 @@ export const SmartContentVisual = () => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 1.0, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
     >
       {/* AI Learning Badge */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 w-fit mx-auto"
+        transition={{ delay: 0.3, ease: "easeInOut" }}
+        className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20"
       >
         <motion.div
           animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]"
         >
           <Brain className="h-4 w-4 text-primary" />
         </motion.div>
@@ -31,8 +32,8 @@ export const SmartContentVisual = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-        className="h-48 bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-6 relative overflow-hidden"
+        transition={{ duration: 1.2, delay: 0.5, ease: "easeInOut" }}
+        className="h-48 bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-6 relative overflow-hidden shadow-lg"
       >
         {/* Chart bars */}
         <div className="flex items-end justify-around h-full gap-2 relative z-10">
@@ -50,16 +51,16 @@ export const SmartContentVisual = () => {
               <motion.div
                 initial={{ height: 0 }}
                 animate={{ height: `${bar.height}%` }}
-                transition={{ duration: 1, delay: 0.6 + index * 0.1 }}
-                className={`w-full rounded-t bg-gradient-to-t ${bar.color} relative`}
+                transition={{ duration: 1.5, delay: 0.8 + index * 0.15, ease: "easeInOut" }}
+                className={`w-full rounded-t bg-gradient-to-t ${bar.color} relative shadow-lg`}
               >
                 {/* Value label */}
                 {index === 7 && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: -20 }}
-                    transition={{ delay: 1.5 }}
-                    className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-neon-blue whitespace-nowrap"
+                    transition={{ delay: 2.2, ease: "easeInOut" }}
+                    className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-neon-blue whitespace-nowrap drop-shadow-[0_0_10px_rgba(var(--neon-blue),0.6)]"
                   >
                     95%
                   </motion.div>
@@ -78,7 +79,7 @@ export const SmartContentVisual = () => {
             fill="none"
             initial={{ pathLength: 0 }}
             animate={{ pathLength: 1 }}
-            transition={{ duration: 2.5, delay: 1.2 }}
+            transition={{ duration: 3.5, delay: 1.5, ease: "easeInOut" }}
           />
           <defs>
             <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">

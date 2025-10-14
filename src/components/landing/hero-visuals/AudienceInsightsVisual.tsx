@@ -8,19 +8,20 @@ export const AudienceInsightsVisual = () => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 1.0, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
     >
       {/* Personalized Strategy Badge */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-neon-blue/20 border border-primary/30 w-fit mx-auto"
+        transition={{ delay: 0.3, ease: "easeInOut" }}
+        className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-neon-blue/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20"
       >
         <motion.div
           animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]"
         >
           <Brain className="h-4 w-4 text-primary" />
         </motion.div>
@@ -31,15 +32,15 @@ export const AudienceInsightsVisual = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-        className="bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-6 relative overflow-hidden"
+        transition={{ duration: 1.2, delay: 0.5, ease: "easeInOut" }}
+        className="bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-6 relative overflow-hidden shadow-lg"
       >
         {/* Center avatar */}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ delay: 0.6, type: 'spring' }}
-          className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-neon-blue mx-auto mb-6 flex items-center justify-center relative"
+          transition={{ delay: 0.8, type: 'spring', stiffness: 100, damping: 15 }}
+          className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-neon-blue mx-auto mb-6 flex items-center justify-center relative shadow-lg shadow-primary/30"
         >
           <Users className="h-10 w-10 text-white" />
           
@@ -60,9 +61,10 @@ export const AudienceInsightsVisual = () => {
                 scaleY: [0.8, 1.2, 0.8]
               }}
               transition={{
-                duration: 2,
+                duration: 3,
                 repeat: Infinity,
-                delay: index * 0.5
+                delay: index * 0.6,
+                ease: "easeInOut"
               }}
             />
           ))}
@@ -80,8 +82,8 @@ export const AudienceInsightsVisual = () => {
               key={index}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1 + index * 0.15 }}
-              className={`bg-gradient-to-br from-${metric.color}/20 to-${metric.color}/5 rounded-lg border border-${metric.color}/30 p-3`}
+              transition={{ delay: 1.2 + index * 0.2, type: "spring", stiffness: 100, damping: 15 }}
+              className={`bg-gradient-to-br from-${metric.color}/20 to-${metric.color}/5 rounded-lg border border-${metric.color}/30 p-3 shadow-md`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <metric.icon className={`h-4 w-4 text-${metric.color}`} />
@@ -90,7 +92,7 @@ export const AudienceInsightsVisual = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.2 + index * 0.15 }}
+                transition={{ delay: 1.6 + index * 0.2, ease: "easeInOut" }}
                 className="text-lg font-bold text-foreground"
               >
                 {metric.value}
@@ -104,14 +106,15 @@ export const AudienceInsightsVisual = () => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.8 }}
-        className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 space-y-3"
+        transition={{ duration: 0.8, delay: 3, ease: "easeInOut" }}
+        className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 space-y-3 shadow-md"
       >
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-foreground">Audience Insights</span>
           <motion.div
             animate={{ rotate: [0, 360] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+            className="drop-shadow-[0_0_6px_rgba(var(--primary),0.4)]"
           >
             <Brain className="h-4 w-4 text-primary" />
           </motion.div>
@@ -128,7 +131,7 @@ export const AudienceInsightsVisual = () => {
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 2 + index * 0.2 }}
+                transition={{ delay: 3.3 + index * 0.3, ease: "easeInOut" }}
                 className={`text-${insight.color} font-medium`}
               >
                 {insight.value}%
@@ -136,10 +139,10 @@ export const AudienceInsightsVisual = () => {
             </div>
             <div className="h-1.5 bg-background/50 rounded-full overflow-hidden">
               <motion.div
-                className={`h-full bg-gradient-to-r from-${insight.color} to-${insight.color}/60 rounded-full`}
+                className={`h-full bg-gradient-to-r from-${insight.color} to-${insight.color}/60 rounded-full shadow-[0_0_6px_rgba(var(--${insight.color}),0.4)]`}
                 initial={{ width: 0 }}
                 animate={{ width: `${insight.value}%` }}
-                transition={{ duration: 1.5, delay: 2 + index * 0.2 }}
+                transition={{ duration: 2.2, delay: 3.3 + index * 0.3, ease: "easeInOut" }}
               />
             </div>
           </div>
