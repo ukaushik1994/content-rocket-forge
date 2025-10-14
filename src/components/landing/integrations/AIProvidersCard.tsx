@@ -1,14 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, CheckCircle, Wind, Route } from 'lucide-react';
-import { GlassCard } from '@/components/ui/GlassCard';
-import logosImage from '@/assets/logos/integrations-logos.png';
+import { Brain, Check } from 'lucide-react';
 
 const providers = [
-  { name: 'OpenAI', position: '0% 0%', size: '33.33%' },
-  { name: 'Anthropic', position: '33.33% 0%', size: '33.33%' },
-  { name: 'Gemini', position: '66.66% 0%', size: '33.33%' },
-  { name: 'LM Studio', position: '0% 50%', size: '33.33%' },
+  { name: 'OpenAI', icon: 'O' },
+  { name: 'Anthropic', icon: 'A' },
+  { name: 'Gemini', icon: 'G' },
+  { name: 'LM Studio', icon: 'L' },
+  { name: 'Mistral', icon: 'M' },
+  { name: 'OpenRouter', icon: 'O' },
 ];
 
 const benefits = [
@@ -25,59 +25,78 @@ export const AIProvidersCard: React.FC = () => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
+      className="group relative h-full"
     >
-      <GlassCard className="p-6 h-full hover:shadow-lg transition-all duration-300">
-        {/* Icon Container */}
-        <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-primary to-neon-blue p-0.5 mb-4">
-          <div className="w-full h-full rounded-lg bg-card flex items-center justify-center">
-            <Brain className="h-6 w-6 text-primary" />
-          </div>
+      {/* Glowing Border Effect */}
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/40 rounded-2xl opacity-30 group-hover:opacity-60 blur transition duration-500" />
+      
+      {/* Card Content */}
+      <div className="relative h-full bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 overflow-hidden">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary),0.3),transparent_50%)]" />
         </div>
 
-        {/* Title */}
-        <h3 className="text-xl font-bold mb-2">AI Model Freedom</h3>
-        <p className="text-sm text-muted-foreground mb-6">Bring Your Own Keys</p>
-
-        {/* Logo Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {providers.map((provider) => (
-            <div
-              key={provider.name}
-              className="aspect-square bg-card/50 border border-border/50 rounded-lg overflow-hidden hover:border-primary/30 transition-colors"
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <motion.div
+              className="p-3 bg-primary/20 rounded-xl"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ type: 'spring', stiffness: 300 }}
             >
-              <img
-                src={logosImage}
-                alt={provider.name}
-                className="w-full h-full object-cover"
-                style={{
-                  objectPosition: provider.position,
-                  objectFit: 'none',
-                  transform: `scale(${100 / parseFloat(provider.size)})`,
-                  transformOrigin: provider.position,
-                }}
-              />
+              <Brain className="w-6 h-6 text-primary" />
+            </motion.div>
+            <div>
+              <h3 className="text-xl font-bold text-foreground">AI Provider Freedom</h3>
+              <p className="text-sm text-muted-foreground">Bring Your Own Keys</p>
             </div>
-          ))}
-          {/* Mistral - Lucide Icon */}
-          <div className="aspect-square bg-card/50 border border-border/50 rounded-lg flex items-center justify-center hover:border-primary/30 transition-colors">
-            <Wind className="w-8 h-8 text-primary/60" />
           </div>
-          {/* OpenRouter - Lucide Icon */}
-          <div className="aspect-square bg-card/50 border border-border/50 rounded-lg flex items-center justify-center hover:border-primary/30 transition-colors">
-            <Route className="w-8 h-8 text-primary/60" />
+
+          {/* Provider Logos Grid */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {providers.map((provider, index) => (
+              <motion.div
+                key={provider.name}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                className="relative p-4 bg-card/50 border border-border/50 rounded-xl cursor-pointer backdrop-blur-sm hover:border-primary/50 hover:bg-card/70 transition-all duration-300"
+              >
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-foreground mb-1">
+                    {provider.icon}
+                  </div>
+                  <div className="text-[10px] font-semibold text-muted-foreground leading-tight">
+                    {provider.name}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Benefits List */}
+          <div className="space-y-2">
+            {benefits.map((benefit, index) => (
+              <motion.div
+                key={benefit}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 + index * 0.1 }}
+                className="flex items-center gap-2 text-sm"
+              >
+                <div className="p-1 bg-primary/20 rounded-full">
+                  <Check className="w-3 h-3 text-primary" />
+                </div>
+                <span className="text-muted-foreground">{benefit}</span>
+              </motion.div>
+            ))}
           </div>
         </div>
-
-        {/* Benefits */}
-        <ul className="space-y-2">
-          {benefits.map((benefit) => (
-            <li key={benefit} className="flex items-start gap-2">
-              <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-muted-foreground">{benefit}</span>
-            </li>
-          ))}
-        </ul>
-      </GlassCard>
+      </div>
     </motion.div>
   );
 };
