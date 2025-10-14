@@ -20,11 +20,10 @@ export const InvestorSection = () => {
 
   return (
     <section className="py-8 px-4 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
+      {/* Floating Elements Only - Background inherited from AnimatedBackground */}
       <FloatingElements elements={floatingElements} />
       
-      <Container>
+      <Container className="backdrop-blur-[2px]">
         <div className="relative z-10">
           {/* Header */}
           <motion.div
