@@ -356,10 +356,15 @@ useEffect(() => {
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0 flex-1 min-h-0 flex flex-col">
                 <div className="flex-1 min-h-0">
-                  <InlineAiEditor value={editedContent} onChange={handleContentChange} onAiApplied={prev => {
-                  setUndoContent(prev);
-                  setTimeout(() => setUndoContent(null), 5000);
-                }} />
+                  <InlineAiEditor 
+                    value={editedContent} 
+                    onChange={handleContentChange}
+                    className="flex-1 min-h-0"
+                    onAiApplied={prev => {
+                      setUndoContent(prev);
+                      setTimeout(() => setUndoContent(null), 5000);
+                    }} 
+                  />
                 </div>
               </TabsContent>
               
