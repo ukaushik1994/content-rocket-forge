@@ -117,8 +117,8 @@ export const AIChatDemo = () => {
         className="lg:col-span-3"
       >
         <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl shadow-2xl overflow-hidden">
-          {/* Mock Chat Interface */}
-          <div className="p-6 space-y-4 min-h-[750px]">
+          {/* Chat Container */}
+          <div className="p-6 space-y-4 h-[650px] md:h-[750px] overflow-hidden">
             {/* User Message */}
             <AnimatePresence>
               {animationPhase >= 0 && (

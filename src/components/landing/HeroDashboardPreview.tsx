@@ -28,7 +28,7 @@ export const HeroDashboardPreview = ({ currentMessageIndex }: HeroDashboardPrevi
       <div className="relative bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden shadow-2xl">
         
         {/* Dynamic Dashboard Content */}
-        <div className="p-6 md:p-8 relative z-10 min-h-[500px]">
+        <div className="p-6 md:p-8 relative z-10 h-[500px] md:h-[600px] overflow-hidden">
           <AnimatePresence mode="wait">
             <CurrentVisual key={currentMessageIndex} />
           </AnimatePresence>

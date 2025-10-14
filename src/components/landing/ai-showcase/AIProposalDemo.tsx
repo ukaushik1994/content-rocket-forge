@@ -129,7 +129,8 @@ export const AIProposalDemo = () => {
         className="lg:col-span-3"
       >
         <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl shadow-2xl overflow-hidden">
-          <div className="p-6 space-y-6 min-h-[600px]">
+          {/* Proposal Container */}
+          <div className="p-6 space-y-6 h-[550px] md:h-[650px] overflow-hidden">
             {/* Goal Input */}
             <AnimatePresence>
               {animationPhase >= 0 && (
