@@ -63,11 +63,10 @@ export const ValuePropositions = () => {
 
   return (
     <section className="py-8 px-4 relative overflow-hidden">
-      {/* Enhanced Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-neon-pink/5 to-background" />
+      {/* Floating Elements Only - Background inherited from AnimatedBackground */}
       <FloatingElements elements={floatingElements} />
       
-      <Container className="relative z-10">
+      <Container className="relative z-10 backdrop-blur-[2px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
