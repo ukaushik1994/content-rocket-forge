@@ -294,7 +294,7 @@ useEffect(() => {
     setEditedContent(updatedContent);
   };
   return (
-    <motion.div className="space-y-6" initial={{
+    <motion.div className="space-y-6 h-[calc(100vh-8rem)]" initial={{
       opacity: 0
     }} animate={{
       opacity: 1
