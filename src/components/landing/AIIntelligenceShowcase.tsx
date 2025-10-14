@@ -3,7 +3,6 @@ import { Container } from '@/components/ui/Container';
 import { TabSwitcher } from './ai-showcase/TabSwitcher';
 import { AIChatDemo } from './ai-showcase/AIChatDemo';
 import { AIProposalDemo } from './ai-showcase/AIProposalDemo';
-import { FeatureComparisonGrid } from './ai-showcase/FeatureComparisonGrid';
 import { motion } from 'framer-motion';
 
 export const AIIntelligenceShowcase = () => {
@@ -35,9 +34,6 @@ export const AIIntelligenceShowcase = () => {
         <div className="mt-8 md:mt-12">
           {activeTab === 'chat' ? <AIChatDemo /> : <AIProposalDemo />}
         </div>
-
-        {/* Feature Comparison Grid */}
-        <FeatureComparisonGrid />
       </Container>
     </section>
   );

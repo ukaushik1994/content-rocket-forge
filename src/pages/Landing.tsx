@@ -12,6 +12,7 @@ import { InvestorSection } from '@/components/landing/InvestorSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { AIIntelligenceShowcase } from '@/components/landing/AIIntelligenceShowcase';
 import { IntegrationsHub } from '@/components/landing/IntegrationsHub';
+import { PerformanceSection } from '@/components/landing/PerformanceSection';
 
 const Landing = () => {
   return (
@@ -45,6 +46,10 @@ const Landing = () => {
           
           <section id="integrations" className="scroll-mt-16">
             <IntegrationsHub />
+          </section>
+          
+          <section id="performance" className="scroll-mt-16">
+            <PerformanceSection />
           </section>
           
           <section id="features" className="scroll-mt-16">
