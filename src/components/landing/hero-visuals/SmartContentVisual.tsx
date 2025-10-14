@@ -1,105 +1,189 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, ArrowUp } from 'lucide-react';
-
+import { Brain, TrendingUp } from 'lucide-react';
 export const SmartContentVisual = () => {
-  const metrics = [
-    { label: 'Quality', value: 45 },
-    { label: 'Engagement', value: 67 },
-    { label: 'Reach', value: 23 },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
-      className="min-h-[500px] flex items-center justify-center"
-    >
-      <div className="relative w-full max-w-2xl mx-auto space-y-8">
-        {/* Top Progress Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-center space-y-3"
-        >
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-sm text-muted-foreground">Overall Performance</span>
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="text-sm font-bold text-blue-400"
-            >
-              92%
-            </motion.span>
-          </div>
-          <div className="h-2 bg-muted/20 rounded-full overflow-hidden max-w-md mx-auto">
-            <motion.div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: '92%' }}
-              transition={{ delay: 0.5, duration: 1.5, ease: "easeOut" }}
-            />
-          </div>
+  return <motion.div initial={{
+    opacity: 0,
+    scale: 0.95
+  }} animate={{
+    opacity: 1,
+    scale: 1
+  }} exit={{
+    opacity: 0,
+    scale: 0.95
+  }} transition={{
+    duration: 0.5,
+    ease: [0.43, 0.13, 0.23, 0.96]
+  }} className="space-y-6">
+      {/* AI Learning Badge */}
+      <motion.div initial={{
+      opacity: 0,
+      y: 10
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.15,
+      ease: "easeInOut"
+    }} className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20">
+        <motion.div animate={{
+        scale: [1, 1.2, 1]
+      }} transition={{
+        duration: 3,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }} className="drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]">
+          <Brain className="h-4 w-4 text-primary" />
         </motion.div>
+        <span className="text-xs font-medium text-primary">Getting Smarter</span>
+      </motion.div>
 
-        {/* Center Icon */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.6, type: "spring", stiffness: 150, damping: 15 }}
-          className="relative flex items-center justify-center"
-        >
-          <div className="absolute -inset-8 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 rounded-full blur-3xl" />
-          <motion.div
-            animate={{
-              scale: [1, 1.05, 1],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="relative w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/40"
-          >
-            <TrendingUp className="h-16 w-16 text-white" />
-          </motion.div>
-        </motion.div>
+      {/* Progressive Improvement Chart */}
+      <motion.div initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} transition={{
+      duration: 0.6,
+      delay: 0.25,
+      ease: "easeInOut"
+    }} className="h-52 bg-gradient-to-br from-background/60 to-background/30 rounded-lg border border-border/40 relative overflow-hidden shadow-xl">
+        {/* Chart bars */}
+        <div className="absolute bottom-0 left-0 right-0 h-[calc(100%-3rem)] px-6 flex items-end justify-between gap-1">
+          {[{
+          height: 45,
+          label: 'Week 1',
+          color: 'from-primary/40 to-primary/60'
+        }, {
+          height: 52,
+          label: 'Week 2',
+          color: 'from-primary/40 to-primary/60'
+        }, {
+          height: 58,
+          label: 'Week 3',
+          color: 'from-primary/50 to-primary/70'
+        }, {
+          height: 65,
+          label: 'Week 4',
+          color: 'from-primary/50 to-primary/70'
+        }, {
+          height: 72,
+          label: 'Week 5',
+          color: 'from-neon-blue/40 to-neon-blue/60'
+        }, {
+          height: 80,
+          label: 'Week 6',
+          color: 'from-neon-blue/50 to-neon-blue/70'
+        }, {
+          height: 88,
+          label: 'Week 7',
+          color: 'from-neon-blue/60 to-neon-blue/80'
+        }, {
+          height: 95,
+          label: 'Week 8',
+          color: 'from-neon-blue/70 to-neon-blue/90'
+        }].map((bar, index) => <motion.div key={index} initial={{
+          height: 0
+        }} animate={{
+          height: `${bar.height}%`
+        }} transition={{
+          duration: 1.0,
+          delay: 0.4 + index * 0.1,
+          ease: "easeInOut"
+        }} className={`w-[11%] rounded-t bg-gradient-to-t ${bar.color} relative shadow-lg`} style={{
+          minWidth: '8px'
+        }}>
+              {/* Value label */}
+              {index === 7}
+            </motion.div>)}
+        </div>
 
-        {/* Bottom Metrics */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="flex items-center justify-center gap-8"
-        >
-          {metrics.map((metric, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.9 + index * 0.1, type: "spring" }}
-              className="text-center"
-            >
-              <div className="flex items-center gap-1 justify-center mb-1">
-                <ArrowUp className="h-4 w-4 text-green-400" />
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.0 + index * 0.1 }}
-                  className="text-2xl font-bold text-foreground"
-                >
-                  +{metric.value}%
-                </motion.span>
-              </div>
-              <span className="text-xs text-muted-foreground">{metric.label}</span>
-            </motion.div>
-          ))}
+        {/* Trend line overlay */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{
+        zIndex: 5
+      }} preserveAspectRatio="none">
+          <motion.path d="M 8 55 Q 20 48, 30 42 T 45 35 T 60 28 T 75 20 T 92 8" stroke="url(#trendGradient)" strokeWidth="2" fill="none" initial={{
+          pathLength: 0,
+          opacity: 0
+        }} animate={{
+          pathLength: 1,
+          opacity: 0.7
+        }} transition={{
+          duration: 2.0,
+          delay: 0.8,
+          ease: "easeInOut"
+        }} />
+          <defs>
+            <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="hsl(var(--primary))" />
+              <stop offset="100%" stopColor="hsl(var(--neon-blue))" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        {/* Trend arrow */}
+        <motion.div initial={{
+        opacity: 0,
+        x: -20
+      }} animate={{
+        opacity: 1,
+        x: 0
+      }} transition={{
+        delay: 1.2
+      }} className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-blue/20 border border-neon-blue/30">
+          <TrendingUp className="h-4 w-4 text-neon-blue" />
+          <span className="text-xs font-medium text-neon-blue">+111%</span>
         </motion.div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+
+      {/* Improvement Insights Panel */}
+      <motion.div initial={{
+      opacity: 0,
+      y: 10
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      duration: 0.4,
+      delay: 1.2
+    }} className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 space-y-3">
+        <div className="text-xs font-medium text-muted-foreground mb-2">AI Improvements</div>
+        {[{
+        label: 'Headline Optimization',
+        progress: 85,
+        color: 'bg-primary'
+      }, {
+        label: 'Audience Targeting',
+        progress: 72,
+        color: 'bg-neon-blue'
+      }, {
+        label: 'Content Structure',
+        progress: 68,
+        color: 'bg-neon-pink'
+      }].map((insight, index) => <div key={index} className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-foreground">{insight.label}</span>
+              <motion.span initial={{
+            opacity: 0
+          }} animate={{
+            opacity: 1
+          }} transition={{
+            delay: 1.3 + index * 0.15
+          }} className="text-primary font-medium">
+                {insight.progress}%
+              </motion.span>
+            </div>
+            <div className="h-2 bg-background/50 rounded-full overflow-hidden">
+              <motion.div className={`h-full ${insight.color}/60 rounded-full`} initial={{
+            width: 0
+          }} animate={{
+            width: `${insight.progress}%`
+          }} transition={{
+            duration: 1.2,
+            delay: 1.3 + index * 0.15
+          }} />
+            </div>
+          </div>)}
+      </motion.div>
+    </motion.div>;
 };
