@@ -22,10 +22,12 @@ export const LandingNavbar = () => {
   const navItems = [
     { name: 'Home', href: '#hero' },
     { name: 'Problem', href: '#problem' },
+    { name: 'AI Intelligence', href: '#ai-showcase' },
+    { name: 'Integrations', href: '#integrations' },
+    { name: 'Performance', href: '#performance' },
     { name: 'Features', href: '#features' },
     { name: 'Comparison', href: '#comparison' },
-    { name: 'Value', href: '#value' },
-    { name: 'Investors', href: '#investors' }
+    { name: 'For You', href: '#value' }
   ];
 
   const scrollToSection = (href: string) => {
