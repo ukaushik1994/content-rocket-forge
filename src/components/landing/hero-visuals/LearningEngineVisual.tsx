@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, TrendingUp, Target, RefreshCw } from 'lucide-react';
+import { Brain, TrendingUp, Target, RefreshCw, Database, CheckCircle, Clock } from 'lucide-react';
 
 export const LearningEngineVisual = () => {
   return (
@@ -166,6 +166,40 @@ export const LearningEngineVisual = () => {
           <RefreshCw className="h-6 w-6 text-primary" />
         </motion.div>
         <span className="text-base font-medium text-foreground">Continuous Learning Active</span>
+      </motion.div>
+
+      {/* Real-Time Learning Stats */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 1.6, ease: "easeInOut" }}
+        className="grid grid-cols-4 gap-3"
+      >
+        {[
+          { label: 'Models Trained', value: '847', icon: Brain },
+          { label: 'Data Points', value: '2.4M', icon: Database },
+          { label: 'Accuracy', value: '94.2%', icon: CheckCircle },
+          { label: 'Updated', value: '2s ago', icon: Clock, pulse: true }
+        ].map((stat, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.7 + index * 0.1, ease: "easeInOut" }}
+            className="bg-background/40 backdrop-blur-sm rounded-lg border border-border/30 p-3 text-center relative"
+          >
+            <stat.icon className="h-4 w-4 text-primary/70 mx-auto mb-1" />
+            <div className="text-lg font-bold text-foreground">{stat.value}</div>
+            <div className="text-xs text-muted-foreground">{stat.label}</div>
+            {stat.pulse && (
+              <motion.div
+                className="absolute top-2 right-2 w-2 h-2 bg-neon-blue rounded-full"
+                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            )}
+          </motion.div>
+        ))}
       </motion.div>
     </motion.div>
   );
