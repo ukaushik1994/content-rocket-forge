@@ -8,14 +8,14 @@ export const SmartContentVisual = () => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 1.2, ease: [0.43, 0.13, 0.23, 0.96] }}
+      transition={{ duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
     >
       {/* AI Learning Badge */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, ease: "easeInOut" }}
+        transition={{ delay: 0.15, ease: "easeInOut" }}
         className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 w-fit mx-auto shadow-md shadow-primary/20"
       >
         <motion.div
@@ -32,7 +32,7 @@ export const SmartContentVisual = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1.2, delay: 0.6, ease: "easeInOut" }}
+        transition={{ duration: 0.6, delay: 0.25, ease: "easeInOut" }}
         className="h-52 bg-gradient-to-br from-background/60 to-background/30 rounded-lg border border-border/40 relative overflow-hidden shadow-xl"
       >
         {/* Chart bars */}
@@ -51,7 +51,7 @@ export const SmartContentVisual = () => {
               key={index}
               initial={{ height: 0 }}
               animate={{ height: `${bar.height}%` }}
-              transition={{ duration: 1.8, delay: 1.0 + index * 0.18, ease: "easeInOut" }}
+              transition={{ duration: 1.0, delay: 0.4 + index * 0.1, ease: "easeInOut" }}
               className={`w-[11%] rounded-t bg-gradient-to-t ${bar.color} relative shadow-lg`}
               style={{ minWidth: '8px' }}
             >
@@ -60,7 +60,7 @@ export const SmartContentVisual = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: -20 }}
-                  transition={{ delay: 2.8, ease: "easeInOut" }}
+                  transition={{ delay: 1.2, ease: "easeInOut" }}
                   className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-neon-blue whitespace-nowrap drop-shadow-[0_0_10px_rgba(var(--neon-blue),0.6)]"
                 >
                   95%
@@ -79,7 +79,7 @@ export const SmartContentVisual = () => {
             fill="none"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 0.7 }}
-            transition={{ duration: 4.0, delay: 2.0, ease: "easeInOut" }}
+            transition={{ duration: 2.0, delay: 0.8, ease: "easeInOut" }}
           />
           <defs>
             <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -93,7 +93,7 @@ export const SmartContentVisual = () => {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 2.8 }}
+          transition={{ delay: 1.2 }}
           className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-blue/20 border border-neon-blue/30"
         >
           <TrendingUp className="h-4 w-4 text-neon-blue" />
@@ -105,7 +105,7 @@ export const SmartContentVisual = () => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 3.0 }}
+        transition={{ duration: 0.4, delay: 1.2 }}
         className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 space-y-3"
       >
         <div className="text-xs font-medium text-muted-foreground mb-2">AI Improvements</div>
@@ -120,7 +120,7 @@ export const SmartContentVisual = () => {
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 3.2 + index * 0.25 }}
+                transition={{ delay: 1.3 + index * 0.15 }}
                 className="text-primary font-medium"
               >
                 {insight.progress}%
@@ -131,7 +131,7 @@ export const SmartContentVisual = () => {
                 className={`h-full ${insight.color}/60 rounded-full`}
                 initial={{ width: 0 }}
                 animate={{ width: `${insight.progress}%` }}
-                transition={{ duration: 2.0, delay: 3.2 + index * 0.25 }}
+                transition={{ duration: 1.2, delay: 1.3 + index * 0.15 }}
               />
             </div>
           </div>

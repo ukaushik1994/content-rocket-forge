@@ -16,7 +16,7 @@ export const WorkflowPipelineVisual = () => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 1.2, ease: [0.43, 0.13, 0.23, 0.96] }}
+      transition={{ duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
     >
       {/* Pipeline Stages */}
@@ -26,7 +26,7 @@ export const WorkflowPipelineVisual = () => {
             key={index}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 + index * 0.2, ease: "easeInOut" }}
+            transition={{ duration: 0.4, delay: 0.15 + index * 0.12, ease: "easeInOut" }}
             className="relative"
           >
             {/* Stage Card */}
@@ -38,9 +38,9 @@ export const WorkflowPipelineVisual = () => {
                     rotate: index === 1 ? [0, 5, -5, 0] : 0
                   }}
                   transition={{ 
-                    duration: 3, 
+                    duration: 2, 
                     repeat: Infinity,
-                    delay: index * 0.4,
+                    delay: index * 0.25,
                     ease: "easeInOut"
                   }}
                   className={`w-10 h-10 rounded-lg bg-gradient-to-br from-${stage.color} to-${stage.color}/70 flex items-center justify-center shadow-lg`}
@@ -52,7 +52,7 @@ export const WorkflowPipelineVisual = () => {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 + index * 0.2, ease: "easeInOut" }}
+                    transition={{ delay: 0.3 + index * 0.12, ease: "easeInOut" }}
                     className={`text-xs text-${stage.color}`}
                   >
                     {stage.conversion} Success Rate
@@ -65,7 +65,7 @@ export const WorkflowPipelineVisual = () => {
                 className="flex gap-1"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.9 + index * 0.2, ease: "easeInOut" }}
+                transition={{ delay: 0.45 + index * 0.12, ease: "easeInOut" }}
               >
                 {[...Array(3)].map((_, i) => (
                   <motion.div
@@ -76,9 +76,9 @@ export const WorkflowPipelineVisual = () => {
                       opacity: [0.5, 1, 0.5]
                     }}
                     transition={{
-                      duration: 2.5,
+                      duration: 1.5,
                       repeat: Infinity,
-                      delay: i * 0.3 + index * 0.15,
+                      delay: i * 0.2 + index * 0.1,
                       ease: "easeInOut"
                     }}
                   />
@@ -91,7 +91,7 @@ export const WorkflowPipelineVisual = () => {
               <motion.div
                 initial={{ opacity: 0, scaleY: 0 }}
                 animate={{ opacity: 1, scaleY: 1 }}
-                transition={{ duration: 0.6, delay: 0.5 + index * 0.2, ease: "easeInOut" }}
+                transition={{ duration: 0.3, delay: 0.25 + index * 0.12, ease: "easeInOut" }}
                 className="absolute left-5 top-full w-px h-4 bg-gradient-to-b from-primary/50 to-transparent origin-top"
               >
                 {/* Flowing particle */}
@@ -102,9 +102,9 @@ export const WorkflowPipelineVisual = () => {
                     opacity: [0, 1, 0]
                   }}
                   transition={{
-                    duration: 2.5,
+                    duration: 1.5,
                     repeat: Infinity,
-                    delay: 1.5 + index * 0.6,
+                    delay: 0.7 + index * 0.35,
                     ease: 'easeInOut'
                   }}
                 />
@@ -118,7 +118,7 @@ export const WorkflowPipelineVisual = () => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 3, ease: "easeInOut" }}
+        transition={{ duration: 0.4, delay: 1.3, ease: "easeInOut" }}
         className="bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 rounded-lg border border-primary/30 p-4 shadow-md"
       >
         <div className="flex items-center justify-between">
@@ -131,7 +131,7 @@ export const WorkflowPipelineVisual = () => {
               scale: [1, 1.2, 1],
               rotate: [0, 180, 360]
             }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
           >
             <span className="text-white text-xs font-bold">AI</span>
@@ -145,7 +145,7 @@ export const WorkflowPipelineVisual = () => {
               className="h-full bg-gradient-to-r from-primary via-neon-blue to-neon-pink shadow-[0_0_8px_rgba(var(--primary),0.3)]"
               initial={{ width: 0 }}
               animate={{ width: '100%' }}
-              transition={{ duration: 4, delay: 3.2, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 2, delay: 1.4, repeat: Infinity, ease: "easeInOut" }}
             />
           </div>
         </div>
