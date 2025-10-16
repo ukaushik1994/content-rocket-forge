@@ -1,12 +1,16 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import { Brain, TrendingUp, Target, RefreshCw, Award, Clock, Heart, ThumbsUp } from 'lucide-react';
 
 export const LearningEngineVisual = () => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.5, ease: [0.43, 0.13, 0.23, 0.96] }}
       className="space-y-6"
@@ -14,7 +18,7 @@ export const LearningEngineVisual = () => {
       {/* AI Learning Badge */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
         transition={{ delay: 0.1, ease: "easeInOut" }}
         className="flex items-center justify-between"
       >
@@ -22,13 +26,13 @@ export const LearningEngineVisual = () => {
           <motion.div
             className="h-full bg-gradient-to-r from-primary to-neon-blue shadow-[0_0_10px_rgba(var(--primary),0.3)]"
             initial={{ width: "0%" }}
-            animate={{ width: "75%" }}
+            animate={isInView ? { width: "75%" } : { width: "0%" }}
             transition={{ duration: 1.5, delay: 0.2, ease: "easeInOut" }}
           />
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 shadow-md shadow-primary/20">
           <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
+            animate={isInView ? { scale: [1, 1.2, 1] } : { scale: 1 }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             className="drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]"
           >
@@ -48,7 +52,7 @@ export const LearningEngineVisual = () => {
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.4, delay: 0.2 + index * 0.1, ease: "easeInOut" }}
             className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg border border-primary/30 p-6 shadow-md min-h-[140px]"
           >
@@ -56,7 +60,7 @@ export const LearningEngineVisual = () => {
             <motion.div 
               className="text-3xl md:text-4xl font-bold text-foreground"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={isInView ? { opacity: 1 } : { opacity: 0 }}
               transition={{ duration: 0.4, delay: 0.4 + index * 0.1, ease: "easeInOut" }}
             >
               {metric.value}
@@ -65,7 +69,7 @@ export const LearningEngineVisual = () => {
             <motion.div
               className="text-sm text-neon-blue font-medium"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={isInView ? { opacity: 1 } : { opacity: 0 }}
               transition={{ delay: 0.6 + index * 0.1, ease: "easeInOut" }}
             >
               → {metric.target}
@@ -77,7 +81,7 @@ export const LearningEngineVisual = () => {
       {/* Feedback Loop Visualization */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={isInView ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.6, delay: 0.5, ease: "easeInOut" }}
         className="bg-gradient-to-r from-background/50 to-background/20 rounded-lg border border-border/30 p-8 relative overflow-hidden shadow-lg min-h-[120px]"
       >
@@ -86,19 +90,19 @@ export const LearningEngineVisual = () => {
             <motion.div
               key={index}
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
               transition={{ delay: 0.7 + index * 0.15, type: "spring", stiffness: 150, damping: 12 }}
               className="flex flex-col items-center gap-2"
             >
               <motion.div
-                animate={{ 
+                animate={isInView ? { 
                   scale: [1, 1.2, 1],
                   boxShadow: [
                     '0 0 0px rgba(var(--primary), 0)',
                     '0 0 20px rgba(var(--primary), 0.5)',
                     '0 0 0px rgba(var(--primary), 0)'
                   ]
-                }}
+                } : { scale: 1 }}
                 transition={{ duration: 2, repeat: Infinity, delay: index * 0.4, ease: "easeInOut" }}
                 className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-neon-blue flex items-center justify-center shadow-lg"
               >
@@ -119,7 +123,7 @@ export const LearningEngineVisual = () => {
               fill="none"
               strokeDasharray="4 4"
               initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 0.6 }}
+              animate={isInView ? { pathLength: 1, opacity: 0.6 } : { pathLength: 0, opacity: 0 }}
               transition={{ duration: 1, delay: 0.9 + index * 0.2, ease: "easeInOut" }}
             />
           ))}
@@ -137,10 +141,10 @@ export const LearningEngineVisual = () => {
             key={index}
             className="absolute top-1/2 w-2 h-2 bg-primary rounded-full shadow-[0_0_6px_rgba(var(--primary),0.6)]"
             style={{ left: `${25 + index * 25}%` }}
-            animate={{
+            animate={isInView ? {
               x: ['0%', '100%'],
               opacity: [0, 1, 1, 0]
-            }}
+            } : { x: '0%', opacity: 0 }}
             transition={{
               duration: 2,
               repeat: Infinity,
@@ -154,12 +158,12 @@ export const LearningEngineVisual = () => {
       {/* Continuous Learning Badge */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
         transition={{ duration: 0.4, delay: 1.4, ease: "easeInOut" }}
         className="flex items-center justify-center gap-2 px-6 py-4 rounded-lg bg-gradient-to-r from-primary/10 via-neon-blue/10 to-neon-pink/10 border border-primary/30 shadow-md shadow-primary/20"
       >
         <motion.div
-          animate={{ rotate: 360 }}
+          animate={isInView ? { rotate: 360 } : { rotate: 0 }}
           transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
           className="drop-shadow-[0_0_6px_rgba(var(--primary),0.4)]"
         >
@@ -171,7 +175,7 @@ export const LearningEngineVisual = () => {
       {/* Real-Time Learning Stats */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
         transition={{ duration: 0.4, delay: 1.6, ease: "easeInOut" }}
         className="grid grid-cols-4 gap-3"
       >
@@ -184,7 +188,7 @@ export const LearningEngineVisual = () => {
           <motion.div
             key={index}
             initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
             transition={{ delay: 1.7 + index * 0.1, ease: "easeInOut" }}
             className="bg-background/40 backdrop-blur-sm rounded-lg border border-border/30 p-3 text-center relative"
           >
@@ -194,7 +198,7 @@ export const LearningEngineVisual = () => {
             {stat.pulse && (
               <motion.div
                 className="absolute top-2 right-2 w-2 h-2 bg-neon-blue rounded-full"
-                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                animate={isInView ? { scale: [1, 1.5, 1], opacity: [1, 0.5, 1] } : { scale: 1, opacity: 1 }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
             )}
