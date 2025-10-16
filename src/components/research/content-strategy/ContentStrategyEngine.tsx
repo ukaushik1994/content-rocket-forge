@@ -335,6 +335,10 @@ export const ContentStrategyEngine = ({
     }
     
     try {
+      // Auto-fix providers before generating
+      const { fixEmptyProviderModels } = await import('@/utils/fixAiProviders');
+      await fixEmptyProviderModels();
+      
       // Check for active AI provider before starting
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -348,7 +352,7 @@ export const ContentStrategyEngine = ({
       
       const { data: activeProvider, error: providerError } = await supabase
         .from('ai_service_providers')
-        .select('provider, preferred_model, status, api_key')
+        .select('provider, preferred_model, status, api_key, available_models')
         .eq('user_id', user.id)
         .eq('status', 'active')
         .order('priority', { ascending: true })
@@ -358,7 +362,18 @@ export const ContentStrategyEngine = ({
       if (providerError || !activeProvider || !activeProvider.api_key) {
         toast({
           title: "No AI Provider Active",
-          description: "Please activate an AI provider (like LM Studio) in Settings before generating strategies.",
+          description: "Please activate an AI provider in Settings before generating strategies.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate provider has models configured
+      const models = Array.isArray(activeProvider.available_models) ? activeProvider.available_models : [];
+      if (models.length === 0) {
+        toast({
+          title: "Provider Configuration Error",
+          description: `${activeProvider.provider} has no models configured. Please reconfigure in Settings.`,
           variant: "destructive"
         });
         return;
