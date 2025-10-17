@@ -363,7 +363,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
             
             {/* Two-Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 px-4 sm:px-6 pb-6">
-              {/* Left Side - Content Preview Only */}
+              {/* Left Side - Content Preview & Repurposed Content */}
               <div className="space-y-4 sm:space-y-6">
                 {/* Content Preview */}
                 <CollapsibleSection
@@ -444,6 +444,22 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </div>
                   )}
                 </CollapsibleSection>
+
+                {/* Repurposed Content Section */}
+                {repurposedFormats.length > 0 && (
+                  <CollapsibleSection
+                    isOpen={isRepurposedOpen}
+                    onToggle={() => setIsRepurposedOpen(!isRepurposedOpen)}
+                    title="Repurposed Content"
+                    icon={Layers}
+                    count={repurposedFormats.length}
+                  >
+                    <RepurposedContentIcons
+                      repurposedFormats={repurposedFormats}
+                      onFormatClick={handleRepurposedFormatClick}
+                    />
+                  </CollapsibleSection>
+                )}
               </div>
 
               {/* Right Sidebar */}
@@ -618,22 +634,6 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 >
                   <OptimizationBadges metadata={content.metadata} />
                 </CollapsibleSection>
-
-                {/* Repurposed Content Section */}
-                {repurposedFormats.length > 0 && (
-                  <CollapsibleSection
-                    isOpen={isRepurposedOpen}
-                    onToggle={() => setIsRepurposedOpen(!isRepurposedOpen)}
-                    title="Repurposed Content"
-                    icon={Layers}
-                    count={repurposedFormats.length}
-                  >
-                    <RepurposedContentIcons
-                      repurposedFormats={repurposedFormats}
-                      onFormatClick={handleRepurposedFormatClick}
-                    />
-                  </CollapsibleSection>
-                )}
 
                 {/* Actions */}
                 <Card className="bg-muted/5 border-border">
