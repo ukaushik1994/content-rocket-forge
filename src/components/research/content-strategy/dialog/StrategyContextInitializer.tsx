@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
 
 interface StrategyContextInitializerProps {
   proposal: any;
@@ -35,7 +36,17 @@ export function StrategyContextInitializer({ proposal, children }: StrategyConte
     if (proposal.title && proposal.title !== state.contentTitle) {
       console.log('[StrategyContextInit] Setting contentTitle:', proposal.title);
       setContentTitle(proposal.title);
-      setMetaTitle(proposal.title);
+      
+      // Set meta title separately - try meta_suggestions first, then generate SEO-optimized version
+      const metaTitleToUse = proposal.meta_suggestions?.title 
+        || generateMetaSuggestions(
+            proposal.description || '', 
+            proposal.primary_keyword || '', 
+            proposal.title
+          ).metaTitle;
+      
+      console.log('[StrategyContextInit] Setting metaTitle (distinct from contentTitle):', metaTitleToUse);
+      setMetaTitle(metaTitleToUse);
     }
     
     // Set default content settings optimized for strategy
