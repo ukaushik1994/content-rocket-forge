@@ -14,7 +14,6 @@ import { aiStrategyService } from '@/services/aiStrategyService';
 import { useToast } from '@/hooks/use-toast';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
-import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
 import { ConsolidatedFilterDialog } from './ConsolidatedFilterDialog';
 import { ViewToggle, ViewMode } from './ViewToggle';
@@ -95,9 +94,7 @@ export const ContentStrategyEngine = ({
   const hasNextPage = currentPage < totalPages;
   const hasPreviousPage = currentPage > 1;
 
-  // Strategy Builder Dialog state
-  const [showBuilderDialog, setShowBuilderDialog] = useState(false);
-  const [selectedProposal, setSelectedProposal] = useState<any>(null);
+  // Strategy Builder Dialog state removed - now navigating to /content-builder page
 
   // Track newly generated proposals with timestamps
   const [newProposalIds, setNewProposalIds] = useState<Set<string>>(new Set());
@@ -669,8 +666,38 @@ export const ContentStrategyEngine = ({
                         setSelectedProposals(newSelected);
                       }}
                       onSendToBuilder={(proposal) => {
-                        setSelectedProposal(proposal);
-                        setShowBuilderDialog(true);
+                        navigate('/content-builder', {
+                          state: {
+                            fromProposal: true,
+                            proposalData: {
+                              id: proposal.id,
+                              primary_keyword: proposal.primary_keyword,
+                              related_keywords: proposal.related_keywords || [],
+                              title: proposal.title,
+                              description: proposal.description,
+                              serp_data: proposal.serp_data,
+                              content_suggestions: proposal.content_suggestions || [],
+                              priority_tag: proposal.priority_tag || 'evergreen',
+                              estimated_impressions: proposal.estimated_impressions || 0,
+                              content_type: proposal.content_type || 'blog'
+                            },
+                            strategyContext: {
+                              proposal_id: proposal.id,
+                              source_proposal_id: proposal.id, // CRITICAL for completion trigger
+                              priority_tag: proposal.priority_tag || 'evergreen',
+                              estimated_impressions: proposal.estimated_impressions || 0,
+                              meta_suggestions: {
+                                title: proposal.title,
+                                description: proposal.description
+                              }
+                            },
+                            sourceInfo: {
+                              type: 'proposal',
+                              id: proposal.id,
+                              data: proposal
+                            }
+                          }
+                        });
                       }}
                       isNew={newProposalIds.has(proposal.id || proposal.title.toLowerCase().replace(/\s+/g, '-'))}
                     />
@@ -691,8 +718,38 @@ export const ContentStrategyEngine = ({
                   console.log('View details:', proposal);
                 }}
                 onSendToBuilder={(proposal) => {
-                  setSelectedProposal(proposal);
-                  setShowBuilderDialog(true);
+                  navigate('/content-builder', {
+                    state: {
+                      fromProposal: true,
+                      proposalData: {
+                        id: proposal.id,
+                        primary_keyword: proposal.primary_keyword,
+                        related_keywords: proposal.related_keywords || [],
+                        title: proposal.title,
+                        description: proposal.description,
+                        serp_data: proposal.serp_data,
+                        content_suggestions: proposal.content_suggestions || [],
+                        priority_tag: proposal.priority_tag || 'evergreen',
+                        estimated_impressions: proposal.estimated_impressions || 0,
+                        content_type: proposal.content_type || 'blog'
+                      },
+                      strategyContext: {
+                        proposal_id: proposal.id,
+                        source_proposal_id: proposal.id, // CRITICAL for completion trigger
+                        priority_tag: proposal.priority_tag || 'evergreen',
+                        estimated_impressions: proposal.estimated_impressions || 0,
+                        meta_suggestions: {
+                          title: proposal.title,
+                          description: proposal.description
+                        }
+                      },
+                      sourceInfo: {
+                        type: 'proposal',
+                        id: proposal.id,
+                        data: proposal
+                      }
+                    }
+                  });
                 }}
                 newProposalIds={newProposalIds}
               />
@@ -778,16 +835,7 @@ export const ContentStrategyEngine = ({
         onCancel={() => setShowGenModal(false)}
         activeProvider={activeProvider}
       />
-      <StrategyBuilderDialog 
-        open={showBuilderDialog}
-        onOpenChange={(open) => {
-          setShowBuilderDialog(open);
-          if (!open) {
-            setSelectedProposal(null);
-          }
-        }}
-        proposal={selectedProposal}
-      />
+      {/* StrategyBuilderDialog removed - now navigating to /content-builder page */}
     </div>
   );
 };

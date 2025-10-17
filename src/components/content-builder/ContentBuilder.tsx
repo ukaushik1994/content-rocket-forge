@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useContentBuilder, ContentBuilderProvider } from '@/contexts/content-builder/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
@@ -19,7 +21,6 @@ import { getApiKey } from '@/services/apiKeyService';
 import { migrateExistingAPIKeys } from '@/utils/migrateAIProviders';
 import { useTemplateInitialization } from '@/hooks/useTemplateInitialization';
 import { TemplateStatus } from '@/components/ui/template-indicator';
-import { useNavigate } from 'react-router-dom';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
 import { useSettings } from '@/contexts/SettingsContext';
 interface ContentBuilderProps {
@@ -59,6 +60,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
   additionalInstructions,
   sourceInfo
 }) => {
+  const navigate = useNavigate();
   const {
     state,
     dispatch,
@@ -410,6 +412,41 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
             />
           ))}
         </div>
+        
+        {/* Strategy Context Indicator */}
+        {strategyContext && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-8 pt-6 pb-0"
+          >
+            <div className="max-w-7xl mx-auto">
+              <div className="p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-3 py-1">
+                      📊 Strategy-Driven Content
+                    </Badge>
+                    <Badge variant="outline" className="text-purple-300 border-purple-500/30 px-3 py-1">
+                      {strategyContext.priority_tag}
+                    </Badge>
+                    <span className="text-sm text-white/70">
+                      Est. {strategyContext.estimated_impressions.toLocaleString()} impressions/month
+                    </span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => navigate('/research/content-strategy')}
+                    className="text-white/70 hover:text-white hover:bg-white/10"
+                  >
+                    Back to Strategy
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
         
         {/* Progress indicator */}
         
