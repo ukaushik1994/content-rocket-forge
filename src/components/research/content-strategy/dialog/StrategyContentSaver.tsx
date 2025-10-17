@@ -186,7 +186,7 @@ export function StrategyContentSaver({
     }
   };
 
-  // Enhanced save completion handler with data validation
+  // Enhanced save completion handler with data validation and timeout protection
   const handleSaveComplete = async (contentId: string) => {
     // Validate contentId first to prevent hanging
     if (!contentId || contentId.trim() === '') {
@@ -200,7 +200,13 @@ export function StrategyContentSaver({
     console.log('[StrategyContentSaver] Proposal ID:', proposal?.id);
     console.log('[StrategyContentSaver] Strategy source in state:', state.strategySource);
     
-    if (proposal?.id) {
+    // Wrap everything in timeout protection to prevent indefinite hanging
+    const timeoutPromise = new Promise<void>((_, reject) => 
+      setTimeout(() => reject(new Error('Save completion timeout')), 5000)
+    );
+    
+    const completionPromise = (async () => {
+      if (proposal?.id) {
       // Verify the content was saved with the correct metadata
       const { data: savedContent, error: fetchError } = await supabase
         .from('content_items')
@@ -243,9 +249,18 @@ export function StrategyContentSaver({
         console.log('[StrategyContentSaver] Proposal successfully marked as completed');
         toast.success(`Content saved! Proposal "${proposal.title}" marked as completed.`);
       }
-    }
+      }
+    })();
     
-    onSaveComplete();
+    try {
+      await Promise.race([completionPromise, timeoutPromise]);
+    } catch (error) {
+      console.error('[StrategyContentSaver] Save completion error:', error);
+      toast.error('Save completed but validation timed out - check proposal status manually');
+    } finally {
+      // Always close modal, even if validation fails or times out
+      onSaveComplete();
+    }
   };
   
   return (

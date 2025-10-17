@@ -21,6 +21,9 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
   const { content, mainKeyword } = state;
   const navigate = useNavigate();
   
+  // Detect if we're in modal context (has onSaveComplete callback)
+  const isInModalContext = !!onSaveComplete;
+  
   const {
     alreadySaved,
     existingContentId,
@@ -37,7 +40,7 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
     handleDownload,
     saveCompleted,
     savedContentId
-  } = useSaveStep();
+  } = useSaveStep(isInModalContext);
   
   // Set a flag in session storage when saving and handle completion callback
   useEffect(() => {
@@ -50,7 +53,15 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
       // Call the completion callback if provided with actual contentId
       if (onSaveComplete) {
         console.log('[SaveStep] Calling onSaveComplete with contentId:', savedContentId);
-        onSaveComplete(savedContentId);
+        // Properly await the async callback with error handling
+        (async () => {
+          try {
+            await onSaveComplete(savedContentId);
+          } catch (error) {
+            console.error('[SaveStep] Error in onSaveComplete callback:', error);
+            toast.error('Save completed but validation failed - check proposal status manually');
+          }
+        })();
       } else {
         toast.success('Content saved successfully! Navigating to content library...');
       }

@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 
-export const useSaveStep = () => {
+export const useSaveStep = (skipNavigation: boolean = false) => {
   const { state } = useContentBuilder();
   const { 
     mainKeyword, 
@@ -184,13 +184,15 @@ export const useSaveStep = () => {
       sessionStorage.setItem('content_save_timestamp', Date.now().toString());
       console.log("[SaveStep] Session storage flags set for draft saved");
       
-      // Navigate to drafts page after a short delay 
-      setTimeout(() => {
-        console.log("[SaveStep] Navigating to drafts page...");
-        navigate('/drafts', { 
-          state: { contentRefresh: true }
-        });
-      }, 1000);
+      // Only navigate if not in modal context (skipNavigation will be true when used in modals)
+      if (!skipNavigation) {
+        setTimeout(() => {
+          console.log("[SaveStep] Navigating to drafts page...");
+          navigate('/drafts', { 
+            state: { contentRefresh: true }
+          });
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');

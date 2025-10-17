@@ -28,7 +28,7 @@ export const SaveActions: React.FC<SaveActionsProps> = ({
           ? 'bg-secondary hover:bg-secondary/90' 
           : 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple'
         } min-w-[150px]`}
-        onClick={handleSaveContent}
+        onClick={() => handleSaveContent()}
         disabled={isSubmitting || !content || !mainKeyword || !title.trim()}
       >
         {isSubmitting ? (
