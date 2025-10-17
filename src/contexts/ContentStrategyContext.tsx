@@ -9,6 +9,7 @@ import {
   StrategyInsight 
 } from '@/services/contentStrategyService';
 import { proposalPipelineSync } from '@/services/proposalPipelineSync';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContentItem {
   id: string;
@@ -311,9 +312,41 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       
       // Use all generated proposals (not limited by content pieces goal)
       const generatedProposals = result.proposals || [];
-      setAiProposals(generatedProposals);
       
-      toast.success(`Generated ${generatedProposals.length} AI proposals based on your traffic goal`);
+      // Save proposals to ai_strategy_proposals table
+      if (generatedProposals.length > 0) {
+        try {
+          const { data: savedProposals, error: saveError } = await supabase
+            .from('ai_strategy_proposals')
+            .insert(
+              generatedProposals.map((proposal: any) => ({
+                user_id: user.id,
+                strategy_session_id: currentStrategy?.id,
+                title: proposal.title,
+                description: proposal.description,
+                primary_keyword: proposal.primary_keyword,
+                related_keywords: proposal.keywords || [],
+                content_type: proposal.content_type || 'blog',
+                priority_tag: proposal.priority_tag || 'evergreen',
+                estimated_impressions: proposal.estimated_impressions || 0,
+                proposal_data: proposal,
+                status: 'available'
+              }))
+            )
+            .select();
+
+          if (saveError) {
+            console.error('Failed to save proposals to database:', saveError);
+          } else {
+            console.log('✅ Saved', savedProposals?.length || 0, 'proposals to database');
+          }
+        } catch (dbError) {
+          console.error('Database error saving proposals:', dbError);
+        }
+      }
+      
+      setAiProposals(generatedProposals);
+      toast.success(`Generated ${generatedProposals.length} AI proposals`);
     } catch (error) {
       console.error('Error generating goal-based proposals:', error);
       toast.error('Failed to generate proposals');
