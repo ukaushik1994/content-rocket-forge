@@ -92,7 +92,7 @@ export const RepurposedContentViewer: React.FC<RepurposedContentViewerProps> = (
 
         <div className="flex-1 min-h-0 space-y-4">
           {/* Format Selector */}
-          {availableFormats.length > 1 && (
+          {Array.isArray(availableFormats) && availableFormats.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2">
               {availableFormats.map(formatId => {
                 const fmt = contentFormats.find(f => f.id === formatId);

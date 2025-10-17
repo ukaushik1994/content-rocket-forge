@@ -89,13 +89,6 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
             toast.success('Content saved successfully! Navigating to content library...');
           }
         }
-        
-        // Auto-close modal after successful save (500ms delay for UX)
-        if (onSaveComplete && isMounted) {
-          setTimeout(() => {
-            console.log('[SaveStep] Auto-closing modal after successful save');
-          }, 500);
-        }
       }
     };
     

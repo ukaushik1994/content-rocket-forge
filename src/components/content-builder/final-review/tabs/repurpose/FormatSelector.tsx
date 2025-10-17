@@ -14,13 +14,14 @@ export const FormatSelector: React.FC<FormatSelectorProps> = ({
   activeFormat,
   onSelectFormat,
 }) => {
-  if (Object.keys(generatedContents).length === 0) {
+  // Safety check: ensure generatedContents is an object
+  if (!generatedContents || typeof generatedContents !== 'object' || Object.keys(generatedContents).length === 0) {
     return null;
   }
 
   return (
     <div className="flex space-x-2 overflow-x-auto pb-2">
-      {contentFormats
+      {Array.isArray(contentFormats) && contentFormats
         .filter(format => generatedContents[format.id])
         .map(format => (
           <Button

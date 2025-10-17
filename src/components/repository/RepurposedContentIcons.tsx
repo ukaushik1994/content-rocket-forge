@@ -16,7 +16,8 @@ export const RepurposedContentIcons: React.FC<RepurposedContentIconsProps> = ({
   onFormatClick,
   className = ''
 }) => {
-  if (repurposedFormats.length === 0) {
+  // Safety check: ensure repurposedFormats is an array
+  if (!Array.isArray(repurposedFormats) || repurposedFormats.length === 0) {
     return null;
   }
 
