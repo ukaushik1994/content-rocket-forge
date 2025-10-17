@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { retryWithBackoff } from './retry-utils.ts'
+import { parseAIResponse } from './json-utils.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -826,7 +827,6 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
   }
   
   // Use safe parser with markdown stripping
-  const { parseAIResponse } = await import('./json-utils.ts');
   const parsed = parseAIResponse(kwText, { keywords: [] });
   let kwList: Array<{ keyword: string; intent?: string }> = parsed.keywords || [];
   console.log('✅ Parsed keywords successfully:', kwList.length, 'keywords');
@@ -1012,8 +1012,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
   }
   
   // Use safe parser with markdown stripping
-  const { parseAIResponse: parseStrategyResponse } = await import('./json-utils.ts');
-  const strategyParsed = parseStrategyResponse(stratText, { proposals: [] });
+  const strategyParsed = parseAIResponse(stratText, { proposals: [] });
   let proposals: any[] = Array.isArray(strategyParsed) ? strategyParsed.slice(0, 6) : (strategyParsed.proposals || []).slice(0, 6);
   console.log('✅ Parsed proposals successfully:', proposals.length, 'proposals');
 
