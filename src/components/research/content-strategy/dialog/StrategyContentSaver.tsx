@@ -4,6 +4,12 @@ import { SaveStep } from '@/components/content-builder/steps/save/SaveStep';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
+import { calculateKeywordUsage, calculateKeywordUsageScore } from '@/utils/seo/keywordAnalysis';
+import { calculateContentLengthScore, calculateReadabilityScore, generateRecommendations } from '@/utils/seo/contentAnalysis';
+import { getImprovementType } from '@/utils/seo/contentRewriter';
+import { determineImpact } from '@/hooks/seo-analysis/utils';
+import { analyzeEnhancedSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
+import { v4 as uuidv4 } from 'uuid';
 
 interface StrategyContentSaverProps {
   proposal: any;
@@ -51,7 +57,7 @@ export function StrategyContentSaver({
       setMetaDescription(description);
     }
     
-    // Enrich state with SEO data before saving (minimal frontend solution)
+    // Enrich state with SEO data before saving (complete frontend solution)
     if (state.content && !state.documentStructure) {
       const docStructure = extractDocumentStructure(state.content);
       dispatch({ type: 'SET_DOCUMENT_STRUCTURE', payload: docStructure });
@@ -65,6 +71,58 @@ export function StrategyContentSaver({
         documentStructure: docStructure,
         seoScore: basicScore
       });
+    }
+    
+    // Generate SEO improvements for repository display
+    if (state.content && state.mainKeyword && state.seoImprovements.length === 0) {
+      const usage = calculateKeywordUsage(state.content, state.mainKeyword, state.selectedKeywords);
+      const keywordUsageScore = calculateKeywordUsageScore(usage, state.mainKeyword);
+      const contentLengthScore = calculateContentLengthScore(state.content);
+      const readabilityScore = calculateReadabilityScore(state.content);
+      
+      const recommendations = generateRecommendations(
+        state.content,
+        keywordUsageScore,
+        contentLengthScore,
+        readabilityScore,
+        usage,
+        state.mainKeyword
+      );
+      
+      const seoImprovements = recommendations.map(recommendation => {
+        const improvementType = getImprovementType(recommendation);
+        return {
+          id: uuidv4(),
+          type: improvementType,
+          recommendation,
+          impact: determineImpact(improvementType, keywordUsageScore),
+          applied: false
+        };
+      });
+      
+      dispatch({ type: 'SET_SEO_IMPROVEMENTS', payload: seoImprovements });
+      
+      console.log('[StrategyContentSaver] Generated SEO improvements:', seoImprovements.length);
+    }
+    
+    // Calculate solution integration metrics
+    if (state.content && state.selectedSolution && !state.solutionIntegrationMetrics) {
+      const solutionMetrics = analyzeEnhancedSolutionIntegration(
+        state.content, 
+        state.selectedSolution
+      );
+      
+      const normalizedMetrics = {
+        ...solutionMetrics,
+        featureIncorporation: Number(solutionMetrics.featureIncorporation || 0),
+        positioningScore: Number(solutionMetrics.positioningScore || 0),
+        overallScore: Number(solutionMetrics.overallScore || 0),
+        naturalIntegration: Number(solutionMetrics.naturalIntegration || 0)
+      };
+      
+      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: normalizedMetrics });
+      
+      console.log('[StrategyContentSaver] Calculated solution integration metrics:', normalizedMetrics);
     }
     
     // Warn if critical data is missing
