@@ -3,6 +3,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Target, TrendingUp, BarChart3, Brain, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 
 export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => void }) => {
   const { strategies, aiProposals, pipelineItems, loading } = useContentStrategy();
@@ -113,7 +115,11 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
                 <TrendingUp className="h-6 w-6 text-primary" />
               </div>
               <div className="text-left">
-                <div className="text-2xl font-bold text-foreground">12</div>
+                {loading ? (
+                  <Skeleton className="h-8 w-12 mb-1" />
+                ) : (
+                  <div className="text-2xl font-bold text-foreground">{activeStrategiesCount}</div>
+                )}
                 <div className="text-sm text-muted-foreground">Active Strategies</div>
               </div>
             </motion.div>
@@ -126,7 +132,11 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
                 <BarChart3 className="h-6 w-6 text-blue-500" />
               </div>
               <div className="text-left">
-                <div className="text-2xl font-bold text-foreground">48</div>
+                {loading ? (
+                  <Skeleton className="h-8 w-12 mb-1" />
+                ) : (
+                  <div className="text-2xl font-bold text-foreground">{proposalsCount}</div>
+                )}
                 <div className="text-sm text-muted-foreground">Content Proposals</div>
               </div>
             </motion.div>
@@ -139,7 +149,11 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
                 <Zap className="h-6 w-6 text-purple-500" />
               </div>
               <div className="text-left">
-                <div className="text-2xl font-bold text-foreground">156</div>
+                {loading ? (
+                  <Skeleton className="h-8 w-12 mb-1" />
+                ) : (
+                  <div className="text-2xl font-bold text-foreground">{pipelineCount}</div>
+                )}
                 <div className="text-sm text-muted-foreground">Pipeline Items</div>
               </div>
             </motion.div>

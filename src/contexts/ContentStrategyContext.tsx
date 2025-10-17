@@ -94,14 +94,16 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
     try {
       setLoading(true);
       
-      // Load critical data first (strategies and active strategy)
-      const [strategiesData, activeStrategy] = await Promise.all([
+      // Load critical data first (strategies, active strategy, and proposals)
+      const [strategiesData, activeStrategy, proposalsData] = await Promise.all([
         contentStrategyService.getStrategies(),
-        contentStrategyService.getActiveStrategy()
+        contentStrategyService.getActiveStrategy(),
+        contentStrategyService.getAIProposals(50, 0)
       ]);
 
       setStrategies(strategiesData);
       setCurrentStrategy(activeStrategy);
+      setAiProposals(proposalsData);
       setLoading(false);
 
       // Load secondary data in background without blocking UI
