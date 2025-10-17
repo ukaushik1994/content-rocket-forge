@@ -651,16 +651,14 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                         Edit Content
                       </Button>
 
-                      {repurposedFormats.length > 0 && (
-                        <Button
-                          onClick={handleRepurpose}
-                          className="w-full"
-                          variant="outline"
-                        >
-                          <Layers className="h-4 w-4 mr-2" />
-                          Repurpose Content
-                        </Button>
-                      )}
+                      <Button
+                        onClick={handleRepurpose}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        <Layers className="h-4 w-4 mr-2" />
+                        {repurposedFormats.length > 0 ? 'Manage Repurposed Content' : 'Repurpose Content'}
+                      </Button>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
