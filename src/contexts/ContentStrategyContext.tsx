@@ -315,34 +315,76 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       // Use all generated proposals (not limited by content pieces goal)
       const generatedProposals = result.proposals || [];
       
+      console.log('🎯 Generated proposals from edge function:', {
+        count: generatedProposals.length,
+        sample: generatedProposals[0],
+        user_id: user.id,
+        currentStrategy: currentStrategy?.id
+      });
+      
       // Save proposals to ai_strategy_proposals table
       if (generatedProposals.length > 0) {
         try {
+          // Test database access first
+          const { data: testData, error: testError } = await supabase
+            .from('ai_strategy_proposals')
+            .select('id')
+            .limit(1);
+
+          console.log('🔍 Database access test:', { 
+            canAccess: !testError, 
+            error: testError?.message 
+          });
+
+          // Validate and prepare proposals for insertion
+          const proposalsToInsert = generatedProposals
+            .filter((proposal: any) => {
+              const isValid = proposal.title && proposal.primary_keyword;
+              if (!isValid) {
+                console.warn('⚠️ Skipping invalid proposal:', {
+                  title: proposal.title,
+                  primary_keyword: proposal.primary_keyword
+                });
+              }
+              return isValid;
+            })
+            .map((proposal: any) => ({
+              user_id: user.id,
+              strategy_session_id: currentStrategy?.id,
+              title: proposal.title || 'Untitled',
+              description: proposal.description || null,
+              primary_keyword: proposal.primary_keyword,
+              related_keywords: Array.isArray(proposal.keywords) ? proposal.keywords : [],
+              content_type: proposal.content_type || 'blog',
+              priority_tag: proposal.priority_tag || 'evergreen',
+              estimated_impressions: parseInt(proposal.estimated_impressions) || 0,
+              proposal_data: proposal,
+              status: 'available'
+            }));
+          
+          console.log('💾 Attempting to insert proposals:', {
+            count: proposalsToInsert.length,
+            sample: proposalsToInsert[0]
+          });
+
           const { data: savedProposals, error: saveError } = await supabase
             .from('ai_strategy_proposals')
-            .insert(
-              generatedProposals.map((proposal: any) => ({
-                user_id: user.id,
-                strategy_session_id: currentStrategy?.id,
-                title: proposal.title,
-                description: proposal.description,
-                primary_keyword: proposal.primary_keyword,
-                related_keywords: proposal.keywords || [],
-                content_type: proposal.content_type || 'blog',
-                priority_tag: proposal.priority_tag || 'evergreen',
-                estimated_impressions: proposal.estimated_impressions || 0,
-                proposal_data: proposal,
-                status: 'available'
-              }))
-            )
+            .insert(proposalsToInsert)
             .select();
 
           if (saveError) {
-            console.error('❌ FAILED to save proposals:', saveError);
-            toast.error(`Failed to save ${generatedProposals.length} proposals to database`);
-            throw saveError;
+            console.error('❌ FAILED to save proposals:', {
+              error: saveError,
+              code: saveError.code,
+              message: saveError.message,
+              details: saveError.details,
+              hint: saveError.hint
+            });
+            toast.error(`Failed to save proposals: ${saveError.message}`);
+            // Don't throw - continue with local state
+            setAiProposals(generatedProposals);
           } else {
-            console.log('✅ Successfully saved', savedProposals?.length || 0, 'proposals');
+            console.log('✅ Successfully saved', savedProposals?.length || 0, 'proposals to database');
             toast.success(`Saved ${savedProposals?.length || 0} proposals to your library`);
             
             // Reload proposals from database to ensure UI shows saved data
@@ -356,8 +398,12 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
             }
           }
         } catch (dbError) {
-          console.error('❌ Database error saving proposals:', dbError);
-          toast.error('Database error - proposals may not have been saved');
+          console.error('❌ Database error saving proposals:', {
+            error: dbError,
+            message: dbError instanceof Error ? dbError.message : 'Unknown error'
+          });
+          toast.error('Database error - using proposals locally only');
+          setAiProposals(generatedProposals);
         }
       } else {
         setAiProposals(generatedProposals);
