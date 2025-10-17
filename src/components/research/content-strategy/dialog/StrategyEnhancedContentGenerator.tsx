@@ -63,29 +63,53 @@ export function StrategyEnhancedContentGenerator({ proposal }: StrategyEnhancedC
         'Include specific examples and use cases where appropriate'
       ].filter(Boolean).join('\n- ');
 
-      // Temporarily set additional instructions for this generation
-      const originalInstructions = state.additionalInstructions;
-      setAdditionalInstructions(strategyInstructions);
+      // Merge strategy instructions with existing user instructions instead of replacing
+      const mergedInstructions = [
+        state.additionalInstructions,
+        '\n\n=== Strategy Context ===\n',
+        strategyInstructions
+      ].filter(Boolean).join('');
+      
+      setAdditionalInstructions(mergedInstructions);
 
       await generateContent(outlineSections);
 
-      // Restore original instructions
-      setAdditionalInstructions(originalInstructions);
-
-      // Success feedback with word count
-      const generatedWordCount = content.split(' ').filter(word => word.length > 0).length;
+      // Calculate word count AFTER generation completes
+      const generatedWordCount = state.content.split(/\s+/).filter(word => word.length > 0).length;
       toast({
         title: "Content Generated",
         description: `Successfully created ${generatedWordCount > 0 ? generatedWordCount + ' word' : ''} strategy-focused content`,
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Enhanced content generation failed:', error);
-      toast({
-        title: "Generation Failed",
-        description: "Failed to generate content. Please try again or check your AI configuration.",
-        variant: "destructive"
-      });
+      
+      // Specific error handling for better user feedback
+      if (error.message?.includes('rate limit') || error.message?.includes('429')) {
+        toast({
+          title: "Rate Limit Exceeded",
+          description: "Too many requests. Please wait a moment and try again.",
+          variant: "destructive"
+        });
+      } else if (error.message?.includes('API key') || error.message?.includes('401') || error.message?.includes('403')) {
+        toast({
+          title: "Configuration Error",
+          description: "AI service not properly configured. Check your settings.",
+          variant: "destructive"
+        });
+      } else if (error.message?.includes('402') || error.message?.includes('credits')) {
+        toast({
+          title: "Insufficient Credits",
+          description: "Please add credits to your Lovable AI workspace.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Generation Failed",
+          description: error.message || "Unknown error. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

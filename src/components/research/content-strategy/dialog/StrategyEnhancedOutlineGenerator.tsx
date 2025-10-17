@@ -3,6 +3,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { AIOutlineGenerator } from '@/components/content-builder/outline/AIOutlineGenerator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
 
 interface StrategyEnhancedOutlineGeneratorProps {
   proposal: any;
@@ -10,7 +11,7 @@ interface StrategyEnhancedOutlineGeneratorProps {
 
 export function StrategyEnhancedOutlineGenerator({ proposal }: StrategyEnhancedOutlineGeneratorProps) {
   const { state } = useContentBuilder();
-  const { selectedSolution, serpSelections } = state;
+  const { selectedSolution, serpSelections, isGenerating } = state;
 
   const selectedSerpCount = serpSelections.filter(item => item.selected).length;
 
@@ -75,6 +76,14 @@ export function StrategyEnhancedOutlineGenerator({ proposal }: StrategyEnhancedO
           </CardContent>
         </Card>
       </div>
+
+      {/* Loading State */}
+      {isGenerating && (
+        <div className="text-center py-6">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+          <p className="text-sm text-muted-foreground mt-3">Generating outline...</p>
+        </div>
+      )}
 
       {/* Use existing Content Builder AIOutlineGenerator */}
       <AIOutlineGenerator />

@@ -29,6 +29,7 @@ export function StrategyContentSaver({
   } = useContentBuilder();
   
   const [isValidatingCompletion, setIsValidatingCompletion] = useState(false);
+  const [hasEnrichedData, setHasEnrichedData] = useState(false);
   
   // Validate that all critical data is present before save
   useEffect(() => {
@@ -47,18 +48,10 @@ export function StrategyContentSaver({
       metaDescription: state.metaDescription
     });
     
-    // Ensure meta description is optimized if not already set
-    if (!state.metaDescription || state.metaDescription.length < 50) {
-      const primaryKeyword = proposal?.primary_keyword || '';
-      const description = state.selectedSolution 
-        ? `Learn about ${primaryKeyword} and discover how ${state.selectedSolution.name} can help. Expert insights and practical solutions.`
-        : `A comprehensive guide about ${primaryKeyword}. Expert insights, strategies, and actionable advice.`;
-      
-      setMetaDescription(description);
-    }
+    // Meta description is now handled by StrategyContextInitializer - removed duplicate logic
     
     // Enrich state with SEO data before saving (complete frontend solution)
-    if (state.content && !state.documentStructure) {
+    if (state.content && !state.documentStructure && !hasEnrichedData) {
       const docStructure = extractDocumentStructure(state.content);
       dispatch({ type: 'SET_DOCUMENT_STRUCTURE', payload: docStructure });
       
@@ -71,6 +64,8 @@ export function StrategyContentSaver({
         documentStructure: docStructure,
         seoScore: basicScore
       });
+      
+      setHasEnrichedData(true); // Mark as enriched to prevent recalculation
     }
     
     // Generate SEO improvements for repository display
@@ -219,16 +214,23 @@ export function StrategyContentSaver({
         }
       }
       
-      // Wait a moment for the trigger to process
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Wait briefly for the trigger to process (reduced from 1500ms)
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Validate that the proposal was marked as completed
       const wasCompleted = await validateProposalCompletion(contentId);
       
       if (!wasCompleted) {
-        console.warn('[StrategyContentSaver] Proposal was not automatically completed, attempting manual completion');
-        toast.info('Ensuring proposal completion...');
-        await completeProposalManually(contentId);
+        console.warn('[StrategyContentSaver] Trigger failed, attempting manual completion');
+        
+        // Double-check before manual completion to avoid duplicates
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const finalCheck = await validateProposalCompletion(contentId);
+        
+        if (!finalCheck) {
+          toast.info('Ensuring proposal completion...');
+          await completeProposalManually(contentId);
+        }
       } else {
         console.log('[StrategyContentSaver] Proposal successfully marked as completed');
         toast.success(`Content saved! Proposal "${proposal.title}" marked as completed.`);

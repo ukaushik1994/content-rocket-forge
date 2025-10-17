@@ -56,64 +56,36 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     return <>{children}</>;
   };
 
-  // Navigation validation logic
+  // Simplified navigation validation logic
   const canProceedToStep = (step: number, state: any): boolean => {
-    console.log('Checking step', step, 'with state:', {
-      selectedSolution: !!state.selectedSolution,
-      mainKeyword: !!state.mainKeyword,
-      outlineLength: state.outline.length,
-      serpSelectionsLength: state.serpSelections.length,
-      hasContent: !!state.content,
-      proposalData: {
-        hasProposal: !!proposal,
-        primaryKeyword: proposal?.primary_keyword,
-        title: proposal?.title
-      }
-    });
-    
     switch (step) {
       case 0: return true; // Always can access solution selection
-      case 1: return !!state.selectedSolution || !!proposal; // Need solution selected OR have proposal for SERP analysis  
+      case 1: return !!state.selectedSolution || !!proposal; // Need solution OR proposal
       case 2: 
-        // For outline generation: need solution/proposal AND keyword (from state or proposal)
-        const hasRequiredSolution = !!state.selectedSolution || !!proposal;
-        const hasRequiredKeyword = !!state.mainKeyword || !!proposal?.primary_keyword;
-        console.log('Step 2 validation:', { hasRequiredSolution, hasRequiredKeyword });
-        return hasRequiredSolution && hasRequiredKeyword;
+        // For outline: need solution and keyword (auto-populated from proposal)
+        return (!!state.selectedSolution || !!proposal);
       case 3: 
-        // For content generation: need outline OR serp selections
-        const hasContentStructure = state.outline.length > 0 || state.serpSelections.length > 0;
-        const baseRequirements = (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword);
-        console.log('Step 3 validation:', { baseRequirements, hasContentStructure });
-        return baseRequirements && hasContentStructure;
+        // For content: need ANY content structure (outline OR serp selections OR proposal)
+        return (state.outline.length > 0 || state.serpSelections.length > 0 || !!proposal);
       case 4: 
-        // For saving: need generated content OR at least an outline
-        const hasSaveableContent = !!state.content || state.outline.length > 0;
-        const saveBaseRequirements = (!!state.selectedSolution || !!proposal) && (!!state.mainKeyword || !!proposal?.primary_keyword);
-        console.log('Step 4 validation:', { saveBaseRequirements, hasSaveableContent });
-        return saveBaseRequirements && hasSaveableContent;
+        // For saving: need content OR outline
+        return (!!state.content || state.outline.length > 0);
       default: return false;
     }
   };
 
   const getStepRequirement = (step: number, state: any): string => {
     const hasSolution = !!state.selectedSolution || !!proposal;
-    const hasKeyword = !!state.mainKeyword || !!proposal?.primary_keyword;
     
     switch (step) {
-      case 1: return hasSolution ? 'Ready for SERP analysis' : 'Please select a solution first';
-      case 2: 
-        if (!hasSolution) return 'Select a solution first';
-        if (!hasKeyword) return 'Primary keyword will be set from proposal automatically';
-        return 'Ready to generate outline';
+      case 1: return hasSolution ? 'Ready for SERP analysis' : 'Select a solution first';
+      case 2: return hasSolution ? 'Ready to generate outline' : 'Select a solution first';
       case 3: 
-        const hasContentStructure = state.outline.length > 0 || state.serpSelections.length > 0;
-        if (!hasSolution || !hasKeyword) return 'Complete previous steps first';
-        return hasContentStructure ? 'Ready to generate content' : 'Complete outline generation or SERP analysis first';
+        const hasStructure = state.outline.length > 0 || state.serpSelections.length > 0;
+        return hasStructure ? 'Ready to generate content' : 'Create an outline first';
       case 4: 
-        const hasSaveableContent = !!state.content || state.outline.length > 0;
-        if (!hasSolution || !hasKeyword) return 'Complete setup steps first';
-        return hasSaveableContent ? 'Ready to save content' : 'Generate content first';
+        const hasContent = !!state.content || state.outline.length > 0;
+        return hasContent ? 'Ready to save content' : 'Generate content first';
       default: return 'Step available';
     }
   };

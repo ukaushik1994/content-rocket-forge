@@ -37,13 +37,15 @@ export function StrategyContextInitializer({ proposal, children }: StrategyConte
       console.log('[StrategyContextInit] Setting contentTitle:', proposal.title);
       setContentTitle(proposal.title);
       
-      // Set meta title separately - try meta_suggestions first, then generate SEO-optimized version
+      // Set meta title separately - try meta_suggestions first, then generate SEO-optimized version with validation
       const metaTitleToUse = proposal.meta_suggestions?.title 
-        || generateMetaSuggestions(
-            proposal.description || '', 
-            proposal.primary_keyword || '', 
-            proposal.title
-          ).metaTitle;
+        || (proposal.description && proposal.description.length > 10
+            ? generateMetaSuggestions(
+                proposal.description, 
+                proposal.primary_keyword || '', 
+                proposal.title
+              ).metaTitle
+            : `${proposal.primary_keyword || proposal.title} - Complete Guide`.substring(0, 60));
       
       console.log('[StrategyContextInit] Setting metaTitle (distinct from contentTitle):', metaTitleToUse);
       setMetaTitle(metaTitleToUse);
