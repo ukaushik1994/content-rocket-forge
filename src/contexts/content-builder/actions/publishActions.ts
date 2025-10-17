@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
+import { extractTitleFromContent } from '@/utils/content/extractTitle';
 
 export const createPublishActions = (
   state: ContentBuilderState, 
@@ -38,10 +39,14 @@ export const createPublishActions = (
       // Get proposal_id from strategy source or metadata
       const proposalId = state.strategySource?.proposal_id || (content.metadata as any)?.source_proposal_id || (content.metadata as any)?.proposal_id;
 
+      // Extract title from content if not explicitly provided
+      const extractedTitle = extractTitleFromContent(content.content);
+      const finalTitle = extractedTitle || content.title || 'Untitled';
+
       // Prepare content data for database
       const contentData = {
-        title: content.title, // Blog title (from contentTitle)
-        meta_title: content.metaTitle, // SEO meta title
+        title: finalTitle, // Blog title (extracted from content)
+        meta_title: content.metaTitle || finalTitle, // SEO meta title
         meta_description: content.metaDescription, // SEO meta description
         content: content.content,
         status: 'draft',
@@ -187,10 +192,14 @@ export const createPublishActions = (
       // Get proposal_id from strategy source or metadata
       const proposalId = state.strategySource?.proposal_id || (content.metadata as any)?.source_proposal_id || (content.metadata as any)?.proposal_id;
 
+      // Extract title from content if not explicitly provided
+      const extractedTitle = extractTitleFromContent(content.content);
+      const finalTitle = extractedTitle || content.title || 'Untitled';
+
       // Prepare content data for database
       const contentData = {
-        title: content.title, // Blog title (from contentTitle)
-        meta_title: content.metaTitle, // SEO meta title
+        title: finalTitle, // Blog title (extracted from content)
+        meta_title: content.metaTitle || finalTitle, // SEO meta title
         meta_description: content.metaDescription, // SEO meta description
         content: content.content,
         status: 'published',
