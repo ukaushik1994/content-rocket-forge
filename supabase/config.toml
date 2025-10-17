@@ -106,3 +106,6 @@ verify_jwt = false
 
 [functions.backfill-proposal-keywords]
 verify_jwt = true
+
+[functions.sync-content-keywords]
+verify_jwt = true

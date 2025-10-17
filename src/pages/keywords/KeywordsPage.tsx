@@ -62,19 +62,23 @@ const KeywordsPage = () => {
   const handleBackfillKeywords = async () => {
     try {
       setLoading(true);
-      toast.loading('Syncing keywords from proposals...');
+      const toastId = toast.loading('Syncing all keywords...');
       
-      const { data, error } = await supabase.functions.invoke('backfill-proposal-keywords');
+      // Sync proposal keywords
+      const { data: proposalData, error: proposalError } = await supabase.functions.invoke('backfill-proposal-keywords');
+      if (proposalError) throw new Error(`Proposals: ${proposalError.message}`);
       
-      if (error) throw error;
+      // Sync content keywords
+      const { data: contentData, error: contentError } = await supabase.functions.invoke('sync-content-keywords');
+      if (contentError) throw new Error(`Content: ${contentError.message}`);
       
-      toast.dismiss();
-      toast.success(`Keywords synced! ${data?.stats?.keywords_saved || 0} keywords saved.`);
+      const totalSaved = (proposalData?.stats?.keywords_saved || 0) + (contentData?.stats?.keywords_saved || 0);
+      
+      toast.success(`All keywords synced! ${totalSaved} keywords saved.`, { id: toastId });
       await loadKeywords();
     } catch (error) {
       console.error('Backfill error:', error);
-      toast.dismiss();
-      toast.error('Failed to sync keywords');
+      toast.error(`Failed to sync: ${error.message}`);
     } finally {
       setLoading(false);
     }
