@@ -196,7 +196,7 @@ export const AIProposalCard: React.FC<AIProposalCardProps> = ({
               <div className="flex flex-wrap gap-1">
                 {proposal.related_keywords.slice(0, 4).map((keyword: any, index: number) => (
                   <Badge key={index} variant="secondary" className="text-xs bg-primary/10 text-primary">
-                    {typeof keyword === 'string' ? keyword : keyword?.keyword || String(keyword)}
+                    {typeof keyword === 'string' ? keyword : keyword?.keyword ? String(keyword.keyword) : String(keyword)}
                   </Badge>
                 ))}
                 {proposal.related_keywords.length > 4 && (
