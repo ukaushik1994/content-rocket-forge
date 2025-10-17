@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { StepContent } from './dialog/StepContent';
 import { StepNavigationItems } from './dialog/StepNavigationItems';
 import { ProgressIndicator } from './dialog/ProgressIndicator';
@@ -35,6 +36,7 @@ const STEPS = [
 
 
 export function StrategyBuilderDialog({ open, onOpenChange, proposal }: StrategyBuilderDialogProps) {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [initializationError, setInitializationError] = useState<string | null>(null);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
@@ -109,10 +111,21 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     }
   };
 
-  const handleClose = () => {
+  const handleClose = (saveSuccessful = false) => {
     // Block close during save operation
     if (isSaving) {
       toast.info('Please wait for content to finish saving...');
+      return;
+    }
+    
+    // If save was successful, navigate to repository
+    if (saveSuccessful) {
+      sessionStorage.setItem('strategy_content_saved', 'true');
+      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
+      
+      navigate('/repository', { 
+        state: { from: 'strategy-builder', proposalId: proposal.id }
+      });
       return;
     }
     
@@ -323,7 +336,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                     >
                       <Button 
                         variant="outline" 
-                        onClick={handleClose}
+                        onClick={() => handleClose()}
                         disabled={isSaving}
                         className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
                       >

@@ -5,7 +5,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 interface CompleteButtonProps {
   isSaving: boolean;
-  onComplete: () => void;
+  onComplete: (saveSuccessful?: boolean) => void;
 }
 
 export function CompleteButton({ isSaving, onComplete }: CompleteButtonProps) {
@@ -20,7 +20,7 @@ export function CompleteButton({ isSaving, onComplete }: CompleteButtonProps) {
     if (saveCompleted && !autoCloseTimer) {
       console.log('[CompleteButton] Save completed, auto-closing in 500ms');
       const timer = setTimeout(() => {
-        onComplete();
+        onComplete(true); // Signal successful save
       }, 500);
       setAutoCloseTimer(timer);
     }
@@ -34,7 +34,7 @@ export function CompleteButton({ isSaving, onComplete }: CompleteButtonProps) {
   
   return (
     <Button 
-      onClick={onComplete}
+      onClick={() => onComplete(true)}
       disabled={isSaving}
       className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-500/90 hover:to-emerald-500/90 shadow-lg"
     >

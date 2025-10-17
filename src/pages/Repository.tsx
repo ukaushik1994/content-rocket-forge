@@ -28,27 +28,36 @@ const Repository = () => {
     console.log('[Repository] Component mounted, refreshing content...');
     console.log('[Repository] Content items at load:', contentItems.length);
 
-    // Check if we're coming from the content builder or glossary builder
+    // Check if we're coming from the content builder, glossary builder, or strategy builder
     const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
     const glossarySaved = sessionStorage.getItem('glossary_saved');
+    const strategyContentSaved = sessionStorage.getItem('strategy_content_saved');
     const saveTimestamp = sessionStorage.getItem('content_save_timestamp');
     
     console.log('[Repository] contentDraftSaved flag:', contentDraftSaved);
     console.log('[Repository] glossarySaved flag:', glossarySaved);
+    console.log('[Repository] strategyContentSaved flag:', strategyContentSaved);
     console.log('[Repository] saveTimestamp:', saveTimestamp);
     
-    if (contentDraftSaved === 'true' || glossarySaved === 'true') {
+    if (contentDraftSaved === 'true' || glossarySaved === 'true' || strategyContentSaved === 'true') {
       console.log('[Repository] Content saved, refreshing content...');
       
       // Show a loading toast while we refresh
-      const toastId = toast.loading('Loading your new content...');
+      const toastMessage = strategyContentSaved === 'true' 
+        ? 'Loading your strategy content...'
+        : 'Loading your new content...';
+      const toastId = toast.loading(toastMessage);
       
       // Double-check with a slight delay to ensure DB operations have completed
       setTimeout(async () => {
         console.log('[Repository] Refreshing content after timeout');
         await refreshContent();
         console.log('[Repository] Content items after refresh:', contentItems.length);
-        toast.success('Content loaded successfully', { id: toastId });
+        
+        const successMessage = strategyContentSaved === 'true'
+          ? 'Strategy content saved and published successfully!'
+          : 'Content loaded successfully';
+        toast.success(successMessage, { id: toastId });
       }, 1000);
     }
 
@@ -56,6 +65,7 @@ const Repository = () => {
     return () => {
       sessionStorage.removeItem('content_draft_saved');
       sessionStorage.removeItem('glossary_saved');
+      sessionStorage.removeItem('strategy_content_saved');
       sessionStorage.removeItem('from_content_builder');
       sessionStorage.removeItem('from_glossary_builder');
       sessionStorage.removeItem('content_save_timestamp');
