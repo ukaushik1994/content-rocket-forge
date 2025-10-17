@@ -15,6 +15,7 @@ export function StrategyContextInitializer({ proposal, children }: StrategyConte
     setContentType,
     setContentFormat,
     setContentIntent,
+    setStrategySource,
     state
   } = useContentBuilder();
   
@@ -57,7 +58,26 @@ export function StrategyContextInitializer({ proposal, children }: StrategyConte
       setMetaDescription(description);
     }
     
-  }, [proposal, setMainKeyword, setContentTitle, setMetaTitle, setMetaDescription, setContentType, setContentFormat, setContentIntent, state]);
+    // CRITICAL: Set strategy source immediately for proper tracking throughout workflow
+    if (proposal.id) {
+      console.log('[StrategyContextInit] Setting strategySource:', {
+        proposal_id: proposal.id,
+        priority_tag: proposal.priority_tag,
+        estimated_impressions: proposal.estimated_impressions
+      });
+      
+      setStrategySource({
+        proposal_id: proposal.id,
+        priority_tag: proposal.priority_tag || 'evergreen',
+        estimated_impressions: proposal.estimated_impressions || 0,
+        meta_suggestions: {
+          title: proposal.title || '',
+          description: description
+        }
+      });
+    }
+    
+  }, [proposal, setMainKeyword, setContentTitle, setMetaTitle, setMetaDescription, setContentType, setContentFormat, setContentIntent, setStrategySource, state]);
   
   return <>{children}</>;
 }

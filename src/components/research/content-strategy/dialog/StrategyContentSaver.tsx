@@ -15,36 +15,51 @@ export function StrategyContentSaver({
 }: StrategyContentSaverProps) {
   const { 
     state, 
-    setMetaDescription, 
-    setStrategySource,
+    setMetaDescription,
     saveContentToDraft, 
     saveContentToPublished 
   } = useContentBuilder();
   
   const [isValidatingCompletion, setIsValidatingCompletion] = useState(false);
   
-  // Update meta description and strategy source when component mounts
+  // Validate that all critical data is present before save
   useEffect(() => {
-    const primaryKeyword = proposal?.primary_keyword || '';
-    const description = state.selectedSolution 
-      ? `Learn about ${primaryKeyword} and discover how ${state.selectedSolution.name} can help.`
-      : `A comprehensive guide about ${primaryKeyword}`;
+    if (!proposal) return;
     
-    setMetaDescription(description);
+    console.log('[StrategyContentSaver] Validating state before save:', {
+      hasContent: !!state.content,
+      hasTitle: !!state.contentTitle,
+      hasMainKeyword: !!state.mainKeyword,
+      hasSelectedSolution: !!state.selectedSolution,
+      hasSerpData: !!state.serpData,
+      hasOutline: state.outline.length > 0,
+      hasStrategySource: !!state.strategySource,
+      strategySourceProposalId: state.strategySource?.proposal_id,
+      metaTitle: state.metaTitle,
+      metaDescription: state.metaDescription
+    });
     
-    // Set the strategy source information
-    if (proposal?.id) {
-      setStrategySource({
-        proposal_id: proposal.id,
-        priority_tag: proposal.priority_tag || 'evergreen',
-        estimated_impressions: proposal.estimated_impressions || 0,
-        meta_suggestions: {
-          title: proposal.title || '',
-          description: description
-        }
-      });
+    // Ensure meta description is optimized if not already set
+    if (!state.metaDescription || state.metaDescription.length < 50) {
+      const primaryKeyword = proposal?.primary_keyword || '';
+      const description = state.selectedSolution 
+        ? `Learn about ${primaryKeyword} and discover how ${state.selectedSolution.name} can help. Expert insights and practical solutions.`
+        : `A comprehensive guide about ${primaryKeyword}. Expert insights, strategies, and actionable advice.`;
+      
+      setMetaDescription(description);
     }
-  }, [proposal, state.selectedSolution, setMetaDescription, setStrategySource]);
+    
+    // Warn if critical data is missing
+    if (!state.content || state.content.length < 100) {
+      console.warn('[StrategyContentSaver] Content appears to be missing or too short');
+    }
+    if (!state.selectedSolution) {
+      console.warn('[StrategyContentSaver] No solution selected - content may lack integration context');
+    }
+    if (!state.strategySource) {
+      console.error('[StrategyContentSaver] CRITICAL: Strategy source not set - proposal completion will fail!');
+    }
+  }, [proposal, state, setMetaDescription]);
 
   // Validation function to check if proposal was completed
   const validateProposalCompletion = async (contentId: string): Promise<boolean> => {
@@ -100,20 +115,46 @@ export function StrategyContentSaver({
     }
   };
 
-  // Enhanced save completion handler
+  // Enhanced save completion handler with data validation
   const handleSaveComplete = async (contentId: string) => {
+    console.log('[StrategyContentSaver] Content saved with ID:', contentId);
+    console.log('[StrategyContentSaver] Proposal ID:', proposal?.id);
+    console.log('[StrategyContentSaver] Strategy source in state:', state.strategySource);
+    
     if (proposal?.id) {
+      // Verify the content was saved with the correct metadata
+      const { data: savedContent, error: fetchError } = await supabase
+        .from('content_items')
+        .select('metadata')
+        .eq('id', contentId)
+        .single();
+      
+      if (fetchError) {
+        console.error('[StrategyContentSaver] Failed to verify saved content:', fetchError);
+      } else {
+        console.log('[StrategyContentSaver] Saved content metadata:', savedContent?.metadata);
+        
+        // Check if source_proposal_id is in metadata (required for trigger)
+        const metadata = savedContent?.metadata as Record<string, any> | null;
+        const hasProposalId = metadata?.source_proposal_id || metadata?.proposal_id;
+        if (!hasProposalId) {
+          console.error('[StrategyContentSaver] CRITICAL: Content saved without proposal_id in metadata!');
+          console.error('[StrategyContentSaver] This will prevent the completion trigger from working');
+        }
+      }
+      
       // Wait a moment for the trigger to process
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Validate that the proposal was marked as completed
       const wasCompleted = await validateProposalCompletion(contentId);
       
       if (!wasCompleted) {
-        console.warn('Proposal was not automatically completed, attempting manual completion');
+        console.warn('[StrategyContentSaver] Proposal was not automatically completed, attempting manual completion');
         toast.info('Ensuring proposal completion...');
         await completeProposalManually(contentId);
       } else {
+        console.log('[StrategyContentSaver] Proposal successfully marked as completed');
         toast.success(`Content saved! Proposal "${proposal.title}" marked as completed.`);
       }
     }

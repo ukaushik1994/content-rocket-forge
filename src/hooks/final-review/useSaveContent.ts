@@ -201,6 +201,15 @@ export const useSaveContent = () => {
         outline: saveParams.outline,
         serpSelections: saveParams.serpSelections,
         
+        // CRITICAL: Strategy source tracking for proposal completion
+        ...(state.strategySource && {
+          source_proposal_id: state.strategySource.proposal_id,
+          proposal_id: state.strategySource.proposal_id, // Duplicate for backward compatibility
+          strategySource: state.strategySource,
+          priority_tag: state.strategySource.priority_tag,
+          estimated_impressions: state.strategySource.estimated_impressions
+        }),
+        
         // Solution integration data
         selectedSolution: state.selectedSolution ? {
           id: state.selectedSolution.id,
@@ -476,6 +485,15 @@ export const useSaveContent = () => {
         metaDescription: publishParams.metaDescription,
         outline: publishParams.outline,
         serpSelections: publishParams.serpSelections,
+        
+        // CRITICAL: Strategy source tracking for proposal completion
+        ...(state.strategySource && {
+          source_proposal_id: state.strategySource.proposal_id,
+          proposal_id: state.strategySource.proposal_id, // Duplicate for backward compatibility
+          strategySource: state.strategySource,
+          priority_tag: state.strategySource.priority_tag,
+          estimated_impressions: state.strategySource.estimated_impressions
+        }),
         
         // Solution integration data
         selectedSolution: state.selectedSolution ? {
