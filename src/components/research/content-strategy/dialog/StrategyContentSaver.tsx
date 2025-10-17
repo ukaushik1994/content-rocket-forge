@@ -35,6 +35,27 @@ export function StrategyContentSaver({
   const [isValidatingCompletion, setIsValidatingCompletion] = useState(false);
   const [hasEnrichedData, setHasEnrichedData] = useState(false);
   
+  // Auto-save when step loads
+  useEffect(() => {
+    const autoSave = async () => {
+      const { content, mainKeyword, contentTitle } = state;
+      
+      // Only auto-save if we have all required data and haven't saved yet
+      if (content && mainKeyword && contentTitle?.trim()) {
+        console.log('[StrategyContentSaver] Auto-triggering save on mount');
+        // Use setTimeout to ensure component is fully mounted
+        setTimeout(() => {
+          const saveButton = document.querySelector('[data-auto-save-trigger]') as HTMLButtonElement;
+          if (saveButton) {
+            saveButton.click();
+          }
+        }, 100);
+      }
+    };
+    
+    autoSave();
+  }, []); // Only run once on mount
+  
   // Validate that all critical data is present before save
   useEffect(() => {
     if (!proposal) return;

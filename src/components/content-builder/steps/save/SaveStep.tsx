@@ -5,8 +5,8 @@ import { SaveAlreadyExistsAlert } from './SaveAlreadyExistsAlert';
 import { SaveStepOptimizationsAlert } from './SaveStepOptimizationsAlert';
 import { ContentDetailsCard } from './ContentDetailsCard';
 import { ContentSummaryCard } from './ContentSummaryCard';
-import { SaveActions } from './SaveActions';
 import { useNavigate } from 'react-router-dom';
+import { CheckCircle, Loader2 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSaveStep } from './useSaveStep';
@@ -84,9 +84,17 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
             // DO NOT rethrow - we want the modal to close even on error
           }
         } else {
+          // Not in modal context - show success toast
           if (isMounted) {
             toast.success('Content saved successfully! Navigating to content library...');
           }
+        }
+        
+        // Auto-close modal after successful save (500ms delay for UX)
+        if (onSaveComplete && isMounted) {
+          setTimeout(() => {
+            console.log('[SaveStep] Auto-closing modal after successful save');
+          }, 500);
         }
       }
     };
@@ -151,15 +159,48 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
         />
       </div>
       
-      {/* Save Actions */}
-      <SaveActions
-        alreadySaved={alreadySaved}
-        isSubmitting={isSubmitting}
-        handleSaveContent={handleSaveContent}
-        content={content}
-        mainKeyword={mainKeyword}
-        title={title}
-      />
+      {/* Hidden auto-save trigger button */}
+      {isInModalContext && (
+        <button
+          data-auto-save-trigger
+          onClick={handleSaveContent}
+          disabled={isSubmitting || !content || !mainKeyword || !title.trim()}
+          className="hidden"
+          aria-hidden="true"
+        />
+      )}
+      
+      {/* Manual save button for non-modal context */}
+      {!isInModalContext && (
+        <div className="flex justify-center pt-4">
+          <Button
+            className={`gap-1 ${
+              alreadySaved 
+              ? 'bg-secondary hover:bg-secondary/90' 
+              : 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple'
+            } min-w-[150px]`}
+            onClick={handleSaveContent}
+            disabled={isSubmitting || !content || !mainKeyword || !title.trim()}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : alreadySaved ? (
+              <>
+                <CheckCircle className="h-4 w-4" />
+                View in Content Library
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4" />
+                Save Content
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

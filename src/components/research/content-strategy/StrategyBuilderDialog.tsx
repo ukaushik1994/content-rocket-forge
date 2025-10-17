@@ -17,6 +17,7 @@ import { EnhancedSolution } from '@/contexts/content-builder/types';
 import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
 import { StrategyContextInitializer } from './dialog/StrategyContextInitializer';
 import { StrategyDialogErrorBoundary } from './dialog/StrategyDialogErrorBoundary';
+import { CompleteButton } from './dialog/CompleteButton';
 
 interface StrategyBuilderDialogProps {
   open: boolean;
@@ -344,13 +345,10 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                           <ChevronRight className="h-4 w-4 ml-2" />
                         </Button>
                       ) : (
-                        <Button 
-                          onClick={handleClose}
-                          disabled={isSaving}
-                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-500/90 hover:to-emerald-500/90 shadow-lg"
-                        >
-                          {isSaving ? 'Saving...' : 'Complete'}
-                        </Button>
+                        <CompleteButton 
+                          isSaving={isSaving}
+                          onComplete={handleClose}
+                        />
                       )}
                     </motion.div>
                   </div>
