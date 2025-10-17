@@ -970,24 +970,7 @@ Return ONLY the JSON object with 12 unique, high-quality keywords.`
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
         });
       
-      // 4. Also save to unified_keywords table for Keywords Library
-      await supabase
-        .from('unified_keywords')
-        .upsert({
-          user_id,
-          keyword,
-          search_volume: resp.data.searchVolume || 0,
-          difficulty: resp.data.keywordDifficulty || 0,
-          competition: resp.data.competitionScore || 0,
-          cpc: resp.data.cpc || null,
-          intent: intent || 'informational',
-          source_type: 'ai_strategy',
-          last_checked_at: new Date().toISOString(),
-          serp_last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,keyword'
-        });
-      
+      // Keywords will be saved after proposals are created with proper source_id
       return { keyword, data: resp.data, cached: false };
     } catch (error) {
       console.error(`❌ Error fetching SERP for "${keyword}":`, error);
@@ -1250,18 +1233,34 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
       
       savedProposals.push(savedProposal);
       
-      // Update all keywords with this proposal's ID as source_id
+      // NOW save all keywords for this proposal with SERP data and source_id
       if (savedProposal?.id && proposal.keywords) {
         for (const kw of proposal.keywords) {
-          const { error: kwUpdateError } = await supabaseAdmin
-            .from('unified_keywords')
-            .update({ source_id: savedProposal.id })
-            .eq('user_id', user.id)
-            .eq('keyword', kw.keyword)
-            .eq('source_type', 'ai_strategy');
+          // Get SERP data for this keyword from proposal.serp_data
+          const serpData = proposal.serp_data?.[kw.keyword];
           
-          if (kwUpdateError) {
-            console.error(`⚠️ Failed to link keyword "${kw.keyword}" to proposal:`, kwUpdateError);
+          const { error: kwError } = await supabaseAdmin
+            .from('unified_keywords')
+            .upsert({
+              user_id: user.id,
+              keyword: kw.keyword,
+              search_volume: serpData?.search_volume || 0,
+              difficulty: serpData?.keyword_difficulty || 0,
+              competition: serpData?.competition_score || 0,
+              cpc: serpData?.cpc || null,
+              intent: kw.intent || 'informational',
+              source_type: 'ai_strategy',
+              source_id: savedProposal.id,
+              serp_last_updated: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,keyword',
+              ignoreDuplicates: false
+            });
+          
+          if (kwError) {
+            console.error(`⚠️ Failed to save keyword "${kw.keyword}":`, kwError);
+          } else {
+            console.log(`✅ Saved keyword: ${kw.keyword} (vol: ${serpData?.search_volume || 0})`);
           }
         }
       }

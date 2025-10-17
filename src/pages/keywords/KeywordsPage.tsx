@@ -48,7 +48,7 @@ const KeywordsPage = () => {
   const loadKeywords = async () => {
     try {
       setLoading(true);
-      const result = await keywordLibraryService.getContentKeywords({}, 1, 100);
+      const result = await keywordLibraryService.getKeywords({}, 1, 100);
       setKeywords(result.keywords);
     } catch (error) {
       console.error('Error loading keywords:', error);

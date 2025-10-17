@@ -325,10 +325,35 @@ class KeywordLibraryService {
 
       if (error) throw error;
 
+      // Enrich keywords with content usage information
+      const enrichedKeywords = await Promise.all(
+        (data || []).map(async (keyword) => {
+          try {
+            // Find content items that use this keyword
+            const { data: contentItems } = await supabase
+              .from('content_items')
+              .select('id, title, status, content_type')
+              .eq('user_id', user.id)
+              .or(`metadata->mainKeyword.eq.${keyword.keyword},metadata->secondaryKeywords.cs.["${keyword.keyword}"]`);
+            
+            return {
+              ...keyword,
+              content_pieces: contentItems || []
+            };
+          } catch (err) {
+            console.error(`Error fetching content for keyword ${keyword.keyword}:`, err);
+            return {
+              ...keyword,
+              content_pieces: []
+            };
+          }
+        })
+      );
+
       const totalPages = Math.ceil((count || 0) / limit);
 
       return {
-        keywords: (data || []) as UnifiedKeyword[],
+        keywords: enrichedKeywords as UnifiedKeyword[],
         total: count || 0,
         page,
         totalPages
