@@ -9,6 +9,11 @@ interface RepositorySerpDisplayProps {
 }
 
 export const RepositorySerpDisplay: React.FC<RepositorySerpDisplayProps> = ({ serpSelections }) => {
+  // Safety check: ensure serpSelections is an array
+  if (!Array.isArray(serpSelections)) {
+    return null;
+  }
+  
   // Filter only selected items
   const selectedItems = serpSelections.filter(item => item.selected);
   
