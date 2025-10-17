@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle } from 'lucide-react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 interface CompleteButtonProps {
   isSaving: boolean;
@@ -9,29 +8,6 @@ interface CompleteButtonProps {
 }
 
 export function CompleteButton({ isSaving, onComplete }: CompleteButtonProps) {
-  const { state } = useContentBuilder();
-  const [autoCloseTimer, setAutoCloseTimer] = useState<NodeJS.Timeout | null>(null);
-  
-  // Auto-close modal after successful save
-  useEffect(() => {
-    // Check if save completed (content exists and not currently saving)
-    const saveCompleted = state.content && !isSaving && state.contentTitle;
-    
-    if (saveCompleted && !autoCloseTimer) {
-      console.log('[CompleteButton] Save completed, auto-closing in 500ms');
-      const timer = setTimeout(() => {
-        onComplete(true); // Signal successful save
-      }, 500);
-      setAutoCloseTimer(timer);
-    }
-    
-    return () => {
-      if (autoCloseTimer) {
-        clearTimeout(autoCloseTimer);
-      }
-    };
-  }, [state.content, isSaving, state.contentTitle, onComplete]);
-  
   return (
     <Button 
       onClick={() => onComplete(true)}
