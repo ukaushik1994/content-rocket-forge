@@ -126,14 +126,13 @@ export const useSaveContent = () => {
       setIsSaving(true);
       console.log('[useSaveContent] Starting save to draft process');
       
-      // Validate that meta information is present
+      // Validate that meta information is present (warning only, allow save)
       if (!state.metaTitle || !state.metaDescription) {
-        toast.error('Meta information required', {
-          description: 'Please generate meta title and description before saving',
+        toast.warning('Missing meta information', {
+          description: 'Consider adding meta title and description for better SEO',
           duration: 5000
         });
-        setIsSaving(false);
-        return null;
+        // Allow save to continue
       }
       
       // Extract comprehensive SERP data
@@ -254,6 +253,8 @@ export const useSaveContent = () => {
           .update({
             content: saveParams.content,
             seo_score: state.seoScore || 0,
+            meta_title: state.metaTitle,
+            meta_description: state.metaDescription,
             metadata: metadata,
             updated_at: new Date().toISOString()
           })
@@ -272,6 +273,13 @@ export const useSaveContent = () => {
       }
       
       // Save new content item with comprehensive metadata
+      console.log('[useSaveContent] Saving with meta info:', {
+        metaTitle: state.metaTitle,
+        metaDescription: state.metaDescription,
+        willSaveToTopLevel: true,
+        willSaveToMetadata: true
+      });
+      
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
         .insert({
@@ -280,6 +288,8 @@ export const useSaveContent = () => {
           user_id: user.user.id,
           status: 'draft',
           seo_score: state.seoScore || 0,
+          meta_title: state.metaTitle,
+          meta_description: state.metaDescription,
           metadata: metadata
         })
         .select()
@@ -379,14 +389,13 @@ export const useSaveContent = () => {
     try {
       setIsSaving(true);
       
-      // Validate that meta information is present
+      // Validate that meta information is present (warning only, allow publish)
       if (!state.metaTitle || !state.metaDescription) {
-        toast.error('Meta information required', {
-          description: 'Please generate meta title and description before publishing',
+        toast.warning('Missing meta information', {
+          description: 'Consider adding meta title and description for better SEO',
           duration: 5000
         });
-        setIsSaving(false);
-        return null;
+        // Allow publish to continue
       }
       
       // Extract comprehensive SERP data
@@ -501,6 +510,8 @@ export const useSaveContent = () => {
           .update({
             content: publishParams.content,
             seo_score: publishParams.seoScore || 0,
+            meta_title: state.metaTitle,
+            meta_description: state.metaDescription,
             metadata: metadata,
             updated_at: new Date().toISOString()
           })
@@ -518,6 +529,13 @@ export const useSaveContent = () => {
       }
       
       // Save new published content item with comprehensive metadata
+      console.log('[useSaveContent] Publishing with meta info:', {
+        metaTitle: state.metaTitle,
+        metaDescription: state.metaDescription,
+        willSaveToTopLevel: true,
+        willSaveToMetadata: true
+      });
+      
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
         .insert({
@@ -526,6 +544,8 @@ export const useSaveContent = () => {
           user_id: user.user.id,
           status: 'published',
           seo_score: publishParams.seoScore || 0,
+          meta_title: state.metaTitle,
+          meta_description: state.metaDescription,
           metadata: metadata
         })
         .select()
