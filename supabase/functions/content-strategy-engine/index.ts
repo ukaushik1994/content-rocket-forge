@@ -364,6 +364,12 @@ Deno.serve(async (req) => {
       }
     )
 
+    // Create admin client for database writes (bypasses RLS)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     const { action, ...payload } = await req.json()
 
     console.log('Content Strategy Engine action:', action)
