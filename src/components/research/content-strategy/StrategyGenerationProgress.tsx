@@ -1,8 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { Sparkles, Target, Search, Brain } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogOverlay } from '@/components/ui/dialog';
 
 interface StrategyGenerationProgressProps {
   isGenerating: boolean;
@@ -25,10 +24,15 @@ export function StrategyGenerationProgress({
   const currentStepIndex = GENERATION_STEPS.findIndex(step => step.key === currentStep);
   const currentStepData = GENERATION_STEPS[currentStepIndex] || GENERATION_STEPS[0];
 
-  return (
-    <Dialog open={isGenerating} onOpenChange={() => {}}>
-      <DialogOverlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
-      <DialogContent className="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%] w-full max-w-md bg-background/95 backdrop-blur-sm border border-border p-6 shadow-xl [&>button]:hidden">
+  if (!isGenerating) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+      {/* Full-screen overlay */}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+      
+      {/* Modal content */}
+      <div className="relative z-[10000] w-full max-w-md bg-background/95 backdrop-blur-sm border border-border rounded-lg p-6 shadow-xl mx-4">
         <div className="space-y-5">
           {/* Header */}
           <div className="text-center space-y-2">
@@ -88,7 +92,8 @@ export function StrategyGenerationProgress({
             })}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>,
+    document.body
   );
 }
