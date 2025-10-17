@@ -93,7 +93,6 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const [isKeywordsOpen, setIsKeywordsOpen] = useState(true);
   const [isSerpAnalysisOpen, setIsSerpAnalysisOpen] = useState(true);
   const [isDocumentStructureOpen, setIsDocumentStructureOpen] = useState(false);
-  const [isOptimizationOpen, setIsOptimizationOpen] = useState(false);
   const [isRepurposedOpen, setIsRepurposedOpen] = useState(true);
   
   // Repurposing states
@@ -346,17 +345,16 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    const allOpen = isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isOptimizationOpen && isRepurposedOpen;
+                    const allOpen = isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isRepurposedOpen;
                     setIsContentPreviewOpen(!allOpen);
                     setIsKeywordsOpen(!allOpen);
                     setIsSerpAnalysisOpen(!allOpen);
                     setIsDocumentStructureOpen(!allOpen);
-                    setIsOptimizationOpen(!allOpen);
                     setIsRepurposedOpen(!allOpen);
                   }}
                   className="text-xs h-7 px-2"
                 >
-                  {(isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isOptimizationOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
+                  {(isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
                 </Button>
               </div>
             </div>
@@ -624,16 +622,6 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </div>
                   </CollapsibleSection>
                 )}
-
-                {/* Optimization */}
-                <CollapsibleSection
-                  isOpen={isOptimizationOpen}
-                  onToggle={() => setIsOptimizationOpen(!isOptimizationOpen)}
-                  title="Optimization"
-                  icon={Target}
-                >
-                  <OptimizationBadges metadata={content.metadata} />
-                </CollapsibleSection>
 
                 {/* Actions */}
                 <Card className="bg-muted/5 border-border">
