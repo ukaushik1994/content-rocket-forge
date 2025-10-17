@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle, ExternalLink, BarChart3 } from 'lucide-react';
 import { PublishedUrlDialog } from '@/components/content-builder/steps/save/PublishedUrlDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
   onApprove,
 }) => {
   const [showUrlDialog, setShowUrlDialog] = useState(false);
+  const [showAnalyticsTrackingDialog, setShowAnalyticsTrackingDialog] = useState(false);
   const [isApproved, setIsApproved] = useState(context.approvalStatus === 'approved');
 
   const handleApprove = async () => {
@@ -64,6 +65,51 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
     }
   };
 
+  const handleAnalyticsUrlSubmit = async (publishedUrl: string) => {
+    if (!context.contentId) return;
+    
+    try {
+      // Update content_items with published_url
+      const { error } = await supabase
+        .from('content_items')
+        .update({ published_url: publishedUrl })
+        .eq('id', context.contentId);
+
+      if (error) throw error;
+
+      // Trigger Google Analytics fetch
+      await supabase.functions.invoke('google-analytics-fetch', {
+        body: {
+          contentId: context.contentId,
+          publishedUrl
+        }
+      });
+
+      // Trigger Search Console fetch
+      await supabase.functions.invoke('search-console-fetch', {
+        body: {
+          contentId: context.contentId,
+          publishedUrl
+        }
+      });
+
+      toast.success('Tracking initiated! Redirecting to Analytics Hub...', {
+        description: 'Your content is now being tracked'
+      });
+      
+      setShowAnalyticsTrackingDialog(false);
+      
+      // Navigate to Analytics Hub after 1.5s
+      setTimeout(() => {
+        window.location.href = '/analytics';
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error saving published URL for analytics:', error);
+      throw error;
+    }
+  };
+
   return (
     <>
       <div className="flex items-center gap-2">
@@ -89,12 +135,32 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
         >
           <ExternalLink className="h-4 w-4" aria-hidden="true" />
         </Button>
+
+        {/* Track in Analytics Hub Button */}
+        <Button
+          onClick={() => setShowAnalyticsTrackingDialog(true)}
+          disabled={!!disabled}
+          aria-label="Track URL in Analytics Hub"
+          size="icon"
+          variant="outline"
+          className="bg-purple-600/10 border-purple-600/30 text-purple-400 hover:bg-purple-600/20"
+        >
+          <BarChart3 className="h-4 w-4" aria-hidden="true" />
+        </Button>
       </div>
 
       <PublishedUrlDialog
         open={showUrlDialog}
         onClose={() => setShowUrlDialog(false)}
         onSubmit={handleUrlSubmit}
+        contentTitle={context.contentId || 'Content'}
+      />
+
+      {/* Analytics Tracking Dialog */}
+      <PublishedUrlDialog
+        open={showAnalyticsTrackingDialog}
+        onClose={() => setShowAnalyticsTrackingDialog(false)}
+        onSubmit={handleAnalyticsUrlSubmit}
         contentTitle={context.contentId || 'Content'}
       />
     </>
