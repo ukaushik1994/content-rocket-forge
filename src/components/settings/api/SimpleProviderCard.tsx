@@ -39,12 +39,13 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
     loadApiKey();
   }, [provider]);
 
-  // Subscribe to real-time changes in ai_service_providers
+  // Subscribe to real-time changes
   useEffect(() => {
     const setupSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
+      // Listen to both ai_service_providers (for AI services) and api_keys (for all services)
       const channel = supabase
         .channel(`provider-${provider.serviceKey}`)
         .on(
@@ -58,6 +59,20 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
           (payload) => {
             if (payload.new && (payload.new as any).provider === provider.serviceKey) {
               setIsEnabled((payload.new as any).status === 'active');
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'api_keys',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            if (payload.new && (payload.new as any).service === provider.serviceKey) {
+              setIsEnabled((payload.new as any).is_active);
             }
           }
         )
@@ -80,9 +95,10 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
         setApiKey(key);
         setStatus('testing');
         
-        // Check provider status in ai_service_providers table
+        // Check provider status
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          // First try ai_service_providers (for AI services)
           const { data: providerData } = await supabase
             .from('ai_service_providers')
             .select('status')
@@ -90,7 +106,19 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
             .eq('provider', provider.serviceKey)
             .maybeSingle();
           
-          setIsEnabled(providerData?.status === 'active');
+          if (providerData) {
+            setIsEnabled(providerData.status === 'active');
+          } else {
+            // Fall back to api_keys table (for non-AI services like SERP)
+            const { data: apiKeyData } = await supabase
+              .from('api_keys')
+              .select('is_active')
+              .eq('user_id', user.id)
+              .eq('service', provider.serviceKey)
+              .maybeSingle();
+            
+            setIsEnabled(apiKeyData?.is_active ?? true);
+          }
         }
         
         // Test the key
@@ -257,8 +285,8 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
 
       {/* Configuration section */}
       <div className={`px-4 pb-4 space-y-4 border-t bg-muted/20 transition-opacity ${!isEnabled ? 'opacity-60' : ''}`}>
-        {/* Enable/Disable Toggle - Only show if key exists */}
-        {status !== 'unconfigured' && (
+        {/* Enable/Disable Toggle - Show for any configured service */}
+        {(status !== 'unconfigured' || apiKey.trim()) && (
           <div className="flex items-center justify-between pt-3 pb-2 border-b">
             <Label htmlFor={`enable-${provider.serviceKey}`} className="text-sm font-medium">
               Enable Service
@@ -280,7 +308,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               className="pr-10 text-sm"
-              disabled={!isEnabled && status !== 'unconfigured'}
+              disabled={status === 'disabled' && !apiKey.trim()}
             />
             <Button
               variant="ghost"
@@ -288,7 +316,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
               className="absolute right-0 top-0 h-full px-2"
               onClick={() => setShowKey(!showKey)}
               type="button"
-              disabled={!isEnabled && status !== 'unconfigured'}
+              disabled={status === 'disabled' && !apiKey.trim()}
             >
               {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
             </Button>
@@ -300,7 +328,7 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
           <div className="flex items-center gap-2">
             <Button
               onClick={handleSave}
-              disabled={isSaving || !apiKey.trim() || (!isEnabled && status !== 'unconfigured')}
+              disabled={isSaving || !apiKey.trim()}
               size="sm"
             >
               {isSaving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}

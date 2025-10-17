@@ -384,8 +384,18 @@ class ApiKeyService {
         return false;
       }
 
-      // Sync with ai_service_providers table if this is an AI provider
-      if (DEFAULT_MODELS[service]) {
+      // Check if this is an AI provider
+      const isAiProvider = DEFAULT_MODELS[service];
+      
+      // If NOT an AI provider (e.g., SERP, serpstack, etc.), we're done
+      if (!isAiProvider) {
+        console.log(`✅ ${service} (non-AI provider) status toggled successfully`);
+        toast.success(`${service} ${isActive ? 'enabled' : 'disabled'}`);
+        return true;
+      }
+
+      // Sync with ai_service_providers table for AI providers only
+      if (isAiProvider) {
         console.log(`🔄 Syncing ${service} with ai_service_providers...`);
 
         // Check if provider record exists
