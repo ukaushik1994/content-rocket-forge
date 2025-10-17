@@ -33,6 +33,8 @@ export const GoalSettingCard = React.memo(() => {
   });
   const [serpMetrics, setSerpMetrics] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState<'keywords' | 'analysis' | 'strategy' | 'complete'>('keywords');
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   // Load current strategy data
   useEffect(() => {
@@ -55,9 +57,20 @@ export const GoalSettingCard = React.memo(() => {
       return;
     }
     setIsGenerating(true);
+    setGenerationStep('keywords');
+    setGenerationProgress(10);
+    
     try {
+      // Simulate keyword processing
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setGenerationProgress(35);
+      setGenerationStep('analysis');
+      
       const data = await analyzeSERP(goals.mainKeyword);
       setSerpMetrics(data);
+      
+      setGenerationProgress(70);
+      setGenerationStep('strategy');
 
       // Save the insight to database
       await saveInsight({
@@ -68,12 +81,20 @@ export const GoalSettingCard = React.memo(() => {
         serp_data: data,
         opportunity_score: Math.floor((100 - data.keywordDifficulty) * (data.searchVolume / 10000))
       });
+      
+      setGenerationProgress(100);
+      setGenerationStep('complete');
+      
+      // Brief delay to show completion
+      await new Promise(resolve => setTimeout(resolve, 500));
       toast.success("Keyword analyzed successfully!");
     } catch (error) {
       console.error('SERP analysis error:', error);
       toast.error('Failed to analyze keyword');
     } finally {
       setIsGenerating(false);
+      setGenerationStep('keywords');
+      setGenerationProgress(0);
     }
   };
   const handleSaveStrategy = async () => {
@@ -208,8 +229,8 @@ export const GoalSettingCard = React.memo(() => {
           {isGenerating && (
             <StrategyGenerationProgress 
               isGenerating={isGenerating} 
-              currentStep="keywords"
-              progress={25}
+              currentStep={generationStep}
+              progress={generationProgress}
             />
           )}
 

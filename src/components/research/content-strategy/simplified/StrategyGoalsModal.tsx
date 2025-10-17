@@ -48,6 +48,8 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
   const [serpMetrics, setSerpMetrics] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState<'goals' | 'keyword' | 'analyze'>('goals');
+  const [generationStep, setGenerationStep] = useState<'keywords' | 'analysis' | 'strategy' | 'complete'>('keywords');
+  const [generationProgress, setGenerationProgress] = useState(0);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isValid, setIsValid] = useState(false);
 
@@ -114,14 +116,25 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
     }
     
     setIsGenerating(true);
+    setGenerationStep('keywords');
+    setGenerationProgress(10);
+    
     try {
       if (!analyzeSERP) {
         toast.error("SERP analysis service not available");
         return;
       }
       
+      // Simulate keyword processing
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setGenerationProgress(35);
+      setGenerationStep('analysis');
+      
       const data = await analyzeSERP(goals.mainKeyword);
       setSerpMetrics(data);
+      
+      setGenerationProgress(70);
+      setGenerationStep('strategy');
 
       // Save the insight to database
       if (saveInsight) {
@@ -134,12 +147,20 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
           opportunity_score: Math.floor((100 - data.keywordDifficulty) * (data.searchVolume / 10000))
         });
       }
+      
+      setGenerationProgress(100);
+      setGenerationStep('complete');
+      
+      // Brief delay to show completion
+      await new Promise(resolve => setTimeout(resolve, 500));
       toast.success("Keyword analyzed successfully!");
     } catch (error) {
       console.error('SERP analysis error:', error);
       toast.error('Failed to analyze keyword. Please try again.');
     } finally {
       setIsGenerating(false);
+      setGenerationStep('keywords');
+      setGenerationProgress(0);
     }
   };
 
@@ -552,8 +573,8 @@ export const StrategyGoalsModal: React.FC<StrategyGoalsModalProps> = ({ open, on
                           >
                             <StrategyGenerationProgress 
                               isGenerating={isGenerating} 
-                              currentStep="keywords"
-                              progress={25}
+                              currentStep={generationStep}
+                              progress={generationProgress}
                             />
                           </motion.div>
                         )}
