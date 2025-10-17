@@ -117,7 +117,10 @@ export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: str
     let isValid = false;
     let validationDetails = '';
     
-    switch (provider.toLowerCase()) {
+    // Normalize serpapi alias to serp
+    const normalizedProvider = provider === 'serpapi' ? 'serp' : provider;
+    
+    switch (normalizedProvider.toLowerCase()) {
       case 'openai':
         const isOpenAiStart = cleanKey.startsWith('sk-');
         const isNotAnthropic = !cleanKey.startsWith('sk-ant-');
@@ -207,8 +210,10 @@ export function getValidationErrorMessage(provider: ApiProvider, apiKey: string)
   }
   
   const cleanKey = apiKey.trim();
+  // Normalize serpapi alias
+  const normalizedProvider = provider === 'serpapi' ? 'serp' : provider;
   
-  switch (provider) {
+  switch (normalizedProvider) {
     case 'openai':
       if (!cleanKey.startsWith('sk-')) {
         return 'OpenAI API keys must start with "sk-" (example: sk-abc123...)';

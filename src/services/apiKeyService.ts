@@ -44,10 +44,15 @@ class ApiKeyService {
    */
   static async storeApiKey(service: ApiProvider, apiKey: string): Promise<boolean> {
     try {
-      console.log(`💾 Starting API key storage for ${service}...`);
+      // Normalize serpapi alias to serp
+      const normalizedService = service === 'serpapi' ? 'serp' : service;
+      console.log(`💾 Starting API key storage for ${normalizedService}${service !== normalizedService ? ` (from ${service})` : ''}...`);
+      
+      // Use normalized service for all operations
+      const effectiveService = normalizedService;
       
       // Validate inputs
-      if (!service || typeof service !== 'string') {
+      if (!effectiveService || typeof effectiveService !== 'string') {
         toast.error('Invalid service specified');
         return false;
       }
@@ -65,34 +70,34 @@ class ApiKeyService {
       }
 
       // Validate API key format using the imported function
-      console.log(`🔍 Validating ${service} API key format...`);
+      console.log(`🔍 Validating ${effectiveService} API key format...`);
       
       // Try to detect the API key type first
       const detectedType = detectKeyType(apiKey.trim());
-      if (detectedType && detectedType !== service) {
-        console.warn(`⚠️ Detected ${detectedType} key format but expecting ${service}`);
-        toast.error(`This appears to be a ${detectedType} API key, but you selected ${service}. Please check your selection.`);
+      if (detectedType && detectedType !== effectiveService && detectedType !== 'serp') {
+        console.warn(`⚠️ Detected ${detectedType} key format but expecting ${effectiveService}`);
+        toast.error(`This appears to be a ${detectedType} API key, but you selected ${effectiveService}. Please check your selection.`);
         return false;
       }
       
-      if (!validateApiKeyFormat(service, apiKey.trim())) {
-        toast.error(`Invalid API key format for ${service}. Please check the format and try again.`);
+      if (!validateApiKeyFormat(effectiveService, apiKey.trim())) {
+        toast.error(`Invalid API key format for ${effectiveService}. Please check the format and try again.`);
         return false;
       }
-      console.log(`✅ ${service} API key format validation passed`);
+      console.log(`✅ ${effectiveService} API key format validation passed`);
 
       // Encrypt the API key using the new secure encryption
-      console.log(`🔐 Encrypting ${service} API key...`);
+      console.log(`🔐 Encrypting ${effectiveService} API key...`);
       const encryptedKey = await encryptApiKey(apiKey.trim(), user.id);
-      console.log(`✅ ${service} API key encrypted successfully`);
+      console.log(`✅ ${effectiveService} API key encrypted successfully`);
 
       // Store in database with proper upsert logic
-      console.log(`💾 Storing encrypted ${service} API key in database...`);
+      console.log(`💾 Storing encrypted ${effectiveService} API key in database...`);
       const { error: dbError } = await supabase
         .from('api_keys')
         .upsert({
           user_id: user.id,
-          service,
+          service: effectiveService,
           encrypted_key: encryptedKey,
           is_active: true,
           updated_at: new Date().toISOString()
@@ -106,8 +111,8 @@ class ApiKeyService {
         return false;
       }
 
-      console.log(`✅ ${service} API key stored successfully`);
-      toast.success(`${service} API key stored securely`);
+      console.log(`✅ ${effectiveService} API key stored successfully`);
+      toast.success(`${effectiveService} API key stored securely`);
       return true;
     } catch (error: any) {
       console.error(`❌ Error storing ${service} API key:`, {
