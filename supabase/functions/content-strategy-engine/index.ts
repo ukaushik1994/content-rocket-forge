@@ -18,7 +18,7 @@ const CLASSIFICATION_THRESHOLDS = {
   },
   GROWTH_OPPORTUNITY: {
     MIN_VOLUME: 3000,
-    MAX_VOLUME: 10000,
+    MAX_VOLUME: 25000, // Expanded to capture high-volume achievable opportunities
     MAX_DIFFICULTY: 40,
     MIN_OPPORTUNITY_SCORE: 8
   },
@@ -736,6 +736,22 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 async function generateAIStrategy(supabase: any, payload: any) {
   const { user_id, goals = {}, location = 'United States', excludeKeywords = [], api_keys = {} } = payload;
 
+  // ✅ FIX 2.1: Validate SERP API key early
+  if (!api_keys?.serp) {
+    console.error('❌ SERP API key not configured');
+    return new Response(
+      JSON.stringify({ 
+        error: 'SERP API key not configured',
+        message: 'Please add your SERP API key in Settings → Integrations to generate AI proposals.',
+        action_url: '/settings?tab=integrations'
+      }),
+      { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
   // 1) Fetch minimal user context
   const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
     supabase.from('solutions').select('*').eq('user_id', user_id).limit(20),
@@ -859,6 +875,25 @@ Return ONLY the JSON object with 12 unique, high-quality keywords.`
   
   kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 12); // Increased from 8 to 12 for more options
   
+  // ✅ FIX 3.2: Validate AI keyword count
+  if (kwList.length < 8) {
+    console.error(`❌ Critical: AI generated only ${kwList.length} keywords (minimum 8 required)`);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Insufficient keywords generated',
+        message: `Only ${kwList.length} keywords were generated. Please try again with a different prompt or broader criteria.`
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+  
+  if (kwList.length < 10) {
+    console.warn(`⚠️ Low keyword count: AI generated only ${kwList.length} keywords (expected 12)`);
+  }
+  
   if (kwList.length === 0) {
     console.error('❌ No valid keywords generated');
     return new Response(JSON.stringify({ proposals: [], message: 'No keywords proposed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -945,6 +980,7 @@ Return ONLY the JSON object with 12 unique, high-quality keywords.`
           difficulty: resp.data.keywordDifficulty || 0,
           competition: resp.data.competitionScore || 0,
           cpc: resp.data.cpc || null,
+          intent: intent || 'informational', // ✅ FIX 2.3: Save intent field
           source: 'ai_strategy',
           last_checked_at: new Date().toISOString()
         }, {
@@ -1163,12 +1199,36 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     classificationQuality: qualityReport.quality_score
   });
 
+  // ✅ FIX 2.2: Add partial failure warnings
+  const warnings = [];
+  if (failedKeywords.length > 0) {
+    warnings.push({
+      type: 'partial_failure',
+      message: `Generated ${withSerp.length} of ${kwList.length + failedKeywords.length} proposals. ${failedKeywords.length} keywords failed to fetch SERP data.`,
+      failed_keywords: failedKeywords,
+      success_rate: `${Math.round((withSerp.length / (kwList.length + failedKeywords.length)) * 100)}%`
+    });
+  }
+  
+  if (kwList.length < 10) {
+    warnings.push({
+      type: 'low_keyword_count',
+      message: `Only ${kwList.length} keywords were generated (expected 12). Results may be less comprehensive.`
+    });
+  }
+
   return new Response(
     JSON.stringify({ 
       success: true, 
       proposals: withSerp, 
       message: `Generated ${withSerp.length} proposals`,
-      quality_metrics: qualityReport
+      quality_metrics: qualityReport,
+      warnings: warnings.length > 0 ? warnings : undefined,
+      metadata: {
+        total_attempted: kwList.length + failedKeywords.length,
+        successful: withSerp.length,
+        failed: failedKeywords.length
+      }
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
