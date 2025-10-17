@@ -3,6 +3,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SaveStep } from '@/components/content-builder/steps/save/SaveStep';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
 
 interface StrategyContentSaverProps {
   proposal: any;
@@ -15,6 +16,7 @@ export function StrategyContentSaver({
 }: StrategyContentSaverProps) {
   const { 
     state, 
+    dispatch,
     setMetaDescription,
     saveContentToDraft, 
     saveContentToPublished 
@@ -49,6 +51,22 @@ export function StrategyContentSaver({
       setMetaDescription(description);
     }
     
+    // Enrich state with SEO data before saving (minimal frontend solution)
+    if (state.content && !state.documentStructure) {
+      const docStructure = extractDocumentStructure(state.content);
+      dispatch({ type: 'SET_DOCUMENT_STRUCTURE', payload: docStructure });
+      
+      // Calculate basic SEO score: 70 base + keyword presence bonus
+      const hasKeyword = state.mainKeyword && state.content.toLowerCase().includes(state.mainKeyword.toLowerCase());
+      const basicScore = hasKeyword ? 75 : 65;
+      dispatch({ type: 'SET_SEO_SCORE', payload: basicScore });
+      
+      console.log('[StrategyContentSaver] Enriched state with SEO data:', {
+        documentStructure: docStructure,
+        seoScore: basicScore
+      });
+    }
+    
     // Warn if critical data is missing
     if (!state.content || state.content.length < 100) {
       console.warn('[StrategyContentSaver] Content appears to be missing or too short');
@@ -59,7 +77,7 @@ export function StrategyContentSaver({
     if (!state.strategySource) {
       console.error('[StrategyContentSaver] CRITICAL: Strategy source not set - proposal completion will fail!');
     }
-  }, [proposal, state, setMetaDescription]);
+  }, [proposal, state, setMetaDescription, dispatch]);
 
   // Validation function to check if proposal was completed
   const validateProposalCompletion = async (contentId: string): Promise<boolean> => {
