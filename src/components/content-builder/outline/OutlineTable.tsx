@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -23,6 +23,11 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
   const [editableOutline, setEditableOutline] = useState<string[]>(outline);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Sync local state with prop changes (e.g., when AI generates outline)
+  useEffect(() => {
+    setEditableOutline(outline);
+  }, [outline]);
 
   const handleEdit = (index: number, value: string) => {
     const newOutline = [...editableOutline];
