@@ -14,7 +14,7 @@ export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
   
   
-  const { state, updateContent } = useContentBuilder();
+  const { state, updateContent, setMetaTitle, setMetaDescription } = useContentBuilder();
   
   const {
     isAnalyzing,
@@ -73,11 +73,11 @@ export const OptimizeAndReviewStep = () => {
   };
 
   const onMetaTitleChange = (value: string) => {
-    // dispatch({ type: 'SET_META_TITLE', payload: value });
+    setMetaTitle(value);
   };
   
   const onMetaDescriptionChange = (value: string) => {
-    // dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
+    setMetaDescription(value);
   };
 
   
