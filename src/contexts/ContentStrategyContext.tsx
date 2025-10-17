@@ -349,16 +349,19 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
               return isValid;
             })
             .map((proposal: any) => ({
+              // Don't include 'id' - let database auto-generate UUID
               user_id: user.id,
               strategy_session_id: currentStrategy?.id,
               title: proposal.title || 'Untitled',
               description: proposal.description || null,
               primary_keyword: proposal.primary_keyword,
-              related_keywords: Array.isArray(proposal.keywords) ? proposal.keywords : [],
+              related_keywords: Array.isArray(proposal.keywords) 
+                ? proposal.keywords.map((k: any) => typeof k === 'string' ? k : k.keyword) 
+                : [],
               content_type: proposal.content_type || 'blog',
               priority_tag: proposal.priority_tag || 'evergreen',
               estimated_impressions: parseInt(proposal.estimated_impressions) || 0,
-              proposal_data: proposal,
+              proposal_data: proposal, // Store full proposal for debugging
               status: 'available'
             }));
           
