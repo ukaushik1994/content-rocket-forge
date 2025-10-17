@@ -428,7 +428,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
 
 export const useContentStrategy = () => {
   const context = useContext(ContentStrategyContext);
-  if (context === undefined) {
+  if (!context || context === undefined) {
     throw new Error('useContentStrategy must be used within a ContentStrategyProvider');
   }
   return context;
