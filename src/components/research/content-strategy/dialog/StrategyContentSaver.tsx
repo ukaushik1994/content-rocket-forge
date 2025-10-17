@@ -188,6 +188,14 @@ export function StrategyContentSaver({
 
   // Enhanced save completion handler with data validation
   const handleSaveComplete = async (contentId: string) => {
+    // Validate contentId first to prevent hanging
+    if (!contentId || contentId.trim() === '') {
+      console.error('[StrategyContentSaver] Invalid contentId received:', contentId);
+      toast.error('Failed to retrieve saved content ID');
+      onSaveComplete(); // Still call completion to prevent hang
+      return;
+    }
+    
     console.log('[StrategyContentSaver] Content saved with ID:', contentId);
     console.log('[StrategyContentSaver] Proposal ID:', proposal?.id);
     console.log('[StrategyContentSaver] Strategy source in state:', state.strategySource);

@@ -45,20 +45,23 @@ export const useSaveStep = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveCompleted, setSaveCompleted] = useState(false);
   const [autoSaved, setAutoSaved] = useState<boolean>(false);
+  const [savedContentId, setSavedContentId] = useState<string | null>(null);
+  const [autoSaveToastShown, setAutoSaveToastShown] = useState(false);
   
   // Check for auto-saved content
   useEffect(() => {
     const hasDraft = localStorage.getItem('content_builder_draft') !== null;
     setAutoSaved(hasDraft);
     
-    // If there's an auto-saved draft, remind the user it needs to be saved properly
-    if (hasDraft && !saveCompleted) {
+    // If there's an auto-saved draft, remind the user it needs to be saved properly (only once)
+    if (hasDraft && !saveCompleted && !autoSaveToastShown) {
       toast.info(
         "You have auto-saved content that needs to be properly saved to your library",
         { duration: 5000 }
       );
+      setAutoSaveToastShown(true);
     }
-  }, [saveCompleted]);
+  }, [saveCompleted, autoSaveToastShown]);
   
   // Update the local state when global state changes
   useEffect(() => {
@@ -155,6 +158,10 @@ export const useSaveStep = () => {
         if (!result) {
           throw new Error('Failed to save content');
         }
+        
+        // Capture the contentId for callback
+        setSavedContentId(result);
+        console.log('[SaveStep] Content saved with ID:', result);
       } else {
         // Fallback to original save method
         await handleSaveToDraft();
@@ -225,6 +232,7 @@ export const useSaveStep = () => {
     contentType,
     content,
     saveCompleted,
-    autoSaved
+    autoSaved,
+    savedContentId
   };
 };
