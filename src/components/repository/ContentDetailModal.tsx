@@ -71,6 +71,23 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Debug logging to track content data
+  useEffect(() => {
+    if (content) {
+      console.log('[ContentDetailModal] Received content object:', {
+        id: content.id,
+        title: content.title,
+        meta_title: content.meta_title,
+        meta_description: content.meta_description,
+        extractedTitle: extractTitleFromContent(content.content),
+        hasMetaInMetadata: {
+          metaTitle: content.metadata?.metaTitle,
+          metaDescription: content.metadata?.metaDescription
+        }
+      });
+    }
+  }, [content]);
+  
   // Collapsible section states
   const [isContentPreviewOpen, setIsContentPreviewOpen] = useState(true);
   const [isKeywordsOpen, setIsKeywordsOpen] = useState(true);

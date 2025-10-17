@@ -14,6 +14,7 @@ import {
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
+import { extractTitleFromContent } from '@/utils/content/extractTitle';
 
 interface SimplifiedRepositoryCardProps {
   content: ContentItemType;
@@ -142,7 +143,7 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
             <h3 className="text-lg font-semibold text-foreground group-hover:text-primary 
               transition-all duration-300 line-clamp-2 leading-tight
               group-hover:drop-shadow-[0_0_8px_rgba(155,135,245,0.6)]">
-              {content.title}
+              {extractTitleFromContent(content.content) || content.title}
             </h3>
             
             {content.metadata?.description && (

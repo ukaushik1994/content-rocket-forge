@@ -64,7 +64,15 @@ const Repository = () => {
   }, [refreshContent, contentItems.length]);
 
   const handleOpenDetailView = (content: ContentItemType) => {
-    setSelectedContent(content);
+    // Look up the latest version of the content from context to ensure fresh data
+    const freshContent = contentItems.find(item => item.id === content.id) || content;
+    console.log('[Repository] Opening detail view with fresh content:', {
+      id: freshContent.id,
+      meta_title: freshContent.meta_title,
+      meta_description: freshContent.meta_description,
+      hasFreshData: freshContent !== content
+    });
+    setSelectedContent(freshContent);
     setDetailViewOpen(true);
   };
 
