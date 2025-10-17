@@ -27,10 +27,10 @@ const ContentBuilderPage = () => {
 
   if (preloadData?.fromProposal && preloadData?.proposalData) {
     proposalData = preloadData.proposalData;
-    sourceInfo = { type: 'proposal', id: proposalData.id, data: proposalData };
-  } else if (preloadData?.fromCalendar) {
-    calendarData = preloadData.calendarData || preloadData;
-    sourceInfo = { type: 'calendar', id: preloadData.calendarItemId, data: calendarData };
+    sourceInfo = { type: 'proposal', id: proposalData.source_proposal_id };
+  } else if (preloadData?.fromCalendar && preloadData?.calendarData) {
+    calendarData = preloadData.calendarData;
+    sourceInfo = { type: 'calendar', data: calendarData };
   }
 
   // Derive initial props from payload, proposal, or calendar data with safe fallbacks
@@ -53,17 +53,8 @@ const ContentBuilderPage = () => {
   
   const initialStep = typeof payload?.initial_step === 'number' ? payload.initial_step : preloadData?.step;
   
-  // Enhanced strategy context handling - prioritize from preloadData
-  const strategyContext = preloadData?.strategyContext || payload?.strategy_context || (proposalData?.id ? {
-    proposal_id: proposalData.id,
-    source_proposal_id: proposalData.id, // CRITICAL for trigger
-    priority_tag: proposalData.priority_tag || 'evergreen',
-    estimated_impressions: proposalData.estimated_impressions || 0,
-    meta_suggestions: {
-      title: proposalData.title,
-      description: proposalData.description
-    }
-  } : null);
+  // Enhanced strategy context handling
+  const strategyContext = payload?.strategy_context || null;
   const metaSuggestions = payload?.meta_suggestions || null;
   const suggestedTitle = proposalData?.title || payload?.title || calendarData?.title || null;
   const suggestedOutline = payload?.outline || null;

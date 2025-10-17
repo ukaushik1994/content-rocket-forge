@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import { CrossTabActions } from '../components/CrossTabActions';
 import { useProposalIntegration } from '@/hooks/useProposalIntegration';
 import { toast } from 'sonner';
 import { proposalManagement } from '@/services/proposalManagement';
+import { StrategyBuilderDialog } from '../StrategyBuilderDialog';
 import { CalendarLoadingSkeleton } from '../components/CalendarLoadingSkeleton';
 import { CalendarItemActions } from './CalendarItemActions';
 
@@ -23,13 +23,14 @@ interface EditorialCalendarProps {
 }
 
 export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
-  const navigate = useNavigate();
   const { calendarItems, pipelineItems, createCalendarItem, updateCalendarItem, deleteCalendarItem, loading, loadingCalendar, refreshData } = useContentStrategy();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [strategyDialogOpen, setStrategyDialogOpen] = useState(false);
+  const [selectedCalendarItem, setSelectedCalendarItem] = useState<any>(null);
   const { syncProposalAcrossTabs, updateProposalStatus } = useProposalIntegration();
 
   // Check for overdue proposals on mount only (prevent infinite loop)
@@ -151,56 +152,57 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
   };
 
   const handleGenerateContent = (item: any) => {
-    console.log('🚀 Opening Content Builder from calendar item:', item.id);
+    console.log('🚀 handleGenerateContent called with item:', {
+      id: item?.id,
+      title: item?.title,
+      notes: item?.notes,
+      content_type: item?.content_type
+    });
     
     try {
       let proposalData = null;
       let notes: any = {};
       
-      // Try to parse notes as JSON for proposal data
+      // Try to parse notes as JSON, but don't fail if it's plain text
       if (item.notes) {
         try {
           notes = JSON.parse(item.notes);
           proposalData = notes.proposal_data;
+          console.log('📝 Parsed notes as JSON:', { proposalData });
         } catch (parseError) {
-          console.log('Notes are plain text, using calendar data only');
+          console.log('📝 Notes are plain text, not JSON. Continuing with fallback data.');
+          // Notes are plain text, that's okay - proposalData stays null
         }
       }
 
-      // Build state for navigation
-      const navigationState: any = {
-        fromCalendar: true,
-        calendarItemId: item.id,
-        initialKeyword: item.primary_keyword || item.title.split(' ').slice(0, 2).join(' '),
-        sourceInfo: {
-          type: 'calendar',
-          id: item.id,
-          data: item
-        }
-      };
-
-      // If proposal data exists, treat as strategy-initiated
       if (proposalData) {
-        navigationState.fromProposal = true;
-        navigationState.proposalData = proposalData;
-        navigationState.strategyContext = {
-          proposal_id: notes.source_proposal_id || proposalData.id,
-          source_proposal_id: notes.source_proposal_id || proposalData.id, // CRITICAL for completion trigger
-          priority_tag: proposalData.priority_tag || 'evergreen',
-          estimated_impressions: proposalData.estimated_impressions || 0,
-          meta_suggestions: {
-            title: proposalData.title,
-            description: proposalData.description
-          }
-        };
+        console.log('✅ Using proposal data from calendar item notes');
+        setSelectedCalendarItem({
+          ...proposalData,
+          source_proposal_id: notes.source_proposal_id,
+          fromCalendar: true,
+          calendarItemId: item.id
+        });
+      } else {
+        console.log('✅ Creating fallback proposal data from calendar item');
+        setSelectedCalendarItem({
+          title: item.title,
+          primary_keyword: item.primary_keyword || item.title.split(' ').slice(0, 2).join(' '),
+          description: item.notes || `Content piece about ${item.title}`,
+          content_type: item.content_type || 'blog',
+          fromCalendar: true,
+          calendarItemId: item.id,
+          tags: item.tags,
+          scheduled_date: item.scheduled_date
+        });
       }
-
-      // Navigate to unified Content Builder
-      navigate('/content-builder', { state: navigationState });
-      toast.success('Opening Content Builder...');
+      
+      console.log('✅ Opening strategy builder dialog...');
+      setStrategyDialogOpen(true);
+      toast.success('Opening content builder...');
     } catch (error) {
       console.error('❌ Error opening content builder:', error);
-      toast.error('Failed to open content builder');
+      toast.error(`Failed to open content builder: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -481,7 +483,12 @@ export const EditorialCalendar = ({ goals }: EditorialCalendarProps) => {
         selectedDate={selectedDate}
       />
 
-      {/* StrategyBuilderDialog removed - now navigating to /content-builder page */}
+      {/* Strategy Builder Dialog for unified content creation */}
+      <StrategyBuilderDialog
+        open={strategyDialogOpen}
+        onOpenChange={setStrategyDialogOpen}
+        proposal={selectedCalendarItem}
+      />
     </>
   );
 };

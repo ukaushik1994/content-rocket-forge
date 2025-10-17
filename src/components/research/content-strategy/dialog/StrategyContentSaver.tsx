@@ -1,0 +1,182 @@
+import React, { useEffect, useState } from 'react';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { SaveStep } from '@/components/content-builder/steps/save/SaveStep';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface StrategyContentSaverProps {
+  proposal: any;
+  onSaveComplete: () => void;
+}
+
+export function StrategyContentSaver({ 
+  proposal, 
+  onSaveComplete
+}: StrategyContentSaverProps) {
+  const { 
+    state, 
+    setMetaDescription,
+    saveContentToDraft, 
+    saveContentToPublished 
+  } = useContentBuilder();
+  
+  const [isValidatingCompletion, setIsValidatingCompletion] = useState(false);
+  
+  // Validate that all critical data is present before save
+  useEffect(() => {
+    if (!proposal) return;
+    
+    console.log('[StrategyContentSaver] Validating state before save:', {
+      hasContent: !!state.content,
+      hasTitle: !!state.contentTitle,
+      hasMainKeyword: !!state.mainKeyword,
+      hasSelectedSolution: !!state.selectedSolution,
+      hasSerpData: !!state.serpData,
+      hasOutline: state.outline.length > 0,
+      hasStrategySource: !!state.strategySource,
+      strategySourceProposalId: state.strategySource?.proposal_id,
+      metaTitle: state.metaTitle,
+      metaDescription: state.metaDescription
+    });
+    
+    // Ensure meta description is optimized if not already set
+    if (!state.metaDescription || state.metaDescription.length < 50) {
+      const primaryKeyword = proposal?.primary_keyword || '';
+      const description = state.selectedSolution 
+        ? `Learn about ${primaryKeyword} and discover how ${state.selectedSolution.name} can help. Expert insights and practical solutions.`
+        : `A comprehensive guide about ${primaryKeyword}. Expert insights, strategies, and actionable advice.`;
+      
+      setMetaDescription(description);
+    }
+    
+    // Warn if critical data is missing
+    if (!state.content || state.content.length < 100) {
+      console.warn('[StrategyContentSaver] Content appears to be missing or too short');
+    }
+    if (!state.selectedSolution) {
+      console.warn('[StrategyContentSaver] No solution selected - content may lack integration context');
+    }
+    if (!state.strategySource) {
+      console.error('[StrategyContentSaver] CRITICAL: Strategy source not set - proposal completion will fail!');
+    }
+  }, [proposal, state, setMetaDescription]);
+
+  // Validation function to check if proposal was completed
+  const validateProposalCompletion = async (contentId: string): Promise<boolean> => {
+    if (!proposal?.id) return false;
+    
+    try {
+      setIsValidatingCompletion(true);
+      
+      // Check if proposal status was updated to completed
+      const { data: proposalData, error } = await supabase
+        .from('ai_strategy_proposals')
+        .select('status, completed_at')
+        .eq('id', proposal.id)
+        .single();
+      
+      if (error) {
+        console.error('Error checking proposal status:', error);
+        return false;
+      }
+      
+      return proposalData?.status === 'completed';
+    } catch (error) {
+      console.error('Error validating proposal completion:', error);
+      return false;
+    } finally {
+      setIsValidatingCompletion(false);
+    }
+  };
+
+  // Recovery function to manually complete proposal if trigger failed
+  const completeProposalManually = async (contentId: string) => {
+    if (!proposal?.id) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('complete-proposal', {
+        body: {
+          proposal_id: proposal.id,
+          content_id: contentId
+        }
+      });
+      
+      if (error) {
+        console.error('Failed to manually complete proposal:', error);
+        toast.error('Failed to mark proposal as completed');
+        return;
+      }
+      
+      console.log('Proposal completed manually:', data);
+      toast.success('Proposal marked as completed successfully');
+    } catch (error) {
+      console.error('Error in manual proposal completion:', error);
+      toast.error('Failed to mark proposal as completed');
+    }
+  };
+
+  // Enhanced save completion handler with data validation
+  const handleSaveComplete = async (contentId: string) => {
+    console.log('[StrategyContentSaver] Content saved with ID:', contentId);
+    console.log('[StrategyContentSaver] Proposal ID:', proposal?.id);
+    console.log('[StrategyContentSaver] Strategy source in state:', state.strategySource);
+    
+    if (proposal?.id) {
+      // Verify the content was saved with the correct metadata
+      const { data: savedContent, error: fetchError } = await supabase
+        .from('content_items')
+        .select('metadata')
+        .eq('id', contentId)
+        .single();
+      
+      if (fetchError) {
+        console.error('[StrategyContentSaver] Failed to verify saved content:', fetchError);
+      } else {
+        console.log('[StrategyContentSaver] Saved content metadata:', savedContent?.metadata);
+        
+        // Check if source_proposal_id is in metadata (required for trigger)
+        const metadata = savedContent?.metadata as Record<string, any> | null;
+        const hasProposalId = metadata?.source_proposal_id || metadata?.proposal_id;
+        if (!hasProposalId) {
+          console.error('[StrategyContentSaver] CRITICAL: Content saved without proposal_id in metadata!');
+          console.error('[StrategyContentSaver] This will prevent the completion trigger from working');
+        }
+      }
+      
+      // Wait a moment for the trigger to process
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Validate that the proposal was marked as completed
+      const wasCompleted = await validateProposalCompletion(contentId);
+      
+      if (!wasCompleted) {
+        console.warn('[StrategyContentSaver] Proposal was not automatically completed, attempting manual completion');
+        toast.info('Ensuring proposal completion...');
+        await completeProposalManually(contentId);
+      } else {
+        console.log('[StrategyContentSaver] Proposal successfully marked as completed');
+        toast.success(`Content saved! Proposal "${proposal.title}" marked as completed.`);
+      }
+    }
+    
+    onSaveComplete();
+  };
+  
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="text-lg font-semibold mb-2">Save Your Content</h3>
+        <p className="text-muted-foreground">
+          Your strategy content for "{proposal?.primary_keyword}" is ready to save
+        </p>
+        {isValidatingCompletion && (
+          <p className="text-sm text-primary mt-2">
+            Validating proposal completion...
+          </p>
+        )}
+      </div>
+      
+      <SaveStep onSaveComplete={handleSaveComplete} />
+    </div>
+  );
+}
