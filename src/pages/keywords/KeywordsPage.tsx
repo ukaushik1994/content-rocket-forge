@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
 import { Database } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const KeywordsPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -53,6 +54,27 @@ const KeywordsPage = () => {
     } catch (error) {
       console.error('Error loading keywords:', error);
       toast.error('Failed to load keywords');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackfillKeywords = async () => {
+    try {
+      setLoading(true);
+      toast.loading('Syncing keywords from proposals...');
+      
+      const { data, error } = await supabase.functions.invoke('backfill-proposal-keywords');
+      
+      if (error) throw error;
+      
+      toast.dismiss();
+      toast.success(`Keywords synced! ${data?.stats?.keywords_saved || 0} keywords saved.`);
+      await loadKeywords();
+    } catch (error) {
+      console.error('Backfill error:', error);
+      toast.dismiss();
+      toast.error('Failed to sync keywords');
     } finally {
       setLoading(false);
     }
@@ -131,6 +153,7 @@ const KeywordsPage = () => {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           onRefresh={loadKeywords}
+          onBackfillKeywords={handleBackfillKeywords}
         />
 
         {/* Keywords Grid/List */}

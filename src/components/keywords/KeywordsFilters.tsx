@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, RefreshCw, Grid3X3, List } from 'lucide-react';
+import { Search, RefreshCw, Grid3X3, List, Database } from 'lucide-react';
 
 interface KeywordsFiltersProps {
   searchQuery: string;
@@ -14,6 +14,7 @@ interface KeywordsFiltersProps {
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
   onRefresh?: () => void;
+  onBackfillKeywords?: () => void;
 }
 
 export const KeywordsFilters: React.FC<KeywordsFiltersProps> = ({
@@ -23,7 +24,8 @@ export const KeywordsFilters: React.FC<KeywordsFiltersProps> = ({
   onSortChange,
   viewMode,
   onViewModeChange,
-  onRefresh
+  onRefresh,
+  onBackfillKeywords
 }) => {
   return (
     <motion.div
@@ -76,6 +78,17 @@ export const KeywordsFilters: React.FC<KeywordsFiltersProps> = ({
                   <List className="h-4 w-4" />
                 </Button>
               </div>
+
+              {onBackfillKeywords && (
+                <Button
+                  variant="outline"
+                  onClick={onBackfillKeywords}
+                  className="bg-background/40 border-border/50 hover:bg-background/60"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  Sync Keywords
+                </Button>
+              )}
 
               {onRefresh && (
                 <Button
