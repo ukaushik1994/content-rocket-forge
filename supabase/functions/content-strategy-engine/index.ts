@@ -16,6 +16,12 @@ const CLASSIFICATION_THRESHOLDS = {
     MAX_DIFFICULTY: 35,
     MIN_OPPORTUNITY_SCORE: 3
   },
+  GROWTH_OPPORTUNITY: {
+    MIN_VOLUME: 3000,
+    MAX_VOLUME: 10000,
+    MAX_DIFFICULTY: 40,
+    MIN_OPPORTUNITY_SCORE: 8
+  },
   HIGH_RETURN: {
     MIN_VOLUME: 1000,
     MIN_OPPORTUNITY_SCORE: 10
@@ -38,22 +44,22 @@ function calculateOpportunityScore(volume: number, difficulty: number): number {
 }
 
 function calculateWeightedScore(volume: number, difficulty: number, intent: string = 'informational'): number {
-  // Intent scoring: transactional > commercial > navigational > informational
+  // Enhanced intent scoring with stronger emphasis on commercial/transactional
   const intentWeights = {
-    'transactional': 1.0,
-    'commercial': 0.8,
+    'transactional': 1.2,  // Boosted for conversion potential
+    'commercial': 1.0,     // Boosted for revenue potential
     'navigational': 0.6,
     'informational': 0.4
   };
   
   const intentWeight = intentWeights[intent as keyof typeof intentWeights] || 0.4;
   
-  // Weighted formula: 40% Volume + 40% Inverse Difficulty + 20% Intent
+  // Weighted formula: 35% Volume + 35% Inverse Difficulty + 30% Intent (increased intent weight)
   const volumeScore = Math.min(volume / 1000, 10); // Normalize volume (max score 10)
   const difficultyScore = Math.max(0, 10 - (difficulty / 10)); // Inverse difficulty (max score 10)
   const intentScore = intentWeight * 10; // Intent score (max score 10)
   
-  return Math.round((volumeScore * 0.4 + difficultyScore * 0.4 + intentScore * 0.2) * 100) / 100;
+  return Math.round((volumeScore * 0.35 + difficultyScore * 0.35 + intentScore * 0.3) * 100) / 100;
 }
 
 // Advanced business logic validation functions
@@ -247,8 +253,8 @@ function classifyProposal(
     solutions || []
   );
   
-  // Enhanced classification rules with explicit logic for all categories
-  let priorityTag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority' = 'evergreen';
+  // Enhanced classification rules with Growth Opportunity category
+  let priorityTag: 'quick_win' | 'growth_opportunity' | 'high_return' | 'evergreen' | 'low_priority' = 'evergreen';
   
   // Quick Wins: Low difficulty + decent volume + good opportunity score + manageable competition
   if (avgDifficulty <= CLASSIFICATION_THRESHOLDS.QUICK_WIN.MAX_DIFFICULTY && 
@@ -258,7 +264,14 @@ function classifyProposal(
       serpAnalysis.competitiveComplexity !== 'high') {
     priorityTag = 'quick_win';
   } 
-  // High Return: High volume with good opportunity score OR strong conversion potential
+  // Growth Opportunity: High volume with achievable difficulty (between Quick Win and High Return)
+  else if (totalVolume >= CLASSIFICATION_THRESHOLDS.GROWTH_OPPORTUNITY.MIN_VOLUME &&
+           totalVolume <= CLASSIFICATION_THRESHOLDS.GROWTH_OPPORTUNITY.MAX_VOLUME &&
+           avgDifficulty <= CLASSIFICATION_THRESHOLDS.GROWTH_OPPORTUNITY.MAX_DIFFICULTY &&
+           opportunityScore >= CLASSIFICATION_THRESHOLDS.GROWTH_OPPORTUNITY.MIN_OPPORTUNITY_SCORE) {
+    priorityTag = 'growth_opportunity';
+  }
+  // High Return: Very high volume with good opportunity score OR strong conversion potential
   else if ((totalVolume >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_VOLUME &&
             opportunityScore >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_OPPORTUNITY_SCORE) ||
            (conversionPotential.conversionScore > 0.5 && businessValidation.strategicValue === 'high')) {
@@ -329,7 +342,7 @@ interface ContentCluster {
     faq: number;
   };
   timeframe_weeks: number;
-  priority_tag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority';
+  priority_tag: 'quick_win' | 'growth_opportunity' | 'high_return' | 'evergreen' | 'low_priority';
   solution_mapping: string[];
   competitor_analysis: any[];
 }
@@ -773,18 +786,31 @@ async function generateAIStrategy(supabase: any, payload: any) {
         messages: [
           {
             role: 'system',
-            content: `You are a content strategist specializing in SEO keyword research. Generate strategic keywords based on the user's goals and company context. Return ONLY a JSON object with this structure: {"keywords": [{"keyword": "example keyword", "intent": "informational|commercial|transactional|navigational"}]}`
+            content: `You are an expert SEO strategist specializing in high-intent keyword research. Your goal is to identify keywords that indicate genuine user needs and strong commercial/informational intent. Prioritize keywords that:
+1. Show clear user intent (transactional > commercial > informational > navigational)
+2. Represent real problems or needs users are actively searching for
+3. Align with the company's solutions and expertise
+4. Have realistic ranking potential across various difficulty levels
+
+Return ONLY a JSON object with this exact structure: {"keywords": [{"keyword": "example keyword", "intent": "informational|commercial|transactional|navigational"}]}`
           },
           {
             role: 'user',
-            content: `Given this company context and solutions, propose 8 high-opportunity, relevant, untapped keywords for content strategy.${excludeKeywords.length > 0 ? `\n\nIMPORTANT: EXCLUDE these previously used keywords and their variations: ${excludeKeywords.join(', ')}` : ''}
+            content: `Analyze this company context and generate 12 strategic, high-intent keywords for content opportunities.${excludeKeywords.length > 0 ? `\n\n⚠️ CRITICAL: EXCLUDE these previously used keywords and any variations: ${excludeKeywords.join(', ')}` : ''}
 
-Company: ${JSON.stringify(companyInfo || {})}
-Solutions: ${JSON.stringify(solutions || [])}
-Recent Content Titles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}
-Goals: ${JSON.stringify(goals)}
+Company Context: ${JSON.stringify(companyInfo || {})}
+Solutions/Services: ${JSON.stringify(solutions || [])}
+Recent Content Focus: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}
+Business Goals: ${JSON.stringify(goals)}
 
-Return ONLY the JSON object with diverse, unique keywords that don't overlap with excluded ones.`
+Generate keywords that:
+- Reflect real user search behavior and genuine needs
+- Include a mix of difficulty levels (some achievable quick wins, some long-term opportunities)
+- Prioritize commercial/transactional intent where relevant
+- Avoid generic terms; focus on specific, actionable keywords
+- Represent diverse content opportunities
+
+Return ONLY the JSON object with 12 unique, high-quality keywords.`
           }
         ]
       }
@@ -831,47 +857,108 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
   let kwList: Array<{ keyword: string; intent?: string }> = parsed.keywords || [];
   console.log('✅ Parsed keywords successfully:', kwList.length, 'keywords');
   
-  kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 8); // Reduced from 20 to 8
+  kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 12); // Increased from 8 to 12 for more options
   
   if (kwList.length === 0) {
     console.error('❌ No valid keywords generated');
     return new Response(JSON.stringify({ proposals: [], message: 'No keywords proposed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  // 3) Fetch SERP metrics for each keyword (via unified SERP proxy)
+  // 3) Fetch SERP metrics with database caching (NO FAKE DATA)
   const chunk = <T,>(arr: T[], size: number) => arr.reduce((acc: T[][], _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), [] as T[][]);
   const serpMap: Record<string, any> = {};
-  console.log('🔍 Fetching SERP data for keywords...');
+  const failedKeywords: string[] = [];
+  console.log('🔍 Fetching SERP data for keywords with cache-first strategy...');
   
-  // Fallback SERP data generator for when API fails
-  function generateFallbackSerpData(keyword: string, intent: string = 'informational'): any {
-    const hash = keyword.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
-    const baseVolume = Math.abs(hash % 8000) + 200; // 200-8200 range
-    const baseDifficulty = Math.abs(hash % 80) + 10; // 10-90 range
-    
-    // Adjust based on intent for more realistic data
-    const intentMultipliers = {
-      'transactional': { volume: 0.7, difficulty: 1.2 },
-      'commercial': { volume: 0.8, difficulty: 1.1 },
-      'navigational': { volume: 1.2, difficulty: 0.9 },
-      'informational': { volume: 1.0, difficulty: 1.0 }
-    };
-    
-    const multiplier = intentMultipliers[intent as keyof typeof intentMultipliers] || intentMultipliers.informational;
-    
-    const searchVolume = Math.round(baseVolume * multiplier.volume);
-    const keywordDifficulty = Math.min(95, Math.round(baseDifficulty * multiplier.difficulty));
-    
-    return {
-      searchVolume,
-      keywordDifficulty,
-      cpc: Math.round((Math.abs(hash % 500) + 50) / 100 * 100) / 100, // $0.50-$5.50
-      competitionScore: Math.round(keywordDifficulty * 0.8), // Correlated with difficulty
-      serpFeatures: intent === 'commercial' ? ['shopping', 'ads'] : intent === 'navigational' ? ['knowledge_graph'] : []
-    };
+  // Helper: Check cache first, then API
+  async function fetchSerpWithCache(keyword: string, intent: string): Promise<{ keyword: string; data: any; cached: boolean } | null> {
+    try {
+      // 1. Check database cache
+      const { data: cachedData } = await supabase
+        .from('keyword_performance_cache')
+        .select('*')
+        .eq('keyword', keyword.toLowerCase())
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+      
+      if (cachedData) {
+        console.log(`💾 Cache HIT for "${keyword}" (age: ${Math.round((Date.now() - new Date(cachedData.cached_at).getTime()) / 3600000)}h)`);
+        return {
+          keyword,
+          data: {
+            searchVolume: cachedData.search_volume,
+            keywordDifficulty: cachedData.keyword_difficulty,
+            cpc: cachedData.cpc,
+            competitionScore: cachedData.competition_score,
+            serpFeatures: cachedData.serp_features || []
+          },
+          cached: true
+        };
+      }
+      
+      console.log(`🔍 Cache MISS for "${keyword}", fetching from SERP API...`);
+      
+      // 2. Fetch from SERP API
+      const resp = await supabase.functions.invoke('api-proxy', {
+        body: {
+          service: 'serp',
+          endpoint: 'analyze',
+          apiKey: api_keys?.serp,
+          params: {
+            keyword,
+            location,
+            language: 'en'
+          }
+        }
+      });
+      
+      if (resp.error || !resp.data) {
+        console.error(`❌ SERP API failed for "${keyword}":`, resp.error);
+        return null; // Return null for failures (no fake data)
+      }
+      
+      console.log(`✅ SERP API success for "${keyword}", caching...`);
+      
+      // 3. Save to cache
+      await supabase
+        .from('keyword_performance_cache')
+        .upsert({
+          keyword: keyword.toLowerCase(),
+          search_volume: resp.data.searchVolume || 0,
+          keyword_difficulty: resp.data.keywordDifficulty || 0,
+          cpc: resp.data.cpc || null,
+          competition_score: resp.data.competitionScore || null,
+          serp_features: resp.data.serpFeatures || [],
+          intent,
+          user_id: user_id,
+          cached_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+        });
+      
+      // 4. Also save to unified_keywords table for Keywords Library
+      await supabase
+        .from('unified_keywords')
+        .upsert({
+          user_id,
+          keyword,
+          search_volume: resp.data.searchVolume || 0,
+          difficulty: resp.data.keywordDifficulty || 0,
+          competition: resp.data.competitionScore || 0,
+          cpc: resp.data.cpc || null,
+          source: 'ai_strategy',
+          last_checked_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,keyword'
+        });
+      
+      return { keyword, data: resp.data, cached: false };
+    } catch (error) {
+      console.error(`❌ Error fetching SERP for "${keyword}":`, error);
+      return null;
+    }
   }
   
-  for (const group of chunk(kwList, 3)) { // Reduced batch size from 5 to 3
+  for (const group of chunk(kwList, 3)) { // Process in batches of 3
     console.log(`🔄 Processing batch of ${group.length} keywords with rate limiting...`);
     
     const results = await Promise.all(group.map(async (k, index) => {
@@ -881,57 +968,50 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
       }
       
       return await retryWithBackoff(async () => {
-        console.log(`🔍 Fetching SERP for: ${k.keyword}`);
-        const resp = await supabase.functions.invoke('api-proxy', {
-          body: {
-            service: 'serp',
-            endpoint: 'analyze',
-            apiKey: api_keys?.serp,
-            params: {
-              keyword: k.keyword,
-              location,
-              language: 'en'
-            }
-          }
-        });
-        
-        if (resp.error) {
-          console.warn(`⚠️ SERP error for "${k.keyword}", using fallback data:`, resp.error);
-          const fallbackData = generateFallbackSerpData(k.keyword, k.intent);
-          console.log(`📊 Generated fallback SERP data for "${k.keyword}":`, fallbackData);
-          return { keyword: k.keyword, data: fallbackData };
-        }
-        
-        console.log(`✅ SERP data received for "${k.keyword}"`);
-        return { keyword: k.keyword, data: resp.data };
+        return await fetchSerpWithCache(k.keyword, k.intent || 'informational');
       });
     }));
     
-    // Process results - ensure all keywords have SERP data
+    // Process results - only include successful fetches (NO FAKE DATA)
     results.forEach(result => {
       if (result?.data) {
         serpMap[result.keyword] = result.data;
+        console.log(`📊 Added SERP data for "${result.keyword}" (${result.cached ? 'cached' : 'fresh'})`);
       } else {
-        // Generate fallback data for any missing keywords
-        const keyword = result?.keyword || '';
-        const intent = kwList.find(k => k.keyword === keyword)?.intent || 'informational';
-        serpMap[keyword] = generateFallbackSerpData(keyword, intent);
-        console.log(`🔧 Generated fallback data for missing keyword "${keyword}"`);
+        failedKeywords.push(result?.keyword || 'unknown');
+        console.warn(`⚠️ Failed to fetch SERP data for "${result?.keyword}", will exclude from proposals`);
       }
     });
     
     // Add delay between batches to respect rate limits
     if (kwList.indexOf(group[group.length - 1]) < kwList.length - 1) {
-      console.log('⏳ Waiting 2s before next batch to respect rate limits...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('⏳ Waiting 1s before next batch to respect rate limits...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
   console.log('📊 SERP fetch completed:', {
     total: kwList.length,
-    withData: Object.values(serpMap).filter(d => d).length,
-    failed: Object.values(serpMap).filter(d => !d).length
+    successful: Object.keys(serpMap).length,
+    failed: failedKeywords.length,
+    failed_keywords: failedKeywords,
+    cache_efficiency: `${Math.round((Object.values(serpMap).length / kwList.length) * 100)}%`
   });
+  
+  // If too many failures, return error
+  if (failedKeywords.length > kwList.length / 2) {
+    console.error('❌ More than 50% of keywords failed to fetch SERP data');
+    return new Response(
+      JSON.stringify({ 
+        error: `Unable to fetch keyword data. ${failedKeywords.length} of ${kwList.length} keywords failed. Please check your SERP API configuration or try again later.`,
+        failed_keywords: failedKeywords
+      }),
+      { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  // Filter keywords to only those with successful SERP data
+  kwList = kwList.filter(k => serpMap[k.keyword]);
 
   // 4) Ask AI (via unified proxy) to assemble the content strategy
   const enriched = kwList.map(k => ({
@@ -1106,6 +1186,9 @@ function generateClassificationReasoning(classification: any, keywords: any[]): 
     case 'quick_win':
       reasoning = `Quick Win: Low difficulty (${avg_difficulty}≤35), decent volume (${total_volume} in 100-5K range), good opportunity score (${opportunity_score}≥3), and manageable competition (${serp_analysis.competitiveComplexity}).`;
       break;
+    case 'growth_opportunity':
+      reasoning = `Growth Opportunity: High search volume (${total_volume} in 3K-10K range) with achievable difficulty (${avg_difficulty}≤40) and strong opportunity score (${opportunity_score}≥8). Balanced potential for impact and ranking.`;
+      break;
     case 'high_return':
       if (total_volume >= CLASSIFICATION_THRESHOLDS.HIGH_RETURN.MIN_VOLUME) {
         reasoning = `High Return: High search volume (${total_volume}≥1K) with good opportunity score (${opportunity_score}≥10).`;
@@ -1154,18 +1237,24 @@ function validateClassificationThresholds(proposals: any[]): {
   const recommendations: string[] = [];
   let quality_score = 100;
   
-  // Check for healthy distribution (should have some of each category)
+  // Check for healthy distribution (updated to include Growth Opportunity)
   const quickWinPercent = (distribution.quick_win || 0) / total * 100;
+  const growthPercent = (distribution.growth_opportunity || 0) / total * 100;
   const highReturnPercent = (distribution.high_return || 0) / total * 100;
   const evergreenPercent = (distribution.evergreen || 0) / total * 100;
   const lowPriorityPercent = (distribution.low_priority || 0) / total * 100;
   
-  // Ideal distribution: 20-30% quick wins, 15-25% high return, 40-60% evergreen, <20% low priority
+  // Ideal distribution: 15-25% quick wins, 15-25% growth, 15-25% high return, 30-50% evergreen, <20% low priority
   if (quickWinPercent < 10) {
     recommendations.push('Consider lowering difficulty thresholds to identify more Quick Win opportunities');
     quality_score -= 15;
   } else if (quickWinPercent > 40) {
     recommendations.push('Too many Quick Wins - consider raising difficulty or volume thresholds');
+    quality_score -= 10;
+  }
+  
+  if (growthPercent < 10 && quickWinPercent < 20) {
+    recommendations.push('Low Growth Opportunity + Quick Win percentage - review keyword intent quality');
     quality_score -= 10;
   }
   
@@ -1182,7 +1271,7 @@ function validateClassificationThresholds(proposals: any[]): {
     quality_score -= 20;
   }
   
-  if (evergreenPercent < 30) {
+  if (evergreenPercent < 20) {
     recommendations.push('Consider broadening Evergreen criteria for more consistent content opportunities');
     quality_score -= 5;
   }
@@ -1205,11 +1294,27 @@ function logClassificationMetrics(proposals: any[]): void {
     recommendations: metrics.recommendations
   });
   
-  // Log detailed metrics for each category
-  Object.entries(metrics.distribution).forEach(([category, count]) => {
+  // Log detailed metrics for each category (including new Growth Opportunity)
+  const categories = ['quick_win', 'growth_opportunity', 'high_return', 'evergreen', 'low_priority'];
+  categories.forEach(category => {
+    const count = metrics.distribution[category] || 0;
+    if (count === 0) return;
+    
     const categoryProposals = proposals.filter(p => p.priority_tag === category);
-    const avgVolume = categoryProposals.reduce((sum, p) => sum + (p.metrics?.total_volume || 0), 0) / count;
-    const avgDifficulty = categoryProposals.reduce((sum, p) => sum + (p.metrics?.avg_difficulty || 0), 0) / count;
+    const avgVolume = Math.round(categoryProposals.reduce((sum, p) => sum + (p.metrics?.total_volume || 0), 0) / count);
+    const avgDifficulty = Math.round(categoryProposals.reduce((sum, p) => sum + (p.metrics?.avg_difficulty || 0), 0) / count);
+    const avgOpportunity = Math.round(categoryProposals.reduce((sum, p) => sum + (p.metrics?.opportunity_score || 0), 0) / count * 100) / 100;
+    
+    const emoji = category === 'quick_win' ? '⚡' : category === 'growth_opportunity' ? '🌱' : category === 'high_return' ? '📈' : category === 'evergreen' ? '🌲' : '⚠️';
+    const label = category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').toUpperCase();
+    
+    console.log(`${emoji} ${label} Category (${count} proposals):`, {
+      avg_volume: avgVolume,
+      avg_difficulty: avgDifficulty,
+      avg_opportunity_score: avgOpportunity
+    });
+  });
+}
     const avgOpportunityScore = categoryProposals.reduce((sum, p) => sum + (p.metrics?.opportunity_score || 0), 0) / count;
     
     console.log(`📈 ${category.toUpperCase()} Category (${count} proposals):`, {

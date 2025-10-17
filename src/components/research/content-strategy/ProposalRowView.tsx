@@ -91,6 +91,7 @@ export const ProposalRowView: React.FC<ProposalRowViewProps> = ({
   const getPriorityBadge = (priority: string) => {
     const priorityConfig = {
       quick_win: { label: 'Quick Win', className: 'text-green-400 bg-green-500/10 border-green-400/30' },
+      growth_opportunity: { label: 'Growth Opportunity', className: 'text-emerald-400 bg-emerald-500/10 border-emerald-400/30' },
       high_return: { label: 'High Return', className: 'text-blue-400 bg-blue-500/10 border-blue-400/30' },
       evergreen: { label: 'Evergreen', className: 'text-purple-400 bg-purple-500/10 border-purple-400/30' },
       low_priority: { label: 'Low Priority', className: 'text-gray-400 bg-gray-500/10 border-gray-400/30' }

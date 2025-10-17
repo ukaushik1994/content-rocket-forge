@@ -64,6 +64,7 @@ export const HistoricalProposalsSection = ({ onReuse, className }: HistoricalPro
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'quick_win': return 'text-green-400 bg-green-500/10 border-green-400/30';
+      case 'growth_opportunity': return 'text-emerald-400 bg-emerald-500/10 border-emerald-400/30';
       case 'high_return': return 'text-blue-400 bg-blue-500/10 border-blue-400/30';
       case 'evergreen': return 'text-purple-400 bg-purple-500/10 border-purple-400/30';
       default: return 'text-white/80 bg-white/10 border-white/20';
@@ -73,6 +74,7 @@ export const HistoricalProposalsSection = ({ onReuse, className }: HistoricalPro
   const getPriorityLabel = (priority?: string) => {
     switch (priority) {
       case 'quick_win': return 'Quick Win';
+      case 'growth_opportunity': return 'Growth Opportunity';
       case 'high_return': return 'High Return';
       case 'evergreen': return 'Evergreen';
       default: return 'Standard';

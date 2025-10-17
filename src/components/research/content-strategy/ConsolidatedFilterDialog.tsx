@@ -44,6 +44,7 @@ export const ConsolidatedFilterDialog: React.FC<ConsolidatedFilterDialogProps> =
     all: { label: 'All Proposals', icon: Grid, className: 'text-white' },
     selected: { label: 'Selected', icon: Users, className: 'text-yellow-400' },
     quick_win: { label: 'Quick Wins', icon: Target, className: 'text-green-400' },
+    growth_opportunity: { label: 'Growth Opportunities', icon: TrendingUp, className: 'text-emerald-400' },
     high_return: { label: 'High Return', icon: TrendingUp, className: 'text-blue-400' },
     evergreen: { label: 'Evergreen', icon: TreePine, className: 'text-purple-400' }
   };

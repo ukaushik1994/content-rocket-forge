@@ -49,6 +49,12 @@ const priorityConfig = {
     gradient: 'from-green-500/10 to-emerald-600/10',
     icon: '⚡'
   },
+  'growth_opportunity': { 
+    label: 'Growth Opportunity', 
+    color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    gradient: 'from-emerald-500/10 to-green-600/10',
+    icon: '🌱'
+  },
   'high_return': { 
     label: 'High Return', 
     color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',

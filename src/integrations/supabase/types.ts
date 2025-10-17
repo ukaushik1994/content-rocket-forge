@@ -2907,6 +2907,48 @@ export type Database = {
         }
         Relationships: []
       }
+      keyword_performance_cache: {
+        Row: {
+          cached_at: string
+          competition_score: number | null
+          cpc: number | null
+          created_at: string
+          expires_at: string
+          intent: string | null
+          keyword: string
+          keyword_difficulty: number
+          search_volume: number
+          serp_features: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          cached_at?: string
+          competition_score?: number | null
+          cpc?: number | null
+          created_at?: string
+          expires_at?: string
+          intent?: string | null
+          keyword: string
+          keyword_difficulty?: number
+          search_volume?: number
+          serp_features?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          cached_at?: string
+          competition_score?: number | null
+          cpc?: number | null
+          created_at?: string
+          expires_at?: string
+          intent?: string | null
+          keyword?: string
+          keyword_difficulty?: number
+          search_volume?: number
+          serp_features?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       keyword_position_history: {
         Row: {
           created_at: string
@@ -6136,6 +6178,10 @@ export type Database = {
         Returns: unknown
       }
       clean_expired_serp_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_keyword_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

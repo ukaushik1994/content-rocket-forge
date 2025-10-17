@@ -76,6 +76,11 @@ const priorityConfig = {
     color: 'bg-green-500/20 text-green-400 border-green-500/30',
     icon: '⚡'
   },
+  'growth_opportunity': { 
+    label: 'Growth Opportunity', 
+    color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    icon: '🌱'
+  },
   'high_return': { 
     label: 'High Return', 
     color: 'bg-blue-500/20 text-blue-400 border-blue-500/30',

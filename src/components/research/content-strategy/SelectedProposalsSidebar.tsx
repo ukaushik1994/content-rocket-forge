@@ -164,6 +164,7 @@ export const SelectedProposalsSidebar = ({
                                 variant="outline" 
                                 className={`text-xs ${
                                   proposal.priority_tag === 'quick_win' ? 'text-green-400 border-green-400/30' :
+                                  proposal.priority_tag === 'growth_opportunity' ? 'text-emerald-400 border-emerald-400/30' :
                                   proposal.priority_tag === 'high_return' ? 'text-blue-400 border-blue-400/30' :
                                   'text-purple-400 border-purple-400/30'
                                 }`}
