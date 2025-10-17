@@ -1375,12 +1375,3 @@ function logClassificationMetrics(proposals: any[]): void {
     });
   });
 }
-    const avgOpportunityScore = categoryProposals.reduce((sum, p) => sum + (p.metrics?.opportunity_score || 0), 0) / count;
-    
-    console.log(`📈 ${category.toUpperCase()} Category (${count} proposals):`, {
-      avg_volume: Math.round(avgVolume),
-      avg_difficulty: Math.round(avgDifficulty),
-      avg_opportunity_score: Math.round(avgOpportunityScore * 100) / 100
-    });
-  });
-}
