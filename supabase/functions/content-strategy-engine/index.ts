@@ -825,16 +825,11 @@ Return ONLY the JSON object with diverse, unique keywords that don't overlap wit
     kwText = '{}';
   }
   
-  let kwList: Array<{ keyword: string; intent?: string }> = [];
-  try { 
-    const parsed = JSON.parse(kwText);
-    kwList = parsed.keywords || [];
-    console.log('✅ Parsed keywords successfully:', kwList.length, 'keywords');
-  } catch (jsonError) { 
-    console.error('❌ Failed to parse keywords JSON:', jsonError);
-    console.log('Raw keyword text that failed to parse:', kwText);
-    kwList = [];
-  }
+  // Use safe parser with markdown stripping
+  const { parseAIResponse } = await import('./json-utils.ts');
+  const parsed = parseAIResponse(kwText, { keywords: [] });
+  let kwList: Array<{ keyword: string; intent?: string }> = parsed.keywords || [];
+  console.log('✅ Parsed keywords successfully:', kwList.length, 'keywords');
   
   kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 8); // Reduced from 20 to 8
   
@@ -1016,16 +1011,11 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     stratText = '{}';
   }
   
-  let proposals: any[] = [];
-  try { 
-    const parsed = JSON.parse(stratText);
-    proposals = parsed.slice(0, 6); // Ensure exactly 6 proposals
-    console.log('✅ Parsed proposals successfully:', proposals.length, 'proposals');
-  } catch (jsonError) { 
-    console.error('❌ Failed to parse strategy JSON:', jsonError);
-    console.log('Raw strategy text that failed to parse:', stratText);
-    proposals = [];
-  }
+  // Use safe parser with markdown stripping
+  const { parseAIResponse: parseStrategyResponse } = await import('./json-utils.ts');
+  const parsed = parseStrategyResponse(stratText, { proposals: [] });
+  let proposals: any[] = Array.isArray(parsed) ? parsed.slice(0, 6) : (parsed.proposals || []).slice(0, 6);
+  console.log('✅ Parsed proposals successfully:', proposals.length, 'proposals');
 
   const withSerp = proposals.map((p) => {
     const kws = (p.keywords || []).map((k: any) => (typeof k === 'string' ? { keyword: k } : k));
