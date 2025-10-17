@@ -24,6 +24,13 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 }) => {
   if (!proposal) return null;
 
+  // Helper to normalize keywords (handles both strings and {keyword: string} objects)
+  const normalizeKeyword = (kw: any): string => {
+    if (typeof kw === 'string') return kw;
+    if (kw && typeof kw === 'object' && kw.keyword) return String(kw.keyword);
+    return String(kw || '');
+  };
+
   const primaryKw = proposal.primary_keyword || 'No keyword';
   const primaryMetrics = proposal.serp_data?.[primaryKw] || {};
   const estImpressions = proposal.estimated_impressions ?? Math.round((primaryMetrics.searchVolume || 0) * 0.05);
@@ -215,9 +222,9 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-1">
-                    {proposal.related_keywords.map((keyword: string, index: number) => (
+                    {proposal.related_keywords.map((keyword: any, index: number) => (
                       <Badge key={index} variant="outline" className="text-xs text-muted-foreground border-border bg-muted/10">
-                        {keyword}
+                        {normalizeKeyword(keyword)}
                       </Badge>
                     ))}
                   </div>

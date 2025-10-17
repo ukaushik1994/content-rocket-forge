@@ -225,10 +225,10 @@ export const SelectedProposalsSidebar = ({
                                     <BarChart3 className="h-3 w-3 text-blue-400" />
                                     Related Keywords
                                   </div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {proposal.related_keywords.slice(0, 2).map((keyword: string, index: number) => (
+                                   <div className="flex flex-wrap gap-1">
+                                    {proposal.related_keywords.slice(0, 2).map((keyword: any, index: number) => (
                                       <Badge key={index} variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
-                                        {keyword}
+                                        {typeof keyword === 'string' ? keyword : keyword?.keyword || String(keyword)}
                                       </Badge>
                                     ))}
                                     {proposal.related_keywords.length > 2 && (

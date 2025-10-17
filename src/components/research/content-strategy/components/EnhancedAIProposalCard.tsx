@@ -195,12 +195,12 @@ export const EnhancedAIProposalCard: React.FC<EnhancedAIProposalCardProps> = ({
             </Tooltip>
           </TooltipProvider>
           
-          {proposal.related_keywords.slice(0, 2).map((keyword, i) => (
+          {proposal.related_keywords.slice(0, 2).map((keyword: any, i: number) => (
             <TooltipProvider key={i}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="inline-flex text-[10px] px-1.5 py-0.5 bg-secondary/30 rounded hover:bg-secondary/40 transition-colors cursor-help">
-                    {keyword}
+                    {typeof keyword === 'string' ? keyword : keyword?.keyword || String(keyword)}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>

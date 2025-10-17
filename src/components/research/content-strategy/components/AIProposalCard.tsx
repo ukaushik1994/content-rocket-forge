@@ -194,9 +194,9 @@ export const AIProposalCard: React.FC<AIProposalCardProps> = ({
             <div className="mb-4 p-3 rounded-lg bg-background/40 border border-border/30">
               <h4 className="text-xs font-semibold text-muted-foreground mb-2">RELATED KEYWORDS</h4>
               <div className="flex flex-wrap gap-1">
-                {proposal.related_keywords.slice(0, 4).map((keyword, index) => (
+                {proposal.related_keywords.slice(0, 4).map((keyword: any, index: number) => (
                   <Badge key={index} variant="secondary" className="text-xs bg-primary/10 text-primary">
-                    {keyword}
+                    {typeof keyword === 'string' ? keyword : keyword?.keyword || String(keyword)}
                   </Badge>
                 ))}
                 {proposal.related_keywords.length > 4 && (
