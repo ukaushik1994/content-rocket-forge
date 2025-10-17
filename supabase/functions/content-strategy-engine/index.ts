@@ -384,7 +384,7 @@ Deno.serve(async (req) => {
       case 'calculate_traffic_potential':
         return await calculateTrafficPotential(supabase, payload)
       case 'generate_ai_strategy':
-        return await generateAIStrategy(supabase, payload)
+        return await generateAIStrategy(supabase, supabaseAdmin, payload)
       default:
         throw new Error(`Unknown action: ${action}`)
     }
@@ -739,7 +739,7 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 }
 
 // New AI-first strategy generation (no clusters)
-async function generateAIStrategy(supabase: any, payload: any) {
+async function generateAIStrategy(supabase: any, supabaseAdmin: any, payload: any) {
   const { user_id, goals = {}, location = 'United States', excludeKeywords = [], api_keys = {} } = payload;
 
   // ✅ FIX 2.1: Validate SERP API key early

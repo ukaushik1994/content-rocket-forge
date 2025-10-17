@@ -109,3 +109,7 @@ verify_jwt = true
 
 [functions.sync-content-keywords]
 verify_jwt = true
+
+[functions.migrate-strategy-proposals]
+verify_jwt = true
+

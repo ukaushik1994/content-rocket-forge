@@ -251,7 +251,8 @@ export const ContentStrategyEngine = ({
       setGenerating(true);
       startProgress();
       
-      const result = await aiStrategyService.generateNewStrategy({
+      // Use the same edge function as "Generate AI Proposals"
+      const result = await contentStrategyService.generateAIStrategy({
         goals: {
           monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
           contentPieces: 6,
@@ -261,6 +262,9 @@ export const ContentStrategyEngine = ({
         location: 'United States',
         excludeKeywords: []
       });
+
+      // Reload historical proposals to get the newly saved proposals
+      await loadHistoricalProposals();
 
       const newProposals = result.proposals || [];
       
@@ -275,10 +279,6 @@ export const ContentStrategyEngine = ({
         timestamps[id] = Date.now();
       });
       setNewProposalTimestamps(timestamps);
-
-      // Add to proposals arrays
-      setProposals(prev => [...prev, ...newProposals]);
-      setAiProposals([...(aiProposals || []), ...newProposals]);
       
       toast({
         title: `${newProposals.length} New Proposals Generated`,
@@ -420,6 +420,18 @@ export const ContentStrategyEngine = ({
   // Load data on mount - load historical first to populate initial view
   useEffect(() => {
     const initData = async () => {
+      // Check and run migration if needed (one-time, idempotent)
+      const { proposalMigrationService } = await import('@/services/proposalMigrationService');
+      try {
+        const needsMigration = await proposalMigrationService.needsMigration();
+        if (needsMigration) {
+          console.log('🔄 Hidden proposals detected, running migration...');
+          await proposalMigrationService.migrateHistoricalProposals();
+        }
+      } catch (migrationError) {
+        console.error('Migration error (non-fatal):', migrationError);
+      }
+      
       await loadHistoricalProposals(); // Load historical first
       await loadClusters();
       await loadCompletedProposalIds();
