@@ -43,6 +43,47 @@ export const createPublishActions = (
       const extractedTitle = extractTitleFromContent(content.content);
       const finalTitle = extractedTitle || content.title || 'Untitled';
 
+      // Enrich metadata with proposal data from strategySource and database
+      let proposalMetadata: Record<string, any> = {};
+      
+      // Start with data from strategySource if available
+      if (state.strategySource) {
+        proposalMetadata = {
+          priority_tag: state.strategySource.priority_tag,
+          estimated_impressions: state.strategySource.estimated_impressions,
+          meta_suggestions: state.strategySource.meta_suggestions
+        };
+      }
+
+      // Fetch full proposal data if proposalId exists to preserve ALL proposal information
+      if (proposalId) {
+        try {
+          const { data: fullProposal, error: proposalError } = await supabase
+            .from('ai_strategy_proposals')
+            .select('priority_tag, estimated_impressions, related_keywords, content_suggestions, serp_data, proposal_data, content_type, strategy_session_id')
+            .eq('id', proposalId)
+            .single();
+
+          if (!proposalError && fullProposal) {
+            // Merge all proposal data into metadata
+            proposalMetadata = {
+              ...proposalMetadata,
+              priority_tag: fullProposal.priority_tag,
+              estimated_impressions: fullProposal.estimated_impressions,
+              related_keywords: fullProposal.related_keywords,
+              content_suggestions: fullProposal.content_suggestions,
+              serp_data: fullProposal.serp_data,
+              proposal_data: fullProposal.proposal_data,
+              proposal_content_type: fullProposal.content_type,
+              strategy_session_id: fullProposal.strategy_session_id
+            };
+            console.log('[SaveContent] Enriched metadata with full proposal data:', proposalMetadata);
+          }
+        } catch (error) {
+          console.error('[SaveContent] Error fetching proposal data for metadata enrichment:', error);
+        }
+      }
+
       // Prepare content data for database
       const contentData = {
         title: finalTitle, // Blog title (extracted from content)
@@ -61,6 +102,7 @@ export const createPublishActions = (
           serpSelections: content.serpSelections || [],
           serpData: content.serpData,
           proposal_id: proposalId, // Use proposal_id (not source_proposal_id) for trigger compatibility
+          ...proposalMetadata, // Add enriched proposal metadata (all 8 missing fields)
           ...(content.metadata || {}) // Include any additional metadata passed in
         }
       };
@@ -196,6 +238,47 @@ export const createPublishActions = (
       const extractedTitle = extractTitleFromContent(content.content);
       const finalTitle = extractedTitle || content.title || 'Untitled';
 
+      // Enrich metadata with proposal data from strategySource and database
+      let proposalMetadata: Record<string, any> = {};
+      
+      // Start with data from strategySource if available
+      if (state.strategySource) {
+        proposalMetadata = {
+          priority_tag: state.strategySource.priority_tag,
+          estimated_impressions: state.strategySource.estimated_impressions,
+          meta_suggestions: state.strategySource.meta_suggestions
+        };
+      }
+
+      // Fetch full proposal data if proposalId exists to preserve ALL proposal information
+      if (proposalId) {
+        try {
+          const { data: fullProposal, error: proposalError } = await supabase
+            .from('ai_strategy_proposals')
+            .select('priority_tag, estimated_impressions, related_keywords, content_suggestions, serp_data, proposal_data, content_type, strategy_session_id')
+            .eq('id', proposalId)
+            .single();
+
+          if (!proposalError && fullProposal) {
+            // Merge all proposal data into metadata
+            proposalMetadata = {
+              ...proposalMetadata,
+              priority_tag: fullProposal.priority_tag,
+              estimated_impressions: fullProposal.estimated_impressions,
+              related_keywords: fullProposal.related_keywords,
+              content_suggestions: fullProposal.content_suggestions,
+              serp_data: fullProposal.serp_data,
+              proposal_data: fullProposal.proposal_data,
+              proposal_content_type: fullProposal.content_type,
+              strategy_session_id: fullProposal.strategy_session_id
+            };
+            console.log('[PublishContent] Enriched metadata with full proposal data:', proposalMetadata);
+          }
+        } catch (error) {
+          console.error('[PublishContent] Error fetching proposal data for metadata enrichment:', error);
+        }
+      }
+
       // Prepare content data for database
       const contentData = {
         title: finalTitle, // Blog title (extracted from content)
@@ -214,6 +297,7 @@ export const createPublishActions = (
           serpSelections: content.serpSelections || [],
           serpData: content.serpData,
           proposal_id: proposalId, // Use proposal_id (not source_proposal_id) for trigger compatibility
+          ...proposalMetadata, // Add enriched proposal metadata (all 8 missing fields)
           ...(content.metadata || {}) // Include any additional metadata passed in
         }
       };
