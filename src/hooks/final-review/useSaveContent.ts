@@ -126,13 +126,33 @@ export const useSaveContent = () => {
       setIsSaving(true);
       console.log('[useSaveContent] Starting save to draft process');
       
-      // Validate that meta information is present (warning only, allow save)
-      if (!state.metaTitle || !state.metaDescription) {
-        toast.warning('Missing meta information', {
-          description: 'Consider adding meta title and description for better SEO',
-          duration: 5000
+      // Auto-generate meta information if missing (Phase 4: Data Validation)
+      let finalMetaTitle = state.metaTitle;
+      let finalMetaDescription = state.metaDescription;
+      
+      if (!finalMetaTitle || !finalMetaDescription) {
+        console.log('[useSaveContent] Meta information missing, auto-generating...');
+        
+        // Import utilities
+        const { extractTitleFromContent } = await import('@/utils/content/extractTitle');
+        const { generateMetaSuggestions } = await import('@/utils/seo/meta/generateMetaSuggestions');
+        
+        // Generate missing meta information
+        if (!finalMetaTitle) {
+          finalMetaTitle = extractTitleFromContent(state.content) || state.contentTitle || state.mainKeyword;
+          console.log('[useSaveContent] Auto-generated meta_title:', finalMetaTitle);
+        }
+        
+        if (!finalMetaDescription) {
+          const suggestions = generateMetaSuggestions(state.content, state.mainKeyword, state.contentTitle);
+          finalMetaDescription = suggestions.metaDescription;
+          console.log('[useSaveContent] Auto-generated meta_description:', finalMetaDescription);
+        }
+        
+        toast.warning('Auto-generated meta information', {
+          description: 'Meta title and description were created automatically from your content',
+          duration: 4000
         });
-        // Allow save to continue
       }
       
       // Extract comprehensive SERP data
@@ -176,8 +196,8 @@ export const useSaveContent = () => {
       // Prepare comprehensive metadata with optimization insights
       const metadata = {
         contentType: saveParams.contentType,
-        metaTitle: saveParams.metaTitle,
-        metaDescription: saveParams.metaDescription,
+        metaTitle: finalMetaTitle,
+        metaDescription: finalMetaDescription,
         outline: saveParams.outline,
         serpSelections: saveParams.serpSelections,
         
@@ -253,8 +273,8 @@ export const useSaveContent = () => {
           .update({
             content: saveParams.content,
             seo_score: state.seoScore || 0,
-            meta_title: state.metaTitle,
-            meta_description: state.metaDescription,
+            meta_title: finalMetaTitle,
+            meta_description: finalMetaDescription,
             metadata: metadata,
             updated_at: new Date().toISOString()
           })
@@ -274,8 +294,8 @@ export const useSaveContent = () => {
       
       // Save new content item with comprehensive metadata
       console.log('[useSaveContent] Saving with meta info:', {
-        metaTitle: state.metaTitle,
-        metaDescription: state.metaDescription,
+        metaTitle: finalMetaTitle,
+        metaDescription: finalMetaDescription,
         willSaveToTopLevel: true,
         willSaveToMetadata: true
       });
@@ -288,8 +308,8 @@ export const useSaveContent = () => {
           user_id: user.user.id,
           status: 'draft',
           seo_score: state.seoScore || 0,
-          meta_title: state.metaTitle,
-          meta_description: state.metaDescription,
+          meta_title: finalMetaTitle,
+          meta_description: finalMetaDescription,
           metadata: metadata
         })
         .select()
@@ -389,13 +409,33 @@ export const useSaveContent = () => {
     try {
       setIsSaving(true);
       
-      // Validate that meta information is present (warning only, allow publish)
-      if (!state.metaTitle || !state.metaDescription) {
-        toast.warning('Missing meta information', {
-          description: 'Consider adding meta title and description for better SEO',
-          duration: 5000
+      // Auto-generate meta information if missing (Phase 4: Data Validation)
+      let finalMetaTitle = state.metaTitle;
+      let finalMetaDescription = state.metaDescription;
+      
+      if (!finalMetaTitle || !finalMetaDescription) {
+        console.log('[useSaveContent] Meta information missing, auto-generating before publish...');
+        
+        // Import utilities
+        const { extractTitleFromContent } = await import('@/utils/content/extractTitle');
+        const { generateMetaSuggestions } = await import('@/utils/seo/meta/generateMetaSuggestions');
+        
+        // Generate missing meta information
+        if (!finalMetaTitle) {
+          finalMetaTitle = extractTitleFromContent(state.content) || state.contentTitle || state.mainKeyword;
+          console.log('[useSaveContent] Auto-generated meta_title:', finalMetaTitle);
+        }
+        
+        if (!finalMetaDescription) {
+          const suggestions = generateMetaSuggestions(state.content, state.mainKeyword, state.contentTitle);
+          finalMetaDescription = suggestions.metaDescription;
+          console.log('[useSaveContent] Auto-generated meta_description:', finalMetaDescription);
+        }
+        
+        toast.warning('Auto-generated meta information', {
+          description: 'Meta title and description were created automatically from your content',
+          duration: 4000
         });
-        // Allow publish to continue
       }
       
       // Extract comprehensive SERP data
@@ -510,8 +550,8 @@ export const useSaveContent = () => {
           .update({
             content: publishParams.content,
             seo_score: publishParams.seoScore || 0,
-            meta_title: state.metaTitle,
-            meta_description: state.metaDescription,
+            meta_title: finalMetaTitle,
+            meta_description: finalMetaDescription,
             metadata: metadata,
             updated_at: new Date().toISOString()
           })
@@ -530,8 +570,8 @@ export const useSaveContent = () => {
       
       // Save new published content item with comprehensive metadata
       console.log('[useSaveContent] Publishing with meta info:', {
-        metaTitle: state.metaTitle,
-        metaDescription: state.metaDescription,
+        metaTitle: finalMetaTitle,
+        metaDescription: finalMetaDescription,
         willSaveToTopLevel: true,
         willSaveToMetadata: true
       });
@@ -544,8 +584,8 @@ export const useSaveContent = () => {
           user_id: user.user.id,
           status: 'published',
           seo_score: publishParams.seoScore || 0,
-          meta_title: state.metaTitle,
-          meta_description: state.metaDescription,
+          meta_title: finalMetaTitle,
+          meta_description: finalMetaDescription,
           metadata: metadata
         })
         .select()
