@@ -14,11 +14,15 @@ import { v4 as uuidv4 } from 'uuid';
 interface StrategyContentSaverProps {
   proposal: any;
   onSaveComplete: () => void;
+  isSaving?: boolean;
+  setIsSaving?: (saving: boolean) => void;
 }
 
 export function StrategyContentSaver({ 
   proposal, 
-  onSaveComplete
+  onSaveComplete,
+  isSaving,
+  setIsSaving
 }: StrategyContentSaverProps) {
   const { 
     state, 
@@ -188,10 +192,14 @@ export function StrategyContentSaver({
 
   // Enhanced save completion handler with data validation and timeout protection
   const handleSaveComplete = async (contentId: string) => {
+    // Set isSaving to true when save starts
+    if (setIsSaving) setIsSaving(true);
+    
     // Validate contentId first to prevent hanging
     if (!contentId || contentId.trim() === '') {
       console.error('[StrategyContentSaver] Invalid contentId received:', contentId);
       toast.error('Failed to retrieve saved content ID');
+      if (setIsSaving) setIsSaving(false);
       onSaveComplete(); // Still call completion to prevent hang
       return;
     }
@@ -199,6 +207,9 @@ export function StrategyContentSaver({
     console.log('[StrategyContentSaver] Content saved with ID:', contentId);
     console.log('[StrategyContentSaver] Proposal ID:', proposal?.id);
     console.log('[StrategyContentSaver] Strategy source in state:', state.strategySource);
+    
+    // Set validation state at the START
+    setIsValidatingCompletion(true);
     
     // Wrap everything in timeout protection to prevent indefinite hanging
     const timeoutPromise = new Promise<void>((_, reject) => 
@@ -254,11 +265,16 @@ export function StrategyContentSaver({
     
     try {
       await Promise.race([completionPromise, timeoutPromise]);
+      // Success - clear loading state and close modal AFTER all async operations complete
+      setIsValidatingCompletion(false);
+      if (setIsSaving) setIsSaving(false);
+      onSaveComplete();
     } catch (error) {
       console.error('[StrategyContentSaver] Save completion error:', error);
       toast.error('Save completed but validation timed out - check proposal status manually');
-    } finally {
-      // Always close modal, even if validation fails or times out
+      // Clear loading state and close modal even on error to prevent hang
+      setIsValidatingCompletion(false);
+      if (setIsSaving) setIsSaving(false);
       onSaveComplete();
     }
   };
@@ -271,9 +287,17 @@ export function StrategyContentSaver({
           Your strategy content for "{proposal?.primary_keyword}" is ready to save
         </p>
         {isValidatingCompletion && (
-          <p className="text-sm text-primary mt-2">
-            Validating proposal completion...
-          </p>
+          <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="text-sm font-medium text-primary">
+                Saving and validating proposal completion...
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              This may take a few seconds
+            </p>
+          </div>
         )}
       </div>
       

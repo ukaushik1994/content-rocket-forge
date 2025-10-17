@@ -9,9 +9,11 @@ interface StepContentProps {
   currentStep: number;
   proposal: any;
   handleClose: () => void;
+  isSaving?: boolean;
+  setIsSaving?: (saving: boolean) => void;
 }
 
-export function StepContent({ currentStep, proposal, handleClose }: StepContentProps) {
+export function StepContent({ currentStep, proposal, handleClose, isSaving, setIsSaving }: StepContentProps) {
   switch (currentStep) {
     case 0:
       return <StrategyEnhancedSolutionSelector proposal={proposal} />;
@@ -34,6 +36,8 @@ export function StepContent({ currentStep, proposal, handleClose }: StepContentP
         <StrategyContentSaver
           proposal={proposal}
           onSaveComplete={handleClose}
+          isSaving={isSaving}
+          setIsSaving={setIsSaving}
         />
       );
     

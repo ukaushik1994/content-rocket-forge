@@ -184,15 +184,20 @@ export const useSaveStep = (skipNavigation: boolean = false) => {
       sessionStorage.setItem('content_save_timestamp', Date.now().toString());
       console.log("[SaveStep] Session storage flags set for draft saved");
       
-      // Only navigate if not in modal context (skipNavigation will be true when used in modals)
+      // Clear auto-save data after successful save
+      localStorage.removeItem('autoSave_content');
+      localStorage.removeItem('autoSave_timestamp');
+      
+      // Success! Navigate to drafts ONLY if not in modal context
+      toast.success('Content saved to drafts successfully!');
+      
+      // Only navigate if skipNavigation is false (not in modal context)
       if (!skipNavigation) {
         setTimeout(() => {
-          console.log("[SaveStep] Navigating to drafts page...");
-          navigate('/drafts', { 
-            state: { contentRefresh: true }
-          });
+          navigate('/drafts', { state: { contentRefresh: true } });
         }, 1000);
       }
+      // If skipNavigation is true, do NOTHING - let the modal control flow
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');

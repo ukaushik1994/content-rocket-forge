@@ -44,28 +44,40 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
   
   // Set a flag in session storage when saving and handle completion callback
   useEffect(() => {
-    if (saveCompleted && savedContentId) {
-      console.log('[SaveStep] Save completed with ID:', savedContentId);
-      // Use consistent flag names across the app
-      sessionStorage.setItem('content_draft_saved', 'true');
-      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
-      
-      // Call the completion callback if provided with actual contentId
-      if (onSaveComplete) {
-        console.log('[SaveStep] Calling onSaveComplete with contentId:', savedContentId);
-        // Properly await the async callback with error handling
-        (async () => {
+    let isMounted = true;
+    
+    const handleAsyncCompletion = async () => {
+      if (saveCompleted && savedContentId && isMounted) {
+        console.log('[SaveStep] Save completed with ID:', savedContentId);
+        // Use consistent flag names across the app
+        sessionStorage.setItem('content_draft_saved', 'true');
+        sessionStorage.setItem('content_save_timestamp', Date.now().toString());
+        
+        // Call the completion callback if provided with actual contentId
+        if (onSaveComplete) {
+          console.log('[SaveStep] Calling onSaveComplete with contentId:', savedContentId);
           try {
             await onSaveComplete(savedContentId);
           } catch (error) {
             console.error('[SaveStep] Error in onSaveComplete callback:', error);
-            toast.error('Save completed but validation failed - check proposal status manually');
+            if (isMounted) {
+              toast.error('Save completed but validation failed - check proposal status manually');
+            }
           }
-        })();
-      } else {
-        toast.success('Content saved successfully! Navigating to content library...');
+        } else {
+          if (isMounted) {
+            toast.success('Content saved successfully! Navigating to content library...');
+          }
+        }
       }
-    }
+    };
+    
+    handleAsyncCompletion();
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+    };
   }, [saveCompleted, savedContentId, onSaveComplete]);
   
   // Validate that we have content before showing the form

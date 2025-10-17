@@ -36,6 +36,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
   const [currentStep, setCurrentStep] = useState(0);
   const [initializationError, setInitializationError] = useState<string | null>(null);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Reset state when dialog opens with error handling
   useEffect(() => {
@@ -107,6 +108,12 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
   };
 
   const handleClose = () => {
+    // Block close during save operation
+    if (isSaving) {
+      toast.info('Please wait for content to finish saving...');
+      return;
+    }
+    
     // Check if user has made progress that would be lost
     const hasProgress = currentStep > 0;
     
@@ -275,6 +282,8 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                         currentStep={currentStep}
                         proposal={proposal}
                         handleClose={handleClose}
+                        isSaving={isSaving}
+                        setIsSaving={setIsSaving}
                       />
                     </StepValidationWrapper>
                       </LoadingStateWrapper>
@@ -296,7 +305,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                     <Button
                       variant="outline"
                       onClick={handlePrevious}
-                      disabled={currentStep === 0}
+                      disabled={currentStep === 0 || isSaving}
                       className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
                     >
                       <ChevronLeft className="h-4 w-4 mr-2" />
@@ -312,6 +321,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                       <Button 
                         variant="outline" 
                         onClick={handleClose}
+                        disabled={isSaving}
                         className="bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80"
                       >
                         Cancel
@@ -325,6 +335,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                       {currentStep < STEPS.length - 1 ? (
                         <Button 
                           onClick={handleNext}
+                          disabled={isSaving}
                           className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 shadow-lg"
                         >
                           Next
@@ -333,9 +344,10 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
                       ) : (
                         <Button 
                           onClick={handleClose}
+                          disabled={isSaving}
                           className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-500/90 hover:to-emerald-500/90 shadow-lg"
                         >
-                          Complete
+                          {isSaving ? 'Saving...' : 'Complete'}
                         </Button>
                       )}
                     </motion.div>
