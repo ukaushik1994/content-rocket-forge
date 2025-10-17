@@ -980,9 +980,10 @@ Return ONLY the JSON object with 12 unique, high-quality keywords.`
           difficulty: resp.data.keywordDifficulty || 0,
           competition: resp.data.competitionScore || 0,
           cpc: resp.data.cpc || null,
-          intent: intent || 'informational', // ✅ FIX 2.3: Save intent field
-          source: 'ai_strategy',
-          last_checked_at: new Date().toISOString()
+          intent: intent || 'informational',
+          source_type: 'ai_strategy',
+          last_checked_at: new Date().toISOString(),
+          serp_last_updated: new Date().toISOString()
         }, {
           onConflict: 'user_id,keyword'
         });
@@ -1164,7 +1165,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     return { 
       ...p, 
       keywords: kws, 
-      primary_keyword: kws.length > 0 ? kws[0] : p.title.toLowerCase(),
+      primary_keyword: kws.length > 0 ? kws[0].keyword : p.title.toLowerCase(),
       serp_data: serpMap, 
       estimated_impressions: Math.round(estImpr),
       priority_tag: classification.priority_tag,
@@ -1216,6 +1217,60 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
       message: `Only ${kwList.length} keywords were generated (expected 12). Results may be less comprehensive.`
     });
   }
+
+  // Save proposals to database and link keywords
+  console.log(`💾 Saving ${withSerp.length} proposals to database...`);
+  const savedProposals = [];
+
+  for (const proposal of withSerp) {
+    try {
+      // Save the proposal
+      const { data: savedProposal, error: saveError } = await supabaseAdmin
+        .from('ai_strategy_proposals')
+        .insert({
+          user_id: user.id,
+          strategy_session_id: strategy_session_id || null,
+          title: proposal.title,
+          description: proposal.description,
+          primary_keyword: proposal.primary_keyword,
+          content_type: proposal.content_type || 'blog',
+          priority_tag: proposal.priority_tag,
+          estimated_impressions: proposal.estimated_impressions,
+          related_keywords: proposal.keywords.map((k: any) => k.keyword),
+          proposal_data: proposal,
+          serp_data: proposal.serp_data || {}
+        })
+        .select()
+        .single();
+      
+      if (saveError) {
+        console.error(`❌ Failed to save proposal "${proposal.title}":`, saveError);
+        continue;
+      }
+      
+      savedProposals.push(savedProposal);
+      
+      // Update all keywords with this proposal's ID as source_id
+      if (savedProposal?.id && proposal.keywords) {
+        for (const kw of proposal.keywords) {
+          const { error: kwUpdateError } = await supabaseAdmin
+            .from('unified_keywords')
+            .update({ source_id: savedProposal.id })
+            .eq('user_id', user.id)
+            .eq('keyword', kw.keyword)
+            .eq('source_type', 'ai_strategy');
+          
+          if (kwUpdateError) {
+            console.error(`⚠️ Failed to link keyword "${kw.keyword}" to proposal:`, kwUpdateError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error saving proposal:`, error);
+    }
+  }
+
+  console.log(`✅ Saved ${savedProposals.length}/${withSerp.length} proposals with keyword links`);
 
   return new Response(
     JSON.stringify({ 
