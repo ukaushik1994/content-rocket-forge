@@ -10,6 +10,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import CheckEmail from "./pages/CheckEmail";
 import Repository from "./pages/Repository";
+import { RepositoryBackfill } from "./pages/RepositoryBackfill";
 import ContentBuilderPage from "./pages/ContentBuilder";
 import ContentTypeSelection from "./pages/ContentTypeSelection";
 import ContentApproval from "./pages/ContentApproval";
@@ -119,6 +120,7 @@ const App = () => (
                   <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                   <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                   <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
+                  <Route path="/repository/backfill" element={<ProtectedRoute><RepositoryBackfill /></ProtectedRoute>} />
                   <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
                   <Route path="/content-type-selection" element={<ProtectedRoute><ContentTypeSelection /></ProtectedRoute>} />
                   <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
