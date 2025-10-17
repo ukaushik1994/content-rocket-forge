@@ -1249,7 +1249,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
               competition_score: serpData?.competition_score || 0,
               cpc: serpData?.cpc || null,
               intent: kw.intent || 'informational',
-              source_type: 'ai_strategy',
+              source_type: 'strategy',
               source_id: savedProposal.id,
               serp_last_updated: new Date().toISOString()
             }, {

@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
               competition_score: serpData?.competition_score || 0,
               cpc: serpData?.cpc || null,
               intent: kwObj.intent || 'informational',
-              source_type: 'ai_strategy',
+              source_type: 'strategy',
               source_id: proposal.id,
               serp_last_updated: serpData ? new Date().toISOString() : null
             }, {
