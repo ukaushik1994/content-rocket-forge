@@ -77,6 +77,8 @@ export const processContentItems = async (contentData: any[]): Promise<ContentIt
       let item: ContentItemType = {
         id: dbItem.id,
         title: dbItem.title || '',
+        meta_title: dbItem.meta_title,
+        meta_description: dbItem.meta_description,
         content: dbItem.content || '',
         status: dbItem.status as 'draft' | 'published' | 'archived',
         approval_status: dbItem.approval_status as 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published',
