@@ -126,6 +126,16 @@ export const useSaveContent = () => {
       setIsSaving(true);
       console.log('[useSaveContent] Starting save to draft process');
       
+      // Validate that meta information is present
+      if (!state.metaTitle || !state.metaDescription) {
+        toast.error('Meta information required', {
+          description: 'Please generate meta title and description before saving',
+          duration: 5000
+        });
+        setIsSaving(false);
+        return null;
+      }
+      
       // Extract comprehensive SERP data
       const comprehensiveSerpData = extractComprehensiveSerpData();
       
@@ -368,6 +378,16 @@ export const useSaveContent = () => {
   const handlePublish = async (): Promise<string | null> => {
     try {
       setIsSaving(true);
+      
+      // Validate that meta information is present
+      if (!state.metaTitle || !state.metaDescription) {
+        toast.error('Meta information required', {
+          description: 'Please generate meta title and description before publishing',
+          duration: 5000
+        });
+        setIsSaving(false);
+        return null;
+      }
       
       // Extract comprehensive SERP data
       const comprehensiveSerpData = extractComprehensiveSerpData();

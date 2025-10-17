@@ -84,9 +84,8 @@ Meta Description: [your description here]`,
         
         console.log("[useMetaGenerator] Generated meta:", { generatedTitle, generatedDescription });
         
-        // Update both meta title and content title for consistency
+        // Update only meta fields, not content title
         dispatch({ type: 'SET_META_TITLE', payload: generatedTitle });
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: generatedTitle });
         dispatch({ type: 'SET_META_DESCRIPTION', payload: generatedDescription });
         
         toast.success('Generated meta title and description using AI', toastConfig.success);
@@ -95,7 +94,6 @@ Meta Description: [your description here]`,
         const { metaTitle: generatedTitle, metaDescription: generatedDescription } = generateMetaSuggestions(content, mainKeyword, contentTitle);
         
         dispatch({ type: 'SET_META_TITLE', payload: generatedTitle });
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: generatedTitle });
         dispatch({ type: 'SET_META_DESCRIPTION', payload: generatedDescription });
         
         toast.success('Generated meta title and description', toastConfig.success);
@@ -111,7 +109,6 @@ Meta Description: [your description here]`,
       const { metaTitle: generatedTitle, metaDescription: generatedDescription } = generateMetaSuggestions(content, mainKeyword, contentTitle);
       
       dispatch({ type: 'SET_META_TITLE', payload: generatedTitle });
-      dispatch({ type: 'SET_CONTENT_TITLE', payload: generatedTitle });
       dispatch({ type: 'SET_META_DESCRIPTION', payload: generatedDescription });
       
       toast.success('Generated meta title and description using local algorithm', toastConfig.success);

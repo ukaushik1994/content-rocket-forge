@@ -9,6 +9,7 @@ import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
+import { useAutoGenerateMetaAndAnalysis } from '@/hooks/final-review/useAutoGenerateMetaAndAnalysis';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -31,6 +32,9 @@ export const OptimizeAndReviewStep = () => {
   
   const { isSaving, isSavedToDraft, handleSaveToDraft, handlePublish } = useSaveContent();
   const { checklistItems, passedChecks, totalChecks, completionPercentage } = useChecklistItems();
+  
+  // Auto-generate meta information and solution analysis on component mount
+  const { isAutoGenerating } = useAutoGenerateMetaAndAnalysis(generateMeta, analyzeSolutionUsage);
   
   // Debug the state when component loads
   useEffect(() => {
