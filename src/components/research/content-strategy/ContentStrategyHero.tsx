@@ -5,6 +5,12 @@ import { Sparkles, Target, TrendingUp, BarChart3, Brain, Zap } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 
 export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => void }) => {
+  const { strategies, aiProposals, pipelineItems, loading } = useContentStrategy();
+  
+  const activeStrategiesCount = strategies.filter(s => s.is_active).length;
+  const proposalsCount = aiProposals.length;
+  const pipelineCount = pipelineItems.length;
+
   return (
     <motion.div 
       className="relative min-h-[60vh] flex items-center justify-center w-full"

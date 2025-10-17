@@ -599,6 +599,19 @@ class ContentStrategyService {
     }
   }
 
+  // Load AI strategy proposals from database with pagination
+  async getAIProposals(limit = 20, offset = 0): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('ai_strategy_proposals')
+      .select('*')
+      .eq('status', 'available')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (error) throw error;
+    return data || [];
+  }
+
   // AI-first strategy proposals using the content-strategy-engine function
   async generateAIStrategy(params?: { goals?: any; location?: string; excludeKeywords?: string[] }): Promise<{ proposals: any[]; message: string }> {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
