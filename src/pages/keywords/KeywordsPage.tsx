@@ -6,6 +6,7 @@ import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { KeywordsHero } from '@/components/keywords/KeywordsHero';
 import { KeywordsFilters } from '@/components/keywords/KeywordsFilters';
 import { KeywordCard } from '@/components/keywords/KeywordCard';
+import { KeywordListItem } from '@/components/keywords/KeywordListItem';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
@@ -196,13 +197,28 @@ const KeywordsPage = () => {
                 </div>
               </Card>
             </motion.div>
-          ) : (
-            // Keywords Grid/List
+          ) : viewMode === 'list' ? (
+            // Keywords List View
             <motion.div
-              className={viewMode === 'grid' 
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
-                : 'space-y-4'
-              }
+              className="space-y-3"
+              variants={{
+                hidden: { opacity: 0 },
+                show: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.05 }
+                }
+              }}
+              initial="hidden"
+              animate="show"
+            >
+              {filteredAndSortedKeywords.map((keyword) => (
+                <KeywordListItem key={keyword.id} keyword={keyword} />
+              ))}
+            </motion.div>
+          ) : (
+            // Keywords Grid View
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
