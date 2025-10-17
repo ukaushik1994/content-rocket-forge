@@ -326,7 +326,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] max-w-7xl h-[95vh] sm:h-[90vh] bg-background border-border text-foreground backdrop-blur-xl shadow-2xl rounded-xl flex flex-col">
           <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-4 border-b border-border">
             <DialogTitle className="text-lg sm:text-2xl font-bold text-foreground pr-8 line-clamp-2">
-              {extractTitleFromContent(content.content) || content.title}
+              {extractTitleFromContent(content.content) || content.metadata?.metaTitle || content.title}
             </DialogTitle>
             <div className="text-xs sm:text-sm text-muted-foreground capitalize">
               {content.content_type.replace('_', ' ')} • {content.status}

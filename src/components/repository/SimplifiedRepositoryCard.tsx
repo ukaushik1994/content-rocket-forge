@@ -15,6 +15,7 @@ import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
+import { useEffect } from 'react';
 
 interface SimplifiedRepositoryCardProps {
   content: ContentItemType;
@@ -25,6 +26,18 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
   content, 
   onView 
 }) => {
+  // Debug logging for title extraction
+  useEffect(() => {
+    const extracted = extractTitleFromContent(content.content);
+    console.log('[RepositoryCard] Title extraction debug:', {
+      contentId: content.id,
+      extractedTitle: extracted,
+      fallbackTitle: content.title,
+      metaTitle: content.metadata?.metaTitle,
+      contentPreview: content.content?.substring(0, 100) || 'NO CONTENT'
+    });
+  }, [content]);
+
   const getContentTypeIcon = (type: string) => {
     switch (type) {
       case 'article': return FileText;
@@ -143,7 +156,7 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
             <h3 className="text-lg font-semibold text-foreground group-hover:text-primary 
               transition-all duration-300 line-clamp-2 leading-tight
               group-hover:drop-shadow-[0_0_8px_rgba(155,135,245,0.6)]">
-              {extractTitleFromContent(content.content) || content.title}
+              {extractTitleFromContent(content.content) || content.metadata?.metaTitle || content.title}
             </h3>
             
             {content.metadata?.description && (

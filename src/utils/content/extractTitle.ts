@@ -4,8 +4,12 @@
  */
 export function extractTitleFromContent(content: string): string {
   if (!content || content.trim() === '') {
+    console.warn('[extractTitle] Empty or undefined content received');
     return '';
   }
+
+  // Log first 200 chars for debugging
+  console.log('[extractTitle] Processing content (first 200 chars):', content.substring(0, 200));
 
   // Split content into lines
   const lines = content.split('\n');
@@ -25,9 +29,12 @@ export function extractTitleFromContent(content: string): string {
       title = title.replace(/\*(.*?)\*/g, '$1');
       title = title.replace(/_(.*?)_/g, '$1');
       
-      return title.trim();
+      const extractedTitle = title.trim();
+      console.log('[extractTitle] Successfully extracted title:', extractedTitle);
+      return extractedTitle;
     }
   }
   
+  console.warn('[extractTitle] No title found in content - no non-empty lines detected');
   return '';
 }
