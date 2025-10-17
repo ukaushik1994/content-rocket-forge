@@ -338,16 +338,31 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
             .select();
 
           if (saveError) {
-            console.error('Failed to save proposals to database:', saveError);
+            console.error('❌ FAILED to save proposals:', saveError);
+            toast.error(`Failed to save ${generatedProposals.length} proposals to database`);
+            throw saveError;
           } else {
-            console.log('✅ Saved', savedProposals?.length || 0, 'proposals to database');
+            console.log('✅ Successfully saved', savedProposals?.length || 0, 'proposals');
+            toast.success(`Saved ${savedProposals?.length || 0} proposals to your library`);
+            
+            // Reload proposals from database to ensure UI shows saved data
+            try {
+              const reloadedProposals = await contentStrategyService.getAIProposals(50, 0);
+              setAiProposals(reloadedProposals);
+              console.log('✅ Reloaded', reloadedProposals.length, 'proposals from database');
+            } catch (reloadError) {
+              console.warn('⚠️ Failed to reload proposals:', reloadError);
+              setAiProposals(generatedProposals);
+            }
           }
         } catch (dbError) {
-          console.error('Database error saving proposals:', dbError);
+          console.error('❌ Database error saving proposals:', dbError);
+          toast.error('Database error - proposals may not have been saved');
         }
+      } else {
+        setAiProposals(generatedProposals);
       }
       
-      setAiProposals(generatedProposals);
       toast.success(`Generated ${generatedProposals.length} AI proposals`);
     } catch (error) {
       console.error('Error generating goal-based proposals:', error);

@@ -601,10 +601,13 @@ class ContentStrategyService {
 
   // Load AI strategy proposals from database with pagination
   async getAIProposals(limit = 20, offset = 0): Promise<any[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    
     const { data, error } = await supabase
       .from('ai_strategy_proposals')
       .select('*')
-      .eq('status', 'available')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
     
@@ -680,23 +683,6 @@ class ContentStrategyService {
     }
 
     console.log('✅ Strategy generation completed:', data);
-
-    // Auto-save strategy using aiStrategyService
-    try {
-      const { aiStrategyService } = await import('./aiStrategyService');
-      await aiStrategyService.saveStrategy({
-        title: `AI Strategy - ${new Date().toLocaleDateString()}`,
-        description: 'Auto-generated content strategy',
-        goals: params?.goals || {},
-        proposals: data.proposals || [],
-        serp_data: (data.proposals || []).reduce((acc: any, p: any) => ({ ...acc, ...p.serp_data }), {}),
-        keywords: (data.proposals || []).flatMap((p: any) => [p.primary_keyword, ...(p.keywords || [])]).filter(Boolean)
-      });
-      console.log('✅ Strategy saved to database');
-    } catch (saveError) {
-      console.warn('⚠️ Failed to save strategy to database:', saveError);
-      // Don't throw here, just log the warning
-    }
 
     return {
       proposals: data.proposals || [],
