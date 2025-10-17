@@ -30,18 +30,35 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
   const { name, features, painPoints = [], targetAudience = [] } = selectedSolution;
   const contentLower = content.toLowerCase();
   
-  // Calculate how many solution features are incorporated
+  // Calculate how many solution features are incorporated with flexible matching
   const featureIncorporation = features.reduce((count, feature) => {
-    if (contentLower.includes(feature.toLowerCase())) {
+    const featureLower = feature.toLowerCase();
+    const featureWords = featureLower.split(/\s+/).filter(w => w.length > 3);
+    
+    // Check if feature name is directly mentioned
+    if (contentLower.includes(featureLower)) {
       return count + 1;
     }
+    
+    // Check if majority of feature keywords appear (semantic matching)
+    const matchCount = featureWords.filter(word => contentLower.includes(word)).length;
+    if (matchCount >= Math.ceil(featureWords.length * 0.7)) {
+      return count + 1;
+    }
+    
     return count;
   }, 0);
   
   // Track which features are mentioned
-  const mentionedFeatures = features.filter(feature => 
-    contentLower.includes(feature.toLowerCase())
-  );
+  const mentionedFeatures = features.filter(feature => {
+    const featureLower = feature.toLowerCase();
+    const featureWords = featureLower.split(/\s+/).filter(w => w.length > 3);
+    
+    if (contentLower.includes(featureLower)) return true;
+    
+    const matchCount = featureWords.filter(word => contentLower.includes(word)).length;
+    return matchCount >= Math.ceil(featureWords.length * 0.7);
+  });
   
   const featureIncorporationPercentage = features.length > 0 ? 
     (featureIncorporation / features.length) * 100 : 0;

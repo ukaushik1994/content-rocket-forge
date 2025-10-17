@@ -92,9 +92,11 @@ const analyzeKeywordCompliance = (
   const words = contentLower.split(/\s+/);
   const wordCount = words.length;
 
-  // Main keyword analysis
+  // Main keyword analysis with word boundaries
   const mainKeyword = state.mainKeyword.toLowerCase();
-  const mainKeywordCount = (contentLower.match(new RegExp(mainKeyword, 'g')) || []).length;
+  const escapedKeyword = mainKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const keywordRegex = new RegExp(`\\b${escapedKeyword}\\b`, 'gi');
+  const mainKeywordCount = (contentLower.match(keywordRegex) || []).length;
   const mainKeywordDensity = wordCount > 0 ? (mainKeywordCount / wordCount) * 100 : 0;
   
   // Target density with flexibility
@@ -154,11 +156,13 @@ const analyzeKeywordCompliance = (
     });
   }
 
-  // Secondary keywords coverage
+  // Secondary keywords coverage with word boundaries
   const secondaryKeywords = state.selectedKeywords;
-  const coveredSecondary = secondaryKeywords.filter(keyword => 
-    contentLower.includes(keyword.toLowerCase())
-  ).length;
+  const coveredSecondary = secondaryKeywords.filter(keyword => {
+    const escaped = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+    return regex.test(contentLower);
+  }).length;
   
   const secondaryCoveragePercentage = secondaryKeywords.length > 0 
     ? (coveredSecondary / secondaryKeywords.length) * 100 
@@ -240,11 +244,15 @@ const analyzeSerpCompliance = (
     };
   }
 
-  // Analyze headings coverage
+  // Analyze headings coverage with semantic matching
   const headingItems = selectedSerpItems.filter(item => item.type === 'heading');
-  const coveredHeadings = headingItems.filter(item => 
-    contentLower.includes(item.content.toLowerCase().substring(0, 50))
-  ).length;
+  const coveredHeadings = headingItems.filter(item => {
+    const serpHeading = item.content.toLowerCase();
+    const serpWords = serpHeading.split(/\s+/).filter(w => w.length > 3);
+    // Check if majority of key words from SERP heading appear in content
+    const matchCount = serpWords.filter(word => contentLower.includes(word)).length;
+    return matchCount >= Math.ceil(serpWords.length * 0.6);
+  }).length;
   
   const headingsCoveragePercentage = headingItems.length > 0 
     ? (coveredHeadings / headingItems.length) * 100 
@@ -360,10 +368,17 @@ const analyzeSolutionCompliance = (
     });
   }
 
-  // Check for CTA presence
+  // Check for CTA presence with enhanced pattern matching
   const lastSection = content.substring(Math.max(0, content.length - Math.floor(content.length * 0.15)));
-  const ctaKeywords = ['try', 'start', 'get started', 'sign up', 'learn more', 'contact', 'book', 'schedule'];
-  const ctaPresent = ctaKeywords.some(keyword => lastSection.toLowerCase().includes(keyword));
+  const ctaPatterns = [
+    /\b(try|start|get started|sign up|join|register)\b/i,
+    /\b(download|learn more|contact|book|schedule|request)\b/i,
+    /\b(buy now|order|purchase|shop)\b/i,
+    /\b(unlock|discover|explore|see how)\b/i,
+    /\b(get access|claim|upgrade|view plans)\b/i,
+    /\[.*?\]\(.*?\)/ // Markdown links
+  ];
+  const ctaPresent = ctaPatterns.some(pattern => pattern.test(lastSection));
 
   if (!ctaPresent) {
     violations.push({

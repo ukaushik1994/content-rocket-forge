@@ -43,7 +43,22 @@ export const useChecklistItems = () => {
       },
       {
         title: 'Meta title includes primary keyword',
-        passed: !!metaTitle && mainKeyword ? metaTitle.toLowerCase().includes(mainKeyword.toLowerCase()) : false
+        passed: (() => {
+          if (!metaTitle || !mainKeyword) return false;
+          
+          const metaTitleLower = metaTitle.toLowerCase();
+          const mainKeywordLower = mainKeyword.toLowerCase();
+          
+          // Check if exact keyword is present
+          if (metaTitleLower.includes(mainKeywordLower)) return true;
+          
+          // If not exact match, check if majority of keyword terms are present
+          const keywordTerms = mainKeywordLower.split(/\s+/).filter(t => t.length > 2);
+          if (keywordTerms.length === 0) return false;
+          
+          const matchedTerms = keywordTerms.filter(term => metaTitleLower.includes(term)).length;
+          return matchedTerms >= Math.ceil(keywordTerms.length * 0.7);
+        })()
       },
       {
         title: 'Meta description is 50-160 characters',
