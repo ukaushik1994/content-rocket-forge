@@ -1246,7 +1246,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
               keyword: kw.keyword,
               search_volume: serpData?.search_volume || 0,
               difficulty: serpData?.keyword_difficulty || 0,
-              competition: serpData?.competition_score || 0,
+              competition_score: serpData?.competition_score || 0,
               cpc: serpData?.cpc || null,
               intent: kw.intent || 'informational',
               source_type: 'ai_strategy',
