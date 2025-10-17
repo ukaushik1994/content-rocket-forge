@@ -49,20 +49,39 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
     const handleAsyncCompletion = async () => {
       if (saveCompleted && savedContentId && isMounted) {
         console.log('[SaveStep] Save completed with ID:', savedContentId);
-        // Use consistent flag names across the app
+        
+        // Set session storage flags
         sessionStorage.setItem('content_draft_saved', 'true');
         sessionStorage.setItem('content_save_timestamp', Date.now().toString());
         
-        // Call the completion callback if provided with actual contentId
+        // Call completion callback with comprehensive error handling
         if (onSaveComplete) {
           console.log('[SaveStep] Calling onSaveComplete with contentId:', savedContentId);
           try {
-            await onSaveComplete(savedContentId);
+            // Add timeout protection
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('onSaveComplete timeout')), 10000)
+            );
+            
+            const completionPromise = onSaveComplete(savedContentId);
+            
+            await Promise.race([completionPromise, timeoutPromise]);
+            
+            console.log('[SaveStep] ✅ onSaveComplete callback completed successfully');
           } catch (error) {
-            console.error('[SaveStep] Error in onSaveComplete callback:', error);
+            console.error('[SaveStep] ❌ Error in onSaveComplete callback:', error);
+            
             if (isMounted) {
-              toast.error('Save completed but validation failed - check proposal status manually');
+              const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+              
+              if (errorMsg.includes('timeout')) {
+                toast.error('Save completed but final validation timed out - content is safe');
+              } else {
+                toast.error('Save completed but validation failed - check proposal status manually');
+              }
             }
+            
+            // DO NOT rethrow - we want the modal to close even on error
           }
         } else {
           if (isMounted) {
@@ -72,9 +91,13 @@ export const SaveStep = ({ onSaveComplete }: SaveStepProps = {}) => {
       }
     };
     
-    handleAsyncCompletion();
+    // Wrap in try-catch to prevent React error
+    handleAsyncCompletion().catch(error => {
+      console.error('[SaveStep] Unhandled error in async completion:', error);
+      toast.error('An error occurred after saving - your content is safe');
+    });
     
-    // Cleanup function to prevent memory leaks
+    // Cleanup function
     return () => {
       isMounted = false;
     };

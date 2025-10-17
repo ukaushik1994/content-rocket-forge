@@ -84,28 +84,39 @@ export const createPublishActions = (
         }
       }
 
-      // Prepare content data for database
+      // Prepare content data for database with FLAT metadata structure
       const contentData = {
-        title: finalTitle, // Blog title (extracted from content)
-        meta_title: content.metaTitle || finalTitle, // SEO meta title
-        meta_description: content.metaDescription, // SEO meta description
+        title: finalTitle,
+        meta_title: content.metaTitle || finalTitle,
+        meta_description: content.metaDescription,
         content: content.content,
         status: 'draft',
         seo_score: content.seoScore || 0,
         user_id: user.id,
         keywords: [content.mainKeyword, ...(content.secondaryKeywords || [])].filter(Boolean),
         metadata: {
+          // CRITICAL: Flat structure for database trigger compatibility
+          proposal_id: proposalId || null,
+          source_proposal_id: proposalId || null,
           mainKeyword: content.mainKeyword,
           secondaryKeywords: content.secondaryKeywords || [],
           contentType: content.contentType,
-          outline: content.outline || [],
-          serpSelections: content.serpSelections || [],
-          serpData: content.serpData,
-          proposal_id: proposalId, // Use proposal_id (not source_proposal_id) for trigger compatibility
-          ...proposalMetadata, // Add enriched proposal metadata (all 8 missing fields)
-          ...(content.metadata || {}) // Include any additional metadata passed in
+          outline: JSON.stringify(content.outline || []),
+          serpSelections: JSON.stringify(content.serpSelections || []),
+          serpData: content.serpData ? JSON.stringify(content.serpData) : null,
+          // Flatten proposal metadata to avoid nesting issues
+          ...(proposalMetadata || {}),
+          ...(content.metadata || {})
         }
       };
+
+      // CRITICAL VALIDATION: Ensure proposal_id is set
+      if (!contentData.metadata.proposal_id && proposalId) {
+        console.error('[CRITICAL] proposal_id missing from metadata, adding manually');
+        contentData.metadata.proposal_id = proposalId;
+      }
+
+      console.log('[SaveContent] Final metadata structure:', JSON.stringify(contentData.metadata, null, 2));
 
       // Save to database
       const { data, error } = await supabase
@@ -279,28 +290,39 @@ export const createPublishActions = (
         }
       }
 
-      // Prepare content data for database
+      // Prepare content data for database with FLAT metadata structure
       const contentData = {
-        title: finalTitle, // Blog title (extracted from content)
-        meta_title: content.metaTitle || finalTitle, // SEO meta title
-        meta_description: content.metaDescription, // SEO meta description
+        title: finalTitle,
+        meta_title: content.metaTitle || finalTitle,
+        meta_description: content.metaDescription,
         content: content.content,
         status: 'published',
         seo_score: content.seoScore || 0,
         user_id: user.id,
         keywords: [content.mainKeyword, ...(content.secondaryKeywords || [])].filter(Boolean),
         metadata: {
+          // CRITICAL: Flat structure for database trigger compatibility
+          proposal_id: proposalId || null,
+          source_proposal_id: proposalId || null,
           mainKeyword: content.mainKeyword,
           secondaryKeywords: content.secondaryKeywords || [],
           contentType: content.contentType,
-          outline: content.outline || [],
-          serpSelections: content.serpSelections || [],
-          serpData: content.serpData,
-          proposal_id: proposalId, // Use proposal_id (not source_proposal_id) for trigger compatibility
-          ...proposalMetadata, // Add enriched proposal metadata (all 8 missing fields)
-          ...(content.metadata || {}) // Include any additional metadata passed in
+          outline: JSON.stringify(content.outline || []),
+          serpSelections: JSON.stringify(content.serpSelections || []),
+          serpData: content.serpData ? JSON.stringify(content.serpData) : null,
+          // Flatten proposal metadata to avoid nesting issues
+          ...(proposalMetadata || {}),
+          ...(content.metadata || {})
         }
       };
+
+      // CRITICAL VALIDATION: Ensure proposal_id is set
+      if (!contentData.metadata.proposal_id && proposalId) {
+        console.error('[CRITICAL] proposal_id missing from metadata, adding manually');
+        contentData.metadata.proposal_id = proposalId;
+      }
+
+      console.log('[PublishContent] Final metadata structure:', JSON.stringify(contentData.metadata, null, 2));
 
       // Save to database
       const { data, error } = await supabase

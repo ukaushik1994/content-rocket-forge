@@ -192,89 +192,116 @@ export function StrategyContentSaver({
 
   // Enhanced save completion handler with data validation and timeout protection
   const handleSaveComplete = async (contentId: string) => {
-    // Set isSaving to true when save starts
-    if (setIsSaving) setIsSaving(true);
-    
-    // Validate contentId first to prevent hanging
-    if (!contentId || contentId.trim() === '') {
-      console.error('[StrategyContentSaver] Invalid contentId received:', contentId);
-      toast.error('Failed to retrieve saved content ID');
-      if (setIsSaving) setIsSaving(false);
-      onSaveComplete(); // Still call completion to prevent hang
-      return;
-    }
-    
-    console.log('[StrategyContentSaver] Content saved with ID:', contentId);
-    console.log('[StrategyContentSaver] Proposal ID:', proposal?.id);
-    console.log('[StrategyContentSaver] Strategy source in state:', state.strategySource);
-    
-    // Set validation state at the START
-    setIsValidatingCompletion(true);
-    
-    // Wrap everything in timeout protection to prevent indefinite hanging
-    const timeoutPromise = new Promise<void>((_, reject) => 
-      setTimeout(() => reject(new Error('Save completion timeout')), 5000)
-    );
-    
-    const completionPromise = (async () => {
-      if (proposal?.id) {
-      // Verify the content was saved with the correct metadata
-      const { data: savedContent, error: fetchError } = await supabase
-        .from('content_items')
-        .select('metadata')
-        .eq('id', contentId)
-        .single();
-      
-      if (fetchError) {
-        console.error('[StrategyContentSaver] Failed to verify saved content:', fetchError);
-      } else {
-        console.log('[StrategyContentSaver] Saved content metadata:', savedContent?.metadata);
-        
-        // Check if source_proposal_id is in metadata (required for trigger)
-        const metadata = savedContent?.metadata as Record<string, any> | null;
-        const hasProposalId = metadata?.source_proposal_id || metadata?.proposal_id;
-        if (!hasProposalId) {
-          console.error('[StrategyContentSaver] CRITICAL: Content saved without proposal_id in metadata!');
-          console.error('[StrategyContentSaver] This will prevent the completion trigger from working');
-        }
-      }
-      
-      // Wait briefly for the trigger to process (reduced from 1500ms)
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Validate that the proposal was marked as completed
-      const wasCompleted = await validateProposalCompletion(contentId);
-      
-      if (!wasCompleted) {
-        console.warn('[StrategyContentSaver] Trigger failed, attempting manual completion');
-        
-        // Double-check before manual completion to avoid duplicates
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const finalCheck = await validateProposalCompletion(contentId);
-        
-        if (!finalCheck) {
-          toast.info('Ensuring proposal completion...');
-          await completeProposalManually(contentId);
-        }
-      } else {
-        console.log('[StrategyContentSaver] Proposal successfully marked as completed');
-        toast.success(`Content saved! Proposal "${proposal.title}" marked as completed.`);
-      }
-      }
-    })();
-    
+    // CRITICAL: Wrap entire function in error boundary
     try {
+      if (setIsSaving) setIsSaving(true);
+      
+      // Validate contentId first
+      if (!contentId || contentId.trim() === '') {
+        throw new Error('Invalid contentId received');
+      }
+      
+      console.log('[StrategyContentSaver] Starting save completion for ID:', contentId);
+      
+      setIsValidatingCompletion(true);
+      
+      // Reduced timeout for faster failure detection
+      const timeoutPromise = new Promise<void>((_, reject) => 
+        setTimeout(() => reject(new Error('Validation timeout - operation took too long')), 3000)
+      );
+      
+      const completionPromise = (async () => {
+        if (proposal?.id) {
+          // Verify content was saved - wrapped in try-catch
+          let savedContent;
+          try {
+            const { data, error: fetchError } = await supabase
+              .from('content_items')
+              .select('metadata, id')
+              .eq('id', contentId)
+              .single();
+            
+            if (fetchError) throw fetchError;
+            savedContent = data;
+          } catch (verifyError) {
+            console.error('[StrategyContentSaver] Failed to verify content:', verifyError);
+            throw new Error('Content verification failed');
+          }
+          
+          console.log('[StrategyContentSaver] Verified content metadata:', savedContent?.metadata);
+          
+          // Validate metadata structure
+          const metadata = savedContent?.metadata as Record<string, any> | null;
+          if (!metadata?.proposal_id && !metadata?.source_proposal_id) {
+            console.error('[StrategyContentSaver] CRITICAL: Missing proposal_id in metadata!');
+            // Attempt to fix by updating the record
+            try {
+              const { error: updateError } = await supabase
+                .from('content_items')
+                .update({ 
+                  metadata: { 
+                    ...(metadata || {}), 
+                    proposal_id: proposal.id,
+                    source_proposal_id: proposal.id 
+                  } 
+                })
+                .eq('id', contentId);
+              
+              if (updateError) throw updateError;
+              console.log('[StrategyContentSaver] Fixed missing proposal_id in metadata');
+            } catch (fixError) {
+              console.error('[StrategyContentSaver] Failed to fix metadata:', fixError);
+              throw new Error('Metadata repair failed');
+            }
+          }
+          
+          // Reduced wait time for trigger
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // Validate proposal completion
+          const wasCompleted = await validateProposalCompletion(contentId);
+          
+          if (!wasCompleted) {
+            console.warn('[StrategyContentSaver] Trigger did not complete proposal, attempting manual completion');
+            await completeProposalManually(contentId);
+          } else {
+            console.log('[StrategyContentSaver] ✅ Proposal successfully completed');
+            toast.success(`Content saved! Proposal "${proposal.title}" marked as completed.`);
+          }
+        }
+      })();
+      
+      // Race with timeout
       await Promise.race([completionPromise, timeoutPromise]);
-      // Success - clear loading state and close modal AFTER all async operations complete
+      
+      // Success path
+      console.log('[StrategyContentSaver] ✅ Save completed successfully');
       setIsValidatingCompletion(false);
       if (setIsSaving) setIsSaving(false);
       onSaveComplete();
+      
     } catch (error) {
-      console.error('[StrategyContentSaver] Save completion error:', error);
-      toast.error('Save completed but validation timed out - check proposal status manually');
-      // Clear loading state and close modal even on error to prevent hang
+      // COMPREHENSIVE ERROR RECOVERY
+      console.error('[StrategyContentSaver] ❌ Save completion error:', error);
+      
+      // Determine error type for user feedback
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      if (errorMessage.includes('timeout')) {
+        toast.error('Validation timed out - content saved but proposal status unknown');
+      } else if (errorMessage.includes('Invalid contentId')) {
+        toast.error('Failed to save content - invalid ID generated');
+      } else if (errorMessage.includes('Metadata')) {
+        toast.error('Content saved but metadata validation failed');
+      } else {
+        toast.error('Save completed but validation failed - check proposal status manually');
+      }
+      
+      // ALWAYS clear loading states and close modal to prevent hang
       setIsValidatingCompletion(false);
       if (setIsSaving) setIsSaving(false);
+      
+      // Close modal even on error - content is saved, just validation failed
       onSaveComplete();
     }
   };

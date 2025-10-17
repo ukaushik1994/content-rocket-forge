@@ -16,6 +16,7 @@ import { ContentBuilderProvider, useContentBuilder } from '@/contexts/ContentBui
 import { EnhancedSolution } from '@/contexts/content-builder/types';
 import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
 import { StrategyContextInitializer } from './dialog/StrategyContextInitializer';
+import { StrategyDialogErrorBoundary } from './dialog/StrategyDialogErrorBoundary';
 
 interface StrategyBuilderDialogProps {
   open: boolean;
@@ -134,8 +135,9 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-7xl h-[90vh] flex flex-col bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-border/50 sm:max-w-[95vw] lg:max-w-6xl xl:max-w-7xl !z-[100]">
-        <ContentBuilderProvider>
-          <StrategyContextInitializer proposal={proposal}>
+        <StrategyDialogErrorBoundary onReset={() => { setCurrentStep(0); onOpenChange(false); }}>
+          <ContentBuilderProvider>
+            <StrategyContextInitializer proposal={proposal}>
           
           {/* Interactive Background Effects */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -356,6 +358,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
               </div>
             </StrategyContextInitializer>
           </ContentBuilderProvider>
+        </StrategyDialogErrorBoundary>
       </DialogContent>
       
       {/* Exit Confirmation Dialog */}
