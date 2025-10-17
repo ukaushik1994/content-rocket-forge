@@ -33,8 +33,8 @@ export const useSaveStep = () => {
   // Track optimizations
   const hasAppliedOptimizations = seoImprovements?.some(improvement => improvement.applied) || false;
   
-  // Initialize title from contentTitle or metaTitle if available, otherwise use a default
-  const [title, setTitle] = useState(contentTitle || metaTitle || `${mainKeyword} - Complete Guide`);
+  // Initialize title from contentTitle (blog title), not metaTitle
+  const [title, setTitle] = useState(contentTitle || `${mainKeyword} - Complete Guide`);
   
   // Initialize description from metaDescription if available, otherwise use a default
   const [description, setDescription] = useState(metaDescription || `A comprehensive guide about ${mainKeyword}`);
@@ -64,10 +64,8 @@ export const useSaveStep = () => {
   useEffect(() => {
     console.log("[SaveStep] Global state updated:", { metaTitle, contentTitle, metaDescription });
     
-    if (metaTitle) {
-      setTitle(metaTitle);
-      console.log("[SaveStep] Updated title from metaTitle:", metaTitle);
-    } else if (contentTitle) {
+    // Prioritize contentTitle for the blog title
+    if (contentTitle) {
       setTitle(contentTitle);
       console.log("[SaveStep] Updated title from contentTitle:", contentTitle);
     }
@@ -138,12 +136,12 @@ export const useSaveStep = () => {
       if (hasSaveActions) {
         // Use ContentBuilder's save function with enhanced params
         const saveParams = {
-          title,
+          title: contentTitle || title, // Use contentTitle as the blog title
           content,
           mainKeyword,
           secondaryKeywords: selectedKeywords,
           contentType,
-          metaTitle: title,
+          metaTitle: metaTitle || title, // Use metaTitle for SEO meta title
           metaDescription: description,
           status: 'draft' as const,
           notes: '',
