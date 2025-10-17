@@ -104,7 +104,6 @@ const App = () => (
           <GlobalSettingsBridge />
           <KeywordMigrationRunner />
           <ContentProvider>
-              <TourProvider>
                 <ChatContextBridgeProvider>
               <Toaster />
               <Sonner />
@@ -164,7 +163,6 @@ const App = () => (
                 </Routes>
               </BrowserRouter>
               </ChatContextBridgeProvider>
-            </TourProvider>
         </ContentProvider>
         </SettingsProvider>
       </AuthProvider>
