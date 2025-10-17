@@ -27,7 +27,7 @@ export function StrategyGenerationProgress({
   if (!isGenerating) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center transform-none">
       {/* Full-screen overlay */}
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
       
