@@ -1013,8 +1013,8 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
   
   // Use safe parser with markdown stripping
   const { parseAIResponse: parseStrategyResponse } = await import('./json-utils.ts');
-  const parsed = parseStrategyResponse(stratText, { proposals: [] });
-  let proposals: any[] = Array.isArray(parsed) ? parsed.slice(0, 6) : (parsed.proposals || []).slice(0, 6);
+  const strategyParsed = parseStrategyResponse(stratText, { proposals: [] });
+  let proposals: any[] = Array.isArray(strategyParsed) ? strategyParsed.slice(0, 6) : (strategyParsed.proposals || []).slice(0, 6);
   console.log('✅ Parsed proposals successfully:', proposals.length, 'proposals');
 
   const withSerp = proposals.map((p) => {
