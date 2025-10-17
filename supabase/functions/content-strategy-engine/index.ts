@@ -384,7 +384,7 @@ Deno.serve(async (req) => {
       case 'calculate_traffic_potential':
         return await calculateTrafficPotential(supabase, payload)
       case 'generate_ai_strategy':
-        return await generateAIStrategy(supabase, supabaseAdmin, payload)
+        return await generateAIStrategy(supabase, payload)
       default:
         throw new Error(`Unknown action: ${action}`)
     }
@@ -739,7 +739,7 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 }
 
 // New AI-first strategy generation (no clusters)
-async function generateAIStrategy(supabase: any, supabaseAdmin: any, payload: any) {
+async function generateAIStrategy(supabase: any, payload: any) {
   const { user_id, goals = {}, location = 'United States', excludeKeywords = [], api_keys = {} } = payload;
 
   // ✅ FIX 2.1: Validate SERP API key early
@@ -1167,36 +1167,25 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     };
   });
 
-  // Filter out proposals with estimated impressions below 300
-  const filteredProposals = withSerp.filter(proposal => {
-    if (proposal.estimated_impressions < 300) {
-      console.log(`🚫 Excluding "${proposal.title}" - impressions too low (${proposal.estimated_impressions} < 300)`);
-      return false;
-    }
-    return true;
-  });
-
-  console.log(`📊 Filtered proposals: ${withSerp.length} → ${filteredProposals.length} (removed ${withSerp.length - filteredProposals.length} low-impression proposals)`);
-
   // Add classification quality monitoring
-  logClassificationMetrics(filteredProposals);
+  logClassificationMetrics(withSerp);
   
   // Validate and log classification distribution
-  const qualityReport = validateClassificationThresholds(filteredProposals);
+  const qualityReport = validateClassificationThresholds(withSerp);
   console.log('🎯 Final Classification Summary:', {
-    proposals_generated: filteredProposals.length,
+    proposals_generated: withSerp.length,
     quality_score: qualityReport.quality_score,
     distribution_percentages: Object.entries(qualityReport.distribution).reduce((acc, [key, value]) => {
-      acc[key] = `${Math.round((value / filteredProposals.length) * 100)}%`;
+      acc[key] = `${Math.round((value / withSerp.length) * 100)}%`;
       return acc;
     }, {} as Record<string, string>),
     optimization_recommendations: qualityReport.recommendations
   });
 
   console.log('✅ Strategy generation completed:', {
-    proposalsGenerated: filteredProposals.length,
+    proposalsGenerated: withSerp.length,
     totalKeywords: kwList.length,
-    avgEstimatedImpressions: filteredProposals.reduce((sum, p) => sum + p.estimated_impressions, 0) / filteredProposals.length,
+    avgEstimatedImpressions: withSerp.reduce((sum, p) => sum + p.estimated_impressions, 0) / withSerp.length,
     classificationQuality: qualityReport.quality_score
   });
 
@@ -1219,10 +1208,10 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
   }
 
   // Save proposals to database and link keywords
-  console.log(`💾 Saving ${filteredProposals.length} proposals to database...`);
+  console.log(`💾 Saving ${withSerp.length} proposals to database...`);
   const savedProposals = [];
 
-  for (const proposal of filteredProposals) {
+  for (const proposal of withSerp) {
     try {
       // Save the proposal
       const { data: savedProposal, error: saveError } = await supabaseAdmin

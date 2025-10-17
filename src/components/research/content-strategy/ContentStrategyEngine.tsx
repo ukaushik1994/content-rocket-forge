@@ -251,8 +251,7 @@ export const ContentStrategyEngine = ({
       setGenerating(true);
       startProgress();
       
-      // Use the same edge function as initial generation
-      const result = await contentStrategyService.generateAIStrategy({
+      const result = await aiStrategyService.generateNewStrategy({
         goals: {
           monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
           contentPieces: 6,
@@ -265,20 +264,21 @@ export const ContentStrategyEngine = ({
 
       const newProposals = result.proposals || [];
       
-      // Reload all proposals from database to get the newly saved ones
-      await loadHistoricalProposals();
-      
       // Mark new proposals for highlighting
-      const newIds = new Set(newProposals.map(p => String(p.id || p.title.toLowerCase().replace(/\s+/g, '-'))));
+      const newIds = new Set(newProposals.map(p => p.id || p.title.toLowerCase().replace(/\s+/g, '-')));
       setNewProposalIds(newIds);
       
       // Set timestamps for fade-out animation
       const timestamps: Record<string, number> = {};
       newProposals.forEach(p => {
-        const id = String(p.id || p.title.toLowerCase().replace(/\s+/g, '-'));
+        const id = p.id || p.title.toLowerCase().replace(/\s+/g, '-');
         timestamps[id] = Date.now();
       });
       setNewProposalTimestamps(timestamps);
+
+      // Add to proposals arrays
+      setProposals(prev => [...prev, ...newProposals]);
+      setAiProposals([...(aiProposals || []), ...newProposals]);
       
       toast({
         title: `${newProposals.length} New Proposals Generated`,
