@@ -44,6 +44,14 @@ export interface StrategySession {
 }
 
 class AIStrategyService {
+  // Helper to safely convert any value to lowercase string
+  private toSafeString(value: any): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value.toLowerCase();
+    if (typeof value === 'object' && value.keyword) return String(value.keyword).toLowerCase();
+    return String(value).toLowerCase();
+  }
+
   // Strategy persistence operations
   async saveStrategy(data: {
     title: string;
@@ -207,7 +215,7 @@ class AIStrategyService {
         
         const hasUsedKeyword = proposalKeywords.some(kw => 
           excludeKeywords.some(used => 
-            used.toLowerCase() === kw.toLowerCase()
+            this.toSafeString(used) === this.toSafeString(kw)
           )
         );
         
@@ -221,9 +229,9 @@ class AIStrategyService {
         console.log('⚠️ No unique proposals found, using relaxed filtering (exclude only exact matches)');
         
         const relaxedFiltered = result.proposals.filter(proposal => {
-          const primaryKeyword = proposal.primary_keyword?.toLowerCase() || '';
+          const primaryKeyword = this.toSafeString(proposal.primary_keyword);
           return !excludeKeywords.some(used => 
-            used.toLowerCase() === primaryKeyword
+            this.toSafeString(used) === primaryKeyword
           );
         });
         
