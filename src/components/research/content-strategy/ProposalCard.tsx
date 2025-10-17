@@ -30,7 +30,14 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
   const [scheduleHours, setScheduleHours] = useState(2);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   
-  const primaryKw = proposal.primary_keyword || 'No keyword';
+  // Helper to safely extract string from keyword (handles both string and {keyword: string} object)
+  const normalizeKeyword = (kw: any): string => {
+    if (typeof kw === 'string') return kw;
+    if (kw && typeof kw === 'object' && kw.keyword) return String(kw.keyword);
+    return String(kw || 'No keyword');
+  };
+  
+  const primaryKw = normalizeKeyword(proposal.primary_keyword);
   const primaryMetrics = proposal.serp_data?.[primaryKw] || {};
   const estImpressions = proposal.estimated_impressions ?? Math.round((primaryMetrics.searchVolume || 0) * 0.05);
   

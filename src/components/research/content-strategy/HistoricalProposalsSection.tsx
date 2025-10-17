@@ -168,7 +168,7 @@ export const HistoricalProposalsSection = ({ onReuse, className }: HistoricalPro
                           <div className="flex items-center gap-2">
                             <Target className="h-3 w-3 text-purple-400" />
                             <span className="text-xs text-white/80 truncate">
-                              {proposal.primary_keyword}
+                              {typeof proposal.primary_keyword === 'string' ? proposal.primary_keyword : (proposal.primary_keyword as any)?.keyword || String(proposal.primary_keyword)}
                             </span>
                           </div>
 

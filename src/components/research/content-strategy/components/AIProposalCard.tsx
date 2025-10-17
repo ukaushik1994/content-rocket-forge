@@ -166,7 +166,7 @@ export const AIProposalCard: React.FC<AIProposalCardProps> = ({
           <div className="flex items-center gap-4 text-xs text-muted-foreground mt-3">
             <div className="flex items-center gap-1">
               <Target className="h-3 w-3" />
-              <span className="text-primary font-medium">{proposal.primary_keyword}</span>
+              <span className="text-primary font-medium">{typeof proposal.primary_keyword === 'string' ? proposal.primary_keyword : (proposal.primary_keyword as any)?.keyword || String(proposal.primary_keyword)}</span>
             </div>
             <div className="flex items-center gap-1">
               <TrendingUp className="h-3 w-3" />

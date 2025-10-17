@@ -186,7 +186,7 @@ export const EnhancedAIProposalCard: React.FC<EnhancedAIProposalCardProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="inline-flex text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary rounded hover:bg-primary/30 transition-colors cursor-help">
-                  {proposal.primary_keyword}
+                  {typeof proposal.primary_keyword === 'string' ? proposal.primary_keyword : (proposal.primary_keyword as any)?.keyword || String(proposal.primary_keyword)}
                 </span>
               </TooltipTrigger>
               <TooltipContent>

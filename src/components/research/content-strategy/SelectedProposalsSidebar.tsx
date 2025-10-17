@@ -201,7 +201,7 @@ export const SelectedProposalsSidebar = ({
                                 <Target className="h-3 w-3 text-purple-400" />
                                 <span className="text-xs text-white/80">Primary:</span>
                                 <Badge variant="outline" className="text-xs text-white/80 border-white/20 bg-white/10">
-                                  {proposal.primary_keyword}
+                                  {typeof proposal.primary_keyword === 'string' ? proposal.primary_keyword : proposal.primary_keyword?.keyword || String(proposal.primary_keyword)}
                                 </Badge>
                               </div>
 
