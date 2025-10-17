@@ -61,10 +61,19 @@ const isValidMarkdownTableRow = (line: string): boolean => {
   return segments.length >= 2;
 };
 
-// Frontend does ZERO cleaning - let validation layer handle issues
+// Clean malformed pipes that corrupt text flow
 const cleanMalformedPipes = (content: string): string => {
-  // Trust backend cleaning and validation layer
-  return content;
+  return content
+    // Remove pipes surrounded by spaces (not table borders)
+    .replace(/\s+\|\s+/g, ' ')
+    // Remove pipes at start of lines (not tables)
+    .replace(/^\|(?!\s*-)/gm, '')
+    // Remove pipes at end of lines (not tables)
+    .replace(/\|$/gm, '')
+    // Clean up multiple consecutive pipes
+    .replace(/\|{2,}/g, '|')
+    // Remove orphaned pipes in middle of sentences
+    .replace(/(\w)\s*\|\s*(\w)/g, '$1 $2');
 };
 
 // Convert CSV content to markdown table
@@ -362,120 +371,31 @@ const processTableLines = (lines: string[]): string => {
   }
 };
 
-// Streamlined table detection with validation-first approach
+// Simplified table detection - let markdown handle it naturally
 const detectAndConvertTables = (content: string): { processedContent: string; hasErrors: boolean; errorCount: number; hasTableConversion?: boolean } => {
-  let errorCount = 0;
-  let hasErrors = false;
-  let hasTableConversion = false;
+  console.log('🔄 Starting simplified table processing');
   
-  console.log('🔄 Starting table detection and conversion process');
+  // Step 1: Clean malformed pipes
+  let processedContent = cleanMalformedPipes(content);
   
-  // Step 0: No frontend cleaning - trust backend
-  let processedContent = content;
-  
-  // Step 1: Pre-process code blocks to convert CSV to tables
+  // Step 2: Only convert CSV in code blocks - trust AI for markdown tables
   processedContent = processCodeBlocks(processedContent);
-  console.log('📋 Code blocks processed');
   
-  // Step 2: NEW - Validate table BEFORE attempting repair
-  if (detectMalformedTable(processedContent)) {
-    console.log('🔍 Table-like content detected, validating structure...');
-    
-    const validation = validateMarkdownTable(processedContent);
-    
-    if (!validation.isValid) {
-      console.warn('⚠️ Invalid table detected:', validation.reason);
-      console.log('🔄 Converting to formatted list instead...');
-      
-      processedContent = convertInvalidTableToList(processedContent);
-      hasTableConversion = true;
-      
-      return { 
-        processedContent,
-        hasErrors: false, // Not an error - we handled it gracefully
-        errorCount: 0,
-        hasTableConversion: true
-      };
-    }
-    
-    // Only proceed with repair if validation passes
-    console.log('✅ Table structure valid, proceeding with repair if needed');
-    try {
-      processedContent = repairMalformedTable(processedContent);
-      console.log('✅ Table processed successfully');
-      
-      return { 
-        processedContent,
-        hasErrors: false,
-        errorCount: 0,
-        hasTableConversion: false
-      };
-    } catch (error) {
-      console.warn('❌ Failed to process table:', error);
-      hasErrors = true;
-      errorCount++;
-      // Continue with regular processing as fallback
-    }
-  }
+  // Step 3: Normalize whitespace for better readability
+  processedContent = processedContent
+    // Ensure double line breaks between paragraphs
+    .replace(/\n{3,}/g, '\n\n')
+    // Add space after periods if missing
+    .replace(/\.(?=[A-Z])/g, '. ')
+    // Clean up list formatting
+    .replace(/^(\d+\.|[-*])\s+/gm, '$1 ');
   
-  // Step 3: Process remaining content for table patterns (only if no malformed tables were found/repaired)
-  console.log('🔍 Scanning for additional table patterns');
-  const lines = processedContent.split('\n');
-  const processedLines: string[] = [];
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-    
-    // Skip empty lines
-    if (!line.trim()) {
-      processedLines.push(line);
-      i++;
-      continue;
-    }
-
-    // Check if this line looks like a table header or data row
-    const tableMatch = detectTablePattern(line);
-    
-    if (tableMatch) {
-      console.log('📋 Table pattern detected at line', i);
-      // Found a potential table, collect all consecutive table rows
-      try {
-        const tableLines = collectTableLines(lines, i);
-        console.log('📊 Collected', tableLines.length, 'table lines');
-        
-        if (tableLines.length >= 2) { // Need at least header + 1 data row
-          const markdownTable = convertToMarkdownTable(tableLines);
-          if (markdownTable && markdownTable.trim()) {
-            console.log('✅ Successfully converted to markdown table');
-            processedLines.push(markdownTable);
-            i += tableLines.length;
-            continue;
-          } else {
-            console.warn('⚠️ Table conversion resulted in empty content');
-            hasErrors = true;
-            errorCount++;
-          }
-        } else {
-          console.warn('⚠️ Insufficient table lines for conversion');
-        }
-      } catch (error) {
-        console.warn('❌ Table conversion error:', error);
-        hasErrors = true;
-        errorCount++;
-      }
-    }
-    
-    // Add the line as regular content (only add once per iteration)
-    processedLines.push(line);
-    i++;
-  }
-
-  console.log('🏁 Table processing complete. Errors:', errorCount);
+  console.log('✅ Table processing complete');
   return { 
-    processedContent: processedLines.join('\n'),
-    hasErrors,
-    errorCount
+    processedContent,
+    hasErrors: false,
+    errorCount: 0,
+    hasTableConversion: false
   };
 };
 
@@ -803,7 +723,7 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-base font-semibold text-foreground mb-3 mt-5 first:mt-0">
+            <h2 className="text-base font-semibold text-foreground mb-3 mt-6 first:mt-0 border-l-4 border-primary pl-3">
               {children}
             </h2>
           ),
@@ -812,23 +732,23 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
               {children}
             </h3>
           ),
-          p: ({ children }) => (
-            <p className="text-sm text-foreground/90 mb-3 leading-relaxed">
-              {children}
-            </p>
-          ),
+              p: ({ children }) => (
+                <p className="text-sm text-foreground/90 mb-4 leading-relaxed max-w-prose">
+                  {children}
+                </p>
+              ),
           ul: ({ children }) => (
-            <ul className="list-disc list-inside space-y-2 mb-4 text-sm text-foreground/90 ml-2">
+            <ul className="list-disc space-y-2 mb-4 text-sm text-foreground/90 ml-6 pl-0">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal list-inside space-y-2 mb-4 text-sm text-foreground/90 ml-2">
+            <ol className="list-decimal space-y-2 mb-4 text-sm text-foreground/90 ml-6 pl-0">
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="ml-1 leading-relaxed">
+            <li className="ml-0 pl-1 leading-relaxed">
               {children}
             </li>
           ),
@@ -887,12 +807,12 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
           code: ({ children, className }) => {
             const isInline = !className;
             return isInline ? (
-              <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-foreground">
+              <code className="bg-muted/70 px-2 py-1 rounded-md text-xs font-mono text-foreground border border-border/30">
                 {children}
               </code>
             ) : (
-              <pre className="bg-muted p-3 rounded-lg overflow-x-auto mb-3">
-                <code className="text-xs font-mono text-foreground">
+              <pre className="bg-muted/50 p-4 rounded-lg overflow-x-auto mb-4 border border-border/30 backdrop-blur-sm">
+                <code className="text-xs font-mono text-foreground/90 leading-relaxed">
                   {children}
                 </code>
               </pre>
