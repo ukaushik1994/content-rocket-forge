@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
@@ -9,7 +9,6 @@ import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
-import { useAutoGenerateMetaAndAnalysis } from '@/hooks/final-review/useAutoGenerateMetaAndAnalysis';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -33,8 +32,24 @@ export const OptimizeAndReviewStep = () => {
   const { isSaving, isSavedToDraft, handleSaveToDraft, handlePublish } = useSaveContent();
   const { checklistItems, passedChecks, totalChecks, completionPercentage } = useChecklistItems();
   
-  // Auto-generate meta information and solution analysis on component mount
-  const { isAutoGenerating } = useAutoGenerateMetaAndAnalysis(generateMeta, analyzeSolutionUsage);
+  // Auto-trigger existing button functions on component mount
+  const hasAutoTriggered = useRef(false);
+  
+  useEffect(() => {
+    if (hasAutoTriggered.current) return;
+    if (!state.content) return;
+    
+    const needsMeta = !state.metaTitle || !state.metaDescription;
+    const needsSolution = state.selectedSolution && !state.solutionIntegrationMetrics;
+    
+    if (needsMeta || needsSolution) {
+      hasAutoTriggered.current = true;
+      
+      // Trigger the same functions that the buttons call
+      if (needsMeta) generateMeta();
+      if (needsSolution) analyzeSolutionUsage();
+    }
+  }, [state.content, state.metaTitle, state.metaDescription, state.selectedSolution, state.solutionIntegrationMetrics, generateMeta, analyzeSolutionUsage]);
   
   // Debug the state when component loads
   useEffect(() => {
