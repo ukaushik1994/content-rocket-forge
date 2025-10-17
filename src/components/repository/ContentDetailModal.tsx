@@ -492,6 +492,36 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   </CardContent>
                 </Card>
 
+                {/* Meta Information (SEO) */}
+                {(content.meta_title || content.meta_description) && (
+                  <Card className="bg-muted/5 border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                        <Globe className="h-5 w-5 text-primary" />
+                        SEO Meta Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {content.meta_title && (
+                        <div>
+                          <h4 className="text-xs font-medium text-muted-foreground mb-2">Meta Title</h4>
+                          <p className="text-sm text-foreground bg-muted/10 p-3 rounded-lg border border-border/20">
+                            {content.meta_title}
+                          </p>
+                        </div>
+                      )}
+                      {content.meta_description && (
+                        <div>
+                          <h4 className="text-xs font-medium text-muted-foreground mb-2">Meta Description</h4>
+                          <p className="text-sm text-foreground bg-muted/10 p-3 rounded-lg border border-border/20">
+                            {content.meta_description}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Keywords & Tags */}
                 {(content.keywords?.length > 0 || content.metadata?.tags?.length > 0) && (
                   <CollapsibleSection

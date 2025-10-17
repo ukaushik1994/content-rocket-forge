@@ -4,6 +4,8 @@ export type ContentType = 'article' | 'blog' | 'glossary' | 'social_post' | 'ema
 export interface ContentItemType {
   id: string;
   title: string;
+  meta_title?: string;
+  meta_description?: string;
   content: string;
   status: 'draft' | 'published' | 'archived';
   approval_status: 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published';

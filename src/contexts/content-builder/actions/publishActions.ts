@@ -40,7 +40,9 @@ export const createPublishActions = (
 
       // Prepare content data for database
       const contentData = {
-        title: content.title,
+        title: content.title, // Blog title (from contentTitle)
+        meta_title: content.metaTitle, // SEO meta title
+        meta_description: content.metaDescription, // SEO meta description
         content: content.content,
         status: 'draft',
         seo_score: content.seoScore || 0,
@@ -50,8 +52,6 @@ export const createPublishActions = (
           mainKeyword: content.mainKeyword,
           secondaryKeywords: content.secondaryKeywords || [],
           contentType: content.contentType,
-          metaTitle: content.metaTitle,
-          metaDescription: content.metaDescription,
           outline: content.outline || [],
           serpSelections: content.serpSelections || [],
           serpData: content.serpData,
@@ -189,7 +189,9 @@ export const createPublishActions = (
 
       // Prepare content data for database
       const contentData = {
-        title: content.title,
+        title: content.title, // Blog title (from contentTitle)
+        meta_title: content.metaTitle, // SEO meta title
+        meta_description: content.metaDescription, // SEO meta description
         content: content.content,
         status: 'published',
         seo_score: content.seoScore || 0,
@@ -199,8 +201,6 @@ export const createPublishActions = (
           mainKeyword: content.mainKeyword,
           secondaryKeywords: content.secondaryKeywords || [],
           contentType: content.contentType,
-          metaTitle: content.metaTitle,
-          metaDescription: content.metaDescription,
           outline: content.outline || [],
           serpSelections: content.serpSelections || [],
           serpData: content.serpData,
