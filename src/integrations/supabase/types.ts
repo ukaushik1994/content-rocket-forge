@@ -5810,6 +5810,72 @@ export type Database = {
         }
         Relationships: []
       }
+      website_connections: {
+        Row: {
+          access_token: string | null
+          app_password: string | null
+          connection_status: string | null
+          created_at: string
+          default_settings: Json | null
+          id: string
+          is_active: boolean
+          last_tested_at: string | null
+          provider: string
+          refresh_token: string | null
+          scopes: string[] | null
+          site_email: string | null
+          site_id: string | null
+          site_name: string | null
+          site_url: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          app_password?: string | null
+          connection_status?: string | null
+          created_at?: string
+          default_settings?: Json | null
+          id?: string
+          is_active?: boolean
+          last_tested_at?: string | null
+          provider: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          site_email?: string | null
+          site_id?: string | null
+          site_name?: string | null
+          site_url?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          app_password?: string | null
+          connection_status?: string | null
+          created_at?: string
+          default_settings?: Json | null
+          id?: string
+          is_active?: boolean
+          last_tested_at?: string | null
+          provider?: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          site_email?: string | null
+          site_id?: string | null
+          site_name?: string | null
+          site_url?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       workflow_automations: {
         Row: {
           actions: Json | null

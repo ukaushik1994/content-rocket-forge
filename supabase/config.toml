@@ -113,3 +113,9 @@ verify_jwt = true
 [functions.migrate-strategy-proposals]
 verify_jwt = true
 
+[functions.test-wordpress-connection]
+verify_jwt = true
+
+[functions.test-wix-connection]
+verify_jwt = true
+
