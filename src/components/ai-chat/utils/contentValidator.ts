@@ -8,53 +8,85 @@ export interface ValidationResult {
   repairedContent: string;
 }
 
+interface TableProtection {
+  placeholder: string;
+  content: string;
+}
+
+/**
+ * Extract tables and replace with placeholders to protect during processing
+ */
+function extractAndProtectTables(content: string): { content: string; tables: TableProtection[] } {
+  const tables: TableProtection[] = [];
+  let protectedContent = content;
+  
+  // Match full table blocks (header + separator + data rows)
+  const tableRegex = /(\|.+\|\n\|[\s\-:]+\|\n(?:\|.+\|\n?)*)/g;
+  
+  let match;
+  let index = 0;
+  while ((match = tableRegex.exec(content)) !== null) {
+    const placeholder = `__TABLE_PROTECTED_${index}__`;
+    tables.push({
+      placeholder,
+      content: match[0]
+    });
+    protectedContent = protectedContent.replace(match[0], `\n${placeholder}\n`);
+    index++;
+  }
+  
+  return { content: protectedContent, tables };
+}
+
+/**
+ * Restore protected tables back into content
+ */
+function restoreProtectedTables(content: string, tables: TableProtection[]): string {
+  let restored = content;
+  tables.forEach(table => {
+    restored = restored.replace(table.placeholder, table.content);
+  });
+  return restored;
+}
+
 /**
  * Validates and repairs markdown content before rendering
  * Ensures proper spacing, table structure, and formatting
  */
 export function validateAndRepairMarkdown(content: string): ValidationResult {
   const issues: string[] = [];
-  let repaired = content;
   
-  // Check 1: Ensure headings have proper spacing
-  const headingMatches = repaired.match(/\n#{1,6}\s/g);
-  if (!headingMatches || headingMatches.length === 0) {
-    // Check if there are headings without proper newlines
-    if (/#{1,6}\s/.test(repaired)) {
-      issues.push('Missing heading spacing');
-      repaired = repaired.replace(/(#{1,6}\s+.+)/g, '\n$1\n');
-    }
+  // STEP 1: Extract and protect tables FIRST
+  const { content: protectedContent, tables } = extractAndProtectTables(content);
+  let repaired = protectedContent;
+  
+  // STEP 2: Check headings (safe - doesn't affect tables)
+  if (/#{1,6}\s/.test(repaired) && !repaired.match(/\n#{1,6}\s/g)) {
+    issues.push('Missing heading spacing');
+    repaired = repaired.replace(/(#{1,6}\s+.+)/g, '\n$1\n');
   }
   
-  // Check 2: Validate table structure
-  const tableMatches = repaired.match(/\|.+\|/g);
-  if (tableMatches && tableMatches.length > 1) {
-    const hasSeparator = tableMatches.some(line => /\|[\s\-:]+\|/.test(line) && line.includes('---'));
-    if (!hasSeparator) {
-      issues.push('Table missing separator row');
-      // Try to insert separator after first row
-      const firstTableLine = tableMatches[0];
-      const cellCount = (firstTableLine.match(/\|/g) || []).length - 1;
-      const separator = '| ' + Array(cellCount).fill('---').join(' | ') + ' |';
-      repaired = repaired.replace(
-        new RegExp(`(${escapeRegExp(firstTableLine)}\\n)([^|])`),
-        `$1${separator}\n$2`
-      );
-    }
-  }
-  
-  // Check 3: Ensure list items have spacing
+  // STEP 3: List item spacing (safe - doesn't affect tables)
   repaired = repaired.replace(/^(\*|-|\d+\.)\s*/gm, '\n$1 ');
   
-  // Check 4: Remove excessive blank lines
+  // STEP 4: Remove excessive blank lines
   repaired = repaired.replace(/\n{4,}/g, '\n\n\n');
   
-  // Check 5: Ensure paragraphs are separated properly
-  // Add double newline after sentences followed by capital letters
-  repaired = repaired.replace(/([.!?])\s+([A-Z][a-z])/g, '$1\n\n$2');
+  // STEP 5: Paragraph separation - ONLY for non-table content
+  // Only add paragraph breaks if spacing is minimal
+  repaired = repaired.replace(/([.!?])(\s+)([A-Z][a-z])/g, (match, punct, space, nextChar) => {
+    // Only add paragraph break if there's just one space
+    if (space.length === 1) {
+      return `${punct}\n\n${nextChar}`;
+    }
+    return match;
+  });
   
-  // Check 6: Ensure proper spacing around tables
-  repaired = repaired.replace(/([^\n])\n(\|.+\|)/g, '$1\n\n$2');
+  // STEP 6: Restore tables
+  repaired = restoreProtectedTables(repaired, tables);
+  
+  // STEP 7: Ensure proper spacing around restored tables
+  repaired = repaired.replace(/([^\n])(\|.+\|)/g, '$1\n\n$2');
   repaired = repaired.replace(/(\|.+\|)\n([^\n|])/g, '$1\n\n$2');
   
   return {

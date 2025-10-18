@@ -675,15 +675,12 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
         .replace(/<think>[\s\S]*?<\/think>/gi, '')
         .replace(/<\/?think>/gi, '');
       
-      // NEW: Validate and repair markdown structure FIRST
+      // Validate and repair markdown structure with table protection
       const validated = validateAndRepairMarkdown(processedContent);
       if (!validated.isValid) {
         console.warn('⚠️ Content validation issues:', validated.issues);
       }
       processedContent = validated.repairedContent;
-      
-      // THEN clean malformed pipes (after validation preserves tables)
-      processedContent = cleanMalformedPipes(processedContent);
       
       // Skip table processing if visual data already handles the tables
       if (hasVisualData) {
@@ -837,34 +834,36 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
             </blockquote>
           ),
           table: ({ children }) => (
-            <EnhancedTableRenderer rawTableData={processedResult.processedContent}>
-              <table className="min-w-full border border-border rounded-lg bg-card">
-                {children}
-              </table>
-            </EnhancedTableRenderer>
+            <div className="my-4 overflow-x-auto rounded-lg border border-border/50 shadow-sm">
+              <EnhancedTableRenderer rawTableData={processedResult.processedContent}>
+                <table className="min-w-full divide-y divide-border bg-card">
+                  {children}
+                </table>
+              </EnhancedTableRenderer>
+            </div>
           ),
           thead: ({ children }) => (
-            <thead className="bg-muted/50">
+            <thead className="bg-muted/30">
               {children}
             </thead>
           ),
           tbody: ({ children }) => (
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border/30 bg-card">
               {children}
             </tbody>
           ),
           tr: ({ children }) => (
-            <tr className="hover:bg-muted/30 transition-colors">
+            <tr className="hover:bg-muted/20 transition-colors">
               {children}
             </tr>
           ),
           th: ({ children }) => (
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
+            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-4 py-3 text-sm text-foreground border-b border-border/50">
+            <td className="px-4 py-3 text-sm text-foreground/90">
               {children}
             </td>
           ),
