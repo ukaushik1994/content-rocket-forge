@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, forwardRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CollaborationIndicators } from './CollaborationIndicators';
 import { ChatHeader } from './ChatHeader';
 import { MessageInput } from './MessageInput';
@@ -15,7 +16,7 @@ import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
 import { useContextSnapshots } from '@/hooks/useContextSnapshots';
 import { MultiUserTypingIndicator } from './MultiUserTypingIndicator';
 import { ContextSnapshotPanel } from './ContextSnapshotPanel';
-import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
+import { Wifi, WifiOff, Loader2, Radio, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StreamingChatInterfaceProps {
@@ -33,6 +34,7 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
 }, ref) => {
   const [visualSidebarOpen, setVisualSidebarOpen] = useState(false);
   const [currentVisualData, setCurrentVisualData] = useState<any>(null);
+  const [currentSerpData, setCurrentSerpData] = useState<any>(null);
   
   const {
     messages,
@@ -86,8 +88,9 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   // Auto-trigger sidebar when visual data is available
   useEffect(() => {
     const latestMessage = displayMessages[displayMessages.length - 1];
-    if (latestMessage?.role === 'assistant' && latestMessage.visualData) {
+    if (latestMessage?.role === 'assistant' && (latestMessage.visualData || latestMessage.serpData)) {
       setCurrentVisualData(latestMessage.visualData);
+      setCurrentSerpData(latestMessage.serpData);
       setVisualSidebarOpen(true);
     }
   }, [displayMessages]);
@@ -264,17 +267,37 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     {/* Visual Data Sidebar */}
     <VisualDataSidebar
       visualData={currentVisualData}
+      serpData={currentSerpData}
       isOpen={visualSidebarOpen}
       onClose={() => setVisualSidebarOpen(false)}
       onDeepDive={(prompt) => {
         sendMessage(prompt);
-        setVisualSidebarOpen(false);
       }}
       onActionClick={(action) => {
         // Handle action click
         console.log('Action clicked:', action);
       }}
+      onSendMessage={sendMessage}
     />
+
+    {/* Reopen Toggle Button - When Sidebar is Closed */}
+    {!visualSidebarOpen && (currentVisualData || currentSerpData) && (
+      <motion.div
+        initial={{ x: 100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 100, opacity: 0 }}
+        className="fixed right-4 top-1/2 -translate-y-1/2 z-40"
+      >
+        <Button
+          size="sm"
+          onClick={() => setVisualSidebarOpen(true)}
+          className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all"
+          title="Show Insights"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+      </motion.div>
+    )}
     </div>
   );
 });

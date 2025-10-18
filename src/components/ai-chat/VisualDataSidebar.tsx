@@ -1,12 +1,13 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, BarChart3, TrendingUp } from 'lucide-react';
+import { X, BarChart3, TrendingUp, Search, FileText, HelpCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { VisualData, ActionableItem } from '@/types/enhancedChat';
 import { VisualDataRenderer } from './VisualDataRenderer';
 import { ModernActionButtons } from './ModernActionButtons';
 import { Card } from '@/components/ui/card';
+import { SerpVisualData } from './SerpVisualData';
 
 interface VisualDataSidebarProps {
   visualData: VisualData | null;
@@ -14,6 +15,8 @@ interface VisualDataSidebarProps {
   onClose: () => void;
   onDeepDive?: (prompt: string) => void;
   onActionClick?: (action: any) => void;
+  serpData?: any;
+  onSendMessage?: (message: string) => void;
 }
 
 export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
@@ -21,7 +24,9 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
   isOpen,
   onClose,
   onDeepDive,
-  onActionClick
+  onActionClick,
+  serpData,
+  onSendMessage
 }) => {
   const sidebarVariants = {
     hidden: { x: '100%', opacity: 0 },
@@ -37,7 +42,8 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
     }
   };
 
-  if (!visualData) return null;
+  // Show sidebar if we have either visual data or SERP data
+  if (!visualData && !serpData) return null;
 
   return (
     <AnimatePresence>
@@ -69,7 +75,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 <div>
                   <h2 className="text-lg font-semibold">AI Insights</h2>
                   <p className="text-xs text-muted-foreground">
-                    {visualData.title || 'Data Visualization'}
+                    {visualData?.title || 'Data Visualization'}
                   </p>
                 </div>
               </div>
@@ -83,11 +89,110 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
               </Button>
             </div>
 
-            {/* Content */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-6">
+                {/* SERP Analysis Section */}
+                {visualData?.type === 'serp_analysis' && visualData.serpData && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                  >
+                    <SerpVisualData 
+                      serpData={visualData.serpData} 
+                      onActionClick={(action, data) => {
+                        onActionClick?.({
+                          id: `serp-action-${Date.now()}`,
+                          type: 'button',
+                          label: action,
+                          action: 'send_message',
+                          data
+                        });
+                      }}
+                    />
+                  </motion.div>
+                )}
+
+                {/* Additional SERP Data */}
+                {serpData && typeof serpData === 'object' && 'structured' in serpData && serpData.structured && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.08 }}
+                    className="space-y-3"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <Search className="w-5 h-5 text-primary" />
+                      <h4 className="text-sm font-semibold">SERP Metrics</h4>
+                    </div>
+                    
+                    {/* Keyword Metrics Cards */}
+                    <div className="grid grid-cols-1 gap-3">
+                      <Card className="p-3 bg-gradient-to-br from-primary/10 to-transparent">
+                        <div className="text-xs text-muted-foreground">Avg Search Volume</div>
+                        <div className="text-2xl font-bold">
+                          {serpData.structured.aggregateMetrics.avgSearchVolume.toLocaleString()}
+                        </div>
+                      </Card>
+                      <Card className="p-3 bg-gradient-to-br from-warning/10 to-transparent">
+                        <div className="text-xs text-muted-foreground">Avg Difficulty</div>
+                        <div className="text-2xl font-bold">
+                          {serpData.structured.aggregateMetrics.avgKeywordDifficulty}%
+                        </div>
+                      </Card>
+                      <Card className="p-3 bg-gradient-to-br from-success/10 to-transparent">
+                        <div className="text-xs text-muted-foreground">Competition</div>
+                        <div className="text-2xl font-bold">
+                          {serpData.structured.aggregateMetrics.avgCompetitionScore}%
+                        </div>
+                      </Card>
+                    </div>
+                    
+                    {/* Quick Actions for SERP */}
+                    <div className="flex gap-2 flex-wrap">
+                      {serpData.structured.aggregateMetrics.totalContentGaps > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            onSendMessage?.(`Show me content gaps for ${serpData.keywords.join(', ')}`);
+                            onClose();
+                          }}
+                        >
+                          <FileText className="w-3 h-3 mr-1" />
+                          {serpData.structured.aggregateMetrics.totalContentGaps} Gaps
+                        </Button>
+                      )}
+                      {serpData.structured.aggregateMetrics.totalQuestions > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            onSendMessage?.(`What are people asking about ${serpData.keywords.join(', ')}?`);
+                            onClose();
+                          }}
+                        >
+                          <HelpCircle className="w-3 h-3 mr-1" />
+                          {serpData.structured.aggregateMetrics.totalQuestions} Questions
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          onSendMessage?.(`Who's ranking for ${serpData.keywords.join(', ')}?`);
+                          onClose();
+                        }}
+                      >
+                        <Users className="w-3 h-3 mr-1" />
+                        Competitors
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Top Section: Metrics */}
-                {visualData.metrics && visualData.metrics.length > 0 && (
+                {visualData?.metrics && visualData.metrics.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -104,7 +209,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 )}
 
                 {/* Summary Insights Section */}
-                {visualData.summaryInsights && (
+                {visualData?.summaryInsights && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -127,7 +232,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 )}
 
                 {/* Middle Section: Charts */}
-                {visualData.chartConfig && (
+                {visualData?.chartConfig && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -145,7 +250,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 )}
 
                 {/* Multiple Charts */}
-                {visualData.charts && visualData.charts.length > 0 && (
+                {visualData?.charts && visualData.charts.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -169,7 +274,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 )}
 
                 {/* Table Data */}
-                {visualData.tableData && (
+                {visualData?.tableData && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -180,7 +285,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 )}
 
                 {/* Workflow */}
-                {visualData.workflowStep && (
+                {visualData?.workflowStep && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -191,7 +296,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 )}
 
                 {/* Summary */}
-                {visualData.summary && (
+                {visualData?.summary && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -204,8 +309,8 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
             </ScrollArea>
 
             {/* Bottom Section: Actions */}
-            {((visualData.actionableItems && visualData.actionableItems.length > 0) || 
-              (visualData.deepDivePrompts && visualData.deepDivePrompts.length > 0)) && (
+            {((visualData?.actionableItems && visualData.actionableItems.length > 0) || 
+              (visualData?.deepDivePrompts && visualData.deepDivePrompts.length > 0)) && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -213,7 +318,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 className="border-t border-border/50 p-4 bg-background/80"
               >
                 {/* Action Buttons */}
-                {visualData.actionableItems && visualData.actionableItems.length > 0 && (
+                {visualData?.actionableItems && visualData.actionableItems.length > 0 && (
                   <div className="mb-4">
                     <h3 className="text-sm font-medium text-muted-foreground mb-3">
                       Quick Actions
@@ -232,7 +337,7 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 )}
 
                 {/* Deep Dive Prompts */}
-                {visualData.deepDivePrompts && visualData.deepDivePrompts.length > 0 && (
+                {visualData?.deepDivePrompts && visualData.deepDivePrompts.length > 0 && (
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground mb-3">
                       Deep Dive Questions

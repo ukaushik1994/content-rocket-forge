@@ -5,6 +5,8 @@ import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { MessageInput } from './MessageInput';
 import { ChatHeader } from './ChatHeader';
 import { VisualDataSidebar } from './VisualDataSidebar';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft } from 'lucide-react';
 
 
 import { EnhancedChatMessage } from '@/types/enhancedChat';
@@ -32,6 +34,7 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
   const [user, setUser] = useState<any>(null);
   const [visualSidebarOpen, setVisualSidebarOpen] = useState(false);
   const [currentVisualData, setCurrentVisualData] = useState<any>(null);
+  const [currentSerpData, setCurrentSerpData] = useState<any>(null);
   const { toast } = useToast();
   
   const {
@@ -62,8 +65,9 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
   // Auto-trigger sidebar when visual data is available
   useEffect(() => {
     const latestMessage = messages[messages.length - 1];
-    if (latestMessage?.role === 'assistant' && latestMessage.visualData) {
+    if (latestMessage?.role === 'assistant' && (latestMessage.visualData || latestMessage.serpData)) {
       setCurrentVisualData(latestMessage.visualData);
+      setCurrentSerpData(latestMessage.serpData);
       setVisualSidebarOpen(true);
     }
   }, [messages]);
@@ -202,16 +206,36 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
         {/* Visual Data Sidebar */}
         <VisualDataSidebar
           visualData={currentVisualData}
+          serpData={currentSerpData}
           isOpen={visualSidebarOpen}
           onClose={() => setVisualSidebarOpen(false)}
           onDeepDive={(prompt) => {
             handleSendMessage(prompt);
-            setVisualSidebarOpen(false);
           }}
           onActionClick={(action) => {
             handleContextualAction(action);
           }}
+          onSendMessage={handleSendMessage}
         />
+
+        {/* Reopen Toggle Button - When Sidebar is Closed */}
+        {!visualSidebarOpen && (currentVisualData || currentSerpData) && (
+          <motion.div
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 100, opacity: 0 }}
+            className="fixed right-4 top-1/2 -translate-y-1/2 z-40"
+          >
+            <Button
+              size="sm"
+              onClick={() => setVisualSidebarOpen(true)}
+              className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all"
+              title="Show Insights"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );
