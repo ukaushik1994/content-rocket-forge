@@ -122,19 +122,22 @@ function attemptJSONFix(jsonString: string): any | null {
 }
 
 export function removeExtractedJSON(text: string): string {
-  // Remove JSON code blocks
-  let cleaned = text.replace(/```(?:json)?\s*\{[\s\S]*?\}\s*```/gm, '');
+  // STEP 1: Protect markdown tables by replacing with placeholders
+  const tablePattern = /\|[^\n]+\|[\s\S]*?\n\|[-:\s|]+\|[\s\S]*?(?:\n\|[^\n]+\|)*/gm;
+  const tables: string[] = [];
+  let textWithPlaceholders = text.replace(tablePattern, (match) => {
+    const placeholder = `__TABLE_PLACEHOLDER_${tables.length}__`;
+    tables.push(match);
+    return placeholder;
+  });
   
-  // Remove standalone JSON objects
-  cleaned = cleaned.replace(/(?:^|\n)\s*\{(?:[^{}]|{(?:[^{}]|{[^{}]*})*})*\}\s*(?:\n|$)/gm, '\n');
+  // STEP 2: Remove JSON code blocks
+  let cleaned = textWithPlaceholders.replace(/```(?:json)?\s*\{[\s\S]*?\}\s*```/gm, '');
   
-  // Remove CSV-like patterns that shouldn't be displayed
-  cleaned = cleaned.replace(/^[A-Za-z\s,]+(?:,\s*[A-Za-z\s]+)*\n(?:[^,\n]*,\s*)*[^,\n]*$/gm, '');
+  // STEP 3: Remove standalone JSON objects (more precise - must start with { and have quotes)
+  cleaned = cleaned.replace(/(?:^|\n)\s*\{\s*"[^"]+"\s*:[\s\S]*?\}\s*(?:\n|$)/gm, '\n');
   
-  // Remove quoted CSV data patterns
-  cleaned = cleaned.replace(/^"[^"]*"(?:,\s*"[^"]*")*$/gm, '');
-  
-  // NEW: Preserve markdown structure
+  // STEP 4: Preserve markdown structure (but DON'T remove CSV patterns that might be table explanations)
   cleaned = cleaned
     // Ensure double line breaks between sections
     .replace(/\n{3,}/g, '\n\n')
@@ -145,14 +148,17 @@ export function removeExtractedJSON(text: string): string {
     // Preserve blockquote markers
     .replace(/^>\s+/gm, '> ');
   
-  // If content becomes too minimal, preserve some context
+  // STEP 5: Restore markdown tables
+  tables.forEach((table, index) => {
+    cleaned = cleaned.replace(`__TABLE_PLACEHOLDER_${index}__`, table);
+  });
+  
+  // STEP 6: If content becomes too minimal, preserve some context
   if (cleaned.length < 50 && text.length > 200) {
     // Extract any conversational parts that aren't data
     const lines = text.split('\n');
     const conversationalLines = lines.filter(line => 
       line.length > 10 && 
-      !line.match(/^[A-Za-z\s,]+(?:,\s*[A-Za-z\s]+)*$/) && // Not CSV headers
-      !line.match(/^"[^"]*"(?:,\s*"[^"]*")*$/) && // Not CSV data
       !line.match(/^\s*\{/) && // Not JSON
       !line.match(/^\s*\}/) &&
       !line.trim().match(/^[0-9,.\s]+$/) // Not just numbers and commas
