@@ -259,21 +259,27 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
                 )}
 
                 {/* Top Section: Metrics */}
-                {visualData?.metrics && visualData.metrics.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <div className="mb-3">
-                      <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4" />
-                        Key Metrics
-                      </h3>
-                    </div>
-                    <VisualDataRenderer data={{ ...visualData, type: 'metrics' }} />
-                  </motion.div>
-                )}
+                {visualData?.metrics && (() => {
+                  console.log('📊 [Sidebar] Rendering metrics:', {
+                    metricsCount: visualData.metrics.length,
+                    metrics: visualData.metrics
+                  });
+                  return visualData.metrics.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      <div className="mb-3">
+                        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4" />
+                          Key Metrics
+                        </h3>
+                      </div>
+                      <VisualDataRenderer data={{ ...visualData, type: 'metrics' }} />
+                    </motion.div>
+                  );
+                })()}
 
                 {/* Summary Insights Section */}
                 {visualData?.summaryInsights && (

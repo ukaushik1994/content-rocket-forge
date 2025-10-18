@@ -17,7 +17,7 @@ import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
 import { useContextSnapshots } from '@/hooks/useContextSnapshots';
 import { MultiUserTypingIndicator } from './MultiUserTypingIndicator';
 import { ContextSnapshotPanel } from './ContextSnapshotPanel';
-import { Wifi, WifiOff, Loader2, Radio, ChevronLeft, BarChart3 } from 'lucide-react';
+import { Wifi, WifiOff, Loader2, Radio, ChevronLeft, BarChart3, Bug } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StreamingChatInterfaceProps {
@@ -91,87 +91,67 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   // Use filtered messages for display
   const displayMessages = filteredMessages.length > 0 ? filteredMessages : messages;
   
-  // Auto-trigger sidebar when visual data is available
+  // Single comprehensive visual data detection
   useEffect(() => {
-    console.log('🔍 [StreamingChatInterface] Visual data detection triggered');
-    console.log('📊 [StreamingChatInterface] State:', {
+    console.log('🔍 [Visual Data Check] Running detection');
+    console.log('📊 [Visual Data Check] Context:', {
       displayMessagesLength: displayMessages.length,
       dbMessagesLength: dbMessages.length,
-      filteredMessagesLength: filteredMessages.length,
-      activeConversation: activeConversation
+      activeConversation: activeConversation,
+      visualSidebarOpen: visualSidebarOpen
     });
 
-    if (displayMessages.length === 0) {
-      console.log('❌ [StreamingChatInterface] No messages, closing sidebar');
-      setCurrentVisualData(null);
-      setCurrentSerpData(null);
-      setVisualSidebarOpen(false);
-      return;
-    }
-
-    // Find the most recent assistant message with visual data
-    const messageWithVisualData = displayMessages
-      .filter(msg => {
-        const hasData = msg.role === 'assistant' && (msg.visualData || msg.serpData);
-        if (hasData) {
-          console.log('✅ [StreamingChatInterface] Found message with visual data:', {
-            id: msg.id,
-            hasVisualData: !!msg.visualData,
-            hasSerpData: !!msg.serpData,
-            visualData: msg.visualData
-          });
-        }
-        return hasData;
-      })
-      .reverse()
-      .find(msg => msg.visualData || msg.serpData);
-
-    if (messageWithVisualData) {
-      console.log('🎯 [StreamingChatInterface] Setting visual data and opening sidebar');
-      setCurrentVisualData(messageWithVisualData.visualData);
-      setCurrentSerpData(messageWithVisualData.serpData);
-      setVisualSidebarOpen(true);
-    } else {
-      console.log('❌ [StreamingChatInterface] No visual data found');
-      setCurrentVisualData(null);
-      setCurrentSerpData(null);
-      setVisualSidebarOpen(false);
-    }
-  }, [
-    displayMessages,
-    displayMessages.length,
-    dbMessages,
-    dbMessages.length,
-    filteredMessages,
-    filteredMessages.length,
-    activeConversation
-  ]);
-
-  // Force visual data detection when dbMessages loads from database
-  useEffect(() => {
-    console.log('🔄 [Force Check] dbMessages changed, checking for visual data');
-    
-    if (dbMessages.length === 0) return;
-    
-    // Check if ANY message has visual data
-    const hasVisualData = dbMessages.some(msg => 
-      msg.role === 'assistant' && (msg.visualData || msg.serpData)
-    );
-    
-    if (hasVisualData && !visualSidebarOpen) {
-      console.log('🎯 [Force Check] Found visual data, opening sidebar');
-      const messageWithData = dbMessages
+    // Priority 1: Check dbMessages (database-loaded messages)
+    if (dbMessages.length > 0) {
+      const dbMessageWithData = dbMessages
         .filter(msg => msg.role === 'assistant')
         .reverse()
         .find(msg => msg.visualData || msg.serpData);
       
-      if (messageWithData) {
-        setCurrentVisualData(messageWithData.visualData);
-        setCurrentSerpData(messageWithData.serpData);
+      if (dbMessageWithData) {
+        console.log('✅ [Visual Data Check] Found in dbMessages:', {
+          id: dbMessageWithData.id,
+          visualDataType: dbMessageWithData.visualData?.type,
+          hasMetrics: !!dbMessageWithData.visualData?.metrics,
+          metricsCount: dbMessageWithData.visualData?.metrics?.length || 0
+        });
+        
+        setCurrentVisualData(dbMessageWithData.visualData);
+        setCurrentSerpData(dbMessageWithData.serpData);
         setVisualSidebarOpen(true);
+        return;
       }
     }
-  }, [dbMessages.length]);
+    
+    // Priority 2: Check displayMessages (real-time messages)
+    if (displayMessages.length > 0) {
+      const displayMessageWithData = displayMessages
+        .filter(msg => msg.role === 'assistant')
+        .reverse()
+        .find(msg => msg.visualData || msg.serpData);
+      
+      if (displayMessageWithData) {
+        console.log('✅ [Visual Data Check] Found in displayMessages:', {
+          id: displayMessageWithData.id,
+          visualDataType: displayMessageWithData.visualData?.type
+        });
+        
+        setCurrentVisualData(displayMessageWithData.visualData);
+        setCurrentSerpData(displayMessageWithData.serpData);
+        setVisualSidebarOpen(true);
+        return;
+      }
+    }
+    
+    // No visual data found
+    console.log('❌ [Visual Data Check] No visual data found');
+  }, [
+    activeConversation,
+    dbMessages,
+    displayMessages,
+    displayMessages.length,
+    dbMessages.length
+  ]);
 
   const handleClearConversation = () => {
     clearMessages();
@@ -272,6 +252,43 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
               )}
             </Button>
           )}
+          
+          {/* DEBUG: Manual sidebar trigger button */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              console.log('🔧 [DEBUG] Manual sidebar trigger clicked');
+              console.log('🔧 [DEBUG] Current state:', {
+                dbMessagesLength: dbMessages.length,
+                displayMessagesLength: displayMessages.length,
+                currentVisualData: currentVisualData,
+                visualSidebarOpen: visualSidebarOpen
+              });
+              
+              // Force re-check for visual data
+              const allMessages = [...dbMessages, ...displayMessages];
+              const messageWithData = allMessages
+                .filter(msg => msg.role === 'assistant')
+                .reverse()
+                .find(msg => msg.visualData || msg.serpData);
+              
+              if (messageWithData) {
+                console.log('🔧 [DEBUG] Found visual data:', messageWithData.visualData);
+                setCurrentVisualData(messageWithData.visualData);
+                setCurrentSerpData(messageWithData.serpData);
+                setVisualSidebarOpen(true);
+              } else {
+                console.log('🔧 [DEBUG] No visual data found, toggling sidebar anyway');
+                setVisualSidebarOpen(!visualSidebarOpen);
+              }
+            }}
+            className="flex items-center gap-2"
+            title="Debug: Force sidebar check"
+          >
+            <Bug className="w-4 h-4" />
+            <span className="hidden sm:inline">Debug</span>
+          </Button>
           
           <CollaborationIndicators 
             users={collaborators || []}
