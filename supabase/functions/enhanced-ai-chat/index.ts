@@ -2140,18 +2140,73 @@ serve(async (req) => {
       }
     }
 
-    // Only provide basic contextual actions if AI didn't return structured data
-    // NO MOCK DATA GENERATION - Let the AI create appropriate responses based on real data
-    if (!actions && !visualData) {
-      console.log("⚠️ No structured data returned from AI - providing basic navigation only");
+    // Generate contextual actions if AI didn't return them
+    if (!actions) {
+      console.log("🎯 Generating contextual action buttons...");
       
-      actions = [{
-        id: "explore-dashboard",
-        label: "View Dashboard",
-        type: "button", 
-        action: "navigate:/dashboard",
-        data: {}
-      }];
+      if (visualData) {
+        // Generate visual data-specific actions
+        actions = [];
+        
+        // Always add "Deep Dive" action for visual data
+        actions.push({
+          id: "deep-dive",
+          label: "Deep Dive Analysis",
+          type: "button",
+          action: "send-message",
+          description: "Get detailed insights about this data",
+          data: { message: `Provide a detailed analysis of ${userQuery}` }
+        });
+        
+        // Add chart-specific actions
+        if (visualData.type === 'chart' || visualData.chartConfig) {
+          actions.push({
+            id: "compare-trends",
+            label: "Compare Trends",
+            type: "button",
+            action: "send-message",
+            description: "Compare with other periods or data",
+            data: { message: "How does this compare to previous periods?" }
+          });
+        }
+        
+        // Add action items button if there are actionable items
+        if (visualData.actionableItems && visualData.actionableItems.length > 0) {
+          actions.push({
+            id: "view-actions",
+            label: "View Action Items",
+            type: "button",
+            action: "send-message",
+            description: "See specific recommended actions",
+            data: { message: "Show me the recommended action items based on this data" }
+          });
+        }
+        
+        // Add optimization suggestions action
+        actions.push({
+          id: "optimize",
+          label: "Optimization Tips",
+          type: "button",
+          action: "send-message",
+          description: "Get recommendations to improve",
+          data: { message: "What can I do to optimize these results?" }
+        });
+        
+        console.log(`✅ Generated ${actions.length} contextual actions for visual data`);
+      } else {
+        // Basic navigation actions when no visual data
+        console.log("⚠️ No structured data returned from AI - providing basic navigation only");
+        
+        actions = [{
+          id: "explore-dashboard",
+          label: "View Dashboard",
+          type: "button", 
+          action: "navigate:/dashboard",
+          data: {}
+        }];
+      }
+    } else {
+      console.log(`✅ AI provided ${actions.length} actions`);
     }
 
     console.log(`✅ Parsed response: { hasActions: ${!!actions}, hasVisualData: ${!!visualData}, messageLength: ${cleanedResponse?.length || aiMessage.length} }`);
