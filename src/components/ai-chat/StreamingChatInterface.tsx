@@ -115,7 +115,7 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
       setCurrentSerpData(null);
       setVisualSidebarOpen(false);
     }
-  }, [displayMessages]);
+  }, [displayMessages, dbMessages.length]);
 
   const handleClearConversation = () => {
     clearMessages();

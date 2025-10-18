@@ -86,7 +86,7 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
       setCurrentSerpData(null);
       setVisualSidebarOpen(false);
     }
-  }, [messages]);
+  }, [messages, messages.length]);
 
 
   const handleSendMessage = async (message: string) => {

@@ -2141,7 +2141,7 @@ serve(async (req) => {
     }
 
     // Generate contextual actions if AI didn't return them
-    if (!actions) {
+    if (!actions || (Array.isArray(actions) && actions.length === 0)) {
       console.log("🎯 Generating contextual action buttons...");
       
       if (visualData) {
