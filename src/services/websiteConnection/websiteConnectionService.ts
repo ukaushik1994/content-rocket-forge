@@ -34,6 +34,13 @@ export async function saveWordPressConnection(config: SaveWordPressConnectionPar
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
+    // Delete any existing Wix connection (enforce single connection)
+    await supabase
+      .from('website_connections')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('provider', 'wix');
+
     const { error } = await supabase
       .from('website_connections')
       .upsert({
@@ -41,7 +48,7 @@ export async function saveWordPressConnection(config: SaveWordPressConnectionPar
         provider: 'wordpress',
         site_url: config.siteUrl,
         username: config.username,
-        app_password: config.appPassword, // In production, this should be encrypted
+        app_password: config.appPassword,
         is_active: true,
         connection_status: 'unconfigured',
         default_settings: config.defaultSettings || {
@@ -71,18 +78,20 @@ export async function saveWixConnection(config: SaveWixConnectionParams): Promis
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
+    // Delete any existing WordPress connection (enforce single connection)
+    await supabase
+      .from('website_connections')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('provider', 'wordpress');
+
     const { error } = await supabase
       .from('website_connections')
       .upsert({
         user_id: user.id,
         provider: 'wix',
         site_id: config.siteId,
-        refresh_token: config.refreshToken, // In production, this should be encrypted
-        access_token: config.accessToken, // In production, this should be encrypted
-        token_expires_at: config.expiresAt.toISOString(),
-        site_name: config.siteName,
-        site_email: config.siteEmail,
-        scopes: config.scopes,
+        api_key: config.apiKey,
         is_active: true,
         connection_status: 'unconfigured'
       }, {

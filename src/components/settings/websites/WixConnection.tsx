@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, ExternalLink } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getConnection, testConnection, deleteConnection } from '@/services/websiteConnection';
+import { getConnection, saveWixConnection, testConnection, deleteConnection } from '@/services/websiteConnection';
 
 interface WixConnectionProps {
   onConnectionChange: () => void;
@@ -13,6 +14,9 @@ interface WixConnectionProps {
 export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
   const [connectionInfo, setConnectionInfo] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [siteId, setSiteId] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -22,30 +26,41 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
   const loadConnection = async () => {
     const connection = await getConnection('wix');
     setConnectionInfo(connection);
+    if (connection) {
+      setSiteId(connection.site_id || '');
+    }
   };
 
-  const handleConnect = async () => {
-    const { initiateWixOAuth } = await import('@/services/websiteConnection/wixOAuthService');
-    
-    toast({
-      title: 'Opening Wix Authorization',
-      description: 'Please authorize access in the popup window',
-    });
-
-    const result = await initiateWixOAuth();
-
-    if (result.success) {
+  const handleSave = async () => {
+    if (!siteId.trim() || !apiKey.trim()) {
       toast({
-        title: 'Connected Successfully',
-        description: 'Your Wix site has been connected',
+        title: 'Missing Information',
+        description: 'Please provide both Site ID and API Key',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    const success = await saveWixConnection({
+      siteId: siteId.trim(),
+      apiKey: apiKey.trim()
+    });
+    setIsSaving(false);
+
+    if (success) {
+      toast({
+        title: 'Connection Saved',
+        description: 'Wix connection has been saved successfully'
       });
       await loadConnection();
       onConnectionChange();
+      setApiKey(''); // Clear sensitive data
     } else {
       toast({
-        title: 'Connection Failed',
-        description: result.error || 'Failed to connect to Wix',
-        variant: 'destructive',
+        title: 'Save Failed',
+        description: 'Failed to save Wix connection',
+        variant: 'destructive'
       });
     }
   };
@@ -59,7 +74,7 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
       title: success ? 'Connection Successful' : 'Connection Failed',
       description: success 
         ? 'Wix connection verified successfully'
-        : 'Failed to connect to Wix. Please reconnect.',
+        : 'Failed to connect to Wix. Please check your credentials.',
       variant: success ? 'default' : 'destructive'
     });
   };
@@ -68,6 +83,8 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
     const success = await deleteConnection('wix');
     if (success) {
       setConnectionInfo(null);
+      setSiteId('');
+      setApiKey('');
       toast({
         title: 'Disconnected',
         description: 'Wix connection has been removed'
@@ -79,30 +96,46 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
   if (!connectionInfo || !connectionInfo.is_active) {
     return (
       <div className="space-y-4">
-        {/* Helper Card */}
         <Card className="p-4 bg-muted/50">
-          <h4 className="font-medium mb-2 text-sm">🔐 Wix OAuth Connection</h4>
+          <h4 className="font-medium mb-2 text-sm">🔐 Wix API Connection</h4>
           <p className="text-xs text-muted-foreground mb-2">
-            We'll securely connect to your Wix site using OAuth.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            When you click "Connect Wix Site":
+            Connect your Wix site using your Site ID and API Key.
           </p>
           <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside mt-2">
-            <li>A popup will open asking you to log in to Wix</li>
-            <li>Select the site you want to connect</li>
-            <li>Authorize blog publishing permissions</li>
-            <li>You'll be redirected back automatically</li>
+            <li>Go to your Wix Dashboard</li>
+            <li>Navigate to Settings → API Keys</li>
+            <li>Create a new API key with blog permissions</li>
+            <li>Copy your Site ID and API Key below</li>
           </ol>
-          <p className="text-xs text-muted-foreground mt-2">
-            We'll store a secure token - no passwords required!
-          </p>
         </Card>
 
-        <Button onClick={handleConnect} className="w-full">
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Connect Wix Site
-        </Button>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="wix-site-id">Site ID</Label>
+            <Input
+              id="wix-site-id"
+              placeholder="e.g., abc123def"
+              value={siteId}
+              onChange={(e) => setSiteId(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="wix-api-key">API Key</Label>
+            <Input
+              id="wix-api-key"
+              type="password"
+              placeholder="Your Wix API Key"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
+          </div>
+
+          <Button onClick={handleSave} className="w-full" disabled={isSaving}>
+            {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Connect Wix Site
+          </Button>
+        </div>
       </div>
     );
   }
@@ -116,30 +149,10 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
             <span className="font-medium text-green-900 dark:text-green-100">Connected</span>
           </div>
           
-          {connectionInfo.site_name && (
+          {connectionInfo.site_id && (
             <div className="text-sm">
-              <span className="text-muted-foreground">Site:</span>
-              <span className="ml-2 font-medium">{connectionInfo.site_name}</span>
-            </div>
-          )}
-          
-          {connectionInfo.site_email && (
-            <div className="text-sm">
-              <span className="text-muted-foreground">Account:</span>
-              <span className="ml-2 font-medium">{connectionInfo.site_email}</span>
-            </div>
-          )}
-          
-          {connectionInfo.scopes && connectionInfo.scopes.length > 0 && (
-            <div className="text-sm">
-              <span className="text-muted-foreground">Scopes:</span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {connectionInfo.scopes.map((scope: string) => (
-                  <Badge key={scope} variant="outline" className="text-xs">
-                    {scope}
-                  </Badge>
-                ))}
-              </div>
+              <span className="text-muted-foreground">Site ID:</span>
+              <span className="ml-2 font-medium">{connectionInfo.site_id}</span>
             </div>
           )}
 

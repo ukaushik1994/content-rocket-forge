@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,8 +7,10 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { PublishedUrlDialog } from '@/components/content-builder/steps/save/PublishedUrlDialog';
+import { PublishConfirmationDialog } from '@/components/publishing/PublishConfirmationDialog';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { supabase } from '@/integrations/supabase/client';
+import { getActiveConnection, publishToWebsite } from '@/services/publishing';
 interface SaveAndExportPanelProps {
   completionPercentage: number;
   onSave: () => Promise<void>;
@@ -23,14 +25,24 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
   isSaving,
   isSavedToDraft
 }) => {
-  const {
-    state
-  } = useContentBuilder();
+  const { state } = useContentBuilder();
   const [showUrlDialog, setShowUrlDialog] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<'wordpress' | 'wix' | null>(null);
   const [savedContentId, setSavedContentId] = useState<string | null>(null);
   const [isProcessingUrl, setIsProcessingUrl] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const isReady = completionPercentage >= 80;
   const isOkay = completionPercentage >= 60;
+
+  // Load active connection on mount
+  useEffect(() => {
+    const loadConnection = async () => {
+      const { provider } = await getActiveConnection();
+      setActiveProvider(provider);
+    };
+    loadConnection();
+  }, []);
   const handleSave = async () => {
     try {
       await onSave();
@@ -59,27 +71,71 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
     if (completionPercentage < 60 && !confirm('Your content is not fully optimized. Are you sure you want to publish?')) {
       return;
     }
+    
+    // Show confirmation dialog
+    setShowPublishDialog(true);
+  };
+
+  const handleConfirmPublish = async () => {
+    setIsPublishing(true);
+    
     try {
+      // 1. Internal publish
       await onPublish();
-      // After publish, we need to get the content ID from the database
-      // Let's query for the most recently created published content by this user
-      const {
-        data: user
-      } = await supabase.auth.getUser();
-      if (user?.user) {
-        const {
-          data: contentItem
-        } = await supabase.from('content_items').select('id').eq('user_id', user.user.id).eq('status', 'published').order('created_at', {
-          ascending: false
-        }).limit(1).single();
-        if (contentItem) {
-          setSavedContentId(contentItem.id);
-          setShowUrlDialog(true);
+      
+      // 2. Get the content ID
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data: contentItem } = await supabase
+        .from('content_items')
+        .select('id')
+        .eq('user_id', user.user.id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!contentItem) {
+        throw new Error('Failed to retrieve published content');
+      }
+
+      setSavedContentId(contentItem.id);
+
+      // 3. Publish to website if connected
+      if (activeProvider) {
+        const result = await publishToWebsite({
+          title: state.contentTitle || state.metaTitle || state.mainKeyword || 'Untitled',
+          contentMd: state.content,
+          excerpt: state.metaDescription || undefined,
+          tags: state.selectedKeywords || []
+        });
+
+        if (result.ok && result.url) {
+          // Open published URL
+          window.open(result.url, '_blank');
+          toast.success(`Published successfully to ${activeProvider}!`);
+          
+          // Update content with published URL
+          await supabase
+            .from('content_items')
+            .update({ published_url: result.url })
+            .eq('id', contentItem.id);
+        } else {
+          toast.error(result.error || 'Failed to publish to website');
         }
       }
+      
+      // Show URL dialog for tracking
+      setShowUrlDialog(true);
     } catch (error) {
       console.error('Error publishing content:', error);
       toast.error('Failed to publish content');
+    } finally {
+      setIsPublishing(false);
+      setShowPublishDialog(false);
     }
   };
   const handleUrlSubmit = async (publishedUrl: string) => {
@@ -182,6 +238,15 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
         {/* Additional export options as a floating bar */}
         
       </Card>
+
+      <PublishConfirmationDialog
+        open={showPublishDialog}
+        onOpenChange={setShowPublishDialog}
+        provider={activeProvider}
+        onConfirm={handleConfirmPublish}
+        onCancel={() => setShowPublishDialog(false)}
+        isPublishing={isPublishing}
+      />
 
       <PublishedUrlDialog open={showUrlDialog} onClose={() => setShowUrlDialog(false)} onSubmit={handleUrlSubmit} contentTitle={state.contentTitle || state.metaTitle || state.mainKeyword || 'Untitled Content'} />
     </>;

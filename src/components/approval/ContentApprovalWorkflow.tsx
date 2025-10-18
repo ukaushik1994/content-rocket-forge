@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Link, BarChart3, CheckCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { PublishConfirmationDialog } from '@/components/publishing/PublishConfirmationDialog';
+import { getActiveConnection, publishToWebsite } from '@/services/publishing';
 
 interface ContentApprovalWorkflowProps {
   contentItems: ContentItemType[];
@@ -28,8 +30,20 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
   statusFilter
 }) => {
   const [activeTab, setActiveTab] = useState('editor');
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<'wordpress' | 'wix' | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
   const { findInterLinkingOpportunities } = useApproval();
   const { updateContentItem, publishContent } = useContent();
+  
+  // Load active connection on mount
+  useEffect(() => {
+    const loadConnection = async () => {
+      const { provider } = await getActiveConnection();
+      setActiveProvider(provider);
+    };
+    loadConnection();
+  }, []);
   
   // Select first item by default if nothing is selected
   useEffect(() => {
@@ -63,12 +77,45 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
   const handlePublish = async () => {
     if (!selectedContent) return;
     
+    // Show confirmation dialog
+    setShowPublishDialog(true);
+  };
+
+  const handleConfirmPublish = async () => {
+    if (!selectedContent) return;
+    
+    setIsPublishing(true);
+    
     try {
+      // 1. Update internal status to published
       await publishContent(selectedContent.id);
-      toast.success('Content published successfully');
+      
+      // 2. Publish to website if connected
+      if (activeProvider) {
+        const result = await publishToWebsite({
+          title: selectedContent.title,
+          contentMd: selectedContent.content,
+          excerpt: selectedContent.meta_description || undefined,
+          tags: selectedContent.metadata?.tags || [],
+          categories: selectedContent.metadata?.category ? [selectedContent.metadata.category] : []
+        });
+
+        if (result.ok && result.url) {
+          // Open published URL
+          window.open(result.url, '_blank');
+          toast.success(`Published successfully to ${activeProvider}!`);
+        } else {
+          toast.error(result.error || 'Failed to publish to website');
+        }
+      } else {
+        toast.success('Content published successfully');
+      }
     } catch (error) {
       console.error('Error publishing content:', error);
       toast.error('Failed to publish content');
+    } finally {
+      setIsPublishing(false);
+      setShowPublishDialog(false);
     }
   };
 
@@ -200,6 +247,16 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
           </div>
         )}
       </motion.div>
+
+      {/* Publish Confirmation Dialog */}
+      <PublishConfirmationDialog
+        open={showPublishDialog}
+        onOpenChange={setShowPublishDialog}
+        provider={activeProvider}
+        onConfirm={handleConfirmPublish}
+        onCancel={() => setShowPublishDialog(false)}
+        isPublishing={isPublishing}
+      />
     </div>
   );
 };

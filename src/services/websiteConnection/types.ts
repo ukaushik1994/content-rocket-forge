@@ -45,10 +45,5 @@ export interface SaveWordPressConnectionParams {
 
 export interface SaveWixConnectionParams {
   siteId: string;
-  refreshToken: string;
-  accessToken: string;
-  expiresAt: Date;
-  siteName: string;
-  siteEmail: string;
-  scopes: string[];
+  apiKey: string;
 }

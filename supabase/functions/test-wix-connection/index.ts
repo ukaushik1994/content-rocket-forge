@@ -41,14 +41,15 @@ serve(async (req) => {
       throw new Error('Wix connection not found');
     }
 
-    // Test Wix API with access token
-    const wixApiUrl = 'https://www.wixapis.com/blog/v3/posts?paging.limit=1';
+    // Test Wix API with API key
+    const wixApiUrl = 'https://www.wixapis.com/v2/posts';
     
     console.log('Testing Wix connection');
     
     const response = await fetch(wixApiUrl, {
       headers: {
-        'Authorization': `Bearer ${connection.access_token}`
+        'Authorization': connection.api_key,
+        'wix-site-id': connection.site_id
       }
     });
 
@@ -72,8 +73,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        siteName: connection.site_name,
-        siteEmail: connection.site_email
+        siteId: connection.site_id
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
