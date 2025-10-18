@@ -86,19 +86,27 @@ export const useEnhancedAIChatDB = () => {
             const parsedFunctionCalls = typeof msg.function_calls === 'string' ? JSON.parse(msg.function_calls) : msg.function_calls;
             if (Array.isArray(parsedFunctionCalls)) {
               actions = parsedFunctionCalls;
+              console.log('✅ [DB] Parsed actions (array) for message:', msg.id, 'count:', actions.length);
             } else if (parsedFunctionCalls.actions && Array.isArray(parsedFunctionCalls.actions)) {
               actions = parsedFunctionCalls.actions;
+              console.log('✅ [DB] Parsed actions (nested) for message:', msg.id, 'count:', actions.length);
             }
           } else if (msg.attachments && typeof msg.attachments === 'string') {
             const attachments = JSON.parse(msg.attachments);
             if (attachments.actions && Array.isArray(attachments.actions)) {
               actions = attachments.actions;
+              console.log('✅ [DB] Parsed actions from attachments for message:', msg.id, 'count:', actions.length);
             }
           }
           
           // Parse other JSON fields
           if (msg.visual_data) {
-            visualData = typeof msg.visual_data === 'string' ? JSON.parse(msg.visual_data) : msg.visual_data;
+            try {
+              visualData = typeof msg.visual_data === 'string' ? JSON.parse(msg.visual_data) : msg.visual_data;
+              console.log('✅ [DB] Parsed visualData for message:', msg.id, visualData);
+            } catch (e) {
+              console.error('❌ [DB] Failed to parse visual_data:', e, msg.visual_data);
+            }
           }
           if (msg.progress_indicator) {
             progressIndicator = typeof msg.progress_indicator === 'string' ? JSON.parse(msg.progress_indicator) : msg.progress_indicator;

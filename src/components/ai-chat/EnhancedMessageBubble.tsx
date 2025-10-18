@@ -34,6 +34,18 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   thinkingContent,
   isThinking = false
 }) => {
+  const messageActions = message.actions || [];
+  
+  // Log message rendering details
+  console.log('🎬 [MessageBubble] Rendering message:', {
+    messageId: message.id,
+    role: message.role,
+    hasActions: !!message.actions,
+    actionsLength: messageActions.length,
+    actions: messageActions,
+    hasVisualData: !!message.visualData
+  });
+
   // Check if this is an error message
   if (message.messageStatus === 'error' && onRetry) {
     return (
@@ -137,11 +149,13 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
 
 
           {/* Action Buttons */}
-          {message.actions && message.actions.length > 0 && (
-            <ModernActionButtons 
-              actions={message.actions} 
-              onAction={onAction || (() => {})} 
-            />
+          {messageActions.length > 0 && (
+            <div className="mt-4">
+              <ModernActionButtons 
+                actions={messageActions} 
+                onAction={onAction || (() => {})} 
+              />
+            </div>
           )}
 
           {/* Retry Button for AI messages */}

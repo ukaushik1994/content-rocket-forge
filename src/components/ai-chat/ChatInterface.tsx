@@ -64,7 +64,10 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
 
   // Auto-trigger sidebar when visual data is available
   useEffect(() => {
+    console.log('🔍 [ChatInterface] Checking for visual data, messages:', messages.length, 'activeConversation:', activeConversation);
+    
     if (messages.length === 0) {
+      console.log('❌ [ChatInterface] No messages, closing sidebar');
       setCurrentVisualData(null);
       setCurrentSerpData(null);
       setVisualSidebarOpen(false);
@@ -73,20 +76,32 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
 
     // Find the most recent assistant message with visual data
     const messageWithVisualData = messages
-      .filter(msg => msg.role === 'assistant')
+      .filter(msg => {
+        const hasVisualData = msg.role === 'assistant' && (msg.visualData || msg.serpData);
+        if (hasVisualData) {
+          console.log('✅ [ChatInterface] Found message with visual data:', msg.id, {
+            hasVisualData: !!msg.visualData,
+            hasSerpData: !!msg.serpData,
+            visualData: msg.visualData
+          });
+        }
+        return hasVisualData;
+      })
       .reverse()
       .find(msg => msg.visualData || msg.serpData);
 
     if (messageWithVisualData) {
+      console.log('🎯 [ChatInterface] Setting visual data and opening sidebar');
       setCurrentVisualData(messageWithVisualData.visualData);
       setCurrentSerpData(messageWithVisualData.serpData);
       setVisualSidebarOpen(true);
     } else {
+      console.log('❌ [ChatInterface] No visual data found in messages');
       setCurrentVisualData(null);
       setCurrentSerpData(null);
       setVisualSidebarOpen(false);
     }
-  }, [messages, messages.length]);
+  }, [messages, messages.length, activeConversation]);
 
 
   const handleSendMessage = async (message: string) => {
