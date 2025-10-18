@@ -102,6 +102,10 @@ export interface VisualData {
   description?: string;
   insightTitle?: string; // Key insight headline
   
+  // Error handling for incomplete responses
+  parseError?: boolean;
+  errorMessage?: string;
+  
   // Multi-chart support
   charts?: ChartConfiguration[]; // Array of 2-4 charts showing different perspectives
   

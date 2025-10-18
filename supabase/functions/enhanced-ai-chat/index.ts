@@ -13,6 +13,7 @@ import {
   generateStructuredSerpData
 } from './serp-intelligence.ts';
 import { generateChartPerspectives } from './chart-intelligence.ts';
+import { detectTruncation, createFallbackVisualData } from './truncation-detector.ts';
 
 // PHASE 1: Multi-chart detection - detects when user needs multiple perspectives
 function shouldGenerateMultipleCharts(query: string): boolean {
@@ -1567,13 +1568,13 @@ serve(async (req) => {
 
     // Phase 6: Dynamic token budget scaling for large context models (260K)
     const estimatedModelContext = 260000; // LM Studio model context window
-    const outputTokenRatio = 0.15; // Allow ~15% for output (~39K), enabling ~220K input
+    const outputTokenRatio = 0.20; // INCREASED: Allow ~20% for output (~52K), preventing truncation
     const dynamicMaxTokens = Math.min(
       Math.max(
         Math.floor(estimatedModelContext * outputTokenRatio),
-        30000 // Minimum 30K tokens for detailed responses
+        40000 // INCREASED: Minimum 40K tokens for detailed responses with charts
       ),
-      100000 // Maximum 100K tokens (reasonable cap)
+      120000 // INCREASED: Maximum 120K tokens for complex visualizations
     );
 
     console.log(`📊 Token Budget Check:
@@ -1602,26 +1603,75 @@ serve(async (req) => {
     }
 
 
-    // Call ai-proxy edge function with user's provider
-    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
-      body: {
-        service: provider.provider,
-        endpoint: 'chat',
-        apiKey: provider.api_key,
-        params: {
-          model: provider.preferred_model,
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt,
-            },
-            ...messages,
-          ],
-          temperature: 0.7,
-          max_tokens: dynamicMaxTokens, // Phase 1: Increased from 2000 to support 260K context models
+    // RETRY LOGIC: Attempt to get complete response
+    let aiProxyResult: any;
+    let aiProxyError: any;
+    let retryCount = 0;
+    const MAX_RETRIES = 2;
+    let currentMaxTokens = dynamicMaxTokens;
+
+    while (retryCount <= MAX_RETRIES) {
+      console.log(`🔄 AI call attempt ${retryCount + 1}/${MAX_RETRIES + 1} (max_tokens: ${currentMaxTokens})`);
+      
+      // Call ai-proxy edge function with user's provider
+      const result = await supabase.functions.invoke('ai-proxy', {
+        body: {
+          service: provider.provider,
+          endpoint: 'chat',
+          apiKey: provider.api_key,
+          params: {
+            model: provider.preferred_model,
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              ...messages,
+            ],
+            temperature: 0.7,
+            max_tokens: currentMaxTokens,
+          }
         }
+      });
+
+      aiProxyResult = result.data;
+      aiProxyError = result.error;
+
+      // Check if successful
+      if (!aiProxyError && aiProxyResult?.success) {
+        const aiMessage = aiProxyResult.data?.choices?.[0]?.message?.content;
+        
+        if (aiMessage) {
+          // Detect truncation
+          const truncationCheck = detectTruncation(aiMessage);
+          
+          if (truncationCheck.isTruncated && retryCount < MAX_RETRIES) {
+            console.warn(`⚠️ Response truncated (confidence: ${(truncationCheck.confidence * 100).toFixed(0)}%): ${truncationCheck.reasons.join(', ')}`);
+            console.log(`🔄 Retrying with increased max_tokens...`);
+            
+            retryCount++;
+            currentMaxTokens = Math.floor(currentMaxTokens * 1.5); // Increase by 50%
+            continue; // Retry
+          } else if (truncationCheck.isTruncated) {
+            console.error(`❌ Response still truncated after ${MAX_RETRIES} retries`);
+            // Will use fallback visual data below
+          } else {
+            console.log('✅ Complete response received');
+          }
+        }
+        
+        break; // Success - exit retry loop
       }
-    });
+
+      // Failed - retry if we have retries left
+      if (retryCount < MAX_RETRIES) {
+        console.warn(`⚠️ AI call failed, retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+      } else {
+        break; // Max retries reached
+      }
+    }
 
     if (aiProxyError || !aiProxyResult?.success) {
       console.error("AI request failed:", aiProxyError?.message || aiProxyResult?.error);
@@ -1690,9 +1740,16 @@ serve(async (req) => {
       console.warn('💡 Consider adjusting max_tokens or using streaming for better UX');
     }
 
-    // Check if response appears truncated mid-code-block
-    if (aiMessage.endsWith('```') && !aiMessage.endsWith('```\n')) {
-      console.error('🚨 Response appears truncated mid-code-block!');
+    // Advanced truncation detection
+    const finalTruncationCheck = detectTruncation(aiMessage);
+    if (finalTruncationCheck.isTruncated) {
+      console.error('🚨 Response appears truncated!', {
+        confidence: `${(finalTruncationCheck.confidence * 100).toFixed(0)}%`,
+        reasons: finalTruncationCheck.reasons
+      });
+      
+      // Add warning metadata
+      aiMessage = aiMessage + '\n\n⚠️ *Note: Response may be incomplete. Consider asking for clarification.*';
     }
 
     // Enhanced chart request detection
@@ -1985,6 +2042,21 @@ serve(async (req) => {
     if (!actions && !visualData) {
       const jsonBlocks = extractJSONBlocks(aiMessage);
       allVisualData = []; // Reset and collect ALL charts instead of overwriting
+      
+      // If extraction failed and we have JSON markers, try repair
+      if (jsonBlocks.length === 0 && aiMessage.includes('```json')) {
+        console.warn('⚠️ Attempting to repair truncated JSON...');
+        const repaired = aiMessage + '\n}\n```';
+        const repairedBlocks = extractJSONBlocks(repaired);
+        
+        if (repairedBlocks.length === 0) {
+          console.error('❌ Failed to repair JSON - creating fallback visual data');
+          visualData = createFallbackVisualData(userQuery, 'Response truncated - JSON parsing failed');
+        } else {
+          console.log('✅ Successfully repaired truncated JSON');
+          jsonBlocks.push(...repairedBlocks);
+        }
+      }
       
       for (const block of jsonBlocks) {
         console.log('🔍 Processing JSON block:', JSON.stringify(block).substring(0, 200));

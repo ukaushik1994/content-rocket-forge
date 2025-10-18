@@ -42,8 +42,8 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
     }
   };
 
-  // Show sidebar if we have either visual data or SERP data
-  if (!visualData && !serpData) return null;
+  // Always render if open - show "No data" state if needed
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -91,6 +91,59 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
 
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-6">
+                {/* No Data State */}
+                {!visualData && !serpData && (
+                  <Card className="p-6 text-center">
+                    <BarChart3 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <h3 className="text-lg font-semibold mb-2">No Visual Data Available</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      The AI response didn't include chart data. Try asking for specific visualizations.
+                    </p>
+                    <div className="space-y-2">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => onSendMessage?.("Show me a chart of my data")}
+                      >
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Request Chart Visualization
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => onSendMessage?.("Analyze my content performance with graphs")}
+                      >
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        Request Performance Analysis
+                      </Button>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Parse Error State */}
+                {visualData?.parseError && (
+                  <Card className="p-6 bg-yellow-500/10 border-yellow-500/20">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-yellow-500/20">
+                        <BarChart3 className="w-5 h-5 text-yellow-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold mb-2 text-yellow-600">Incomplete Visualization</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {visualData.errorMessage || 'The AI response was incomplete. Please regenerate the visualization.'}
+                        </p>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => onSendMessage?.("Try again with more detail")}
+                        >
+                          Regenerate Visualization
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
                 {/* SERP Analysis Section */}
                 {visualData?.type === 'serp_analysis' && visualData.serpData && (
                   <motion.div

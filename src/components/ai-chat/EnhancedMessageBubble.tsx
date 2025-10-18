@@ -158,13 +158,33 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             </div>
           )}
 
-          {/* Visual Data Indicator */}
-          {message.visualData && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-primary">
-              <BarChart3 className="w-3 h-3" />
-              <span>Contains visual data</span>
-            </div>
-          )}
+                {/* Visual Data Indicator */}
+                {message.visualData && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-primary">
+                    <BarChart3 className="w-3 h-3" />
+                    <span>Contains visual data</span>
+                    {message.visualData.parseError && (
+                      <span className="text-yellow-600">(incomplete - click to regenerate)</span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Truncation Warning */}
+                {message.visualData?.parseError && (
+                  <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2">
+                      ⚠️ The visual data was incomplete. Click below to regenerate.
+                    </p>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-7 text-xs"
+                      onClick={() => onRetry?.()}
+                    >
+                      Regenerate Visualization
+                    </Button>
+                  </div>
+                )}
 
           {/* Retry Button for AI messages */}
           {!isUser && onRetry && (

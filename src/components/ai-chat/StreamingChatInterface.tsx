@@ -332,29 +332,31 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
       onSendMessage={sendMessage}
     />
 
-    {/* Visual Data Sidebar Toggle - Always Visible */}
-    <motion.div
-      className="fixed top-20 right-4 z-40"
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.2 }}
-    >
-      <Button
-        size="sm"
-        variant={visualSidebarOpen ? "default" : "outline"}
-        onClick={() => setVisualSidebarOpen(!visualSidebarOpen)}
-        className={`h-10 px-3 rounded-lg shadow-lg hover:shadow-xl transition-all ${
-          (currentVisualData || currentSerpData) ? 'ring-2 ring-primary/50' : ''
-        }`}
-        title={visualSidebarOpen ? "Hide Insights" : "Show Insights"}
-      >
-        <BarChart3 className="w-4 h-4 mr-2" />
-        {visualSidebarOpen ? 'Hide' : 'Show'} Insights
-        {(currentVisualData || currentSerpData) && !visualSidebarOpen && (
-          <span className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+        {/* Visual Data Sidebar Toggle - Only show when data exists OR sidebar is open */}
+        {((currentVisualData || currentSerpData) || visualSidebarOpen) && (
+          <motion.div
+            className="fixed top-20 right-4 z-40"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Button
+              size="sm"
+              variant={visualSidebarOpen ? "default" : "outline"}
+              onClick={() => setVisualSidebarOpen(!visualSidebarOpen)}
+              className={`h-10 px-3 rounded-lg shadow-lg hover:shadow-xl transition-all ${
+                (currentVisualData || currentSerpData) ? 'ring-2 ring-primary/50' : ''
+              }`}
+              title={visualSidebarOpen ? "Hide Insights" : "Show Insights"}
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              {visualSidebarOpen ? 'Hide' : 'Show'} Insights
+              {(currentVisualData || currentSerpData) && !visualSidebarOpen && (
+                <span className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+              )}
+            </Button>
+          </motion.div>
         )}
-      </Button>
-    </motion.div>
     </div>
   );
 });
