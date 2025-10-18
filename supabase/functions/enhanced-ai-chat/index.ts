@@ -306,17 +306,36 @@ For sequential or related items:
 - Numbered lists: Use 1. 2. 3. for sequential steps
 - Add blank line before and after lists
 
-### 4. MARKDOWN TABLES - STRICT FORMAT REQUIRED
+### 4. MARKDOWN TABLES - **USE THESE FOR ALL TABULAR DATA**
 
-When presenting tabular data with 2+ columns, FOLLOW THIS EXACT FORMAT:
+⚠️ CRITICAL: For ANY data that has rows and columns, use markdown tables INLINE in your response.
 
-✅ CORRECT MARKDOWN TABLE:
+**MANDATORY FORMAT:**
 | Header 1 | Header 2 | Header 3 |
 |----------|----------|----------|
 | Data 1   | Data 2   | Data 3   |
 | Data 4   | Data 5   | Data 6   |
 
-MANDATORY TABLE RULES:
+**PLACEMENT RULES - THIS IS CRITICAL:**
+• Place tables EXACTLY where they're needed in the explanation
+• Put tables BETWEEN paragraphs, not just at the end
+• Add a heading or explanation before each table
+• Continue your explanation AFTER the table
+• Tables should flow naturally within your narrative
+
+**Example of CORRECT inline table placement:**
+"Here are the top performing keywords based on the data:
+
+### Top 5 Keywords by Traffic
+| Keyword | Traffic | Difficulty |
+|---------|---------|-----------|
+| SEO tips | 10,500 | Medium |
+| Content strategy | 8,200 | Low |
+| Marketing guide | 6,300 | High |
+
+As you can see from the data above, 'SEO tips' has the highest traffic. This suggests..."
+
+**MANDATORY TABLE RULES:**
 1. Line 1: Header row | Header | Header |
 2. Line 2: Separator row with ONLY dashes |---|---|
 3. Line 3+: Data rows, ONE per line | Data | Data |
@@ -329,8 +348,10 @@ MANDATORY TABLE RULES:
 
 ### 5. WHEN TO USE WHAT FORMAT:
 
-**Use Tables For:**
-- Comparing 3+ data points across 2+ distinct categories
+**Use Markdown Tables For (PREFERRED):**
+- Small to medium datasets (2-20 rows)
+- Comparing data points across 2+ distinct categories
+- ANY tabular data that needs inline explanation
 - Structured data with multiple columns
 
 **Use Lists For:**
