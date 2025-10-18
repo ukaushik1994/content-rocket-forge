@@ -33,6 +33,7 @@ import CalendarPage from "./pages/research/Calendar";
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
 import { AIStreamingChatPage } from "./pages/AIStreamingChatPage";
+import WixCallback from "./pages/WixCallback";
 import { EnterpriseHubPage } from "./pages/EnterpriseHubPage";
 import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
@@ -114,6 +115,7 @@ const App = () => (
                   <Route path="/landing" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/auth/check-email" element={<CheckEmail />} />
+                  <Route path="/wix-callback" element={<WixCallback />} />
                   
                   {/* Landing is now the main entry point */}
                   <Route path="/" element={<Landing />} />

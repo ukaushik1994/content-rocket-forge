@@ -24,12 +24,30 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
     setConnectionInfo(connection);
   };
 
-  const handleConnect = () => {
-    // OAuth flow - this would open a popup to Wix OAuth
+  const handleConnect = async () => {
+    const { initiateWixOAuth } = await import('@/services/websiteConnection/wixOAuthService');
+    
     toast({
-      title: 'Coming Soon',
-      description: 'Wix OAuth integration will be available soon',
+      title: 'Opening Wix Authorization',
+      description: 'Please authorize access in the popup window',
     });
+
+    const result = await initiateWixOAuth();
+
+    if (result.success) {
+      toast({
+        title: 'Connected Successfully',
+        description: 'Your Wix site has been connected',
+      });
+      await loadConnection();
+      onConnectionChange();
+    } else {
+      toast({
+        title: 'Connection Failed',
+        description: result.error || 'Failed to connect to Wix',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleTest = async () => {

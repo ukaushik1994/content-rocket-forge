@@ -119,3 +119,6 @@ verify_jwt = true
 [functions.test-wix-connection]
 verify_jwt = true
 
+[functions.wix-oauth-callback]
+verify_jwt = true
+
