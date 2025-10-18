@@ -64,11 +64,27 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
 
   // Auto-trigger sidebar when visual data is available
   useEffect(() => {
-    const latestMessage = messages[messages.length - 1];
-    if (latestMessage?.role === 'assistant' && (latestMessage.visualData || latestMessage.serpData)) {
-      setCurrentVisualData(latestMessage.visualData);
-      setCurrentSerpData(latestMessage.serpData);
+    if (messages.length === 0) {
+      setCurrentVisualData(null);
+      setCurrentSerpData(null);
+      setVisualSidebarOpen(false);
+      return;
+    }
+
+    // Find the most recent assistant message with visual data
+    const messageWithVisualData = messages
+      .filter(msg => msg.role === 'assistant')
+      .reverse()
+      .find(msg => msg.visualData || msg.serpData);
+
+    if (messageWithVisualData) {
+      setCurrentVisualData(messageWithVisualData.visualData);
+      setCurrentSerpData(messageWithVisualData.serpData);
       setVisualSidebarOpen(true);
+    } else {
+      setCurrentVisualData(null);
+      setCurrentSerpData(null);
+      setVisualSidebarOpen(false);
     }
   }, [messages]);
 
