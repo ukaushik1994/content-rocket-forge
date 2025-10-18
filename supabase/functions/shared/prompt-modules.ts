@@ -119,24 +119,15 @@ Otherwise → Generate CHART (default behavior)
 }
 \`\`\`
 
-**CRITICAL DATA PRESENTATION RULES:**
-
-**For Small-Medium Datasets (2-20 rows):**
-• USE INLINE MARKDOWN TABLES in your response text
-• Place tables contextually - before, during, or after explanation
-• Format: | Header | Header |\n|---|---|\n| Data | Data |
-
-**For Large Datasets (20+ rows) or Interactive Needs:**
-• Use JSON visualData structure as shown above
-• Good for data export, pagination, sorting features
-
-**For ALL Data (Tables or Charts):**
+**CRITICAL TABLE RULES:**
+• NEVER use pipe characters (|) or markdown table syntax
+• ALWAYS use the exact JSON structure above
 • Pre-sort data in correct order (e.g., highest to lowest)
-• Add rank numbers in first column when relevant
+• Add rank numbers in first column
 • Include descriptive title with emoji
 • Add caption explaining sort order
 
-**CHART FORMAT (use for visualizations and trends):**
+**CHART FORMAT (use for all other queries):**
 \`\`\`json
 {
   "visualData": {
@@ -313,30 +304,14 @@ export const MULTI_CHART_MODULE = `
 export const TABLE_MODULE = `
 📋 TABLE DISPLAY RULES:
 
-**DEFAULT BEHAVIOR: Use INLINE MARKDOWN TABLES for most tabular data**
+**When to Use Tables (ONLY IF):**
+• User explicitly asks: "show me a table", "tabular format", "spreadsheet", "list all data"
+• User wants to export raw data: "give me the data", "export this"
+• Data has 5+ columns AND user requests detailed breakdown
 
-**When to Use Inline Markdown Tables (PREFERRED):**
-• Small-medium datasets (2-20 rows)
-• When explaining data within your response
-• Comparison tables
-• Summary tables
-• ANY time you need to show tabular data contextually
+**DEFAULT BEHAVIOR: Use charts instead of tables for visualization**
 
-**Inline Markdown Table Format:**
-Place tables directly in your response text:
-
-| Column 1 | Column 2 | Column 3 |
-|----------|----------|----------|
-| Value 1  | Value 2  | Value 3  |
-| Value 4  | Value 5  | Value 6  |
-
-**When to Use JSON visualData Tables (ONLY FOR):**
-• Large datasets (20+ rows) needing pagination
-• User explicitly requests exportable data format
-• Data has 5+ columns AND needs interactive features
-• User says: "give me exportable data", "show in spreadsheet format"
-
-**JSON Table Format (use sparingly):**
+**Table Format:**
 \`\`\`json
 {
   "visualData": {
@@ -353,21 +328,15 @@ Place tables directly in your response text:
 }
 \`\`\`
 
-**Table Placement (for inline markdown tables):**
-• Place tables THROUGHOUT your response where contextually relevant
-• Add explanation BEFORE the table
-• Add analysis AFTER the table
-• Tables should flow naturally in conversation
+**Table Placement:**
+• START: When user asks "show me the data"
+• MIDDLE: When supporting your explanation
+• END: When summarizing findings
 
-**Example of correct inline usage:**
-"Let me show you the top keywords:
-
-| Keyword | Volume | Priority |
-|---------|--------|----------|
-| SEO guide | 12,000 | High |
-| Content tips | 8,500 | Medium |
-
-As you can see, SEO guide has the highest volume..."`;
+**NEVER:**
+• Use markdown pipe tables (| --- |)
+• Paste raw CSV in conversational text
+• Display data without proper formatting`;
 
 // SERP visualization module - ~500 tokens
 export const SERP_MODULE = `
