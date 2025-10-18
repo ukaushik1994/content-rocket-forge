@@ -203,10 +203,6 @@ function sanitizeResponseContent(content: string): string {
     .replace(/<think>[\s\S]*?<\/think>/gi, '')
     // Remove any orphaned or malformed <think> or </think> tags
     .replace(/<\/?think>/gi, '')
-    // Remove any raw CSV-like patterns
-    .replace(/^[A-Za-z\s,]+(?:,\s*[A-Za-z\s]+)*\n(?:[^,\n]*,\s*)*[^,\n]*$/gm, '')
-    // Remove quoted CSV data patterns
-    .replace(/^"[^"]*"(?:,\s*"[^"]*")*$/gm, '')
     // Remove standalone JSON objects that shouldn't be in text
     .replace(/^\s*\{[\s\S]*?\}\s*$/gm, '')
     // Clean up extra whitespace
