@@ -40,7 +40,7 @@ serve(async (req) => {
 
     // Parse request body
     const body = await req.json();
-    const { title, contentMd, slug, excerpt, tags, categories, status = 'draft' } = body;
+    const { title, contentMd, slug, excerpt, tags, categories, status = 'draft', scheduledAt } = body;
 
     if (!title || !contentMd) {
       throw new Error('Title and content are required');
@@ -54,6 +54,53 @@ serve(async (req) => {
       breaks: true // Convert line breaks to <br>
     }) as string;
 
+    // Helper function to resolve taxonomy IDs
+    async function resolveTaxonomyIds(taxonomy: 'tags' | 'categories', names: string[]): Promise<number[]> {
+      const ids: number[] = [];
+      
+      for (const name of names) {
+        try {
+          // Try to find existing
+          const searchUrl = `${connection.site_url}/wp-json/wp/v2/${taxonomy}?search=${encodeURIComponent(name)}`;
+          const searchRes = await fetch(searchUrl, {
+            headers: { 'Authorization': `Basic ${credentials}` }
+          });
+          
+          if (searchRes.ok) {
+            const results = await searchRes.json();
+            const existing = results.find((t: any) => 
+              t.name.toLowerCase() === name.toLowerCase()
+            );
+            
+            if (existing) {
+              ids.push(existing.id);
+              continue;
+            }
+          }
+          
+          // Create new if not found
+          const createUrl = `${connection.site_url}/wp-json/wp/v2/${taxonomy}`;
+          const createRes = await fetch(createUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${credentials}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name })
+          });
+          
+          if (createRes.ok) {
+            const created = await createRes.json();
+            ids.push(created.id);
+          }
+        } catch (error) {
+          console.error(`Error resolving ${taxonomy} "${name}":`, error);
+        }
+      }
+      
+      return ids;
+    }
+
     // Create post payload
     const postPayload: any = {
       title,
@@ -63,14 +110,26 @@ serve(async (req) => {
       excerpt: excerpt || ''
     };
 
-    // Add tags if provided
-    if (tags && tags.length > 0) {
-      postPayload.tags = tags;
+    // Add scheduling if future date provided
+    if (scheduledAt && new Date(scheduledAt) > new Date()) {
+      postPayload.status = 'future';
+      postPayload.date_gmt = new Date(scheduledAt).toISOString();
     }
 
-    // Add categories if provided
+    // Resolve and add tags if provided
+    if (tags && tags.length > 0) {
+      const tagIds = await resolveTaxonomyIds('tags', tags);
+      if (tagIds.length > 0) {
+        postPayload.tags = tagIds;
+      }
+    }
+
+    // Resolve and add categories if provided
     if (categories && categories.length > 0) {
-      postPayload.categories = categories;
+      const categoryIds = await resolveTaxonomyIds('categories', categories);
+      if (categoryIds.length > 0) {
+        postPayload.categories = categoryIds;
+      }
     }
 
     // Publish to WordPress

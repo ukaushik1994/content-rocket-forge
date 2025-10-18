@@ -15,4 +15,5 @@ export interface PublishResult {
   postId?: string;
   url?: string;
   error?: string;
+  scheduled?: boolean;
 }

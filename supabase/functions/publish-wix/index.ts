@@ -39,13 +39,28 @@ serve(async (req) => {
 
     // Parse request body
     const body = await req.json();
-    const { title, contentMd, slug, excerpt, tags } = body;
+    const { title, contentMd, slug, excerpt, tags, scheduledAt } = body;
 
     if (!title || !contentMd) {
       throw new Error('Title and content are required');
     }
 
     console.log('Publishing to Wix site:', connection.site_id);
+
+    // Check for scheduling - Wix Blog v3 does not support native scheduling
+    if (scheduledAt) {
+      console.warn('Wix does not support native scheduling. Post will be created as draft.');
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: 'Wix does not support scheduled publishing. Please publish manually or use a custom scheduler.',
+          postId: null,
+          url: null,
+          scheduled: false
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Convert Markdown to Wix Ricos format (inline conversion)
     const lines = contentMd.split('\n');

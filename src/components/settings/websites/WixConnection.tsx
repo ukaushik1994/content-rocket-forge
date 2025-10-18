@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, CheckCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getConnection, saveWixConnection, testConnection, deleteConnection } from '@/services/websiteConnection';
 
@@ -108,6 +109,13 @@ export const WixConnection = ({ onConnectionChange }: WixConnectionProps) => {
             <li>Copy your Site ID and API Key below</li>
           </ol>
         </Card>
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            When creating your API key, make sure to enable <strong>Blog (Manage Blog)</strong> permissions.
+          </AlertDescription>
+        </Alert>
 
         <div className="space-y-3">
           <div>

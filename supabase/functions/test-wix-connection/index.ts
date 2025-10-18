@@ -41,8 +41,8 @@ serve(async (req) => {
       throw new Error('Wix connection not found');
     }
 
-    // Test Wix API with API key
-    const wixApiUrl = 'https://www.wixapis.com/v2/posts';
+    // Test Wix API with Blog v3 endpoint
+    const wixApiUrl = 'https://www.wixapis.com/blog/v3/posts?paging.limit=1';
     
     console.log('Testing Wix connection');
     
