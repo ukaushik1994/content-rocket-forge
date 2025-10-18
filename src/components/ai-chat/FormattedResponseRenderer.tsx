@@ -2,11 +2,9 @@ import React, { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, AlertTriangle } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedTableRenderer } from './EnhancedTableRenderer';
-import { validateAndRepairMarkdown } from './utils/contentValidator';
-import { Card } from '@/components/ui/card';
 
 // Process content but skip CSV conversion when visual data exists
 const processCodeBlocks = (content: string, hasVisualData: boolean = false): string => {
@@ -63,32 +61,19 @@ const isValidMarkdownTableRow = (line: string): boolean => {
   return segments.length >= 2;
 };
 
-// Clean malformed pipes that corrupt text flow - INTELLIGENT VERSION
+// Clean malformed pipes that corrupt text flow
 const cleanMalformedPipes = (content: string): string => {
-  const lines = content.split('\n');
-  const processedLines = lines.map(line => {
-    const trimmed = line.trim();
-    
-    // DON'T touch lines that look like valid table rows
-    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.includes('---')) {
-      return line; // Preserve table separator rows
-    }
-    
-    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
-      const cellCount = (trimmed.match(/\|/g) || []).length;
-      // If consistent pipe count (3+ pipes = 2+ columns), it's likely a table
-      if (cellCount >= 3) {
-        return line; // Preserve table data rows
-      }
-    }
-    
-    // Only remove orphaned pipes in prose (not in table structure)
-    return line
-      .replace(/\s+\|\s+/g, ' ') // Pipes surrounded by spaces in prose
-      .replace(/(\w)\s*\|\s*(\w)/g, '$1 $2'); // Pipes between words
-  });
-  
-  return processedLines.join('\n');
+  return content
+    // Remove pipes surrounded by spaces (not table borders)
+    .replace(/\s+\|\s+/g, ' ')
+    // Remove pipes at start of lines (not tables)
+    .replace(/^\|(?!\s*-)/gm, '')
+    // Remove pipes at end of lines (not tables)
+    .replace(/\|$/gm, '')
+    // Clean up multiple consecutive pipes
+    .replace(/\|{2,}/g, '|')
+    // Remove orphaned pipes in middle of sentences
+    .replace(/(\w)\s*\|\s*(\w)/g, '$1 $2');
 };
 
 // Convert CSV content to markdown table
@@ -226,30 +211,25 @@ const convertInvalidTableToList = (content: string): string => {
 // Enhanced malformed table detection with better pattern recognition
 const detectMalformedTable = (content: string): boolean => {
   const lines = content.split('\n');
-  let tableLineCount = 0;
-  let hasSeparatorRow = false;
+  let pipeLineCount = 0;
+  let consecutivePipeLines = 0;
+  let maxConsecutive = 0;
   
   for (const line of lines) {
     const trimmed = line.trim();
     
-    // Detect table separator rows (only dashes and pipes)
-    if (/^\|[\s\-:]+\|$/.test(trimmed) && trimmed.includes('---')) {
-      hasSeparatorRow = true;
-      tableLineCount++;
-      continue;
-    }
-    
-    // Detect table data rows (proper start/end pipes, 2+ columns)
-    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
-      const cellCount = (trimmed.match(/\|/g) || []).length;
-      if (cellCount >= 3) { // At least 2 columns (3 pipes)
-        tableLineCount++;
-      }
+    // Count lines that look like table rows
+    if (trimmed.startsWith('|') && (trimmed.match(/\|/g) || []).length >= 2) {
+      pipeLineCount++;
+      consecutivePipeLines++;
+      maxConsecutive = Math.max(maxConsecutive, consecutivePipeLines);
+    } else {
+      consecutivePipeLines = 0;
     }
   }
   
-  // Must have separator row AND at least one data row
-  return hasSeparatorRow && tableLineCount >= 2;
+  // More robust detection: need either 3+ pipe lines OR 2+ consecutive ones
+  return pipeLineCount >= 3 || maxConsecutive >= 2;
 };
 
 // Improved malformed table repair with better error handling
@@ -675,35 +655,26 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
         .replace(/<think>[\s\S]*?<\/think>/gi, '')
         .replace(/<\/?think>/gi, '');
       
-      // Validate and repair markdown structure with table protection
-      const validated = validateAndRepairMarkdown(processedContent);
-      if (!validated.isValid) {
-        console.warn('⚠️ Content validation issues:', validated.issues);
-      }
-      processedContent = validated.repairedContent;
+      // ALWAYS clean malformed pipes after <think> removal
+      processedContent = cleanMalformedPipes(processedContent);
       
       // Skip table processing if visual data already handles the tables
       if (hasVisualData) {
         return { 
           processedContent, 
           hasErrors: false, 
-          errorCount: 0,
-          validationIssues: validated.issues
+          errorCount: 0 
         };
       }
       
       const result = detectAndConvertTables(processedContent);
-      return {
-        ...result,
-        validationIssues: validated.issues
-      };
+      return result;
     } catch (error) {
       console.error('Content processing error:', error);
       return { 
         processedContent: content, 
         hasErrors: true, 
-        errorCount: 1,
-        validationIssues: ['Processing error']
+        errorCount: 1 
       };
     } finally {
       setTimeout(() => setIsProcessing(false), 100);
@@ -742,69 +713,37 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
     );
   }
   
-  // Show fallback error UI if severe formatting issues detected
-  if (processedResult.hasErrors && processedResult.errorCount > 3) {
-    return (
-      <Card className="p-4 border-warning/50 bg-warning/5">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-warning mb-2">
-              Content Formatting Issues Detected
-            </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              The AI response contains formatting that couldn't be properly rendered. 
-              Showing raw content with basic formatting.
-            </p>
-            <pre className="text-xs bg-muted/50 p-3 rounded overflow-x-auto whitespace-pre-wrap font-mono">
-              {processedResult.processedContent}
-            </pre>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-  
   return (
     <div className={cn("prose prose-sm max-w-none", className)}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 className="text-xl font-bold text-foreground mb-4 mt-6 first:mt-0 border-b-2 border-primary/20 pb-2">
+            <h1 className="text-lg font-semibold text-foreground mb-4 mt-6 first:mt-0 border-b border-border pb-2">
               {children}
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-lg font-semibold text-foreground mb-3 mt-5 first:mt-0">
+            <h2 className="text-base font-semibold text-foreground mb-3 mt-6 first:mt-0 border-l-4 border-primary pl-3">
               {children}
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-base font-medium text-foreground mb-2 mt-4 first:mt-0">
+            <h3 className="text-sm font-semibold text-foreground mb-2 mt-4 first:mt-0">
               {children}
             </h3>
           ),
-          p: ({ children, node }) => {
-            // Check if paragraph contains only a table (avoid double wrapping)
-            const hasTable = node?.children?.some((child: any) => 
-              child.tagName === 'table'
-            );
-            
-            if (hasTable) return <>{children}</>;
-            
-            return (
-              <p className="text-sm text-foreground/90 mb-4 leading-relaxed whitespace-pre-wrap">
-                {children}
-              </p>
-            );
-          },
+              p: ({ children }) => (
+                <p className="text-sm text-foreground/90 mb-4 leading-relaxed max-w-prose">
+                  {children}
+                </p>
+              ),
           ul: ({ children }) => (
-            <ul className="list-disc space-y-1.5 mb-4 text-sm text-foreground/90 ml-6 pl-2">
+            <ul className="list-disc space-y-2 mb-4 text-sm text-foreground/90 ml-6 pl-0">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal space-y-1.5 mb-4 text-sm text-foreground/90 ml-6 pl-2">
+            <ol className="list-decimal space-y-2 mb-4 text-sm text-foreground/90 ml-6 pl-0">
               {children}
             </ol>
           ),
@@ -834,36 +773,34 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
             </blockquote>
           ),
           table: ({ children }) => (
-            <div className="my-4 overflow-x-auto rounded-lg border border-border/50 shadow-sm">
-              <EnhancedTableRenderer rawTableData={processedResult.processedContent}>
-                <table className="min-w-full divide-y divide-border bg-card">
-                  {children}
-                </table>
-              </EnhancedTableRenderer>
-            </div>
+            <EnhancedTableRenderer rawTableData={processedResult.processedContent}>
+              <table className="min-w-full border border-border rounded-lg bg-card">
+                {children}
+              </table>
+            </EnhancedTableRenderer>
           ),
           thead: ({ children }) => (
-            <thead className="bg-muted/30">
+            <thead className="bg-muted/50">
               {children}
             </thead>
           ),
           tbody: ({ children }) => (
-            <tbody className="divide-y divide-border/30 bg-card">
+            <tbody className="divide-y divide-border">
               {children}
             </tbody>
           ),
           tr: ({ children }) => (
-            <tr className="hover:bg-muted/20 transition-colors">
+            <tr className="hover:bg-muted/30 transition-colors">
               {children}
             </tr>
           ),
           th: ({ children }) => (
-            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-4 py-3 text-sm text-foreground/90">
+            <td className="px-4 py-3 text-sm text-foreground border-b border-border/50">
               {children}
             </td>
           ),
