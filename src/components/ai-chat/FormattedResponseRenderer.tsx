@@ -2,9 +2,11 @@ import React, { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedTableRenderer } from './EnhancedTableRenderer';
+import { validateAndRepairMarkdown } from './utils/contentValidator';
+import { Card } from '@/components/ui/card';
 
 // Process content but skip CSV conversion when visual data exists
 const processCodeBlocks = (content: string, hasVisualData: boolean = false): string => {
@@ -61,19 +63,32 @@ const isValidMarkdownTableRow = (line: string): boolean => {
   return segments.length >= 2;
 };
 
-// Clean malformed pipes that corrupt text flow
+// Clean malformed pipes that corrupt text flow - INTELLIGENT VERSION
 const cleanMalformedPipes = (content: string): string => {
-  return content
-    // Remove pipes surrounded by spaces (not table borders)
-    .replace(/\s+\|\s+/g, ' ')
-    // Remove pipes at start of lines (not tables)
-    .replace(/^\|(?!\s*-)/gm, '')
-    // Remove pipes at end of lines (not tables)
-    .replace(/\|$/gm, '')
-    // Clean up multiple consecutive pipes
-    .replace(/\|{2,}/g, '|')
-    // Remove orphaned pipes in middle of sentences
-    .replace(/(\w)\s*\|\s*(\w)/g, '$1 $2');
+  const lines = content.split('\n');
+  const processedLines = lines.map(line => {
+    const trimmed = line.trim();
+    
+    // DON'T touch lines that look like valid table rows
+    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.includes('---')) {
+      return line; // Preserve table separator rows
+    }
+    
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      const cellCount = (trimmed.match(/\|/g) || []).length;
+      // If consistent pipe count (3+ pipes = 2+ columns), it's likely a table
+      if (cellCount >= 3) {
+        return line; // Preserve table data rows
+      }
+    }
+    
+    // Only remove orphaned pipes in prose (not in table structure)
+    return line
+      .replace(/\s+\|\s+/g, ' ') // Pipes surrounded by spaces in prose
+      .replace(/(\w)\s*\|\s*(\w)/g, '$1 $2'); // Pipes between words
+  });
+  
+  return processedLines.join('\n');
 };
 
 // Convert CSV content to markdown table
@@ -211,25 +226,30 @@ const convertInvalidTableToList = (content: string): string => {
 // Enhanced malformed table detection with better pattern recognition
 const detectMalformedTable = (content: string): boolean => {
   const lines = content.split('\n');
-  let pipeLineCount = 0;
-  let consecutivePipeLines = 0;
-  let maxConsecutive = 0;
+  let tableLineCount = 0;
+  let hasSeparatorRow = false;
   
   for (const line of lines) {
     const trimmed = line.trim();
     
-    // Count lines that look like table rows
-    if (trimmed.startsWith('|') && (trimmed.match(/\|/g) || []).length >= 2) {
-      pipeLineCount++;
-      consecutivePipeLines++;
-      maxConsecutive = Math.max(maxConsecutive, consecutivePipeLines);
-    } else {
-      consecutivePipeLines = 0;
+    // Detect table separator rows (only dashes and pipes)
+    if (/^\|[\s\-:]+\|$/.test(trimmed) && trimmed.includes('---')) {
+      hasSeparatorRow = true;
+      tableLineCount++;
+      continue;
+    }
+    
+    // Detect table data rows (proper start/end pipes, 2+ columns)
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      const cellCount = (trimmed.match(/\|/g) || []).length;
+      if (cellCount >= 3) { // At least 2 columns (3 pipes)
+        tableLineCount++;
+      }
     }
   }
   
-  // More robust detection: need either 3+ pipe lines OR 2+ consecutive ones
-  return pipeLineCount >= 3 || maxConsecutive >= 2;
+  // Must have separator row AND at least one data row
+  return hasSeparatorRow && tableLineCount >= 2;
 };
 
 // Improved malformed table repair with better error handling
@@ -655,7 +675,14 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
         .replace(/<think>[\s\S]*?<\/think>/gi, '')
         .replace(/<\/?think>/gi, '');
       
-      // ALWAYS clean malformed pipes after <think> removal
+      // NEW: Validate and repair markdown structure FIRST
+      const validated = validateAndRepairMarkdown(processedContent);
+      if (!validated.isValid) {
+        console.warn('⚠️ Content validation issues:', validated.issues);
+      }
+      processedContent = validated.repairedContent;
+      
+      // THEN clean malformed pipes (after validation preserves tables)
       processedContent = cleanMalformedPipes(processedContent);
       
       // Skip table processing if visual data already handles the tables
@@ -663,18 +690,23 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
         return { 
           processedContent, 
           hasErrors: false, 
-          errorCount: 0 
+          errorCount: 0,
+          validationIssues: validated.issues
         };
       }
       
       const result = detectAndConvertTables(processedContent);
-      return result;
+      return {
+        ...result,
+        validationIssues: validated.issues
+      };
     } catch (error) {
       console.error('Content processing error:', error);
       return { 
         processedContent: content, 
         hasErrors: true, 
-        errorCount: 1 
+        errorCount: 1,
+        validationIssues: ['Processing error']
       };
     } finally {
       setTimeout(() => setIsProcessing(false), 100);
@@ -713,37 +745,69 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
     );
   }
   
+  // Show fallback error UI if severe formatting issues detected
+  if (processedResult.hasErrors && processedResult.errorCount > 3) {
+    return (
+      <Card className="p-4 border-warning/50 bg-warning/5">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-warning mb-2">
+              Content Formatting Issues Detected
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              The AI response contains formatting that couldn't be properly rendered. 
+              Showing raw content with basic formatting.
+            </p>
+            <pre className="text-xs bg-muted/50 p-3 rounded overflow-x-auto whitespace-pre-wrap font-mono">
+              {processedResult.processedContent}
+            </pre>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+  
   return (
     <div className={cn("prose prose-sm max-w-none", className)}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 className="text-lg font-semibold text-foreground mb-4 mt-6 first:mt-0 border-b border-border pb-2">
+            <h1 className="text-xl font-bold text-foreground mb-4 mt-6 first:mt-0 border-b-2 border-primary/20 pb-2">
               {children}
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-base font-semibold text-foreground mb-3 mt-6 first:mt-0 border-l-4 border-primary pl-3">
+            <h2 className="text-lg font-semibold text-foreground mb-3 mt-5 first:mt-0">
               {children}
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-sm font-semibold text-foreground mb-2 mt-4 first:mt-0">
+            <h3 className="text-base font-medium text-foreground mb-2 mt-4 first:mt-0">
               {children}
             </h3>
           ),
-              p: ({ children }) => (
-                <p className="text-sm text-foreground/90 mb-4 leading-relaxed max-w-prose">
-                  {children}
-                </p>
-              ),
+          p: ({ children, node }) => {
+            // Check if paragraph contains only a table (avoid double wrapping)
+            const hasTable = node?.children?.some((child: any) => 
+              child.tagName === 'table'
+            );
+            
+            if (hasTable) return <>{children}</>;
+            
+            return (
+              <p className="text-sm text-foreground/90 mb-4 leading-relaxed whitespace-pre-wrap">
+                {children}
+              </p>
+            );
+          },
           ul: ({ children }) => (
-            <ul className="list-disc space-y-2 mb-4 text-sm text-foreground/90 ml-6 pl-0">
+            <ul className="list-disc space-y-1.5 mb-4 text-sm text-foreground/90 ml-6 pl-2">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal space-y-2 mb-4 text-sm text-foreground/90 ml-6 pl-0">
+            <ol className="list-decimal space-y-1.5 mb-4 text-sm text-foreground/90 ml-6 pl-2">
               {children}
             </ol>
           ),

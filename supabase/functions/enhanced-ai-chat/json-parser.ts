@@ -134,8 +134,16 @@ export function removeExtractedJSON(text: string): string {
   // Remove quoted CSV data patterns
   cleaned = cleaned.replace(/^"[^"]*"(?:,\s*"[^"]*")*$/gm, '');
   
-  // Clean up extra whitespace and newlines
-  cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
+  // NEW: Preserve markdown structure
+  cleaned = cleaned
+    // Ensure double line breaks between sections
+    .replace(/\n{3,}/g, '\n\n')
+    // Preserve heading markers
+    .replace(/^(#{1,6})\s+/gm, '$1 ')
+    // Preserve list markers
+    .replace(/^(\*|-|\d+\.)\s+/gm, '$1 ')
+    // Preserve blockquote markers
+    .replace(/^>\s+/gm, '> ');
   
   // If content becomes too minimal, preserve some context
   if (cleaned.length < 50 && text.length > 200) {
@@ -152,5 +160,5 @@ export function removeExtractedJSON(text: string): string {
     cleaned = conversationalLines.slice(0, 3).join('\n');
   }
   
-  return cleaned || text;
+  return cleaned.trim() || text;
 }

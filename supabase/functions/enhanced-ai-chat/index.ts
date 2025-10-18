@@ -285,66 +285,83 @@ function buildMultiChartSystemPrompt(): string {
 
 CRITICAL FORMATTING RULES FOR CONVERSATIONAL RESPONSES:
 
-## MARKDOWN TABLE RULES (EXTREMELY IMPORTANT)
+## CRITICAL FORMATTING RULES (FOLLOW EXACTLY):
 
-When presenting tabular data, you MUST follow this EXACT format:
+### 1. HEADINGS - Use for Visual Hierarchy
+Use proper markdown headings to structure content:
+- ## for main sections
+- ### for subsections  
+- #### for sub-subsections
 
-✅ CORRECT MARKDOWN TABLE FORMAT:
+Always add a blank line before and after headings.
+
+### 2. PARAGRAPHS - Break Up Walls of Text
+- Keep paragraphs 3-4 sentences maximum
+- Add double line breaks between paragraphs (\\n\\n)
+- NEVER create walls of text - always break into readable chunks
+
+### 3. LISTS - Use for Multiple Items
+For sequential or related items:
+- Bullet lists: Use - or * at the start of lines
+- Numbered lists: Use 1. 2. 3. for sequential steps
+- Add blank line before and after lists
+
+### 4. MARKDOWN TABLES - STRICT FORMAT REQUIRED
+
+When presenting tabular data with 2+ columns, FOLLOW THIS EXACT FORMAT:
+
+✅ CORRECT MARKDOWN TABLE:
+```
 | Header 1 | Header 2 | Header 3 |
-| --- | --- | --- |
-| Data 1 | Data 2 | Data 3 |
-| Data 4 | Data 5 | Data 6 |
+|----------|----------|----------|
+| Data 1   | Data 2   | Data 3   |
+| Data 4   | Data 5   | Data 6   |
+```
 
 MANDATORY TABLE RULES:
-1. Line 1: Header row with pipes at start and end: | Header | Header |
-2. Line 2: Separator row with ONLY dashes: | --- | --- |
-3. Line 3+: Data rows, ONE per line: | Data | Data |
-4. Each cell MUST be on the SAME ROW, separated by single pipes |
-5. NEVER put header separator (---) on the same line as data
-6. NEVER mix header content and data on one line
-7. Empty cells: Use spaces between pipes: |  | Data |
-8. Column count MUST be consistent across all rows
+1. Line 1: Header row | Header | Header |
+2. Line 2: Separator row with ONLY dashes |---|---|
+3. Line 3+: Data rows, ONE per line | Data | Data |
+4. Each cell on SAME ROW, separated by single pipes |
+5. NEVER mix separator (---) on same line as data
+6. Empty cells: Use spaces |  | Data |
+7. Column count MUST be consistent
 
-❌ NEVER DO THIS (these break rendering):
-| Header | Data --- More Data | Values |
-| Mixed content --- separator | all | wrong |
-| Query Type | Impressions | What This Means | --- | --- | --- |
+❌ NEVER DO THIS:
+```
+| Header | Data --- More | Values |
+| Mixed --- separator | wrong |
+```
 
-📝 WHEN TO USE TABLES vs LISTS:
-- Tables: Comparing 3+ data points across 2+ distinct categories
-- Lists: Sequential information, single-column data, narratives
+### 5. WHEN TO USE WHAT FORMAT:
 
-IF DATA DOESN'T FIT TABLE FORMAT, use bulleted lists:
-- **Item 1**: Value (description)
-- **Item 2**: Value (description)
+**Use Tables For:**
+- Comparing 3+ data points across 2+ distinct categories
+- Structured data with multiple columns
 
-## GENERAL TEXT FORMATTING RULES:
-1. NEVER use pipe characters (|) in conversational text - they break markdown rendering
-2. Use markdown headers (## Section, ### Subsection) to structure content
-3. Use bullet lists (- item) or numbered lists (1. item) for data presentation
-4. Use **bold** for emphasis, not surrounded by ASCII separators
-5. Separate sections with blank lines, not with | --- | or similar patterns
-   
-   GOOD EXAMPLE:
-   ## Content Analysis
-   
-   ### Key Findings:
-   1. **Content Status**: 6 draft articles, 1 published (total 7)
-   2. **SEO Health**: All content has 0/100 SEO scores
-   3. **Top Performing Topic**: People Analytics with 6 pieces
-   
-   ### Recommendations:
-   - Optimize SEO scores across all content
-   - Publish draft articles
-   - Focus on high-performing topics
-   
-   BAD EXAMPLE (NEVER DO THIS):
-   | --- | --- |
-   | Topic | Content pieces |
-   | SEO Health | 0/100 scores |
+**Use Lists For:**
+- Sequential information
+- Single-column data
+- Narrative points
+- Action items
 
-7. Only use proper markdown tables when explicitly asked or when data has 3+ columns
-8. Keep responses clean, scannable, and professional
+Example with lists:
+- **Metric 1**: Value (description)
+- **Metric 2**: Value (description)
+
+### 6. FORMATTING PROHIBITIONS:
+
+❌ NEVER use pipe characters (|) in prose text
+❌ NEVER use ASCII art separators like | --- |
+❌ NEVER create walls of text without breaks
+❌ NEVER put headers and data on the same table line
+
+### 7. EMPHASIS AND CLARITY:
+
+- Use **bold** for key terms and emphasis
+- Use *italic* for secondary emphasis
+- Add blank lines for visual breathing room
+- Structure responses with clear sections
 
 CRITICAL CHART DATA FORMAT RULES:
 9. **Pie Charts** require STRICT data format:
