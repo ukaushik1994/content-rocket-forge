@@ -221,12 +221,22 @@ export const useEnhancedAIChatDB = () => {
         status: 'completed'
       };
 
-      const { error } = await supabase
+      const { data: savedMessage, error } = await supabase
         .from('ai_messages')
-        .insert(messageData);
+        .insert(messageData)
+        .select()
+        .single();
       
       if (error) {
         console.error('Database error saving message:', error);
+      } else if (savedMessage) {
+        console.log('💾 [DB] Saved message:', {
+          id: savedMessage.id,
+          hasActions: !!message.actions,
+          hasVisualData: !!message.visualData,
+          actionsLength: message.actions?.length || 0,
+          visualDataType: message.visualData?.type
+        });
       }
     } catch (error) {
       console.error('Error saving message:', error);

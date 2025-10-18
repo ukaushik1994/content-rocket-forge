@@ -42,8 +42,14 @@ export const AIStreamingChatPage: React.FC = () => {
   };
 
   const handleSelectConversation = (conversationId: string) => {
+    console.log('🔄 [AIStreamingChatPage] Switching to conversation:', conversationId);
     selectConversation(conversationId);
     updateActiveConversation(conversationId);
+    
+    // Force sidebar to check for visual data after conversation loads
+    setTimeout(() => {
+      console.log('🔍 [AIStreamingChatPage] Triggered visual data check after conversation switch');
+    }, 100);
   };
 
   const handleDeleteConversation = async (conversationId: string) => {

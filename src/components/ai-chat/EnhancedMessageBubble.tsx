@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bot, RefreshCw } from 'lucide-react';
+import { User, Bot, RefreshCw, BarChart3 } from 'lucide-react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { ModernActionButtons } from './ModernActionButtons';
@@ -155,6 +155,14 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 actions={messageActions} 
                 onAction={onAction || (() => {})} 
               />
+            </div>
+          )}
+
+          {/* Visual Data Indicator */}
+          {message.visualData && (
+            <div className="mt-2 flex items-center gap-2 text-xs text-primary">
+              <BarChart3 className="w-3 h-3" />
+              <span>Contains visual data</span>
             </div>
           )}
 

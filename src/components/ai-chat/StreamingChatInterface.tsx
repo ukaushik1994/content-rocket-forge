@@ -17,7 +17,7 @@ import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
 import { useContextSnapshots } from '@/hooks/useContextSnapshots';
 import { MultiUserTypingIndicator } from './MultiUserTypingIndicator';
 import { ContextSnapshotPanel } from './ContextSnapshotPanel';
-import { Wifi, WifiOff, Loader2, Radio, ChevronLeft } from 'lucide-react';
+import { Wifi, WifiOff, Loader2, Radio, ChevronLeft, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StreamingChatInterfaceProps {
@@ -93,7 +93,16 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   
   // Auto-trigger sidebar when visual data is available
   useEffect(() => {
+    console.log('🔍 [StreamingChatInterface] Visual data detection triggered');
+    console.log('📊 [StreamingChatInterface] State:', {
+      displayMessagesLength: displayMessages.length,
+      dbMessagesLength: dbMessages.length,
+      filteredMessagesLength: filteredMessages.length,
+      activeConversation: activeConversation
+    });
+
     if (displayMessages.length === 0) {
+      console.log('❌ [StreamingChatInterface] No messages, closing sidebar');
       setCurrentVisualData(null);
       setCurrentSerpData(null);
       setVisualSidebarOpen(false);
@@ -102,20 +111,41 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
 
     // Find the most recent assistant message with visual data
     const messageWithVisualData = displayMessages
-      .filter(msg => msg.role === 'assistant')
+      .filter(msg => {
+        const hasData = msg.role === 'assistant' && (msg.visualData || msg.serpData);
+        if (hasData) {
+          console.log('✅ [StreamingChatInterface] Found message with visual data:', {
+            id: msg.id,
+            hasVisualData: !!msg.visualData,
+            hasSerpData: !!msg.serpData,
+            visualData: msg.visualData
+          });
+        }
+        return hasData;
+      })
       .reverse()
       .find(msg => msg.visualData || msg.serpData);
 
     if (messageWithVisualData) {
+      console.log('🎯 [StreamingChatInterface] Setting visual data and opening sidebar');
       setCurrentVisualData(messageWithVisualData.visualData);
       setCurrentSerpData(messageWithVisualData.serpData);
       setVisualSidebarOpen(true);
     } else {
+      console.log('❌ [StreamingChatInterface] No visual data found');
       setCurrentVisualData(null);
       setCurrentSerpData(null);
       setVisualSidebarOpen(false);
     }
-  }, [displayMessages, dbMessages.length, activeConversation]);
+  }, [
+    displayMessages,
+    displayMessages.length,
+    dbMessages,
+    dbMessages.length,
+    filteredMessages,
+    filteredMessages.length,
+    activeConversation
+  ]);
 
   const handleClearConversation = () => {
     clearMessages();
@@ -302,24 +332,29 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
       onSendMessage={sendMessage}
     />
 
-    {/* Reopen Toggle Button - When Sidebar is Closed */}
-    {!visualSidebarOpen && (currentVisualData || currentSerpData) && (
-      <motion.div
-        initial={{ x: 100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: 100, opacity: 0 }}
-        className="fixed right-4 top-1/2 -translate-y-1/2 z-40"
+    {/* Visual Data Sidebar Toggle - Always Visible */}
+    <motion.div
+      className="fixed top-20 right-4 z-40"
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.2 }}
+    >
+      <Button
+        size="sm"
+        variant={visualSidebarOpen ? "default" : "outline"}
+        onClick={() => setVisualSidebarOpen(!visualSidebarOpen)}
+        className={`h-10 px-3 rounded-lg shadow-lg hover:shadow-xl transition-all ${
+          (currentVisualData || currentSerpData) ? 'ring-2 ring-primary/50' : ''
+        }`}
+        title={visualSidebarOpen ? "Hide Insights" : "Show Insights"}
       >
-        <Button
-          size="sm"
-          onClick={() => setVisualSidebarOpen(true)}
-          className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all"
-          title="Show Insights"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-      </motion.div>
-    )}
+        <BarChart3 className="w-4 h-4 mr-2" />
+        {visualSidebarOpen ? 'Hide' : 'Show'} Insights
+        {(currentVisualData || currentSerpData) && !visualSidebarOpen && (
+          <span className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+        )}
+      </Button>
+    </motion.div>
     </div>
   );
 });
