@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, forwardRef } from 'react';
+import React, { useEffect, useRef, forwardRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { CollaborationIndicators } from './CollaborationIndicators';
@@ -7,6 +7,7 @@ import { MessageInput } from './MessageInput';
 import { InfiniteScrollMessages } from './InfiniteScrollMessages';
 import { MessageSearchBar } from './MessageSearchBar';
 import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
+import { VisualDataSidebar } from './VisualDataSidebar';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
 import { ChatSuggestion } from '@/hooks/useSmartSuggestions';
 import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
@@ -30,6 +31,9 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   isSidebarOpen = false,
   activeConversation
 }, ref) => {
+  const [visualSidebarOpen, setVisualSidebarOpen] = useState(false);
+  const [currentVisualData, setCurrentVisualData] = useState<any>(null);
+  
   const {
     messages,
     filteredMessages,
@@ -78,6 +82,15 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
 
   // Use filtered messages for display
   const displayMessages = filteredMessages.length > 0 ? filteredMessages : messages;
+  
+  // Auto-trigger sidebar when visual data is available
+  useEffect(() => {
+    const latestMessage = displayMessages[displayMessages.length - 1];
+    if (latestMessage?.role === 'assistant' && latestMessage.visualData) {
+      setCurrentVisualData(latestMessage.visualData);
+      setVisualSidebarOpen(true);
+    }
+  }, [displayMessages]);
 
   const handleClearConversation = () => {
     clearMessages();
@@ -146,7 +159,7 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
       {/* Main Chat Interface */}
       <motion.div 
         ref={ref}
-        className="flex flex-col flex-1 bg-background/50 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden"
+        className={`flex flex-col flex-1 bg-background/50 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden transition-all duration-300 ${visualSidebarOpen ? 'lg:mr-[30%]' : ''}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
@@ -247,6 +260,21 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         />
       </motion.div>
     )}
+    
+    {/* Visual Data Sidebar */}
+    <VisualDataSidebar
+      visualData={currentVisualData}
+      isOpen={visualSidebarOpen}
+      onClose={() => setVisualSidebarOpen(false)}
+      onDeepDive={(prompt) => {
+        sendMessage(prompt);
+        setVisualSidebarOpen(false);
+      }}
+      onActionClick={(action) => {
+        // Handle action click
+        console.log('Action clicked:', action);
+      }}
+    />
     </div>
   );
 });

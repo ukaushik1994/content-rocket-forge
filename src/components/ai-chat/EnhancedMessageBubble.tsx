@@ -175,40 +175,24 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             }`} />
           </Card>
 
-          {/* Visual Data Rendering */}
-          {message.visualData && (
+          {/* Visual Data Indicator - No inline rendering */}
+          {message.visualData && !isUser && (
             <div className="mt-3">
-              {message.visualData.type === 'multi_chart_analysis' ? (
-                showMultiChart && (
-                  <MultiChartAnalysis
-                    visualData={message.visualData}
-                    onClose={() => setShowMultiChart(false)}
-                    onDeepDive={(question) => {
-                      setShowMultiChart(false);
-                      onSendMessage?.(question);
-                    }}
-                  />
-                )
-              ) : (
-                <>
-                  {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
-                    <SerpVisualData 
-                      serpData={message.visualData.serpData} 
-                      onActionClick={(action, data) => {
-                        onAction?.({
-                          id: `serp-action-${Date.now()}`,
-                          type: 'button',
-                          label: action,
-                          action: 'send_message',
-                          data: { 
-                            message: getActionPrompt(action, data)
-                          }
-                        });
-                      }}
-                    />
-                  )}
-                  <VisualDataRenderer data={message.visualData} />
-                </>
+              {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
+                <SerpVisualData 
+                  serpData={message.visualData.serpData} 
+                  onActionClick={(action, data) => {
+                    onAction?.({
+                      id: `serp-action-${Date.now()}`,
+                      type: 'button',
+                      label: action,
+                      action: 'send_message',
+                      data: { 
+                        message: getActionPrompt(action, data)
+                      }
+                    });
+                  }}
+                />
               )}
             </div>
           )}

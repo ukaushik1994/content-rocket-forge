@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { MessageInput } from './MessageInput';
 import { ChatHeader } from './ChatHeader';
+import { VisualDataSidebar } from './VisualDataSidebar';
 
 
 import { EnhancedChatMessage } from '@/types/enhancedChat';
@@ -29,6 +30,8 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
 }, ref) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [user, setUser] = useState<any>(null);
+  const [visualSidebarOpen, setVisualSidebarOpen] = useState(false);
+  const [currentVisualData, setCurrentVisualData] = useState<any>(null);
   const { toast } = useToast();
   
   const {
@@ -55,6 +58,15 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // Auto-trigger sidebar when visual data is available
+  useEffect(() => {
+    const latestMessage = messages[messages.length - 1];
+    if (latestMessage?.role === 'assistant' && latestMessage.visualData) {
+      setCurrentVisualData(latestMessage.visualData);
+      setVisualSidebarOpen(true);
+    }
+  }, [messages]);
 
 
   const handleSendMessage = async (message: string) => {
@@ -104,7 +116,7 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
       {/* Main Content Area */}
       <div className="flex-1 flex gap-4 min-h-0 relative">
         {/* Messages Area */}
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col transition-all duration-300 ${visualSidebarOpen ? 'lg:mr-[30%]' : ''}`}>
           <ScrollArea className="flex-1 px-4 py-2">
           <div className="max-w-6xl mx-auto space-y-6">
 
@@ -187,6 +199,19 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
           </div>
         </div>
 
+        {/* Visual Data Sidebar */}
+        <VisualDataSidebar
+          visualData={currentVisualData}
+          isOpen={visualSidebarOpen}
+          onClose={() => setVisualSidebarOpen(false)}
+          onDeepDive={(prompt) => {
+            handleSendMessage(prompt);
+            setVisualSidebarOpen(false);
+          }}
+          onActionClick={(action) => {
+            handleContextualAction(action);
+          }}
+        />
       </div>
     </motion.div>
   );
