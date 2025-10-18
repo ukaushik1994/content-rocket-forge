@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { ContextualAction } from '@/services/aiService';
 import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
+import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { supabase } from '@/integrations/supabase/client';
 import { ApiKeyStatusIndicator } from './ApiKeyStatusIndicator';
 
@@ -37,12 +38,12 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
   const [currentSerpData, setCurrentSerpData] = useState<any>(null);
   const { toast } = useToast();
   
+  const { createConversation } = useEnhancedAIChatDB();
+  
   const {
     messages,
     isLoading,
     isTyping,
-    thinkingContent,
-    isThinking,
     sendMessage,
     handleAction
   } = useEnhancedAIChat();
@@ -55,7 +56,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     };
     getUser();
   }, []);
-
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -136,8 +136,8 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
                       isLatest={isLatestMessage}
                       onAction={handleContextualAction}
                       onSendMessage={handleSendMessage}
-                      thinkingContent={isLatestMessage && message.role === 'assistant' ? thinkingContent : ''}
-                      isThinking={isLatestMessage && message.role === 'assistant' ? isThinking : false}
+                      thinkingContent={''}
+                      isThinking={false}
                     />
                   );
                 })}

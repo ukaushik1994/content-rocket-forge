@@ -10,6 +10,7 @@ import { MessageSearchBar } from './MessageSearchBar';
 import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
 import { VisualDataSidebar } from './VisualDataSidebar';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
+import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { ChatSuggestion } from '@/hooks/useSmartSuggestions';
 import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
 import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
@@ -36,8 +37,10 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   const [currentVisualData, setCurrentVisualData] = useState<any>(null);
   const [currentSerpData, setCurrentSerpData] = useState<any>(null);
   
+  const { messages: dbMessages } = useEnhancedAIChatDB();
+  
   const {
-    messages,
+    messages: streamMessages,
     filteredMessages,
     isConnected,
     isTyping,
@@ -56,6 +59,9 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     exportConversation,
     retryLastMessage
   } = useEnhancedStreamingChat();
+  
+  // Use database messages if available, otherwise use stream messages
+  const messages = dbMessages.length > 0 ? dbMessages : streamMessages;
   
   // Advanced collaboration with enhanced features
   const { 

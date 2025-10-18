@@ -226,7 +226,7 @@ export const useEnhancedAIChatDB = () => {
   }, []);
 
   // Send message with enhanced features
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, conversationId?: string) => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -236,11 +236,11 @@ export const useEnhancedAIChatDB = () => {
       return;
     }
 
-    // Create conversation if none active
-    let conversationId = activeConversation;
-    if (!conversationId) {
-      conversationId = await createConversation(content.slice(0, 50));
-      if (!conversationId) return;
+    // Use provided conversationId or create new one
+    let currentConversationId = conversationId || activeConversation;
+    if (!currentConversationId) {
+      currentConversationId = await createConversation(content.slice(0, 50));
+      if (!currentConversationId) return;
     }
 
     setIsLoading(true);
@@ -257,7 +257,7 @@ export const useEnhancedAIChatDB = () => {
     setMessages(prev => [...prev, userMessage]);
 
     // Save user message to database
-    await saveMessage(userMessage, conversationId);
+    await saveMessage(userMessage, currentConversationId);
 
     try {
       // Get enhanced AI response
@@ -269,7 +269,7 @@ export const useEnhancedAIChatDB = () => {
 
       // Update messages and save AI response
       setMessages(prev => [...prev, aiResponse]);
-      await saveMessage(aiResponse, conversationId);
+      await saveMessage(aiResponse, currentConversationId);
 
       // Show workflow progress if this was part of a workflow
       if (aiResponse.workflowContext?.currentWorkflow) {
@@ -286,11 +286,11 @@ export const useEnhancedAIChatDB = () => {
         await supabase
           .from('ai_conversations')
           .update({ title })
-          .eq('id', conversationId);
+          .eq('id', currentConversationId);
         
         setConversations(prev => 
           prev.map(conv => 
-            conv.id === conversationId 
+            conv.id === currentConversationId 
               ? { ...conv, title }
               : conv
           )
@@ -736,6 +736,7 @@ export const useEnhancedAIChatDB = () => {
     isTyping,
     searchTerm,
     loadConversations,
+    loadMessages,
     createConversation,
     deleteConversation,
     sendMessage,
