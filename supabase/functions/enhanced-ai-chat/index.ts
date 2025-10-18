@@ -311,12 +311,10 @@ For sequential or related items:
 When presenting tabular data with 2+ columns, FOLLOW THIS EXACT FORMAT:
 
 ✅ CORRECT MARKDOWN TABLE:
-```
 | Header 1 | Header 2 | Header 3 |
 |----------|----------|----------|
 | Data 1   | Data 2   | Data 3   |
 | Data 4   | Data 5   | Data 6   |
-```
 
 MANDATORY TABLE RULES:
 1. Line 1: Header row | Header | Header |
@@ -327,11 +325,7 @@ MANDATORY TABLE RULES:
 6. Empty cells: Use spaces |  | Data |
 7. Column count MUST be consistent
 
-❌ NEVER DO THIS:
-```
-| Header | Data --- More | Values |
-| Mixed --- separator | wrong |
-```
+❌ NEVER MIX separator rows with data on same line
 
 ### 5. WHEN TO USE WHAT FORMAT:
 
