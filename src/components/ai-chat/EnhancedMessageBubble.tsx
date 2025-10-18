@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bot, RefreshCw, BarChart3 } from 'lucide-react';
+import { User, Bot, RefreshCw, BarChart3, Sparkles, Search, FileText, HelpCircle, Users } from 'lucide-react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
+import { VisualDataRenderer } from './VisualDataRenderer';
 import { ModernActionButtons } from './ModernActionButtons';
 import { InlineProgress } from './InlineProgress';
+import { SerpVisualData } from './SerpVisualData';
 import { MessageStatus } from './MessageStatus';
 import { ErrorMessageBubble } from './ErrorMessageBubble';
 import { FormattedResponseRenderer } from './FormattedResponseRenderer';
+import { MultiChartModal } from './MultiChartModal';
+import { MultiChartAnalysis } from './visualization/MultiChartAnalysis';
 import { Button } from '@/components/ui/button';
 import { ThinkingIndicator } from './ThinkingIndicator';
 
@@ -34,18 +38,12 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   thinkingContent,
   isThinking = false
 }) => {
-  const messageActions = message.actions || [];
+  const [showMultiChartModal, setShowMultiChartModal] = useState(false);
+  // Auto-show multi-chart analysis when present
+  const [showMultiChart, setShowMultiChart] = useState(
+    message.visualData?.type === 'multi_chart_analysis'
+  );
   
-  // Log message rendering details
-  console.log('🎬 [MessageBubble] Rendering message:', {
-    messageId: message.id,
-    role: message.role,
-    hasActions: !!message.actions,
-    actionsLength: messageActions.length,
-    actions: messageActions,
-    hasVisualData: !!message.visualData
-  });
-
   // Check if this is an error message
   if (message.messageStatus === 'error' && onRetry) {
     return (
@@ -58,6 +56,36 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   }
 
   const isUser = message.role === 'user';
+
+  // Helper function to generate prompts for SERP actions
+  const getActionPrompt = (action: string, data: any): string => {
+    switch (action) {
+      case 'create-content-strategy':
+        return `Create a comprehensive content strategy for "${data.keyword}" based on the SERP analysis. Include:
+        - Content brief targeting ${data.searchVolume?.toLocaleString()} monthly searches
+        - Strategy to compete against difficulty level ${data.difficulty}%
+        - Content gaps to address: ${data.contentGaps?.join(', ') || 'competitive analysis needed'}
+        - Opportunities in: ${Object.entries(data.opportunities || {}).map(([key, values]) => `${key} (${Array.isArray(values) ? values.length : 0} keywords)`).join(', ')}`;
+        
+      case 'analyze-competitors':
+        return `Analyze the top competitors for "${data.keyword}" and provide actionable insights:
+        - Competitor analysis for: ${data.competitors?.map(c => c.title).join(', ')}
+        - Search volume context: ${data.searchVolume?.toLocaleString()} monthly searches
+        - Competition level: ${data.difficulty}% difficulty
+        - Provide content gaps, backlink opportunities, and competitive advantages to pursue`;
+        
+      case 'explore-related-keywords':
+        return `Expand keyword research for "${data.keyword}" with related opportunities:
+        - Base keyword: ${data.searchVolume?.toLocaleString()} monthly searches
+        - Related keywords to analyze: ${data.relatedKeywords?.join(', ')}
+        - Low competition opportunities: ${data.opportunities?.lowCompetition?.join(', ')}
+        - High volume opportunities: ${data.opportunities?.highVolume?.join(', ')}
+        - Trending keywords: ${data.opportunities?.trending?.join(', ')}`;
+        
+      default:
+        return `Help me with ${action} for keyword "${data.keyword}"`;
+    }
+  };
 
   const bubbleVariants = {
     hidden: { opacity: 0, y: 10, scale: 0.98 },
@@ -147,44 +175,162 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             }`} />
           </Card>
 
-
-          {/* Action Buttons */}
-          {messageActions.length > 0 && (
-            <div className="mt-4">
-              <ModernActionButtons 
-                actions={messageActions} 
-                onAction={onAction || (() => {})} 
-              />
+          {/* Visual Data Rendering */}
+          {message.visualData && (
+            <div className="mt-3">
+              {message.visualData.type === 'multi_chart_analysis' ? (
+                showMultiChart && (
+                  <MultiChartAnalysis
+                    visualData={message.visualData}
+                    onClose={() => setShowMultiChart(false)}
+                    onDeepDive={(question) => {
+                      setShowMultiChart(false);
+                      onSendMessage?.(question);
+                    }}
+                  />
+                )
+              ) : (
+                <>
+                  {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
+                    <SerpVisualData 
+                      serpData={message.visualData.serpData} 
+                      onActionClick={(action, data) => {
+                        onAction?.({
+                          id: `serp-action-${Date.now()}`,
+                          type: 'button',
+                          label: action,
+                          action: 'send_message',
+                          data: { 
+                            message: getActionPrompt(action, data)
+                          }
+                        });
+                      }}
+                    />
+                  )}
+                  <VisualDataRenderer data={message.visualData} />
+                </>
+              )}
             </div>
           )}
 
-                {/* Visual Data Indicator */}
-                {message.visualData && (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-primary">
-                    <BarChart3 className="w-3 h-3" />
-                    <span>Contains visual data</span>
-                    {message.visualData.parseError && (
-                      <span className="text-yellow-600">(incomplete - click to regenerate)</span>
-                    )}
+          {/* Show visual analysis card for ANY visual data */}
+          {message.type === 'assistant' && (
+            message.visualData || (message.allVisualData && message.allVisualData.length > 0)
+          ) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 mb-3"
+            >
+              <div className="p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg border border-primary/20 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/20">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        Visual Analysis Available
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {message.allVisualData?.length || 1} chart(s) • Interactive insights • Actionable recommendations
+                      </p>
+                    </div>
                   </div>
-                )}
-                
-                {/* Truncation Warning */}
-                {message.visualData?.parseError && (
-                  <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2">
-                      ⚠️ The visual data was incomplete. Click below to regenerate.
-                    </p>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="h-7 text-xs"
-                      onClick={() => onRetry?.()}
-                    >
-                      Regenerate Visualization
-                    </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowMultiChartModal(true)}
+                    className="bg-primary hover:bg-primary/90 gap-2 shadow-lg"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    View Insights
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Action Buttons */}
+          {message.actions && message.actions.length > 0 && (
+            <ModernActionButtons 
+              actions={message.actions} 
+              onAction={onAction || (() => {})} 
+            />
+          )}
+
+          {/* SERP Data Visualization */}
+          {message.serpData && typeof message.serpData === 'object' && 'structured' in message.serpData && message.serpData.structured && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 space-y-3"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Search className="w-5 h-5 text-primary" />
+                <h4 className="text-sm font-semibold">SERP Analysis Results</h4>
+              </div>
+              
+              {/* Keyword Metrics Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="p-3 bg-gradient-to-br from-primary/10 to-transparent">
+                  <div className="text-xs text-muted-foreground">Avg Search Volume</div>
+                  <div className="text-2xl font-bold">
+                    {(message.serpData as any).structured.aggregateMetrics.avgSearchVolume.toLocaleString()}
                   </div>
+                </Card>
+                <Card className="p-3 bg-gradient-to-br from-warning/10 to-transparent">
+                  <div className="text-xs text-muted-foreground">Avg Difficulty</div>
+                  <div className="text-2xl font-bold">
+                    {(message.serpData as any).structured.aggregateMetrics.avgKeywordDifficulty}%
+                  </div>
+                </Card>
+                <Card className="p-3 bg-gradient-to-br from-success/10 to-transparent">
+                  <div className="text-xs text-muted-foreground">Competition</div>
+                  <div className="text-2xl font-bold">
+                    {(message.serpData as any).structured.aggregateMetrics.avgCompetitionScore}%
+                  </div>
+                </Card>
+              </div>
+              
+              {/* Quick Actions for SERP */}
+              <div className="flex gap-2 flex-wrap">
+                {(message.serpData as any).structured.aggregateMetrics.totalContentGaps > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      onSendMessage?.(`Show me content gaps for ${(message.serpData as any).keywords.join(', ')}`);
+                    }}
+                  >
+                    <FileText className="w-3 h-3 mr-1" />
+                    {(message.serpData as any).structured.aggregateMetrics.totalContentGaps} Content Gaps
+                  </Button>
                 )}
+                {(message.serpData as any).structured.aggregateMetrics.totalQuestions > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      onSendMessage?.(`What are people asking about ${(message.serpData as any).keywords.join(', ')}?`);
+                    }}
+                  >
+                    <HelpCircle className="w-3 h-3 mr-1" />
+                    {(message.serpData as any).structured.aggregateMetrics.totalQuestions} Questions
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    onSendMessage?.(`Who's ranking for ${(message.serpData as any).keywords.join(', ')}?`);
+                  }}
+                >
+                  <Users className="w-3 h-3 mr-1" />
+                  Top Competitors
+                </Button>
+              </div>
+            </motion.div>
+          )}
 
           {/* Retry Button for AI messages */}
           {!isUser && onRetry && (
@@ -237,6 +383,30 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         >
           <User className="h-4 w-4 text-secondary" />
         </motion.div>
+      )}
+
+      {/* Multi-Chart Modal */}
+      {(message.visualData || (message.allVisualData && message.allVisualData.length > 0)) && (
+        <MultiChartModal
+          isOpen={showMultiChartModal}
+          onClose={() => setShowMultiChartModal(false)}
+          visualData={message.visualData}
+          allVisualData={message.allVisualData}
+          currentChartConfig={message.visualData?.chartConfig}
+          title={message.visualData?.title || 'Insights Hub'}
+          description={message.visualData?.description}
+          actionableItems={message.visualData?.actionableItems}
+          deepDivePrompts={message.visualData?.deepDivePrompts}
+          insights={(message as any).insights || []}
+          context={(message as any).context || {}}
+          onDeepDiveClick={(prompt) => {
+            setShowMultiChartModal(false);
+            onSendMessage?.(prompt);
+          }}
+          onActionClick={(action) => {
+            onAction?.(action);
+          }}
+        />
       )}
     </motion.div>
   );

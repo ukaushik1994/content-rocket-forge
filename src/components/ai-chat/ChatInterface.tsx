@@ -4,9 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { MessageInput } from './MessageInput';
 import { ChatHeader } from './ChatHeader';
-import { VisualDataSidebar } from './VisualDataSidebar';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft } from 'lucide-react';
 
 
 import { EnhancedChatMessage } from '@/types/enhancedChat';
@@ -14,7 +11,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { ContextualAction } from '@/services/aiService';
 import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
-import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { supabase } from '@/integrations/supabase/client';
 import { ApiKeyStatusIndicator } from './ApiKeyStatusIndicator';
 
@@ -33,17 +29,14 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
 }, ref) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [user, setUser] = useState<any>(null);
-  const [visualSidebarOpen, setVisualSidebarOpen] = useState(false);
-  const [currentVisualData, setCurrentVisualData] = useState<any>(null);
-  const [currentSerpData, setCurrentSerpData] = useState<any>(null);
   const { toast } = useToast();
-  
-  const { createConversation } = useEnhancedAIChatDB();
   
   const {
     messages,
     isLoading,
     isTyping,
+    thinkingContent,
+    isThinking,
     sendMessage,
     handleAction
   } = useEnhancedAIChat();
@@ -57,51 +50,11 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
     getUser();
   }, []);
 
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
-
-  // Auto-trigger sidebar when visual data is available
-  useEffect(() => {
-    console.log('🔍 [ChatInterface] Checking for visual data, messages:', messages.length, 'activeConversation:', activeConversation);
-    
-    if (messages.length === 0) {
-      console.log('❌ [ChatInterface] No messages, closing sidebar');
-      setCurrentVisualData(null);
-      setCurrentSerpData(null);
-      setVisualSidebarOpen(false);
-      return;
-    }
-
-    // Find the most recent assistant message with visual data
-    const messageWithVisualData = messages
-      .filter(msg => {
-        const hasVisualData = msg.role === 'assistant' && (msg.visualData || msg.serpData);
-        if (hasVisualData) {
-          console.log('✅ [ChatInterface] Found message with visual data:', msg.id, {
-            hasVisualData: !!msg.visualData,
-            hasSerpData: !!msg.serpData,
-            visualData: msg.visualData
-          });
-        }
-        return hasVisualData;
-      })
-      .reverse()
-      .find(msg => msg.visualData || msg.serpData);
-
-    if (messageWithVisualData) {
-      console.log('🎯 [ChatInterface] Setting visual data and opening sidebar');
-      setCurrentVisualData(messageWithVisualData.visualData);
-      setCurrentSerpData(messageWithVisualData.serpData);
-      setVisualSidebarOpen(true);
-    } else {
-      console.log('❌ [ChatInterface] No visual data found in messages');
-      setCurrentVisualData(null);
-      setCurrentSerpData(null);
-      setVisualSidebarOpen(false);
-    }
-  }, [messages, messages.length, activeConversation]);
 
 
   const handleSendMessage = async (message: string) => {
@@ -151,7 +104,7 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
       {/* Main Content Area */}
       <div className="flex-1 flex gap-4 min-h-0 relative">
         {/* Messages Area */}
-        <div className={`flex-1 flex flex-col transition-all duration-300 ${visualSidebarOpen ? 'lg:mr-[30%]' : ''}`}>
+        <div className="flex-1 flex flex-col">
           <ScrollArea className="flex-1 px-4 py-2">
           <div className="max-w-6xl mx-auto space-y-6">
 
@@ -167,8 +120,8 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
                       isLatest={isLatestMessage}
                       onAction={handleContextualAction}
                       onSendMessage={handleSendMessage}
-                      thinkingContent={''}
-                      isThinking={false}
+                      thinkingContent={isLatestMessage && message.role === 'assistant' ? thinkingContent : ''}
+                      isThinking={isLatestMessage && message.role === 'assistant' ? isThinking : false}
                     />
                   );
                 })}
@@ -234,39 +187,6 @@ export const ChatInterface = React.forwardRef<HTMLDivElement, ChatInterfaceProps
           </div>
         </div>
 
-        {/* Visual Data Sidebar */}
-        <VisualDataSidebar
-          visualData={currentVisualData}
-          serpData={currentSerpData}
-          isOpen={visualSidebarOpen}
-          onClose={() => setVisualSidebarOpen(false)}
-          onDeepDive={(prompt) => {
-            handleSendMessage(prompt);
-          }}
-          onActionClick={(action) => {
-            handleContextualAction(action);
-          }}
-          onSendMessage={handleSendMessage}
-        />
-
-        {/* Reopen Toggle Button - When Sidebar is Closed */}
-        {!visualSidebarOpen && (currentVisualData || currentSerpData) && (
-          <motion.div
-            initial={{ x: 100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 100, opacity: 0 }}
-            className="fixed right-4 top-1/2 -translate-y-1/2 z-40"
-          >
-            <Button
-              size="sm"
-              onClick={() => setVisualSidebarOpen(true)}
-              className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all"
-              title="Show Insights"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-          </motion.div>
-        )}
       </div>
     </motion.div>
   );

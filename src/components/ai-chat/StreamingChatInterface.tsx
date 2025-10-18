@@ -1,23 +1,20 @@
-import React, { useEffect, useRef, forwardRef, useState } from 'react';
+import React, { useEffect, useRef, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { CollaborationIndicators } from './CollaborationIndicators';
 import { ChatHeader } from './ChatHeader';
 import { MessageInput } from './MessageInput';
 import { InfiniteScrollMessages } from './InfiniteScrollMessages';
 import { MessageSearchBar } from './MessageSearchBar';
 import { SmartSuggestionsPanel } from './SmartSuggestionsPanel';
-import { VisualDataSidebar } from './VisualDataSidebar';
 import { useEnhancedStreamingChat } from '@/hooks/useEnhancedStreamingChat';
-import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { ChatSuggestion } from '@/hooks/useSmartSuggestions';
 import { useRealtimeMessageStatus } from '@/hooks/useRealtimeMessageStatus';
 import { useAdvancedCollaboration } from '@/hooks/useAdvancedCollaboration';
 import { useContextSnapshots } from '@/hooks/useContextSnapshots';
 import { MultiUserTypingIndicator } from './MultiUserTypingIndicator';
 import { ContextSnapshotPanel } from './ContextSnapshotPanel';
-import { Wifi, WifiOff, Loader2, Radio, ChevronLeft, BarChart3, Bug } from 'lucide-react';
+import { Wifi, WifiOff, Loader2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StreamingChatInterfaceProps {
@@ -33,14 +30,8 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
   isSidebarOpen = false,
   activeConversation
 }, ref) => {
-  const [visualSidebarOpen, setVisualSidebarOpen] = useState(false);
-  const [currentVisualData, setCurrentVisualData] = useState<any>(null);
-  const [currentSerpData, setCurrentSerpData] = useState<any>(null);
-  
-  const { messages: dbMessages } = useEnhancedAIChatDB();
-  
   const {
-    messages: streamMessages,
+    messages,
     filteredMessages,
     isConnected,
     isTyping,
@@ -59,9 +50,6 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     exportConversation,
     retryLastMessage
   } = useEnhancedStreamingChat();
-  
-  // Use database messages if available, otherwise use stream messages
-  const messages = dbMessages.length > 0 ? dbMessages : streamMessages;
   
   // Advanced collaboration with enhanced features
   const { 
@@ -90,68 +78,6 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
 
   // Use filtered messages for display
   const displayMessages = filteredMessages.length > 0 ? filteredMessages : messages;
-  
-  // Single comprehensive visual data detection
-  useEffect(() => {
-    console.log('🔍 [Visual Data Check] Running detection');
-    console.log('📊 [Visual Data Check] Context:', {
-      displayMessagesLength: displayMessages.length,
-      dbMessagesLength: dbMessages.length,
-      activeConversation: activeConversation,
-      visualSidebarOpen: visualSidebarOpen
-    });
-
-    // Priority 1: Check dbMessages (database-loaded messages)
-    if (dbMessages.length > 0) {
-      const dbMessageWithData = dbMessages
-        .filter(msg => msg.role === 'assistant')
-        .reverse()
-        .find(msg => msg.visualData || msg.serpData);
-      
-      if (dbMessageWithData) {
-        console.log('✅ [Visual Data Check] Found in dbMessages:', {
-          id: dbMessageWithData.id,
-          visualDataType: dbMessageWithData.visualData?.type,
-          hasMetrics: !!dbMessageWithData.visualData?.metrics,
-          metricsCount: dbMessageWithData.visualData?.metrics?.length || 0
-        });
-        
-        setCurrentVisualData(dbMessageWithData.visualData);
-        setCurrentSerpData(dbMessageWithData.serpData);
-        setVisualSidebarOpen(true);
-        return;
-      }
-    }
-    
-    // Priority 2: Check displayMessages (real-time messages)
-    if (displayMessages.length > 0) {
-      const displayMessageWithData = displayMessages
-        .filter(msg => msg.role === 'assistant')
-        .reverse()
-        .find(msg => msg.visualData || msg.serpData);
-      
-      if (displayMessageWithData) {
-        console.log('✅ [Visual Data Check] Found in displayMessages:', {
-          id: displayMessageWithData.id,
-          visualDataType: displayMessageWithData.visualData?.type
-        });
-        
-        setCurrentVisualData(displayMessageWithData.visualData);
-        setCurrentSerpData(displayMessageWithData.serpData);
-        setVisualSidebarOpen(true);
-        return;
-      }
-    }
-    
-    // No visual data found
-    console.log('❌ [Visual Data Check] No visual data found');
-  }, [
-    activeConversation,
-    dbMessages,
-    displayMessages,
-    displayMessages.length,
-    dbMessages.length
-  ]);
 
   const handleClearConversation = () => {
     clearMessages();
@@ -220,7 +146,7 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
       {/* Main Chat Interface */}
       <motion.div 
         ref={ref}
-        className={`flex flex-col flex-1 bg-background/50 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden transition-all duration-300 ${visualSidebarOpen ? 'lg:mr-[30%]' : ''}`}
+        className="flex flex-col flex-1 bg-background/50 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
@@ -235,61 +161,6 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         />
         
         <div className="flex items-center gap-3">
-          {/* Insights Button - Always Visible if Data Exists */}
-          {displayMessages.some(m => m.visualData || m.serpData) && (
-            <Button
-              size="sm"
-              variant={visualSidebarOpen ? "default" : "outline"}
-              onClick={() => setVisualSidebarOpen(!visualSidebarOpen)}
-              className="flex items-center gap-2"
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">
-                {visualSidebarOpen ? 'Hide' : 'Show'} Insights
-              </span>
-              {!visualSidebarOpen && (
-                <span className="w-2 h-2 bg-primary rounded-full animate-pulse ml-1" />
-              )}
-            </Button>
-          )}
-          
-          {/* DEBUG: Manual sidebar trigger button */}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              console.log('🔧 [DEBUG] Manual sidebar trigger clicked');
-              console.log('🔧 [DEBUG] Current state:', {
-                dbMessagesLength: dbMessages.length,
-                displayMessagesLength: displayMessages.length,
-                currentVisualData: currentVisualData,
-                visualSidebarOpen: visualSidebarOpen
-              });
-              
-              // Force re-check for visual data
-              const allMessages = [...dbMessages, ...displayMessages];
-              const messageWithData = allMessages
-                .filter(msg => msg.role === 'assistant')
-                .reverse()
-                .find(msg => msg.visualData || msg.serpData);
-              
-              if (messageWithData) {
-                console.log('🔧 [DEBUG] Found visual data:', messageWithData.visualData);
-                setCurrentVisualData(messageWithData.visualData);
-                setCurrentSerpData(messageWithData.serpData);
-                setVisualSidebarOpen(true);
-              } else {
-                console.log('🔧 [DEBUG] No visual data found, toggling sidebar anyway');
-                setVisualSidebarOpen(!visualSidebarOpen);
-              }
-            }}
-            className="flex items-center gap-2"
-            title="Debug: Force sidebar check"
-          >
-            <Bug className="w-4 h-4" />
-            <span className="hidden sm:inline">Debug</span>
-          </Button>
-          
           <CollaborationIndicators 
             users={collaborators || []}
             connectionStatus={connectionStatus}
@@ -376,48 +247,6 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         />
       </motion.div>
     )}
-    
-    {/* Visual Data Sidebar */}
-    <VisualDataSidebar
-      visualData={currentVisualData}
-      serpData={currentSerpData}
-      isOpen={visualSidebarOpen}
-      onClose={() => setVisualSidebarOpen(false)}
-      onDeepDive={(prompt) => {
-        sendMessage(prompt);
-      }}
-      onActionClick={(action) => {
-        // Handle action click
-        console.log('Action clicked:', action);
-      }}
-      onSendMessage={sendMessage}
-    />
-
-        {/* Visual Data Sidebar Toggle - Always show if conversation has visual data */}
-        {(displayMessages.some(m => m.visualData || m.serpData) || visualSidebarOpen) && (
-          <motion.div
-            className="fixed top-20 right-4 z-40"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Button
-              size="sm"
-              variant={visualSidebarOpen ? "default" : "outline"}
-              onClick={() => setVisualSidebarOpen(!visualSidebarOpen)}
-              className={`h-10 px-3 rounded-lg shadow-lg hover:shadow-xl transition-all ${
-                (currentVisualData || currentSerpData) ? 'ring-2 ring-primary/50' : ''
-              }`}
-              title={visualSidebarOpen ? "Hide Insights" : "Show Insights"}
-            >
-              <BarChart3 className="w-4 h-4 mr-2" />
-              {visualSidebarOpen ? 'Hide' : 'Show'} Insights
-              {(currentVisualData || currentSerpData) && !visualSidebarOpen && (
-                <span className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
-              )}
-            </Button>
-          </motion.div>
-        )}
     </div>
   );
 });

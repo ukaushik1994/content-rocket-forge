@@ -13,7 +13,6 @@ import {
   generateStructuredSerpData
 } from './serp-intelligence.ts';
 import { generateChartPerspectives } from './chart-intelligence.ts';
-import { detectTruncation, createFallbackVisualData } from './truncation-detector.ts';
 
 // PHASE 1: Multi-chart detection - detects when user needs multiple perspectives
 function shouldGenerateMultipleCharts(query: string): boolean {
@@ -1568,13 +1567,13 @@ serve(async (req) => {
 
     // Phase 6: Dynamic token budget scaling for large context models (260K)
     const estimatedModelContext = 260000; // LM Studio model context window
-    const outputTokenRatio = 0.20; // INCREASED: Allow ~20% for output (~52K), preventing truncation
+    const outputTokenRatio = 0.15; // Allow ~15% for output (~39K), enabling ~220K input
     const dynamicMaxTokens = Math.min(
       Math.max(
         Math.floor(estimatedModelContext * outputTokenRatio),
-        40000 // INCREASED: Minimum 40K tokens for detailed responses with charts
+        30000 // Minimum 30K tokens for detailed responses
       ),
-      120000 // INCREASED: Maximum 120K tokens for complex visualizations
+      100000 // Maximum 100K tokens (reasonable cap)
     );
 
     console.log(`📊 Token Budget Check:
@@ -1603,75 +1602,26 @@ serve(async (req) => {
     }
 
 
-    // RETRY LOGIC: Attempt to get complete response
-    let aiProxyResult: any;
-    let aiProxyError: any;
-    let retryCount = 0;
-    const MAX_RETRIES = 2;
-    let currentMaxTokens = dynamicMaxTokens;
-
-    while (retryCount <= MAX_RETRIES) {
-      console.log(`🔄 AI call attempt ${retryCount + 1}/${MAX_RETRIES + 1} (max_tokens: ${currentMaxTokens})`);
-      
-      // Call ai-proxy edge function with user's provider
-      const result = await supabase.functions.invoke('ai-proxy', {
-        body: {
-          service: provider.provider,
-          endpoint: 'chat',
-          apiKey: provider.api_key,
-          params: {
-            model: provider.preferred_model,
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt,
-              },
-              ...messages,
-            ],
-            temperature: 0.7,
-            max_tokens: currentMaxTokens,
-          }
+    // Call ai-proxy edge function with user's provider
+    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        apiKey: provider.api_key,
+        params: {
+          model: provider.preferred_model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            ...messages,
+          ],
+          temperature: 0.7,
+          max_tokens: dynamicMaxTokens, // Phase 1: Increased from 2000 to support 260K context models
         }
-      });
-
-      aiProxyResult = result.data;
-      aiProxyError = result.error;
-
-      // Check if successful
-      if (!aiProxyError && aiProxyResult?.success) {
-        const aiMessage = aiProxyResult.data?.choices?.[0]?.message?.content;
-        
-        if (aiMessage) {
-          // Detect truncation
-          const truncationCheck = detectTruncation(aiMessage);
-          
-          if (truncationCheck.isTruncated && retryCount < MAX_RETRIES) {
-            console.warn(`⚠️ Response truncated (confidence: ${(truncationCheck.confidence * 100).toFixed(0)}%): ${truncationCheck.reasons.join(', ')}`);
-            console.log(`🔄 Retrying with increased max_tokens...`);
-            
-            retryCount++;
-            currentMaxTokens = Math.floor(currentMaxTokens * 1.5); // Increase by 50%
-            continue; // Retry
-          } else if (truncationCheck.isTruncated) {
-            console.error(`❌ Response still truncated after ${MAX_RETRIES} retries`);
-            // Will use fallback visual data below
-          } else {
-            console.log('✅ Complete response received');
-          }
-        }
-        
-        break; // Success - exit retry loop
       }
-
-      // Failed - retry if we have retries left
-      if (retryCount < MAX_RETRIES) {
-        console.warn(`⚠️ AI call failed, retrying... (${retryCount + 1}/${MAX_RETRIES})`);
-        retryCount++;
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
-      } else {
-        break; // Max retries reached
-      }
-    }
+    });
 
     if (aiProxyError || !aiProxyResult?.success) {
       console.error("AI request failed:", aiProxyError?.message || aiProxyResult?.error);
@@ -1740,16 +1690,9 @@ serve(async (req) => {
       console.warn('💡 Consider adjusting max_tokens or using streaming for better UX');
     }
 
-    // Advanced truncation detection
-    const finalTruncationCheck = detectTruncation(aiMessage);
-    if (finalTruncationCheck.isTruncated) {
-      console.error('🚨 Response appears truncated!', {
-        confidence: `${(finalTruncationCheck.confidence * 100).toFixed(0)}%`,
-        reasons: finalTruncationCheck.reasons
-      });
-      
-      // Add warning metadata
-      aiMessage = aiMessage + '\n\n⚠️ *Note: Response may be incomplete. Consider asking for clarification.*';
+    // Check if response appears truncated mid-code-block
+    if (aiMessage.endsWith('```') && !aiMessage.endsWith('```\n')) {
+      console.error('🚨 Response appears truncated mid-code-block!');
     }
 
     // Enhanced chart request detection
@@ -2043,21 +1986,6 @@ serve(async (req) => {
       const jsonBlocks = extractJSONBlocks(aiMessage);
       allVisualData = []; // Reset and collect ALL charts instead of overwriting
       
-      // If extraction failed and we have JSON markers, try repair
-      if (jsonBlocks.length === 0 && aiMessage.includes('```json')) {
-        console.warn('⚠️ Attempting to repair truncated JSON...');
-        const repaired = aiMessage + '\n}\n```';
-        const repairedBlocks = extractJSONBlocks(repaired);
-        
-        if (repairedBlocks.length === 0) {
-          console.error('❌ Failed to repair JSON - creating fallback visual data');
-          visualData = createFallbackVisualData(userQuery, 'Response truncated - JSON parsing failed');
-        } else {
-          console.log('✅ Successfully repaired truncated JSON');
-          jsonBlocks.push(...repairedBlocks);
-        }
-      }
-      
       for (const block of jsonBlocks) {
         console.log('🔍 Processing JSON block:', JSON.stringify(block).substring(0, 200));
         
@@ -2212,73 +2140,18 @@ serve(async (req) => {
       }
     }
 
-    // Generate contextual actions if AI didn't return them
-    if (!actions || (Array.isArray(actions) && actions.length === 0)) {
-      console.log("🎯 Generating contextual action buttons...");
+    // Only provide basic contextual actions if AI didn't return structured data
+    // NO MOCK DATA GENERATION - Let the AI create appropriate responses based on real data
+    if (!actions && !visualData) {
+      console.log("⚠️ No structured data returned from AI - providing basic navigation only");
       
-      if (visualData) {
-        // Generate visual data-specific actions
-        actions = [];
-        
-        // Always add "Deep Dive" action for visual data
-        actions.push({
-          id: "deep-dive",
-          label: "Deep Dive Analysis",
-          type: "button",
-          action: "send-message",
-          description: "Get detailed insights about this data",
-          data: { message: `Provide a detailed analysis of ${userQuery}` }
-        });
-        
-        // Add chart-specific actions
-        if (visualData.type === 'chart' || visualData.chartConfig) {
-          actions.push({
-            id: "compare-trends",
-            label: "Compare Trends",
-            type: "button",
-            action: "send-message",
-            description: "Compare with other periods or data",
-            data: { message: "How does this compare to previous periods?" }
-          });
-        }
-        
-        // Add action items button if there are actionable items
-        if (visualData.actionableItems && visualData.actionableItems.length > 0) {
-          actions.push({
-            id: "view-actions",
-            label: "View Action Items",
-            type: "button",
-            action: "send-message",
-            description: "See specific recommended actions",
-            data: { message: "Show me the recommended action items based on this data" }
-          });
-        }
-        
-        // Add optimization suggestions action
-        actions.push({
-          id: "optimize",
-          label: "Optimization Tips",
-          type: "button",
-          action: "send-message",
-          description: "Get recommendations to improve",
-          data: { message: "What can I do to optimize these results?" }
-        });
-        
-        console.log(`✅ Generated ${actions.length} contextual actions for visual data`);
-      } else {
-        // Basic navigation actions when no visual data
-        console.log("⚠️ No structured data returned from AI - providing basic navigation only");
-        
-        actions = [{
-          id: "explore-dashboard",
-          label: "View Dashboard",
-          type: "button", 
-          action: "navigate:/dashboard",
-          data: {}
-        }];
-      }
-    } else {
-      console.log(`✅ AI provided ${actions.length} actions`);
+      actions = [{
+        id: "explore-dashboard",
+        label: "View Dashboard",
+        type: "button", 
+        action: "navigate:/dashboard",
+        data: {}
+      }];
     }
 
     console.log(`✅ Parsed response: { hasActions: ${!!actions}, hasVisualData: ${!!visualData}, messageLength: ${cleanedResponse?.length || aiMessage.length} }`);

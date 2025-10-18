@@ -86,27 +86,19 @@ export const useEnhancedAIChatDB = () => {
             const parsedFunctionCalls = typeof msg.function_calls === 'string' ? JSON.parse(msg.function_calls) : msg.function_calls;
             if (Array.isArray(parsedFunctionCalls)) {
               actions = parsedFunctionCalls;
-              console.log('✅ [DB] Parsed actions (array) for message:', msg.id, 'count:', actions.length);
             } else if (parsedFunctionCalls.actions && Array.isArray(parsedFunctionCalls.actions)) {
               actions = parsedFunctionCalls.actions;
-              console.log('✅ [DB] Parsed actions (nested) for message:', msg.id, 'count:', actions.length);
             }
           } else if (msg.attachments && typeof msg.attachments === 'string') {
             const attachments = JSON.parse(msg.attachments);
             if (attachments.actions && Array.isArray(attachments.actions)) {
               actions = attachments.actions;
-              console.log('✅ [DB] Parsed actions from attachments for message:', msg.id, 'count:', actions.length);
             }
           }
           
           // Parse other JSON fields
           if (msg.visual_data) {
-            try {
-              visualData = typeof msg.visual_data === 'string' ? JSON.parse(msg.visual_data) : msg.visual_data;
-              console.log('✅ [DB] Parsed visualData for message:', msg.id, visualData);
-            } catch (e) {
-              console.error('❌ [DB] Failed to parse visual_data:', e, msg.visual_data);
-            }
+            visualData = typeof msg.visual_data === 'string' ? JSON.parse(msg.visual_data) : msg.visual_data;
           }
           if (msg.progress_indicator) {
             progressIndicator = typeof msg.progress_indicator === 'string' ? JSON.parse(msg.progress_indicator) : msg.progress_indicator;
@@ -221,22 +213,12 @@ export const useEnhancedAIChatDB = () => {
         status: 'completed'
       };
 
-      const { data: savedMessage, error } = await supabase
+      const { error } = await supabase
         .from('ai_messages')
-        .insert(messageData)
-        .select()
-        .single();
+        .insert(messageData);
       
       if (error) {
         console.error('Database error saving message:', error);
-      } else if (savedMessage) {
-        console.log('💾 [DB] Saved message:', {
-          id: savedMessage.id,
-          hasActions: !!message.actions,
-          hasVisualData: !!message.visualData,
-          actionsLength: message.actions?.length || 0,
-          visualDataType: message.visualData?.type
-        });
       }
     } catch (error) {
       console.error('Error saving message:', error);
@@ -244,7 +226,7 @@ export const useEnhancedAIChatDB = () => {
   }, []);
 
   // Send message with enhanced features
-  const sendMessage = useCallback(async (content: string, conversationId?: string) => {
+  const sendMessage = useCallback(async (content: string) => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -254,11 +236,11 @@ export const useEnhancedAIChatDB = () => {
       return;
     }
 
-    // Use provided conversationId or create new one
-    let currentConversationId = conversationId || activeConversation;
-    if (!currentConversationId) {
-      currentConversationId = await createConversation(content.slice(0, 50));
-      if (!currentConversationId) return;
+    // Create conversation if none active
+    let conversationId = activeConversation;
+    if (!conversationId) {
+      conversationId = await createConversation(content.slice(0, 50));
+      if (!conversationId) return;
     }
 
     setIsLoading(true);
@@ -275,7 +257,7 @@ export const useEnhancedAIChatDB = () => {
     setMessages(prev => [...prev, userMessage]);
 
     // Save user message to database
-    await saveMessage(userMessage, currentConversationId);
+    await saveMessage(userMessage, conversationId);
 
     try {
       // Get enhanced AI response
@@ -287,7 +269,7 @@ export const useEnhancedAIChatDB = () => {
 
       // Update messages and save AI response
       setMessages(prev => [...prev, aiResponse]);
-      await saveMessage(aiResponse, currentConversationId);
+      await saveMessage(aiResponse, conversationId);
 
       // Show workflow progress if this was part of a workflow
       if (aiResponse.workflowContext?.currentWorkflow) {
@@ -304,11 +286,11 @@ export const useEnhancedAIChatDB = () => {
         await supabase
           .from('ai_conversations')
           .update({ title })
-          .eq('id', currentConversationId);
+          .eq('id', conversationId);
         
         setConversations(prev => 
           prev.map(conv => 
-            conv.id === currentConversationId 
+            conv.id === conversationId 
               ? { ...conv, title }
               : conv
           )
@@ -754,7 +736,6 @@ export const useEnhancedAIChatDB = () => {
     isTyping,
     searchTerm,
     loadConversations,
-    loadMessages,
     createConversation,
     deleteConversation,
     sendMessage,
