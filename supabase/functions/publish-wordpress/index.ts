@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
 import { corsHeaders } from '../_shared/cors.ts';
+import { marked } from 'https://esm.sh/marked@11.1.1';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -47,13 +48,11 @@ serve(async (req) => {
 
     console.log('Publishing to WordPress:', connection.site_url);
 
-    // Convert Markdown to HTML (simple conversion)
-    const htmlContent = contentMd
-      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/^(.+)$/gm, '<p>$1</p>');
+    // Convert Markdown to HTML using marked library
+    const htmlContent = marked.parse(contentMd, { 
+      gfm: true, // GitHub Flavored Markdown
+      breaks: true // Convert line breaks to <br>
+    }) as string;
 
     // Create post payload
     const postPayload: any = {

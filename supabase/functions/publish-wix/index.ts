@@ -47,7 +47,7 @@ serve(async (req) => {
 
     console.log('Publishing to Wix site:', connection.site_id);
 
-    // Convert Markdown to Wix Ricos format
+    // Convert Markdown to Wix Ricos format (inline conversion)
     const lines = contentMd.split('\n');
     const nodes: any[] = [];
     let currentParagraph: string[] = [];
@@ -83,6 +83,13 @@ serve(async (req) => {
           headingData: { level: 2 },
           nodes: [{ type: 'TEXT', textData: { text: line.substring(3).trim(), decorations: [] } }]
         });
+      } else if (line.startsWith('### ')) {
+        flushParagraph();
+        nodes.push({
+          type: 'HEADING',
+          headingData: { level: 3 },
+          nodes: [{ type: 'TEXT', textData: { text: line.substring(4).trim(), decorations: [] } }]
+        });
       } else if (line.trim() === '') {
         flushParagraph();
       } else {
@@ -93,31 +100,33 @@ serve(async (req) => {
 
     const richContent = { nodes, documentStyle: {} };
 
-    // Create draft post payload
-    const draftPayload = {
-      title,
-      contentText: contentMd.substring(0, 200), // Excerpt
-      richContent,
-      slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      excerpt: excerpt || ''
-    };
-
     // Get API key from connection configuration
     const apiKey = connection.api_key;
     if (!apiKey) {
       throw new Error('Wix API key not found in connection');
     }
 
-    // Create draft post
-    const draftUrl = `https://www.wixapis.com/v2/posts`;
+    // Create draft post payload for Wix Blog v3 API
+    const draftPayload = {
+      draftPost: {
+        title,
+        slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        excerpt: excerpt || '',
+        richContent,
+        tagNames: tags || []
+      }
+    };
+
+    // Create draft post using Wix Blog v3 API
+    const draftUrl = 'https://www.wixapis.com/blog/v3/draft-posts';
     const draftResponse = await fetch(draftUrl, {
       method: 'POST',
       headers: {
         'Authorization': apiKey,
-        'Content-Type': 'application/json',
-        'wix-site-id': connection.site_id
+        'wix-site-id': connection.site_id,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ post: draftPayload })
+      body: JSON.stringify(draftPayload)
     });
 
     if (!draftResponse.ok) {
@@ -127,22 +136,22 @@ serve(async (req) => {
     }
 
     const draftData = await draftResponse.json();
-    const postId = draftData.post?.id;
+    const draftId = draftData.draftPost?.id;
     
-    if (!postId) {
-      throw new Error('Failed to get post ID from Wix response');
+    if (!draftId) {
+      throw new Error('Failed to get draft ID from Wix response');
     }
 
-    console.log('Wix draft post created:', postId);
+    console.log('Wix draft post created:', draftId);
 
-    // Publish the draft
-    const publishUrl = `https://www.wixapis.com/v2/posts/${postId}/publish`;
+    // Publish the draft using Wix Blog v3 API
+    const publishUrl = `https://www.wixapis.com/blog/v3/draft-posts/${draftId}/publish`;
     const publishResponse = await fetch(publishUrl, {
       method: 'POST',
       headers: {
         'Authorization': apiKey,
-        'Content-Type': 'application/json',
-        'wix-site-id': connection.site_id
+        'wix-site-id': connection.site_id,
+        'Content-Type': 'application/json'
       }
     });
 
@@ -152,8 +161,15 @@ serve(async (req) => {
       throw new Error(`Failed to publish: ${errorText}`);
     }
 
-    // Get post URL
-    const getUrl = `https://www.wixapis.com/v2/posts/${postId}`;
+    const publishData = await publishResponse.json();
+    const postId = publishData.post?.id;
+
+    if (!postId) {
+      throw new Error('Failed to get post ID from publish response');
+    }
+
+    // Get post URL using Wix Blog v3 API
+    const getUrl = `https://www.wixapis.com/blog/v3/posts/${postId}?fieldsets=URL`;
     const getResponse = await fetch(getUrl, {
       method: 'GET',
       headers: {
@@ -162,7 +178,7 @@ serve(async (req) => {
       }
     });
 
-    let postUrl = `https://${connection.site_name || connection.site_id}.wixsite.com/blog/${slug}`;
+    let postUrl = `https://${connection.site_name || connection.site_id}.wixsite.com/blog/${slug || ''}`;
     
     if (getResponse.ok) {
       const postData = await getResponse.json();
