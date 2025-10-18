@@ -91,6 +91,20 @@ export const VisualDataSidebar: React.FC<VisualDataSidebarProps> = ({
 
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-6">
+                {/* Debug Logging */}
+                {(() => {
+                  console.log('🎨 [Sidebar] Rendering visual data:', {
+                    hasVisualData: !!visualData,
+                    hasSerpData: !!serpData,
+                    visualDataType: visualData?.type,
+                    hasMetrics: !!visualData?.metrics,
+                    metricsCount: visualData?.metrics?.length || 0,
+                    hasCharts: !!visualData?.chartConfig || !!visualData?.charts,
+                    hasTable: !!visualData?.tableData
+                  });
+                  return null;
+                })()}
+                
                 {/* No Data State */}
                 {!visualData && !serpData && (
                   <Card className="p-6 text-center">

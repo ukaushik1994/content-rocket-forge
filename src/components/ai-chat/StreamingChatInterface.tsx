@@ -147,6 +147,32 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
     activeConversation
   ]);
 
+  // Force visual data detection when dbMessages loads from database
+  useEffect(() => {
+    console.log('🔄 [Force Check] dbMessages changed, checking for visual data');
+    
+    if (dbMessages.length === 0) return;
+    
+    // Check if ANY message has visual data
+    const hasVisualData = dbMessages.some(msg => 
+      msg.role === 'assistant' && (msg.visualData || msg.serpData)
+    );
+    
+    if (hasVisualData && !visualSidebarOpen) {
+      console.log('🎯 [Force Check] Found visual data, opening sidebar');
+      const messageWithData = dbMessages
+        .filter(msg => msg.role === 'assistant')
+        .reverse()
+        .find(msg => msg.visualData || msg.serpData);
+      
+      if (messageWithData) {
+        setCurrentVisualData(messageWithData.visualData);
+        setCurrentSerpData(messageWithData.serpData);
+        setVisualSidebarOpen(true);
+      }
+    }
+  }, [dbMessages.length]);
+
   const handleClearConversation = () => {
     clearMessages();
     onClearConversation?.();
@@ -229,6 +255,24 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
         />
         
         <div className="flex items-center gap-3">
+          {/* Insights Button - Always Visible if Data Exists */}
+          {displayMessages.some(m => m.visualData || m.serpData) && (
+            <Button
+              size="sm"
+              variant={visualSidebarOpen ? "default" : "outline"}
+              onClick={() => setVisualSidebarOpen(!visualSidebarOpen)}
+              className="flex items-center gap-2"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {visualSidebarOpen ? 'Hide' : 'Show'} Insights
+              </span>
+              {!visualSidebarOpen && (
+                <span className="w-2 h-2 bg-primary rounded-full animate-pulse ml-1" />
+              )}
+            </Button>
+          )}
+          
           <CollaborationIndicators 
             users={collaborators || []}
             connectionStatus={connectionStatus}
@@ -332,8 +376,8 @@ export const StreamingChatInterface = forwardRef<HTMLDivElement, StreamingChatIn
       onSendMessage={sendMessage}
     />
 
-        {/* Visual Data Sidebar Toggle - Only show when data exists OR sidebar is open */}
-        {((currentVisualData || currentSerpData) || visualSidebarOpen) && (
+        {/* Visual Data Sidebar Toggle - Always show if conversation has visual data */}
+        {(displayMessages.some(m => m.visualData || m.serpData) || visualSidebarOpen) && (
           <motion.div
             className="fixed top-20 right-4 z-40"
             initial={{ opacity: 0, scale: 0.8 }}
