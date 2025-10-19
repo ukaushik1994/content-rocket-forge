@@ -1668,23 +1668,6 @@ serve(async (req) => {
       }
     }
 
-    // Detect response truncation
-    const finishReason = data?.choices?.[0]?.finish_reason || aiProxyResult?.finish_reason;
-    const wasTruncated = finishReason === 'length' || aiProxyResult?.was_truncated;
-
-    console.log(`📊 Response Status:
-  - Length: ${aiMessage?.length} characters
-  - Finish Reason: ${finishReason}
-  - Truncated: ${wasTruncated ? '⚠️ YES' : '✅ NO'}
-`);
-
-    if (wasTruncated) {
-      console.warn('⚠️ RESPONSE TRUNCATED - Model hit output token limit');
-      
-      // Append user-friendly truncation notice
-      aiMessage += '\n\n---\n\n⚠️ **Response was truncated** due to model output limits.\n\n💡 **Try:**\n• Ask for smaller sections (e.g., "show top 5" instead of "show all")\n• Request specific aspects only\n• Break into multiple questions';
-    }
-
     if (!aiMessage) {
       console.error("No response from AI", data);
       console.log("Full AI response data:", JSON.stringify(data, null, 2));
@@ -2205,11 +2188,7 @@ serve(async (req) => {
         visual_data_count: allCharts ? allCharts.length : (visualData ? 1 : 0),
         has_serp_data: !!serpData,
         insights_generated: aiInsights.length,
-        serp_keywords: serpData?.keywords || [],
-        was_truncated: wasTruncated,
-        finish_reason: finishReason || 'unknown',
-        provider: 'lmstudio',
-        model: provider.preferred_model
+        serp_keywords: serpData?.keywords || []
       }
     };
 

@@ -2,9 +2,8 @@ import React, { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, AlertCircle } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EnhancedTableRenderer } from './EnhancedTableRenderer';
 
 // Process content but skip CSV conversion when visual data exists
@@ -636,18 +635,12 @@ interface FormattedResponseRendererProps {
   content: string;
   className?: string;
   hasVisualData?: boolean;
-  metadata?: {
-    was_truncated?: boolean;
-    finish_reason?: string;
-    [key: string]: any;
-  };
 }
 
 export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps> = ({ 
   content, 
   className,
-  hasVisualData = false,
-  metadata
+  hasVisualData = false
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
@@ -720,21 +713,8 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
     );
   }
   
-  // Detect truncation from metadata or message content
-  const wasTruncated = metadata?.was_truncated || 
-                       content.includes('⚠️ **Response was truncated');
-  
   return (
     <div className={cn("prose prose-sm max-w-none", className)}>
-      {wasTruncated && (
-        <Alert variant="default" className="mb-4 border-amber-500 bg-amber-50">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-900">
-            <strong>Response incomplete:</strong> The model reached its output limit. 
-            Try asking for less data at once or break your question into smaller parts.
-          </AlertDescription>
-        </Alert>
-      )}
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
