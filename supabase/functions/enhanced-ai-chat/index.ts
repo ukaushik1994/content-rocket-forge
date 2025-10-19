@@ -595,7 +595,7 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       .eq('user_id', userId);
 
     // Build minimal context string with basic stats
-    return `
+    const contextString = `
 ## Available Data Summary (${new Date().toISOString()}):
 - **Content Items**: ${contentCount || 0} total
 - **AI Strategy Proposals**: ${proposalCount || 0} total
@@ -626,6 +626,17 @@ You have access to 6 powerful tools to fetch exactly the data you need:
 
 **Remember:** The counts above show total data available. Use tools to dive deeper when needed.
 `;
+
+    // Store counts for TOOL_USAGE_MODULE replacement
+    return {
+      contextString,
+      counts: {
+        contentCount: contentCount || 0,
+        proposalCount: proposalCount || 0,
+        keywordCount: keywordCount || 0,
+        solutionCount: solutionCount || 0
+      }
+    };
   } catch (error) {
     console.error('❌ Error fetching context:', error);
     return `## Error Loading Context\nUnable to fetch data: ${error.message}`;
@@ -802,7 +813,7 @@ serve(async (req) => {
 
     // Build enhanced system prompt with context
     // Fetch real data from database using tiered context
-    const realDataContext = await fetchRealDataContext(user.id, queryIntent, userQuery);
+    const { contextString: realDataContext, counts } = await fetchRealDataContext(user.id, queryIntent, userQuery);
     
     // Import prompt modules
     const {
@@ -842,7 +853,15 @@ serve(async (req) => {
       // HIGH: Keep essentials + tools + charts (preserve core functionality)
       console.warn('⚠️ High token usage (25k-40k) - using BASE + TOOL_USAGE + CHART_MODULE only');
       systemPrompt = BASE_PROMPT;
-      systemPrompt += '\n\n' + TOOL_USAGE_MODULE; // Critical for tool-based architecture
+      
+      // Replace count placeholders in TOOL_USAGE_MODULE
+      const toolUsageWithCounts = TOOL_USAGE_MODULE
+        .replace('{contentCount}', counts.contentCount.toString())
+        .replace('{proposalCount}', counts.proposalCount.toString())
+        .replace('{keywordCount}', counts.keywordCount.toString())
+        .replace('{solutionCount}', counts.solutionCount.toString());
+      
+      systemPrompt += '\n\n' + toolUsageWithCounts; // Critical for tool-based architecture
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       systemPrompt += '\n\n' + CHART_MODULE;
       
@@ -857,7 +876,15 @@ serve(async (req) => {
       
       // START WITH TOOL USAGE MODULE (most critical for tool-based architecture)
       systemPrompt = BASE_PROMPT;
-      systemPrompt += '\n\n' + TOOL_USAGE_MODULE;
+      
+      // Replace count placeholders in TOOL_USAGE_MODULE
+      const toolUsageWithCounts = TOOL_USAGE_MODULE
+        .replace('{contentCount}', counts.contentCount.toString())
+        .replace('{proposalCount}', counts.proposalCount.toString())
+        .replace('{keywordCount}', counts.keywordCount.toString())
+        .replace('{solutionCount}', counts.solutionCount.toString());
+      
+      systemPrompt += '\n\n' + toolUsageWithCounts;
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       
       // PHASE 3: Check if multi-chart mode should be activated
@@ -984,15 +1011,21 @@ serve(async (req) => {
       console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
       
       const toolResults = [];
+      const toolExecutionStart = Date.now();
       
       for (const toolCall of toolCalls) {
         const toolName = toolCall.function.name;
         const toolArgs = JSON.parse(toolCall.function.arguments);
+        const toolStart = Date.now();
         
-        console.log(`🔧 Executing ${toolName} with args:`, toolArgs);
+        console.log(`[TOOL] ${toolName} | user: ${user.id} | params:`, toolArgs);
         
         try {
           const toolData = await executeToolCall(toolName, toolArgs, supabase, user.id, toolCache);
+          const toolDuration = Date.now() - toolStart;
+          
+          console.log(`[TOOL] ${toolName} | SUCCESS | time: ${toolDuration}ms | results: ${Array.isArray(toolData) ? toolData.length : 'N/A'} items`);
+          
           toolResults.push({
             tool_call_id: toolCall.id,
             role: "tool",
@@ -1000,15 +1033,21 @@ serve(async (req) => {
             content: JSON.stringify(toolData)
           });
         } catch (error) {
-          console.error(`❌ Tool ${toolName} failed:`, error);
+          const toolDuration = Date.now() - toolStart;
+          console.error(`[TOOL] ${toolName} | FAILED | time: ${toolDuration}ms | error:`, error);
+          
+          // Return empty array instead of error to allow AI to continue
           toolResults.push({
             tool_call_id: toolCall.id,
             role: "tool",
             name: toolName,
-            content: JSON.stringify({ error: error.message })
+            content: JSON.stringify([]) // Empty array for graceful degradation
           });
         }
       }
+      
+      const totalToolTime = Date.now() - toolExecutionStart;
+      console.log(`✅ All tools executed in ${totalToolTime}ms`);
       
       // Call AI again with tool results
       console.log(`🔧 Calling AI again with ${toolResults.length} tool results`);
