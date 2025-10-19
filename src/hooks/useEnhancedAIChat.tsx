@@ -33,10 +33,11 @@ export const useEnhancedAIChat = () => {
       }
 
       // Call enhanced AI chat function
+      // Only send last 10 messages to prevent token bloat and maintain focus on recent context
       const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
           message: content,
-          conversationHistory: messages,
+          conversationHistory: messages.slice(-10),
           userId: user.id
         }
       });
