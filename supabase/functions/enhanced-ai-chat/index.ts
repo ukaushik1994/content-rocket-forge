@@ -813,7 +813,8 @@ serve(async (req) => {
       SERP_MODULE,
       ACTION_MODULE,
       MINIMAL_PROMPT,
-      RESPONSE_STRUCTURE
+      RESPONSE_STRUCTURE,
+      TOOL_USAGE_MODULE
     } = await import('../shared/prompt-modules.ts');
 
     // Build dynamic system prompt based on query intent
@@ -838,9 +839,10 @@ serve(async (req) => {
       console.error('🚨 EXTREME token usage (>40k) - using MINIMAL_PROMPT');
       systemPrompt = MINIMAL_PROMPT;
     } else if (preliminaryTotal > 25000) {
-      // HIGH: Keep essentials + charts (preserve visualization)
-      console.warn('⚠️ High token usage (25k-40k) - using BASE + CHART_MODULE only');
+      // HIGH: Keep essentials + tools + charts (preserve core functionality)
+      console.warn('⚠️ High token usage (25k-40k) - using BASE + TOOL_USAGE + CHART_MODULE only');
       systemPrompt = BASE_PROMPT;
+      systemPrompt += '\n\n' + TOOL_USAGE_MODULE; // Critical for tool-based architecture
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       systemPrompt += '\n\n' + CHART_MODULE;
       
@@ -853,22 +855,24 @@ serve(async (req) => {
       // NORMAL: Full prompt with all modules
       console.log('✅ Normal token usage (<25k) - using full dynamic prompt');
       
+      // START WITH TOOL USAGE MODULE (most critical for tool-based architecture)
+      systemPrompt = BASE_PROMPT;
+      systemPrompt += '\n\n' + TOOL_USAGE_MODULE;
+      systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
+      
       // PHASE 3: Check if multi-chart mode should be activated
       const needsMultiChart = shouldGenerateMultipleCharts(userQuery);
       
       if (needsMultiChart) {
         console.log('📊📊📊 MULTI-CHART MODE ACTIVATED - Enhanced analysis with multiple perspectives');
-        systemPrompt = BASE_PROMPT;
-        systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
         systemPrompt += '\n\n' + MULTI_CHART_MODULE; // Use multi-chart module instead of regular CHART_MODULE
         systemPrompt += '\n\n' + TABLE_MODULE;
         systemPrompt += '\n\n' + ACTION_MODULE;
       } else if (queryIntent.requiresVisualData || queryIntent.scope === 'detailed' || queryIntent.scope === 'full') {
         console.log('📊 Using standard chart analysis prompt');
-        systemPrompt = buildMultiChartSystemPrompt();
+        systemPrompt += '\n\n' + CHART_MODULE;
+        systemPrompt += '\n\n' + TABLE_MODULE;
       } else {
-        systemPrompt = BASE_PROMPT;
-        systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
         systemPrompt += '\n\n' + CHART_MODULE;
         systemPrompt += '\n\n' + TABLE_MODULE;
       }
