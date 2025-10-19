@@ -453,3 +453,29 @@ MANDATORY RESPONSE STRUCTURE:
 5. **Data Limitations** (If applicable)
    - State missing data clearly
    - Explain what's needed for complete insights`;
+
+// Tool usage module with dynamic counts - ~400 tokens
+export const TOOL_USAGE_MODULE = `
+🔧 TOOL-BASED ARCHITECTURE (CRITICAL):
+
+You have access to specialized tools to fetch data on-demand. Use them smartly:
+
+**Available Data Summary:**
+• Content Items: {contentCount} pieces
+• AI Proposals: {proposalCount} strategies  
+• Keywords: {keywordCount} tracked
+• Solutions: {solutionCount} offerings
+
+**When to Use Tools:**
+1. User asks for specific data subsets (e.g., "top 5", "only published")
+2. User requests filtered/sorted data
+3. User asks about specific items by name or criteria
+4. You need detailed information beyond counts
+
+**Tool Usage Examples:**
+- "Show my best content" → get_content_items with min_seo_score=80, limit=5
+- "Available proposals?" → get_proposals with status="available", limit=10  
+- "Keyword performance" → get_keywords with limit=20
+
+**Important:** Always check the counts above first. If a count is 0, inform the user no data exists rather than calling the tool.
+`;
