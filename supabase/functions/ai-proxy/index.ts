@@ -781,13 +781,24 @@ async function chatLMStudio(apiKey: string, params: any) {
   // Normalize: remove trailing /v1 or /v1/ to prevent double /v1/v1
   baseUrl = baseUrl.replace(/\/v1\/?$/, '');
   
+  // Cap max_tokens to 8,000 for Qwen2.5 4B output limits
+  const requestedTokens = params.maxTokens || params.max_tokens || 1000;
+  const QWEN_MAX_OUTPUT = 8000;
+  const safeMaxTokens = Math.min(requestedTokens, QWEN_MAX_OUTPUT);
+  
+  if (requestedTokens > QWEN_MAX_OUTPUT) {
+    console.warn(`⚠️ Capping max_tokens: ${requestedTokens} → ${safeMaxTokens} (Qwen2.5 output limit)`);
+  }
+  
   const requestBody = {
     model: params.model || 'local-model',
     messages: params.messages || [],
     temperature: params.temperature || 0.7,
-    max_tokens: params.maxTokens || params.max_tokens || 1000,
+    max_tokens: safeMaxTokens,
     ...params
   };
+
+  console.log(`🚀 Sending to LM Studio (max_tokens: ${safeMaxTokens})`);
 
   try {
     const response = await fetch(`${baseUrl}/v1/chat/completions`, {
@@ -805,12 +816,16 @@ async function chatLMStudio(apiKey: string, params: any) {
     }
 
     const data = await response.json();
-    console.log('✅ LM Studio chat successful');
+    const finishReason = data?.choices?.[0]?.finish_reason;
+    
+    console.log(`✅ LM Studio chat successful (finish_reason: ${finishReason})`);
     
     return {
       success: true,
       data,
-      provider: 'LM Studio'
+      provider: 'LM Studio',
+      finish_reason: finishReason,
+      was_truncated: finishReason === 'length'
     };
   } catch (error: any) {
     console.error('💥 LM Studio chat exception:', error);
