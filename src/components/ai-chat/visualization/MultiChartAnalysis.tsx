@@ -12,12 +12,14 @@ interface MultiChartAnalysisProps {
   visualData: VisualData;
   onClose: () => void;
   onDeepDive: (question: string) => void;
+  onSendMessage?: (message: string) => void;
 }
 
 export const MultiChartAnalysis: React.FC<MultiChartAnalysisProps> = ({
   visualData,
   onClose,
-  onDeepDive
+  onDeepDive,
+  onSendMessage
 }) => {
   const navigate = useNavigate();
   const [isClosing, setIsClosing] = useState(false);
@@ -145,7 +147,11 @@ export const MultiChartAnalysis: React.FC<MultiChartAnalysisProps> = ({
                     {chart.subtitle && (
                       <p className="text-sm text-muted-foreground mb-4">{chart.subtitle}</p>
                     )}
-                    <InteractiveChart chartConfig={chart} />
+                    <InteractiveChart 
+                      chartConfig={chart} 
+                      onSendMessage={onSendMessage}
+                      originalQuery={visualData.title || chart.title || 'show data'}
+                    />
                     {chart.chartInsights && chart.chartInsights.length > 0 && (
                       <div className="mt-4 space-y-1">
                         {chart.chartInsights.map((insight, i) => (

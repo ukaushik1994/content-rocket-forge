@@ -180,13 +180,14 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             <div className="mt-3">
               {message.visualData.type === 'multi_chart_analysis' ? (
                 showMultiChart && (
-                  <MultiChartAnalysis
+                <MultiChartAnalysis
                     visualData={message.visualData}
                     onClose={() => setShowMultiChart(false)}
                     onDeepDive={(question) => {
                       setShowMultiChart(false);
                       onSendMessage?.(question);
                     }}
+                    onSendMessage={onSendMessage}
                   />
                 )
               ) : (
