@@ -5,9 +5,10 @@ import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
 import { analyzeQueryIntent } from './query-analyzer.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
 import { estimateTokens } from '../shared/token-counter.ts';
+import { TOOL_DEFINITIONS, executeToolCall } from './tools.ts';
 import { 
   analyzeSerpIntent, 
-  executeSerpAnalysis, 
+  executeSerpAnalysis,
   generateSerpContext, 
   generateSmartSuggestions,
   generateStructuredSerpData
@@ -753,316 +754,61 @@ Just ask! Examples: 'Show me all content' or 'Load full data'"
 
     console.log(`✅ Context string built successfully (${queryIntent.scope} scope)`);
     return contextString;
-    const totalImpressions = gscData?.reduce((sum, item) => sum + (item.search_console_data?.impressions || 0), 0) || 0;
-    const totalClicks = gscData?.reduce((sum, item) => sum + (item.search_console_data?.clicks || 0), 0) || 0;
-    const averageCTR = totalClicks > 0 && totalImpressions > 0 ? (totalClicks / totalImpressions * 100) : 0;
-    const topPerformingPages = gscData?.filter(item => item.search_console_data?.clicks > 0)
-      .sort((a, b) => (b.search_console_data?.clicks || 0) - (a.search_console_data?.clicks || 0))
-      .slice(0, 5) || [];
-
-    // SMART LIMITS based on query scope
-    const limits = {
-      summary: { main: 5, related: 3, logs: 5 },
-      detailed: { main: 10, related: 8, logs: 10 },
-      full: { main: 20, related: 15, logs: 20 }
-    };
+    // TOOL-BASED APPROACH: Fetch ONLY basic counts
+    console.log('📊 Fetching basic data counts only (tools will fetch detailed data on demand)...');
     
-    const scope = queryIntent.scope || 'summary';
-    const limit = limits[scope];
-    
-    console.log(`📊 Fetching context with ${scope} scope (limits: main=${limit.main}, related=${limit.related}, logs=${limit.logs})`);
-
-    // PHASE 1: ENHANCED AI STRATEGY PROPOSALS INTEGRATION
-    const { data: strategyProposals } = await supabase
-      .from('ai_strategy_proposals')
-      .select('id, title, primary_keyword, description, status, priority_tag, estimated_impressions, content_type, created_at')
-      .order('estimated_impressions', { ascending: false })
-      .limit(limit.main);
-
-    // PHASE 1: CONTENT PIPELINE AWARENESS (Smart Limited)
-    const { data: contentWithPipeline } = await supabase
+    const { count: contentCount } = await supabase
       .from('content_items')
-      .select('id, title, status, created_at, seo_score, content_type')
-      .order('created_at', { ascending: false })
-      .limit(limit.main);
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
 
-    // Get pipeline data separately and join manually
-    const { data: pipelineData } = await supabase
-      .from('content_pipeline')
-      .select('content_id, stage, priority, notes, created_at');
+    const { count: proposalCount } = await supabase
+      .from('ai_strategy_proposals')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
 
-    // PHASE 1: EDITORIAL CALENDAR INTEGRATION
-    const { data: calendarItems } = await supabase
-      .from('content_calendar')
-      .select('id, title, scheduled_date, status, content_type, created_at, proposal_id')
-      .gte('scheduled_date', new Date().toISOString())
-      .order('scheduled_date', { ascending: true })
-      .limit(10);
-
-    // Fetch solutions data (Smart Limited)
-    const { data: solutions } = await supabase
-      .from('solutions')
-      .select('id, name, description')
-      .order('created_at', { ascending: false })
-      .limit(limit.related);
-
-    // Calculate enhanced statistics
-    const totalContent = contentWithPipeline?.length || 0;
-    const publishedContent = contentWithPipeline?.filter(item => item.status === 'published').length || 0;
-    const draftContent = contentWithPipeline?.filter(item => item.status === 'draft').length || 0;
-    const avgSeoScore = (contentWithPipeline?.reduce((sum, item) => sum + (item.seo_score || 0), 0) || 0) / (totalContent || 1);
-    
-    // Pipeline statistics - create a map for easy lookup
-    const pipelineMap = pipelineData?.reduce((map, pipeline) => {
-      map[pipeline.content_id] = pipeline;
-      return map;
-    }, {} as Record<string, any>) || {};
-    
-    const contentInPipeline = contentWithPipeline?.filter(item => pipelineMap[item.id]).length || 0;
-    const pipelineStages = pipelineData?.reduce((acc, pipeline) => {
-      if (pipeline.stage) {
-        acc[pipeline.stage] = (acc[pipeline.stage] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>) || {};
-
-    // Strategy proposal statistics
-    const availableProposals = strategyProposals?.filter(p => p.status === 'available').length || 0;
-    const scheduledProposals = strategyProposals?.filter(p => p.status === 'scheduled').length || 0;
-    const completedProposals = strategyProposals?.filter(p => p.status === 'completed').length || 0;
-    const proposalTotalImpressions = strategyProposals?.reduce((sum, p) => sum + (p.estimated_impressions || 0), 0) || 0;
-    
-    // Top opportunity keywords from proposals
-    const topOpportunities = strategyProposals?.slice(0, 5).map(p => ({
-      keyword: p.primary_keyword,
-      impressions: p.estimated_impressions,
-      contentType: p.content_type,
-      priority: p.priority_tag
-    })) || [];
-
-    // Calendar insights
-    const upcomingItems = calendarItems?.length || 0;
-    const nextDeadline = calendarItems?.[0]?.scheduled_date || 'No upcoming deadlines';
-
-    // Get content creation timeline (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentContent = contentWithPipeline?.filter(item => 
-      new Date(item.created_at) > thirtyDaysAgo
-    ).length || 0;
-
-    return `
-## REAL CONTENT STRATEGY DATA (Phase 1 Enhanced with GSC - ${new Date().toISOString()}):
-
-### GOOGLE SEARCH CONSOLE INSIGHTS (REAL DATA):
-- Total Tracked Pages: ${gscData?.length || 0}
-- Total Impressions (Last 30 days): ${totalImpressions.toLocaleString()}
-- Total Clicks: ${totalClicks.toLocaleString()}
-- Average CTR: ${averageCTR.toFixed(2)}%
-- Top Performing Pages: ${topPerformingPages.length} pages with clicks
-${topPerformingPages.map((page, i) => 
-  `  ${i + 1}. ${page.published_url} - ${page.search_console_data?.clicks || 0} clicks, ${page.search_console_data?.impressions || 0} impressions`
-).join('\n')}
-${gscData?.length === 0 ? '⚠️ No Search Console data available - connect GSC API for insights' : ''}
-
-### AI STRATEGY PROPOSALS (REAL DATA):
-- Total Proposals: ${strategyProposals?.length || 0}
-- Available Opportunities: ${availableProposals} (ready for content creation)
-- Scheduled: ${scheduledProposals} | Completed: ${completedProposals}
-- Total Potential Impressions: ${proposalTotalImpressions.toLocaleString()}
-- Highest Opportunity: ${topOpportunities[0]?.keyword || 'No proposals'} (${(topOpportunities[0]?.impressions || 0).toLocaleString()} impressions)
-
-### TOP 5 CONTENT OPPORTUNITIES (REAL PROPOSALS):
-${topOpportunities.map((opp, i) => 
-  `${i + 1}. "${opp.keyword}" - ${opp.impressions?.toLocaleString() || 0} impressions (${opp.contentType}, ${opp.priority})`
-).join('\n')}
-
-### CONTENT PIPELINE STATUS (REAL DATA):
-- Total Content Items: ${totalContent}
-- In Pipeline: ${contentInPipeline} (${totalContent > 0 ? Math.round((contentInPipeline/totalContent)*100) : 0}%)
-- Published: ${publishedContent} (${totalContent > 0 ? Math.round((publishedContent/totalContent)*100) : 0}% publication rate)
-- Draft: ${draftContent} (${totalContent > 0 ? Math.round((draftContent/totalContent)*100) : 0}% unpublished)
-- Pipeline Stages: ${Object.entries(pipelineStages).map(([stage, count]) => `${stage}: ${count}`).join(', ') || 'No stages tracked'}
-
-### EDITORIAL CALENDAR (REAL DATA):
-- Upcoming Scheduled Items: ${upcomingItems}
-- Next Deadline: ${nextDeadline}
-- Calendar Integration: ${calendarItems && calendarItems.length > 0 ? 'Active' : 'No items scheduled'}
-
-### PERFORMANCE METRICS (REAL DATA):
-- Average SEO Score: ${avgSeoScore.toFixed(1)}/100 ${avgSeoScore === 0 ? '⚠️ CRITICAL: All SEO scores are 0' : ''}
-- Content Created (Last 30 days): ${recentContent}
-
-### SOLUTIONS DATA (REAL):
-${solutions && solutions.length > 0 ? solutions.map(solution => 
-  `- "${solution.name}": ${solution.description?.substring(0, 100)}...`
-).join('\n') : 'No solutions found'}
-
-### CRITICAL STRATEGIC INSIGHTS:
-${availableProposals > 50 ? `🎯 MAJOR OPPORTUNITY: ${availableProposals} untapped content proposals worth ${proposalTotalImpressions.toLocaleString()} potential impressions` : ''}
-${avgSeoScore === 0 ? '❌ SEO system not functional - all content has 0 SEO scores' : ''}
-${publishedContent === 0 ? '❌ No published content - publishing workflow needs attention' : ''}
-${contentInPipeline === 0 ? '⚠️ No content in pipeline - content workflow not being used' : ''}
-${upcomingItems === 0 ? '📅 No scheduled content - editorial calendar needs planning' : ''}
-${totalClicks === 0 && totalImpressions > 0 ? '⚠️ GSC: High impressions but no clicks - CTR optimization needed' : ''}
-${averageCTR > 0 && averageCTR < 2 ? `⚠️ GSC: Low average CTR (${averageCTR.toFixed(2)}%) - meta descriptions and titles need optimization` : ''}
-${totalImpressions === 0 ? '❌ GSC: No search visibility detected - SEO and content discovery issues' : ''}
-
-### ACTIONABLE NEXT STEPS:
-${availableProposals > 0 ? `✅ ${availableProposals} AI-generated proposals ready for immediate content creation` : ''}
-${draftContent > 0 ? `✅ ${draftContent} draft articles ready for review and publishing` : ''}
-${solutions && solutions.length > 0 ? `✅ ${solutions.length} solutions available for content mapping` : ''}
-${recentContent > 0 ? `✅ Active content creation (${recentContent} items in last 30 days)` : ''}
-${topPerformingPages.length > 0 ? `🔍 GSC: Optimize top performing pages for higher CTR and expand similar content` : ''}
-${totalImpressions > 1000 && totalClicks < 50 ? `🎯 GSC: Focus on improving meta titles/descriptions for ${totalImpressions.toLocaleString()} impressions` : ''}
-${gscData && gscData.length > 0 ? `📊 GSC: ${gscData.length} pages tracked - analyze query data for content optimization opportunities` : ''}
-
-CRITICAL: This is REAL data from the user's actual strategy proposals and content pipeline. Provide specific, actionable recommendations based on these exact numbers and opportunities.
-     `;
-
-    // PHASE 2: PERFORMANCE & ANALYTICS INTELLIGENCE
-    // Fetch performance analytics data (Smart Limited)
-    const { data: performanceMetrics } = await supabase
-      .from('performance_metrics')
-      .select('metric_name, value, timestamp')
-      .order('created_at', { ascending: false })
-      .limit(limit.logs);
-
-    // Fetch action analytics for user behavior insights (Smart Limited)
-    const { data: actionAnalytics } = await supabase
-      .from('action_analytics')
-      .select('action_type, action_label, success, triggered_at')
-      .order('triggered_at', { ascending: false })
-      .limit(limit.logs);
-
-    // Fetch content activity logs for engagement tracking (Smart Limited)
-    const { data: activityLogs } = await supabase
-      .from('content_activity_log')
-      .select('action, content_type, module, timestamp')
-      .order('timestamp', { ascending: false })
-      .limit(limit.logs);
-
-    // Fetch SERP usage logs for competitive intelligence (Smart Limited)
-    const { data: serpUsage } = await supabase
-      .from('serp_usage_logs')
-      .select('provider, operation, success, created_at')
-      .order('created_at', { ascending: false })
-      .limit(limit.logs);
-
-    // Calculate Phase 2 analytics
-    const totalActions = actionAnalytics?.length || 0;
-    const successfulActions = actionAnalytics?.filter(action => action.success).length || 0;
-    const actionSuccessRate = totalActions > 0 ? (successfulActions / totalActions * 100) : 0;
-    
-    // User behavior patterns
-    const actionTypes = actionAnalytics?.reduce((acc, action) => {
-      const type = action.action_type;
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>) || {};
-
-    // Content engagement metrics
-    const recentActivity = activityLogs?.length || 0;
-    const contentModules = activityLogs?.reduce((acc, log) => {
-      const module = log.module || 'unknown';
-      acc[module] = (acc[module] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>) || {};
-
-    // SERP intelligence
-    const serpApiCalls = serpUsage?.length || 0;
-    const serpSuccess = serpUsage?.filter(usage => usage.success).length || 0;
-    const serpSuccessRate = serpApiCalls > 0 ? (serpSuccess / serpApiCalls * 100) : 0;
-
-    // PHASE 3: RESEARCH & INTELLIGENCE ENHANCEMENT
-    // Fetch keywords research data (Smart Limited)
-    const { data: keywords } = await supabase
+    const { count: keywordCount } = await supabase
       .from('keywords')
-      .select('keyword, volume, difficulty, created_at')
-      .order('created_at', { ascending: false })
-      .limit(limit.main);
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
 
-    // Fetch content clusters data (Smart Limited)
-    const { data: contentClusters } = await supabase
-      .from('content_clusters')
-      .select('id, name, description, status')
-      .order('created_at', { ascending: false })
-      .limit(limit.related);
+    const { count: solutionCount } = await supabase
+      .from('solutions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
 
-    // Fetch cluster keywords relationships (Smart Limited)
-    const { data: clusterKeywords } = await supabase
-      .from('cluster_keywords')
-      .select('cluster_id, keyword_id, is_primary')
-      .order('created_at', { ascending: false })
-      .limit(limit.related);
+    // Build minimal context string with basic stats
+    return `
+## Available Data Summary (${new Date().toISOString()}):
+- **Content Items**: ${contentCount || 0} total
+- **AI Strategy Proposals**: ${proposalCount || 0} total
+- **Keywords**: ${keywordCount || 0} researched
+- **Solutions/Products**: ${solutionCount || 0} defined
 
-    // Fetch SERP analysis history for competitive intelligence (Smart Limited)
-    const { data: serpAnalysisHistory } = await supabase
-      .from('serp_analysis_history')
-      .select('keyword, analysis_type, created_at')
-      .order('created_at', { ascending: false })
-      .limit(limit.logs);
+## How to Access Detailed Data:
 
-    // Fetch keyword position tracking for ranking insights (Smart Limited)
-    const { data: keywordPositions } = await supabase
-      .from('keyword_position_history')
-      .select('keyword, position, tracked_at')
-      .order('tracked_at', { ascending: false })
-      .limit(limit.logs);
+You have access to 6 powerful tools to fetch exactly the data you need:
 
-    // Fetch opportunity seeds for content gap analysis (Smart Limited)
-    const { data: opportunitySeeds } = await supabase
-      .from('opportunity_seeds')
-      .select('seed_keyword, opportunity_score, created_at')
-      .order('created_at', { ascending: false })
-      .limit(limit.logs);
+1. **get_content_items** - Fetch content with filters (status, SEO score, type)
+2. **get_keywords** - Fetch keyword data (volume, difficulty)
+3. **get_proposals** - Fetch AI proposals (status, priority, impressions)
+4. **get_solutions** - Fetch solutions/products
+5. **get_seo_scores** - Fetch SEO performance metrics
+6. **get_serp_analysis** - Fetch fresh SERP analysis data
 
-    // PHASE 4: ENTERPRISE & WORKFLOW INTELLIGENCE
-    // Fetch AI workflow states for process intelligence (Smart Limited)
-    const { data: workflowStates } = await supabase
-      .from('ai_workflow_states')
-      .select('workflow_type, current_step, updated_at')
-      .order('updated_at', { ascending: false })
-      .limit(limit.logs);
+**CRITICAL INSTRUCTIONS:**
+- When user asks about specific data, USE TOOLS to fetch it
+- Start with small limits (5-10 items) unless user asks for "all"
+- Only fetch what you actually need to answer the question
+- Use filters to get precise data (e.g., status="published", min_seo_score=70)
 
-    // Fetch team collaboration sessions (Smart Limited)
-    const { data: collaborationSessions } = await supabase
-      .from('collaboration_sessions')
-      .select('session_name, status, started_at')
-      .eq('status', 'active')
-      .order('updated_at', { ascending: false })
-      .limit(limit.related);
+**Examples:**
+- User: "Show my best content" → Call get_content_items with min_seo_score=80, limit=5
+- User: "What proposals are available?" → Call get_proposals with status="available", limit=10
+- User: "Analyze keyword performance" → Call get_keywords with limit=20
 
-    // Fetch workflow executions for optimization insights (Smart Limited)
-    const { data: workflowExecutions } = await supabase
-      .from('workflow_executions')
-      .select('workflow_type, status, started_at')
-      .order('started_at', { ascending: false })
-      .limit(limit.logs);
-
-    // Fetch team workspaces for collaboration context (Smart Limited)
-    const { data: teamWorkspaces } = await supabase
-      .from('team_workspaces')
-      .select('name, is_active')
-      .eq('is_active', true)
-      .limit(limit.related);
-
-    // Calculate Phase 3 research intelligence metrics
-    const totalKeywords = keywords?.length || 0;
-    const totalClusters = contentClusters?.length || 0;
-    const totalClusterRelations = clusterKeywords?.length || 0;
-    const serpAnalysisCount = serpAnalysisHistory?.length || 0;
-    const positionTrackingCount = keywordPositions?.length || 0;
-    const opportunitiesCount = opportunitySeeds?.length || 0;
-
-    // Calculate Phase 4 enterprise intelligence metrics
-    const totalWorkflowStates = workflowStates?.length || 0;
-    const activeWorkflows = workflowStates?.filter(w => w.current_step !== 'completed').length || 0;
-    const completedWorkflows = workflowStates?.filter(w => w.current_step === 'completed').length || 0;
-    const stalledWorkflows = workflowStates?.filter(w => w.current_step === 'stalled' || w.current_step === 'error').length || 0;
-    
-    const activeCollaborationSessions = collaborationSessions?.length || 0;
-    const totalWorkflowExecutions = workflowExecutions?.length || 0;
+**Remember:** The counts above show total data available. Use tools to dive deeper when needed.
+`;
     const successfulExecutions = workflowExecutions?.filter(w => w.status === 'completed').length || 0;
     const failedExecutions = workflowExecutions?.filter(w => w.status === 'failed').length || 0;
     
@@ -1602,7 +1348,10 @@ serve(async (req) => {
     }
 
 
-    // Call ai-proxy edge function with user's provider
+    // Initialize tool cache for this request
+    const toolCache = new Map<string, { data: any; timestamp: number }>();
+
+    // Call ai-proxy edge function with user's provider (including tools)
     const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
       body: {
         service: provider.provider,
@@ -1617,8 +1366,9 @@ serve(async (req) => {
             },
             ...messages,
           ],
+          tools: TOOL_DEFINITIONS, // ✅ Add tools for function calling
           temperature: 0.7,
-          max_tokens: dynamicMaxTokens, // Phase 1: Increased from 2000 to support 260K context models
+          max_tokens: dynamicMaxTokens,
         }
       }
     });
@@ -1637,6 +1387,71 @@ serve(async (req) => {
 
     const data = aiProxyResult.data;
     let aiMessage = data?.choices?.[0]?.message?.content;
+    const toolCalls = data?.choices?.[0]?.message?.tool_calls;
+
+    // ✅ Handle tool calls if AI requested them
+    if (toolCalls && toolCalls.length > 0) {
+      console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
+      
+      const toolResults = [];
+      
+      for (const toolCall of toolCalls) {
+        const toolName = toolCall.function.name;
+        const toolArgs = JSON.parse(toolCall.function.arguments);
+        
+        console.log(`🔧 Executing ${toolName} with args:`, toolArgs);
+        
+        try {
+          const toolData = await executeToolCall(toolName, toolArgs, supabase, user.id, toolCache);
+          toolResults.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: toolName,
+            content: JSON.stringify(toolData)
+          });
+        } catch (error) {
+          console.error(`❌ Tool ${toolName} failed:`, error);
+          toolResults.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: toolName,
+            content: JSON.stringify({ error: error.message })
+          });
+        }
+      }
+      
+      // Call AI again with tool results
+      console.log(`🔧 Calling AI again with ${toolResults.length} tool results`);
+      const { data: secondCallResult, error: secondCallError } = await supabase.functions.invoke('ai-proxy', {
+        body: {
+          service: provider.provider,
+          endpoint: 'chat',
+          apiKey: provider.api_key,
+          params: {
+            model: provider.preferred_model,
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              ...messages,
+              data.choices[0].message, // Original AI message with tool_calls
+              ...toolResults // Tool results
+            ],
+            temperature: 0.7,
+            max_tokens: dynamicMaxTokens,
+          }
+        }
+      });
+      
+      if (secondCallError || !secondCallResult?.success) {
+        console.error("❌ Second AI call failed after tools:", secondCallError);
+        throw new Error("Second AI call failed after tool execution");
+      }
+      
+      aiMessage = secondCallResult.data?.choices?.[0]?.message?.content;
+      console.log(`✅ Received final AI response after tool execution (${aiMessage?.length || 0} chars)`);
+    }
 
     // Remove <think> tags AGGRESSIVELY before any other processing
     if (aiMessage) {
