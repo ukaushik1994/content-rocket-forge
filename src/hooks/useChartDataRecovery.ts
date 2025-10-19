@@ -7,6 +7,9 @@ interface RecoveryResult {
   confidence: number;
 }
 
+// Global debounce tracker to prevent rapid-fire recovery attempts
+const lastRecoveryAttempt = { timestamp: 0, prompt: '' };
+
 /**
  * Hook to detect empty/invalid chart data and automatically generate
  * intelligent follow-up prompts to fetch the missing data via AI tools
@@ -113,38 +116,50 @@ export const useChartDataRecovery = (
     visualData?: VisualData,
     originalQuery?: string
   ): Promise<boolean> => {
+    if (!onSendMessage) {
+      console.warn('⚠️ Cannot attempt recovery: onSendMessage not provided');
+      return false;
+    }
+
+    // Debounce check - prevent duplicate attempts within 1 second
+    const now = Date.now();
+    const prompt = generateRecoveryPrompt(visualData, originalQuery);
+    
+    if (now - lastRecoveryAttempt.timestamp < 1000 && lastRecoveryAttempt.prompt === prompt) {
+      console.log('🔄 Skipping recovery - duplicate attempt blocked (debounced)');
+      return false;
+    }
+    
+    lastRecoveryAttempt.timestamp = now;
+    lastRecoveryAttempt.prompt = prompt;
+
     const result = shouldAttemptRecovery(visualData);
     
     if (!result.needsRecovery || result.confidence < 0.5) {
       return false;
     }
 
-    if (!onSendMessage) {
-      console.warn('Cannot attempt recovery: onSendMessage not provided');
-      return false;
-    }
-
     console.log('🔄 Attempting automatic data recovery:', {
       confidence: result.confidence,
-      prompt: result.recoveryPrompt
+      prompt: prompt
     });
 
     setIsRecovering(true);
     
     try {
       // Send recovery prompt to AI
-      onSendMessage(result.recoveryPrompt);
+      onSendMessage(prompt);
       
       // Recovery will be handled by the normal message flow
       return true;
     } catch (error) {
-      console.error('Failed to attempt recovery:', error);
+      console.error('❌ Failed to attempt recovery:', error);
       return false;
     } finally {
       // Keep recovering state for a bit to show loading
       setTimeout(() => setIsRecovering(false), 2000);
     }
-  }, [shouldAttemptRecovery, onSendMessage]);
+  }, [shouldAttemptRecovery, onSendMessage, generateRecoveryPrompt]);
 
   return {
     detectEmptyData,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { X, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
 import { VisualData } from '@/types/enhancedChat';
 import { InteractiveChart } from './InteractiveChart';
 import { useNavigate } from 'react-router-dom';
+import { useChartDataRecovery } from '@/hooks/useChartDataRecovery';
 
 interface MultiChartAnalysisProps {
   visualData: VisualData;
@@ -23,6 +24,28 @@ export const MultiChartAnalysis: React.FC<MultiChartAnalysisProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isClosing, setIsClosing] = useState(false);
+  const hasAttemptedRecovery = useRef(false);
+  const { detectEmptyData, attemptRecovery } = useChartDataRecovery(onSendMessage);
+
+  // Coordinated recovery for all empty charts - prevents duplicate messages
+  useEffect(() => {
+    if (!hasAttemptedRecovery.current && visualData.charts && onSendMessage) {
+      const emptyCharts = visualData.charts.filter(chart => 
+        detectEmptyData({ type: 'chart', chartConfig: chart })
+      );
+      
+      if (emptyCharts.length > 0) {
+        hasAttemptedRecovery.current = true;
+        const chartTitles = emptyCharts.map(c => c.title).filter(Boolean).join(', ');
+        const recoveryPrompt = chartTitles 
+          ? `Please fetch data for "${visualData.title}" including: ${chartTitles}`
+          : `Please fetch data for "${visualData.title}" using appropriate tools`;
+        
+        console.log(`🔄 Coordinated recovery for ${emptyCharts.length} empty charts`);
+        attemptRecovery({ ...visualData, type: 'multi_chart_analysis' }, recoveryPrompt);
+      }
+    }
+  }, [visualData, onSendMessage]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -151,6 +174,7 @@ export const MultiChartAnalysis: React.FC<MultiChartAnalysisProps> = ({
                       chartConfig={chart} 
                       onSendMessage={onSendMessage}
                       originalQuery={visualData.title || chart.title || 'show data'}
+                      skipAutoRecovery={true}
                     />
                     {chart.chartInsights && chart.chartInsights.length > 0 && (
                       <div className="mt-4 space-y-1">

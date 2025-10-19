@@ -28,6 +28,7 @@ interface InteractiveChartProps {
   onSendMessage?: (message: string) => void; // NEW: For deep dive prompts
   onActionTrigger?: (action: string) => void; // NEW: For actionable items
   originalQuery?: string; // NEW: For recovery context
+  skipAutoRecovery?: boolean; // NEW: Disable auto-recovery when parent handles it
 }
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   chartConfig,
@@ -41,7 +42,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   allVisualData = [],
   onSendMessage,
   onActionTrigger,
-  originalQuery
+  originalQuery,
+  skipAutoRecovery = false
 }) => {
   // Enhanced chart intelligence
   const {
@@ -60,8 +62,13 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   // Smart data recovery hook
   const { detectEmptyData, attemptRecovery, isRecovering } = useChartDataRecovery(onSendMessage);
 
-  // Auto-recover on mount if data is empty
+  // Auto-recover on mount if data is empty (unless disabled by parent)
   useEffect(() => {
+    if (skipAutoRecovery) {
+      console.log('⏭️ Skipping auto-recovery - handled by parent component');
+      return;
+    }
+    
     const visualData = {
       type: 'chart' as const,
       chartConfig,
@@ -72,7 +79,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       console.log('🔄 Empty data detected, attempting recovery...');
       attemptRecovery(visualData, originalQuery || title);
     }
-  }, [chartConfig, title, originalQuery]);
+  }, [chartConfig, title, originalQuery, skipAutoRecovery]);
 
   // Generate intelligent suggestions when data changes
   const chartSuggestions = React.useMemo(() => {

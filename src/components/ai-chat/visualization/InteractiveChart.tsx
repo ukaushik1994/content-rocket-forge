@@ -10,12 +10,14 @@ interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
   onSendMessage?: (message: string) => void;
   originalQuery?: string;
+  skipAutoRecovery?: boolean;
 }
 
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({ 
   chartConfig, 
   onSendMessage,
-  originalQuery 
+  originalQuery,
+  skipAutoRecovery = false
 }) => {
   const { type, data, categories, series, colors, height = 300 } = chartConfig;
 
