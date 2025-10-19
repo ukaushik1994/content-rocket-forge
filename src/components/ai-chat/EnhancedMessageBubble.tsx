@@ -160,7 +160,6 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   <FormattedResponseRenderer 
                     content={message.content} 
                     hasVisualData={!!message.visualData}
-                    metadata={message.metadata}
                   />
                 )}
               </div>
