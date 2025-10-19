@@ -8,19 +8,28 @@ import { AlertTriangle } from 'lucide-react';
 
 interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
+  onSendMessage?: (message: string) => void;
+  originalQuery?: string;
 }
 
-export const InteractiveChart: React.FC<InteractiveChartProps> = ({ chartConfig }) => {
+export const InteractiveChart: React.FC<InteractiveChartProps> = ({ 
+  chartConfig, 
+  onSendMessage,
+  originalQuery 
+}) => {
   const { type, data, categories, series, colors, height = 300 } = chartConfig;
 
-  // Validate data before rendering
+  // Validate data before rendering - show loading state instead of error
   if (!data || !Array.isArray(data) || data.length === 0) {
     console.warn('⚠️ InteractiveChart: No valid data provided', { type, dataLength: data?.length });
+    
+    // If we have onSendMessage, this will be handled by parent recovery hook
+    // Just show a minimal loading state
     return (
       <div className="flex items-center justify-center h-full min-h-[300px]">
         <div className="text-center text-muted-foreground">
-          <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No data available for this chart</p>
+          <div className="w-8 h-8 mx-auto mb-2 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm">Fetching data...</p>
         </div>
       </div>
     );

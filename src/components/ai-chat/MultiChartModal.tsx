@@ -1167,8 +1167,21 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     return Array.from(categories);
   };
 
-  // Early return for no valid charts
+  // Early return for no valid charts - trigger recovery instead of showing error
   if (validCharts.length === 0) {
+    // Attempt recovery if onDeepDiveClick is available (acts as message sender)
+    if (onDeepDiveClick) {
+      const recoveryPrompt = visualData?.title 
+        ? `Please fetch data for "${visualData.title}" using the appropriate tools and show the visualization`
+        : 'Please fetch the requested data using available tools and create the visualization';
+      
+      console.log('🔄 Empty charts detected in modal, triggering recovery:', recoveryPrompt);
+      onDeepDiveClick(recoveryPrompt);
+      onClose();
+      return null;
+    }
+    
+    // Fallback error modal if recovery isn't available
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">

@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { useChartIntelligence } from '@/hooks/useChartIntelligence';
 import { useChartActions } from '@/hooks/useChartActions';
+import { useChartDataRecovery } from '@/hooks/useChartDataRecovery';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ interface InteractiveChartProps {
   allVisualData?: any[];
   onSendMessage?: (message: string) => void; // NEW: For deep dive prompts
   onActionTrigger?: (action: string) => void; // NEW: For actionable items
+  originalQuery?: string; // NEW: For recovery context
 }
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   chartConfig,
@@ -38,7 +40,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   onExport,
   allVisualData = [],
   onSendMessage,
-  onActionTrigger
+  onActionTrigger,
+  originalQuery
 }) => {
   // Enhanced chart intelligence
   const {
@@ -53,6 +56,23 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     onSendMessage,
     onActionTrigger
   });
+
+  // Smart data recovery hook
+  const { detectEmptyData, attemptRecovery, isRecovering } = useChartDataRecovery(onSendMessage);
+
+  // Auto-recover on mount if data is empty
+  useEffect(() => {
+    const visualData = {
+      type: 'chart' as const,
+      chartConfig,
+      title: title || chartConfig.title
+    };
+    
+    if (detectEmptyData(visualData) && onSendMessage) {
+      console.log('🔄 Empty data detected, attempting recovery...');
+      attemptRecovery(visualData, originalQuery || title);
+    }
+  }, [chartConfig, title, originalQuery]);
 
   // Generate intelligent suggestions when data changes
   const chartSuggestions = React.useMemo(() => {
@@ -225,6 +245,18 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     };
     if (!filteredData || filteredData.length === 0) {
       console.log('❌ InteractiveChart: No data available');
+      // Show loading state during recovery instead of error
+      if (isRecovering) {
+        return (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center text-muted-foreground">
+              <div className="w-8 h-8 mx-auto mb-2 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm">Fetching data...</p>
+            </div>
+          </div>
+        );
+      }
+      // Fallback for when recovery isn't available
       return <div className="flex items-center justify-center h-64 text-muted-foreground">
           No data available to display
         </div>;
