@@ -1667,6 +1667,13 @@ serve(async (req) => {
         console.log('Problematic content:', aiMessage.substring(0, 500));
       }
     }
+    
+    // Check for truncation from AI provider
+    const wasTruncated = aiProxyResult?.was_truncated || aiProxyResult?.finish_reason === 'length';
+    if (wasTruncated) {
+      console.warn('⚠️ AI response was truncated due to token limit');
+      aiMessage += '\n\n⚠️ **Note:** This response was truncated due to length limits. For complete analysis, try breaking your question into smaller parts or focus on specific aspects.';
+    }
 
     if (!aiMessage) {
       console.error("No response from AI", data);
@@ -2188,7 +2195,11 @@ serve(async (req) => {
         visual_data_count: allCharts ? allCharts.length : (visualData ? 1 : 0),
         has_serp_data: !!serpData,
         insights_generated: aiInsights.length,
-        serp_keywords: serpData?.keywords || []
+        serp_keywords: serpData?.keywords || [],
+        was_truncated: aiProxyResult?.was_truncated || aiProxyResult?.finish_reason === 'length',
+        finish_reason: aiProxyResult?.finish_reason,
+        provider: 'lmstudio',
+        model: activeProvider?.available_models?.[0] || 'unknown'
       }
     };
 

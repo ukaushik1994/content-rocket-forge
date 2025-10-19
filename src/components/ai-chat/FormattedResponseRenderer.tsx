@@ -2,8 +2,9 @@ import React, { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EnhancedTableRenderer } from './EnhancedTableRenderer';
 
 // Process content but skip CSV conversion when visual data exists
@@ -635,12 +636,18 @@ interface FormattedResponseRendererProps {
   content: string;
   className?: string;
   hasVisualData?: boolean;
+  metadata?: {
+    was_truncated?: boolean;
+    finish_reason?: string;
+    [key: string]: any;
+  };
 }
 
 export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps> = ({ 
   content, 
   className,
-  hasVisualData = false
+  hasVisualData = false,
+  metadata
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
@@ -713,8 +720,21 @@ export const FormattedResponseRenderer: React.FC<FormattedResponseRendererProps>
     );
   }
   
+  // Check if response was truncated
+  const showTruncationWarning = metadata?.was_truncated || content.includes('was truncated due to');
+  
   return (
     <div className={cn("prose prose-sm max-w-none", className)}>
+      {showTruncationWarning && (
+        <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
+            <strong>Response Truncated:</strong> This answer was cut short due to model output limits. 
+            Try breaking your question into smaller parts or asking about specific aspects for complete analysis.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <ReactMarkdown
         components={{
           h1: ({ children }) => (

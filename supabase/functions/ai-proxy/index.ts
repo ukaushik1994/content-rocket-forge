@@ -781,11 +781,19 @@ async function chatLMStudio(apiKey: string, params: any) {
   // Normalize: remove trailing /v1 or /v1/ to prevent double /v1/v1
   baseUrl = baseUrl.replace(/\/v1\/?$/, '');
   
+  // Cap max_tokens at 8000 for Qwen2.5 models to prevent silent truncation
+  let maxTokens = params.maxTokens || params.max_tokens || 1000;
+  const modelName = params.model || 'local-model';
+  if (modelName.toLowerCase().includes('qwen')) {
+    maxTokens = Math.min(maxTokens, 8000);
+    console.log(`🔒 Capped max_tokens for Qwen model: ${maxTokens}`);
+  }
+  
   const requestBody = {
-    model: params.model || 'local-model',
+    model: modelName,
     messages: params.messages || [],
     temperature: params.temperature || 0.7,
-    max_tokens: params.maxTokens || params.max_tokens || 1000,
+    max_tokens: maxTokens,
     ...params
   };
 
@@ -805,12 +813,21 @@ async function chatLMStudio(apiKey: string, params: any) {
     }
 
     const data = await response.json();
-    console.log('✅ LM Studio chat successful');
+    const finishReason = data.choices?.[0]?.finish_reason;
+    const wasTruncated = finishReason === 'length';
+    
+    if (wasTruncated) {
+      console.warn('⚠️ LM Studio response was truncated (finish_reason: length)');
+    } else {
+      console.log(`✅ LM Studio chat successful (finish_reason: ${finishReason})`);
+    }
     
     return {
       success: true,
       data,
-      provider: 'LM Studio'
+      provider: 'LM Studio',
+      finish_reason: finishReason,
+      was_truncated: wasTruncated
     };
   } catch (error: any) {
     console.error('💥 LM Studio chat exception:', error);
