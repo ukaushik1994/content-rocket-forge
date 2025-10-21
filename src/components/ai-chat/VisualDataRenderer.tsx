@@ -27,6 +27,154 @@ import {
   TrendingUp as LineIcon
 } from 'lucide-react';
 
+// Helper functions for static Tailwind classes - matching MultiChartModal
+const getCardClasses = (colorTheme: string): string => {
+  switch (colorTheme) {
+    case 'blue':
+      return 'relative overflow-hidden bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-xl p-3 hover:border-blue-400/30 transition-all duration-200';
+    case 'orange':
+      return 'relative overflow-hidden bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20 rounded-xl p-3 hover:border-orange-400/30 transition-all duration-200';
+    case 'red':
+      return 'relative overflow-hidden bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl p-3 hover:border-red-400/30 transition-all duration-200';
+    case 'green':
+      return 'relative overflow-hidden bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-xl p-3 hover:border-green-400/30 transition-all duration-200';
+    case 'purple':
+      return 'relative overflow-hidden bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-xl p-3 hover:border-purple-400/30 transition-all duration-200';
+    case 'yellow':
+      return 'relative overflow-hidden bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20 rounded-xl p-3 hover:border-yellow-400/30 transition-all duration-200';
+    case 'indigo':
+      return 'relative overflow-hidden bg-gradient-to-br from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 rounded-xl p-3 hover:border-indigo-400/30 transition-all duration-200';
+    default:
+      return 'relative overflow-hidden bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-xl p-3 hover:border-purple-400/30 transition-all duration-200';
+  }
+};
+
+const getIconWrapperClasses = (colorTheme: string): string => {
+  switch (colorTheme) {
+    case 'blue':
+      return 'p-1 bg-blue-500/20 rounded-lg';
+    case 'orange':
+      return 'p-1 bg-orange-500/20 rounded-lg';
+    case 'red':
+      return 'p-1 bg-red-500/20 rounded-lg';
+    case 'green':
+      return 'p-1 bg-green-500/20 rounded-lg';
+    case 'purple':
+      return 'p-1 bg-purple-500/20 rounded-lg';
+    case 'yellow':
+      return 'p-1 bg-yellow-500/20 rounded-lg';
+    case 'indigo':
+      return 'p-1 bg-indigo-500/20 rounded-lg';
+    default:
+      return 'p-1 bg-purple-500/20 rounded-lg';
+  }
+};
+
+const getIconClasses = (colorTheme: string): string => {
+  switch (colorTheme) {
+    case 'blue':
+      return 'h-3 w-3 text-blue-400';
+    case 'orange':
+      return 'h-3 w-3 text-orange-400';
+    case 'red':
+      return 'h-3 w-3 text-red-400';
+    case 'green':
+      return 'h-3 w-3 text-green-400';
+    case 'purple':
+      return 'h-3 w-3 text-purple-400';
+    case 'yellow':
+      return 'h-3 w-3 text-yellow-400';
+    case 'indigo':
+      return 'h-3 w-3 text-indigo-400';
+    default:
+      return 'h-3 w-3 text-purple-400';
+  }
+};
+
+const getBadgeClasses = (colorTheme: string): string => {
+  switch (colorTheme) {
+    case 'blue':
+      return 'bg-blue-500/10 text-blue-300 border-blue-500/30 text-[10px] px-1.5 py-0 h-4';
+    case 'orange':
+      return 'bg-orange-500/10 text-orange-300 border-orange-500/30 text-[10px] px-1.5 py-0 h-4';
+    case 'red':
+      return 'bg-red-500/10 text-red-300 border-red-500/30 text-[10px] px-1.5 py-0 h-4';
+    case 'green':
+      return 'bg-green-500/10 text-green-300 border-green-500/30 text-[10px] px-1.5 py-0 h-4';
+    case 'purple':
+      return 'bg-purple-500/10 text-purple-300 border-purple-500/30 text-[10px] px-1.5 py-0 h-4';
+    case 'yellow':
+      return 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30 text-[10px] px-1.5 py-0 h-4';
+    case 'indigo':
+      return 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30 text-[10px] px-1.5 py-0 h-4';
+    default:
+      return 'bg-purple-500/10 text-purple-300 border-purple-500/30 text-[10px] px-1.5 py-0 h-4';
+  }
+};
+
+const getValueClasses = (colorTheme: string): string => {
+  switch (colorTheme) {
+    case 'blue':
+      return 'text-xl font-bold text-blue-400';
+    case 'orange':
+      return 'text-xl font-bold text-orange-400';
+    case 'red':
+      return 'text-xl font-bold text-red-400';
+    case 'green':
+      return 'text-xl font-bold text-green-400';
+    case 'purple':
+      return 'text-xl font-bold text-purple-400';
+    case 'yellow':
+      return 'text-xl font-bold text-yellow-400';
+    case 'indigo':
+      return 'text-xl font-bold text-indigo-400';
+    default:
+      return 'text-xl font-bold text-purple-400';
+  }
+};
+
+const getProgressClasses = (colorTheme: string): string => {
+  switch (colorTheme) {
+    case 'blue':
+      return 'h-1 bg-blue-500/10';
+    case 'orange':
+      return 'h-1 bg-orange-500/10';
+    case 'red':
+      return 'h-1 bg-red-500/10';
+    case 'green':
+      return 'h-1 bg-green-500/10';
+    case 'purple':
+      return 'h-1 bg-purple-500/10';
+    case 'yellow':
+      return 'h-1 bg-yellow-500/10';
+    case 'indigo':
+      return 'h-1 bg-indigo-500/10';
+    default:
+      return 'h-1 bg-purple-500/10';
+  }
+};
+
+const getDescriptionClasses = (colorTheme: string): string => {
+  switch (colorTheme) {
+    case 'blue':
+      return 'text-xs text-blue-300/70 leading-tight';
+    case 'orange':
+      return 'text-xs text-orange-300/70 leading-tight';
+    case 'red':
+      return 'text-xs text-red-300/70 leading-tight';
+    case 'green':
+      return 'text-xs text-green-300/70 leading-tight';
+    case 'purple':
+      return 'text-xs text-purple-300/70 leading-tight';
+    case 'yellow':
+      return 'text-xs text-yellow-300/70 leading-tight';
+    case 'indigo':
+      return 'text-xs text-indigo-300/70 leading-tight';
+    default:
+      return 'text-xs text-purple-300/70 leading-tight';
+  }
+};
+
 interface VisualDataRendererProps {
   data: VisualData;
 }
@@ -218,7 +366,27 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     console.log('📊 renderMetrics: Rendering', data.metrics.length, 'metrics');
 
     // Color theme mapping based on metric color
-    const getColorTheme = (color?: string): string => {
+    const getColorTheme = (color?: string, icon?: string): string => {
+      // If icon is provided, use icon-based mapping
+      if (icon) {
+        const iconMap: Record<string, string> = {
+          'TrendingUp': 'green',
+          'TrendingDown': 'red',
+          'Activity': 'orange',
+          'Target': 'orange',
+          'BarChart3': 'blue',
+          'Zap': 'purple',
+          'AlertTriangle': 'red',
+          'TableIcon': 'blue',
+          'Users': 'indigo',
+          'DollarSign': 'green',
+          'Eye': 'blue',
+          'CheckCircle2': 'green',
+        };
+        if (iconMap[icon]) return iconMap[icon];
+      }
+      
+      // Fallback to color-based mapping
       const colorMap: Record<string, string> = {
         'blue': 'blue',
         'green': 'green',
@@ -227,7 +395,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
         'red': 'red',
         'yellow': 'yellow',
         'indigo': 'indigo',
-        'cyan': 'cyan',
+        'cyan': 'blue',
       };
       return colorMap[color || ''] || 'purple';
     };
@@ -251,7 +419,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
       <div className="grid gap-4 auto-rows-[120px]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         {data.metrics.map((metric, index) => {
           const IconComponent = metric.icon && (LucideIcons[metric.icon as keyof typeof LucideIcons] as LucideIcon | undefined);
-          const colorTheme = getColorTheme(metric.color);
+          const colorTheme = getColorTheme(metric.color, metric.icon);
           const progressValue = calculateProgress(metric);
           
           return (
@@ -262,22 +430,22 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
               transition={{ delay: index * 0.1 }}
               className="h-full"
             >
-              <Card className={`relative overflow-hidden bg-gradient-to-br from-${colorTheme}-500/10 to-${colorTheme}-600/5 border border-${colorTheme}-500/20 rounded-xl p-3 hover:border-${colorTheme}-400/30 transition-all duration-200 h-full`}>
+              <Card className={getCardClasses(colorTheme) + ' h-full'}>
                 <div className="flex flex-col h-full">
                   {/* Top: Icon + Badge */}
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
                       {IconComponent ? (
-                        <div className={`p-1 bg-${colorTheme}-500/20 rounded-lg`}>
-                          <IconComponent className={`h-3 w-3 text-${colorTheme}-400`} />
+                        <div className={getIconWrapperClasses(colorTheme)}>
+                          <IconComponent className={getIconClasses(colorTheme)} />
                         </div>
                       ) : (
-                        <div className={`p-1 bg-${colorTheme}-500/20 rounded-lg`}>
-                          <Activity className={`h-3 w-3 text-${colorTheme}-400`} />
+                        <div className={getIconWrapperClasses(colorTheme)}>
+                          <Activity className={getIconClasses(colorTheme)} />
                         </div>
                       )}
                     </div>
-                    <Badge variant="outline" className={`bg-${colorTheme}-500/10 text-${colorTheme}-300 border-${colorTheme}-500/30 text-[10px] px-1.5 py-0 h-4`}>
+                    <Badge variant="outline" className={getBadgeClasses(colorTheme)}>
                       {metric.title}
                     </Badge>
                   </div>
@@ -285,7 +453,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
                   {/* Middle: Value + Progress */}
                   <div className="space-y-1.5">
                     <motion.div 
-                      className={`text-xl font-bold text-${colorTheme}-400`}
+                      className={getValueClasses(colorTheme)}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
@@ -294,8 +462,8 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
                     </motion.div>
                     
                     <div className="space-y-1">
-                      <Progress value={progressValue} className={`h-1 bg-${colorTheme}-500/10`} />
-                      <p className={`text-xs text-${colorTheme}-300/70 leading-tight`}>
+                      <Progress value={progressValue} className={getProgressClasses(colorTheme)} />
+                      <p className={getDescriptionClasses(colorTheme)}>
                         {metric.change?.period || metric.title}
                       </p>
                     </div>
