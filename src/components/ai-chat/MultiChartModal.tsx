@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -82,7 +83,40 @@ const CHART_TYPE_ICONS: Record<string, any> = {
   'table': TableIcon
 };
 
-// Animated Metric Card Component - Phase 1: Fixed uniform sizing
+// Color theme mapping based on icon or metric type
+const getMetricColorTheme = (icon?: string): string => {
+  const colorMap: Record<string, string> = {
+    'TrendingUp': 'green',
+    'TrendingDown': 'red',
+    'Activity': 'purple',
+    'Target': 'orange',
+    'BarChart3': 'blue',
+    'Zap': 'yellow',
+    'AlertTriangle': 'amber',
+    'TableIcon': 'blue',
+    'Users': 'indigo',
+    'DollarSign': 'green',
+    'Eye': 'cyan',
+  };
+  return icon ? (colorMap[icon] || 'purple') : 'purple';
+};
+
+// Calculate progress value for progress bar
+const calculateProgressValue = (metric: any): number => {
+  if (typeof metric.value === 'string' && metric.value.includes('%')) {
+    const numValue = parseFloat(metric.value);
+    return isNaN(numValue) ? 50 : numValue;
+  }
+  if (metric.change?.value) {
+    return Math.min(Math.abs(metric.change.value), 100);
+  }
+  if (typeof metric.value === 'number' && metric.value <= 100) {
+    return metric.value;
+  }
+  return 50;
+};
+
+// Animated Metric Card Component - SERP Style
 const AnimatedMetricCard: React.FC<{ 
   label: string; 
   value: any; 
@@ -92,44 +126,73 @@ const AnimatedMetricCard: React.FC<{
   suffix?: string;
   isText?: boolean;
   index: number;
-}> = ({ label, value, icon: Icon, trend, trendUp, suffix, isText, index }) => {
+  iconName?: string;
+  change?: { value: number; period?: string };
+}> = ({ label, value, icon: Icon, trend, trendUp, suffix, isText, index, iconName, change }) => {
+  const colorTheme = getMetricColorTheme(iconName);
+  const progressValue = calculateProgressValue({ value, change });
+  
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.1 }}
+      className="h-full"
     >
-      <Card className="p-4 glass-panel bg-gradient-to-br from-card/50 to-card/30 border border-white/10 hover:border-primary/30 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10 h-[140px] flex flex-col justify-between overflow-hidden">
-        {/* Icon + Label - Fixed height */}
-        <div className="flex items-center gap-2 mb-2 h-[28px]">
-          <div className="p-1.5 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
-            <Icon className="w-4 h-4 text-primary" />
+      <Card className={`relative overflow-hidden bg-gradient-to-br from-${colorTheme}-500/10 to-${colorTheme}-600/5 border border-${colorTheme}-500/20 rounded-xl p-3 hover:border-${colorTheme}-400/30 transition-all duration-200`}>
+        <div className="flex flex-col h-full">
+          {/* Top: Icon + Badge */}
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2">
+              {Icon && (
+                <div className={`p-1 bg-${colorTheme}-500/20 rounded-lg`}>
+                  <Icon className={`h-3 w-3 text-${colorTheme}-400`} />
+                </div>
+              )}
+            </div>
+            <Badge variant="outline" className={`bg-${colorTheme}-500/10 text-${colorTheme}-300 border-${colorTheme}-500/30 text-[10px] px-1.5 py-0 h-4`}>
+              {label}
+            </Badge>
           </div>
-          <span className="text-xs text-muted-foreground truncate">{label}</span>
-        </div>
-        
-        {/* Value - Flex grow to fill space */}
-        <div className="flex-1 flex items-center">
-          <div className="text-2xl font-bold line-clamp-2">
-            {isText ? value : `${value}${suffix || ''}`}
+
+          {/* Middle: Value + Progress */}
+          <div className="space-y-1.5">
+            <motion.div 
+              className={`${isText ? 'text-lg' : 'text-xl'} font-bold text-${colorTheme}-400`}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
+            >
+              {isText ? value : `${value}${suffix || ''}`}
+            </motion.div>
+            
+            <div className="space-y-1">
+              <Progress value={progressValue} className={`h-1 bg-${colorTheme}-500/10`} />
+              <p className={`text-xs text-${colorTheme}-300/70 leading-tight`}>
+                {change?.period || label}
+              </p>
+            </div>
           </div>
+
+          {/* Bottom: Trend (if exists) */}
+          {trend && (
+            <motion.div 
+              className="flex items-center gap-1 text-xs mt-1 h-[24px]"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 + 0.3 }}
+            >
+              {trendUp ? (
+                <TrendingUp className="h-3 w-3 text-green-500" />
+              ) : (
+                <TrendingDown className="h-3 w-3 text-red-500" />
+              )}
+              <span className={trendUp ? 'text-green-500' : 'text-red-500'}>
+                {trend}
+              </span>
+            </motion.div>
+          )}
         </div>
-        
-        {/* Trend - Fixed height at bottom */}
-        {trend && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: index * 0.1 + 0.3 }}
-            className={cn(
-              "text-xs mt-1 flex items-center gap-1 h-[24px]",
-              trendUp ? 'text-success' : 'text-destructive'
-            )}
-          >
-            {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {trend}
-          </motion.div>
-        )}
       </Card>
     </motion.div>
   );
@@ -187,17 +250,19 @@ const KeyMetricsPanel: React.FC<{ visualData?: VisualData; context?: any }> = ({
   if (metrics.length === 0) return null;
 
   return (
-    <div className={`grid ${getGridClass(metrics.length)} gap-4 mb-6 auto-rows-[140px]`}>
+    <div className={`grid ${getGridClass(metrics.length)} gap-4 mb-6 auto-rows-[120px]`}>
       {metrics.map((metric, idx) => (
         <AnimatedMetricCard 
           key={metric.id || idx}
           label={metric.title}
           value={metric.value}
           icon={ICON_MAP[metric.icon || 'Activity'] || Activity}
+          iconName={metric.icon}
           trend={metric.change?.value ? `${metric.change.value > 0 ? '+' : ''}${metric.change.value}% ${metric.change.period || ''}` : undefined}
           trendUp={metric.change?.type === 'increase'}
           isText={typeof metric.value === 'string' && isNaN(Number(metric.value))}
           index={idx}
+          change={metric.change}
         />
       ))}
     </div>

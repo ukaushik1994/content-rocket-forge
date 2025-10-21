@@ -217,102 +217,110 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     }
     console.log('📊 renderMetrics: Rendering', data.metrics.length, 'metrics');
 
-    const containerVariants = {
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: {
-          staggerChildren: 0.1,
-          delayChildren: 0.2
-        }
-      }
+    // Color theme mapping based on metric color
+    const getColorTheme = (color?: string): string => {
+      const colorMap: Record<string, string> = {
+        'blue': 'blue',
+        'green': 'green',
+        'purple': 'purple',
+        'orange': 'orange',
+        'red': 'red',
+        'yellow': 'yellow',
+        'indigo': 'indigo',
+        'cyan': 'cyan',
+      };
+      return colorMap[color || ''] || 'purple';
     };
 
-    const itemVariants = {
-      hidden: { opacity: 0, y: 30, scale: 0.95 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        transition: {
-          type: "spring",
-          stiffness: 100,
-          damping: 15
-        }
+    // Calculate progress value for progress bar
+    const calculateProgress = (metric: any): number => {
+      if (typeof metric.value === 'string' && metric.value.includes('%')) {
+        const numValue = parseFloat(metric.value);
+        return isNaN(numValue) ? 50 : numValue;
       }
+      if (metric.change?.value) {
+        return Math.min(Math.abs(metric.change.value), 100);
+      }
+      if (typeof metric.value === 'number' && metric.value <= 100) {
+        return metric.value;
+      }
+      return 50;
     };
 
     return (
-      <div className="grid gap-2 auto-rows-min" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+      <div className="grid gap-4 auto-rows-[120px]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         {data.metrics.map((metric, index) => {
           const IconComponent = metric.icon && (LucideIcons[metric.icon as keyof typeof LucideIcons] as LucideIcon | undefined);
+          const colorTheme = getColorTheme(metric.color);
+          const progressValue = calculateProgress(metric);
           
           return (
             <motion.div
               key={metric.id}
-              className="group relative max-w-xs"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ scale: 1.02 }}
+              transition={{ delay: index * 0.1 }}
+              className="h-full"
             >
-              {/* Simple background gradient */}
-              <div className={cn(
-                "absolute inset-0 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-200",
-                getColorGradient(metric.color)
-              )} />
-              
-              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-2 group-hover:shadow-lg transition-all duration-200">
-                {/* Compact vertical layout */}
-                <div className="flex flex-col">
-                  {/* Title and icon row */}
-                  <div className="flex items-start justify-between mb-1">
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <Card className={`relative overflow-hidden bg-gradient-to-br from-${colorTheme}-500/10 to-${colorTheme}-600/5 border border-${colorTheme}-500/20 rounded-xl p-3 hover:border-${colorTheme}-400/30 transition-all duration-200 h-full`}>
+                <div className="flex flex-col h-full">
+                  {/* Top: Icon + Badge */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
                       {IconComponent ? (
-                        <div className={cn(
-                          "p-1 rounded bg-gradient-to-br from-white/10 to-white/5",
-                          "group-hover:from-white/15 group-hover:to-white/8 transition-all duration-200"
-                        )}>
-                          <IconComponent className={cn("w-3 h-3", getIconColorClass(metric.color))} />
+                        <div className={`p-1 bg-${colorTheme}-500/20 rounded-lg`}>
+                          <IconComponent className={`h-3 w-3 text-${colorTheme}-400`} />
                         </div>
                       ) : (
-                        <div className="p-1 rounded bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/8 transition-all duration-200">
-                          <Activity className="w-3 h-3 text-primary" />
+                        <div className={`p-1 bg-${colorTheme}-500/20 rounded-lg`}>
+                          <Activity className={`h-3 w-3 text-${colorTheme}-400`} />
                         </div>
                       )}
-                      
-                      <p className="text-[10px] md:text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200 leading-none truncate">
-                        {metric.title}
+                    </div>
+                    <Badge variant="outline" className={`bg-${colorTheme}-500/10 text-${colorTheme}-300 border-${colorTheme}-500/30 text-[10px] px-1.5 py-0 h-4`}>
+                      {metric.title}
+                    </Badge>
+                  </div>
+
+                  {/* Middle: Value + Progress */}
+                  <div className="space-y-1.5">
+                    <motion.div 
+                      className={`text-xl font-bold text-${colorTheme}-400`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
+                    >
+                      {typeof metric.value === 'string' ? metric.value : metric.value?.toLocaleString() || 'N/A'}
+                    </motion.div>
+                    
+                    <div className="space-y-1">
+                      <Progress value={progressValue} className={`h-1 bg-${colorTheme}-500/10`} />
+                      <p className={`text-xs text-${colorTheme}-300/70 leading-tight`}>
+                        {metric.change?.period || metric.title}
                       </p>
                     </div>
-                    
-                    <Sparkles className="w-2.5 h-2.5 text-primary/30 group-hover:text-primary/60 transition-colors duration-200 flex-shrink-0" />
                   </div>
-                  
-                  {/* Value */}
-                  <div className="text-base md:text-lg font-bold leading-none group-hover:text-gradient transition-all duration-200">
-                    {typeof metric.value === 'string' ? metric.value : metric.value?.toLocaleString() || 'N/A'}
-                  </div>
-                  
-                  {/* Change indicator if present */}
+
+                  {/* Bottom: Trend (if exists) */}
                   {metric.change && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <div className={cn(
-                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
-                        metric.change.type === 'increase' 
-                          ? "bg-success/20 text-success" 
-                          : "bg-destructive/20 text-destructive"
-                      )}>
-                        {metric.change.type === 'increase' ? (
-                          <TrendingUp className="h-2.5 w-2.5" />
-                        ) : (
-                          <TrendingDown className="h-2.5 w-2.5" />
-                        )}
-                        <span>
-                          {metric.change.value}%
-                        </span>
-                      </div>
-                    </div>
+                    <motion.div 
+                      className="flex items-center gap-1 text-xs mt-1 h-[24px]"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 + 0.3 }}
+                    >
+                      {metric.change.type === 'increase' ? (
+                        <TrendingUp className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3 text-red-500" />
+                      )}
+                      <span className={metric.change.type === 'increase' ? 'text-green-500' : 'text-red-500'}>
+                        {metric.change.value > 0 ? '+' : ''}{metric.change.value}%
+                      </span>
+                      {metric.change.period && (
+                        <span className="text-muted-foreground">{metric.change.period}</span>
+                      )}
+                    </motion.div>
                   )}
                 </div>
               </Card>
