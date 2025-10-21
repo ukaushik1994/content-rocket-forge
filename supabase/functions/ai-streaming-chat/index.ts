@@ -150,7 +150,7 @@ async function handleChatRequest(socket: WebSocket, connectionId: string, data: 
     return;
   }
   
-  const { messages, conversationId, enableSearch = false } = data;
+  const { messages, conversationId } = data;
   
   if (!messages || !Array.isArray(messages)) {
     socket.send(JSON.stringify({
@@ -164,15 +164,6 @@ async function handleChatRequest(socket: WebSocket, connectionId: string, data: 
   session.conversationId = conversationId;
   session.lastActivity = Date.now();
   
-  // Show search indicator if enabled
-  if (enableSearch) {
-    socket.send(JSON.stringify({
-      type: 'search_enabled',
-      message: 'Web search active',
-      timestamp: Date.now()
-    }));
-  }
-  
   // Notify start of AI thinking
   socket.send(JSON.stringify({
     type: 'ai_thinking_start',
@@ -180,40 +171,67 @@ async function handleChatRequest(socket: WebSocket, connectionId: string, data: 
   }));
   
   try {
-    // Call enhanced-ai-chat edge function for full features including SERP intelligence
-    const { data: aiResponse, error: aiError } = await supabase.functions.invoke('enhanced-ai-chat', {
+    // Get user's active AI provider from database
+    const { data: provider, error: providerError } = await supabase
+      .from('ai_service_providers')
+      .select('provider, api_key, preferred_model, status')
+      .eq('user_id', session.userId)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (providerError || !provider) {
+      throw new Error('No active AI provider configured. Please configure your AI service in Settings.');
+    }
+
+    console.log(`Using AI provider: ${provider.provider} with model: ${provider.preferred_model}`);
+    
+    // Build system prompt for streaming responses
+    const systemPrompt = `You are an intelligent workflow orchestration assistant. You help users create, execute, and manage complex multi-step workflows that integrate multiple solutions and AI capabilities. You can decompose complex tasks into manageable steps, suggest optimal solution integrations, and execute workflows with real-time progress tracking. Focus on being practical, efficient, and solution-aware in your recommendations.
+
+Provide clear, helpful responses that directly address the user's questions and needs.`;
+
+    // Call ai-proxy edge function with user's provider
+    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
       body: {
-        messages,
-        context: {
-          conversationId,
-          userId: session.userId
-        },
-        enableSearch // Pass search flag to enable/disable SERP
+        service: provider.provider,
+        endpoint: 'chat',
+        apiKey: provider.api_key,
+        params: {
+          model: provider.preferred_model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            ...messages,
+          ],
+          temperature: 0.7,
+          max_tokens: 1500,
+          stream: true
+        }
       }
     });
 
-    if (aiError || !aiResponse) {
-      throw new Error(aiError?.message || 'AI request failed');
+    if (aiProxyError || !aiProxyResult?.success) {
+      throw new Error(aiProxyError?.message || aiProxyResult?.error || 'AI request failed');
     }
 
-    const aiMessage = aiResponse.message || aiResponse.content;
-    const actions = aiResponse.actions;
-    const visualData = aiResponse.visualData;
+    const aiMessage = aiProxyResult.data?.choices?.[0]?.message?.content;
 
     if (!aiMessage) {
       throw new Error("No response from AI");
     }
 
-    // Stream the response
-    await streamResponse(socket, aiMessage, session.userId, actions, visualData);
+    // Simulate streaming by sending chunks of the response
+    await streamResponse(socket, aiMessage, session.userId);
     
     // Broadcast to other users in the conversation
     if (conversationId) {
       broadcastToConversation(conversationId, {
         type: 'ai_response_complete',
         content: aiMessage,
-        actions,
-        visualData,
         timestamp: Date.now()
       }, connectionId);
     }
@@ -227,7 +245,7 @@ async function handleChatRequest(socket: WebSocket, connectionId: string, data: 
   }
 }
 
-async function streamResponse(socket: WebSocket, message: string, userId: string, actions?: any[], visualData?: any) {
+async function streamResponse(socket: WebSocket, message: string, userId: string) {
   const words = message.split(' ');
   let currentContent = '';
   
@@ -246,12 +264,10 @@ async function streamResponse(socket: WebSocket, message: string, userId: string
     await new Promise(resolve => setTimeout(resolve, 50));
   }
   
-  // Send completion message with actions and visual data
+  // Send completion message
   socket.send(JSON.stringify({
     type: 'ai_response_complete',
     content: message,
-    actions,
-    visualData,
     timestamp: Date.now()
   }));
 }

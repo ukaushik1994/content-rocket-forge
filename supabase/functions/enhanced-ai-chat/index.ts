@@ -678,9 +678,8 @@ serve(async (req) => {
       });
     }
 
-    const { messages, context, enableSearch = false } = await req.json();
+    const { messages, context } = await req.json();
     console.log("🚀 Processing enhanced AI chat request for user:", user.id);
-    console.log("🔍 Search enabled:", enableSearch);
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Messages array is required" }), {
@@ -777,13 +776,13 @@ serve(async (req) => {
     
     console.log("🧠 Analyzing query for context and SERP opportunities:", userQuery);
     
-    // STEP 1: Detect if query would benefit from SERP data (only if search is enabled)
-    const serpIntelligence = enableSearch ? await analyzeSerpIntent(userQuery) : { shouldTriggerSerp: false, keywords: [], queryType: 'general', priority: 0, suggestedAnalysis: [] };
+    // STEP 1: Detect if query would benefit from SERP data
+    const serpIntelligence = await analyzeSerpIntent(userQuery);
     let serpContext = '';
     let serpData = null;
     
-    if (enableSearch && serpIntelligence.shouldTriggerSerp && serpIntelligence.keywords.length > 0) {
-      console.log("🔍 SERP opportunity detected (search enabled), fetching real-time data:", serpIntelligence);
+    if (serpIntelligence.shouldTriggerSerp && serpIntelligence.keywords.length > 0) {
+      console.log("🔍 SERP opportunity detected, fetching real-time data:", serpIntelligence);
       try {
         const serpResults = await executeSerpAnalysis(serpIntelligence.keywords, serpIntelligence.queryType);
         if (serpResults.length > 0) {

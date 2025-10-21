@@ -2,12 +2,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Mic, MicOff, Search } from 'lucide-react';
+import { Send, Mic, MicOff } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface MessageInputProps {
-  onSendMessage: (message: string, enableSearch?: boolean) => void;
+  onSendMessage: (message: string) => void;
   isLoading: boolean;
   placeholder?: string;
 }
@@ -19,18 +18,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
-  const [isSearchEnabled, setIsSearchEnabled] = useState(() => {
-    // Persist search state in localStorage
-    const saved = localStorage.getItem('ai-chat-search-enabled');
-    return saved ? JSON.parse(saved) : false;
-  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-
-  // Save search state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('ai-chat-search-enabled', JSON.stringify(isSearchEnabled));
-  }, [isSearchEnabled]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -62,7 +51,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
-      onSendMessage(message.trim(), isSearchEnabled);
+      onSendMessage(message.trim());
       setMessage('');
       textareaRef.current?.focus();
     }
@@ -98,51 +87,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="pr-28 min-h-[60px] resize-none bg-background/80 border-white/20 focus:border-primary/40"
+          className="pr-20 min-h-[60px] resize-none bg-background/80 border-white/20 focus:border-primary/40"
           disabled={isLoading}
         />
         
         <div className="absolute bottom-2 right-2 flex gap-2">
-          {/* Search Toggle Button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsSearchEnabled(!isSearchEnabled)}
-                  disabled={isLoading}
-                  className={`p-2 h-8 w-8 transition-all ${
-                    isSearchEnabled 
-                      ? 'text-blue-400 bg-blue-500/10 hover:bg-blue-500/20' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <motion.div
-                    animate={isSearchEnabled ? { 
-                      scale: [1, 1.1, 1],
-                      filter: [
-                        'drop-shadow(0 0 0px rgb(59, 130, 246))',
-                        'drop-shadow(0 0 8px rgb(59, 130, 246))',
-                        'drop-shadow(0 0 0px rgb(59, 130, 246))'
-                      ]
-                    } : { scale: 1 }}
-                    transition={{ duration: 2, repeat: isSearchEnabled ? Infinity : 0 }}
-                  >
-                    <Search className="h-4 w-4" />
-                  </motion.div>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isSearchEnabled ? 'Web search enabled' : 'Enable web search'}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {isSearchEnabled ? 'AI will search the web when needed' : 'Click to enable web search'}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
           {hasVoiceSupport && (
             <Button
               type="button"
@@ -171,17 +120,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           </Button>
         </div>
       </div>
-      
-      {isSearchEnabled && (
-        <motion.div
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 text-xs text-blue-400 px-2"
-        >
-          <Search className="h-3 w-3" />
-          <span>Web search active - AI will search when needed</span>
-        </motion.div>
-      )}
       
       {isListening && (
         <motion.div
