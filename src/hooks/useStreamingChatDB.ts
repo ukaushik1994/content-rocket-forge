@@ -428,7 +428,7 @@ export const useStreamingChatDB = () => {
     }
   }, [user, toast, activeConversationId, saveMessageToDB]);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, enableSearch: boolean = false) => {
     if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
       toast({
         title: "Not connected",
@@ -480,14 +480,15 @@ export const useStreamingChatDB = () => {
     setState(prev => ({ ...prev, messages: [...prev.messages, aiMessage] }));
     currentMessageRef.current = aiMessage;
 
-    // Send chat request via WebSocket
+    // Send chat request via WebSocket with search flag
     const chatRequest = {
       type: 'chat_request',
       messages: [...state.messages, userMessage].map(msg => ({
         role: msg.role,
         content: msg.content
       })),
-      conversationId: activeConversationId
+      conversationId: activeConversationId,
+      enableSearch // Pass search flag to backend
     };
 
     websocketRef.current.send(JSON.stringify(chatRequest));
