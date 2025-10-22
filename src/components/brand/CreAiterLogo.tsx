@@ -88,6 +88,6 @@ export const CreAiterLogo = ({
           </svg>
         </div>
       </div>
-      {showText && <span className={`font-bold bg-gradient-to-r from-[#9b87f5] via-[#FFA3E8] via-[#D946EF] via-[#F97316] via-[#3B82F6] to-[#33C3F0] bg-clip-text text-transparent ${textSizeClasses[size]}`}>Fluxel</span>}
+      {showText && <span className={`font-bold bg-gradient-to-r from-[#9b87f5] via-[#FFA3E8] via-[#D946EF] via-[#F97316] via-[#3B82F6] to-[#33C3F0] bg-clip-text text-transparent ${textSizeClasses[size]}`}>Creaiter</span>}
     </div>;
 };
