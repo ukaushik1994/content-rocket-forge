@@ -10,20 +10,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Plus, 
-  Edit2, 
-  Trash2, 
-  ExternalLink, 
+  Edit2,
+  Trash2,
   Building2,
-  GripVertical,
   Globe,
   FileText,
   Users,
   Target,
-  TrendingUp
+  TrendingUp,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyCompetitor, CompetitorResource } from '@/contexts/content-builder/types/company-types';
+import { CompetitorCard } from './CompetitorCard';
 
 const categoryIcons = {
   website: Globe,
@@ -534,97 +534,24 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {competitors.map((competitor) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {competitors.map((competitor, index) => (
               <motion.div
                 key={competitor.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.3, 
+                  delay: index * 0.05,
+                  ease: "easeOut"
+                }}
+                whileHover={{ y: -4 }}
               >
-                <Card className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                        <Building2 className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{competitor.name}</h4>
-                        {competitor.marketPosition && (
-                          <Badge variant="secondary" className="text-xs">
-                            {competitor.marketPosition}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(competitor)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(competitor.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {competitor.description && (
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {competitor.description}
-                    </p>
-                  )}
-
-                  {competitor.resources.length > 0 && (
-                    <div className="mb-3">
-                      <Label className="text-xs">Resources</Label>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {competitor.resources.slice(0, 3).map((resource, index) => {
-                          const Icon = categoryIcons[resource.category];
-                          return (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              <Icon className="h-3 w-3 mr-1" />
-                              {resource.title}
-                            </Badge>
-                          );
-                        })}
-                        {competitor.resources.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{competitor.resources.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    {competitor.strengths.length > 0 && (
-                      <div>
-                        <Label className="text-xs text-green-600">Strengths</Label>
-                        <p className="text-muted-foreground">
-                          {competitor.strengths.slice(0, 2).join(', ')}
-                          {competitor.strengths.length > 2 && '...'}
-                        </p>
-                      </div>
-                    )}
-                    {competitor.weaknesses.length > 0 && (
-                      <div>
-                        <Label className="text-xs text-red-600">Weaknesses</Label>
-                        <p className="text-muted-foreground">
-                          {competitor.weaknesses.slice(0, 2).join(', ')}
-                          {competitor.weaknesses.length > 2 && '...'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </Card>
+                <CompetitorCard
+                  competitor={competitor}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
               </motion.div>
             ))}
           </div>
