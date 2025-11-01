@@ -23,7 +23,6 @@ import { useConsolidatedFilters } from '@/hooks/useConsolidatedFilters';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
 import { SolutionSelectionModal } from './SolutionSelectionModal';
-import { ContentPagination } from '@/components/content/repository/Pagination';
 
 import { supabase } from '@/integrations/supabase/client';
 import { contentCompletionTracking } from '@/services/contentCompletionTracking';
@@ -742,20 +741,61 @@ export const ContentStrategyEngine = ({
             
             {/* Pagination Controls */}
             {filteredProposals.length > ITEMS_PER_PAGE && (
-              <div className="mt-8 border-t border-white/10 pt-6">
+              <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-6">
                 {/* Info Text */}
-                <div className="text-sm text-muted-foreground text-center mb-4">
+                <div className="text-sm text-muted-foreground">
                   Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to{' '}
                   {Math.min(currentPage * ITEMS_PER_PAGE, filteredProposals.length)} of{' '}
                   {filteredProposals.length} proposals
                 </div>
 
-                {/* Pagination Component */}
-                <ContentPagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
+                {/* Navigation Buttons */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={!hasPreviousPage}
+                    className="gap-2"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Previous
+                  </Button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`min-w-[40px] ${
+                          currentPage === pageNum 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'hover:bg-white/10'
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={!hasNextPage}
+                    className="gap-2"
+                  >
+                    Next
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Button>
+                </div>
               </div>
             )}
           </div>
