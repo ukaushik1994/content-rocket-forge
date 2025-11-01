@@ -94,7 +94,7 @@ export const SolutionSelectionModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <GlassCard className="border-0 shadow-none">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-center">
@@ -102,34 +102,39 @@ export const SolutionSelectionModal = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-6">
+          <div className="py-8 px-6">
             {isLoading ? (
-              <div className="flex justify-center py-8">
+              <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : solutions.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-sm">No solutions found</p>
+                <p className="text-xs text-muted-foreground/70 mt-2">Add solutions to generate proposals</p>
               </div>
             ) : (
               <TooltipProvider>
-                <ScrollArea className="max-h-[300px]">
-                  <div className="flex flex-wrap gap-4 justify-center px-2">
-                    {solutions.map((solution) => (
+                <div className="w-full overflow-x-auto">
+                  <div className="flex flex-nowrap gap-6 pb-2 px-1">
+                    {solutions.map((solution, index) => (
                       <motion.div
                         key={solution.id}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        whileHover={{ scale: 1.08 }}
                       >
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div
-                              className={`relative cursor-pointer transition-all duration-200 ${
+                              className={`relative cursor-pointer transition-all duration-300 rounded-full flex-shrink-0 ${
                                 selectedIds.includes(solution.id)
-                                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' 
-                                  : 'hover:ring-2 hover:ring-primary/50'
+                                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/50'
+                                  : 'hover:ring-2 hover:ring-primary/50 hover:shadow-md'
                               }`}
                               onClick={() => toggleSolution(solution.id)}
                             >
-                              <Avatar className="h-16 w-16 rounded-full border-2 border-border/50 transition-colors">
+                              <Avatar className="h-20 w-20 rounded-full border-2 border-border/50 transition-all duration-300">
                                 {solution.logoUrl ? (
                                   <AvatarImage 
                                     src={solution.logoUrl} 
@@ -146,18 +151,22 @@ export const SolutionSelectionModal = ({
                               <AnimatePresence>
                                 {selectedIds.includes(solution.id) && (
                                   <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    exit={{ scale: 0 }}
-                                    className="absolute -top-1 -right-1 h-6 w-6 bg-primary rounded-full flex items-center justify-center border-2 border-background"
+                                    initial={{ scale: 0, rotate: -180 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    exit={{ scale: 0, rotate: 180 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="absolute -top-1 -right-1 h-7 w-7 bg-primary rounded-full flex items-center justify-center border-2 border-background shadow-md"
                                   >
-                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                    <Check className="h-4 w-4 text-primary-foreground" />
                                   </motion.div>
                                 )}
                               </AnimatePresence>
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom" className="bg-popover border border-border">
+                          <TooltipContent 
+                            side="bottom"
+                            className="bg-popover/95 backdrop-blur-sm border border-border shadow-lg"
+                          >
                             <div className="text-center max-w-48">
                               <p className="font-medium text-foreground">{solution.name}</p>
                               <p className="text-xs text-muted-foreground mt-1">{solution.category}</p>
@@ -167,12 +176,12 @@ export const SolutionSelectionModal = ({
                       </motion.div>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               </TooltipProvider>
             )}
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-2 border-t border-border/50 pt-6">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
@@ -184,7 +193,7 @@ export const SolutionSelectionModal = ({
             <Button
               onClick={handleConfirm}
               disabled={selectedIds.length === 0 || isGenerating}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto min-w-[140px]"
             >
               {isGenerating ? (
                 <>
@@ -192,7 +201,7 @@ export const SolutionSelectionModal = ({
                   Generating...
                 </>
               ) : (
-                `Generate for ${selectedIds.length} solution${selectedIds.length !== 1 ? 's' : ''}`
+                `Generate ${selectedIds.length > 0 ? `(${selectedIds.length})` : ''}`
               )}
             </Button>
           </DialogFooter>
