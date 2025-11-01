@@ -740,7 +740,7 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 
 // New AI-first strategy generation (no clusters)
 async function generateAIStrategy(supabase: any, supabaseAdmin: any, payload: any) {
-  const { user_id, goals = {}, location = 'United States', excludeKeywords = [], api_keys = {} } = payload;
+  const { user_id, goals = {}, location = 'United States', excludeKeywords = [], selectedSolutionIds = [], api_keys = {} } = payload;
 
   // ✅ FIX 2.1: Validate SERP API key early
   if (!api_keys?.serp) {
@@ -759,11 +759,27 @@ async function generateAIStrategy(supabase: any, supabaseAdmin: any, payload: an
   }
 
   // 1) Fetch minimal user context
+  console.log(`🔍 Fetching user context${selectedSolutionIds.length > 0 ? ` (filtering to ${selectedSolutionIds.length} selected solutions)` : ''}`);
+  
+  const solutionsQuery = supabase
+    .from('solutions')
+    .select('*')
+    .eq('user_id', user_id);
+  
+  // Filter solutions if specific IDs are provided
+  if (selectedSolutionIds.length > 0) {
+    solutionsQuery.in('id', selectedSolutionIds);
+  } else {
+    solutionsQuery.limit(20);
+  }
+  
   const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
-    supabase.from('solutions').select('*').eq('user_id', user_id).limit(20),
+    solutionsQuery,
     supabase.from('company_info').select('*').eq('user_id', user_id).maybeSingle(),
     supabase.from('content_items').select('id,title,metadata').eq('user_id', user_id).order('updated_at', { ascending: false }).limit(20),
   ]);
+
+  console.log(`✅ Context loaded: ${solutions?.length || 0} solutions, company info: ${!!companyInfo}`);
 
   // 2) Ask AI (via unified proxy) to propose untapped keywords
   console.log('🤖 Fetching active AI provider for keyword generation...');
@@ -818,7 +834,7 @@ Return ONLY a JSON object with this exact structure: {"keywords": [{"keyword": "
           },
           {
             role: 'user',
-            content: `Analyze this company context and generate 12 strategic, high-intent keywords for content opportunities.${excludeKeywords.length > 0 ? `\n\n⚠️ CRITICAL: EXCLUDE these previously used keywords and any variations: ${excludeKeywords.join(', ')}` : ''}
+            content: `Analyze this company context and generate 12 strategic, high-intent keywords for content opportunities.${excludeKeywords.length > 0 ? `\n\n⚠️ CRITICAL: EXCLUDE these previously used keywords and any variations: ${excludeKeywords.join(', ')}` : ''}${selectedSolutionIds.length > 0 ? `\n\n🎯 FOCUS: Generate proposals specifically relevant to these ${selectedSolutionIds.length} selected solution(s). Ensure proposals are distributed across all selected solutions.` : ''}
 
 Company Context: ${JSON.stringify(companyInfo || {})}
 Solutions/Services: ${JSON.stringify(solutions || [])}
@@ -1217,7 +1233,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
       const { data: savedProposal, error: saveError } = await supabaseAdmin
         .from('ai_strategy_proposals')
         .insert({
-          user_id: user.id,
+          user_id: user_id,
           strategy_session_id: strategy_session_id || null,
           title: proposal.title,
           description: proposal.description,
@@ -1226,7 +1242,10 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
           priority_tag: proposal.priority_tag,
           estimated_impressions: proposal.estimated_impressions,
           related_keywords: proposal.keywords.map((k: any) => k.keyword),
-          proposal_data: proposal,
+          proposal_data: {
+            ...proposal,
+            solution_ids: selectedSolutionIds.length > 0 ? selectedSolutionIds : null
+          },
           serp_data: proposal.serp_data || {}
         })
         .select()
@@ -1248,7 +1267,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
           const { error: kwError } = await supabaseAdmin
             .from('unified_keywords')
             .upsert({
-              user_id: user.id,
+              user_id: user_id,
               keyword: kw.keyword,
               search_volume: serpData?.search_volume || 0,
               difficulty: serpData?.keyword_difficulty || 0,

@@ -22,6 +22,7 @@ import { ProposalRowView } from './ProposalRowView';
 import { useConsolidatedFilters } from '@/hooks/useConsolidatedFilters';
 import { proposalKeywordSync } from '@/services/proposalKeywordSync';
 import { smartCalendarScheduling } from '@/services/smartCalendarScheduling';
+import { SolutionSelectionModal } from './SolutionSelectionModal';
 
 import { supabase } from '@/integrations/supabase/client';
 import { contentCompletionTracking } from '@/services/contentCompletionTracking';
@@ -98,6 +99,10 @@ export const ContentStrategyEngine = ({
   // Strategy Builder Dialog state
   const [showBuilderDialog, setShowBuilderDialog] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
+
+  // Solution selection modal state
+  const [showSolutionModal, setShowSolutionModal] = useState(false);
+  const [selectedSolutionIds, setSelectedSolutionIds] = useState<string[]>([]);
 
   // Track newly generated proposals with timestamps
   const [newProposalIds, setNewProposalIds] = useState<Set<string>>(new Set());
@@ -237,21 +242,41 @@ export const ContentStrategyEngine = ({
     }
   };
 
-  const handleGenerateMore = async () => {
-    if (!goals?.monthlyTraffic) {
+  const checkSolutionsBeforeGenerate = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const { data: solutions } = await supabase
+      .from('solutions')
+      .select('id')
+      .eq('user_id', user.id);
+    
+    if (!solutions || solutions.length === 0) {
       toast({
-        title: "Set Your Traffic Goal First",
-        description: "Please set your monthly traffic goal before generating proposals.",
+        title: "No Solutions Found",
+        description: "Please add at least one solution before generating proposals.",
         variant: "destructive"
       });
       return;
     }
+    
+    if (solutions.length === 1) {
+      // Auto-select single solution and generate directly
+      setSelectedSolutionIds([solutions[0].id]);
+      await handleSolutionSelectionComplete([solutions[0].id]);
+    } else {
+      // Show modal for multiple solutions
+      setShowSolutionModal(true);
+    }
+  };
 
+  const handleSolutionSelectionComplete = async (solutionIds: string[]) => {
     try {
       setGenerating(true);
+      setShowSolutionModal(false);
       startProgress();
       
-      // Use the same edge function as "Generate AI Proposals"
+      // Use the same edge function as "Generate AI Proposals" with selected solutions
       const result = await contentStrategyService.generateAIStrategy({
         goals: {
           monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
@@ -260,7 +285,8 @@ export const ContentStrategyEngine = ({
           mainKeyword: goals.mainKeyword || ''
         },
         location: 'United States',
-        excludeKeywords: []
+        excludeKeywords: [],
+        selectedSolutionIds: solutionIds
       });
 
       // Reload historical proposals to get the newly saved proposals
@@ -282,7 +308,9 @@ export const ContentStrategyEngine = ({
       
       toast({
         title: `${newProposals.length} New Proposals Generated`,
-        description: result.message
+        description: solutionIds.length > 1 
+          ? `Generated for ${solutionIds.length} selected solutions` 
+          : result.message
       });
 
       // Remove "new" highlighting after 10 seconds
@@ -301,6 +329,19 @@ export const ContentStrategyEngine = ({
       setGenerating(false);
       setShowGenModal(false);
     }
+  };
+
+  const handleGenerateMore = async () => {
+    if (!goals?.monthlyTraffic) {
+      toast({
+        title: "Set Your Traffic Goal First",
+        description: "Please set your monthly traffic goal before generating proposals.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await checkSolutionsBeforeGenerate();
   };
 
   // Generation modal state
@@ -787,6 +828,12 @@ export const ContentStrategyEngine = ({
           }
         }}
         proposal={selectedProposal}
+      />
+      <SolutionSelectionModal
+        open={showSolutionModal}
+        onOpenChange={setShowSolutionModal}
+        onConfirm={handleSolutionSelectionComplete}
+        isGenerating={generating}
       />
     </div>
   );
