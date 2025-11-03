@@ -14,7 +14,8 @@ import {
   Target,
   TrendingUp,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,7 @@ interface CompetitorCardProps {
   competitor: CompanyCompetitor;
   onEdit: (competitor: CompanyCompetitor) => void;
   onDelete: (id: string) => void;
+  onViewProfile: (competitor: CompanyCompetitor) => void;
   isAutoFilling?: boolean;
 }
 
@@ -47,7 +49,7 @@ const getResourceColor = (category: string): string => {
   return colors[category as keyof typeof colors] || colors.other;
 };
 
-export function CompetitorCard({ competitor, onEdit, onDelete, isAutoFilling = false }: CompetitorCardProps) {
+export function CompetitorCard({ competitor, onEdit, onDelete, onViewProfile, isAutoFilling = false }: CompetitorCardProps) {
   return (
     <Card className={cn(
       "group overflow-hidden transition-all duration-300 hover:shadow-neon border-border bg-card/60 backdrop-blur-xl relative",
@@ -92,6 +94,15 @@ export function CompetitorCard({ competitor, onEdit, onDelete, isAutoFilling = f
 
         {/* Action buttons - show on hover */}
         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-primary/10"
+            onClick={() => onViewProfile(competitor)}
+            title="View Profile"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

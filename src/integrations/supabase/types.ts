@@ -1361,6 +1361,107 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_solutions: {
+        Row: {
+          benefits: Json | null
+          case_studies: Json | null
+          category: string | null
+          competitor_id: string
+          created_at: string | null
+          discovery_source: string | null
+          external_url: string | null
+          features: Json | null
+          id: string
+          integrations: Json | null
+          key_differentiators: Json | null
+          last_analyzed_at: string | null
+          logo_url: string | null
+          long_description: string | null
+          market_data: Json | null
+          name: string
+          pain_points: Json | null
+          positioning: string | null
+          pricing: Json | null
+          resources: Json | null
+          short_description: string | null
+          tags: Json | null
+          target_audience: Json | null
+          technical_specs: Json | null
+          unique_value_propositions: Json | null
+          updated_at: string | null
+          use_cases: Json | null
+          user_id: string
+        }
+        Insert: {
+          benefits?: Json | null
+          case_studies?: Json | null
+          category?: string | null
+          competitor_id: string
+          created_at?: string | null
+          discovery_source?: string | null
+          external_url?: string | null
+          features?: Json | null
+          id?: string
+          integrations?: Json | null
+          key_differentiators?: Json | null
+          last_analyzed_at?: string | null
+          logo_url?: string | null
+          long_description?: string | null
+          market_data?: Json | null
+          name: string
+          pain_points?: Json | null
+          positioning?: string | null
+          pricing?: Json | null
+          resources?: Json | null
+          short_description?: string | null
+          tags?: Json | null
+          target_audience?: Json | null
+          technical_specs?: Json | null
+          unique_value_propositions?: Json | null
+          updated_at?: string | null
+          use_cases?: Json | null
+          user_id: string
+        }
+        Update: {
+          benefits?: Json | null
+          case_studies?: Json | null
+          category?: string | null
+          competitor_id?: string
+          created_at?: string | null
+          discovery_source?: string | null
+          external_url?: string | null
+          features?: Json | null
+          id?: string
+          integrations?: Json | null
+          key_differentiators?: Json | null
+          last_analyzed_at?: string | null
+          logo_url?: string | null
+          long_description?: string | null
+          market_data?: Json | null
+          name?: string
+          pain_points?: Json | null
+          positioning?: string | null
+          pricing?: Json | null
+          resources?: Json | null
+          short_description?: string | null
+          tags?: Json | null
+          target_audience?: Json | null
+          technical_specs?: Json | null
+          unique_value_propositions?: Json | null
+          updated_at?: string | null
+          use_cases?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_solutions_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "company_competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_activity_log: {
         Row: {
           action: string

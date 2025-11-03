@@ -26,6 +26,7 @@ import { CompanyCompetitor, CompetitorResource } from '@/contexts/content-builde
 import { CompetitorCard } from './CompetitorCard';
 import { AddCompetitorDialog } from './AddCompetitorDialog';
 import { ReviewCompetitorDialog } from './ReviewCompetitorDialog';
+import { CompetitorProfileDialog } from './CompetitorProfileDialog';
 import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
 
 const categoryIcons = {
@@ -58,6 +59,8 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [selectedCompetitor, setSelectedCompetitor] = useState<CompanyCompetitor | null>(null);
   
   const [editingCompetitor, setEditingCompetitor] = useState<CompanyCompetitor | null>(null);
   const [analysisResult, setAnalysisResult] = useState<CompetitorAutoFillPayload | null>(null);
@@ -292,6 +295,11 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
       notes: competitor.notes || ''
     });
     setEditDialogOpen(true);
+  };
+
+  const handleViewProfile = (competitor: CompanyCompetitor) => {
+    setSelectedCompetitor(competitor);
+    setProfileDialogOpen(true);
   };
 
   const handleDelete = async (competitorId: string) => {
@@ -609,6 +617,15 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
               website={pendingCompetitor.website}
             />
           )}
+
+          {/* Profile Dialog */}
+          {selectedCompetitor && (
+            <CompetitorProfileDialog
+              competitor={selectedCompetitor}
+              open={profileDialogOpen}
+              onOpenChange={setProfileDialogOpen}
+            />
+          )}
         </div>
 
         {competitors.length === 0 ? (
@@ -643,6 +660,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
                   competitor={competitor}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  onViewProfile={handleViewProfile}
                   isAutoFilling={false}
                 />
               </motion.div>

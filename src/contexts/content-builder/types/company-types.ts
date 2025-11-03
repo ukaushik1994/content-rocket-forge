@@ -61,3 +61,34 @@ export interface CompanyCompetitor {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CompetitorSolution {
+  id: string;
+  competitorId: string;
+  userId: string;
+  name: string;
+  category: string | null;
+  shortDescription: string | null;
+  longDescription: string | null;
+  externalUrl: string | null;
+  logoUrl: string | null;
+  positioning: string | null;
+  uniqueValuePropositions: any[];
+  keyDifferentiators: any[];
+  features: any[];
+  useCases: any[];
+  painPoints: any[];
+  targetAudience: any[];
+  benefits: any[];
+  pricing: any;
+  technicalSpecs: any;
+  integrations: any[];
+  caseStudies: any[];
+  resources: any[];
+  tags: any[];
+  marketData: any;
+  discoverySource: string | null;
+  lastAnalyzedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
