@@ -13,6 +13,7 @@ import { HeroSection } from '../HeroSection';
 import { motion } from 'framer-motion';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
+import { MultiSolutionPickerDialog } from './MultiSolutionPickerDialog';
 
 interface SolutionManagerProps {
   searchTerm: string;
@@ -32,6 +33,10 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
   const [prefilledData, setPrefilledData] = useState<Partial<EnhancedSolution> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Multi-solution picker state
+  const [detectedSolutions, setDetectedSolutions] = useState<Partial<EnhancedSolution>[]>([]);
+  const [showSolutionPicker, setShowSolutionPicker] = useState(false);
 
   // AI Autofill overlay state
   const [isAutofillOpen, setIsAutofillOpen] = useState(false);
@@ -386,6 +391,40 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         onCancel={() => {
           abortController?.abort();
           setIsAutofillOpen(false);
+        }}
+      />
+
+      {/* Multi-Solution Picker Dialog */}
+      <MultiSolutionPickerDialog
+        open={showSolutionPicker}
+        onOpenChange={setShowSolutionPicker}
+        solutions={detectedSolutions}
+        onSelectSolutions={async (selected) => {
+          setShowSolutionPicker(false);
+          
+          // Create solutions one by one
+          for (const solutionData of selected) {
+            // Ensure required fields are present
+            if (!solutionData.name) {
+              toast.error('Solution name is required');
+              continue;
+            }
+            
+            try {
+              const result = await solutionService.createSolution(solutionData as any);
+              if (!result.success) {
+                toast.error(`Failed to create ${solutionData.name}`);
+              }
+            } catch (error) {
+              console.error(`Error creating ${solutionData.name}:`, error);
+              toast.error(`Failed to create ${solutionData.name}`);
+            }
+          }
+          
+          // Refresh the list after all creations
+          await fetchSolutions({ background: true });
+          toast.success(`Successfully added ${selected.length} solution${selected.length > 1 ? 's' : ''}`);
+          setDetectedSolutions([]);
         }}
       />
     </motion.div>

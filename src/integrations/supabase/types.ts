@@ -4609,6 +4609,39 @@ export type Database = {
         }
         Relationships: []
       }
+      solution_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          diagnostics: Json | null
+          domain: string
+          id: string
+          last_crawled_at: string | null
+          solutions_data: Json
+          url_count: number | null
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          diagnostics?: Json | null
+          domain: string
+          id?: string
+          last_crawled_at?: string | null
+          solutions_data: Json
+          url_count?: number | null
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          diagnostics?: Json | null
+          domain?: string
+          id?: string
+          last_crawled_at?: string | null
+          solutions_data?: Json
+          url_count?: number | null
+        }
+        Relationships: []
+      }
       solution_personas: {
         Row: {
           created_at: string

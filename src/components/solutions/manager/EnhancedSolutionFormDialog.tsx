@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useSimpleFormState } from '@/hooks/useSimpleFormState';
+import { supabase } from '@/integrations/supabase/client';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { FeaturesTab } from './tabs/FeaturesTab';
 import { ResourcesTab } from './tabs/ResourcesTab';
@@ -64,6 +65,19 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   // AI service status and cancellation
   const { isEnabled, hasProviders, activeProviders, refreshStatus } = useAIServiceStatus();
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  
+  // Get userId from Supabase session
+  const [userId, setUserId] = useState<string>('');
+  
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
+    };
+    getUserId();
+  }, []);
   
   // Use simple form state
   const {
@@ -453,6 +467,55 @@ useEffect(() => {
         <div className="flex items-center justify-between mb-2">
           <div />
           <div className="flex items-center gap-2">
+            {formData.externalUrl && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!formData.externalUrl) {
+                    toast.error('Please enter a website URL first');
+                    return;
+                  }
+                  
+                  try {
+                    setIsAIAutofillOpen(true);
+                    setAiProgress(10);
+                    setAiStage('Analyzing website...');
+                    
+                    const { autoFillFromWebsite } = await import('@/services/solutionIntelService');
+                    const result = await autoFillFromWebsite(formData.externalUrl, userId);
+                    
+                    if (!result) {
+                      throw new Error('Failed to analyze website');
+                    }
+                    
+                    setAiProgress(100);
+                    
+                    if (result.multipleDetected && result.solutions.length > 1) {
+                      // Let parent handle multi-solution picker
+                      toast.info(`Found ${result.solutions.length} solutions. Opening selection dialog...`);
+                      // This would require passing a callback prop or using context
+                      // For now, auto-fill with first solution
+                      updateFormData({ ...formData, ...result.solutions[0] });
+                      toast.success('Auto-filled with first solution. Check website for more products.');
+                    } else if (result.solutions.length === 1) {
+                      updateFormData({ ...formData, ...result.solutions[0] });
+                      toast.success('Solution auto-filled successfully!');
+                    } else {
+                      toast.warning('No solutions detected on this website');
+                    }
+                  } catch (error: any) {
+                    console.error('Auto-fill error:', error);
+                    toast.error(error.message || 'Failed to auto-fill from website');
+                  } finally {
+                    setIsAIAutofillOpen(false);
+                  }
+                }}
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Auto-fill from Website
+              </Button>
+            )}
             <Button
               onClick={async () => {
                 try {
