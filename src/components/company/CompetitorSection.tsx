@@ -53,6 +53,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompetitor, setEditingCompetitor] = useState<CompanyCompetitor | null>(null);
+  const [autoFillInProgress, setAutoFillInProgress] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   // Form state
@@ -204,9 +205,19 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
 
       // Auto-fill from website (fire-and-forget)
       if (competitorData.website && competitorData.website.trim()) {
+        const competitorName = competitorData.name;
+        
+        // Mark as in-progress
+        setAutoFillInProgress(prev => new Set(prev).add(competitorName));
+        
+        toast({
+          title: "Auto-filling competitor data...",
+          description: "Analyzing website, this may take 10-30 seconds",
+        });
+        
         setTimeout(async () => {
           try {
-            console.log('🚀 Starting auto-fill for:', competitorData.name);
+            console.log('🚀 Starting auto-fill for:', competitorName);
             const result = await competitorIntelService.autoFillFromWebsite(
               competitorData.website,
               userId
@@ -224,15 +235,38 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
                   notes: result.notes
                 })
                 .eq('user_id', userId)
-                .eq('name', competitorData.name);
+                .eq('name', competitorName);
               
               if (!updateError) {
                 console.log('✅ Auto-fill applied successfully');
                 loadCompetitors();
+                
+                toast({
+                  title: "✅ Auto-fill complete!",
+                  description: `${competitorName} profile updated with competitive intelligence`,
+                });
               }
+            } else {
+              toast({
+                title: "Auto-fill incomplete",
+                description: "Could not analyze website automatically. You can fill details manually.",
+                variant: "destructive"
+              });
             }
           } catch (e) {
             console.warn('⚠️ Auto-fill skipped:', e);
+            toast({
+              title: "Auto-fill failed",
+              description: "Analysis couldn't complete. Manual editing available.",
+              variant: "destructive"
+            });
+          } finally {
+            // Remove from in-progress
+            setAutoFillInProgress(prev => {
+              const next = new Set(prev);
+              next.delete(competitorName);
+              return next;
+            });
           }
         }, 500);
       }
@@ -587,6 +621,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
                   competitor={competitor}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  isAutoFilling={autoFillInProgress.has(competitor.name)}
                 />
               </motion.div>
             ))}

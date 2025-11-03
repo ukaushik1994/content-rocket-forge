@@ -12,7 +12,9 @@ import {
   Users,
   FileText,
   Target,
-  TrendingUp
+  TrendingUp,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
 import { cn } from '@/lib/utils';
@@ -30,6 +32,7 @@ interface CompetitorCardProps {
   competitor: CompanyCompetitor;
   onEdit: (competitor: CompanyCompetitor) => void;
   onDelete: (id: string) => void;
+  isAutoFilling?: boolean;
 }
 
 const getResourceColor = (category: string): string => {
@@ -44,9 +47,21 @@ const getResourceColor = (category: string): string => {
   return colors[category as keyof typeof colors] || colors.other;
 };
 
-export function CompetitorCard({ competitor, onEdit, onDelete }: CompetitorCardProps) {
+export function CompetitorCard({ competitor, onEdit, onDelete, isAutoFilling = false }: CompetitorCardProps) {
   return (
-    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-neon border-border bg-card/60 backdrop-blur-xl">
+    <Card className={cn(
+      "group overflow-hidden transition-all duration-300 hover:shadow-neon border-border bg-card/60 backdrop-blur-xl relative",
+      isAutoFilling && "animate-pulse border-primary/50"
+    )}>
+      {/* Auto-fill loading badge */}
+      {isAutoFilling && (
+        <div className="absolute top-2 left-2 z-10">
+          <Badge className="bg-primary/20 text-primary border-primary/30 animate-pulse">
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            Analyzing...
+          </Badge>
+        </div>
+      )}
       {/* Header with gradient - neon-blue theme for competitors */}
       <CardHeader className="relative bg-gradient-to-br from-neon-blue/20 via-transparent to-transparent pb-4">
         <div className="flex items-start space-x-3">
@@ -203,11 +218,25 @@ export function CompetitorCard({ competitor, onEdit, onDelete }: CompetitorCardP
         <span className="text-xs text-muted-foreground">
           {competitor.resources.length} resource{competitor.resources.length !== 1 ? 's' : ''} tracked
         </span>
-        {competitor.notes && (
-          <Badge variant="secondary" className="text-xs">
-            Has Notes
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {competitor.notes && (
+            <Badge variant="secondary" className="text-xs">
+              Has Notes
+            </Badge>
+          )}
+          {/* Manual retry button when no description but has website */}
+          {!competitor.description && competitor.website && !isAutoFilling && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(competitor)}
+              className="h-7 text-xs"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Auto-fill
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

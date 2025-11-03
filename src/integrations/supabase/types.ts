@@ -1325,6 +1325,42 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          diagnostics: Json | null
+          domain: string
+          etag: string | null
+          id: string
+          last_crawled_at: string | null
+          profile_data: Json
+          url_count: number | null
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          diagnostics?: Json | null
+          domain: string
+          etag?: string | null
+          id?: string
+          last_crawled_at?: string | null
+          profile_data: Json
+          url_count?: number | null
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          diagnostics?: Json | null
+          domain?: string
+          etag?: string | null
+          id?: string
+          last_crawled_at?: string | null
+          profile_data?: Json
+          url_count?: number | null
+        }
+        Relationships: []
+      }
       content_activity_log: {
         Row: {
           action: string
@@ -6245,30 +6281,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      binary_quantize: {
-        Args: { "": string } | { "": unknown }
-        Returns: unknown
-      }
-      clean_expired_serp_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_keyword_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_notifications: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_serp_history: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_serp_monitoring: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      clean_expired_serp_cache: { Args: never; Returns: undefined }
+      cleanup_expired_keyword_cache: { Args: never; Returns: undefined }
+      cleanup_expired_notifications: { Args: never; Returns: undefined }
+      cleanup_expired_serp_history: { Args: never; Returns: undefined }
+      cleanup_old_serp_monitoring: { Args: never; Returns: undefined }
       get_conversation_messages: {
         Args: { conv_id: string; limit_count?: number; offset_count?: number }
         Returns: {
@@ -6292,10 +6309,7 @@ export type Database = {
         Args: { p_start_date: string; p_user_id: string }
         Returns: number
       }
-      get_user_role: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      get_user_role: { Args: { user_id: string }; Returns: string }
       group_notifications: {
         Args: {
           p_module: string
@@ -6305,38 +6319,6 @@ export type Database = {
         }
         Returns: string
       }
-      halfvec_avg: {
-        Args: { "": number[] }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
-      hnsw_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
       increment_topic_frequency: {
         Args: { p_topic_name: string; p_user_id: string }
         Returns: undefined
@@ -6345,30 +6327,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
-      ivfflat_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      l2_norm: {
-        Args: { "": unknown } | { "": unknown }
-        Returns: number
-      }
-      l2_normalize: {
-        Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: unknown
-      }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
       log_optimization_activity: {
         Args: {
           p_content_id: string
@@ -6419,26 +6378,8 @@ export type Database = {
           topic_name: string
         }[]
       }
-      migrate_repurposed_content: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      refresh_keyword_usage_counts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      sparsevec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
+      migrate_repurposed_content: { Args: never; Returns: undefined }
+      refresh_keyword_usage_counts: { Args: never; Returns: undefined }
       update_message_status: {
         Args: { message_id: string; new_status: string; user_id?: string }
         Returns: undefined
@@ -6451,30 +6392,6 @@ export type Database = {
           p_user_feedback: string
         }
         Returns: boolean
-      }
-      vector_avg: {
-        Args: { "": number[] }
-        Returns: string
-      }
-      vector_dims: {
-        Args: { "": string } | { "": unknown }
-        Returns: number
-      }
-      vector_norm: {
-        Args: { "": string }
-        Returns: number
-      }
-      vector_out: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: { "": string }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
       }
     }
     Enums: {
