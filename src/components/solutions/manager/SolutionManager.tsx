@@ -38,6 +38,11 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const [detectedSolutions, setDetectedSolutions] = useState<Partial<EnhancedSolution>[]>([]);
   const [showSolutionPicker, setShowSolutionPicker] = useState(false);
 
+  const handleMultipleSolutionsDetected = (solutions: Partial<EnhancedSolution>[]) => {
+    setDetectedSolutions(solutions);
+    setShowSolutionPicker(true);
+  };
+
   // AI Autofill overlay state
   const [isAutofillOpen, setIsAutofillOpen] = useState(false);
   const [autofillProgress, setAutofillProgress] = useState(0);
@@ -372,6 +377,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         solution={selectedSolution}
         prefilledData={prefilledData || undefined}
         isSubmitting={isSubmitting}
+        onMultipleSolutionsDetected={handleMultipleSolutionsDetected}
       />
       
       {/* Delete Confirmation Dialog */}

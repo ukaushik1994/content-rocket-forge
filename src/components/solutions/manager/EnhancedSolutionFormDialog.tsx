@@ -39,6 +39,7 @@ interface EnhancedSolutionFormDialogProps {
   solution?: EnhancedSolution | null;
   prefilledData?: Partial<EnhancedSolution>;
   isSubmitting?: boolean;
+  onMultipleSolutionsDetected?: (solutions: Partial<EnhancedSolution>[]) => void;
 }
 
 export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProps> = ({
@@ -47,7 +48,8 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   onSubmit,
   solution,
   prefilledData,
-  isSubmitting: parentIsSubmitting = false
+  isSubmitting: parentIsSubmitting = false,
+  onMultipleSolutionsDetected
 }) => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -477,6 +479,14 @@ useEffect(() => {
                     return;
                   }
                   
+                  // Validate URL format
+                  try {
+                    new URL(formData.externalUrl);
+                  } catch {
+                    toast.error('Please enter a valid website URL');
+                    return;
+                  }
+                  
                   try {
                     setIsAIAutofillOpen(true);
                     setAiProgress(10);
@@ -491,29 +501,54 @@ useEffect(() => {
                     
                     setAiProgress(100);
                     
+                    // Handle multiple solutions detected
                     if (result.multipleDetected && result.solutions.length > 1) {
-                      // Let parent handle multi-solution picker
-                      toast.info(`Found ${result.solutions.length} solutions. Opening selection dialog...`);
-                      // This would require passing a callback prop or using context
-                      // For now, auto-fill with first solution
-                      updateFormData({ ...formData, ...result.solutions[0] });
-                      toast.success('Auto-filled with first solution. Check website for more products.');
-                    } else if (result.solutions.length === 1) {
-                      updateFormData({ ...formData, ...result.solutions[0] });
-                      toast.success('Solution auto-filled successfully!');
+                      toast.info(`${result.solutions.length} solutions detected! Select which to add...`);
+                      onOpenChange(false); // Close form dialog
+                      onMultipleSolutionsDetected?.(result.solutions); // Trigger picker in parent
+                      return;
+                    }
+                    
+                    // Single solution: auto-fill the form
+                    if (result.solutions.length > 0) {
+                      const solutionData = result.solutions[0];
+                      updateFormData({ ...formData, ...solutionData });
+                      
+                      const cacheMsg = result.diagnostics.cache_hit ? ' (from cache)' : '';
+                      toast.success(`Solution data auto-filled successfully!${cacheMsg}`);
                     } else {
-                      toast.warning('No solutions detected on this website');
+                      toast.warning('No solution data detected on this website');
                     }
                   } catch (error: any) {
                     console.error('Auto-fill error:', error);
-                    toast.error(error.message || 'Failed to auto-fill from website');
+                    
+                    // Specific error handling
+                    if (error.message?.includes('rate limit')) {
+                      toast.error('Rate limit exceeded. Please try again in a moment.');
+                    } else if (error.message?.includes('timeout')) {
+                      toast.error('Request timed out. The website may be too large or slow to respond.');
+                    } else if (error.message?.includes('unreachable')) {
+                      toast.error('Website is unreachable. Please check the URL and try again.');
+                    } else {
+                      toast.error(error.message || 'Failed to auto-fill from website');
+                    }
                   } finally {
                     setIsAIAutofillOpen(false);
                   }
                 }}
+                disabled={isAIAutofillOpen}
               >
-                <Wand2 className="h-4 w-4 mr-2" />
-                Auto-fill from Website
+                {isAIAutofillOpen ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Auto-fill from Website
+                  </>
+                )}
               </Button>
             )}
             <Button
