@@ -31,7 +31,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, website, maxPages = 30, detectMultiple = true, recrawl = false } = await req.json();
+    const { userId, website, maxPages = 20, detectMultiple = true, recrawl = false } = await req.json();
 
     if (!userId || !website) {
       return new Response(
@@ -109,13 +109,8 @@ serve(async (req) => {
         .slice(0, maxPages);
     }
 
-    // Enhance with SERP if needed
-    if (selectedUrls.length < 15) {
-      console.log(`🔍 Enhancing with SERP queries (current URLs: ${selectedUrls.length})`);
-      usedSerp = true;
-      const serpUrls = await enhanceUrlsWithSerp(domain, selectedUrls, maxPages - selectedUrls.length);
-      selectedUrls = [...selectedUrls, ...serpUrls];
-    } else if (selectedUrls.length === 0) {
+    // Fallback to SERP if no sitemap
+    if (selectedUrls.length === 0) {
       console.log('🔍 No sitemap found, using SERP fallback');
       usedSerp = true;
       selectedUrls = await fetchUrlsFromSerp(domain, maxPages);
@@ -134,7 +129,7 @@ serve(async (req) => {
     // AI Analysis: Detect and extract solutions
     const solutions = await analyzeSolutions(domain, pageContents, userId, detectMultiple);
 
-    // Cache the result with enhanced metadata
+    // Cache the result
     await supabase
       .from('solution_cache')
       .upsert({
@@ -144,15 +139,11 @@ serve(async (req) => {
         url_count: pageContents.length,
         solutions_data: solutions,
         diagnostics: {
-          cache_version: '2.0',
-          extraction_depth: 'comprehensive',
-          ai_model_used: 'gemini-2.5-pro',
           used_sitemap: usedSitemap,
           used_serp: usedSerp,
           pages_fetched: pageContents.length,
           products_detected: solutions.length,
-          confidence: solutions.length > 0 ? Math.round(solutions.reduce((acc: number, s: any) => acc + (s.metadata?.completeness || 85), 0) / solutions.length) : 0,
-          pages_analyzed_per_product: solutions.length > 0 ? Math.round(solutions.reduce((acc: number, s: any) => acc + (s.metadata?.pagesAnalyzed || 0), 0) / solutions.length) : 0
+          confidence: solutions.length > 0 ? Math.round(solutions.reduce((acc: number, s: any) => acc + (s.metadata?.completeness || 85), 0) / solutions.length) : 0
         }
       });
 
@@ -162,15 +153,11 @@ serve(async (req) => {
         multipleDetected: solutions.length > 1,
         solutions,
         diagnostics: {
-          cache_version: '2.0',
-          extraction_depth: 'comprehensive',
-          ai_model_used: 'gemini-2.5-pro',
           used_sitemap: usedSitemap,
           used_serp: usedSerp,
           pages_fetched: pageContents.length,
           products_detected: solutions.length,
-          confidence: solutions.length > 0 ? Math.round(solutions.reduce((acc: number, s: any) => acc + (s.metadata?.completeness || 85), 0) / solutions.length) : 0,
-          pages_analyzed_per_product: solutions.length > 0 ? Math.round(solutions.reduce((acc: number, s: any) => acc + (s.metadata?.pagesAnalyzed || 0), 0) / solutions.length) : 0
+          confidence: solutions.length > 0 ? Math.round(solutions.reduce((acc: number, s: any) => acc + (s.metadata?.completeness || 85), 0) / solutions.length) : 0
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -178,32 +165,9 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('❌ Error:', error);
-    
-    // Detailed error handling
-    let errorMessage = error.message || 'Unknown error occurred';
-    let statusCode = 500;
-    
-    if (error.message?.includes('rate limit')) {
-      errorMessage = 'API rate limit exceeded. Please try again in a few minutes.';
-      statusCode = 429;
-    } else if (error.message?.includes('timeout')) {
-      errorMessage = 'Request timeout. The website took too long to respond.';
-      statusCode = 408;
-    } else if (error.message?.includes('unreachable') || error.message?.includes('ENOTFOUND')) {
-      errorMessage = 'Website unreachable. Please check the URL and try again.';
-      statusCode = 404;
-    } else if (error.message?.includes('AI API error')) {
-      errorMessage = 'AI service temporarily unavailable. Please try again.';
-      statusCode = 503;
-    }
-    
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      }),
-      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
@@ -273,75 +237,6 @@ async function fetchUrlsFromSerp(domain: string, maxUrls: number): Promise<Sitem
   return baseUrls.slice(0, maxUrls);
 }
 
-/**
- * Enhance URLs with SERP API to find high-value pages
- */
-async function enhanceUrlsWithSerp(
-  domain: string,
-  existingUrls: SitemapUrl[],
-  maxAdditional: number
-): Promise<SitemapUrl[]> {
-  const serpApiKey = Deno.env.get('SERP_API_KEY');
-  if (!serpApiKey) {
-    console.log('⚠️ SERP API key not configured, skipping SERP enhancement');
-    return [];
-  }
-
-  const queries = [
-    `site:${domain} product features`,
-    `site:${domain} case study OR success story OR customer`,
-    `site:${domain} pricing plans OR pricing tiers`,
-    `site:${domain} technical specifications OR integrations`,
-    `site:${domain} vs competitor OR comparison`,
-    `site:${domain} testimonials OR reviews`
-  ];
-
-  const discoveredUrls: SitemapUrl[] = [];
-  const existingUrlSet = new Set(existingUrls.map(u => u.loc));
-
-  try {
-    for (const query of queries.slice(0, 3)) { // Limit to 3 queries to avoid rate limits
-      try {
-        const response = await fetch(
-          `https://serpapi.com/search?engine=google&q=${encodeURIComponent(query)}&api_key=${serpApiKey}&num=5`
-        );
-
-        if (response.status === 429) {
-          console.log('⚠️ SERP API rate limit reached');
-          break;
-        }
-
-        if (!response.ok) continue;
-
-        const data = await response.json();
-        const results = data.organic_results || [];
-
-        for (const result of results) {
-          const url = result.link;
-          if (url && !existingUrlSet.has(url) && url.includes(domain)) {
-            const category = categorizeUrl(url);
-            const priority = getCategoryPriority(category);
-            discoveredUrls.push({ loc: url, category, priority });
-            existingUrlSet.add(url);
-          }
-        }
-
-        // Rate limit protection
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (error) {
-        console.log(`SERP query failed for: ${query}`, error);
-      }
-    }
-  } catch (error) {
-    console.error('SERP enhancement error:', error);
-  }
-
-  // Prioritize and return
-  return discoveredUrls
-    .sort((a, b) => a.priority - b.priority)
-    .slice(0, maxAdditional);
-}
-
 async function fetchPagesWithConcurrency(
   urls: Array<{ url: string; category: string }>,
   concurrency: number
@@ -393,20 +288,9 @@ async function detectProducts(
   userId: string,
   detectMultiple: boolean
 ): Promise<any[]> {
-  const pageSummaries = pages.slice(0, 12).map(p => {
+  const pageSummaries = pages.slice(0, 10).map(p => {
     const content = p.content;
-    const headingsText = content.headings.slice(0, 8).map((h: any) => 
-      typeof h === 'string' ? h : `${h.text}${h.context ? ': ' + h.context.slice(0, 50) : ''}`
-    ).join('; ');
-    
-    return `URL: ${p.url}
-Category: ${p.category}
-Title: ${content.title}
-Description: ${content.metaDescription}
-Headings: ${headingsText}
-Key Metrics: ${content.metrics?.slice(0, 3).map((m: any) => `${m.value} ${m.label}`).join(', ') || 'None'}
-Callouts: ${content.callouts?.slice(0, 2).join('; ') || 'None'}
-Text: ${content.mainText.slice(0, 800)}`;
+    return `URL: ${p.url}\nCategory: ${p.category}\nTitle: ${content.title}\nHeadings: ${content.headings.slice(0, 5).join(', ')}\nText: ${content.mainText.slice(0, 500)}`;
   }).join('\n\n---\n\n');
 
   const prompt = `Analyze this website and identify all distinct products/solutions offered.
@@ -417,14 +301,25 @@ Pages analyzed: ${pages.length}
 Content:
 ${pageSummaries}
 
-${detectMultiple ? 'Identify ALL separate products/solutions offered (e.g., different product lines, tiers, or distinct offerings).' : 'Identify only the PRIMARY product/solution.'}
+Return a JSON array of products with:
+{
+  "products": [
+    {
+      "product_name": "Name of product",
+      "product_url": "URL to product page",
+      "brief_description": "One sentence description",
+      "confidence_score": 0-100
+    }
+  ]
+}
+
+${detectMultiple ? 'Identify ALL separate products/solutions offered.' : 'Identify only the PRIMARY product/solution.'}
 
 Rules:
-- Only include distinct products or product families (not individual features)
-- Each product should have a unique name and purpose
+- Only include distinct products (not features)
 - Must have confidence >= 70
-- Include the most relevant URL for each product
-- Be specific with product names (avoid generic terms)`;
+- Brief descriptions only
+- Return valid JSON only`;
 
   try {
     const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/ai-proxy`, {
@@ -434,53 +329,17 @@ Rules:
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-pro',
+        model: 'google/gemini-2.0-flash-exp',
         messages: [
           { role: 'user', content: prompt }
         ],
-        max_tokens: 3000,
-        tools: [{
-          type: 'function',
-          function: {
-            name: 'detect_products',
-            description: 'Detect and list all distinct products or solutions',
-            parameters: {
-              type: 'object',
-              properties: {
-                products: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      product_name: { type: 'string', description: 'Full name of the product' },
-                      product_url: { type: 'string', description: 'URL to product page or homepage' },
-                      brief_description: { type: 'string', description: 'One sentence description' },
-                      confidence_score: { type: 'number', minimum: 0, maximum: 100 },
-                      primary_solution: { type: 'boolean', description: 'Is this the main/flagship product?' }
-                    },
-                    required: ['product_name', 'brief_description', 'confidence_score']
-                  }
-                }
-              },
-              required: ['products']
-            }
-          }
-        }],
-        tool_choice: { type: 'function', function: { name: 'detect_products' } }
+        max_tokens: 1000
       })
     });
 
     const data = await response.json();
-    
-    // Handle tool calling response
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      const parsed = JSON.parse(toolCall.function.arguments);
-      return parsed.products || [];
-    }
-    
-    // Fallback to text parsing
     const aiResponse = data.choices?.[0]?.message?.content || '{}';
+    
     let parsed;
     try {
       const jsonMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
@@ -489,10 +348,11 @@ Rules:
       } else {
         parsed = JSON.parse(aiResponse);
       }
-      return parsed.products || [];
     } catch {
       return [];
     }
+    
+    return parsed.products || [];
   } catch (error) {
     console.error('Failed to detect products:', error);
     return [];
@@ -504,140 +364,49 @@ async function extractProductDetails(
   pages: Array<{ url: string; category: string; content: any }>,
   userId: string
 ): Promise<any> {
-  // Select relevant pages (increased from 5 to 10)
-  const relevantPages = pages.filter(p => {
-    const urlMatch = p.url.toLowerCase().includes(product.product_name.toLowerCase().replace(/\s+/g, '-')) ||
-                     p.url.toLowerCase().includes(product.product_name.toLowerCase().replace(/\s+/g, ''));
-    const categoryMatch = ['product/service', 'homepage', 'resources/blog'].includes(p.category);
-    return urlMatch || categoryMatch;
-  }).slice(0, 10);
+  const relevantPages = pages.filter(p => 
+    p.url.includes(product.product_name.toLowerCase().replace(/\s+/g, '-')) ||
+    p.category === 'product/service' ||
+    p.category === 'homepage'
+  ).slice(0, 5);
 
-  // If we didn't find product-specific pages, use the best general pages
-  if (relevantPages.length < 3) {
-    const generalPages = pages
-      .filter(p => p.category === 'product/service' || p.category === 'homepage')
-      .slice(0, 8);
-    relevantPages.push(...generalPages);
-  }
-
-  // Build comprehensive content summary
   const pageContent = relevantPages.map(p => {
-    const c = p.content;
-    const headingsText = (c.headings || []).slice(0, 10).map((h: any) => 
-      typeof h === 'string' ? h : `${h.text}${h.context ? ': ' + h.context : ''}`
-    ).join('\n');
-    
-    const pricingText = (c.pricingTables || []).map((pt: any) => 
-      `${pt.tier}: ${pt.price}\nFeatures: ${pt.features.join(', ')}`
-    ).join('\n\n');
-    
-    const testimonialsText = (c.testimonials || []).slice(0, 3).map((t: any) =>
-      `"${t.quote}" ${t.author ? `- ${t.author}${t.company ? `, ${t.company}` : ''}` : ''}`
-    ).join('\n');
-    
-    const metricsText = (c.metrics || []).slice(0, 8).map((m: any) => 
-      `${m.value} ${m.label}`
-    ).join(', ');
-    
-    const calloutsText = (c.callouts || []).join('\n');
-    
-    return `
-=== PAGE: ${p.url} (${p.category}) ===
-TITLE: ${c.title}
-META: ${c.metaDescription}
-
-HEADINGS:
-${headingsText}
-
-${pricingText ? `PRICING:\n${pricingText}\n` : ''}
-${testimonialsText ? `TESTIMONIALS:\n${testimonialsText}\n` : ''}
-${metricsText ? `KEY METRICS: ${metricsText}\n` : ''}
-${calloutsText ? `CALLOUTS:\n${calloutsText}\n` : ''}
-
-CONTENT:
-${c.mainText.slice(0, 2000)}
-`;
+    const content = p.content;
+    return `URL: ${p.url}\nTitle: ${content.title}\nContent: ${content.mainText.slice(0, 1000)}`;
   }).join('\n\n---\n\n');
 
-  const prompt = `Extract comprehensive solution intelligence for: ${product.product_name}
-
-You are analyzing ${relevantPages.length} pages of content to create a detailed solution profile.
+  const prompt = `Extract comprehensive solution data for: ${product.product_name}
 
 ${pageContent}
 
-TASK: Create a comprehensive solution profile with rich, specific details.
-
-CRITICAL INSTRUCTIONS:
-1. **Positioning Statement**: Write a 2-3 sentence statement describing what the solution is, who it's for, and what makes it unique. Use evidence from the content.
-
-2. **Description**: 3-4 sentences explaining the solution in detail. Include the value it provides and the problems it solves.
-
-3. **Short Description**: One compelling sentence (under 120 characters) that captures the essence.
-
-4. **Features** (12-20): Extract specific, concrete features. NOT generic phrases like "easy to use". Use actual feature names and capabilities from the content.
-
-5. **Use Cases** (8-12): Specific scenarios with outcomes. Format: "Action/Goal with specific result" (e.g., "Predict employee turnover 6 months in advance to reduce hiring costs by 25%")
-
-6. **Pain Points** (8-12): Real problems this solves, using customer language from testimonials when available.
-
-7. **Benefits** (8-12): Tangible outcomes with metrics when mentioned (e.g., "Reduce reporting time from weeks to hours")
-
-8. **Unique Value Propositions** (3-5): What makes this solution different? Include evidence (e.g., "Largest benchmark database with 25,000+ companies")
-
-9. **Key Differentiators** (3-5): Why choose this over alternatives? Use competitive mentions if found.
-
-10. **Target Audience** (6-10): Specific roles, industries, or company sizes. Be precise.
-
-11. **Pricing**: Extract detailed pricing tiers with features if available. Set customPricing=true if "contact sales" or "enterprise".
-
-12. **Technical Specs**: Platforms, integrations, security features, API capabilities found in content.
-
-13. **Case Studies**: If testimonials or case studies are present, extract company, challenge, solution, and results with metrics.
-
-14. **Tags** (15-20): Relevant, searchable keywords.
-
-Return ONLY valid JSON in this exact structure:
+Return structured JSON:
 {
   "name": "${product.product_name}",
-  "description": "Detailed 3-4 sentence description with value prop and problems solved",
-  "shortDescription": "One sentence under 120 chars",
-  "positioningStatement": "2-3 sentences: what it is, who it's for, what makes it unique",
-  "category": "Specific category (e.g., People Analytics, Marketing Automation, etc.)",
-  "features": ["12-20 specific features with actual names"],
-  "useCases": ["8-12 specific use cases with outcomes"],
-  "painPoints": ["8-12 problems this solves"],
-  "targetAudience": ["6-10 specific roles/industries/sizes"],
-  "benefits": ["8-12 tangible benefits, with metrics when mentioned"],
-  "uniqueValuePropositions": ["3-5 UVPs with evidence"],
-  "keyDifferentiators": ["3-5 differentiators vs competitors"],
+  "description": "2-3 sentence description",
+  "shortDescription": "One sentence",
+  "category": "e.g., Analytics, CRM, Marketing",
+  "features": ["8-15 specific features"],
+  "useCases": ["5-10 use cases"],
+  "painPoints": ["5-8 pain points it solves"],
+  "targetAudience": ["5-8 audience segments"],
+  "benefits": ["5-8 key benefits"],
+  "uniqueValuePropositions": ["3-5 UVPs"],
+  "keyDifferentiators": ["3-5 differentiators"],
   "pricing": {
     "model": "subscription|one-time|usage-based|freemium|enterprise|custom",
-    "startingPrice": "Price or 'Contact sales' or 'Free'",
-    "tiers": [{"name": "", "price": "", "features": []}],
-    "customPricing": true/false,
-    "freeTrialDuration": "e.g., '30 days' or null"
+    "startingPrice": "if found",
+    "tiers": [{"name": "", "price": "", "features": []}]
   },
   "technicalSpecs": {
-    "supportedPlatforms": ["Web", "iOS", "Android", etc.],
-    "apiCapabilities": ["REST API", "Webhooks", etc.],
-    "securityFeatures": ["SOC 2", "GDPR", "SSO", etc.],
-    "integrations": ["Specific integration names"]
+    "supportedPlatforms": [],
+    "apiCapabilities": [],
+    "securityFeatures": [],
+    "integrations": []
   },
-  "caseStudies": [
-    {
-      "title": "Brief title",
-      "company": "Company name",
-      "industry": "Industry",
-      "challenge": "The problem",
-      "solution": "How product helped",
-      "results": ["Specific outcomes with metrics"],
-      "metrics": [{"label": "Metric name", "value": "Value"}]
-    }
-  ],
-  "tags": ["15-20 relevant keywords"]
+  "tags": ["10-15 relevant tags"]
 }
 
-Use ONLY information found in the content. Be specific and detailed. Include numbers/metrics when mentioned.`;
+Return valid JSON only. Be comprehensive but accurate.`;
 
   try {
     const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/ai-proxy`, {
@@ -647,64 +416,42 @@ Use ONLY information found in the content. Be specific and detailed. Include num
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-pro',
+        model: 'google/gemini-2.0-flash-exp',
         messages: [
           { role: 'user', content: prompt }
         ],
-        max_tokens: 12000,
-        temperature: 0.3
+        max_tokens: 2500
       })
     });
-
-    if (!response.ok) {
-      throw new Error(`AI API error: ${response.status}`);
-    }
 
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content || '{}';
     
     let solution;
     try {
-      // Try to extract JSON from markdown code blocks
       const jsonMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
         solution = JSON.parse(jsonMatch[1]);
       } else {
         solution = JSON.parse(aiResponse);
       }
-    } catch (parseError) {
-      console.error(`Failed to parse AI response for ${product.product_name}:`, parseError);
-      // Fallback solution
+    } catch {
       solution = {
         name: product.product_name,
-        description: product.brief_description || `${product.product_name} is a business solution.`,
-        shortDescription: product.brief_description || product.product_name,
+        description: product.brief_description,
         category: 'Business Solution',
         features: [],
         useCases: [],
         painPoints: [],
-        targetAudience: [],
-        benefits: [],
-        uniqueValuePropositions: [],
-        keyDifferentiators: [],
-        pricing: { model: 'custom', customPricing: true },
-        technicalSpecs: {
-          supportedPlatforms: [],
-          apiCapabilities: [],
-          securityFeatures: [],
-          integrations: []
-        },
-        tags: []
+        targetAudience: []
       };
     }
     
-    // Add external metadata
-    solution.externalUrl = product.product_url || pages[0]?.url;
+    // Add metadata
+    solution.externalUrl = product.product_url;
     solution.metadata = {
       completeness: product.confidence_score || 85,
-      lastUpdated: new Date().toISOString(),
-      pagesAnalyzed: relevantPages.length,
-      extractionModel: 'gemini-2.5-pro'
+      lastUpdated: new Date().toISOString()
     };
     
     return solution;
