@@ -235,18 +235,6 @@ export function CompetitorCard({ competitor, onEdit, onDelete, onViewProfile, is
               Has Notes
             </Badge>
           )}
-          {/* Manual retry button when no description but has website */}
-          {!competitor.description && competitor.website && !isAutoFilling && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(competitor)}
-              className="h-7 text-xs"
-            >
-              <RefreshCw className="h-3 w-3 mr-1" />
-              Auto-fill
-            </Button>
-          )}
         </div>
       </CardFooter>
     </Card>
