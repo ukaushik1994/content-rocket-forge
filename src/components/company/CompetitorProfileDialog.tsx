@@ -1,17 +1,19 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
-import { Building2, Link as LinkIcon, TrendingUp, TrendingDown, Package, Bookmark } from 'lucide-react';
+import { Building2, Link as LinkIcon, TrendingUp, TrendingDown, Package, Bookmark, Edit2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CompetitorSolutionsTab } from './CompetitorSolutionsTab';
 
 interface CompetitorProfileDialogProps {
   competitor: CompanyCompetitor;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit: (competitor: CompanyCompetitor) => void;
 }
 
-export function CompetitorProfileDialog({ competitor, open, onOpenChange }: CompetitorProfileDialogProps) {
+export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit }: CompetitorProfileDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -25,21 +27,36 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange }: Comp
               </div>
             )}
             <div className="flex-1">
-              <DialogTitle className="text-2xl">{competitor.name}</DialogTitle>
-              {competitor.marketPosition && (
-                <p className="text-sm text-muted-foreground mt-1">{competitor.marketPosition}</p>
-              )}
-              {competitor.website && (
-                <a
-                  href={competitor.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <DialogTitle className="text-2xl">{competitor.name}</DialogTitle>
+                  {competitor.marketPosition && (
+                    <p className="text-sm text-muted-foreground mt-1">{competitor.marketPosition}</p>
+                  )}
+                  {competitor.website && (
+                    <a
+                      href={competitor.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
+                    >
+                      <LinkIcon className="w-3 h-3" />
+                      {competitor.website}
+                    </a>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onEdit(competitor);
+                    onOpenChange(false);
+                  }}
                 >
-                  <LinkIcon className="w-3 h-3" />
-                  {competitor.website}
-                </a>
-              )}
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit Details
+                </Button>
+              </div>
             </div>
           </div>
         </DialogHeader>

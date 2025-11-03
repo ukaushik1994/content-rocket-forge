@@ -624,6 +624,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
               competitor={selectedCompetitor}
               open={profileDialogOpen}
               onOpenChange={setProfileDialogOpen}
+              onEdit={handleEdit}
             />
           )}
         </div>
@@ -658,7 +659,6 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
               >
                 <CompetitorCard
                   competitor={competitor}
-                  onEdit={handleEdit}
                   onDelete={handleDelete}
                   onViewProfile={handleViewProfile}
                   isAutoFilling={false}

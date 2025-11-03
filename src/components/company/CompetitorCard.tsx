@@ -31,7 +31,6 @@ const categoryIcons = {
 
 interface CompetitorCardProps {
   competitor: CompanyCompetitor;
-  onEdit: (competitor: CompanyCompetitor) => void;
   onDelete: (id: string) => void;
   onViewProfile: (competitor: CompanyCompetitor) => void;
   isAutoFilling?: boolean;
@@ -49,7 +48,7 @@ const getResourceColor = (category: string): string => {
   return colors[category as keyof typeof colors] || colors.other;
 };
 
-export function CompetitorCard({ competitor, onEdit, onDelete, onViewProfile, isAutoFilling = false }: CompetitorCardProps) {
+export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFilling = false }: CompetitorCardProps) {
   return (
     <Card className={cn(
       "group overflow-hidden transition-all duration-300 hover:shadow-neon border-border bg-card/60 backdrop-blur-xl relative",
@@ -102,14 +101,6 @@ export function CompetitorCard({ competitor, onEdit, onDelete, onViewProfile, is
             title="View Profile"
           >
             <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-primary/10"
-            onClick={() => onEdit(competitor)}
-          >
-            <Edit2 className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
