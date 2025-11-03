@@ -322,23 +322,22 @@ Rules:
 - Return valid JSON only`;
 
   try {
-    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/ai-proxy`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 1000
-      })
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+      body: {
+        message: prompt,
+        conversationHistory: [],
+        userId
+      }
     });
 
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || '{}';
+    if (error) {
+      console.error('AI chat error:', error);
+      return [];
+    }
+
+    const aiResponse = data.response || '{}';
     
     let parsed;
     try {
@@ -409,23 +408,22 @@ Return structured JSON:
 Return valid JSON only. Be comprehensive but accurate.`;
 
   try {
-    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/ai-proxy`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 2500
-      })
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+      body: {
+        message: prompt,
+        conversationHistory: [],
+        userId
+      }
     });
 
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || '{}';
+    if (error) {
+      console.error('AI chat error:', error);
+      return null;
+    }
+
+    const aiResponse = data.response || '{}';
     
     let solution;
     try {
