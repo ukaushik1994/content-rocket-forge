@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CompanyCompetitor, CompetitorSolution } from '@/contexts/content-builder/types/company-types';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Package, Loader2 } from 'lucide-react';
+import { Sparkles, Package, Loader2, Target } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { discoverCompetitorSolutions, getCompetitorSolutions } from '@/services/competitorSolutionsService';
@@ -19,6 +19,10 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
   const queryClient = useQueryClient();
   const [selectedSolution, setSelectedSolution] = useState<CompetitorSolution | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [stepDescription, setStepDescription] = useState('Searching for product pages...');
+  const [lastDiagnostics, setLastDiagnostics] = useState<any>(null);
 
   // Fetch solutions
   const { data: solutions = [], isLoading } = useQuery({
@@ -45,9 +49,11 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['competitor-solutions', competitor.id] });
+      setLastDiagnostics(data.diagnostics);
+      setProgressPercent(100);
       toast({
         title: 'Discovery Complete',
-        description: `Found and analyzed ${data.solutions.length} solutions`,
+        description: `Found and analyzed ${data.solutions.length} solutions in ${(data.diagnostics?.total_time_ms / 1000).toFixed(1)}s`,
       });
     },
     onError: (error: any) => {
@@ -58,6 +64,34 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
       });
     },
   });
+
+  // Progress tracking during discovery
+  useEffect(() => {
+    if (discoveryMutation.isPending) {
+      setProgressPercent(0);
+      setCurrentStep(1);
+      const interval = setInterval(() => {
+        setProgressPercent(prev => {
+          const next = Math.min(prev + 3, 95);
+          
+          if (next < 33) {
+            setCurrentStep(1);
+            setStepDescription('🔍 Searching website for product pages...');
+          } else if (next < 66) {
+            setCurrentStep(2);
+            setStepDescription('🧠 Extracting product information...');
+          } else {
+            setCurrentStep(3);
+            setStepDescription('📊 Analyzing solution details...');
+          }
+          
+          return next;
+        });
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [discoveryMutation.isPending]);
 
   const handleViewDetails = (solution: CompetitorSolution) => {
     setSelectedSolution(solution);
@@ -121,16 +155,16 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
           </p>
           
           <div className="space-y-2 mt-6">
-            <Progress value={40} className="h-2" />
+            <Progress value={progressPercent} className="h-2" />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Processing...</span>
-              <span>This may take 3-5 minutes</span>
+              <span>Step {currentStep}/3</span>
+              <span>{progressPercent}% complete</span>
             </div>
           </div>
 
           <div className="mt-4 p-4 rounded-lg bg-muted/50 backdrop-blur-sm border">
             <p className="text-xs text-muted-foreground">
-              🔍 Searching website for product pages and extracting detailed information...
+              {stepDescription}
             </p>
           </div>
         </div>
@@ -155,6 +189,47 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
           Re-discover
         </Button>
       </div>
+
+      {lastDiagnostics && solutions.length > 0 && (
+        <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-muted/30 to-muted/10 backdrop-blur-sm border border-primary/20">
+          <div className="flex items-center gap-2 mb-3">
+            <Target className="w-4 h-4 text-primary" />
+            <h4 className="text-sm font-semibold">Discovery Diagnostics</h4>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">SERP Queries</p>
+              <p className="text-lg font-bold text-primary">{lastDiagnostics.serp_queries || 0}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Pages Discovered</p>
+              <p className="text-lg font-bold text-primary">{lastDiagnostics.pages_discovered || 0}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Solutions Found</p>
+              <p className="text-lg font-bold text-primary">{lastDiagnostics.solutions_extracted || 0}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Processing Time</p>
+              <p className="text-lg font-bold text-primary">
+                {((lastDiagnostics.total_time_ms || 0) / 1000).toFixed(1)}s
+              </p>
+            </div>
+          </div>
+          {lastDiagnostics.partial_extractions > 0 && (
+            <div className="mt-3 p-2 rounded bg-amber-500/10 border border-amber-500/20">
+              <p className="text-xs text-amber-600">
+                ⚠️ {lastDiagnostics.partial_extractions} solutions have incomplete data - some details could not be extracted
+              </p>
+            </div>
+          )}
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <p className="text-xs text-muted-foreground">
+              💡 Used {lastDiagnostics.ai_calls || 0} AI calls to analyze competitor offerings
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {solutions.map((solution) => (

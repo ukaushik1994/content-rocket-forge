@@ -60,16 +60,21 @@ export function CompetitorSolutionCard({ solution, onView }: CompetitorSolutionC
 
         <div className="flex items-center justify-between pt-2">
           <div className="flex gap-1">
-            {hasFullProfile && (
-              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
-                Full Profile
-              </Badge>
-            )}
-            {solution.pricing && (
-              <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
-                Pricing Available
-              </Badge>
-            )}
+        {solution.discoverySource === 'serp:partial' && (
+          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
+            Partial Data
+          </Badge>
+        )}
+        {solution.discoverySource === 'serp:full' && (
+          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+            Complete Profile
+          </Badge>
+        )}
+        {solution.pricing && (
+          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+            Pricing Available
+          </Badge>
+        )}
           </div>
           {solution.externalUrl && (
             <a

@@ -3,8 +3,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompetitorSolution } from '@/contexts/content-builder/types/company-types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package, ExternalLink, DollarSign, Wrench, BookOpen, Target } from 'lucide-react';
+import { Package, ExternalLink, DollarSign, Wrench, BookOpen, Target, RefreshCw, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { refreshCompetitorSolution } from '@/services/competitorSolutionsService';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CompetitorSolutionDetailsDialogProps {
   solution: CompetitorSolution;
@@ -17,32 +21,78 @@ export function CompetitorSolutionDetailsDialog({
   open,
   onOpenChange,
 }: CompetitorSolutionDetailsDialogProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const refreshMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !solution) throw new Error('Not authenticated');
+      
+      return refreshCompetitorSolution(
+        solution.id,
+        solution.externalUrl || '',
+        user.id
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitor-solutions'] });
+      toast({
+        title: 'Solution Refreshed',
+        description: 'Latest data has been fetched successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Refresh Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl border border-white/20 shadow-2xl">
         <DialogHeader>
-          <div className="flex items-start gap-4">
-            {solution.logoUrl ? (
-              <img src={solution.logoUrl} alt={solution.name} className="w-12 h-12 rounded object-cover" />
-            ) : (
-              <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
-                <Package className="w-6 h-6 text-muted-foreground" />
-              </div>
-            )}
-            <div className="flex-1">
-              <DialogTitle className="text-xl">{solution.name}</DialogTitle>
-              <div className="flex items-center gap-2 mt-2">
-                {solution.category && <Badge variant="secondary">{solution.category}</Badge>}
-                {solution.externalUrl && (
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href={solution.externalUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Visit Website
-                    </a>
-                  </Button>
-                )}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4 flex-1">
+              {solution.logoUrl ? (
+                <img src={solution.logoUrl} alt={solution.name} className="w-12 h-12 rounded object-cover" />
+              ) : (
+                <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+                  <Package className="w-6 h-6 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1">
+                <DialogTitle className="text-xl">{solution.name}</DialogTitle>
+                <div className="flex items-center gap-2 mt-2">
+                  {solution.category && <Badge variant="secondary">{solution.category}</Badge>}
+                  {solution.externalUrl && (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={solution.externalUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Visit Website
+                      </a>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refreshMutation.mutate()}
+              disabled={refreshMutation.isPending || !solution.externalUrl}
+              className="shrink-0"
+            >
+              {refreshMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              <span className="ml-2">Refresh</span>
+            </Button>
           </div>
         </DialogHeader>
 

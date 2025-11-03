@@ -29,6 +29,8 @@ Deno.serve(async (req) => {
       serp_queries: 0,
       pages_discovered: 0,
       solutions_extracted: 0,
+      full_extractions: 0,
+      partial_extractions: 0,
       ai_calls: 0,
       total_time_ms: 0
     };
@@ -141,12 +143,14 @@ Return only valid JSON array.`;
               { role: 'system', content: 'You are an expert at analyzing company websites. Return only valid JSON arrays.' },
               { role: 'user', content: extractPrompt }
             ],
-            temperature: retries * 0.2,
-          }),
-        });
+      temperature: retries * 0.2,
+    }),
+  });
 
-        extractData = await extractResponse.json();
-        break;
+  diagnostics.ai_calls++;
+  extractData = await extractResponse.json();
+
+  break;
       } catch (error) {
         retries++;
         if (retries > maxRetries) throw error;
@@ -189,25 +193,27 @@ Return only valid JSON array.`;
 
         diagnostics.ai_calls += 3; // Approximate AI calls in solution-intel
 
-        if (solutionError || !solutionData?.success) {
-          console.warn(`  ⚠️ Partial extraction for ${product.name}`);
-          analyzedSolutions.push({
-            name: product.name,
-            category: product.category || 'Unknown',
-            short_description: product.short_description || `${product.name} - detailed information unavailable`,
-            long_description: product.short_description,
-            external_url: productUrl,
-            features: [],
-            use_cases: [],
-            target_audience: [],
-            discovery_source: 'serp:partial',
-            last_analyzed_at: new Date().toISOString(),
-            metadata: { extraction_status: 'partial', error: solutionError?.message }
-          });
-          continue;
-        }
+    if (solutionError || !solutionData?.success) {
+      console.warn(`  ⚠️ Partial extraction for ${product.name}`);
+      diagnostics.partial_extractions++;
+      analyzedSolutions.push({
+        name: product.name,
+        category: product.category || 'Unknown',
+        short_description: product.short_description || `${product.name} - detailed information unavailable`,
+        long_description: product.short_description,
+        external_url: productUrl,
+        features: product.key_benefits || [],
+        use_cases: [],
+        target_audience: [product.target_audience] || [],
+        discovery_source: 'serp:partial',
+        last_analyzed_at: new Date().toISOString(),
+        metadata: { extraction_status: 'partial', error: solutionError?.message }
+      });
+      continue;
+    }
 
         if (solutionData?.success && solutionData.solutions?.length > 0) {
+          diagnostics.full_extractions++;
           const solutionProfile = solutionData.solutions[0];
           analyzedSolutions.push({
             name: product.name,
