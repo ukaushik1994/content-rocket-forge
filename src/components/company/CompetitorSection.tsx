@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyCompetitor, CompetitorResource } from '@/contexts/content-builder/types/company-types';
 import { CompetitorCard } from './CompetitorCard';
+import * as competitorIntelService from '@/services/competitorIntelService';
 
 const categoryIcons = {
   website: Globe,
@@ -200,6 +201,41 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
       setIsDialogOpen(false);
       resetForm();
       loadCompetitors();
+
+      // Auto-fill from website (fire-and-forget)
+      if (competitorData.website && competitorData.website.trim()) {
+        setTimeout(async () => {
+          try {
+            console.log('🚀 Starting auto-fill for:', competitorData.name);
+            const result = await competitorIntelService.autoFillFromWebsite(
+              competitorData.website,
+              userId
+            );
+            
+            if (result) {
+              const { error: updateError } = await supabase
+                .from('company_competitors')
+                .update({
+                  description: result.description,
+                  market_position: result.market_position,
+                  strengths: result.strengths,
+                  weaknesses: result.weaknesses,
+                  resources: result.resources,
+                  notes: result.notes
+                })
+                .eq('user_id', userId)
+                .eq('name', competitorData.name);
+              
+              if (!updateError) {
+                console.log('✅ Auto-fill applied successfully');
+                loadCompetitors();
+              }
+            }
+          } catch (e) {
+            console.warn('⚠️ Auto-fill skipped:', e);
+          }
+        }, 500);
+      }
     } catch (error) {
       console.error('Error saving competitor:', error);
       toast({
