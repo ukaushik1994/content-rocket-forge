@@ -24,7 +24,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyCompetitor, CompetitorResource } from '@/contexts/content-builder/types/company-types';
 import { CompetitorCard } from './CompetitorCard';
-import * as competitorIntelService from '@/services/competitorIntelService';
+import { AddCompetitorDialog } from './AddCompetitorDialog';
+import { ReviewCompetitorDialog } from './ReviewCompetitorDialog';
+import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
 
 const categoryIcons = {
   website: Globe,
@@ -51,9 +53,16 @@ interface CompetitorSectionProps {
 export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) => {
   const [competitors, setCompetitors] = useState<CompanyCompetitor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  // Dialog state management
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  
   const [editingCompetitor, setEditingCompetitor] = useState<CompanyCompetitor | null>(null);
-  const [autoFillInProgress, setAutoFillInProgress] = useState<Set<string>>(new Set());
+  const [analysisResult, setAnalysisResult] = useState<CompetitorAutoFillPayload | null>(null);
+  const [pendingCompetitor, setPendingCompetitor] = useState<{name: string, website: string} | null>(null);
+  
   const { toast } = useToast();
 
   // Form state
@@ -150,7 +159,78 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
     setEditingCompetitor(null);
   };
 
-  const handleSave = async () => {
+  const handleAnalysisComplete = (data: CompetitorAutoFillPayload, name: string, website: string) => {
+    setAnalysisResult(data);
+    setPendingCompetitor({ name, website });
+    setAddDialogOpen(false);
+    setReviewDialogOpen(true);
+  };
+
+  const handleReviewSave = async (reviewData: {
+    name: string;
+    website: string;
+    description: string;
+    marketPosition: string;
+    strengths: string[];
+    weaknesses: string[];
+    resources: CompetitorResource[];
+    notes: string;
+  }) => {
+    if (!reviewData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Competitor name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const competitorData = {
+        user_id: userId,
+        name: reviewData.name.trim(),
+        website: reviewData.website.trim() || null,
+        description: reviewData.description.trim() || null,
+        market_position: reviewData.marketPosition.trim() || null,
+        strengths: JSON.stringify(reviewData.strengths.filter(s => s.trim())),
+        weaknesses: JSON.stringify(reviewData.weaknesses.filter(w => w.trim())),
+        resources: JSON.stringify(reviewData.resources.filter(r => r.title.trim() && r.url.trim())),
+        notes: reviewData.notes.trim() || null,
+        priority_order: competitors.length
+      };
+
+      const { error } = await supabase
+        .from('company_competitors')
+        .insert([competitorData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Competitor added successfully with AI-extracted intelligence"
+      });
+
+      setReviewDialogOpen(false);
+      setAnalysisResult(null);
+      setPendingCompetitor(null);
+      loadCompetitors();
+    } catch (error) {
+      console.error('Error saving competitor:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save competitor",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleReviewBack = () => {
+    setReviewDialogOpen(false);
+    setAddDialogOpen(true);
+  };
+
+  // Edit existing competitor (old flow)
+  const handleEditSave = async () => {
     if (!formData.name.trim()) {
       toast({
         title: "Error",
@@ -174,107 +254,26 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
         priority_order: editingCompetitor?.priorityOrder || competitors.length
       };
 
-      if (editingCompetitor) {
-        const { error } = await supabase
-          .from('company_competitors')
-          .update(competitorData)
-          .eq('id', editingCompetitor.id);
+      const { error } = await supabase
+        .from('company_competitors')
+        .update(competitorData)
+        .eq('id', editingCompetitor!.id);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: "Success",
-          description: "Competitor updated successfully"
-        });
-      } else {
-        const { error } = await supabase
-          .from('company_competitors')
-          .insert([competitorData]);
+      toast({
+        title: "Success",
+        description: "Competitor updated successfully"
+      });
 
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Competitor added successfully"
-        });
-      }
-
-      setIsDialogOpen(false);
+      setEditDialogOpen(false);
       resetForm();
       loadCompetitors();
-
-      // Auto-fill from website (fire-and-forget)
-      if (competitorData.website && competitorData.website.trim()) {
-        const competitorName = competitorData.name;
-        
-        // Mark as in-progress
-        setAutoFillInProgress(prev => new Set(prev).add(competitorName));
-        
-        toast({
-          title: "Auto-filling competitor data...",
-          description: "Analyzing website, this may take 10-30 seconds",
-        });
-        
-        setTimeout(async () => {
-          try {
-            console.log('🚀 Starting auto-fill for:', competitorName);
-            const result = await competitorIntelService.autoFillFromWebsite(
-              competitorData.website,
-              userId
-            );
-            
-            if (result) {
-              const { error: updateError } = await supabase
-                .from('company_competitors')
-                .update({
-                  description: result.description,
-                  market_position: result.market_position,
-                  strengths: result.strengths,
-                  weaknesses: result.weaknesses,
-                  resources: result.resources,
-                  notes: result.notes
-                })
-                .eq('user_id', userId)
-                .eq('name', competitorName);
-              
-              if (!updateError) {
-                console.log('✅ Auto-fill applied successfully');
-                loadCompetitors();
-                
-                toast({
-                  title: "✅ Auto-fill complete!",
-                  description: `${competitorName} profile updated with competitive intelligence`,
-                });
-              }
-            } else {
-              toast({
-                title: "Auto-fill incomplete",
-                description: "Could not analyze website automatically. You can fill details manually.",
-                variant: "destructive"
-              });
-            }
-          } catch (e) {
-            console.warn('⚠️ Auto-fill skipped:', e);
-            toast({
-              title: "Auto-fill failed",
-              description: "Analysis couldn't complete. Manual editing available.",
-              variant: "destructive"
-            });
-          } finally {
-            // Remove from in-progress
-            setAutoFillInProgress(prev => {
-              const next = new Set(prev);
-              next.delete(competitorName);
-              return next;
-            });
-          }
-        }, 500);
-      }
     } catch (error) {
-      console.error('Error saving competitor:', error);
+      console.error('Error updating competitor:', error);
       toast({
         title: "Error",
-        description: "Failed to save competitor",
+        description: "Failed to update competitor",
         variant: "destructive"
       });
     }
@@ -292,7 +291,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
       resources: competitor.resources.length ? competitor.resources : [{ title: '', url: '', category: 'website' }],
       notes: competitor.notes || ''
     });
-    setIsDialogOpen(true);
+    setEditDialogOpen(true);
   };
 
   const handleDelete = async (competitorId: string) => {
@@ -383,18 +382,16 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
               <p className="text-muted-foreground">Track and analyze your main competitors</p>
             </div>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Competitor
-              </Button>
-            </DialogTrigger>
+          <Button onClick={() => setAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Competitor
+          </Button>
+
+          {/* Edit Competitor Dialog (Traditional Form) */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogContent className="glass-panel max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
-                  {editingCompetitor ? 'Edit Competitor' : 'Add New Competitor'}
-                </DialogTitle>
+                <DialogTitle>Edit Competitor</DialogTitle>
               </DialogHeader>
               
               <div className="space-y-6">
@@ -577,16 +574,41 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
                 </div>
 
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSave}>
-                    {editingCompetitor ? 'Update' : 'Add'} Competitor
+                  <Button onClick={handleEditSave}>
+                    Update Competitor
                   </Button>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* New URL-First Add Dialog */}
+          <AddCompetitorDialog
+            isOpen={addDialogOpen}
+            onClose={() => setAddDialogOpen(false)}
+            onAnalysisComplete={handleAnalysisComplete}
+            userId={userId}
+          />
+
+          {/* Review Dialog */}
+          {analysisResult && pendingCompetitor && (
+            <ReviewCompetitorDialog
+              isOpen={reviewDialogOpen}
+              onClose={() => {
+                setReviewDialogOpen(false);
+                setAnalysisResult(null);
+                setPendingCompetitor(null);
+              }}
+              onSave={handleReviewSave}
+              onBack={handleReviewBack}
+              initialData={analysisResult}
+              name={pendingCompetitor.name}
+              website={pendingCompetitor.website}
+            />
+          )}
         </div>
 
         {competitors.length === 0 ? (
@@ -598,7 +620,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
               Start tracking your competition to gain valuable market insights and stay ahead of industry trends
             </p>
-            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="shadow-lg">
+            <Button onClick={() => setAddDialogOpen(true)} className="shadow-lg">
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Competitor
             </Button>
@@ -621,7 +643,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
                   competitor={competitor}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
-                  isAutoFilling={autoFillInProgress.has(competitor.name)}
+                  isAutoFilling={false}
                 />
               </motion.div>
             ))}
