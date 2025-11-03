@@ -38,7 +38,14 @@ Deno.serve(async (req) => {
     const serpQueries = [
       `site:${competitorWebsite} products`,
       `site:${competitorWebsite} solutions`,
-      `site:${competitorWebsite} "what we offer"`
+      `site:${competitorWebsite} services`,
+      `site:${competitorWebsite} platform`,
+      `site:${competitorWebsite} offerings`,
+      `site:${competitorWebsite} tools`,
+      `site:${competitorWebsite} "what we offer"`,
+      `site:${competitorWebsite} "our products"`,
+      `"${competitorName}" products`,
+      `"${competitorName}" solutions overview`
     ];
 
     const discoveredUrls = new Set<string>();
@@ -52,10 +59,17 @@ Deno.serve(async (req) => {
         
         if (serpData.organic_results) {
           serpData.organic_results.forEach((result: any) => {
+            const url = result.link.toLowerCase();
             if (result.link && (
-              result.link.includes('/product') ||
-              result.link.includes('/solution') ||
-              result.link.includes('/services')
+              url.includes('/product') ||
+              url.includes('/solution') ||
+              url.includes('/service') ||
+              url.includes('/platform') ||
+              url.includes('/offering') ||
+              url.includes('/tool') ||
+              url.includes('/features') ||
+              url === competitorWebsite.toLowerCase() ||
+              url === competitorWebsite.toLowerCase() + '/'
             )) {
               discoveredUrls.add(result.link);
             }
@@ -66,53 +80,79 @@ Deno.serve(async (req) => {
       }
     }
 
-    diagnostics.pages_discovered = discoveredUrls.size;
-    console.log(`✓ Found ${diagnostics.pages_discovered} solution pages`);
-
+    // Fallback to homepage if no URLs found
     if (discoveredUrls.size === 0) {
-      console.log('⚠️ No solution pages found via SERP');
-      return new Response(
-        JSON.stringify({
-          success: true,
-          solutions: [],
-          diagnostics: { ...diagnostics, total_time_ms: Date.now() - startTime }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log('⚠️ No solution pages found via SERP, falling back to homepage');
+      discoveredUrls.add(competitorWebsite);
+      discoveredUrls.add(`${competitorWebsite}/products`);
+      discoveredUrls.add(`${competitorWebsite}/solutions`);
     }
+
+    diagnostics.pages_discovered = discoveredUrls.size;
+    console.log(`✓ Found ${diagnostics.pages_discovered} solution pages`)
 
     // Step 2: Extract product list from main pages
     console.log('🧠 Step 2: Extracting product list from discovered pages...');
-    const mainUrl = Array.from(discoveredUrls)[0]; // Use the first discovered URL
+    const urlsToAnalyze = Array.from(discoveredUrls).slice(0, 5); // Top 5 URLs
     diagnostics.ai_calls++;
 
-    const extractPrompt = `Analyze this URL: ${mainUrl}
+    const extractPrompt = `Analyze these ${urlsToAnalyze.length} pages from ${competitorName}'s website to identify ALL their products/solutions.
 
-Extract ALL individual products/solutions offered by ${competitorName}. For each product provide:
-- name: Product name
-- category: Product category (e.g., "Communication", "Collaboration", "AI Tools")
-- short_description: One-line description
-- url: Direct link to product page if different from main page
+URLs analyzed:
+${urlsToAnalyze.map((url, i) => `${i+1}. ${url}`).join('\n')}
 
-Return a JSON array of products. Be comprehensive - include every distinct product/solution mentioned.`;
+For EACH DISTINCT product/solution, extract:
+- name: Full official product name
+- category: Product category (Software, Platform, Service, Tool, etc.)
+- short_description: One clear sentence describing what it does
+- url: Best URL for this product (from the pages above)
+- confidence: 0-100 score based on how explicitly it's described
 
-    const extractResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You are an expert at analyzing company websites and extracting product information. Always return valid JSON.' },
-          { role: 'user', content: extractPrompt }
-        ],
-        temperature: 0.3,
-      }),
-    });
+Return JSON array of products. Include:
+- Products listed in navigation menus
+- Products in hero sections
+- Products in "Our Products" sections
+- Products in feature comparisons
+- Individual tools in a suite
 
-    const extractData = await extractResponse.json();
+Rules:
+- Separate products have different names and solve different problems
+- Features of the same product should NOT be separate entries
+- Minimum confidence: 60
+- If unclear if it's one product or multiple, favor detecting multiple
+
+Return only valid JSON array.`;
+
+    let extractData;
+    let retries = 0;
+    const maxRetries = 2;
+
+    while (retries <= maxRetries) {
+      try {
+        const extractResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages: [
+              { role: 'system', content: 'You are an expert at analyzing company websites. Return only valid JSON arrays.' },
+              { role: 'user', content: extractPrompt }
+            ],
+            temperature: retries * 0.2,
+          }),
+        });
+
+        extractData = await extractResponse.json();
+        break;
+      } catch (error) {
+        retries++;
+        if (retries > maxRetries) throw error;
+        console.log(`Retry ${retries}/${maxRetries} for AI extraction`);
+      }
+    }
     let products: any[] = [];
     
     try {
@@ -131,11 +171,11 @@ Return a JSON array of products. Be comprehensive - include every distinct produ
     console.log('🔬 Step 3: Analyzing each solution in detail...');
     const analyzedSolutions = [];
 
-    for (const product of products.slice(0, 10)) { // Limit to 10 products
+    for (const product of products) { // Analyze ALL products
       try {
-        console.log(`  ⏳ Analyzing: ${product.name}...`);
+        console.log(`  ⏳ Analyzing: ${product.name}... (${analyzedSolutions.length + 1}/${products.length})`);
         
-        const productUrl = product.url || mainUrl;
+        const productUrl = product.url || urlsToAnalyze[0];
         const { data: solutionData, error: solutionError } = await supabase.functions.invoke('solution-intel', {
           body: {
             userId,
@@ -149,17 +189,20 @@ Return a JSON array of products. Be comprehensive - include every distinct produ
 
         diagnostics.ai_calls += 3; // Approximate AI calls in solution-intel
 
-        if (solutionError) {
-          console.warn(`  ⚠️ Solution-intel error for ${product.name}:`, solutionError);
-          // Save partial data
+        if (solutionError || !solutionData?.success) {
+          console.warn(`  ⚠️ Partial extraction for ${product.name}`);
           analyzedSolutions.push({
             name: product.name,
-            category: product.category,
-            short_description: product.short_description,
+            category: product.category || 'Unknown',
+            short_description: product.short_description || `${product.name} - detailed information unavailable`,
+            long_description: product.short_description,
             external_url: productUrl,
             features: [],
             use_cases: [],
-            discovery_source: 'serp:partial'
+            target_audience: [],
+            discovery_source: 'serp:partial',
+            last_analyzed_at: new Date().toISOString(),
+            metadata: { extraction_status: 'partial', error: solutionError?.message }
           });
           continue;
         }

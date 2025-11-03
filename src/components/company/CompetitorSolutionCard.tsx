@@ -14,7 +14,7 @@ export function CompetitorSolutionCard({ solution, onView }: CompetitorSolutionC
   const hasFullProfile = featureCount > 5;
 
   return (
-    <Card className="group hover:border-primary/50 transition-all cursor-pointer" onClick={() => onView(solution)}>
+    <Card className="group hover:border-primary/50 transition-all cursor-pointer bg-card/50 backdrop-blur-sm hover:bg-card/80 hover:shadow-xl hover:scale-[1.02] duration-300" onClick={() => onView(solution)}>
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           {solution.logoUrl ? (
@@ -29,7 +29,7 @@ export function CompetitorSolutionCard({ solution, onView }: CompetitorSolutionC
               {solution.name}
             </h3>
             {solution.category && (
-              <Badge variant="secondary" className="mt-1 text-xs">
+              <Badge variant="secondary" className="mt-1 text-xs bg-primary/20 text-primary border-primary/30">
                 {solution.category}
               </Badge>
             )}
@@ -61,12 +61,12 @@ export function CompetitorSolutionCard({ solution, onView }: CompetitorSolutionC
         <div className="flex items-center justify-between pt-2">
           <div className="flex gap-1">
             {hasFullProfile && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
                 Full Profile
               </Badge>
             )}
             {solution.pricing && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
                 Pricing Available
               </Badge>
             )}

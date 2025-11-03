@@ -75,26 +75,29 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
   // Empty state
   if (solutions.length === 0 && !discoveryMutation.isPending) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="rounded-full bg-muted p-6 mb-4">
-          <Package className="w-12 h-12 text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="rounded-full bg-gradient-to-br from-primary/20 to-primary/5 p-8 mb-6 shadow-lg">
+          <Package className="w-16 h-16 text-primary" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">No Solutions Discovered</h3>
-        <p className="text-sm text-muted-foreground mb-6 max-w-md">
-          Automatically discover {competitor.name}'s products and solutions from their website
+        <h3 className="text-xl font-semibold mb-2">No Solutions Discovered Yet</h3>
+        <p className="text-sm text-muted-foreground mb-8 max-w-md">
+          Automatically discover and analyze all of {competitor.name}'s products, features, pricing, and technical details
         </p>
         <Button
           onClick={() => discoveryMutation.mutate()}
           disabled={!competitor.website}
           size="lg"
+          className="shadow-lg hover:shadow-xl transition-all"
         >
-          <Sparkles className="w-4 h-4 mr-2" />
+          <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
           Discover Solutions
         </Button>
         {!competitor.website && (
-          <p className="text-xs text-muted-foreground mt-2">
-            Website URL is required for discovery
-          </p>
+          <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+            <p className="text-xs text-amber-600 font-medium">
+              ⚠️ Website URL required - please add competitor website first
+            </p>
+          </div>
         )}
       </div>
     );
@@ -104,16 +107,32 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
   if (discoveryMutation.isPending) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <div className="text-center space-y-2 max-w-md">
-          <h3 className="font-semibold">Discovering Solutions...</h3>
+        <div className="relative">
+          <Loader2 className="w-16 h-16 animate-spin text-primary" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+          </div>
+        </div>
+        
+        <div className="text-center space-y-3 max-w-md">
+          <h3 className="font-semibold text-lg">Discovering Solutions...</h3>
           <p className="text-sm text-muted-foreground">
-            Finding product pages and analyzing each solution. This may take 3-5 minutes.
+            Analyzing {competitor.name}'s website to identify all products and solutions
           </p>
-          <Progress value={33} className="mt-4" />
-          <p className="text-xs text-muted-foreground">
-            Step 1/3: Searching for solution pages...
-          </p>
+          
+          <div className="space-y-2 mt-6">
+            <Progress value={40} className="h-2" />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Processing...</span>
+              <span>This may take 3-5 minutes</span>
+            </div>
+          </div>
+
+          <div className="mt-4 p-4 rounded-lg bg-muted/50 backdrop-blur-sm border">
+            <p className="text-xs text-muted-foreground">
+              🔍 Searching website for product pages and extracting detailed information...
+            </p>
+          </div>
         </div>
       </div>
     );

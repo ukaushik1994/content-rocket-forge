@@ -19,7 +19,7 @@ export function CompetitorSolutionDetailsDialog({
 }: CompetitorSolutionDetailsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl border border-white/20 shadow-2xl">
         <DialogHeader>
           <div className="flex items-start gap-4">
             {solution.logoUrl ? (
@@ -47,7 +47,7 @@ export function CompetitorSolutionDetailsDialog({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
@@ -105,22 +105,37 @@ export function CompetitorSolutionDetailsDialog({
 
               <TabsContent value="features" className="mt-0 space-y-4">
                 {solution.features?.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {solution.features.map((feature: any, idx: number) => (
-                      <div key={idx} className="p-4 rounded-lg border">
-                        <h4 className="font-medium text-sm mb-1">
-                          {typeof feature === 'string' ? feature : feature.name || feature.title}
-                        </h4>
-                        {typeof feature === 'object' && feature.description && (
-                          <p className="text-xs text-muted-foreground">{feature.description}</p>
-                        )}
+                      <div 
+                        key={idx} 
+                        className="p-4 rounded-lg border bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm hover:border-primary/50 hover:shadow-lg transition-all"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                            <span className="text-primary font-bold text-sm">{idx + 1}</span>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm mb-1">
+                              {typeof feature === 'string' ? feature : feature.name || feature.title}
+                            </h4>
+                            {typeof feature === 'object' && feature.description && (
+                              <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No feature details available
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="rounded-full bg-muted/50 p-6 mb-4">
+                      <Package className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      No feature details discovered yet
+                    </p>
+                  </div>
                 )}
               </TabsContent>
 
@@ -131,42 +146,135 @@ export function CompetitorSolutionDetailsDialog({
                       <DollarSign className="w-5 h-5 text-primary" />
                       <h3 className="font-semibold">Pricing Information</h3>
                     </div>
-                    <div className="prose prose-sm max-w-none">
-                      <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs">
-                        {JSON.stringify(solution.pricing, null, 2)}
-                      </pre>
-                    </div>
+
+                    {solution.pricing.model && (
+                      <div className="p-4 rounded-lg bg-muted/50 border border-white/10">
+                        <span className="text-xs text-muted-foreground">Pricing Model</span>
+                        <p className="text-sm font-medium capitalize mt-1">{solution.pricing.model.replace(/-/g, ' ')}</p>
+                      </div>
+                    )}
+
+                    {solution.pricing.startingPrice && (
+                      <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                        <span className="text-xs text-muted-foreground">Starting Price</span>
+                        <p className="text-lg font-bold text-primary mt-1">{solution.pricing.startingPrice}</p>
+                      </div>
+                    )}
+
+                    {solution.pricing.tiers && solution.pricing.tiers.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-sm">Pricing Tiers</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {solution.pricing.tiers.map((tier: any, idx: number) => (
+                            <div key={idx} className="p-4 rounded-lg border bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-all">
+                              <div className="flex items-start justify-between mb-2">
+                                <h5 className="font-semibold text-sm">{tier.name}</h5>
+                                {tier.price && (
+                                  <Badge variant="secondary" className="text-xs">{tier.price}</Badge>
+                                )}
+                              </div>
+                              {tier.description && (
+                                <p className="text-xs text-muted-foreground mb-3">{tier.description}</p>
+                              )}
+                              {tier.features && tier.features.length > 0 && (
+                                <ul className="space-y-1">
+                                  {tier.features.slice(0, 5).map((feature: string, fIdx: number) => (
+                                    <li key={fIdx} className="text-xs flex items-start gap-1">
+                                      <span className="text-primary">✓</span>
+                                      <span>{feature}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No pricing information available
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="rounded-full bg-muted/50 p-6 mb-4">
+                      <DollarSign className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      No pricing information available for this solution
+                    </p>
+                  </div>
                 )}
               </TabsContent>
 
               <TabsContent value="technical" className="mt-0 space-y-6">
-                {solution.technicalSpecs && (
-                  <div>
+                {solution.technicalSpecs ? (
+                  <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-4">
                       <Wrench className="w-5 h-5 text-primary" />
                       <h3 className="font-semibold">Technical Specifications</h3>
                     </div>
-                    <div className="prose prose-sm max-w-none">
-                      <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs">
-                        {JSON.stringify(solution.technicalSpecs, null, 2)}
-                      </pre>
+
+                    {solution.technicalSpecs.supportedPlatforms?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">Supported Platforms</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {solution.technicalSpecs.supportedPlatforms.map((platform: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                              {platform}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {solution.technicalSpecs.apiCapabilities?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">API & Integrations</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {solution.technicalSpecs.apiCapabilities.map((api: string, idx: number) => (
+                            <div key={idx} className="p-3 rounded border bg-card/50 text-sm">
+                              {api}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {solution.technicalSpecs.securityFeatures?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">Security & Compliance</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {solution.technicalSpecs.securityFeatures.map((security: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="border-green-500/30 text-green-600">
+                              {security}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="rounded-full bg-muted/50 p-6 mb-4">
+                      <Wrench className="w-8 h-8 text-muted-foreground" />
                     </div>
+                    <p className="text-sm text-muted-foreground">
+                      No technical specifications available
+                    </p>
                   </div>
                 )}
 
                 {solution.integrations?.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3">Integrations</h3>
-                    <div className="flex flex-wrap gap-2">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Package className="w-4 h-4" />
+                      Available Integrations
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                       {solution.integrations.map((integration: any, idx: number) => (
-                        <Badge key={idx} variant="secondary">
-                          {typeof integration === 'string' ? integration : integration.name}
-                        </Badge>
+                        <div key={idx} className="p-3 rounded-lg border bg-card/30 backdrop-blur-sm hover:bg-card/60 transition-all text-center">
+                          <span className="text-sm font-medium">
+                            {typeof integration === 'string' ? integration : integration.name}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   </div>
