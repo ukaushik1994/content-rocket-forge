@@ -226,15 +226,71 @@ function parseSitemapXml(xml: string, baseUrl: string): SitemapUrl[] {
 }
 
 async function fetchUrlsFromSerp(domain: string, maxUrls: number): Promise<SitemapUrl[]> {
-  const baseUrls = [
-    { loc: `https://${domain}`, category: 'homepage', priority: 1 },
-    { loc: `https://${domain}/products`, category: 'product/service', priority: 1 },
-    { loc: `https://${domain}/solutions`, category: 'product/service', priority: 1 },
-    { loc: `https://${domain}/pricing`, category: 'product/service', priority: 2 },
-    { loc: `https://${domain}/features`, category: 'product/service', priority: 2 }
-  ];
+  // Enhanced SERP discovery - prioritize important pages
+  const serpApiKey = Deno.env.get('SERP_API_KEY');
+  const serpstackKey = Deno.env.get('SERPSTACK_KEY');
   
-  return baseUrls.slice(0, maxUrls);
+  const discoveredUrls: SitemapUrl[] = [];
+  
+  // Try SERP API to find important pages
+  if (serpApiKey || serpstackKey) {
+    const queries = [
+      `site:${domain} pricing OR plans`,
+      `site:${domain} case study OR success story OR customer`,
+      `site:${domain} features OR capabilities`,
+      `site:${domain} product OR solution`
+    ];
+    
+    for (const query of queries) {
+      try {
+        let serpResults;
+        
+        if (serpApiKey) {
+          const response = await fetch(`https://serpapi.com/search.json?q=${encodeURIComponent(query)}&api_key=${serpApiKey}&num=3`);
+          const data = await response.json();
+          serpResults = data.organic_results || [];
+        } else if (serpstackKey) {
+          const response = await fetch(`http://api.serpstack.com/search?access_key=${serpstackKey}&query=${encodeURIComponent(query)}&num=3`);
+          const data = await response.json();
+          serpResults = data.organic_results || [];
+        }
+        
+        if (serpResults) {
+          serpResults.forEach((result: any) => {
+            const url = result.link || result.url;
+            if (url && isValidHttpUrl(url)) {
+              const category = categorizeUrl(url);
+              const priority = getCategoryPriority(category);
+              discoveredUrls.push({ loc: url, category, priority });
+            }
+          });
+        }
+      } catch (error) {
+        console.log(`SERP query failed for: ${query}`, error);
+      }
+    }
+  }
+  
+  // Fallback to base URLs
+  if (discoveredUrls.length === 0) {
+    const baseUrls = [
+      { loc: `https://${domain}`, category: 'homepage', priority: 1 },
+      { loc: `https://${domain}/products`, category: 'product/service', priority: 1 },
+      { loc: `https://${domain}/solutions`, category: 'product/service', priority: 1 },
+      { loc: `https://${domain}/pricing`, category: 'product/service', priority: 2 },
+      { loc: `https://${domain}/features`, category: 'product/service', priority: 2 },
+      { loc: `https://${domain}/customers`, category: 'case-study', priority: 2 },
+      { loc: `https://${domain}/case-studies`, category: 'case-study', priority: 2 }
+    ];
+    
+    return baseUrls.slice(0, maxUrls);
+  }
+  
+  // Remove duplicates and sort by priority
+  const uniqueUrls = Array.from(new Map(discoveredUrls.map(u => [u.loc, u])).values());
+  return uniqueUrls
+    .sort((a, b) => a.priority - b.priority)
+    .slice(0, maxUrls);
 }
 
 async function fetchPagesWithConcurrency(
@@ -288,9 +344,9 @@ async function detectProducts(
   userId: string,
   detectMultiple: boolean
 ): Promise<any[]> {
-  const pageSummaries = pages.slice(0, 10).map(p => {
+  const pageSummaries = pages.slice(0, 15).map(p => {
     const content = p.content;
-    return `URL: ${p.url}\nCategory: ${p.category}\nTitle: ${content.title}\nHeadings: ${content.headings.slice(0, 5).join(', ')}\nText: ${content.mainText.slice(0, 500)}`;
+    return `URL: ${p.url}\nCategory: ${p.category}\nTitle: ${content.title}\nMeta: ${content.metaDescription}\nHeadings: ${content.headings.slice(0, 8).join(', ')}\nText: ${content.mainText.slice(0, 1500)}`;
   }).join('\n\n---\n\n');
 
   const prompt = `Analyze this website and identify all distinct products/solutions offered.
@@ -301,24 +357,28 @@ Pages analyzed: ${pages.length}
 Content:
 ${pageSummaries}
 
-Return a JSON array of products with:
+Return a JSON array with comprehensive product detection:
 {
   "products": [
     {
-      "product_name": "Name of product",
-      "product_url": "URL to product page",
-      "brief_description": "One sentence description",
+      "product_name": "Full product name",
+      "product_url": "Direct URL to product page",
+      "brief_description": "One clear sentence",
+      "category": "Primary category (e.g., Analytics, CRM, HR Tech, Marketing)",
+      "target_audience": "Who it's for (e.g., Enterprise HR Teams, Small Business Owners)",
+      "key_benefits": ["3-5 main benefits"],
       "confidence_score": 0-100
     }
   ]
 }
 
-${detectMultiple ? 'Identify ALL separate products/solutions offered.' : 'Identify only the PRIMARY product/solution.'}
+${detectMultiple ? 'Identify ALL separate products/solutions offered (not features of one product).' : 'Identify only the PRIMARY product/solution.'}
 
 Rules:
-- Only include distinct products (not features)
-- Must have confidence >= 70
-- Brief descriptions only
+- Only include distinct products (not features of the same product)
+- Must have confidence >= 75
+- Extract category and target audience from context
+- Identify key benefits that differentiate the product
 - Return valid JSON only`;
 
   try {
@@ -363,49 +423,104 @@ async function extractProductDetails(
   pages: Array<{ url: string; category: string; content: any }>,
   userId: string
 ): Promise<any> {
-  const relevantPages = pages.filter(p => 
-    p.url.includes(product.product_name.toLowerCase().replace(/\s+/g, '-')) ||
-    p.category === 'product/service' ||
-    p.category === 'homepage'
-  ).slice(0, 5);
+  // Select 10-15 most relevant pages prioritizing product, pricing, case study pages
+  const relevantPages = pages
+    .filter(p => 
+      p.url.includes(product.product_name.toLowerCase().replace(/\s+/g, '-')) ||
+      p.category === 'product/service' ||
+      p.category === 'pricing' ||
+      p.category === 'case-study' ||
+      p.category === 'homepage'
+    )
+    .sort((a, b) => getCategoryPriority(a.category) - getCategoryPriority(b.category))
+    .slice(0, 15);
 
   const pageContent = relevantPages.map(p => {
     const content = p.content;
-    return `URL: ${p.url}\nTitle: ${content.title}\nContent: ${content.mainText.slice(0, 1000)}`;
+    return `URL: ${p.url}\nCategory: ${p.category}\nTitle: ${content.title}\nMeta: ${content.metaDescription}\nContent: ${content.mainText.slice(0, 3000)}`;
   }).join('\n\n---\n\n');
 
-  const prompt = `Extract comprehensive solution data for: ${product.product_name}
+  const prompt = `Extract COMPREHENSIVE solution intelligence for: ${product.product_name}
+
+Analyze these ${relevantPages.length} pages deeply and extract ALL available information:
 
 ${pageContent}
 
-Return structured JSON:
+Return complete structured JSON:
 {
   "name": "${product.product_name}",
-  "description": "2-3 sentence description",
-  "shortDescription": "One sentence",
-  "category": "e.g., Analytics, CRM, Marketing",
-  "features": ["8-15 specific features"],
-  "useCases": ["5-10 use cases"],
-  "painPoints": ["5-8 pain points it solves"],
-  "targetAudience": ["5-8 audience segments"],
-  "benefits": ["5-8 key benefits"],
-  "uniqueValuePropositions": ["3-5 UVPs"],
-  "keyDifferentiators": ["3-5 differentiators"],
+  "description": "2-3 detailed sentences about what this solution does and who it helps",
+  "shortDescription": "One compelling sentence (max 150 chars)",
+  "category": "${product.category || 'Business Solution'}",
+  "positioning": "How they position themselves in the market (1-2 sentences)",
+  
+  "uniqueValuePropositions": [
+    "3-5 UVPs with evidence (e.g., 'AI-powered turnover prediction 12 months in advance')"
+  ],
+  "keyDifferentiators": [
+    "3-5 competitive advantages (e.g., 'No SQL required - built for HR not IT')"
+  ],
+  
+  "features": [
+    "12-20 specific, detailed features (not just 'Analytics' but 'AI-powered predictive turnover analytics')"
+  ],
+  "useCases": [
+    "8-12 specific use cases with outcomes (e.g., 'Predict turnover 12 months early and reduce attrition by 25%')"
+  ],
+  "painPoints": [
+    "8-12 pain points in customer language (e.g., 'HR data scattered across 10+ systems')"
+  ],
+  "targetAudience": [
+    "8-12 specific audience segments (e.g., 'Chief Human Resources Officers at Fortune 500 companies')"
+  ],
+  "benefits": [
+    "8-12 quantifiable benefits (e.g., 'Reduce reporting time from weeks to minutes')"
+  ],
+  
   "pricing": {
-    "model": "subscription|one-time|usage-based|freemium|enterprise|custom",
-    "startingPrice": "if found",
-    "tiers": [{"name": "", "price": "", "features": []}]
+    "model": "subscription|one-time|usage-based|freemium|enterprise|custom|contact-sales",
+    "startingPrice": "Extract if mentioned (e.g., '$99/month', 'Contact sales')",
+    "tiers": [
+      {
+        "name": "Tier name",
+        "price": "Monthly price if found",
+        "description": "Brief description",
+        "features": ["Key features in this tier"]
+      }
+    ]
   },
+  
   "technicalSpecs": {
-    "supportedPlatforms": [],
-    "apiCapabilities": [],
-    "securityFeatures": [],
-    "integrations": []
+    "supportedPlatforms": ["Web, iOS, Android, Desktop, etc."],
+    "apiCapabilities": ["REST API, GraphQL, Webhooks, etc."],
+    "securityFeatures": ["SOC 2, GDPR, SSO, Encryption, etc."],
+    "integrations": ["Named integrations like Salesforce, Slack, etc."]
   },
-  "tags": ["10-15 relevant tags"]
+  
+  "caseStudies": [
+    {
+      "companyName": "If found",
+      "challenge": "What problem they had",
+      "solution": "How the product helped",
+      "results": "Quantifiable outcomes"
+    }
+  ],
+  
+  "tags": ["15-20 searchable tags for discovery (e.g., 'workforce planning', 'HR analytics', 'turnover prediction')"]
 }
 
-Return valid JSON only. Be comprehensive but accurate.`;
+CRITICAL INSTRUCTIONS:
+- Extract 12-20 DETAILED features (not generic)
+- Find 8-12 specific use cases with outcomes
+- Identify 8-12 pain points in customer language
+- List 8-12 target audience segments
+- Extract ALL pricing tiers with features
+- Find case studies with metrics if available
+- Include 15-20 tags for searchability
+- Be comprehensive but only include what you can verify from the content
+- If pricing/case studies aren't found, return empty arrays but ALWAYS fill features, use cases, pain points
+
+Return valid JSON only.`;
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
