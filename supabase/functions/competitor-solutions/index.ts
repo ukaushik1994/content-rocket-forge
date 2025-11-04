@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   try {
     const { competitorId, competitorWebsite, competitorName, userId }: DiscoverRequest = await req.json();
 
-    console.log(`🔍 Discovering solutions for: ${competitorName} (${competitorWebsite})`);
+    console.log('[DISCOVER] Starting discovery for:', competitorName, '(', competitorWebsite, ')');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const startTime = Date.now();
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
           });
         }
       } catch (error) {
-        console.warn(`⚠️ SERP query failed: ${query}`, error);
+        console.warn('[WARN] SERP query failed:', query, error);
       }
     }
 
@@ -109,10 +109,10 @@ Deno.serve(async (req) => {
     }
 
     diagnostics.pages_discovered = discoveredUrls.size;
-    console.log(`✓ Found ${diagnostics.pages_discovered} solution pages`)
+    console.log('[SUCCESS] Found', diagnostics.pages_discovered, 'solution pages')
 
     // Step 1.5: Fetch actual page content
-    console.log('📄 Step 1.5: Fetching page content from discovered URLs...');
+    console.log('[FETCH] Step 1.5: Fetching page content from discovered URLs...');
     const urlsToAnalyze = Array.from(discoveredUrls).slice(0, 5); // Top 5 URLs
     
     const pageContents = await Promise.all(
@@ -120,22 +120,22 @@ Deno.serve(async (req) => {
         try {
           const content = await extractPageContent(url, 15000);
           if (content) {
-            console.log(`✓ Fetched content from: ${url}`);
+            console.log('[SUCCESS] Fetched content from:', url);
             return { url, content };
           }
           return null;
         } catch (error) {
-          console.warn(`⚠️ Failed to fetch ${url}:`, error);
+          console.warn('[WARN] Failed to fetch:', url, error);
           return null;
         }
       })
     );
     
     const validPages = pageContents.filter(p => p !== null);
-    console.log(`✓ Successfully fetched content from ${validPages.length}/${urlsToAnalyze.length} pages`);
+    console.log('[SUCCESS] Successfully fetched content from', validPages.length, '/', urlsToAnalyze.length, 'pages');
 
     // Step 2: Extract product list from actual page content
-    console.log('🧠 Step 2: Extracting product list from page content...');
+    console.log('[EXTRACT] Step 2: Extracting product list from page content...');
 
     const extractPrompt = `You are analyzing ${competitorName}'s website to identify their PRODUCT OFFERINGS.
 
@@ -205,7 +205,7 @@ JSON:`;
       } catch (error) {
         retries++;
         if (retries > maxRetries) throw error;
-        console.log(`Retry ${retries}/${maxRetries} for AI extraction`);
+        console.log('[RETRY]', retries, '/', maxRetries, 'for AI extraction');
       }
     }
     
@@ -222,13 +222,13 @@ JSON:`;
 
     diagnostics.solutions_extracted = products.length;
     diagnostics.total_solutions_attempted = products.length;
-    console.log(`✓ Extracted ${products.length} products`);
+    console.log('[SUCCESS] Extracted', products.length, 'products');
 
     // Step 3: For each product, enrich with focused extraction
-    console.log('🔬 Step 3: Analyzing each solution in detail...');
+    console.log('[ANALYZE] Step 3: Analyzing each solution in detail...');
     
     const enrichSolutionData = async (solution: any) => {
-      console.log(`📦 Attempting extraction for: ${solution.name}`);
+      console.log('[EXTRACT] Attempting extraction for:', solution.name);
       
       try {
         const extractionStartTime = Date.now();
@@ -253,7 +253,7 @@ JSON:`;
           throw new Error('No valid page content available');
         }
         
-        console.log(`  → Analyzing from: ${relevantPage.url}`);
+        console.log('[ANALYZE] Analyzing from:', relevantPage.url);
         
         // Focused extraction prompt for THIS SPECIFIC product
         const detailPrompt = `Extract comprehensive details about "${solution.name}" from this page content.
@@ -331,7 +331,7 @@ RULES:
           const jsonMatch = content.match(/\{[\s\S]*\}/);
           extractedDetails = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
         } catch (error) {
-          console.warn(`⚠️ Failed to parse AI response for ${solution.name}:`, error);
+          console.warn('[WARN] Failed to parse AI response for:', solution.name, error);
           extractedDetails = {};
         }
 
@@ -351,7 +351,7 @@ RULES:
         const dataQuality = confidence >= 80 && completeness >= 75 ? 'high' : 
                            confidence >= 60 && completeness >= 50 ? 'medium' : 'low';
         
-        console.log(`✅ Extracted for ${solution.name}: ${extractedDetails.features?.length || 0} features, ${extractedDetails.useCases?.length || 0} use cases, ${extractedDetails.painPoints?.length || 0} pain points, ${completeness}% complete, ${dataQuality} quality`);
+        console.log('[SUCCESS] Extracted for', solution.name, ':', extractedDetails.features?.length || 0, 'features,', extractedDetails.useCases?.length || 0, 'use cases,', extractedDetails.painPoints?.length || 0, 'pain points,', completeness + '% complete,', dataQuality, 'quality');
         
         diagnostics.full_extractions++;
         diagnostics.successful_extractions = (diagnostics.successful_extractions || 0) + 1;
@@ -393,7 +393,7 @@ RULES:
         };
         
       } catch (error) {
-        console.error(`❌ Extraction failed for: ${solution.name}`, error);
+        console.error('[ERROR] Extraction failed for:', solution.name, error);
         diagnostics.failed_extractions = (diagnostics.failed_extractions || 0) + 1;
         
         return {
@@ -471,8 +471,8 @@ RULES:
     }
     
     diagnostics.total_time_ms = Date.now() - startTime;
-    console.log('📊 Final Diagnostics:', diagnostics);
-    console.log(`✅ Discovery complete! Saved ${savedSolutions.length} solutions in ${diagnostics.total_time_ms}ms`);
+    console.log('[DIAGNOSTICS] Final Diagnostics:', diagnostics);
+    console.log('[SUCCESS] Discovery complete! Saved', savedSolutions.length, 'solutions in', diagnostics.total_time_ms + 'ms');
 
     return new Response(
       JSON.stringify({
