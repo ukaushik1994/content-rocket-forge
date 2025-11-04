@@ -54,18 +54,18 @@ Deno.serve(async (req) => {
     };
 
     // Step 1: Use SERP to find product/solution pages
-    console.log('📋 Step 1: Finding solution pages via SERP...');
+    console.log('[SERP] Step 1: Finding solution pages via SERP...');
     const serpQueries = [
-      `site:${competitorWebsite} products`,
-      `site:${competitorWebsite} solutions`,
-      `site:${competitorWebsite} services`,
-      `site:${competitorWebsite} platform`,
-      `site:${competitorWebsite} offerings`,
-      `site:${competitorWebsite} tools`,
-      `site:${competitorWebsite} "what we offer"`,
-      `site:${competitorWebsite} "our products"`,
-      `"${competitorName}" products`,
-      `"${competitorName}" solutions overview`
+      'site:' + competitorWebsite + ' products',
+      'site:' + competitorWebsite + ' solutions',
+      'site:' + competitorWebsite + ' services',
+      'site:' + competitorWebsite + ' platform',
+      'site:' + competitorWebsite + ' offerings',
+      'site:' + competitorWebsite + ' tools',
+      'site:' + competitorWebsite + ' "what we offer"',
+      'site:' + competitorWebsite + ' "our products"',
+      '"' + competitorName + '" products',
+      '"' + competitorName + '" solutions overview'
     ];
 
     const discoveredUrls = new Set<string>();
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       diagnostics.serp_queries++;
       try {
         const serpResponse = await fetch(
-          `https://serpapi.com/search?q=${encodeURIComponent(query)}&api_key=${SERP_API_KEY}&num=10`
+          'https://serpapi.com/search?q=' + encodeURIComponent(query) + '&api_key=' + SERP_API_KEY + '&num=10'
         );
         const serpData = await serpResponse.json();
         
@@ -102,10 +102,10 @@ Deno.serve(async (req) => {
 
     // Fallback to homepage if no URLs found
     if (discoveredUrls.size === 0) {
-      console.log('⚠️ No solution pages found via SERP, falling back to homepage');
+      console.log('[WARN] No solution pages found via SERP, falling back to homepage');
       discoveredUrls.add(competitorWebsite);
-      discoveredUrls.add(`${competitorWebsite}/products`);
-      discoveredUrls.add(`${competitorWebsite}/solutions`);
+      discoveredUrls.add(competitorWebsite + '/products');
+      discoveredUrls.add(competitorWebsite + '/solutions');
     }
 
     diagnostics.pages_discovered = discoveredUrls.size;
@@ -137,44 +137,38 @@ Deno.serve(async (req) => {
     // Step 2: Extract product list from actual page content
     console.log('[EXTRACT] Step 2: Extracting product list from page content...');
 
-    const extractPrompt = `You are analyzing ${competitorName}'s website to identify their PRODUCT OFFERINGS.
+    const pageContentStr = validPages.map((p, i) => 
+      '\n=== PAGE ' + (i+1) + ': ' + p.url + ' ===\n' +
+      'Title: ' + p.content.title + '\n' +
+      'Meta Description: ' + (p.content.metaDescription || 'N/A') + '\n' +
+      'Main Headings: ' + p.content.headings.slice(0, 10).join(' | ') + '\n' +
+      'Content Preview: ' + p.content.mainText.slice(0, 2000)
+    ).join('\n\n');
 
-Website: ${competitorWebsite}
-Pages analyzed: ${validPages.length}
-
-PAGE CONTENT:
-${validPages.map((p, i) => `
-=== PAGE ${i+1}: ${p.url} ===
-Title: ${p.content.title}
-Meta Description: ${p.content.metaDescription || 'N/A'}
-Main Headings: ${p.content.headings.slice(0, 10).join(' | ')}
-Content Preview: ${p.content.mainText.slice(0, 2000)}
-`).join('\n\n')}
-
-TASK: Extract ALL distinct PRODUCTS/SOLUTIONS/SERVICES offered by ${competitorName}.
-
-IMPORTANT:
-- A PRODUCT is a standalone offering customers can buy/use (e.g., "Visier People", "Slack Enterprise")
-- A FEATURE is part of a product (e.g., "real-time messaging", "turnover prediction")
-- Extract PRODUCTS, not features or page sections
-
-For EACH product:
-{
-  "name": "Exact product name as shown on website",
-  "category": "Product type (e.g., Analytics Platform, CRM, HR Tech)",
-  "short_description": "One sentence: what it does + who it's for",
-  "url": "Best URL for this product from the pages above",
-  "confidence": 0-100
-}
-
-RULES:
-1. Only products with confidence >= 75
-2. If you see "Product A" and "Product B" → 2 separate products
-3. If "Pro" and "Enterprise" editions → 1 product (mention editions in description)
-4. Use actual content (headings, text) to identify products - not just URLs
-5. Return ONLY valid JSON array, NO markdown, NO explanation
-
-JSON:`;
+    const extractPrompt = 'You are analyzing ' + competitorName + '\'s website to identify their PRODUCT OFFERINGS.\n\n' +
+      'Website: ' + competitorWebsite + '\n' +
+      'Pages analyzed: ' + validPages.length + '\n\n' +
+      'PAGE CONTENT:\n' + pageContentStr + '\n\n' +
+      'TASK: Extract ALL distinct PRODUCTS/SOLUTIONS/SERVICES offered by ' + competitorName + '.\n\n' +
+      'IMPORTANT:\n' +
+      '- A PRODUCT is a standalone offering customers can buy/use (e.g., "Visier People", "Slack Enterprise")\n' +
+      '- A FEATURE is part of a product (e.g., "real-time messaging", "turnover prediction")\n' +
+      '- Extract PRODUCTS, not features or page sections\n\n' +
+      'For EACH product:\n' +
+      '{\n' +
+      '  "name": "Exact product name as shown on website",\n' +
+      '  "category": "Product type (e.g., Analytics Platform, CRM, HR Tech)",\n' +
+      '  "short_description": "One sentence: what it does + who it\'s for",\n' +
+      '  "url": "Best URL for this product from the pages above",\n' +
+      '  "confidence": 0-100\n' +
+      '}\n\n' +
+      'RULES:\n' +
+      '1. Only products with confidence >= 75\n' +
+      '2. If you see "Product A" and "Product B" → 2 separate products\n' +
+      '3. If "Pro" and "Enterprise" editions → 1 product (mention editions in description)\n' +
+      '4. Use actual content (headings, text) to identify products - not just URLs\n' +
+      '5. Return ONLY valid JSON array, NO markdown, NO explanation\n\n' +
+      'JSON:';
 
     let extractData;
     let retries = 0;
@@ -185,7 +179,7 @@ JSON:`;
         const extractResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Authorization': 'Bearer ' + LOVABLE_API_KEY,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -256,60 +250,55 @@ JSON:`;
         console.log('[ANALYZE] Analyzing from:', relevantPage.url);
         
         // Focused extraction prompt for THIS SPECIFIC product
-        const detailPrompt = `Extract comprehensive details about "${solution.name}" from this page content.
-
-PRODUCT TO ANALYZE: ${solution.name}
-CATEGORY: ${solution.category}
-PAGE URL: ${relevantPage.url}
-
-PAGE CONTENT:
-Title: ${relevantPage.content.title}
-Meta: ${relevantPage.content.metaDescription}
-Headings: ${relevantPage.content.headings.join(' | ')}
-Content: ${relevantPage.content.mainText.slice(0, 4000)}
-
-Extract ONLY information about "${solution.name}". Return JSON with:
-
-{
-  "features": [
-    { "name": "Feature name", "description": "What it does" }
-  ],
-  "benefits": ["Benefit 1", "Benefit 2"],
-  "useCases": [
-    { "title": "Use case title", "description": "How it's used" }
-  ],
-  "painPoints": ["Pain point 1", "Pain point 2"],
-  "targetAudience": ["Audience 1", "Audience 2"],
-  "pricing": {
-    "model": "subscription|one-time|freemium|contact-sales",
-    "startingPrice": "Price if mentioned",
-    "tiers": [{ "name": "Tier", "price": "Price", "features": [] }]
-  },
-  "technicalSpecs": {
-    "supportedPlatforms": ["Platform 1"],
-    "apiCapabilities": ["API feature 1"],
-    "securityFeatures": ["Security 1"]
-  },
-  "positioning": "Market positioning statement",
-  "uniqueValuePropositions": ["UVP 1", "UVP 2"],
-  "integrations": ["Integration 1"],
-  "confidence": 0-100
-}
-
-RULES:
-1. Extract 15-25 features (core capabilities and detailed features)
-2. Extract 5-10 use cases (specific scenarios and applications)
-3. Extract 5-8 pain points (problems this solution solves)
-4. Extract 3-5 target audiences (who uses this)
-5. Only include information explicitly stated on the page
-6. If pricing not found, set pricing to null
-7. Confidence = how certain you are this is about "${solution.name}"
-8. Return ONLY valid JSON, NO markdown
+        const detailPrompt = 'Extract comprehensive details about "' + solution.name + '" from this page content.\n\n' +
+          'PRODUCT TO ANALYZE: ' + solution.name + '\n' +
+          'CATEGORY: ' + solution.category + '\n' +
+          'PAGE URL: ' + relevantPage.url + '\n\n' +
+          'PAGE CONTENT:\n' +
+          'Title: ' + relevantPage.content.title + '\n' +
+          'Meta: ' + relevantPage.content.metaDescription + '\n' +
+          'Headings: ' + relevantPage.content.headings.join(' | ') + '\n' +
+          'Content: ' + relevantPage.content.mainText.slice(0, 4000) + '\n\n' +
+          'Extract ONLY information about "' + solution.name + '". Return JSON with:\n\n' +
+          '{\n' +
+          '  "features": [\n' +
+          '    { "name": "Feature name", "description": "What it does" }\n' +
+          '  ],\n' +
+          '  "benefits": ["Benefit 1", "Benefit 2"],\n' +
+          '  "useCases": [\n' +
+          '    { "title": "Use case title", "description": "How it\'s used" }\n' +
+          '  ],\n' +
+          '  "painPoints": ["Pain point 1", "Pain point 2"],\n' +
+          '  "targetAudience": ["Audience 1", "Audience 2"],\n' +
+          '  "pricing": {\n' +
+          '    "model": "subscription|one-time|freemium|contact-sales",\n' +
+          '    "startingPrice": "Price if mentioned",\n' +
+          '    "tiers": [{ "name": "Tier", "price": "Price", "features": [] }]\n' +
+          '  },\n' +
+          '  "technicalSpecs": {\n' +
+          '    "supportedPlatforms": ["Platform 1"],\n' +
+          '    "apiCapabilities": ["API feature 1"],\n' +
+          '    "securityFeatures": ["Security 1"]\n' +
+          '  },\n' +
+          '  "positioning": "Market positioning statement",\n' +
+          '  "uniqueValuePropositions": ["UVP 1", "UVP 2"],\n' +
+          '  "integrations": ["Integration 1"],\n' +
+          '  "confidence": 0-100\n' +
+          '}\n\n' +
+          'RULES:\n' +
+          '1. Extract 15-25 features (core capabilities and detailed features)\n' +
+          '2. Extract 5-10 use cases (specific scenarios and applications)\n' +
+          '3. Extract 5-8 pain points (problems this solution solves)\n' +
+          '4. Extract 3-5 target audiences (who uses this)\n' +
+          '5. Only include information explicitly stated on the page\n' +
+          '6. If pricing not found, set pricing to null\n' +
+          '7. Confidence = how certain you are this is about "' + solution.name + '"\n' +
+          '8. Return ONLY valid JSON, NO markdown';
 
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Authorization': 'Bearer ' + LOVABLE_API_KEY,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -399,7 +388,7 @@ RULES:
         return {
           name: solution.name,
           category: solution.category || 'Unknown',
-          short_description: solution.short_description || `${solution.name}`,
+          short_description: solution.short_description || solution.name,
           long_description: solution.short_description,
           external_url: solution.url || validPages[0]?.url || urlsToAnalyze[0],
           features: [],
