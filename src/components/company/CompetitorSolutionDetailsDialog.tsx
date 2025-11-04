@@ -114,12 +114,19 @@ export function CompetitorSolutionDetailsDialog({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-1">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="features">Features</TabsTrigger>
+            <TabsTrigger value="features">
+              Features {solution.features?.length > 0 && `(${solution.features.length})`}
+            </TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            <TabsTrigger value="use-cases">
+              Use Cases {solution.useCases?.length > 0 && `(${solution.useCases.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="audience">
+              Audience {solution.targetAudience?.length > 0 && `(${solution.targetAudience.length})`}
+            </TabsTrigger>
             <TabsTrigger value="technical">Technical</TabsTrigger>
-            <TabsTrigger value="use-cases">Use Cases</TabsTrigger>
           </TabsList>
 
           <ScrollArea className="flex-1">
@@ -361,14 +368,20 @@ export function CompetitorSolutionDetailsDialog({
               <TabsContent value="use-cases" className="mt-0 space-y-4">
                 {solution.useCases?.length > 0 ? (
                   <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <BookOpen className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold">{solution.useCases.length} Use Case{solution.useCases.length !== 1 ? 's' : ''}</h3>
+                    </div>
                     {solution.useCases.map((useCase: any, idx: number) => (
-                      <div key={idx} className="p-4 rounded-lg border bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-all">
+                      <div key={idx} className="p-4 rounded-lg border bg-gradient-to-br from-blue-500/5 to-blue-500/10 border-blue-500/20 backdrop-blur-sm hover:border-blue-500/40 transition-all">
                         <h4 className="font-medium mb-2 flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-primary" />
+                          <span className="text-blue-600">▸</span>
                           {typeof useCase === 'string' ? useCase : useCase.title || useCase.name}
                         </h4>
                         {typeof useCase === 'object' && useCase.description && (
-                          <p className="text-sm text-muted-foreground">{useCase.description}</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed ml-5">
+                            {useCase.description}
+                          </p>
                         )}
                       </div>
                     ))}
@@ -379,10 +392,60 @@ export function CompetitorSolutionDetailsDialog({
                       <BookOpen className="w-8 h-8 text-muted-foreground" />
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      No use case information available
+                      No use case information found
                     </p>
                     <p className="text-xs text-muted-foreground max-w-md">
-                      Use cases help understand how this product is applied in real scenarios
+                      Use case details were not available on their public website
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="audience" className="mt-0 space-y-6">
+                {solution.targetAudience?.length > 0 || solution.painPoints?.length > 0 ? (
+                  <div className="space-y-6">
+                    {solution.targetAudience?.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <Target className="w-5 h-5 text-primary" />
+                          <h3 className="font-semibold">{solution.targetAudience.length} Target Audience{solution.targetAudience.length !== 1 ? 's' : ''}</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {solution.targetAudience.map((audience: string, idx: number) => (
+                            <div key={idx} className="p-4 rounded-lg border bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-all">
+                              <p className="text-sm font-medium">{audience}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {solution.painPoints?.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-green-600 text-lg">✓</span>
+                          <h3 className="font-semibold">{solution.painPoints.length} Problem{solution.painPoints.length !== 1 ? 's' : ''} Solved</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {solution.painPoints.map((painPoint: string, idx: number) => (
+                            <div key={idx} className="p-4 rounded-lg border bg-gradient-to-br from-green-500/5 to-green-500/10 border-green-500/20">
+                              <p className="text-sm flex items-start gap-2">
+                                <span className="text-green-600 mt-0.5">✓</span>
+                                <span>{painPoint}</span>
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="rounded-full bg-muted/50 p-6 mb-4">
+                      <Target className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      No audience or pain point information available
                     </p>
                   </div>
                 )}

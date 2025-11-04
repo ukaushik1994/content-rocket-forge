@@ -278,6 +278,7 @@ Extract ONLY information about "${solution.name}". Return JSON with:
   "useCases": [
     { "title": "Use case title", "description": "How it's used" }
   ],
+  "painPoints": ["Pain point 1", "Pain point 2"],
   "targetAudience": ["Audience 1", "Audience 2"],
   "pricing": {
     "model": "subscription|one-time|freemium|contact-sales",
@@ -296,11 +297,14 @@ Extract ONLY information about "${solution.name}". Return JSON with:
 }
 
 RULES:
-1. Extract 8-15 features minimum (core capabilities)
-2. Only include information explicitly stated
-3. If pricing not found, set pricing to null
-4. Confidence = how certain you are this is about "${solution.name}"
-5. Return ONLY valid JSON, NO markdown`;
+1. Extract 15-25 features (core capabilities and detailed features)
+2. Extract 5-10 use cases (specific scenarios and applications)
+3. Extract 5-8 pain points (problems this solution solves)
+4. Extract 3-5 target audiences (who uses this)
+5. Only include information explicitly stated on the page
+6. If pricing not found, set pricing to null
+7. Confidence = how certain you are this is about "${solution.name}"
+8. Return ONLY valid JSON, NO markdown
 
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
@@ -334,18 +338,20 @@ RULES:
         const extractionTime = Date.now() - extractionStartTime;
         
         // Validate extraction quality
-        const hasFeatures = extractedDetails.features?.length >= 5;
+        const hasFeatures = extractedDetails.features?.length >= 10;
         const hasPricing = extractedDetails.pricing !== null && extractedDetails.pricing !== undefined;
-        const hasUseCases = extractedDetails.useCases?.length > 0;
+        const hasUseCases = extractedDetails.useCases?.length >= 3;
+        const hasPainPoints = extractedDetails.painPoints?.length >= 3;
+        const hasAudience = extractedDetails.targetAudience?.length >= 2;
         const hasSpecs = extractedDetails.technicalSpecs && Object.keys(extractedDetails.technicalSpecs).length > 0;
         const confidence = extractedDetails.confidence || 0;
         
-        const fieldsExtracted = [hasFeatures, hasPricing, hasUseCases, hasSpecs].filter(Boolean).length;
-        const completeness = Math.round((fieldsExtracted / 4) * 100);
+        const fieldsExtracted = [hasFeatures, hasPricing, hasUseCases, hasPainPoints, hasAudience, hasSpecs].filter(Boolean).length;
+        const completeness = Math.round((fieldsExtracted / 6) * 100);
         const dataQuality = confidence >= 80 && completeness >= 75 ? 'high' : 
                            confidence >= 60 && completeness >= 50 ? 'medium' : 'low';
         
-        console.log(`✅ Extracted for ${solution.name}: ${extractedDetails.features?.length || 0} features, ${completeness}% complete, ${dataQuality} quality`);
+        console.log(`✅ Extracted for ${solution.name}: ${extractedDetails.features?.length || 0} features, ${extractedDetails.useCases?.length || 0} use cases, ${extractedDetails.painPoints?.length || 0} pain points, ${completeness}% complete, ${dataQuality} quality`);
         
         diagnostics.full_extractions++;
         diagnostics.successful_extractions = (diagnostics.successful_extractions || 0) + 1;
@@ -362,7 +368,7 @@ RULES:
           key_differentiators: [],
           features: extractedDetails.features || [],
           use_cases: extractedDetails.useCases || [],
-          pain_points: [],
+          pain_points: extractedDetails.painPoints || [],
           target_audience: extractedDetails.targetAudience || [],
           benefits: extractedDetails.benefits || [],
           pricing: extractedDetails.pricing || null,

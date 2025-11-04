@@ -55,37 +55,112 @@ export function CompetitorSolutionCard({ solution, onView, isSelected = false, o
           </p>
         )}
 
+        {/* Stats Summary */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {featureCount > 0 && <span>{featureCount} features</span>}
+          {solution.useCases?.length > 0 && <span>• {solution.useCases.length} use cases</span>}
+          {solution.painPoints?.length > 0 && <span>• {solution.painPoints.length} pain points</span>}
+        </div>
+
+        {/* Features Section */}
         {featureCount > 0 && (
-          <div className="space-y-1">
-            <p className="text-xs font-medium">Key Features:</p>
-            <ul className="space-y-0.5">
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium">Key Features</p>
+            <div className="flex flex-wrap gap-1">
               {solution.features.slice(0, 3).map((feature: any, idx: number) => (
-                <li key={idx} className="text-xs text-muted-foreground flex items-start gap-1">
-                  <span className="text-primary">•</span>
-                  <span className="line-clamp-1">{typeof feature === 'string' ? feature : feature.name || feature.title}</span>
-                </li>
+                <Badge key={idx} variant="secondary" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                  {typeof feature === 'string' ? feature : feature.name || feature.title}
+                </Badge>
               ))}
-            </ul>
+              {featureCount > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{featureCount - 3} more
+                </Badge>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex gap-1">
-        {solution.discoverySource === 'serp:partial' && (
-          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
-            Partial Data
-          </Badge>
+        {/* Use Cases Section */}
+        {solution.useCases?.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium">Use Cases</p>
+            <div className="flex flex-wrap gap-1">
+              {solution.useCases.slice(0, 2).map((useCase: any, idx: number) => (
+                <Badge key={idx} variant="secondary" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                  {typeof useCase === 'string' ? useCase : useCase.title || useCase.name}
+                </Badge>
+              ))}
+              {solution.useCases.length > 2 && (
+                <Badge variant="outline" className="text-xs">
+                  +{solution.useCases.length - 2} more
+                </Badge>
+              )}
+            </div>
+          </div>
         )}
-        {solution.discoverySource === 'serp:full' && (
-          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
-            Complete Profile
-          </Badge>
+
+        {/* Pain Points Section */}
+        {solution.painPoints?.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium">Solves</p>
+            <div className="flex flex-wrap gap-1">
+              {solution.painPoints.slice(0, 2).map((painPoint: string, idx: number) => (
+                <Badge key={idx} variant="secondary" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                  {painPoint}
+                </Badge>
+              ))}
+              {solution.painPoints.length > 2 && (
+                <Badge variant="outline" className="text-xs">
+                  +{solution.painPoints.length - 2} more
+                </Badge>
+              )}
+            </div>
+          </div>
         )}
-        {solution.pricing && (
-          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
-            Pricing Available
-          </Badge>
+
+        {/* Target Audience */}
+        {solution.targetAudience?.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium">For</p>
+            <div className="flex flex-wrap gap-1">
+              {solution.targetAudience.slice(0, 2).map((audience: string, idx: number) => (
+                <Badge key={idx} variant="outline" className="text-xs">
+                  {audience}
+                </Badge>
+              ))}
+            </div>
+          </div>
         )}
+
+        {/* Quality Indicators */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="flex flex-wrap gap-1">
+            {solution.metadata?.data_quality === 'high' && (
+              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                High Quality
+              </Badge>
+            )}
+            {solution.metadata?.data_quality === 'medium' && (
+              <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
+                Medium Quality
+              </Badge>
+            )}
+            {solution.metadata?.data_quality === 'low' && (
+              <Badge variant="outline" className="text-xs bg-red-500/10 text-red-600 border-red-500/30">
+                Low Quality
+              </Badge>
+            )}
+            {solution.metadata?.completeness_score && (
+              <Badge variant="outline" className="text-xs">
+                {solution.metadata.completeness_score}% complete
+              </Badge>
+            )}
+            {solution.pricing && (
+              <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                Pricing Available
+              </Badge>
+            )}
           </div>
           {solution.externalUrl && (
             <a
