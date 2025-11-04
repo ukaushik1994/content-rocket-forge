@@ -1361,6 +1361,65 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_discovery_jobs: {
+        Row: {
+          competitor_id: string
+          completed_at: string | null
+          created_at: string | null
+          current_solution: string | null
+          current_step: number | null
+          diagnostics: Json | null
+          error: string | null
+          id: string
+          progress_percent: number | null
+          started_at: string | null
+          status: string
+          total_steps: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          competitor_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          current_solution?: string | null
+          current_step?: number | null
+          diagnostics?: Json | null
+          error?: string | null
+          id?: string
+          progress_percent?: number | null
+          started_at?: string | null
+          status?: string
+          total_steps?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          competitor_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          current_solution?: string | null
+          current_step?: number | null
+          diagnostics?: Json | null
+          error?: string | null
+          id?: string
+          progress_percent?: number | null
+          started_at?: string | null
+          status?: string
+          total_steps?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_discovery_jobs_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "company_competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_solutions: {
         Row: {
           benefits: Json | null
@@ -1461,6 +1520,41 @@ export type Database = {
             columns: ["competitor_id"]
             isOneToOne: false
             referencedRelation: "company_competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitor_solutions_history: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          changed_fields: Json | null
+          id: string
+          snapshot: Json | null
+          solution_id: string
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by?: string | null
+          changed_fields?: Json | null
+          id?: string
+          snapshot?: Json | null
+          solution_id: string
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string | null
+          changed_fields?: Json | null
+          id?: string
+          snapshot?: Json | null
+          solution_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_solutions_history_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_solutions"
             referencedColumns: ["id"]
           },
         ]

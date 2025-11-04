@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { CompanyCompetitor, CompetitorSolution } from '@/contexts/content-builder/types/company-types';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Package, Loader2, Target, Download, Trash2, FileText, FileJson } from 'lucide-react';
+import { Sparkles, Package, Loader2, Target, Download, Trash2, FileText, FileJson, GitCompare } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { discoverCompetitorSolutions, getCompetitorSolutions } from '@/services/competitorSolutionsService';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { CompetitorSolutionComparison } from './CompetitorSolutionComparison';
 
 interface CompetitorSolutionsTabProps {
   competitor: CompanyCompetitor;
@@ -28,6 +29,8 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
   const [lastDiagnostics, setLastDiagnostics] = useState<any>(null);
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date');
+  const [selectedSolutions, setSelectedSolutions] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
 
   // Fetch solutions
   const { data: solutions = [], isLoading } = useQuery({
@@ -119,6 +122,18 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
   });
 
   const handleDeleteAll = () => deleteAllMutation.mutate();
+
+  const toggleSolutionSelection = (solutionId: string) => {
+    setSelectedSolutions(prev =>
+      prev.includes(solutionId)
+        ? prev.filter(id => id !== solutionId)
+        : [...prev, solutionId]
+    );
+  };
+
+  const getComparisonSolutions = () => {
+    return solutions.filter(s => selectedSolutions.includes(s.id));
+  };
 
   // Export functions
   const exportAsCSV = () => {
@@ -319,6 +334,14 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
             </DropdownMenu>
           )}
           
+          {/* Compare button */}
+          {selectedSolutions.length >= 2 && (
+            <Button variant="outline" size="sm" onClick={() => setShowComparison(true)}>
+              <GitCompare className="w-4 h-4 mr-2" />
+              Compare ({selectedSolutions.length})
+            </Button>
+          )}
+          
           {/* Delete all */}
           {solutions.length > 0 && (
             <AlertDialog>
@@ -402,6 +425,8 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
             key={solution.id}
             solution={solution}
             onView={handleViewDetails}
+            isSelected={selectedSolutions.includes(solution.id)}
+            onToggleSelect={toggleSolutionSelection}
           />
         ))}
       </div>
@@ -411,6 +436,13 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
           solution={selectedSolution}
           open={detailsDialogOpen}
           onOpenChange={setDetailsDialogOpen}
+        />
+      )}
+
+      {showComparison && (
+        <CompetitorSolutionComparison
+          solutions={getComparisonSolutions()}
+          onClose={() => setShowComparison(false)}
         />
       )}
     </div>

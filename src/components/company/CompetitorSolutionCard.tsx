@@ -2,14 +2,17 @@ import { CompetitorSolution } from '@/contexts/content-builder/types/company-typ
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Package, ExternalLink } from 'lucide-react';
 
 interface CompetitorSolutionCardProps {
   solution: CompetitorSolution;
   onView: (solution: CompetitorSolution) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (solutionId: string) => void;
 }
 
-export function CompetitorSolutionCard({ solution, onView }: CompetitorSolutionCardProps) {
+export function CompetitorSolutionCard({ solution, onView, isSelected = false, onToggleSelect }: CompetitorSolutionCardProps) {
   const featureCount = solution.features?.length || 0;
   const hasFullProfile = featureCount > 5;
 
@@ -17,6 +20,14 @@ export function CompetitorSolutionCard({ solution, onView }: CompetitorSolutionC
     <Card className="group hover:border-primary/50 transition-all cursor-pointer bg-card/50 backdrop-blur-sm hover:bg-card/80 hover:shadow-xl hover:scale-[1.02] duration-300" onClick={() => onView(solution)}>
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
+          {onToggleSelect && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelect(solution.id)}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-1"
+            />
+          )}
           {solution.logoUrl ? (
             <img src={solution.logoUrl} alt={solution.name} className="w-10 h-10 rounded object-cover" />
           ) : (
