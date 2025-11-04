@@ -1378,6 +1378,7 @@ export type Database = {
           logo_url: string | null
           long_description: string | null
           market_data: Json | null
+          metadata: Json | null
           name: string
           pain_points: Json | null
           positioning: string | null
@@ -1408,6 +1409,7 @@ export type Database = {
           logo_url?: string | null
           long_description?: string | null
           market_data?: Json | null
+          metadata?: Json | null
           name: string
           pain_points?: Json | null
           positioning?: string | null
@@ -1438,6 +1440,7 @@ export type Database = {
           logo_url?: string | null
           long_description?: string | null
           market_data?: Json | null
+          metadata?: Json | null
           name?: string
           pain_points?: Json | null
           positioning?: string | null

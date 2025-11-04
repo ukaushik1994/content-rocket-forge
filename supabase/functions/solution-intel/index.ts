@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.6";
-import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
+import { XMLParser } from 'https://esm.sh/fast-xml-parser@4.3.2';
 import { corsHeaders } from "../_shared/cors.ts";
 import { 
   normalizeDomain, 
@@ -202,27 +202,53 @@ async function discoverSitemap(baseUrl: string): Promise<SitemapUrl[]> {
 }
 
 function parseSitemapXml(xml: string, baseUrl: string): SitemapUrl[] {
-  const urls: SitemapUrl[] = [];
-  const doc = new DOMParser().parseFromString(xml, 'text/xml');
-  
-  if (!doc) return urls;
-  
-  // Parse URL entries
-  const urlElements = doc.querySelectorAll('url');
-  
-  urlElements.forEach((urlEl: any) => {
-    const loc = urlEl.querySelector('loc')?.textContent?.trim();
-    const lastmod = urlEl.querySelector('lastmod')?.textContent?.trim();
+  try {
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_"
+    });
     
-    if (loc && isValidHttpUrl(loc)) {
-      const category = categorizeUrl(loc);
-      const priority = getCategoryPriority(category);
+    const result = parser.parse(xml);
+    const urls: SitemapUrl[] = [];
+    
+    // Handle sitemap index
+    if (result.sitemapindex?.sitemap) {
+      const sitemaps = Array.isArray(result.sitemapindex.sitemap) 
+        ? result.sitemapindex.sitemap 
+        : [result.sitemapindex.sitemap];
       
-      urls.push({ loc, lastmod, category, priority });
+      // For sitemap indexes, return the sitemap URLs themselves
+      return sitemaps.map((s: any) => ({
+        loc: s.loc,
+        category: 'sitemap',
+        priority: 1
+      })).filter((u: SitemapUrl) => isValidHttpUrl(u.loc));
     }
-  });
-  
-  return urls;
+    
+    // Handle URL set
+    if (result.urlset?.url) {
+      const urlEntries = Array.isArray(result.urlset.url) 
+        ? result.urlset.url 
+        : [result.urlset.url];
+      
+      for (const entry of urlEntries) {
+        const loc = entry.loc;
+        if (loc && isValidHttpUrl(loc)) {
+          urls.push({
+            loc,
+            lastmod: entry.lastmod,
+            category: categorizeUrl(loc),
+            priority: getCategoryPriority(categorizeUrl(loc))
+          });
+        }
+      }
+    }
+    
+    return urls;
+  } catch (error) {
+    console.error('XML parse error:', error);
+    return [];
+  }
 }
 
 async function fetchUrlsFromSerp(domain: string, maxUrls: number): Promise<SitemapUrl[]> {

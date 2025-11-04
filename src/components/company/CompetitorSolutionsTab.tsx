@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CompanyCompetitor, CompetitorSolution } from '@/contexts/content-builder/types/company-types';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Package, Loader2, Target } from 'lucide-react';
+import { Sparkles, Package, Loader2, Target, Download, Trash2, FileText, FileJson } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { discoverCompetitorSolutions, getCompetitorSolutions } from '@/services/competitorSolutionsService';
@@ -9,6 +9,9 @@ import { CompetitorSolutionCard } from './CompetitorSolutionCard';
 import { CompetitorSolutionDetailsDialog } from './CompetitorSolutionDetailsDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface CompetitorSolutionsTabProps {
   competitor: CompanyCompetitor;
@@ -23,12 +26,39 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
   const [currentStep, setCurrentStep] = useState(1);
   const [stepDescription, setStepDescription] = useState('Searching for product pages...');
   const [lastDiagnostics, setLastDiagnostics] = useState<any>(null);
+  const [filter, setFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('date');
 
   // Fetch solutions
   const { data: solutions = [], isLoading } = useQuery({
     queryKey: ['competitor-solutions', competitor.id],
     queryFn: () => getCompetitorSolutions(competitor.id),
   });
+
+  // Filter and sort logic
+  const filteredSolutions = useMemo(() => {
+    let filtered = [...solutions];
+    
+    // Apply filters
+    if (filter === 'complete') {
+      filtered = filtered.filter(s => s.discoverySource === 'serp:full');
+    } else if (filter === 'partial') {
+      filtered = filtered.filter(s => s.discoverySource === 'serp:partial');
+    } else if (filter === 'with-pricing') {
+      filtered = filtered.filter(s => s.pricing);
+    }
+    
+    // Apply sorting
+    if (sortBy === 'name') {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'features') {
+      filtered.sort((a, b) => ((b.features as any[])?.length || 0) - ((a.features as any[])?.length || 0));
+    } else {
+      filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    }
+    
+    return filtered;
+  }, [solutions, filter, sortBy]);
 
   // Discovery mutation
   const discoveryMutation = useMutation({
@@ -64,6 +94,66 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
       });
     },
   });
+
+  // Delete all mutation
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('competitor_solutions')
+        .delete()
+        .eq('competitor_id', competitor.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitor-solutions', competitor.id] });
+      toast({ title: 'All solutions deleted' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Delete Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+
+  const handleDeleteAll = () => deleteAllMutation.mutate();
+
+  // Export functions
+  const exportAsCSV = () => {
+    const headers = ['Name', 'Category', 'Description', 'Features Count', 'Has Pricing', 'Completeness', 'URL'];
+    const rows = solutions.map(s => [
+      s.name,
+      s.category || '',
+      s.shortDescription || '',
+      (s.features as any[])?.length || 0,
+      s.pricing ? 'Yes' : 'No',
+      s.discoverySource === 'serp:full' ? 'Complete' : 'Partial',
+      s.externalUrl || ''
+    ]);
+    
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${competitor.name.replace(/[^a-z0-9]/gi, '_')}_solutions_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
+  const exportAsJSON = () => {
+    const json = JSON.stringify(solutions, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${competitor.name.replace(/[^a-z0-9]/gi, '_')}_solutions_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+  };
 
   // Progress tracking during discovery
   useEffect(() => {
@@ -175,19 +265,94 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
   // Solutions display
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <div className="flex-1">
           <h3 className="font-semibold">Discovered Solutions</h3>
-          <p className="text-sm text-muted-foreground">{solutions.length} solutions tracked</p>
+          <p className="text-sm text-muted-foreground">{filteredSolutions.length} of {solutions.length} solutions</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => discoveryMutation.mutate()}
-          disabled={!competitor.website || discoveryMutation.isPending}
-        >
-          <Sparkles className="w-4 h-4 mr-2" />
-          Re-discover
-        </Button>
+        
+        <div className="flex gap-2 flex-wrap">
+          {/* Filter by completeness */}
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Solutions</SelectItem>
+              <SelectItem value="complete">Complete Only</SelectItem>
+              <SelectItem value="partial">Partial Only</SelectItem>
+              <SelectItem value="with-pricing">With Pricing</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Sort */}
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date">Recently Added</SelectItem>
+              <SelectItem value="name">Name A-Z</SelectItem>
+              <SelectItem value="features">Most Features</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Export dropdown */}
+          {solutions.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={exportAsCSV}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportAsJSON}>
+                  <FileJson className="w-4 h-4 mr-2" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
+          {/* Delete all */}
+          {solutions.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete All Solutions?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete all {solutions.length} discovered solutions for {competitor.name}.
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAll}>Delete All</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          
+          <Button
+            variant="outline"
+            onClick={() => discoveryMutation.mutate()}
+            disabled={!competitor.website || discoveryMutation.isPending}
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Re-discover
+          </Button>
+        </div>
       </div>
 
       {lastDiagnostics && solutions.length > 0 && (
@@ -232,7 +397,7 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {solutions.map((solution) => (
+        {filteredSolutions.map((solution) => (
           <CompetitorSolutionCard
             key={solution.id}
             solution={solution}

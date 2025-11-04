@@ -6,6 +6,14 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')!;
 const SERP_API_KEY = Deno.env.get('SERP_API_KEY')!;
 
+// Utility: Add timeout protection for long-running operations
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
+  const timeoutPromise = new Promise<null>((resolve) => 
+    setTimeout(() => resolve(null), timeoutMs)
+  );
+  return Promise.race([promise, timeoutPromise]);
+}
+
 interface DiscoverRequest {
   competitorId: string;
   competitorWebsite: string;
@@ -98,32 +106,36 @@ Deno.serve(async (req) => {
     const urlsToAnalyze = Array.from(discoveredUrls).slice(0, 5); // Top 5 URLs
     diagnostics.ai_calls++;
 
-    const extractPrompt = `Analyze these ${urlsToAnalyze.length} pages from ${competitorName}'s website to identify ALL their products/solutions.
+    const extractPrompt = `You are analyzing ${competitorName}'s website to identify their PRODUCT OFFERINGS (not features, not pages).
 
 URLs analyzed:
 ${urlsToAnalyze.map((url, i) => `${i+1}. ${url}`).join('\n')}
 
-For EACH DISTINCT product/solution, extract:
-- name: Full official product name
-- category: Product category (Software, Platform, Service, Tool, etc.)
-- short_description: One clear sentence describing what it does
-- url: Best URL for this product (from the pages above)
-- confidence: 0-100 score based on how explicitly it's described
+IMPORTANT DISTINCTIONS:
+- A PRODUCT is a standalone offering that customers can purchase/use (e.g., "Slack", "Salesforce CRM")
+- A FEATURE is a capability within a product (e.g., "real-time messaging", "contact management")
+- A PAGE is just a website section (e.g., "About Us", "Pricing")
 
-Return JSON array of products. Include:
-- Products listed in navigation menus
-- Products in hero sections
-- Products in "Our Products" sections
-- Products in feature comparisons
-- Individual tools in a suite
+Your task: Extract ONLY distinct PRODUCTS (not features, not pages).
 
-Rules:
-- Separate products have different names and solve different problems
-- Features of the same product should NOT be separate entries
-- Minimum confidence: 60
-- If unclear if it's one product or multiple, favor detecting multiple
+For EACH product, extract:
+{
+  "name": "Official product name exactly as shown",
+  "category": "Product type (SaaS, Platform, Service, Tool, API, etc.)",
+  "short_description": "One sentence: what the product does and who it's for",
+  "url": "Best URL for this product from the list above",
+  "confidence": 0-100 (How certain are you this is a distinct product?)
+}
 
-Return only valid JSON array.`;
+RULES:
+1. If you see "Visier People" and "Visier Planning" → 2 SEPARATE products
+2. If you see "People Analytics" as a feature of "Visier People" → 1 product (Visier People)
+3. Homepage usually describes the company, not a specific product
+4. Navigation menu items like "Solutions", "Resources" are NOT products
+5. Min confidence: 70. If uncertain, skip it.
+6. If one product has multiple editions (Pro, Enterprise), list as ONE product
+
+Return ONLY a valid JSON array. NO markdown, NO explanation.`;
 
     let extractData;
     let retries = 0;
@@ -180,21 +192,26 @@ Return only valid JSON array.`;
         console.log(`  ⏳ Analyzing: ${product.name}... (${analyzedSolutions.length + 1}/${products.length})`);
         
         const productUrl = product.url || urlsToAnalyze[0];
-        const { data: solutionData, error: solutionError } = await supabase.functions.invoke('solution-intel', {
-          body: {
-            userId,
-            website: productUrl,
-            maxPages: 5,
-            detectMultiple: false,
-            parentCompany: competitorName,
-            recrawl: false
-          }
-        });
+        
+        // Add 120 second timeout for solution-intel
+        const solutionResult = await withTimeout(
+          supabase.functions.invoke('solution-intel', {
+            body: {
+              userId,
+              website: productUrl,
+              maxPages: 5,
+              detectMultiple: false,
+              parentCompany: competitorName,
+              recrawl: false
+            }
+          }),
+          120000 // 2 minutes
+        );
 
         diagnostics.ai_calls += 3; // Approximate AI calls in solution-intel
 
-    if (solutionError || !solutionData?.success) {
-      console.warn(`  ⚠️ Partial extraction for ${product.name}`);
+    if (!solutionResult || solutionResult.error || !solutionResult.data?.success) {
+      console.warn(`  ⚠️ Partial extraction for ${product.name} (timeout or error)`);
       diagnostics.partial_extractions++;
       analyzedSolutions.push({
         name: product.name,
@@ -210,9 +227,11 @@ Return only valid JSON array.`;
         metadata: { extraction_status: 'partial', error: solutionError?.message }
       });
       continue;
-    }
+        }
 
-        if (solutionData?.success && solutionData.solutions?.length > 0) {
+        const solutionData = solutionResult.data;
+    if (solutionData?.success && solutionData.solutions?.length > 0) {
+      diagnostics.full_extractions++;
           diagnostics.full_extractions++;
           const solutionProfile = solutionData.solutions[0];
           analyzedSolutions.push({
@@ -247,8 +266,19 @@ Return only valid JSON array.`;
       }
     }
 
-    // Step 4: Save to database
-    console.log('💾 Saving solutions to database...');
+    // Step 4: Clean up old solutions and save new ones
+    console.log('💾 Cleaning up old solutions and saving new ones...');
+    
+    // Delete existing solutions for this competitor
+    const { error: deleteError } = await supabase
+      .from('competitor_solutions')
+      .delete()
+      .eq('competitor_id', competitorId);
+
+    if (deleteError) {
+      console.warn('⚠️ Could not delete old solutions:', deleteError);
+    }
+    
     const savedSolutions = [];
     
     for (const solution of analyzedSolutions) {
