@@ -99,6 +99,20 @@ export interface CompetitorSolution {
     fields_extracted?: number;
     source_page?: string;
     extraction_error?: string;
+    competitive_mapping?: {
+      featureOverlap?: string[];
+      featureGaps?: string[];
+      painPointCoverage?: string[];
+      audienceOverlap?: string[];
+      differentiators?: string[];
+    };
+    competitive_metrics?: {
+      feature_overlap_count: number;
+      feature_gap_count: number;
+      pain_point_coverage_count: number;
+      audience_overlap_count: number;
+      has_competitive_analysis: boolean;
+    };
   };
   createdAt: string;
   updatedAt: string;

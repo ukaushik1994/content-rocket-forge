@@ -10,12 +10,35 @@ export async function discoverCompetitorSolutions(
   try {
     console.log('🔍 Discovering solutions for competitor:', competitorName);
 
+    // Fetch user's company info and solutions for context
+    const [companyInfoResponse, userSolutionsResponse] = await Promise.all([
+      supabase
+        .from('company_info')
+        .select('name, industry, mission, description')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('solutions')
+        .select('name, category, features, pain_points, target_audience, use_cases')
+        .eq('user_id', userId)
+    ]);
+
+    const userCompanyInfo = companyInfoResponse.data || null;
+    const userSolutions = userSolutionsResponse.data || [];
+
+    console.log('📊 User context:', {
+      hasCompanyInfo: !!userCompanyInfo,
+      solutionsCount: userSolutions.length
+    });
+
     const { data, error } = await supabase.functions.invoke('competitor-solutions', {
       body: {
         competitorId,
         competitorWebsite,
         competitorName,
-        userId
+        userId,
+        userCompanyInfo,
+        userSolutions
       }
     });
 

@@ -55,6 +55,30 @@ export function CompetitorSolutionCard({ solution, onView, isSelected = false, o
           </p>
         )}
 
+        {/* Competitive Context Metrics */}
+        {solution.metadata?.competitive_metrics?.has_competitive_analysis && (
+          <div className="p-2 rounded-lg bg-primary/5 border border-primary/20">
+            <p className="text-xs font-medium text-primary mb-1">Competitive Analysis Available</p>
+            <div className="flex flex-wrap gap-2 text-xs">
+              {solution.metadata.competitive_metrics.feature_overlap_count > 0 && (
+                <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                  {solution.metadata.competitive_metrics.feature_overlap_count} feature overlaps
+                </Badge>
+              )}
+              {solution.metadata.competitive_metrics.pain_point_coverage_count > 0 && (
+                <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                  Addresses {solution.metadata.competitive_metrics.pain_point_coverage_count} of YOUR pain points
+                </Badge>
+              )}
+              {solution.metadata.competitive_metrics.audience_overlap_count > 0 && (
+                <Badge variant="secondary" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                  {solution.metadata.competitive_metrics.audience_overlap_count} audience overlaps
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Stats Summary */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {featureCount > 0 && <span>{featureCount} features</span>}

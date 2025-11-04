@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { refreshCompetitorSolution } from '@/services/competitorSolutionsService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { CompetitiveAnalysisTab } from './CompetitiveAnalysisTab';
 
 interface CompetitorSolutionDetailsDialogProps {
   solution: CompetitorSolution;
@@ -114,7 +115,7 @@ export function CompetitorSolutionDetailsDialog({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 gap-1">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="features">
               Features {solution.features?.length > 0 && `(${solution.features.length})`}
@@ -127,6 +128,11 @@ export function CompetitorSolutionDetailsDialog({
               Audience {solution.targetAudience?.length > 0 && `(${solution.targetAudience.length})`}
             </TabsTrigger>
             <TabsTrigger value="technical">Technical</TabsTrigger>
+            {solution.metadata?.competitive_mapping && (
+              <TabsTrigger value="competitive" className="bg-primary/10">
+                Competitive
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <ScrollArea className="flex-1">
@@ -449,6 +455,10 @@ export function CompetitorSolutionDetailsDialog({
                     </p>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="competitive" className="mt-0">
+                <CompetitiveAnalysisTab solution={solution} />
               </TabsContent>
             </div>
           </ScrollArea>

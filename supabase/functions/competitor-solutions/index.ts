@@ -15,11 +15,29 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
   return Promise.race([promise, timeoutPromise]);
 }
 
+interface UserCompanyInfo {
+  name?: string;
+  industry?: string;
+  mission?: string;
+  description?: string;
+}
+
+interface UserSolution {
+  name: string;
+  category?: string;
+  features?: any[];
+  pain_points?: any[];
+  target_audience?: any[];
+  use_cases?: any[];
+}
+
 interface DiscoverRequest {
   competitorId: string;
   competitorWebsite: string;
   competitorName: string;
   userId: string;
+  userCompanyInfo?: UserCompanyInfo;
+  userSolutions?: UserSolution[];
 }
 
 Deno.serve(async (req) => {
@@ -28,9 +46,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { competitorId, competitorWebsite, competitorName, userId }: DiscoverRequest = await req.json();
+    const { 
+      competitorId, 
+      competitorWebsite, 
+      competitorName, 
+      userId,
+      userCompanyInfo,
+      userSolutions 
+    }: DiscoverRequest = await req.json();
 
     console.log('[DISCOVER] Starting discovery for:', competitorName, '(', competitorWebsite, ')');
+    console.log('[CONTEXT] User company:', userCompanyInfo?.name || 'Not provided');
+    console.log('[CONTEXT] User solutions:', userSolutions?.length || 0);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const startTime = Date.now();
@@ -249,11 +276,51 @@ Deno.serve(async (req) => {
         
         console.log('[ANALYZE] Analyzing from:', relevantPage.url);
         
+        // Build user context section for AI prompt
+        let contextSection = '';
+        if (userCompanyInfo || (userSolutions && userSolutions.length > 0)) {
+          contextSection = '\n\n=== YOUR COMPANY CONTEXT ===\n';
+          
+          if (userCompanyInfo) {
+            contextSection += 'Company: ' + (userCompanyInfo.name || 'Unknown') + '\n';
+            contextSection += 'Industry: ' + (userCompanyInfo.industry || 'Unknown') + '\n';
+            if (userCompanyInfo.mission) {
+              contextSection += 'Mission: ' + userCompanyInfo.mission + '\n';
+            }
+          }
+          
+          if (userSolutions && userSolutions.length > 0) {
+            contextSection += '\nYOUR SOLUTIONS:\n';
+            userSolutions.slice(0, 3).forEach((userSol, i) => {
+              contextSection += (i + 1) + '. ' + userSol.name + '\n';
+              if (userSol.features && userSol.features.length > 0) {
+                contextSection += '   Features: ' + userSol.features.slice(0, 5).map((f: any) => 
+                  typeof f === 'string' ? f : f.name || f.title
+                ).join(', ') + '\n';
+              }
+              if (userSol.pain_points && userSol.pain_points.length > 0) {
+                contextSection += '   Solves: ' + userSol.pain_points.slice(0, 3).join(', ') + '\n';
+              }
+              if (userSol.target_audience && userSol.target_audience.length > 0) {
+                contextSection += '   For: ' + userSol.target_audience.slice(0, 3).join(', ') + '\n';
+              }
+            });
+          }
+          
+          contextSection += '\nEXTRACTION INSTRUCTIONS:\n';
+          contextSection += '- Map competitor features to YOUR feature categories when possible\n';
+          contextSection += '- Identify which of YOUR pain points they address\n';
+          contextSection += '- Match their target audience to YOUR audience segments\n';
+          contextSection += '- Note feature gaps (what YOU have that they don\'t)\n';
+          contextSection += '- Note feature overlaps (what you both offer)\n';
+        }
+        
         // Focused extraction prompt for THIS SPECIFIC product
         const detailPrompt = 'Extract comprehensive details about "' + solution.name + '" from this page content.\n\n' +
           'PRODUCT TO ANALYZE: ' + solution.name + '\n' +
           'CATEGORY: ' + solution.category + '\n' +
-          'PAGE URL: ' + relevantPage.url + '\n\n' +
+          'PAGE URL: ' + relevantPage.url + '\n' +
+          contextSection + '\n\n' +
           'PAGE CONTENT:\n' +
           'Title: ' + relevantPage.content.title + '\n' +
           'Meta: ' + relevantPage.content.metaDescription + '\n' +
@@ -262,14 +329,14 @@ Deno.serve(async (req) => {
           'Extract ONLY information about "' + solution.name + '". Return JSON with:\n\n' +
           '{\n' +
           '  "features": [\n' +
-          '    { "name": "Feature name", "description": "What it does" }\n' +
+          '    { "name": "Feature name", "description": "What it does", "category": "Map to user category if applicable" }\n' +
           '  ],\n' +
           '  "benefits": ["Benefit 1", "Benefit 2"],\n' +
           '  "useCases": [\n' +
           '    { "title": "Use case title", "description": "How it\'s used" }\n' +
           '  ],\n' +
-          '  "painPoints": ["Pain point 1", "Pain point 2"],\n' +
-          '  "targetAudience": ["Audience 1", "Audience 2"],\n' +
+          '  "painPoints": ["Pain point 1 (note if matches user\'s)", "Pain point 2"],\n' +
+          '  "targetAudience": ["Audience 1 (note if matches user\'s)", "Audience 2"],\n' +
           '  "pricing": {\n' +
           '    "model": "subscription|one-time|freemium|contact-sales",\n' +
           '    "startingPrice": "Price if mentioned",\n' +
@@ -283,7 +350,14 @@ Deno.serve(async (req) => {
           '  "positioning": "Market positioning statement",\n' +
           '  "uniqueValuePropositions": ["UVP 1", "UVP 2"],\n' +
           '  "integrations": ["Integration 1"],\n' +
-          '  "confidence": 0-100\n' +
+          '  "confidence": 0-100,\n' +
+          '  "competitiveMapping": {\n' +
+          '    "featureOverlap": ["Features matching user solutions"],\n' +
+          '    "featureGaps": ["Features user has that competitor lacks"],\n' +
+          '    "painPointCoverage": ["User pain points this addresses"],\n' +
+          '    "audienceOverlap": ["User audiences they also target"],\n' +
+          '    "differentiators": ["What makes them unique vs user"]\n' +
+          '  }\n' +
           '}\n\n' +
           'RULES:\n' +
           '1. Extract 15-25 features (core capabilities and detailed features)\n' +
@@ -293,7 +367,8 @@ Deno.serve(async (req) => {
           '5. Only include information explicitly stated on the page\n' +
           '6. If pricing not found, set pricing to null\n' +
           '7. Confidence = how certain you are this is about "' + solution.name + '"\n' +
-          '8. Return ONLY valid JSON, NO markdown';
+          '8. For competitiveMapping, analyze against user context if provided\n' +
+          '9. Return ONLY valid JSON, NO markdown';
 
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
@@ -340,7 +415,23 @@ Deno.serve(async (req) => {
         const dataQuality = confidence >= 80 && completeness >= 75 ? 'high' : 
                            confidence >= 60 && completeness >= 50 ? 'medium' : 'low';
         
+        // Calculate competitive metrics if user context available
+        let competitiveMetrics = null;
+        if (userSolutions && userSolutions.length > 0 && extractedDetails.competitiveMapping) {
+          const mapping = extractedDetails.competitiveMapping;
+          competitiveMetrics = {
+            feature_overlap_count: mapping.featureOverlap?.length || 0,
+            feature_gap_count: mapping.featureGaps?.length || 0,
+            pain_point_coverage_count: mapping.painPointCoverage?.length || 0,
+            audience_overlap_count: mapping.audienceOverlap?.length || 0,
+            has_competitive_analysis: true
+          };
+        }
+        
         console.log('[SUCCESS] Extracted for', solution.name, ':', extractedDetails.features?.length || 0, 'features,', extractedDetails.useCases?.length || 0, 'use cases,', extractedDetails.painPoints?.length || 0, 'pain points,', completeness + '% complete,', dataQuality, 'quality');
+        if (competitiveMetrics) {
+          console.log('[COMPETITIVE]', competitiveMetrics.feature_overlap_count, 'overlaps,', competitiveMetrics.pain_point_coverage_count, 'pain points covered');
+        }
         
         diagnostics.full_extractions++;
         diagnostics.successful_extractions = (diagnostics.successful_extractions || 0) + 1;
@@ -354,7 +445,7 @@ Deno.serve(async (req) => {
           logo_url: null,
           positioning: extractedDetails.positioning || null,
           unique_value_propositions: extractedDetails.uniqueValuePropositions || [],
-          key_differentiators: [],
+          key_differentiators: extractedDetails.competitiveMapping?.differentiators || [],
           features: extractedDetails.features || [],
           use_cases: extractedDetails.useCases || [],
           pain_points: extractedDetails.painPoints || [],
@@ -377,7 +468,9 @@ Deno.serve(async (req) => {
             completeness_score: completeness,
             confidence_score: confidence,
             fields_extracted: fieldsExtracted,
-            source_page: relevantPage.url
+            source_page: relevantPage.url,
+            competitive_mapping: extractedDetails.competitiveMapping || null,
+            competitive_metrics: competitiveMetrics
           }
         };
         
