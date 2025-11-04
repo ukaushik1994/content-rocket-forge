@@ -382,28 +382,51 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
         <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-muted/30 to-muted/10 backdrop-blur-sm border border-primary/20">
           <div className="flex items-center gap-2 mb-3">
             <Target className="w-4 h-4 text-primary" />
-            <h4 className="text-sm font-semibold">Discovery Diagnostics</h4>
+            <h4 className="text-sm font-semibold">Discovery Summary</h4>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">SERP Queries</p>
-              <p className="text-lg font-bold text-primary">{lastDiagnostics.serp_queries || 0}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Pages Discovered</p>
+              <p className="text-xs text-muted-foreground">Pages Analyzed</p>
               <p className="text-lg font-bold text-primary">{lastDiagnostics.pages_discovered || 0}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Solutions Found</p>
+              <p className="text-xs text-muted-foreground">Products Found</p>
               <p className="text-lg font-bold text-primary">{lastDiagnostics.solutions_extracted || 0}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Processing Time</p>
-              <p className="text-lg font-bold text-primary">
+              <p className="text-xs text-muted-foreground">Fully Extracted</p>
+              <p className="text-lg font-bold text-green-500">{lastDiagnostics.full_extractions || 0}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Partial Data</p>
+              <p className="text-lg font-bold text-amber-500">{lastDiagnostics.partial_extractions || 0}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Failed</p>
+              <p className="text-lg font-bold text-destructive">{lastDiagnostics.failed_extractions || 0}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-3 border-t border-white/10">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Total Time</p>
+              <p className="text-sm font-semibold">
                 {((lastDiagnostics.total_time_ms || 0) / 1000).toFixed(1)}s
               </p>
             </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Avg Extraction</p>
+              <p className="text-sm font-semibold">
+                {((lastDiagnostics.average_extraction_time_ms || 0) / 1000).toFixed(1)}s
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">AI Calls</p>
+              <p className="text-sm font-semibold">{lastDiagnostics.ai_calls || 0}</p>
+            </div>
           </div>
+
           {lastDiagnostics.partial_extractions > 0 && (
             <div className="mt-3 p-2 rounded bg-amber-500/10 border border-amber-500/20">
               <p className="text-xs text-amber-600">
@@ -411,11 +434,14 @@ export function CompetitorSolutionsTab({ competitor }: CompetitorSolutionsTabPro
               </p>
             </div>
           )}
-          <div className="mt-3 pt-3 border-t border-white/10">
-            <p className="text-xs text-muted-foreground">
-              💡 Used {lastDiagnostics.ai_calls || 0} AI calls to analyze competitor offerings
-            </p>
-          </div>
+          
+          {lastDiagnostics.timeout_count > 0 && (
+            <div className="mt-2 p-2 rounded bg-destructive/10 border border-destructive/20">
+              <p className="text-xs text-destructive">
+                ⏱️ {lastDiagnostics.timeout_count} extraction(s) timed out - consider re-running discovery
+              </p>
+            </div>
+          )}
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
+import { extractPageContent } from '../shared/content-extractor.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -110,40 +111,70 @@ Deno.serve(async (req) => {
     diagnostics.pages_discovered = discoveredUrls.size;
     console.log(`✓ Found ${diagnostics.pages_discovered} solution pages`)
 
-    // Step 2: Extract product list from main pages
-    console.log('🧠 Step 2: Extracting product list from discovered pages...');
+    // Step 1.5: Fetch actual page content
+    console.log('📄 Step 1.5: Fetching page content from discovered URLs...');
     const urlsToAnalyze = Array.from(discoveredUrls).slice(0, 5); // Top 5 URLs
+    
+    const pageContents = await Promise.all(
+      urlsToAnalyze.map(async (url) => {
+        try {
+          const content = await extractPageContent(url, 15000);
+          if (content) {
+            console.log(`✓ Fetched content from: ${url}`);
+            return { url, content };
+          }
+          return null;
+        } catch (error) {
+          console.warn(`⚠️ Failed to fetch ${url}:`, error);
+          return null;
+        }
+      })
+    );
+    
+    const validPages = pageContents.filter(p => p !== null);
+    console.log(`✓ Successfully fetched content from ${validPages.length}/${urlsToAnalyze.length} pages`);
 
-    const extractPrompt = `You are analyzing ${competitorName}'s website to identify their PRODUCT OFFERINGS (not features, not pages).
+    // Step 2: Extract product list from actual page content
+    console.log('🧠 Step 2: Extracting product list from page content...');
 
-URLs analyzed:
-${urlsToAnalyze.map((url, i) => `${i+1}. ${url}`).join('\n')}
+    const extractPrompt = `You are analyzing ${competitorName}'s website to identify their PRODUCT OFFERINGS.
 
-IMPORTANT DISTINCTIONS:
-- A PRODUCT is a standalone offering that customers can purchase/use (e.g., "Slack", "Salesforce CRM")
-- A FEATURE is a capability within a product (e.g., "real-time messaging", "contact management")
-- A PAGE is just a website section (e.g., "About Us", "Pricing")
+Website: ${competitorWebsite}
+Pages analyzed: ${validPages.length}
 
-Your task: Extract ONLY distinct PRODUCTS (not features, not pages).
+PAGE CONTENT:
+${validPages.map((p, i) => `
+=== PAGE ${i+1}: ${p.url} ===
+Title: ${p.content.title}
+Meta Description: ${p.content.metaDescription || 'N/A'}
+Main Headings: ${p.content.headings.slice(0, 10).join(' | ')}
+Content Preview: ${p.content.mainText.slice(0, 2000)}
+`).join('\n\n')}
 
-For EACH product, extract:
+TASK: Extract ALL distinct PRODUCTS/SOLUTIONS/SERVICES offered by ${competitorName}.
+
+IMPORTANT:
+- A PRODUCT is a standalone offering customers can buy/use (e.g., "Visier People", "Slack Enterprise")
+- A FEATURE is part of a product (e.g., "real-time messaging", "turnover prediction")
+- Extract PRODUCTS, not features or page sections
+
+For EACH product:
 {
-  "name": "Official product name exactly as shown",
-  "category": "Product type (SaaS, Platform, Service, Tool, API, etc.)",
-  "short_description": "One sentence: what the product does and who it's for",
-  "url": "Best URL for this product from the list above",
-  "confidence": 0-100 (How certain are you this is a distinct product?)
+  "name": "Exact product name as shown on website",
+  "category": "Product type (e.g., Analytics Platform, CRM, HR Tech)",
+  "short_description": "One sentence: what it does + who it's for",
+  "url": "Best URL for this product from the pages above",
+  "confidence": 0-100
 }
 
 RULES:
-1. If you see "Visier People" and "Visier Planning" → 2 SEPARATE products
-2. If you see "People Analytics" as a feature of "Visier People" → 1 product (Visier People)
-3. Homepage usually describes the company, not a specific product
-4. Navigation menu items like "Solutions", "Resources" are NOT products
-5. Min confidence: 70. If uncertain, skip it.
-6. If one product has multiple editions (Pro, Enterprise), list as ONE product
+1. Only products with confidence >= 75
+2. If you see "Product A" and "Product B" → 2 separate products
+3. If "Pro" and "Enterprise" editions → 1 product (mention editions in description)
+4. Use actual content (headings, text) to identify products - not just URLs
+5. Return ONLY valid JSON array, NO markdown, NO explanation
 
-Return ONLY a valid JSON array. NO markdown, NO explanation.`;
+JSON:`;
 
     let extractData;
     let retries = 0;
@@ -203,11 +234,33 @@ Return ONLY a valid JSON array. NO markdown, NO explanation.`;
         // Track AI call attempt
         const extractionStartTime = Date.now();
         
+        // Helper to validate HTTP URLs
+        const isValidHttpUrl = (str: string) => {
+          try {
+            const url = new URL(str);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+          } catch {
+            return false;
+          }
+        };
+        
+        // Determine the best URL for this product
+        const productUrl = solution.url && isValidHttpUrl(solution.url) 
+          ? solution.url 
+          : validPages.find(p => 
+              p.url.toLowerCase().includes('product') || 
+              p.url.toLowerCase().includes('solution')
+            )?.url 
+          || validPages[0]?.url
+          || urlsToAnalyze[0];
+        
+        console.log(`  → Using URL: ${productUrl}`);
+        
         const solutionResult = await withTimeout(
           supabase.functions.invoke('solution-intel', {
             body: {
               userId,
-              website: solution.url || urlsToAnalyze[0],
+              website: productUrl,
               maxPages: 5,
               detectMultiple: false,
               parentCompany: competitorName,
