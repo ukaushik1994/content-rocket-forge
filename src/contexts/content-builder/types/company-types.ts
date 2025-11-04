@@ -89,6 +89,17 @@ export interface CompetitorSolution {
   marketData: any;
   discoverySource: string | null;
   lastAnalyzedAt: string | null;
+  metadata?: {
+    extraction_status?: string;
+    extraction_timestamp?: string;
+    extraction_time_ms?: number;
+    data_quality?: 'high' | 'medium' | 'low';
+    completeness_score?: number;
+    confidence_score?: number;
+    fields_extracted?: number;
+    source_page?: string;
+    extraction_error?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

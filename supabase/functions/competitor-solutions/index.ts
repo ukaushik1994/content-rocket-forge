@@ -224,130 +224,178 @@ JSON:`;
     diagnostics.total_solutions_attempted = products.length;
     console.log(`✓ Extracted ${products.length} products`);
 
-    // Step 3: For each product, enrich with solution-intel
+    // Step 3: For each product, enrich with focused extraction
     console.log('🔬 Step 3: Analyzing each solution in detail...');
     
     const enrichSolutionData = async (solution: any) => {
       console.log(`📦 Attempting extraction for: ${solution.name}`);
       
       try {
-        // Track AI call attempt
         const extractionStartTime = Date.now();
         
-        // Helper to validate HTTP URLs
-        const isValidHttpUrl = (str: string) => {
-          try {
-            const url = new URL(str);
-            return url.protocol === 'http:' || url.protocol === 'https:';
-          } catch {
-            return false;
+        // Find the most relevant page for this specific product
+        const relevantPage = validPages.find(p => {
+          const url = p.url.toLowerCase();
+          const productName = solution.name.toLowerCase();
+          const productWords = productName.split(/\s+/);
+          
+          // Check if URL or content mentions this product
+          return productWords.some(word => 
+            word.length > 3 && (
+              url.includes(word) || 
+              p.content.title.toLowerCase().includes(word) ||
+              p.content.mainText.toLowerCase().includes(productName)
+            )
+          );
+        }) || validPages[0]; // Fallback to first page
+        
+        if (!relevantPage) {
+          throw new Error('No valid page content available');
+        }
+        
+        console.log(`  → Analyzing from: ${relevantPage.url}`);
+        
+        // Focused extraction prompt for THIS SPECIFIC product
+        const detailPrompt = `Extract comprehensive details about "${solution.name}" from this page content.
+
+PRODUCT TO ANALYZE: ${solution.name}
+CATEGORY: ${solution.category}
+PAGE URL: ${relevantPage.url}
+
+PAGE CONTENT:
+Title: ${relevantPage.content.title}
+Meta: ${relevantPage.content.metaDescription}
+Headings: ${relevantPage.content.headings.join(' | ')}
+Content: ${relevantPage.content.mainText.slice(0, 4000)}
+
+Extract ONLY information about "${solution.name}". Return JSON with:
+
+{
+  "features": [
+    { "name": "Feature name", "description": "What it does" }
+  ],
+  "benefits": ["Benefit 1", "Benefit 2"],
+  "useCases": [
+    { "title": "Use case title", "description": "How it's used" }
+  ],
+  "targetAudience": ["Audience 1", "Audience 2"],
+  "pricing": {
+    "model": "subscription|one-time|freemium|contact-sales",
+    "startingPrice": "Price if mentioned",
+    "tiers": [{ "name": "Tier", "price": "Price", "features": [] }]
+  },
+  "technicalSpecs": {
+    "supportedPlatforms": ["Platform 1"],
+    "apiCapabilities": ["API feature 1"],
+    "securityFeatures": ["Security 1"]
+  },
+  "positioning": "Market positioning statement",
+  "uniqueValuePropositions": ["UVP 1", "UVP 2"],
+  "integrations": ["Integration 1"],
+  "confidence": 0-100
+}
+
+RULES:
+1. Extract 8-15 features minimum (core capabilities)
+2. Only include information explicitly stated
+3. If pricing not found, set pricing to null
+4. Confidence = how certain you are this is about "${solution.name}"
+5. Return ONLY valid JSON, NO markdown`;
+
+        const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages: [
+              { role: 'system', content: 'You are an expert at extracting structured product data. Return only valid JSON.' },
+              { role: 'user', content: detailPrompt }
+            ],
+            temperature: 0.1,
+          }),
+        });
+
+        diagnostics.ai_calls++;
+        const aiData = await aiResponse.json();
+        
+        let extractedDetails: any = {};
+        try {
+          const content = aiData.choices[0].message.content;
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          extractedDetails = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+        } catch (error) {
+          console.warn(`⚠️ Failed to parse AI response for ${solution.name}:`, error);
+          extractedDetails = {};
+        }
+
+        const extractionTime = Date.now() - extractionStartTime;
+        
+        // Validate extraction quality
+        const hasFeatures = extractedDetails.features?.length >= 5;
+        const hasPricing = extractedDetails.pricing !== null && extractedDetails.pricing !== undefined;
+        const hasUseCases = extractedDetails.useCases?.length > 0;
+        const hasSpecs = extractedDetails.technicalSpecs && Object.keys(extractedDetails.technicalSpecs).length > 0;
+        const confidence = extractedDetails.confidence || 0;
+        
+        const fieldsExtracted = [hasFeatures, hasPricing, hasUseCases, hasSpecs].filter(Boolean).length;
+        const completeness = Math.round((fieldsExtracted / 4) * 100);
+        const dataQuality = confidence >= 80 && completeness >= 75 ? 'high' : 
+                           confidence >= 60 && completeness >= 50 ? 'medium' : 'low';
+        
+        console.log(`✅ Extracted for ${solution.name}: ${extractedDetails.features?.length || 0} features, ${completeness}% complete, ${dataQuality} quality`);
+        
+        diagnostics.full_extractions++;
+        diagnostics.successful_extractions = (diagnostics.successful_extractions || 0) + 1;
+        
+        return {
+          name: solution.name,
+          category: solution.category,
+          short_description: solution.short_description,
+          long_description: extractedDetails.positioning || solution.short_description,
+          external_url: solution.url || relevantPage.url,
+          logo_url: null,
+          positioning: extractedDetails.positioning || null,
+          unique_value_propositions: extractedDetails.uniqueValuePropositions || [],
+          key_differentiators: [],
+          features: extractedDetails.features || [],
+          use_cases: extractedDetails.useCases || [],
+          pain_points: [],
+          target_audience: extractedDetails.targetAudience || [],
+          benefits: extractedDetails.benefits || [],
+          pricing: extractedDetails.pricing || null,
+          technical_specs: extractedDetails.technicalSpecs || null,
+          integrations: extractedDetails.integrations || [],
+          case_studies: [],
+          resources: [],
+          tags: [],
+          market_data: null,
+          discovery_source: 'serp:focused',
+          last_analyzed_at: new Date().toISOString(),
+          metadata: {
+            extraction_status: dataQuality === 'high' || dataQuality === 'medium' ? 'complete' : 'partial',
+            extraction_timestamp: new Date().toISOString(),
+            extraction_time_ms: extractionTime,
+            data_quality: dataQuality,
+            completeness_score: completeness,
+            confidence_score: confidence,
+            fields_extracted: fieldsExtracted,
+            source_page: relevantPage.url
           }
         };
         
-        // Determine the best URL for this product
-        const productUrl = solution.url && isValidHttpUrl(solution.url) 
-          ? solution.url 
-          : validPages.find(p => 
-              p.url.toLowerCase().includes('product') || 
-              p.url.toLowerCase().includes('solution')
-            )?.url 
-          || validPages[0]?.url
-          || urlsToAnalyze[0];
-        
-        console.log(`  → Using URL: ${productUrl}`);
-        
-        const solutionResult = await withTimeout(
-          supabase.functions.invoke('solution-intel', {
-            body: {
-              userId,
-              website: productUrl,
-              maxPages: 5,
-              detectMultiple: false,
-              parentCompany: competitorName,
-              recrawl: false
-            }
-          }),
-          120000
-        );
-
-        const extractionTime = Date.now() - extractionStartTime;
-
-        if (solutionResult?.data?.solutions?.[0]) {
-          const enrichedData = solutionResult.data.solutions[0];
-          
-          console.log(`✅ Extraction successful for: ${solution.name} (${extractionTime}ms)`);
-          diagnostics.full_extractions++;
-          diagnostics.ai_calls += 3; // solution-intel typically makes ~3 AI calls
-          diagnostics.successful_extractions = (diagnostics.successful_extractions || 0) + 1;
-          
-          return {
-            name: solution.name,
-            category: solution.category || enrichedData.category,
-            short_description: solution.short_description || enrichedData.description,
-            long_description: enrichedData.description,
-            external_url: solution.url || urlsToAnalyze[0],
-            logo_url: enrichedData.logoUrl,
-            positioning: enrichedData.positioning,
-            unique_value_propositions: enrichedData.uniqueValuePropositions || [],
-            key_differentiators: enrichedData.keyDifferentiators || [],
-            features: enrichedData.features || solution.features || [],
-            use_cases: enrichedData.useCases || [],
-            pain_points: enrichedData.painPoints || [],
-            target_audience: enrichedData.targetAudience || [],
-            benefits: enrichedData.benefits || [],
-            pricing: enrichedData.pricing || null,
-            technical_specs: enrichedData.technicalSpecs || null,
-            integrations: enrichedData.integrations || [],
-            case_studies: enrichedData.caseStudies || [],
-            resources: enrichedData.resources || [],
-            tags: enrichedData.tags || [],
-            market_data: enrichedData.marketData || null,
-            discovery_source: 'serp:full',
-            last_analyzed_at: new Date().toISOString(),
-            metadata: {
-              extraction_status: 'complete',
-              extraction_timestamp: new Date().toISOString(),
-              extraction_time_ms: extractionTime
-            }
-          };
-        } else {
-          const errorMessage = solutionResult?.error?.message || 'No data returned';
-          console.warn(`⚠️ Partial extraction for: ${solution.name} - ${errorMessage}`);
-          diagnostics.partial_extractions++;
-          diagnostics.failed_extractions = (diagnostics.failed_extractions || 0) + 1;
-          
-          return {
-            name: solution.name,
-            category: solution.category || 'Unknown',
-            short_description: solution.short_description || `${solution.name} - detailed information unavailable`,
-            long_description: solution.short_description,
-            external_url: solution.url || urlsToAnalyze[0],
-            features: [],
-            use_cases: [],
-            target_audience: [],
-            discovery_source: 'serp:partial',
-            last_analyzed_at: new Date().toISOString(),
-            metadata: {
-              extraction_status: 'partial',
-              extraction_error: errorMessage,
-              extraction_timestamp: new Date().toISOString(),
-              extraction_time_ms: extractionTime
-            }
-          };
-        }
       } catch (error) {
         console.error(`❌ Extraction failed for: ${solution.name}`, error);
         diagnostics.failed_extractions = (diagnostics.failed_extractions || 0) + 1;
-        diagnostics.timeout_count = error.message?.includes('timeout') 
-          ? (diagnostics.timeout_count || 0) + 1 
-          : (diagnostics.timeout_count || 0);
         
         return {
           name: solution.name,
           category: solution.category || 'Unknown',
-          short_description: solution.short_description || `${solution.name} - extraction failed`,
+          short_description: solution.short_description || `${solution.name}`,
           long_description: solution.short_description,
-          external_url: solution.url || urlsToAnalyze[0],
+          external_url: solution.url || validPages[0]?.url || urlsToAnalyze[0],
           features: [],
           use_cases: [],
           target_audience: [],
@@ -356,7 +404,10 @@ JSON:`;
           metadata: {
             extraction_status: 'failed',
             extraction_error: error.message || 'Unknown error',
-            extraction_timestamp: new Date().toISOString()
+            extraction_timestamp: new Date().toISOString(),
+            data_quality: 'low',
+            completeness_score: 0,
+            confidence_score: 0
           }
         };
       }

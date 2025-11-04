@@ -66,8 +66,25 @@ export function CompetitorSolutionDetailsDialog({
               )}
               <div className="flex-1">
                 <DialogTitle className="text-xl">{solution.name}</DialogTitle>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {solution.category && <Badge variant="secondary">{solution.category}</Badge>}
+                  
+                  {/* Data quality indicator */}
+                  {solution.metadata?.data_quality && (
+                    <Badge 
+                      variant="outline" 
+                      className={
+                        solution.metadata.data_quality === 'high' 
+                          ? 'border-green-500/30 text-green-600' 
+                          : solution.metadata.data_quality === 'medium'
+                          ? 'border-yellow-500/30 text-yellow-600'
+                          : 'border-orange-500/30 text-orange-600'
+                      }
+                    >
+                      {solution.metadata.completeness_score || 0}% Complete
+                    </Badge>
+                  )}
+                  
                   {solution.externalUrl && (
                     <Button variant="ghost" size="sm" asChild>
                       <a href={solution.externalUrl} target="_blank" rel="noopener noreferrer">
@@ -155,35 +172,45 @@ export function CompetitorSolutionDetailsDialog({
 
               <TabsContent value="features" className="mt-0 space-y-4">
                 {solution.features?.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {solution.features.map((feature: any, idx: number) => (
-                      <div 
-                        key={idx} 
-                        className="p-4 rounded-lg border bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm hover:border-primary/50 hover:shadow-lg transition-all"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary font-bold text-sm">{idx + 1}</span>
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm mb-1">
-                              {typeof feature === 'string' ? feature : feature.name || feature.title}
-                            </h4>
-                            {typeof feature === 'object' && feature.description && (
-                              <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
-                            )}
+                  <>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm text-muted-foreground">
+                        {solution.features.length} feature{solution.features.length !== 1 ? 's' : ''} identified
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {solution.features.map((feature: any, idx: number) => (
+                        <div 
+                          key={idx} 
+                          className="p-4 rounded-lg border bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm hover:border-primary/50 hover:shadow-lg transition-all"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-primary font-bold text-sm">{idx + 1}</span>
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm mb-1">
+                                {typeof feature === 'string' ? feature : feature.name || feature.title}
+                              </h4>
+                              {typeof feature === 'object' && feature.description && (
+                                <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div className="rounded-full bg-muted/50 p-6 mb-4">
                       <Package className="w-8 h-8 text-muted-foreground" />
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-2">
                       No feature details discovered yet
+                    </p>
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      Try clicking "Refresh" to re-extract data from the website
                     </p>
                   </div>
                 )}
@@ -335,7 +362,7 @@ export function CompetitorSolutionDetailsDialog({
                 {solution.useCases?.length > 0 ? (
                   <div className="space-y-4">
                     {solution.useCases.map((useCase: any, idx: number) => (
-                      <div key={idx} className="p-4 rounded-lg border">
+                      <div key={idx} className="p-4 rounded-lg border bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-all">
                         <h4 className="font-medium mb-2 flex items-center gap-2">
                           <BookOpen className="w-4 h-4 text-primary" />
                           {typeof useCase === 'string' ? useCase : useCase.title || useCase.name}
@@ -347,9 +374,17 @@ export function CompetitorSolutionDetailsDialog({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No use case information available
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="rounded-full bg-muted/50 p-6 mb-4">
+                      <BookOpen className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      No use case information available
+                    </p>
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      Use cases help understand how this product is applied in real scenarios
+                    </p>
+                  </div>
                 )}
               </TabsContent>
             </div>
