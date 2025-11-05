@@ -256,6 +256,190 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({
         </Card>
       )}
 
+      {/* Competitive Positioning */}
+      {(formData.positioningStatement || 
+        (formData.uniqueValuePropositions && formData.uniqueValuePropositions.length > 0) ||
+        (formData.keyDifferentiators && formData.keyDifferentiators.length > 0)) && (
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Target className="h-4 w-4 text-primary" />
+              Competitive Positioning
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {formData.positioningStatement && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Positioning Statement</h4>
+                <p className="text-sm text-muted-foreground italic border-l-2 border-primary pl-3">
+                  "{formData.positioningStatement}"
+                </p>
+              </div>
+            )}
+            
+            {formData.uniqueValuePropositions && formData.uniqueValuePropositions.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Unique Value Propositions</h4>
+                <ul className="space-y-1.5">
+                  {formData.uniqueValuePropositions.slice(0, 3).map((uvp, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm">
+                      <span className="text-primary font-bold mt-0.5">✓</span>
+                      <span>{uvp}</span>
+                    </li>
+                  ))}
+                </ul>
+                {formData.uniqueValuePropositions.length > 3 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    +{formData.uniqueValuePropositions.length - 3} more
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {formData.keyDifferentiators && formData.keyDifferentiators.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Key Differentiators</h4>
+                <div className="flex flex-wrap gap-2">
+                  {formData.keyDifferentiators.slice(0, 5).map((diff, idx) => (
+                    <Badge key={idx} variant="default" className="bg-primary/10 text-primary border-primary/30">
+                      {diff}
+                    </Badge>
+                  ))}
+                  {formData.keyDifferentiators.length > 5 && (
+                    <Badge variant="outline">+{formData.keyDifferentiators.length - 5}</Badge>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Market Intelligence */}
+      {formData.marketData && Object.keys(formData.marketData).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-4 w-4 text-green-500" />
+              Market Intelligence
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              {formData.marketData.size && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Market Size</p>
+                  <p className="text-sm font-medium">{formData.marketData.size}</p>
+                </div>
+              )}
+              {formData.marketData.growthRate && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Growth Rate</p>
+                  <p className="text-sm font-medium text-green-500">{formData.marketData.growthRate}</p>
+                </div>
+              )}
+              {formData.marketData.geographicAvailability && formData.marketData.geographicAvailability.length > 0 && (
+                <div className="col-span-2">
+                  <p className="text-xs text-muted-foreground mb-1">Available In</p>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.marketData.geographicAvailability.slice(0, 5).map((geo, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">{geo}</Badge>
+                    ))}
+                    {formData.marketData.geographicAvailability.length > 5 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{formData.marketData.geographicAvailability.length - 5}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+              {formData.marketData.complianceRequirements && formData.marketData.complianceRequirements.length > 0 && (
+                <div className="col-span-2">
+                  <p className="text-xs text-muted-foreground mb-1">Compliance</p>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.marketData.complianceRequirements.map((comp, idx) => (
+                      <Badge key={idx} className="bg-blue-500/10 text-blue-500 text-xs">{comp}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Metrics & Social Proof */}
+      {formData.metrics && Object.keys(formData.metrics).filter(k => formData.metrics && formData.metrics[k as keyof typeof formData.metrics]).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Star className="h-4 w-4 text-yellow-500" />
+              Metrics & Proof
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {formData.metrics.adoptionRate && (
+                <div className="text-center p-3 border border-border/50 rounded-lg">
+                  <p className="text-2xl font-bold text-primary">{formData.metrics.adoptionRate}</p>
+                  <p className="text-xs text-muted-foreground">Adoption</p>
+                </div>
+              )}
+              {formData.metrics.customerSatisfaction && (
+                <div className="text-center p-3 border border-border/50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-500">{formData.metrics.customerSatisfaction}</p>
+                  <p className="text-xs text-muted-foreground">Satisfaction</p>
+                </div>
+              )}
+              {formData.metrics.roi && (
+                <div className="text-center p-3 border border-border/50 rounded-lg">
+                  <p className="text-2xl font-bold text-orange-500">{formData.metrics.roi}</p>
+                  <p className="text-xs text-muted-foreground">ROI</p>
+                </div>
+              )}
+              {formData.metrics.implementationTime && (
+                <div className="text-center p-3 border border-border/50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-500">{formData.metrics.implementationTime}</p>
+                  <p className="text-xs text-muted-foreground">Setup Time</p>
+                </div>
+              )}
+              {formData.metrics.supportResponse && (
+                <div className="text-center p-3 border border-border/50 rounded-lg">
+                  <p className="text-2xl font-bold text-purple-500">{formData.metrics.supportResponse}</p>
+                  <p className="text-xs text-muted-foreground">Support SLA</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Integrations */}
+      {formData.integrations && formData.integrations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Link className="h-4 w-4" />
+              Integrations ({formData.integrations.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {formData.integrations.slice(0, 15).map((integration, idx) => (
+                <Badge key={idx} variant="secondary" className="text-xs">
+                  {integration}
+                </Badge>
+              ))}
+              {formData.integrations.length > 15 && (
+                <Badge variant="outline" className="text-xs">
+                  +{formData.integrations.length - 15} more
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Resources */}
       {formData.resources && formData.resources.length > 0 && (
         <Card>

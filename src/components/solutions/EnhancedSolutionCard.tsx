@@ -2,8 +2,9 @@ import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CustomBadge } from '@/components/ui/custom-badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { motion } from 'framer-motion';
-import { BookmarkIcon, CheckCircle, ExternalLink, Target, Trash2, Users, Zap } from 'lucide-react';
+import { BookmarkIcon, CheckCircle, ExternalLink, Target, Trash2, Users, Zap, Star, Link } from 'lucide-react';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 interface EnhancedSolutionCardProps {
   solution: EnhancedSolution;
@@ -68,12 +69,28 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
               <h3 className="text-gradient text-xl font-bold truncate pr-4 flex-1">{name}</h3>
             </div>
             
-            {externalUrl && <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 hover:opacity-100" onClick={e => {
-            e.stopPropagation();
-            window.open(externalUrl, '_blank');
-          }}>
-                <ExternalLink className="h-4 w-4" />
-              </Button>}
+            <div className="flex gap-1">
+              {solution.positioningStatement && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 hover:opacity-100">
+                        <Target className="h-4 w-4 text-primary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="text-sm italic">"{solution.positioningStatement}"</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {externalUrl && <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 hover:opacity-100" onClick={e => {
+              e.stopPropagation();
+              window.open(externalUrl, '_blank');
+            }}>
+                  <ExternalLink className="h-4 w-4" />
+                </Button>}
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -121,6 +138,81 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
                   </CustomBadge>}
               </div>
             </div>
+
+            {/* Metrics - Quick Stats */}
+            {solution.metrics && Object.keys(solution.metrics).filter(k => solution.metrics && solution.metrics[k as keyof typeof solution.metrics]).length > 0 && (
+              <div className="border-t border-white/10 pt-3 mt-3">
+                <div className="flex items-center gap-1.5 mb-2 text-sm font-medium text-muted-foreground">
+                  <Star className="h-4 w-4 text-yellow-500" />
+                  <span>Key Metrics</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {solution.metrics.customerSatisfaction && (
+                    <div className="text-center p-2 bg-green-500/5 border border-green-500/20 rounded">
+                      <p className="text-sm font-bold text-green-500">{solution.metrics.customerSatisfaction}</p>
+                      <p className="text-xs text-muted-foreground">Rating</p>
+                    </div>
+                  )}
+                  {solution.metrics.adoptionRate && (
+                    <div className="text-center p-2 bg-primary/5 border border-primary/20 rounded">
+                      <p className="text-sm font-bold">{solution.metrics.adoptionRate}</p>
+                      <p className="text-xs text-muted-foreground">Adoption</p>
+                    </div>
+                  )}
+                  {solution.metrics.implementationTime && (
+                    <div className="text-center p-2 bg-blue-500/5 border border-blue-500/20 rounded">
+                      <p className="text-sm font-bold text-blue-500">{solution.metrics.implementationTime}</p>
+                      <p className="text-xs text-muted-foreground">Setup</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Top Integrations */}
+            {solution.integrations && solution.integrations.length > 0 && (
+              <div className="border-t border-white/10 pt-3 mt-3">
+                <div className="flex items-center gap-1.5 mb-2 text-sm font-medium text-muted-foreground">
+                  <Link className="h-4 w-4 text-neon-blue" />
+                  <span>Integrations</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {solution.integrations.slice(0, 6).map((integration, idx) => (
+                    <CustomBadge key={idx} className="bg-neon-blue/10 text-neon-blue border-neon-blue/30 text-xs">
+                      {integration}
+                    </CustomBadge>
+                  ))}
+                  {solution.integrations.length > 6 && (
+                    <CustomBadge className="bg-background/70 text-muted-foreground text-xs">
+                      +{solution.integrations.length - 6}
+                    </CustomBadge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Unique Value Propositions - Condensed */}
+            {solution.uniqueValuePropositions && solution.uniqueValuePropositions.length > 0 && (
+              <div className="border-t border-white/10 pt-3 mt-3">
+                <div className="flex items-center gap-1.5 mb-2 text-sm font-medium text-muted-foreground">
+                  <Zap className="h-4 w-4 text-yellow-500" />
+                  <span>Why Choose</span>
+                </div>
+                <ul className="space-y-1">
+                  {solution.uniqueValuePropositions.slice(0, 2).map((uvp, idx) => (
+                    <li key={idx} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <span className="text-primary mt-0.5">✓</span>
+                      <span className="line-clamp-1">{uvp}</span>
+                    </li>
+                  ))}
+                  {solution.uniqueValuePropositions.length > 2 && (
+                    <li className="text-xs text-muted-foreground italic">
+                      +{solution.uniqueValuePropositions.length - 2} more value props
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
             
             {resources && resources.length > 0 && <div className="border-t border-white/10 pt-3 mt-3">
                 <div className="text-sm font-medium mb-2">Resources</div>

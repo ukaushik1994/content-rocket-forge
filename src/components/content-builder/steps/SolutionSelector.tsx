@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, ExternalLink, Building2, Check } from 'lucide-react';
@@ -209,10 +210,46 @@ export const SolutionSelector = () => {
                       )}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-popover border border-border">
-                    <div className="text-center max-w-48">
-                      <p className="font-medium text-foreground">{solution.name}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{solution.category}</p>
+                  <TooltipContent side="bottom" className="bg-popover border border-border max-w-md">
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-medium text-foreground">{solution.name}</p>
+                        <p className="text-xs text-muted-foreground">{solution.category}</p>
+                      </div>
+                      
+                      {solution.positioningStatement && (
+                        <p className="text-xs text-muted-foreground italic border-l-2 border-primary pl-2">
+                          "{solution.positioningStatement}"
+                        </p>
+                      )}
+                      
+                      {solution.metrics && (
+                        <div className="flex gap-2">
+                          {solution.metrics.customerSatisfaction && (
+                            <Badge variant="outline" className="text-xs">
+                              ⭐ {solution.metrics.customerSatisfaction}
+                            </Badge>
+                          )}
+                          {solution.metrics.adoptionRate && (
+                            <Badge variant="outline" className="text-xs">
+                              👥 {solution.metrics.adoptionRate}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      
+                      {solution.features && solution.features.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {solution.features.slice(0, 3).map((f, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">{f}</Badge>
+                          ))}
+                          {solution.features.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{solution.features.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </TooltipContent>
                 </Tooltip>
