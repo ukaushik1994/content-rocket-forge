@@ -31,30 +31,37 @@ interface CompanyFormDialogProps {
   onOpenChange: (open: boolean) => void;
   companyInfo: CompanyInfo | null;
   onSave: (info: CompanyInfo) => void;
+  prefilledData?: CompanyInfo | null;
+  extractionMetadata?: any;
 }
 
 export const CompanyFormDialog: React.FC<CompanyFormDialogProps> = ({
   open,
   onOpenChange,
   companyInfo,
-  onSave
+  onSave,
+  prefilledData,
+  extractionMetadata
 }) => {
   const isNew = !companyInfo;
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [logoFile, setLogoFile] = React.useState<File | null>(null);
   const [logoPreview, setLogoPreview] = React.useState<string | null>(companyInfo?.logoUrl || null);
   
+  // Use prefilledData if available, otherwise use companyInfo
+  const dataToUse = prefilledData || companyInfo;
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: companyInfo ? {
-      name: companyInfo.name,
-      industry: companyInfo.industry,
-      founded: companyInfo.founded,
-      size: companyInfo.size,
-      description: companyInfo.description,
-      mission: companyInfo.mission,
-      values: companyInfo.values.join(', '),
-      website: companyInfo.website || '',
+    defaultValues: dataToUse ? {
+      name: dataToUse.name,
+      industry: dataToUse.industry,
+      founded: dataToUse.founded,
+      size: dataToUse.size,
+      description: dataToUse.description,
+      mission: dataToUse.mission,
+      values: dataToUse.values.join(', '),
+      website: dataToUse.website || '',
     } : {
       name: '',
       industry: '',
@@ -86,18 +93,19 @@ export const CompanyFormDialog: React.FC<CompanyFormDialogProps> = ({
     setLogoPreview(null);
   };
   
-  // Reset form when dialog opens/closes or companyInfo changes
+  // Reset form when dialog opens/closes or data changes
   React.useEffect(() => {
     if (open) {
-      form.reset(companyInfo ? {
-        name: companyInfo.name,
-        industry: companyInfo.industry,
-        founded: companyInfo.founded,
-        size: companyInfo.size,
-        description: companyInfo.description,
-        mission: companyInfo.mission,
-        values: companyInfo.values.join(', '),
-        website: companyInfo.website || '',
+      const dataToUse = prefilledData || companyInfo;
+      form.reset(dataToUse ? {
+        name: dataToUse.name,
+        industry: dataToUse.industry,
+        founded: dataToUse.founded,
+        size: dataToUse.size,
+        description: dataToUse.description,
+        mission: dataToUse.mission,
+        values: dataToUse.values.join(', '),
+        website: dataToUse.website || '',
       } : {
         name: '',
         industry: '',
@@ -108,10 +116,10 @@ export const CompanyFormDialog: React.FC<CompanyFormDialogProps> = ({
         values: '',
         website: '',
       });
-      setLogoPreview(companyInfo?.logoUrl || null);
+      setLogoPreview(dataToUse?.logoUrl || null);
       setLogoFile(null);
     }
-  }, [open, companyInfo, form]);
+  }, [open, companyInfo, prefilledData, form]);
   
   const handleSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -156,14 +164,25 @@ export const CompanyFormDialog: React.FC<CompanyFormDialogProps> = ({
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-neon-purple/20 to-neon-blue/20 flex items-center justify-center">
                 <Building2 className="h-5 w-5 text-neon-purple" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-xl font-bold text-gradient">
                   {isNew ? 'Add Company Information' : 'Edit Company Information'}
                 </h2>
                 <p className="text-sm text-muted-foreground font-normal">
-                  Define your brand identity and company details
+                  {prefilledData && extractionMetadata ? (
+                    <>
+                      AI-extracted from {extractionMetadata.pagesAnalyzed} pages • Review and edit before saving
+                    </>
+                  ) : (
+                    'Define your brand identity and company details'
+                  )}
                 </p>
               </div>
+              {prefilledData && (
+                <span className="px-3 py-1 text-xs font-medium bg-neon-purple/20 text-neon-purple rounded-full border border-neon-purple/30">
+                  AI-Extracted
+                </span>
+              )}
             </div>
           </DialogTitle>
         </DialogHeader>

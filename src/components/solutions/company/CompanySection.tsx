@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Edit, Plus, Upload, Sparkles } from 'lucide-react';
+import { Building2, Edit, Plus, Upload, Sparkles, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CompanyFormDialog } from './CompanyFormDialog';
+import { CompanyAutofillDialog } from './CompanyAutofillDialog';
 import { CompanyInfo } from '@/contexts/content-builder/types/company-types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CompanySectionProps {
   companyInfo: CompanyInfo | null;
@@ -17,8 +19,28 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
   onSave 
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAutofillDialogOpen, setIsAutofillDialogOpen] = useState(false);
+  const [prefilledData, setPrefilledData] = useState<CompanyInfo | null>(null);
+  const [extractionMetadata, setExtractionMetadata] = useState<any>(null);
+  const [userId, setUserId] = useState<string>('');
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
   
   const handleOpenDialog = () => {
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenAutofillDialog = () => {
+    setIsAutofillDialogOpen(true);
+  };
+
+  const handleAutofillComplete = (data: CompanyInfo, metadata: any) => {
+    setPrefilledData(data);
+    setExtractionMetadata(metadata);
     setIsDialogOpen(true);
   };
 
@@ -116,27 +138,43 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
             </motion.div>
           </div>
           
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Button 
-              onClick={handleOpenDialog} 
-              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple gap-2"
+          <div className="flex gap-2">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {companyInfo ? (
-                <>
-                  <Edit className="h-4 w-4" />
-                  Edit Company Details
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  Add Company Details
-                </>
-              )}
-            </Button>
-          </motion.div>
+              <Button 
+                onClick={handleOpenAutofillDialog} 
+                variant="outline"
+                className="gap-2 border-neon-purple/30 hover:border-neon-purple/50"
+              >
+                <Wand2 className="h-4 w-4" />
+                AI Autofill from Website
+              </Button>
+            </motion.div>
+            
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button 
+                onClick={handleOpenDialog} 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple gap-2"
+              >
+                {companyInfo ? (
+                  <>
+                    <Edit className="h-4 w-4" />
+                    Edit Company Details
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    Add Company Details
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          </div>
         </div>
 
         <div className="relative z-10 mt-4">
@@ -317,9 +355,25 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
 
       <CompanyFormDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setPrefilledData(null);
+            setExtractionMetadata(null);
+          }
+        }}
         companyInfo={companyInfo}
         onSave={onSave}
+        prefilledData={prefilledData}
+        extractionMetadata={extractionMetadata}
+      />
+
+      <CompanyAutofillDialog
+        open={isAutofillDialogOpen}
+        onOpenChange={setIsAutofillDialogOpen}
+        onComplete={handleAutofillComplete}
+        userId={userId}
+        currentCompanyInfo={companyInfo}
       />
     </motion.div>
   );
