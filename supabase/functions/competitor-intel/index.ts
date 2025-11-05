@@ -1,437 +1,357 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.6";
-import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
-import { corsHeaders } from "../shared/cors.ts";
-import { 
-  normalizeDomain, 
-  getBaseUrl, 
-  categorizeUrl, 
-  getCategoryPriority,
-  toResourceCategory,
-  isValidHttpUrl,
-  generateCacheKey
-} from "../shared/url-utils.ts";
-import { extractPageContent, chunkText } from "../shared/content-extractor.ts";
-import { fetchRobotsTxt, parseRobotsTxt, isUrlAllowed } from "../shared/robots-parser.ts";
+import { extractPageContent } from "../shared/content-extractor.ts";
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-interface SitemapUrl {
-  loc: string;
-  lastmod?: string;
-  category: string;
-  priority: number;
+interface CompetitorIntelRequest {
+  userId: string;
+  website: string;
+  maxPages?: number;
+  recrawl?: boolean;
+}
+
+interface CompetitorProfile {
+  description: string;
+  market_position: string;
+  strengths: string[];
+  weaknesses: string[];
+  resources: Array<{
+    title: string;
+    url: string;
+    category: string;
+  }>;
+  notes: string;
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { userId, website, maxPages = 15, recrawl = false } = await req.json();
+    const { userId, website, maxPages = 5, recrawl = false }: CompetitorIntelRequest = await req.json();
 
     if (!userId || !website) {
+      throw new Error("Missing required fields: userId, website");
+    }
+
+    console.log(`[competitor-intel] Starting analysis for: ${website}`);
+    console.log(`[competitor-intel] Max pages: ${maxPages}, Recrawl: ${recrawl}`);
+
+    // Step 1: Discover competitor pages using SERP
+    const discoveredUrls = await discoverCompetitorPages(website);
+    console.log(`[competitor-intel] Discovered ${discoveredUrls.length} competitor pages`);
+
+    if (discoveredUrls.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          success: false,
+          error: "No competitor pages found. Please try entering information manually."
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`🚀 Starting competitor intel for: ${website}`);
-
-    const domain = normalizeDomain(website);
-    const baseUrl = getBaseUrl(domain);
-    const cacheKey = await generateCacheKey(domain);
-
-    // Check cache
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: cached } = await supabase
-      .from('competitor_cache')
-      .select('*')
-      .eq('cache_key', cacheKey)
-      .single();
-
-    if (cached && !recrawl) {
-      const lastCrawled = new Date(cached.last_crawled_at);
-      const hoursSince = (Date.now() - lastCrawled.getTime()) / (1000 * 60 * 60);
-      
-      if (hoursSince < 24) {
-        console.log('✅ Cache hit!');
-        return new Response(
-          JSON.stringify({
-            success: true,
-            profile: cached.profile_data,
-            diagnostics: {
-              ...cached.diagnostics,
-              cache_hit: true
-            }
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    let usedSitemap = false;
-    let usedSerp = false;
-    let selectedUrls: SitemapUrl[] = [];
-
-    // Check robots.txt
-    const robotsTxt = await fetchRobotsTxt(domain);
-    const robotsRules = robotsTxt 
-      ? parseRobotsTxt(robotsTxt, 'CompetitorIntelBot')
-      : { allowed: true, disallowedPaths: [] };
-
-    console.log(`🤖 Robots.txt rules:`, robotsRules);
-
-    // Try sitemap discovery
-    const sitemapUrls = await discoverSitemap(baseUrl);
+    // Step 2: Extract content from discovered pages
+    const topUrls = discoveredUrls.slice(0, maxPages);
+    console.log(`[competitor-intel] Extracting content from ${topUrls.length} pages`);
     
-    if (sitemapUrls.length > 0) {
-      console.log(`📄 Found ${sitemapUrls.length} URLs from sitemap`);
-      usedSitemap = true;
-      
-      // Filter by robots.txt
-      const allowedUrls = sitemapUrls.filter(url => 
-        isUrlAllowed(url.loc, robotsRules)
-      );
-      
-      // Sort by priority and select top URLs
-      selectedUrls = allowedUrls
-        .sort((a, b) => {
-          if (a.priority !== b.priority) return a.priority - b.priority;
-          if (a.lastmod && b.lastmod) return b.lastmod.localeCompare(a.lastmod);
-          return 0;
-        })
-        .slice(0, maxPages);
-    }
-
-    // Fallback to SERP if no sitemap
-    if (selectedUrls.length === 0) {
-      console.log('🔍 No sitemap found, using SERP fallback');
-      usedSerp = true;
-      selectedUrls = await fetchUrlsFromSerp(domain, maxPages);
-    }
-
-    console.log(`📊 Selected ${selectedUrls.length} URLs to fetch`);
-
-    // Fetch page content with concurrency control
-    const pageContents = await fetchPagesWithConcurrency(
-      selectedUrls.map(u => ({ url: u.loc, category: u.category })),
-      3
+    const extractedPages = await Promise.all(
+      topUrls.map(async (url) => {
+        const content = await extractPageContent(url, 10000);
+        return content ? { url, content } : null;
+      })
     );
 
-    console.log(`📚 Successfully fetched ${pageContents.length} pages`);
+    const validPages = extractedPages.filter((p) => p !== null);
+    console.log(`[competitor-intel] Successfully extracted ${validPages.length} pages`);
 
-    // AI Map-Reduce Summarization
-    const profile = await summarizeCompetitor(domain, pageContents, userId);
+    if (validPages.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Could not extract content from any pages. Please try manually."
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Cache the result
-    await supabase
-      .from('competitor_cache')
-      .upsert({
-        cache_key: cacheKey,
-        domain,
-        last_crawled_at: new Date().toISOString(),
-        url_count: pageContents.length,
-        profile_data: profile,
-        diagnostics: {
-          used_sitemap: usedSitemap,
-          used_serp: usedSerp,
-          pages_fetched: pageContents.length,
-          pages_skipped: selectedUrls.length - pageContents.length,
-          ai_calls: pageContents.length + 1,
-          cache_hit: false
-        }
-      });
+    // Step 3: Use AI to extract competitive intelligence
+    const { profile, diagnostics } = await extractCompetitiveIntelligence(
+      validPages,
+      website
+    );
+
+    console.log(`[competitor-intel] ✅ Analysis complete`);
 
     return new Response(
       JSON.stringify({
         success: true,
         profile,
         diagnostics: {
-          used_sitemap: usedSitemap,
-          used_serp: usedSerp,
-          pages_fetched: pageContents.length,
-          pages_skipped: selectedUrls.length - pageContents.length,
-          ai_calls: pageContents.length + 1,
-          cache_hit: false
+          ...diagnostics,
+          used_serp: true,
+          pages_fetched: validPages.length,
+          pages_skipped: topUrls.length - validPages.length
         }
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: any) {
-    console.error('❌ Error:', error);
+    console.error("[competitor-intel] Error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || "Failed to analyze competitor website"
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
 
-async function discoverSitemap(baseUrl: string): Promise<SitemapUrl[]> {
-  const sitemapPaths = ['/sitemap.xml', '/sitemap_index.xml', '/sitemap-index.xml'];
+/**
+ * Discover competitor pages using SERP queries
+ */
+async function discoverCompetitorPages(website: string): Promise<string[]> {
+  const urls: string[] = [];
+  const domain = new URL(website).hostname;
   
-  for (const path of sitemapPaths) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+  // Competitive intelligence queries
+  const queries = [
+    `site:${domain} about`,
+    `site:${domain} solutions OR products`,
+    `site:${domain} case studies OR customers`,
+    `site:${domain} pricing OR plans`,
+    `site:${domain} features OR capabilities`
+  ];
+
+  console.log(`[competitor-intel] Running ${queries.length} SERP queries`);
+
+  for (const query of queries) {
     try {
-      const url = `${baseUrl}${path}`;
-      console.log(`Trying sitemap: ${url}`);
-      
-      const response = await fetch(url, { 
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CompetitorIntelBot/1.0)' }
+      const response = await fetch(`${supabaseUrl}/functions/v1/api-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`
+        },
+        body: JSON.stringify({
+          provider: 'serpstack',
+          endpoint: 'search',
+          params: { query, num: 5 }
+        })
       });
+
+      const data = await response.json();
       
-      if (!response.ok) continue;
-      
-      const xml = await response.text();
-      const urls = parseSitemapXml(xml, baseUrl);
-      
-      if (urls.length > 0) {
-        console.log(`✅ Found sitemap at ${path} with ${urls.length} URLs`);
-        return urls;
+      // Handle rate limits gracefully
+      if (response.status === 429 || data.isRateLimited) {
+        console.warn(`⚠️ SERP rate limited for query: ${query}`);
+        continue;
+      }
+
+      if (data.success && data.results) {
+        urls.push(...data.results.map((r: any) => r.url).filter(Boolean));
       }
     } catch (error) {
-      console.log(`Failed to fetch ${path}:`, error);
+      console.error(`SERP query failed for: ${query}`, error);
     }
   }
-  
-  return [];
-}
 
-function parseSitemapXml(xml: string, baseUrl: string): SitemapUrl[] {
-  const urls: SitemapUrl[] = [];
-  const doc = new DOMParser().parseFromString(xml, 'text/xml');
-  
-  if (!doc) return urls;
-  
-  // Check if this is a sitemap index
-  const sitemapElements = doc.querySelectorAll('sitemap > loc');
-  if (sitemapElements.length > 0) {
-    // TODO: Could recursively fetch child sitemaps, but keeping simple for now
-    console.log('Found sitemap index, parsing first level only');
-  }
-  
-  // Parse URL entries
-  const urlElements = doc.querySelectorAll('url');
-  
-  urlElements.forEach((urlEl: any) => {
-    const loc = urlEl.querySelector('loc')?.textContent?.trim();
-    const lastmod = urlEl.querySelector('lastmod')?.textContent?.trim();
-    
-    if (loc && isValidHttpUrl(loc)) {
-      const category = categorizeUrl(loc);
-      const priority = getCategoryPriority(category);
-      
-      urls.push({ loc, lastmod, category, priority });
-    }
-  });
-  
-  return urls;
-}
-
-async function fetchUrlsFromSerp(domain: string, maxUrls: number): Promise<SitemapUrl[]> {
-  // For now, return basic URLs since we don't have SERP integration wired
-  // In production, this would call the api-proxy with SERP queries
-  console.log('⚠️ SERP fallback not fully implemented, using basic URLs');
-  
-  const baseUrls = [
-    { loc: `https://${domain}`, category: 'homepage', priority: 1 },
-    { loc: `https://${domain}/products`, category: 'product/service', priority: 2 },
-    { loc: `https://${domain}/pricing`, category: 'product/service', priority: 2 },
-    { loc: `https://${domain}/about`, category: 'about/contact', priority: 4 },
-    { loc: `https://${domain}/blog`, category: 'resources/blog', priority: 3 }
-  ];
-  
-  return baseUrls.slice(0, maxUrls);
-}
-
-async function fetchPagesWithConcurrency(
-  urls: Array<{ url: string; category: string }>,
-  concurrency: number
-): Promise<Array<{ url: string; category: string; content: any }>> {
-  const results: Array<{ url: string; category: string; content: any }> = [];
-  
-  for (let i = 0; i < urls.length; i += concurrency) {
-    const batch = urls.slice(i, i + concurrency);
-    const batchResults = await Promise.all(
-      batch.map(async ({ url, category }) => {
-        const content = await extractPageContent(url);
-        return { url, category, content };
-      })
+  // Filter for domain-relevant URLs
+  const relevantUrls = urls.filter(url => {
+    const lowerUrl = url.toLowerCase();
+    return url.includes(domain) && (
+      lowerUrl.includes('/about') ||
+      lowerUrl.includes('/product') ||
+      lowerUrl.includes('/solution') ||
+      lowerUrl.includes('/feature') ||
+      lowerUrl.includes('/pricing') ||
+      lowerUrl.includes('/case') ||
+      lowerUrl.includes('/customer')
     );
-    
-    results.push(...batchResults.filter(r => r.content !== null));
+  });
+
+  // Remove duplicates and return
+  const uniqueUrls = [...new Set(relevantUrls)];
+  console.log(`[competitor-intel] Found ${uniqueUrls.length} relevant URLs after filtering`);
+  
+  return uniqueUrls;
+}
+
+/**
+ * Extract competitive intelligence using AI
+ */
+async function extractCompetitiveIntelligence(
+  pages: Array<{ url: string; content: any }>,
+  website: string
+): Promise<{
+  profile: CompetitorProfile;
+  diagnostics: any;
+}> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  
+  if (!LOVABLE_API_KEY) {
+    console.warn('[competitor-intel] No LOVABLE_API_KEY, using fallback');
+    return createFallbackProfile(website, pages);
   }
-  
-  return results;
-}
 
-async function summarizeCompetitor(
-  domain: string,
-  pages: Array<{ url: string; category: string; content: any }>,
-  userId: string
-): Promise<any> {
-  // MAP phase: Summarize each page
-  const pageSummaries = await Promise.all(
-    pages.map(page => summarizePage(page, userId))
-  );
-  
-  // REDUCE phase: Aggregate into competitor profile
-  const profile = await aggregateProfile(domain, pageSummaries.filter(Boolean), userId);
-  
-  return profile;
-}
+  // Build content summary from pages
+  const pageTexts = pages.map((p, i) => {
+    return `[Page ${i + 1}: ${p.url}]
+Title: ${p.content.title}
+Meta: ${p.content.metaDescription}
+Headings: ${p.content.headings.join(", ")}
+Content: ${p.content.mainText.substring(0, 3000)}
+`;
+  });
 
-async function summarizePage(
-  page: { url: string; category: string; content: any },
-  userId: string
-): Promise<any> {
+  const prompt = `You are a competitive intelligence analyst. Analyze the following pages from a competitor's website and extract structured competitive insights.
+
+COMPETITOR WEBSITE: ${website}
+
+CONTENT FROM PAGES:
+${pageTexts.join("\n\n---\n\n")}
+
+Extract the following competitive intelligence in JSON format:
+
+1. description: 2-3 sentence overview of what this competitor does and their value proposition
+2. market_position: Their market positioning. Choose ONE from: "Market Leader", "Strong Challenger", "Niche Player", "Emerging Competitor", "Disruptor"
+3. strengths: Array of 3-5 competitive strengths/advantages (e.g., "Enterprise-grade security", "24/7 support", "AI-powered automation")
+4. weaknesses: Array of 3-5 weaknesses or gaps (e.g., "Limited integrations", "Complex pricing", "No mobile app")
+5. resources: Array of detected resources with:
+   - title: Resource name (e.g., "Product Documentation", "Case Studies")
+   - url: Full URL
+   - category: Choose from: 'website' | 'documentation' | 'case_studies' | 'social_media' | 'marketing' | 'other'
+6. notes: A brief competitive intelligence summary (2-3 sentences) highlighting key insights about this competitor and how they differentiate
+
+IMPORTANT:
+- Focus on COMPETITIVE angles - what makes them strong, where they fall short
+- Strengths should be specific competitive advantages, not generic statements
+- Weaknesses should be actual gaps or limitations in their offering
+- Market position should reflect their actual standing in the market
+- Notes should provide actionable competitive intelligence
+
+Return ONLY valid JSON in this exact format:
+{
+  "description": "string",
+  "market_position": "string",
+  "strengths": ["string", "string", "string"],
+  "weaknesses": ["string", "string", "string"],
+  "resources": [
+    {
+      "title": "string",
+      "url": "string",
+      "category": "website|documentation|case_studies|social_media|marketing|other"
+    }
+  ],
+  "notes": "string"
+}`;
+
   try {
-    const { content } = page;
-    const fullText = `Title: ${content.title}\nMeta: ${content.metaDescription}\nHeadings: ${content.headings.join(', ')}\n\n${content.mainText}`;
+    console.log('[competitor-intel] Calling AI for competitive intelligence extraction');
     
-    // Chunk if needed
-    const chunks = chunkText(fullText, 10000);
-    const textToSummarize = chunks[0]; // Use first chunk for efficiency
-    
-    const prompt = `Analyze this webpage from a competitor's website and extract key information in JSON format:\n\nURL: ${page.url}\nCategory: ${page.category}\n\nContent:\n${textToSummarize}\n\nReturn a JSON object with:\n{\n  "page_title": "...",\n  "key_points": ["5-8 key points"],\n  "value_props": ["3-5 value propositions"],\n  "features": ["3-5 key features mentioned"],\n  "target_audience": "description",\n  "pricing_hints": "any pricing info",\n  "top_keywords": ["10 relevant keywords"]\n}`;
-
-    // Call Lovable AI via existing pattern
-    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/ai-proxy`, {
-      method: 'POST',
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp',
+        model: "google/gemini-2.0-flash-exp",
         messages: [
-          { role: 'user', content: prompt }
+          { 
+            role: "system", 
+            content: "You are a competitive intelligence analyst. Return only valid JSON with actionable competitive insights." 
+          },
+          { role: "user", content: prompt }
         ],
-        max_tokens: 500
+        temperature: 0.3
       })
     });
 
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || '{}';
-    
-    // Parse JSON from response
-    let parsed;
-    try {
-      // Try to extract JSON if wrapped in markdown code blocks
-      const jsonMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[1]);
-      } else {
-        parsed = JSON.parse(aiResponse);
-      }
-    } catch {
-      parsed = {
-        page_title: content.title,
-        key_points: content.headings.slice(0, 5),
-        value_props: [],
-        features: [],
-        target_audience: '',
-        pricing_hints: '',
-        top_keywords: []
-      };
+    if (!response.ok) {
+      console.error(`AI extraction failed: ${response.status}`);
+      return createFallbackProfile(website, pages);
     }
+
+    const aiData = await response.json();
+    const content = aiData.choices?.[0]?.message?.content || "{}";
     
-    return {
-      url: page.url,
-      category: page.category,
-      ...parsed
+    console.log('[competitor-intel] AI response received, parsing...');
+    
+    // Extract JSON from response (may be wrapped in markdown)
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const jsonStr = jsonMatch ? jsonMatch[0] : content;
+    const extracted = JSON.parse(jsonStr);
+
+    // Validate and build final profile
+    const profile: CompetitorProfile = {
+      description: extracted.description || `Competitor analysis for ${website}`,
+      market_position: extracted.market_position || "Unknown",
+      strengths: Array.isArray(extracted.strengths) ? extracted.strengths : [],
+      weaknesses: Array.isArray(extracted.weaknesses) ? extracted.weaknesses : [],
+      resources: Array.isArray(extracted.resources) ? extracted.resources : [
+        { title: "Website", url: website, category: "website" }
+      ],
+      notes: extracted.notes || "No additional notes available"
     };
-  } catch (error) {
-    console.error(`Failed to summarize page ${page.url}:`, error);
-    return null;
+
+    console.log('[competitor-intel] ✅ Successfully extracted competitive intelligence');
+
+    const diagnostics = {
+      used_sitemap: false,
+      ai_calls: 1,
+      cache_hit: false
+    };
+
+    return { profile, diagnostics };
+
+  } catch (error: any) {
+    console.error("[competitor-intel] AI extraction error:", error);
+    return createFallbackProfile(website, pages);
   }
 }
 
-async function aggregateProfile(
-  domain: string,
-  summaries: any[],
-  userId: string
-): Promise<any> {
-  const aggregatedText = summaries.map(s => 
-    `URL: ${s.url} (${s.category})\nTitle: ${s.page_title}\nKey Points: ${s.key_points?.join(', ')}\nValue Props: ${s.value_props?.join(', ')}\nFeatures: ${s.features?.join(', ')}`
-  ).join('\n\n');
-
-  const prompt = `Based on these competitor webpage summaries, create a comprehensive competitor profile in JSON format:\n\n${aggregatedText}\n\nReturn a JSON object with:\n{\n  "overview": "2-3 sentence company overview",\n  "positioning": "market position/niche",\n  "strengths": ["exactly 5 distinct strengths"],\n  "weaknesses": ["exactly 5 distinct weaknesses"],\n  "products_services": ["up to 10 products/services"],\n  "differentiators": ["3-5 key differentiators"],\n  "keywords_top": ["25 most relevant keywords"]\n}`;
-
-  try {
-    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/ai-proxy`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 1500
-      })
-    });
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || '{}';
-    
-    let profile;
-    try {
-      const jsonMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
-      if (jsonMatch) {
-        profile = JSON.parse(jsonMatch[1]);
-      } else {
-        profile = JSON.parse(aiResponse);
-      }
-    } catch {
-      profile = {
-        overview: `Competitor analysis for ${domain}`,
-        positioning: 'Market competitor',
-        strengths: ['Established brand', 'Product offerings', 'Market presence', 'Customer base', 'Industry experience'],
-        weaknesses: ['Limited information available', 'Analysis incomplete', 'Data gathering in progress', 'Requires manual review', 'Automated assessment'],
-        products_services: [],
-        differentiators: [],
-        keywords_top: []
-      };
+/**
+ * Create fallback profile when AI extraction fails
+ */
+function createFallbackProfile(
+  website: string, 
+  pages: Array<{ url: string; content: any }>
+): {
+  profile: CompetitorProfile;
+  diagnostics: any;
+} {
+  console.log('[competitor-intel] Creating fallback profile');
+  
+  return {
+    profile: {
+      description: `Competitor analysis in progress for ${website}. Please review and add details manually.`,
+      market_position: "Unknown",
+      strengths: [],
+      weaknesses: [],
+      resources: [
+        { title: "Website", url: website, category: "website" },
+        ...pages.slice(0, 3).map(p => ({
+          title: p.content.title || "Discovered Page",
+          url: p.url,
+          category: "other" as const
+        }))
+      ],
+      notes: "AI extraction unavailable. Please add competitive intelligence manually."
+    },
+    diagnostics: {
+      used_sitemap: false,
+      ai_calls: 0,
+      cache_hit: false
     }
-
-    // Map to database schema
-    const today = new Date().toISOString().split('T')[0];
-    const topKeywords = profile.keywords_top?.slice(0, 10).join(', ') || '';
-    
-    return {
-      description: profile.overview || `Competitor analysis for ${domain}`,
-      market_position: profile.positioning || 'Industry competitor',
-      strengths: profile.strengths?.slice(0, 5) || [],
-      weaknesses: profile.weaknesses?.slice(0, 5) || [],
-      resources: summaries.map(s => ({
-        title: s.page_title || s.url,
-        url: s.url,
-        category: toResourceCategory(s.category)
-      })),
-      notes: `Auto-filled on ${today}. Top keywords: ${topKeywords}`
-    };
-  } catch (error) {
-    console.error('Failed to aggregate profile:', error);
-    
-    // Fallback profile
-    return {
-      description: `Competitor profile for ${domain}`,
-      market_position: 'Industry competitor',
-      strengths: ['Established presence', 'Product portfolio', 'Market reach', 'Customer base', 'Brand recognition'],
-      weaknesses: ['Analysis incomplete', 'Limited data available', 'Requires review', 'Automated assessment', 'Further research needed'],
-      resources: summaries.map(s => ({
-        title: s.page_title || 'Competitor page',
-        url: s.url,
-        category: toResourceCategory(s.category)
-      })),
-      notes: `Auto-filled on ${new Date().toISOString().split('T')[0]}`
-    };
-  }
+  };
 }
