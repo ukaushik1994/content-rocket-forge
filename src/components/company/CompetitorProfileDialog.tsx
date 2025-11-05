@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { Progress } from '@/components/ui/progress';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
 import { 
@@ -106,8 +106,8 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="glass-panel max-w-7xl max-h-[90vh] overflow-hidden flex flex-col shadow-neon rounded-xl border border-border/50 bg-card/60 backdrop-blur-xl">
+        <DialogHeader className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/50 pb-4">
           <div className="flex items-start gap-4">
             {competitor.logoUrl ? (
               <img src={competitor.logoUrl} alt={competitor.name} className="w-16 h-16 rounded-lg object-cover" />
@@ -167,7 +167,7 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-5 bg-muted/50 backdrop-blur-sm border border-border/30">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="solutions">Solutions</TabsTrigger>
             <TabsTrigger value="analysis">Analysis</TabsTrigger>
@@ -180,9 +180,9 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
             <TabsContent value="overview" className="space-y-6 m-0 p-6">
               {/* Market Position - Prominent Display */}
               {competitor.marketPosition && (
-                <div className="p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 backdrop-blur-md shadow-lg ring-1 ring-primary/10">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-primary/20">
+                    <div className="p-2 rounded-full bg-primary/20 backdrop-blur-sm">
                       <Target className="w-5 h-5 text-primary" />
                     </div>
                     <div>
@@ -194,14 +194,12 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
               )}
 
               {/* Competitive Summary Card */}
-              <Card className="border-primary/20 bg-gradient-to-br from-background to-muted/30">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+              <GlassCard className="border-primary/30 shadow-xl">
+                <div className="p-6">
+                  <h3 className="text-base font-semibold flex items-center gap-2 mb-4">
                     <TrendingUp className="h-4 w-4 text-primary" />
                     Competitive Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h3>
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="text-3xl font-bold text-green-500">{competitor.strengths.length}</p>
@@ -216,8 +214,8 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                       <p className="text-xs text-muted-foreground mt-1">Resources</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </GlassCard>
 
               {/* Description */}
               {competitor.description && (
@@ -277,7 +275,7 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                         href={resource.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-3 rounded-lg border hover:border-primary transition-all hover:shadow-md group"
+                        className="p-3 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary hover:bg-card/60 transition-all hover:shadow-lg group ring-1 ring-black/5 dark:ring-white/5"
                       >
                         <div className="flex items-start gap-2">
                           <div className="mt-0.5">
@@ -306,26 +304,24 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
 
               {/* Intelligence Notes Preview */}
               {competitor.notes && (
-                <Card className="border-amber-500/20 bg-amber-500/5">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
+                <GlassCard className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent shadow-lg">
+                  <div className="p-6">
+                    <h3 className="text-base font-semibold flex items-center gap-2 mb-3">
                       <Lightbulb className="h-4 w-4 text-amber-500" />
                       Competitive Intelligence
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                    </h3>
                     <p className="text-sm text-muted-foreground line-clamp-3">
                       {competitor.notes}
                     </p>
                     <p className="text-xs text-primary mt-2">
                       View full analysis in Notes tab →
                     </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                </GlassCard>
               )}
 
               {/* Quick Actions */}
-              <div className="pt-4 border-t flex gap-2 flex-wrap">
+              <div className="pt-4 border-t border-border/30 flex gap-2 flex-wrap">
                 {competitor.website && (
                   <Button variant="outline" size="sm" asChild>
                     <a href={competitor.website} target="_blank" rel="noopener noreferrer">
@@ -354,17 +350,15 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
             <TabsContent value="analysis" className="m-0 p-6">
               <div className="space-y-6">
                 {/* SWOT Analysis */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                <GlassCard className="shadow-xl">
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-6">
                       <Target className="h-5 w-5" />
                       SWOT Analysis
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                    </h3>
                     <div className="grid grid-cols-2 gap-4">
                       {/* Strengths */}
-                      <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
+                      <GlassCard className="p-4 border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent">
                         <h4 className="font-semibold text-green-500 mb-3 flex items-center gap-2">
                           <TrendingUp className="w-4 h-4" />
                           Strengths
@@ -381,10 +375,10 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                             <li className="text-sm text-muted-foreground">No strengths identified</li>
                           )}
                         </ul>
-                      </div>
+                      </GlassCard>
 
                       {/* Weaknesses */}
-                      <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/20">
+                      <GlassCard className="p-4 border-red-500/30 bg-gradient-to-br from-red-500/10 to-transparent">
                         <h4 className="font-semibold text-red-500 mb-3 flex items-center gap-2">
                           <TrendingDown className="w-4 h-4" />
                           Weaknesses
@@ -401,10 +395,10 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                             <li className="text-sm text-muted-foreground">No weaknesses identified</li>
                           )}
                         </ul>
-                      </div>
+                      </GlassCard>
 
                       {/* Opportunities (derived) */}
-                      <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                      <GlassCard className="p-4 border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-transparent">
                         <h4 className="font-semibold text-blue-500 mb-3">Opportunities for Us</h4>
                         <ul className="space-y-2">
                           {competitor.weaknesses.length > 0 ? (
@@ -418,10 +412,10 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                             <li className="text-sm text-muted-foreground">No opportunities identified</li>
                           )}
                         </ul>
-                      </div>
+                      </GlassCard>
 
                       {/* Threats (derived) */}
-                      <div className="p-4 rounded-lg bg-orange-500/5 border border-orange-500/20">
+                      <GlassCard className="p-4 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-transparent">
                         <h4 className="font-semibold text-orange-500 mb-3">Threats to Monitor</h4>
                         <ul className="space-y-2">
                           {competitor.strengths.length > 0 ? (
@@ -435,17 +429,15 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                             <li className="text-sm text-muted-foreground">No threats identified</li>
                           )}
                         </ul>
-                      </div>
+                      </GlassCard>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </GlassCard>
 
                 {/* Competitive Positioning Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Competitive Positioning</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                <GlassCard className="shadow-xl">
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Competitive Positioning</h3>
                     <div className="space-y-4">
                       <div>
                         <div className="flex justify-between mb-2">
@@ -462,8 +454,8 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                         <Progress value={calculateThreatLevel(competitor)} className="h-2 [&>div]:bg-red-500" />
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </GlassCard>
               </div>
             </TabsContent>
 
@@ -479,7 +471,7 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                   {/* Resource Statistics */}
                   <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
                     {Object.entries(resourcesByCategory).map(([category, resources]) => (
-                      <div key={category} className="text-center p-3 rounded-lg border">
+                      <div key={category} className="text-center p-3 border border-border/30 rounded-lg bg-card/40 backdrop-blur-sm hover:bg-card/60 transition-all shadow-md ring-1 ring-black/5 dark:ring-white/5">
                         <div className="mb-2 flex justify-center">
                           {getCategoryIcon(category)}
                         </div>
@@ -509,7 +501,7 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                             href={resource.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block p-4 rounded-lg border hover:border-primary transition-colors group"
+                            className="block p-4 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary hover:bg-card/60 transition-all hover:shadow-lg group ring-1 ring-black/5 dark:ring-white/5"
                           >
                             <div className="flex items-start gap-3">
                               <div className="mt-0.5">
@@ -535,30 +527,26 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
               {competitor.notes ? (
                 <div className="space-y-6">
                   {/* Main Intelligence Summary */}
-                  <Card className="border-primary/20">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
+                  <GlassCard className="border-primary/30 shadow-xl">
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
                         <Brain className="h-5 w-5 text-primary" />
                         AI-Generated Competitive Intelligence
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground">
+                      </h3>
+                      <p className="text-xs text-muted-foreground mb-4">
                         Auto-extracted from {competitor.website}
                       </p>
-                    </CardHeader>
-                    <CardContent>
                       <div className="prose prose-sm max-w-none dark:prose-invert">
                         <ReactMarkdown>{competitor.notes}</ReactMarkdown>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </GlassCard>
 
                   {/* Key Insights */}
                   {extractKeyInsights(competitor.notes).length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Key Insights</CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                    <GlassCard className="shadow-lg">
+                      <div className="p-6">
+                        <h3 className="text-base font-semibold mb-4">Key Insights</h3>
                         <ul className="space-y-2">
                           {extractKeyInsights(competitor.notes).map((insight, idx) => (
                             <li key={idx} className="flex items-start gap-2">
@@ -567,19 +555,17 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                             </li>
                           ))}
                         </ul>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </GlassCard>
                   )}
 
                   {/* Action Items */}
-                  <Card className="border-green-500/20 bg-green-500/5">
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
+                  <GlassCard className="border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent shadow-lg">
+                    <div className="p-6">
+                      <h3 className="text-base font-semibold flex items-center gap-2 mb-4">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                         Recommended Actions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                      </h3>
                       <ul className="space-y-2">
                         <li className="flex items-start gap-2 text-sm">
                           <span className="text-green-500">→</span>
@@ -594,8 +580,8 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                           <span>Monitor their {competitor.resources.length} resources for market changes</span>
                         </li>
                       </ul>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </GlassCard>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
