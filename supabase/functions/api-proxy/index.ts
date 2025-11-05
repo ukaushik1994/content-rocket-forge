@@ -1069,21 +1069,46 @@ function cleanText(text: string): string {
 async function handleSerpstackApi(endpoint: string, apiKey: string, params?: any) {
   console.log('🔍 Processing Serpstack request');
   
-  if (endpoint === 'test') {
-    return await testSerpstackApi(apiKey);
-  } else if (endpoint === 'analyze') {
-    return await analyzeSerpstackKeyword(apiKey, params);
-  } else if (endpoint === 'search') {
-    return await searchSerpstack(apiKey, params);
-  }
-  
-  return new Response(
-    JSON.stringify({ success: false, error: 'Serpstack endpoint not implemented' }),
-    { 
-      status: 400, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+  try {
+    if (endpoint === 'test') {
+      return await testSerpstackApi(apiKey);
+    } else if (endpoint === 'analyze') {
+      return await analyzeSerpstackKeyword(apiKey, params);
+    } else if (endpoint === 'search') {
+      return await searchSerpstack(apiKey, params);
     }
-  );
+    
+    return new Response(
+      JSON.stringify({ success: false, error: 'Serpstack endpoint not implemented' }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  } catch (error: any) {
+    // Check if it's a rate limit error
+    const errorMessage = (error.message || '').toLowerCase();
+    if (errorMessage.includes('rate limit') || errorMessage.includes('exceeded') || errorMessage.includes('maximum rate')) {
+      console.warn('⚠️ Serpstack rate limit hit - returning graceful fallback');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'SERP API rate limit exceeded',
+          isRateLimited: true,
+          canContinue: true,
+          message: 'SERP data temporarily unavailable due to API rate limits. Analysis will continue without real-time SERP data.',
+          recommendation: 'Consider upgrading your Serpstack plan or wait a few minutes before retrying.'
+        }),
+        { 
+          status: 429, // Use 429 for rate limit
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 async function analyzeSerpstackKeyword(apiKey: string, params: any) {

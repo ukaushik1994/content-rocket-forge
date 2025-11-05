@@ -807,9 +807,18 @@ serve(async (req) => {
           
           console.log("✅ SERP data successfully integrated into AI context with structured data");
         }
-      } catch (error) {
-        console.error("❌ SERP analysis failed, continuing without SERP data:", error);
+      } catch (error: any) {
+        // Check if it's a rate limit error
+        if (error.message?.includes('rate limit') || error.message?.includes('exceeded')) {
+          console.warn("⚠️ SERP API rate limited - continuing without SERP data");
+          // Add informative message to context instead of failing
+          serpContext = `\n\n⚠️ Note: SERP data temporarily unavailable due to API rate limits. Providing analysis based on internal data.\n`;
+        } else {
+          console.error("❌ SERP analysis failed, continuing without SERP data:", error);
+        }
       }
+    } else {
+      console.log('❌ No SERP intent detected');
     }
 
     // Build enhanced system prompt with context

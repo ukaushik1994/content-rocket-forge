@@ -259,14 +259,22 @@ export async function executeSerpAnalysis(
           })
         });
 
-        if (!response.ok) {
-          throw new Error(`API Proxy failed: ${response.status}`);
-        }
-
         const data = await response.json();
         
+        // Gracefully handle rate limits
+        if (response.status === 429 || data.isRateLimited) {
+          console.warn(`⚠️ SERP API rate limit hit for "${keyword}" - skipping gracefully`);
+          return null; // Skip this keyword without breaking the flow
+        }
+
+        if (!response.ok) {
+          console.error(`❌ SERP API error for "${keyword}":`, data.error);
+          return null; // Skip on other errors
+        }
+        
         if (data.success === false) {
-          throw new Error(data.error || 'API Proxy returned error');
+          console.error(`❌ SERP API returned error for "${keyword}":`, data.error);
+          return null; // Skip on API-level errors
         }
 
         return {
