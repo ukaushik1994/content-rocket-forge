@@ -42,7 +42,8 @@ export interface BrandGuidelines {
 export interface CompetitorResource {
   title: string;
   url: string;
-  category: 'website' | 'social_media' | 'documentation' | 'case_studies' | 'marketing' | 'other';
+  category: 'website' | 'social_media' | 'documentation' | 'case_studies' | 'marketing' | 'pricing' | 'features' | 'comparison' | 'other';
+  description?: string;
 }
 
 export interface CompanyCompetitor {

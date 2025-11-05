@@ -36,6 +36,9 @@ const categoryLabels = {
   documentation: 'Documentation',
   case_studies: 'Case Studies',
   marketing: 'Marketing',
+  pricing: 'Pricing',
+  features: 'Features',
+  comparison: 'Comparison',
   other: 'Other'
 };
 

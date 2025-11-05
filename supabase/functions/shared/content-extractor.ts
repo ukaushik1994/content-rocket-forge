@@ -9,6 +9,14 @@ export interface ExtractedContent {
   headings: string[];
   mainText: string;
   url: string;
+  
+  // Enhanced extraction
+  structuredData?: any[];
+  lists?: string[];
+  tables?: string[];
+  statistics?: string[];
+  testimonials?: string[];
+  ctaText?: string[];
 }
 
 export async function extractPageContent(
@@ -105,6 +113,67 @@ export function parseHtmlContent(html: string, url: string): ExtractedContent {
     if (text && text.length < 200) headings.push(text);
   });
   
+  // Extract structured data (JSON-LD)
+  const structuredData: any[] = [];
+  const jsonLdScripts = doc.querySelectorAll('script[type="application/ld+json"]');
+  jsonLdScripts.forEach(script => {
+    try {
+      const data = JSON.parse(script.textContent || '');
+      structuredData.push(data);
+    } catch (e) {
+      // Skip invalid JSON
+    }
+  });
+  
+  // Extract lists
+  const lists: string[] = [];
+  const ulElements = doc.querySelectorAll('ul li, ol li');
+  ulElements.forEach(li => {
+    const text = li.textContent?.trim();
+    if (text && text.length > 10 && text.length < 200) {
+      lists.push(text);
+    }
+  });
+  
+  // Extract tables (for pricing, features)
+  const tables: string[] = [];
+  const tableElements = doc.querySelectorAll('table');
+  tableElements.forEach(table => {
+    const text = table.textContent?.trim();
+    if (text && text.length < 2000) {
+      tables.push(text);
+    }
+  });
+  
+  // Extract statistics (numbers with context)
+  const statistics: string[] = [];
+  const allText = doc.body?.textContent || '';
+  const statRegex = /(\d+[,\d]*\+?\s*(?:customers|users|companies|integrations|countries|employees|million|billion|%|percent))/gi;
+  const matches = allText.match(statRegex);
+  if (matches) {
+    statistics.push(...matches.slice(0, 10));
+  }
+  
+  // Extract testimonials (quotes in blockquotes or testimonial classes)
+  const testimonials: string[] = [];
+  const blockquotes = doc.querySelectorAll('blockquote, .testimonial, [class*="testimonial"], [class*="review"]');
+  blockquotes.forEach(el => {
+    const text = el.textContent?.trim();
+    if (text && text.length > 20 && text.length < 500) {
+      testimonials.push(text);
+    }
+  });
+  
+  // Extract CTA text
+  const ctaText: string[] = [];
+  const buttons = doc.querySelectorAll('button, .cta, [class*="cta"], a[class*="button"]');
+  buttons.forEach(btn => {
+    const text = btn.textContent?.trim();
+    if (text && text.length < 50) {
+      ctaText.push(text);
+    }
+  });
+  
   // Extract main content
   let mainText = '';
   
@@ -136,9 +205,15 @@ export function parseHtmlContent(html: string, url: string): ExtractedContent {
   return {
     title,
     metaDescription,
-    headings: headings.slice(0, 15), // Max 15 headings
+    headings: headings.slice(0, 15),
     mainText,
-    url
+    url,
+    structuredData: structuredData.length > 0 ? structuredData : undefined,
+    lists: lists.slice(0, 20),
+    tables: tables.length > 0 ? tables : undefined,
+    statistics: statistics.length > 0 ? statistics : undefined,
+    testimonials: testimonials.slice(0, 5),
+    ctaText: ctaText.slice(0, 10)
   };
 }
 
