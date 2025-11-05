@@ -178,20 +178,6 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
           <div className="flex-1 overflow-y-auto">
             {/* OVERVIEW TAB - ENHANCED */}
             <TabsContent value="overview" className="space-y-6 m-0 p-6">
-              {/* Market Position - Prominent Display */}
-              {competitor.marketPosition && (
-                <div className="p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 backdrop-blur-md shadow-lg ring-1 ring-primary/10">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-primary/20 backdrop-blur-sm">
-                      <Target className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium">Market Position</p>
-                      <p className="text-lg font-bold">{competitor.marketPosition}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Competitive Summary Card */}
               <GlassCard className="border-primary/30 shadow-xl">
