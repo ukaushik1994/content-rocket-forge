@@ -264,7 +264,12 @@ async function fetchUrlsFromSerp(domain: string, maxUrls: number): Promise<Sitem
       `site:${domain} pricing OR plans`,
       `site:${domain} case study OR success story OR customer`,
       `site:${domain} features OR capabilities`,
-      `site:${domain} product OR solution`
+      `site:${domain} product OR solution`,
+      // Competitive intelligence queries
+      `site:${domain} vs OR versus OR compared to`,
+      `site:${domain} why choose OR why us OR advantages`,
+      `site:${domain} customers OR clients OR companies using`,
+      `site:${domain} integrations OR works with OR connects to`
     ];
     
     for (const query of queries) {
@@ -472,24 +477,35 @@ Analyze these ${relevantPages.length} pages deeply and extract ALL available inf
 
 ${pageContent}
 
-Return complete structured JSON:
+Return complete structured JSON with these sections:
+
+==== BASIC INFO ====
 {
   "name": "${product.product_name}",
   "description": "2-3 detailed sentences about what this solution does and who it helps",
   "shortDescription": "One compelling sentence (max 150 chars)",
   "category": "${product.category || 'Business Solution'}",
-  "positioning": "How they position themselves in the market (1-2 sentences)",
   
-  "uniqueValuePropositions": [
-    "3-5 UVPs with evidence (e.g., 'AI-powered turnover prediction 12 months in advance')"
-  ],
-  "keyDifferentiators": [
-    "3-5 competitive advantages (e.g., 'No SQL required - built for HR not IT')"
-  ],
+  ==== COMPETITIVE POSITIONING ====
+  "positioning": {
+    "positioningStatement": "How they position themselves in 1-2 sentences (e.g., 'The only HR platform built specifically for enterprise manufacturing with predictive AI')",
+    "uniqueValuePropositions": [
+      "3-5 UVPs with evidence - what makes them unique and quantifiable (e.g., 'AI predicts turnover 12 months in advance with 94% accuracy')"
+    ],
+    "keyDifferentiators": [
+      "3-5 competitive advantages that set them apart (e.g., 'No SQL required - built for HR not IT')"
+    ]
+  },
   
+  ==== FEATURES & BENEFITS ====
   "features": [
     "12-20 specific, detailed features (not just 'Analytics' but 'AI-powered predictive turnover analytics')"
   ],
+  "benefits": [
+    "10-15 quantifiable OUTCOMES (not features) - format: 'Reduce X by Y%' or 'Achieve X in Y time' (e.g., 'Reduce employee turnover by 25% on average', 'Cut reporting time from 2 weeks to 15 minutes')"
+  ],
+  
+  ==== USE CASES & AUDIENCE ====
   "useCases": [
     "8-12 specific use cases with outcomes (e.g., 'Predict turnover 12 months early and reduce attrition by 25%')"
   ],
@@ -499,54 +515,152 @@ Return complete structured JSON:
   "targetAudience": [
     "8-12 specific audience segments (e.g., 'Chief Human Resources Officers at Fortune 500 companies')"
   ],
-  "benefits": [
-    "8-12 quantifiable benefits (e.g., 'Reduce reporting time from weeks to minutes')"
-  ],
   
+  ==== PRICING ====
   "pricing": {
     "model": "subscription|one-time|usage-based|freemium|enterprise|custom|contact-sales",
     "startingPrice": "Extract if mentioned (e.g., '$99/month', 'Contact sales')",
+    "freeTrialDuration": "Trial duration if mentioned",
     "tiers": [
       {
         "name": "Tier name",
         "price": "Monthly price if found",
-        "description": "Brief description",
-        "features": ["Key features in this tier"]
+        "features": ["Key features in this tier"],
+        "limitations": ["Tier limitations if mentioned"]
       }
     ]
   },
   
+  ==== TECHNICAL SPECS ====
   "technicalSpecs": {
+    "systemRequirements": ["Browser requirements, OS requirements, etc."],
     "supportedPlatforms": ["Web, iOS, Android, Desktop, etc."],
     "apiCapabilities": ["REST API, GraphQL, Webhooks, etc."],
     "securityFeatures": ["SOC 2, GDPR, SSO, Encryption, etc."],
-    "integrations": ["Named integrations like Salesforce, Slack, etc."]
+    "performanceMetrics": ["Uptime, speed, reliability claims"],
+    "uptimeGuarantee": "SLA if mentioned (e.g., '99.99% uptime')"
   },
   
-  "caseStudies": [
+  ==== INTEGRATIONS ====
+  "integrations": [
+    "15-25 named integrations (e.g., 'Salesforce', 'Slack', 'Workday', 'ADP', 'BambooHR')"
+  ],
+  
+  ==== MARKET INTELLIGENCE ====
+  "marketData": {
+    "size": "Market size if mentioned (e.g., '$15B global HR tech market')",
+    "growthRate": "Market growth rate if mentioned (e.g., '12% CAGR through 2028')",
+    "geographicAvailability": ["Regions/countries where available"],
+    "complianceRequirements": ["Compliance standards: SOC 2, GDPR, HIPAA, etc."]
+  },
+  
+  ==== COMPETITORS ====
+  "competitors": [
     {
-      "companyName": "If found",
-      "challenge": "What problem they had",
-      "solution": "How the product helped",
-      "results": "Quantifiable outcomes"
+      "name": "Competitor name if explicitly mentioned",
+      "strengths": ["Their advantages if discussed in comparison"],
+      "weaknesses": ["Their limitations if discussed"],
+      "marketShare": "If mentioned",
+      "pricing": "Comparative pricing if available"
     }
   ],
   
-  "tags": ["15-20 searchable tags for discovery (e.g., 'workforce planning', 'HR analytics', 'turnover prediction')"]
+  ==== METRICS & PROOF ====
+  "metrics": {
+    "adoptionRate": "Customer count or growth (e.g., '10,000+ companies', '300% YoY growth')",
+    "customerSatisfaction": "Ratings/NPS (e.g., '4.8/5 on G2', 'NPS 72')",
+    "roi": "ROI claims (e.g., '3x ROI in 6 months', 'Payback in 90 days')",
+    "implementationTime": "Time to value (e.g., 'Live in 2 weeks', 'Setup in hours')",
+    "supportResponse": "Support SLA (e.g., '<1hr response time', '24/7 support')",
+    "usageAnalytics": [
+      {
+        "metric": "Specific metric name",
+        "value": "Value with units",
+        "trend": "up|down|stable"
+      }
+    ]
+  },
+  
+  ==== CASE STUDIES ====
+  "caseStudies": [
+    {
+      "title": "Case study title if found",
+      "company": "Company name",
+      "industry": "Industry",
+      "challenge": "What problem they had",
+      "solution": "How the product helped",
+      "results": ["Quantifiable outcomes"],
+      "metrics": [
+        {
+          "label": "Metric label",
+          "value": "Value",
+          "improvement": "% or quantified improvement"
+        }
+      ],
+      "testimonial": {
+        "quote": "Customer quote if available",
+        "author": "Name",
+        "position": "Title"
+      }
+    }
+  ],
+  
+  ==== DISCOVERY TAGS ====
+  "tags": [
+    "15-20 searchable tags for discovery (e.g., 'workforce planning', 'HR analytics', 'turnover prediction')"
+  ]
 }
 
-CRITICAL INSTRUCTIONS:
-- Extract 12-20 DETAILED features (not generic)
-- Find 8-12 specific use cases with outcomes
-- Identify 8-12 pain points in customer language
-- List 8-12 target audience segments
-- Extract ALL pricing tiers with features
-- Find case studies with metrics if available
-- Include 15-20 tags for searchability
-- Be comprehensive but only include what you can verify from the content
-- If pricing/case studies aren't found, return empty arrays but ALWAYS fill features, use cases, pain points
+CRITICAL EXTRACTION RULES:
 
-Return valid JSON only.`;
+1. **Competitive Positioning (HIGH PRIORITY)**:
+   - Look for "unlike", "vs", "compared to", "only solution that" language
+   - Extract positioning statements from homepage hero sections
+   - Identify unique value props with quantifiable evidence
+   - Find differentiators in feature comparisons
+
+2. **Benefits vs Features**:
+   - Features = what it does ("Dashboard")
+   - Benefits = outcome you get ("Reduce reporting time by 90%")
+   - ALWAYS extract benefits as outcomes, not capabilities
+
+3. **Competitor Intelligence**:
+   - Extract only explicitly mentioned competitors
+   - Look for comparison pages, competitive analysis
+   - Don't invent competitors - only include if found in content
+
+4. **Market Data**:
+   - Extract market size claims from "About" or PR content
+   - Find geographic availability in footer, pricing, or legal pages
+   - Look for compliance badges/logos
+
+5. **Metrics & Social Proof**:
+   - Extract customer counts ("10,000+ companies")
+   - Find ratings from review sites mentioned
+   - Look for ROI claims in case studies
+   - Extract implementation timelines from onboarding content
+
+6. **Integrations**:
+   - Look for dedicated "Integrations" pages
+   - Extract logos/names from "Works with" sections
+   - Include in both techSpecs AND integrations array
+
+7. **Completeness**:
+   - Extract 12-20 detailed features (not generic)
+   - Find 10-15 quantifiable benefits with outcomes
+   - Identify 8-12 specific use cases with outcomes
+   - List 8-12 pain points in customer language
+   - Extract ALL pricing tiers with features
+   - Find case studies with metrics if available
+   - Include 15-20 tags for searchability
+
+8. **Validation**:
+   - Only include data you can verify from the content
+   - If pricing/competitors/case studies aren't found, return empty arrays
+   - ALWAYS fill: features, benefits, useCases, painPoints, targetAudience
+   - positioning, marketData, metrics, integrations should have at least partial data
+
+Return ONLY valid JSON. No markdown, no explanations.`;
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -582,14 +696,76 @@ Return valid JSON only.`;
         features: [],
         useCases: [],
         painPoints: [],
-        targetAudience: []
+        targetAudience: [],
+        benefits: [],
+        integrations: [],
+        positioning: {
+          positioningStatement: `${product.product_name} - ${product.brief_description}`,
+          uniqueValuePropositions: [],
+          keyDifferentiators: []
+        },
+        marketData: {},
+        competitors: [],
+        metrics: {},
+        technicalSpecs: {
+          systemRequirements: [],
+          supportedPlatforms: [],
+          apiCapabilities: [],
+          securityFeatures: [],
+          performanceMetrics: []
+        },
+        pricing: {
+          model: 'custom',
+          tiers: []
+        },
+        caseStudies: [],
+        tags: []
       };
     }
+    
+    // Post-processing validation
+    
+    // Ensure integrations is a first-class field
+    if (!solution.integrations && solution.technicalSpecs?.integrations) {
+      solution.integrations = solution.technicalSpecs.integrations;
+    }
+    
+    // Ensure positioning statement exists
+    if (!solution.positioning?.positioningStatement && solution.description) {
+      solution.positioning = {
+        positioningStatement: `${solution.name}: ${solution.description.split('.')[0]}.`,
+        uniqueValuePropositions: solution.positioning?.uniqueValuePropositions || [],
+        keyDifferentiators: solution.positioning?.keyDifferentiators || []
+      };
+    }
+    
+    // Validate benefits are outcomes, not features
+    if (solution.benefits && Array.isArray(solution.benefits) && solution.benefits.length > 0) {
+      solution.benefits = solution.benefits.filter((b: string) => 
+        b.toLowerCase().includes('reduce') ||
+        b.toLowerCase().includes('increase') ||
+        b.toLowerCase().includes('improve') ||
+        b.toLowerCase().includes('save') ||
+        b.toLowerCase().includes('%') ||
+        /\d+/.test(b) // Contains numbers
+      );
+    }
+    
+    // Add UUIDs to case studies
+    if (solution.caseStudies && Array.isArray(solution.caseStudies) && solution.caseStudies.length > 0) {
+      solution.caseStudies = solution.caseStudies.map((cs: any) => ({
+        id: crypto.randomUUID(),
+        ...cs
+      }));
+    }
+    
+    // Calculate completeness score
+    const completenessScore = calculateCompleteness(solution);
     
     // Add metadata
     solution.externalUrl = product.product_url;
     solution.metadata = {
-      completeness: product.confidence_score || 85,
+      completeness: completenessScore,
       lastUpdated: new Date().toISOString()
     };
     
@@ -598,4 +774,74 @@ Return valid JSON only.`;
     console.error(`Failed to extract details for ${product.product_name}:`, error);
     return null;
   }
+}
+
+function calculateCompleteness(solution: any): number {
+  const weights = {
+    name: 5,
+    description: 5,
+    features: 15,
+    benefits: 10,
+    useCases: 10,
+    painPoints: 10,
+    targetAudience: 8,
+    positioning: 7,
+    uniqueValuePropositions: 8,
+    keyDifferentiators: 7,
+    pricing: 5,
+    technicalSpecs: 3,
+    integrations: 3,
+    marketData: 2,
+    competitors: 2,
+    metrics: 2,
+    caseStudies: 3,
+    tags: 3
+  };
+  
+  let score = 0;
+  let maxScore = Object.values(weights).reduce((a, b) => a + b, 0);
+  
+  // Check basic fields
+  if (solution.name) score += weights.name;
+  if (solution.description) score += weights.description;
+  
+  // Check array fields
+  if (solution.features && solution.features.length > 0) score += weights.features;
+  if (solution.benefits && solution.benefits.length > 0) score += weights.benefits;
+  if (solution.useCases && solution.useCases.length > 0) score += weights.useCases;
+  if (solution.painPoints && solution.painPoints.length > 0) score += weights.painPoints;
+  if (solution.targetAudience && solution.targetAudience.length > 0) score += weights.targetAudience;
+  if (solution.integrations && solution.integrations.length > 0) score += weights.integrations;
+  if (solution.caseStudies && solution.caseStudies.length > 0) score += weights.caseStudies;
+  if (solution.tags && solution.tags.length > 0) score += weights.tags;
+  
+  // Check positioning object
+  if (solution.positioning && solution.positioning.positioningStatement) {
+    score += weights.positioning;
+  }
+  if (solution.positioning && solution.positioning.uniqueValuePropositions && solution.positioning.uniqueValuePropositions.length > 0) {
+    score += weights.uniqueValuePropositions;
+  }
+  if (solution.positioning && solution.positioning.keyDifferentiators && solution.positioning.keyDifferentiators.length > 0) {
+    score += weights.keyDifferentiators;
+  }
+  
+  // Check object fields
+  if (solution.pricing && (solution.pricing.model || solution.pricing.tiers?.length > 0)) {
+    score += weights.pricing;
+  }
+  if (solution.technicalSpecs && Object.keys(solution.technicalSpecs).some(k => solution.technicalSpecs[k]?.length > 0)) {
+    score += weights.technicalSpecs;
+  }
+  if (solution.marketData && Object.keys(solution.marketData).length > 0) {
+    score += weights.marketData;
+  }
+  if (solution.competitors && solution.competitors.length > 0) {
+    score += weights.competitors;
+  }
+  if (solution.metrics && Object.keys(solution.metrics).length > 0) {
+    score += weights.metrics;
+  }
+  
+  return Math.round((score / maxScore) * 100);
 }
