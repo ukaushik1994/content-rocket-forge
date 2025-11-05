@@ -3,6 +3,9 @@
  * Company-related type definitions
  */
 
+import { v4 as uuidv4 } from 'uuid';
+import { CompetitorAutoFillPayload, CompetitorIntelDiagnostics } from '@/types/competitor-intel';
+
 export interface CompanyInfo {
   id: string;
   name: string;
@@ -59,6 +62,8 @@ export interface CompanyCompetitor {
   weaknesses: string[];
   notes?: string | null;
   priorityOrder: number;
+  intelligenceData?: CompetitorAutoFillPayload;
+  qualityMetrics?: CompetitorIntelDiagnostics;
   createdAt: string;
   updatedAt: string;
 }

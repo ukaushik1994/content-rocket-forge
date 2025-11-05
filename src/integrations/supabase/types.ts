@@ -1231,11 +1231,13 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          intelligence_data: Json | null
           logo_url: string | null
           market_position: string | null
           name: string
           notes: string | null
           priority_order: number | null
+          quality_metrics: Json | null
           resources: Json | null
           strengths: Json | null
           updated_at: string
@@ -1247,11 +1249,13 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          intelligence_data?: Json | null
           logo_url?: string | null
           market_position?: string | null
           name: string
           notes?: string | null
           priority_order?: number | null
+          quality_metrics?: Json | null
           resources?: Json | null
           strengths?: Json | null
           updated_at?: string
@@ -1263,11 +1267,13 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          intelligence_data?: Json | null
           logo_url?: string | null
           market_position?: string | null
           name?: string
           notes?: string | null
           priority_order?: number | null
+          quality_metrics?: Json | null
           resources?: Json | null
           strengths?: Json | null
           updated_at?: string

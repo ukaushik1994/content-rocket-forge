@@ -10,6 +10,16 @@ import { CompetitorSolutionsTab } from './CompetitorSolutionsTab';
 import ReactMarkdown from 'react-markdown';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { 
+  QualityMetricsBadge, 
+  CompanyIntelligenceCard, 
+  PricingIntelligenceCard, 
+  ProductIntelligenceCard, 
+  TargetMarketCard, 
+  SocialProofCard, 
+  CompetitiveDifferentiationCard,
+  MarketInsightsCard 
+} from './intelligence';
 interface CompetitorProfileDialogProps {
   competitor: CompanyCompetitor;
   open: boolean;
@@ -135,21 +145,27 @@ export function CompetitorProfileDialog({
                       </div>}
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => {
-                onEdit(competitor);
-                onOpenChange(false);
-              }}>
-                  <Edit2 className="h-4 w-4 mr-2" />
-                  Edit Details
-                </Button>
+                <div className="flex items-center gap-2">
+                  {competitor.qualityMetrics && (
+                    <QualityMetricsBadge metrics={competitor.qualityMetrics} />
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => {
+                    onEdit(competitor);
+                    onOpenChange(false);
+                  }}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit Details
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-5 bg-muted/50 backdrop-blur-sm border border-border/30">
+          <TabsList className="grid w-full grid-cols-6 bg-muted/50 backdrop-blur-sm border border-border/30">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="intelligence">Intelligence</TabsTrigger>
             <TabsTrigger value="solutions">Solutions</TabsTrigger>
             <TabsTrigger value="analysis">Analysis</TabsTrigger>
             <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -160,8 +176,18 @@ export function CompetitorProfileDialog({
             {/* OVERVIEW TAB - ENHANCED */}
             <TabsContent value="overview" className="space-y-6 m-0 p-6">
 
-              {/* Competitive Summary Card */}
-              
+              {/* Company Intelligence Preview */}
+              {competitor.intelligenceData && (
+                <>
+                  <CompanyIntelligenceCard data={competitor.intelligenceData} />
+                  {competitor.intelligenceData.pricing_model && (
+                    <PricingIntelligenceCard data={competitor.intelligenceData} />
+                  )}
+                  {(competitor.intelligenceData.key_features?.length || competitor.intelligenceData.integrations_count) && (
+                    <ProductIntelligenceCard data={competitor.intelligenceData} />
+                  )}
+                </>
+              )}
 
               {/* Description */}
               {competitor.description && <div>
@@ -259,6 +285,32 @@ export function CompetitorProfileDialog({
                   Edit Details
                 </Button>
               </div>
+            </TabsContent>
+
+            {/* INTELLIGENCE TAB - NEW */}
+            <TabsContent value="intelligence" className="m-0 p-6">
+              {competitor.intelligenceData ? (
+                <div className="grid gap-6">
+                  <CompanyIntelligenceCard data={competitor.intelligenceData} />
+                  <PricingIntelligenceCard data={competitor.intelligenceData} />
+                  <ProductIntelligenceCard data={competitor.intelligenceData} />
+                  <TargetMarketCard data={competitor.intelligenceData} />
+                  <SocialProofCard data={competitor.intelligenceData} />
+                  <CompetitiveDifferentiationCard data={competitor.intelligenceData} />
+                  <MarketInsightsCard data={competitor.intelligenceData} />
+                </div>
+              ) : (
+                <GlassCard className="p-12 text-center">
+                  <Brain className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Intelligence Data</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Enhanced intelligence data is not available for this competitor yet.
+                  </p>
+                  <Button variant="outline" onClick={() => onEdit(competitor)}>
+                    Run Auto-Fill Analysis
+                  </Button>
+                </GlassCard>
+              )}
             </TabsContent>
 
             {/* SOLUTIONS TAB */}

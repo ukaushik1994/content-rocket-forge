@@ -11,7 +11,12 @@ import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
 interface AddCompetitorDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAnalysisComplete: (data: CompetitorAutoFillPayload, name: string, website: string) => void;
+  onAnalysisComplete: (
+    data: CompetitorAutoFillPayload, 
+    name: string, 
+    website: string, 
+    diagnostics?: any
+  ) => void;
   userId: string;
 }
 
@@ -90,7 +95,7 @@ export const AddCompetitorDialog: React.FC<AddCompetitorDialogProps> = ({
         description: "Review and customize the extracted intelligence",
       });
 
-      onAnalysisComplete(result, competitorName, normalizedUrl);
+      onAnalysisComplete(result.profile, competitorName, normalizedUrl, result.diagnostics);
       handleClose();
     } catch (error) {
       console.error('Analysis error:', error);

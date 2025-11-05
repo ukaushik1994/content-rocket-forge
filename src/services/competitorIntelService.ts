@@ -1,10 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
 
+export interface CompetitorIntelResult {
+  profile: CompetitorAutoFillPayload;
+  diagnostics: any;
+}
+
 export async function autoFillFromWebsite(
   website: string,
   userId: string
-): Promise<CompetitorAutoFillPayload | null> {
+): Promise<CompetitorIntelResult | null> {
   try {
     console.log('🔍 Auto-filling competitor intel for:', website);
     
@@ -23,7 +28,10 @@ export async function autoFillFromWebsite(
     }
     
     console.log('✅ Auto-fill complete:', data.diagnostics);
-    return data.profile;
+    return {
+      profile: data.profile,
+      diagnostics: data.diagnostics
+    };
     
   } catch (error) {
     console.error('💥 Auto-fill exception:', error);

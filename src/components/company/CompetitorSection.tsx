@@ -64,6 +64,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
   
   const [editingCompetitor, setEditingCompetitor] = useState<CompanyCompetitor | null>(null);
   const [analysisResult, setAnalysisResult] = useState<CompetitorAutoFillPayload | null>(null);
+  const [analysisDiagnostics, setAnalysisDiagnostics] = useState<any>(null);
   const [pendingCompetitor, setPendingCompetitor] = useState<{name: string, website: string} | null>(null);
   
   const { toast } = useToast();
@@ -117,6 +118,19 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
           console.warn('Error parsing competitor data:', e);
         }
 
+        let intelligenceData = null;
+        let qualityMetrics = null;
+        try {
+          if (item.intelligence_data) {
+            intelligenceData = typeof item.intelligence_data === 'string' ? JSON.parse(item.intelligence_data) : item.intelligence_data;
+          }
+          if (item.quality_metrics) {
+            qualityMetrics = typeof item.quality_metrics === 'string' ? JSON.parse(item.quality_metrics) : item.quality_metrics;
+          }
+        } catch (e) {
+          console.warn('Error parsing intelligence data:', e);
+        }
+
         return {
           id: item.id,
           userId: item.user_id,
@@ -129,6 +143,8 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
           strengths,
           weaknesses,
           notes: item.notes,
+          intelligenceData,
+          qualityMetrics,
           priorityOrder: item.priority_order,
           createdAt: item.created_at,
           updatedAt: item.updated_at
@@ -162,8 +178,14 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
     setEditingCompetitor(null);
   };
 
-  const handleAnalysisComplete = (data: CompetitorAutoFillPayload, name: string, website: string) => {
+  const handleAnalysisComplete = (
+    data: CompetitorAutoFillPayload, 
+    name: string, 
+    website: string, 
+    diagnostics?: any
+  ) => {
     setAnalysisResult(data);
+    setAnalysisDiagnostics(diagnostics || null);
     setPendingCompetitor({ name, website });
     setAddDialogOpen(false);
     setReviewDialogOpen(true);
@@ -199,7 +221,9 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
         weaknesses: JSON.stringify(reviewData.weaknesses.filter(w => w.trim())),
         resources: JSON.stringify(reviewData.resources.filter(r => r.title.trim() && r.url.trim())),
         notes: reviewData.notes.trim() || null,
-        priority_order: competitors.length
+        priority_order: competitors.length,
+        intelligence_data: analysisResult ? JSON.stringify(analysisResult) : null,
+        quality_metrics: analysisDiagnostics ? JSON.stringify(analysisDiagnostics) : null
       };
 
       const { error } = await supabase
@@ -215,6 +239,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
 
       setReviewDialogOpen(false);
       setAnalysisResult(null);
+      setAnalysisDiagnostics(null);
       setPendingCompetitor(null);
       loadCompetitors();
     } catch (error) {
