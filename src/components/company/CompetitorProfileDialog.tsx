@@ -3,35 +3,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Progress } from '@/components/ui/progress';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
-import { 
-  Building2, Link as LinkIcon, TrendingUp, TrendingDown, Package, Bookmark, Edit2,
-  Target, Globe, ExternalLink, Download, Lightbulb, Brain, CheckCircle2, Star, 
-  AlertTriangle, Calendar, RefreshCw, Share2, FileText, Briefcase, Megaphone, Zap
-} from 'lucide-react';
+import { Building2, Link as LinkIcon, TrendingUp, TrendingDown, Package, Bookmark, Edit2, Target, Globe, ExternalLink, Download, Lightbulb, Brain, CheckCircle2, Star, AlertTriangle, Calendar, RefreshCw, Share2, FileText, Briefcase, Megaphone, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CompetitorSolutionsTab } from './CompetitorSolutionsTab';
 import ReactMarkdown from 'react-markdown';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
-
 interface CompetitorProfileDialogProps {
   competitor: CompanyCompetitor;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (competitor: CompanyCompetitor) => void;
 }
-
-export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit }: CompetitorProfileDialogProps) {
+export function CompetitorProfileDialog({
+  competitor,
+  open,
+  onOpenChange,
+  onEdit
+}: CompetitorProfileDialogProps) {
   // Helper: Get category icon
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'website': return <Globe className="w-4 h-4 text-blue-500" />;
-      case 'social_media': return <Share2 className="w-4 h-4 text-purple-500" />;
-      case 'documentation': return <FileText className="w-4 h-4 text-green-500" />;
-      case 'case_studies': return <Briefcase className="w-4 h-4 text-orange-500" />;
-      case 'marketing': return <Megaphone className="w-4 h-4 text-pink-500" />;
-      default: return <LinkIcon className="w-4 h-4 text-gray-500" />;
+      case 'website':
+        return <Globe className="w-4 h-4 text-blue-500" />;
+      case 'social_media':
+        return <Share2 className="w-4 h-4 text-purple-500" />;
+      case 'documentation':
+        return <FileText className="w-4 h-4 text-green-500" />;
+      case 'case_studies':
+        return <Briefcase className="w-4 h-4 text-orange-500" />;
+      case 'marketing':
+        return <Megaphone className="w-4 h-4 text-pink-500" />;
+      default:
+        return <LinkIcon className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -39,7 +44,7 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
   const calculateStrengthScore = (comp: CompanyCompetitor): number => {
     const maxScore = 10;
     const score = Math.min(comp.strengths.length, maxScore);
-    return Math.round((score / maxScore) * 100);
+    return Math.round(score / maxScore * 100);
   };
 
   // Helper: Calculate threat level
@@ -47,18 +52,13 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
     const strengthWeight = comp.strengths.length * 10;
     const weaknessWeight = comp.weaknesses.length * 5;
     const resourceWeight = comp.resources.length * 3;
-    
     const totalThreat = strengthWeight - weaknessWeight + resourceWeight;
     return Math.min(Math.max(Math.round(totalThreat / 2), 0), 100);
   };
 
   // Helper: Extract key insights from notes
   const extractKeyInsights = (notes: string): string[] => {
-    return notes
-      .split(/[.!?]/)
-      .map(s => s.trim())
-      .filter(s => s.length > 30 && s.length < 150)
-      .slice(0, 5);
+    return notes.split(/[.!?]/).map(s => s.trim()).filter(s => s.length > 30 && s.length < 150).slice(0, 5);
   };
 
   // Helper: Group resources by category
@@ -88,76 +88,57 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
       weaknesses: competitor.weaknesses,
       resources: competitor.resources,
       notes: competitor.notes,
-      exportedAt: new Date().toISOString(),
+      exportedAt: new Date().toISOString()
     };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json'
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `${competitor.name.replace(/[^a-z0-9]/gi, '_')}_profile_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    
     toast.success('Profile Exported', {
-      description: `${competitor.name} profile downloaded as JSON`,
+      description: `${competitor.name} profile downloaded as JSON`
     });
   };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass-panel max-w-7xl max-h-[90vh] overflow-hidden flex flex-col shadow-neon rounded-xl border border-border/50 bg-card/60 backdrop-blur-xl">
         <DialogHeader className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/50 pb-4">
           <div className="flex items-start gap-4">
-            {competitor.logoUrl ? (
-              <img src={competitor.logoUrl} alt={competitor.name} className="w-16 h-16 rounded-lg object-cover" />
-            ) : (
-              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+            {competitor.logoUrl ? <img src={competitor.logoUrl} alt={competitor.name} className="w-16 h-16 rounded-lg object-cover" /> : <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
                 <Building2 className="w-8 h-8 text-muted-foreground" />
-              </div>
-            )}
+              </div>}
             <div className="flex-1">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <DialogTitle className="text-2xl">{competitor.name}</DialogTitle>
-                  {competitor.marketPosition && (
-                    <p className="text-sm text-muted-foreground mt-1">{competitor.marketPosition}</p>
-                  )}
-                  {competitor.website && (
-                    <a
-                      href={competitor.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
-                    >
+                  {competitor.marketPosition && <p className="text-sm text-muted-foreground mt-1">{competitor.marketPosition}</p>}
+                  {competitor.website && <a href={competitor.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2">
                       <LinkIcon className="w-3 h-3" />
                       {competitor.website}
-                    </a>
-                  )}
+                    </a>}
                   {/* Discovery Metadata */}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-                    {competitor.createdAt && (
-                      <div className="flex items-center gap-1">
+                    {competitor.createdAt && <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        Added {formatDistanceToNow(new Date(competitor.createdAt), { addSuffix: true })}
-                      </div>
-                    )}
-                    {competitor.updatedAt && (
-                      <div className="flex items-center gap-1">
+                        Added {formatDistanceToNow(new Date(competitor.createdAt), {
+                      addSuffix: true
+                    })}
+                      </div>}
+                    {competitor.updatedAt && <div className="flex items-center gap-1">
                         <RefreshCw className="w-3 h-3" />
-                        Updated {formatDistanceToNow(new Date(competitor.updatedAt), { addSuffix: true })}
-                      </div>
-                    )}
+                        Updated {formatDistanceToNow(new Date(competitor.updatedAt), {
+                      addSuffix: true
+                    })}
+                      </div>}
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onEdit(competitor);
-                    onOpenChange(false);
-                  }}
-                >
+                <Button variant="outline" size="sm" onClick={() => {
+                onEdit(competitor);
+                onOpenChange(false);
+              }}>
                   <Edit2 className="h-4 w-4 mr-2" />
                   Edit Details
                 </Button>
@@ -180,89 +161,50 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
             <TabsContent value="overview" className="space-y-6 m-0 p-6">
 
               {/* Competitive Summary Card */}
-              <GlassCard className="border-primary/30 shadow-xl">
-                <div className="p-6">
-                  <h3 className="text-base font-semibold flex items-center gap-2 mb-4">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    Competitive Summary
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-3xl font-bold text-green-500">{competitor.strengths.length}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Strengths</p>
-                    </div>
-                    <div>
-                      <p className="text-3xl font-bold text-red-500">{competitor.weaknesses.length}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Weaknesses</p>
-                    </div>
-                    <div>
-                      <p className="text-3xl font-bold text-blue-500">{competitor.resources.length}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Resources</p>
-                    </div>
-                  </div>
-                </div>
-              </GlassCard>
+              
 
               {/* Description */}
-              {competitor.description && (
-                <div>
+              {competitor.description && <div>
                   <h3 className="font-semibold mb-2">Description</h3>
                   <p className="text-sm text-muted-foreground">{competitor.description}</p>
-                </div>
-              )}
+                </div>}
 
               {/* Strengths */}
-              {competitor.strengths.length > 0 && (
-                <div>
+              {competitor.strengths.length > 0 && <div>
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-green-500" />
                     Strengths
                   </h3>
                   <ul className="space-y-2">
-                    {competitor.strengths.map((strength, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm">
+                    {competitor.strengths.map((strength, idx) => <li key={idx} className="flex items-start gap-2 text-sm">
                         <span className="text-green-500 mt-1">●</span>
                         <span>{strength}</span>
-                      </li>
-                    ))}
+                      </li>)}
                   </ul>
-                </div>
-              )}
+                </div>}
 
               {/* Weaknesses */}
-              {competitor.weaknesses.length > 0 && (
-                <div>
+              {competitor.weaknesses.length > 0 && <div>
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <TrendingDown className="w-4 h-4 text-red-500" />
                     Weaknesses
                   </h3>
                   <ul className="space-y-2">
-                    {competitor.weaknesses.map((weakness, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm">
+                    {competitor.weaknesses.map((weakness, idx) => <li key={idx} className="flex items-start gap-2 text-sm">
                         <span className="text-red-500 mt-1">●</span>
                         <span>{weakness}</span>
-                      </li>
-                    ))}
+                      </li>)}
                   </ul>
-                </div>
-              )}
+                </div>}
 
               {/* Top Resources Preview */}
-              {competitor.resources.length > 0 && (
-                <div>
+              {competitor.resources.length > 0 && <div>
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <LinkIcon className="w-4 h-4 text-blue-500" />
                     Key Resources ({competitor.resources.length})
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    {competitor.resources.slice(0, 4).map((resource, idx) => (
-                      <a
-                        key={idx}
-                        href={resource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-3 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary hover:bg-card/60 transition-all hover:shadow-lg group ring-1 ring-black/5 dark:ring-white/5"
-                      >
+                    {competitor.resources.slice(0, 4).map((resource, idx) => <a key={idx} href={resource.url} target="_blank" rel="noopener noreferrer" className="p-3 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary hover:bg-card/60 transition-all hover:shadow-lg group ring-1 ring-black/5 dark:ring-white/5">
                         <div className="flex items-start gap-2">
                           <div className="mt-0.5">
                             {getCategoryIcon(resource.category)}
@@ -277,20 +219,15 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                           </div>
                           <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
-                      </a>
-                    ))}
+                      </a>)}
                   </div>
-                  {competitor.resources.length > 4 && (
-                    <p className="text-xs text-muted-foreground text-center mt-3">
+                  {competitor.resources.length > 4 && <p className="text-xs text-muted-foreground text-center mt-3">
                       +{competitor.resources.length - 4} more resources in Resources tab
-                    </p>
-                  )}
-                </div>
-              )}
+                    </p>}
+                </div>}
 
               {/* Intelligence Notes Preview */}
-              {competitor.notes && (
-                <GlassCard className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent shadow-lg">
+              {competitor.notes && <GlassCard className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent shadow-lg">
                   <div className="p-6">
                     <h3 className="text-base font-semibold flex items-center gap-2 mb-3">
                       <Lightbulb className="h-4 w-4 text-amber-500" />
@@ -303,19 +240,16 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                       View full analysis in Notes tab →
                     </p>
                   </div>
-                </GlassCard>
-              )}
+                </GlassCard>}
 
               {/* Quick Actions */}
               <div className="pt-4 border-t border-border/30 flex gap-2 flex-wrap">
-                {competitor.website && (
-                  <Button variant="outline" size="sm" asChild>
+                {competitor.website && <Button variant="outline" size="sm" asChild>
                     <a href={competitor.website} target="_blank" rel="noopener noreferrer">
                       <Globe className="w-4 h-4 mr-2" />
                       Visit Website
                     </a>
-                  </Button>
-                )}
+                  </Button>}
                 <Button variant="outline" size="sm" onClick={handleExportProfile}>
                   <Download className="w-4 h-4 mr-2" />
                   Export Profile
@@ -350,16 +284,10 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                           Strengths
                         </h4>
                         <ul className="space-y-2">
-                          {competitor.strengths.length > 0 ? (
-                            competitor.strengths.map((s, i) => (
-                              <li key={i} className="text-sm flex items-start gap-2">
+                          {competitor.strengths.length > 0 ? competitor.strengths.map((s, i) => <li key={i} className="text-sm flex items-start gap-2">
                                 <span className="text-green-500">+</span>
                                 <span>{s}</span>
-                              </li>
-                            ))
-                          ) : (
-                            <li className="text-sm text-muted-foreground">No strengths identified</li>
-                          )}
+                              </li>) : <li className="text-sm text-muted-foreground">No strengths identified</li>}
                         </ul>
                       </GlassCard>
 
@@ -370,16 +298,10 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                           Weaknesses
                         </h4>
                         <ul className="space-y-2">
-                          {competitor.weaknesses.length > 0 ? (
-                            competitor.weaknesses.map((w, i) => (
-                              <li key={i} className="text-sm flex items-start gap-2">
+                          {competitor.weaknesses.length > 0 ? competitor.weaknesses.map((w, i) => <li key={i} className="text-sm flex items-start gap-2">
                                 <span className="text-red-500">−</span>
                                 <span>{w}</span>
-                              </li>
-                            ))
-                          ) : (
-                            <li className="text-sm text-muted-foreground">No weaknesses identified</li>
-                          )}
+                              </li>) : <li className="text-sm text-muted-foreground">No weaknesses identified</li>}
                         </ul>
                       </GlassCard>
 
@@ -387,16 +309,10 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                       <GlassCard className="p-4 border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-transparent">
                         <h4 className="font-semibold text-blue-500 mb-3">Opportunities for Us</h4>
                         <ul className="space-y-2">
-                          {competitor.weaknesses.length > 0 ? (
-                            competitor.weaknesses.slice(0, 3).map((w, i) => (
-                              <li key={i} className="text-sm flex items-start gap-2">
+                          {competitor.weaknesses.length > 0 ? competitor.weaknesses.slice(0, 3).map((w, i) => <li key={i} className="text-sm flex items-start gap-2">
                                 <Star className="w-3 h-3 text-blue-500 mt-0.5" />
                                 <span>Capitalize on: {w}</span>
-                              </li>
-                            ))
-                          ) : (
-                            <li className="text-sm text-muted-foreground">No opportunities identified</li>
-                          )}
+                              </li>) : <li className="text-sm text-muted-foreground">No opportunities identified</li>}
                         </ul>
                       </GlassCard>
 
@@ -404,16 +320,10 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                       <GlassCard className="p-4 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-transparent">
                         <h4 className="font-semibold text-orange-500 mb-3">Threats to Monitor</h4>
                         <ul className="space-y-2">
-                          {competitor.strengths.length > 0 ? (
-                            competitor.strengths.slice(0, 3).map((s, i) => (
-                              <li key={i} className="text-sm flex items-start gap-2">
+                          {competitor.strengths.length > 0 ? competitor.strengths.slice(0, 3).map((s, i) => <li key={i} className="text-sm flex items-start gap-2">
                                 <AlertTriangle className="w-3 h-3 text-orange-500 mt-0.5" />
                                 <span>Watch: {s}</span>
-                              </li>
-                            ))
-                          ) : (
-                            <li className="text-sm text-muted-foreground">No threats identified</li>
-                          )}
+                              </li>) : <li className="text-sm text-muted-foreground">No threats identified</li>}
                         </ul>
                       </GlassCard>
                     </div>
@@ -447,29 +357,23 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
 
             {/* RESOURCES TAB - ENHANCED */}
             <TabsContent value="resources" className="m-0 p-6">
-              {competitor.resources.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
+              {competitor.resources.length === 0 ? <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Package className="w-12 h-12 text-muted-foreground/50 mb-3" />
                   <p className="text-sm text-muted-foreground">No resources added yet</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
+                </div> : <div className="space-y-6">
                   {/* Resource Statistics */}
                   <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-                    {Object.entries(resourcesByCategory).map(([category, resources]) => (
-                      <div key={category} className="text-center p-3 border border-border/30 rounded-lg bg-card/40 backdrop-blur-sm hover:bg-card/60 transition-all shadow-md ring-1 ring-black/5 dark:ring-white/5">
+                    {Object.entries(resourcesByCategory).map(([category, resources]) => <div key={category} className="text-center p-3 border border-border/30 rounded-lg bg-card/40 backdrop-blur-sm hover:bg-card/60 transition-all shadow-md ring-1 ring-black/5 dark:ring-white/5">
                         <div className="mb-2 flex justify-center">
                           {getCategoryIcon(category)}
                         </div>
                         <p className="text-2xl font-bold">{resources.length}</p>
                         <p className="text-xs text-muted-foreground capitalize">{category.replace('_', ' ')}</p>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
 
                   {/* Grouped Resources */}
-                  {Object.entries(resourcesByCategory).map(([category, resources]) => (
-                    <div key={category}>
+                  {Object.entries(resourcesByCategory).map(([category, resources]) => <div key={category}>
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold flex items-center gap-2 capitalize">
                           {getCategoryIcon(category)}
@@ -481,14 +385,7 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                         </Button>
                       </div>
                       <div className="space-y-2">
-                        {resources.map((resource, idx) => (
-                          <a
-                            key={idx}
-                            href={resource.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block p-4 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary hover:bg-card/60 transition-all hover:shadow-lg group ring-1 ring-black/5 dark:ring-white/5"
-                          >
+                        {resources.map((resource, idx) => <a key={idx} href={resource.url} target="_blank" rel="noopener noreferrer" className="block p-4 rounded-lg border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary hover:bg-card/60 transition-all hover:shadow-lg group ring-1 ring-black/5 dark:ring-white/5">
                             <div className="flex items-start gap-3">
                               <div className="mt-0.5">
                                 {getCategoryIcon(resource.category)}
@@ -499,19 +396,15 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                               </div>
                               <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                             </div>
-                          </a>
-                        ))}
+                          </a>)}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    </div>)}
+                </div>}
             </TabsContent>
 
             {/* NOTES TAB - ENHANCED */}
             <TabsContent value="notes" className="m-0 p-6">
-              {competitor.notes ? (
-                <div className="space-y-6">
+              {competitor.notes ? <div className="space-y-6">
                   {/* Main Intelligence Summary */}
                   <GlassCard className="border-primary/30 shadow-xl">
                     <div className="p-6">
@@ -529,21 +422,17 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                   </GlassCard>
 
                   {/* Key Insights */}
-                  {extractKeyInsights(competitor.notes).length > 0 && (
-                    <GlassCard className="shadow-lg">
+                  {extractKeyInsights(competitor.notes).length > 0 && <GlassCard className="shadow-lg">
                       <div className="p-6">
                         <h3 className="text-base font-semibold mb-4">Key Insights</h3>
                         <ul className="space-y-2">
-                          {extractKeyInsights(competitor.notes).map((insight, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
+                          {extractKeyInsights(competitor.notes).map((insight, idx) => <li key={idx} className="flex items-start gap-2">
                               <Lightbulb className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
                               <span className="text-sm">{insight}</span>
-                            </li>
-                          ))}
+                            </li>)}
                         </ul>
                       </div>
-                    </GlassCard>
-                  )}
+                    </GlassCard>}
 
                   {/* Action Items */}
                   <GlassCard className="border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent shadow-lg">
@@ -568,17 +457,13 @@ export function CompetitorProfileDialog({ competitor, open, onOpenChange, onEdit
                       </ul>
                     </div>
                   </GlassCard>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
+                </div> : <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Bookmark className="w-12 h-12 text-muted-foreground/50 mb-3" />
                   <p className="text-sm text-muted-foreground">No notes added yet</p>
-                </div>
-              )}
+                </div>}
             </TabsContent>
           </div>
         </Tabs>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
