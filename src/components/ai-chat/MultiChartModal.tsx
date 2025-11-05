@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
+import { useModalDataRecovery } from '@/hooks/useModalDataRecovery';
 import { 
   Download, 
   Share2, 
@@ -66,6 +67,8 @@ interface MultiChartModalProps {
   context?: any;
   onDeepDiveClick?: (prompt: string) => void;
   onActionClick?: (action: any) => void;
+  onSendMessage?: (message: string) => void; // NEW: For data recovery
+  originalQuery?: string; // NEW: For recovery context
 }
 
 // Icon mapping for dynamic icon loading
@@ -522,7 +525,9 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
   insights = [],
   context = {},
   onDeepDiveClick,
-  onActionClick
+  onActionClick,
+  onSendMessage, // NEW: For data recovery
+  originalQuery // NEW: For recovery context
 }) => {
   const { toast } = useToast();
   const [selectedChartType, setSelectedChartType] = useState<Record<number, string>>({});
@@ -588,6 +593,14 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
       return true;
     }).slice(0, 4);
   }, [allVisualData, currentChartConfig, loadedCharts]);
+
+  // NEW: Data recovery hook - automatically fetches missing data
+  const {
+    isRecovering,
+    chartsNeedingRecovery,
+    validCharts: recoveryValidCharts,
+    attemptRecovery
+  } = useModalDataRecovery(charts, onSendMessage, originalQuery || title);
 
   // Use loaded data if available, otherwise use props
   const displayInsights = loadedInsights || insights;
@@ -1190,42 +1203,29 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     }
   };
 
-  // Validate and filter charts with valid data (pure computation, no side effects)
-  const validCharts = useMemo(() => {
-    return charts.filter(chart => 
-      chart.data && 
-      Array.isArray(chart.data) && 
-      chart.data.length > 0 &&
-      chart.categories && 
-      chart.categories.length > 0
-    );
-  }, [charts]);
+  // Use recovery hook's validCharts instead of local calculation
+  const validCharts = recoveryValidCharts;
 
-  // Show data quality notification in separate effect
+  // Show informational toast when modal opens (no blocking)
   useEffect(() => {
     if (!isOpen) return;
     
     const invalidCount = charts.length - validCharts.length;
-    if (invalidCount > 0) {
+    if (invalidCount > 0 && validCharts.length > 0) {
       toast({
-        title: 'Data Quality Notice',
-        description: `${invalidCount} chart${invalidCount > 1 ? 's' : ''} ${invalidCount > 1 ? 'were' : 'was'} filtered out due to missing or invalid data.`,
+        title: 'Fetching Additional Data',
+        description: `Loading data for ${invalidCount} chart${invalidCount > 1 ? 's' : ''}...`,
         variant: 'default'
       });
-    }
-  }, [isOpen, charts.length, validCharts.length]); // Only when modal opens or chart validity changes
-
-  // Show success toast when valid charts are ready (only when charts actually change)
-  useEffect(() => {
-    if (isOpen && validCharts.length > 0 && charts.length > 0) {
+    } else if (validCharts.length > 0) {
       const dataQuality = (validCharts.length / charts.length) * 100;
       toast({
-        title: 'Charts Loaded Successfully',
-        description: `${validCharts.length} chart${validCharts.length > 1 ? 's' : ''} ready for analysis${dataQuality < 100 ? ` (${Math.round(dataQuality)}% data quality)` : ''}`,
+        title: 'Charts Ready',
+        description: `${validCharts.length} chart${validCharts.length > 1 ? 's' : ''} loaded${dataQuality < 100 ? ` (${Math.round(dataQuality)}% complete)` : ''}`,
         variant: 'default'
       });
     }
-  }, [isOpen, validCharts.length, charts.length]); // Trigger when modal opens or charts change
+  }, [isOpen, charts.length, validCharts.length]);
 
   // Get available categories for filtering
   const getAvailableCategories = (config: ChartConfiguration): string[] => {
@@ -1238,25 +1238,47 @@ export const MultiChartModal: React.FC<MultiChartModalProps> = ({
     return Array.from(categories);
   };
 
-  // Early return for no valid charts - close modal (recovery now handled by MultiChartAnalysis)
-  if (validCharts.length === 0) {
-    console.warn('⚠️ No valid charts available, closing modal');
-    onClose();
-    return null;
+  // REMOVED: No longer closing modal when no valid charts
+  // Modal stays open and shows loading state while data is being fetched
+  
+  // Show loading state when all charts are invalid and recovery is in progress
+  if (validCharts.length === 0 && isRecovering) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <h3 className="text-lg font-semibold mb-2">Fetching Data...</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Loading chart data for {chartsNeedingRecovery} chart{chartsNeedingRecovery > 1 ? 's' : ''}. This will just take a moment.
+            </p>
+            <Button onClick={onClose} variant="outline">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   }
   
-  // Legacy fallback (should never reach here with new recovery system)
-  if (false) {
+  // Show empty state with retry when no valid charts and not recovering
+  if (validCharts.length === 0) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
           <div className="text-center py-8">
             <AlertTriangle className="w-12 h-12 mx-auto text-warning mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
+            <h3 className="text-lg font-semibold mb-2">Unable to Load Data</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Charts cannot be generated without valid data. Please ensure your data source is properly configured.
+              Charts cannot be displayed without valid data. 
             </p>
-            <Button onClick={onClose} className="mt-4">Close</Button>
+            <div className="flex gap-2 justify-center">
+              {onSendMessage && (
+                <Button onClick={() => attemptRecovery()}>
+                  <Activity className="w-4 h-4 mr-2" />
+                  Retry Data Fetch
+                </Button>
+              )}
+              <Button onClick={onClose} variant="outline">Close</Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

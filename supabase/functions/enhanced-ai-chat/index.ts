@@ -14,6 +14,7 @@ import {
   generateStructuredSerpData
 } from './serp-intelligence.ts';
 import { generateChartPerspectives } from './chart-intelligence.ts';
+import { autoFixChartData } from './chart-auto-fix.ts';
 
 // PHASE 1: Multi-chart detection - detects when user needs multiple perspectives
 function shouldGenerateMultipleCharts(query: string): boolean {
@@ -1424,6 +1425,14 @@ serve(async (req) => {
     
     // Proactive empty data validation and recovery
     console.log('🔍 Checking for empty visualizations that need data recovery...');
+    
+    // PHASE 6: Auto-fix chart data to ensure valid structures
+    if (visualData) {
+      console.log('🔧 Running chart auto-fix validation...');
+      visualData = autoFixChartData(visualData);
+      console.log('✅ Chart auto-fix complete');
+    }
+    
     const needsDataRecovery = (() => {
       if (!visualData) return false;
       

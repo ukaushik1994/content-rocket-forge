@@ -502,7 +502,12 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             
             
             
-            <Button variant="outline" size="sm" onClick={() => setShowModal(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowModal(true)}
+              title={filteredData.length === 0 ? "Expand and fetch data" : "Expand visualization"}
+            >
               <Maximize2 className="w-4 h-4" />
             </Button>
           </div>
@@ -560,6 +565,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       insights={allVisualData.flatMap(vd => vd.insights || [])}
       onDeepDiveClick={handleDeepDiveClick}
       onActionClick={handleActionClick}
+      onSendMessage={onSendMessage} // NEW: Pass for data recovery
+      originalQuery={originalQuery} // NEW: Pass for recovery context
     />
   </>;
 };
