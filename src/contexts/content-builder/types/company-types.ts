@@ -5,6 +5,8 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { CompetitorAutoFillPayload, CompetitorIntelDiagnostics } from '@/types/competitor-intel';
+import { SWOTAnalysis } from '@/types/competitor-swot';
+import { CompetitorOverview } from '@/types/competitor-overview';
 
 export interface CompanyInfo {
   id: string;
@@ -64,6 +66,8 @@ export interface CompanyCompetitor {
   priorityOrder: number;
   intelligenceData?: CompetitorAutoFillPayload;
   qualityMetrics?: CompetitorIntelDiagnostics;
+  swotAnalysis?: SWOTAnalysis;
+  overview?: CompetitorOverview;
   createdAt: string;
   updatedAt: string;
 }
