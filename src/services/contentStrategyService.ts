@@ -620,7 +620,8 @@ class ContentStrategyService {
     goals?: any; 
     location?: string; 
     excludeKeywords?: string[];
-    selectedSolutionIds?: string[];
+    solutionCompetitorMappings?: Array<{ solutionId: string; competitorId: string | null }>;
+    selectedSolutionIds?: string[]; // Deprecated: kept for backward compatibility
   }): Promise<{ proposals: any[]; message: string }> {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('User not authenticated');
@@ -646,14 +647,18 @@ class ContentStrategyService {
       throw new Error(errorMessage);
     }
 
+    // Convert solutionCompetitorMappings to selectedSolutionIds for edge function (backward compat)
+    const mappings = params?.solutionCompetitorMappings || 
+      (params?.selectedSolutionIds || []).map(id => ({ solutionId: id, competitorId: null }));
+
     const { data, error } = await supabase.functions.invoke('content-strategy-engine', {
       body: {
         action: 'generate_ai_strategy',
         user_id: user.id,
         goals: params?.goals || {},
         location: params?.location || 'United States',
-        excludeKeywords: params?.excludeKeywords || [], // Pass keyword exclusion list
-        selectedSolutionIds: params?.selectedSolutionIds || [], // Pass selected solution IDs
+        excludeKeywords: params?.excludeKeywords || [],
+        solutionCompetitorMappings: mappings,
         api_keys: {
           openai: openaiKey,
           serp: serpKey

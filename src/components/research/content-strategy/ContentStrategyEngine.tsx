@@ -102,7 +102,7 @@ export const ContentStrategyEngine = ({
 
   // Solution selection modal state
   const [showSolutionModal, setShowSolutionModal] = useState(false);
-  const [selectedSolutionIds, setSelectedSolutionIds] = useState<string[]>([]);
+  const [solutionCompetitorMappings, setSolutionCompetitorMappings] = useState<Array<{ solutionId: string; competitorId: string | null }>>([]);
 
   // Track newly generated proposals with timestamps
   const [newProposalIds, setNewProposalIds] = useState<Set<string>>(new Set());
@@ -262,21 +262,23 @@ export const ContentStrategyEngine = ({
     
     if (solutions.length === 1) {
       // Auto-select single solution and generate directly
-      setSelectedSolutionIds([solutions[0].id]);
-      await handleSolutionSelectionComplete([solutions[0].id]);
+      const mappings = [{ solutionId: solutions[0].id, competitorId: null }];
+      setSolutionCompetitorMappings(mappings);
+      await handleSolutionSelectionComplete(mappings);
     } else {
       // Show modal for multiple solutions
       setShowSolutionModal(true);
     }
   };
 
-  const handleSolutionSelectionComplete = async (solutionIds: string[]) => {
+  const handleSolutionSelectionComplete = async (mappings: Array<{ solutionId: string; competitorId: string | null }>) => {
     try {
       setGenerating(true);
       setShowSolutionModal(false);
+      setSolutionCompetitorMappings(mappings);
       startProgress();
       
-      // Use the same edge function as "Generate AI Proposals" with selected solutions
+      // Use the same edge function as "Generate AI Proposals" with solution-competitor mappings
       const result = await contentStrategyService.generateAIStrategy({
         goals: {
           monthlyTraffic: parseInt(goals.monthlyTraffic) || 10000,
@@ -286,7 +288,7 @@ export const ContentStrategyEngine = ({
         },
         location: 'United States',
         excludeKeywords: [],
-        selectedSolutionIds: solutionIds
+        solutionCompetitorMappings: mappings
       });
 
       // Reload historical proposals to get the newly saved proposals
@@ -306,11 +308,12 @@ export const ContentStrategyEngine = ({
       });
       setNewProposalTimestamps(timestamps);
       
+      const competitorCount = mappings.filter(m => m.competitorId).length;
       toast({
         title: `${newProposals.length} New Proposals Generated`,
-        description: solutionIds.length > 1 
-          ? `Generated for ${solutionIds.length} selected solutions` 
-          : result.message
+        description: competitorCount > 0
+          ? `Generated for ${mappings.length} solution(s) with ${competitorCount} competitor(s) analyzed`
+          : `Generated for ${mappings.length} selected solution(s)`
       });
 
       // Remove "new" highlighting after 10 seconds

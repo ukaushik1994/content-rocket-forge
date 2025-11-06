@@ -740,7 +740,20 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 
 // New AI-first strategy generation (no clusters)
 async function generateAIStrategy(supabase: any, supabaseAdmin: any, payload: any) {
-  const { user_id, goals = {}, location = 'United States', excludeKeywords = [], selectedSolutionIds = [], api_keys = {} } = payload;
+  const { 
+    user_id, 
+    goals = {}, 
+    location = 'United States', 
+    excludeKeywords = [], 
+    solutionCompetitorMappings = [],
+    selectedSolutionIds = [], // Deprecated, kept for backward compatibility
+    api_keys = {} 
+  } = payload;
+
+  // Convert old format to new if needed
+  const mappings = solutionCompetitorMappings.length > 0 
+    ? solutionCompetitorMappings 
+    : selectedSolutionIds.map((id: string) => ({ solutionId: id, competitorId: null }));
 
   // ✅ FIX 2.1: Validate SERP API key early
   if (!api_keys?.serp) {
@@ -758,8 +771,11 @@ async function generateAIStrategy(supabase: any, supabaseAdmin: any, payload: an
     );
   }
 
-  // 1) Fetch minimal user context
-  console.log(`🔍 Fetching user context${selectedSolutionIds.length > 0 ? ` (filtering to ${selectedSolutionIds.length} selected solutions)` : ''}`);
+  // 1) Fetch minimal user context + competitor intelligence
+  const solutionIds = mappings.map((m: any) => m.solutionId);
+  const competitorIds = mappings.map((m: any) => m.competitorId).filter(Boolean);
+  
+  console.log(`🔍 Fetching user context with ${solutionIds.length} solution(s) and ${competitorIds.length} competitor(s)`);
   
   const solutionsQuery = supabase
     .from('solutions')
@@ -767,19 +783,61 @@ async function generateAIStrategy(supabase: any, supabaseAdmin: any, payload: an
     .eq('user_id', user_id);
   
   // Filter solutions if specific IDs are provided
-  if (selectedSolutionIds.length > 0) {
-    solutionsQuery.in('id', selectedSolutionIds);
+  if (solutionIds.length > 0) {
+    solutionsQuery.in('id', solutionIds);
   } else {
     solutionsQuery.limit(20);
   }
+
+  // Fetch competitor intelligence if competitors are selected
+  const competitorsQuery = competitorIds.length > 0
+    ? supabase
+        .from('company_competitors')
+        .select('id, name, description, strengths, weaknesses, overview, intelligence_data, swot_analysis')
+        .in('id', competitorIds)
+    : Promise.resolve({ data: [], error: null });
   
-  const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
+  const [
+    { data: solutions }, 
+    { data: companyInfo }, 
+    { data: recentContent },
+    { data: competitors }
+  ] = await Promise.all([
     solutionsQuery,
     supabase.from('company_info').select('*').eq('user_id', user_id).maybeSingle(),
     supabase.from('content_items').select('id,title,metadata').eq('user_id', user_id).order('updated_at', { ascending: false }).limit(20),
+    competitorsQuery
   ]);
 
-  console.log(`✅ Context loaded: ${solutions?.length || 0} solutions, company info: ${!!companyInfo}`);
+  console.log(`✅ Context loaded: ${solutions?.length || 0} solutions, ${competitors?.length || 0} competitors, company info: ${!!companyInfo}`);
+
+  // Build competitor context for AI
+  const competitorContext = mappings
+    .filter((m: any) => m.competitorId)
+    .map((m: any) => {
+      const solution = solutions?.find((s: any) => s.id === m.solutionId);
+      const competitor = competitors?.find((c: any) => c.id === m.competitorId);
+      
+      if (!solution || !competitor) return null;
+      
+      return {
+        solution: {
+          name: solution.name,
+          features: solution.features,
+          target_audience: solution.target_audience
+        },
+        competitor: {
+          name: competitor.name,
+          strengths: competitor.strengths,
+          weaknesses: competitor.weaknesses,
+          positioning: competitor.overview?.positioning,
+          target_market: competitor.intelligence_data?.targetMarket
+        }
+      };
+    })
+    .filter(Boolean);
+
+  console.log(`🎯 Competitive context built for ${competitorContext.length} solution-competitor pairs`);
 
   // 2) Ask AI (via unified proxy) to propose untapped keywords
   console.log('🤖 Fetching active AI provider for keyword generation...');
@@ -834,7 +892,7 @@ Return ONLY a JSON object with this exact structure: {"keywords": [{"keyword": "
           },
           {
             role: 'user',
-            content: `Analyze this company context and generate 12 strategic, high-intent keywords for content opportunities.${excludeKeywords.length > 0 ? `\n\n⚠️ CRITICAL: EXCLUDE these previously used keywords and any variations: ${excludeKeywords.join(', ')}` : ''}${selectedSolutionIds.length > 0 ? `\n\n🎯 FOCUS: Generate proposals specifically relevant to these ${selectedSolutionIds.length} selected solution(s). Ensure proposals are distributed across all selected solutions.` : ''}
+            content: `Analyze this company context and generate 12 strategic, high-intent keywords for content opportunities.${excludeKeywords.length > 0 ? `\n\n⚠️ CRITICAL: EXCLUDE these previously used keywords and any variations: ${excludeKeywords.join(', ')}` : ''}${solutionIds.length > 0 ? `\n\n🎯 FOCUS: Generate proposals specifically relevant to these ${solutionIds.length} selected solution(s). Ensure proposals are distributed across all selected solutions.` : ''}${competitorContext.length > 0 ? `\n\n🎯 COMPETITIVE CONTEXT: Generate proposals that highlight advantages over these competitors:\n${competitorContext.map((ctx: any, i: number) => `${i + 1}. Solution "${ctx.solution.name}" vs Competitor "${ctx.competitor.name}":\n   - Competitor Strengths: ${ctx.competitor.strengths.slice(0, 3).join(', ')}\n   - Competitor Weaknesses: ${ctx.competitor.weaknesses.slice(0, 3).join(', ')}\n   - Positioning Gap: ${ctx.competitor.positioning || 'Unknown'}`).join('\n')}` : ''}
 
 Company Context: ${JSON.stringify(companyInfo || {})}
 Solutions/Services: ${JSON.stringify(solutions || [])}
@@ -846,7 +904,7 @@ Generate keywords that:
 - Include a mix of difficulty levels (some achievable quick wins, some long-term opportunities)
 - Prioritize commercial/transactional intent where relevant
 - Avoid generic terms; focus on specific, actionable keywords
-- Represent diverse content opportunities
+- Represent diverse content opportunities${competitorContext.length > 0 ? '\n- Target keywords where competitors are weak or where we have competitive advantages' : ''}
 
 Return ONLY the JSON object with 12 unique, high-quality keywords.`
           }
@@ -1080,7 +1138,7 @@ Return ONLY the JSON object with 12 unique, high-quality keywords.`
           messages: [
             {
               role: 'system',
-              content: `You are a content strategist. Generate exactly 6 strategic content proposals based on keyword research and SERP data. Return ONLY a JSON object with this structure: {"proposals": [{"title": "proposal title", "description": "brief description", "keywords": ["keyword1", "keyword2"], "content_type": "blog|article|guide|case_study", "priority": "high|medium|low", "estimated_effort": "1-2 weeks|2-4 weeks|1+ months"}]}`
+              content: `You are a content strategist. Generate exactly 6 strategic content proposals based on keyword research and SERP data. Return ONLY a JSON object with this structure: {"proposals": [{"title": "proposal title", "description": "brief description", "keywords": ["keyword1", "keyword2"], "content_type": "blog|article|guide|case_study", "priority": "high|medium|low", "estimated_effort": "1-2 weeks|2-4 weeks|1+ months"}]}${competitorContext.length > 0 ? '\n\nIMPORTANT: When competitor context is provided, generate proposals that emphasize competitive advantages and address competitor weaknesses.' : ''}`
             },
             {
               role: 'user',
@@ -1088,9 +1146,9 @@ Return ONLY the JSON object with 12 unique, high-quality keywords.`
 
 Company Context: ${JSON.stringify(companyInfo || {})}
 Solutions: ${JSON.stringify((solutions || []).map((s: any) => s.title || s.name).slice(0, 10))}
-Keyword Data: ${JSON.stringify(enriched.slice(0, 8))}
+Keyword Data: ${JSON.stringify(enriched.slice(0, 8))}${competitorContext.length > 0 ? `\n\nCompetitive Intelligence:\n${competitorContext.map((ctx: any, i: number) => `${i + 1}. "${ctx.solution.name}" vs "${ctx.competitor.name}":\n   Competitor Strengths: ${ctx.competitor.strengths.slice(0, 2).join(', ')}\n   Competitor Weaknesses: ${ctx.competitor.weaknesses.slice(0, 2).join(', ')}\n   Our Advantage: Highlight how our solution addresses competitor weaknesses`).join('\n')}` : ''}
 
-Create exactly 6 strategic content proposals that leverage these keywords and align with the company's solutions. Focus on delivering the most valuable opportunities. Return ONLY the JSON object.`
+Create exactly 6 strategic content proposals that leverage these keywords and align with the company's solutions.${competitorContext.length > 0 ? ' For each solution-competitor pair, generate proposals that differentiate our positioning and highlight competitive advantages.' : ''} Focus on delivering the most valuable opportunities. Return ONLY the JSON object.`
             }
           ]
         }
@@ -1223,12 +1281,35 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
     });
   }
 
-  // Save proposals to database and link keywords
-  console.log(`💾 Saving ${withSerp.length} proposals to database...`);
+  // Save proposals to database and link keywords + competitors
+  console.log(`💾 Saving ${withSerp.length} proposals to database with solution-competitor mappings...`);
   const savedProposals = [];
 
   for (const proposal of withSerp) {
     try {
+      // Find the best matching solution-competitor pair for this proposal
+      const matchingMapping = mappings.find((m: any) => {
+        const solution = solutions?.find((s: any) => s.id === m.solutionId);
+        return solution && proposal.title.toLowerCase().includes(solution.name.toLowerCase());
+      }) || mappings[0]; // Fallback to first mapping if no match
+
+      const solutionId = matchingMapping?.solutionId || null;
+      const competitorId = matchingMapping?.competitorId || null;
+      
+      // Build competitive angle if competitor is selected
+      let competitiveAngle = null;
+      if (competitorId && competitors) {
+        const competitor = competitors.find((c: any) => c.id === competitorId);
+        if (competitor) {
+          competitiveAngle = {
+            competitor_name: competitor.name,
+            key_differentiators: competitor.weaknesses?.slice(0, 3) || [],
+            positioning_gap: competitor.overview?.positioning || null,
+            competitive_keywords: proposal.keywords.map((k: any) => k.keyword).slice(0, 3)
+          };
+        }
+      }
+
       // Save the proposal
       const { data: savedProposal, error: saveError } = await supabaseAdmin
         .from('ai_strategy_proposals')
@@ -1242,9 +1323,13 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
           priority_tag: proposal.priority_tag,
           estimated_impressions: proposal.estimated_impressions,
           related_keywords: proposal.keywords.map((k: any) => k.keyword),
+          solution_id: solutionId,
+          competitor_id: competitorId,
+          competitive_angle: competitiveAngle,
           proposal_data: {
             ...proposal,
-            solution_ids: selectedSolutionIds.length > 0 ? selectedSolutionIds : null
+            solution_ids: solutionIds.length > 0 ? solutionIds : null,
+            competitive_context: competitiveAngle
           },
           serp_data: proposal.serp_data || {}
         })
@@ -1257,6 +1342,7 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
       }
       
       savedProposals.push(savedProposal);
+      console.log(`✅ Saved proposal "${proposal.title}" (solution: ${solutionId ? 'linked' : 'none'}, competitor: ${competitorId ? 'linked' : 'none'})`);
       
       // NOW save all keywords for this proposal with SERP data and source_id
       if (savedProposal?.id && proposal.keywords) {

@@ -5,15 +5,28 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedSolution } from '@/contexts/content-builder/types';
 
+interface Competitor {
+  id: string;
+  name: string;
+  logo_url?: string;
+  website?: string;
+}
+
+interface SolutionCompetitorMapping {
+  solutionId: string;
+  competitorId: string | null;
+}
+
 interface SolutionSelectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (selectedSolutionIds: string[]) => void;
+  onConfirm: (mappings: SolutionCompetitorMapping[]) => void;
   isGenerating?: boolean;
 }
 
@@ -24,12 +37,16 @@ export const SolutionSelectionModal = ({
   isGenerating = false 
 }: SolutionSelectionModalProps) => {
   const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
+  const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedCompetitorIds, setSelectedCompetitorIds] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCompetitors, setIsLoadingCompetitors] = useState(false);
 
   useEffect(() => {
     if (open) {
       fetchSolutions();
+      fetchCompetitors();
     }
   }, [open]);
 
@@ -69,17 +86,61 @@ export const SolutionSelectionModal = ({
     }
   };
 
+  const fetchCompetitors = async () => {
+    setIsLoadingCompetitors(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('company_competitors')
+        .select('id, name, logo_url, website')
+        .eq('user_id', user.id)
+        .order('name');
+      
+      if (error) throw error;
+      if (data) {
+        setCompetitors(data);
+      }
+    } catch (error) {
+      console.error("Error fetching competitors:", error);
+    } finally {
+      setIsLoadingCompetitors(false);
+    }
+  };
+
   const toggleSolution = (solutionId: string) => {
-    setSelectedIds(prev => 
-      prev.includes(solutionId) 
+    setSelectedIds(prev => {
+      const newSelectedIds = prev.includes(solutionId) 
         ? prev.filter(id => id !== solutionId)
-        : [...prev, solutionId]
-    );
+        : [...prev, solutionId];
+      
+      // Clear competitor selection if solution is deselected
+      if (!newSelectedIds.includes(solutionId)) {
+        setSelectedCompetitorIds(prevCompetitors => {
+          const { [solutionId]: _, ...rest } = prevCompetitors;
+          return rest;
+        });
+      }
+      
+      return newSelectedIds;
+    });
+  };
+
+  const handleCompetitorChange = (solutionId: string, competitorId: string) => {
+    setSelectedCompetitorIds(prev => ({
+      ...prev,
+      [solutionId]: competitorId === 'none' ? '' : competitorId
+    }));
   };
 
   const handleConfirm = () => {
     if (selectedIds.length > 0) {
-      onConfirm(selectedIds);
+      const mappings: SolutionCompetitorMapping[] = selectedIds.map(solutionId => ({
+        solutionId,
+        competitorId: selectedCompetitorIds[solutionId] || null
+      }));
+      onConfirm(mappings);
     }
   };
 
@@ -114,15 +175,15 @@ export const SolutionSelectionModal = ({
               </div>
             ) : (
               <TooltipProvider>
-                <div className="w-full overflow-x-auto">
-                  <div className="flex flex-nowrap gap-6 pb-2 px-1">
+                <ScrollArea className="h-[400px] w-full">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-4">
                     {solutions.map((solution, index) => (
                       <motion.div
                         key={solution.id}
                         initial={{ opacity: 0, scale: 0.8, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        whileHover={{ scale: 1.08 }}
+                        className="flex flex-col items-center gap-3"
                       >
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -173,10 +234,47 @@ export const SolutionSelectionModal = ({
                             </div>
                           </TooltipContent>
                         </Tooltip>
+                        
+                        {/* Competitor Selection Dropdown */}
+                        {selectedIds.includes(solution.id) && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="w-full"
+                          >
+                            <Select
+                              value={selectedCompetitorIds[solution.id] || 'none'}
+                              onValueChange={(value) => handleCompetitorChange(solution.id, value)}
+                              disabled={isLoadingCompetitors}
+                            >
+                              <SelectTrigger className="w-full text-xs h-8">
+                                <SelectValue placeholder="Competitor (Optional)" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">
+                                  <span className="text-muted-foreground">No Competitor</span>
+                                </SelectItem>
+                                {competitors.map(comp => (
+                                  <SelectItem key={comp.id} value={comp.id}>
+                                    <div className="flex items-center gap-2">
+                                      {comp.logo_url && (
+                                        <Avatar className="h-4 w-4">
+                                          <AvatarImage src={comp.logo_url} alt={comp.name} />
+                                        </Avatar>
+                                      )}
+                                      <span>{comp.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </motion.div>
+                        )}
                       </motion.div>
                     ))}
                   </div>
-                </div>
+                </ScrollArea>
               </TooltipProvider>
             )}
           </div>

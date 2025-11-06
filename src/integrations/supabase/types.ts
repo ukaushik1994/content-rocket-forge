@@ -528,6 +528,8 @@ export type Database = {
       }
       ai_strategy_proposals: {
         Row: {
+          competitive_angle: Json | null
+          competitor_id: string | null
           completed_at: string | null
           content_suggestions: string[] | null
           content_type: string | null
@@ -541,6 +543,7 @@ export type Database = {
           related_keywords: string[] | null
           scheduled_at: string | null
           serp_data: Json | null
+          solution_id: string | null
           status: string
           strategy_session_id: string | null
           title: string
@@ -548,6 +551,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          competitive_angle?: Json | null
+          competitor_id?: string | null
           completed_at?: string | null
           content_suggestions?: string[] | null
           content_type?: string | null
@@ -561,6 +566,7 @@ export type Database = {
           related_keywords?: string[] | null
           scheduled_at?: string | null
           serp_data?: Json | null
+          solution_id?: string | null
           status?: string
           strategy_session_id?: string | null
           title: string
@@ -568,6 +574,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          competitive_angle?: Json | null
+          competitor_id?: string | null
           completed_at?: string | null
           content_suggestions?: string[] | null
           content_type?: string | null
@@ -581,13 +589,29 @@ export type Database = {
           related_keywords?: string[] | null
           scheduled_at?: string | null
           serp_data?: Json | null
+          solution_id?: string | null
           status?: string
           strategy_session_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_strategy_proposals_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "company_competitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_strategy_proposals_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_training_logs: {
         Row: {
