@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -300,33 +301,46 @@ CRITICAL RULES:
     const processingTime = Date.now() - startTime;
     console.log(`[competitor-overview] ✅ Overview generated in ${processingTime}ms`);
 
-    // Save overview to database
+    // Save overview to database using Supabase client
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
       
-      const updateResponse = await fetch(`${supabaseUrl}/rest/v1/company_competitors?id=eq.${competitorId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          overview: overview,
-          last_analyzed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-      });
-
-      if (updateResponse.ok) {
-        console.log('[competitor-overview] ✅ Saved to database');
+      if (!supabaseUrl || !supabaseServiceKey) {
+        console.error('[competitor-overview] ⚠️ Missing Supabase credentials - cannot save to database');
+        console.error('[competitor-overview] SUPABASE_URL:', supabaseUrl ? 'present' : 'missing');
+        console.error('[competitor-overview] SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? 'present' : 'missing');
       } else {
-        console.error('[competitor-overview] ⚠️ Failed to save to database:', await updateResponse.text());
+        console.log('[competitor-overview] 💾 Saving overview to database for competitor:', competitorId);
+        
+        const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        });
+
+        const { data, error } = await supabaseClient
+          .from('company_competitors')
+          .update({
+            overview: overview,
+            last_analyzed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', competitorId)
+          .select();
+
+        if (error) {
+          console.error('[competitor-overview] ❌ Database save error:', error);
+          console.error('[competitor-overview] Error details:', JSON.stringify(error, null, 2));
+        } else {
+          console.log('[competitor-overview] ✅ Successfully saved to database');
+          console.log('[competitor-overview] Updated rows:', data?.length || 0);
+        }
       }
-    } catch (dbError) {
-      console.error('[competitor-overview] ⚠️ Database save error:', dbError);
+    } catch (dbError: any) {
+      console.error('[competitor-overview] 💥 Database save exception:', dbError);
+      console.error('[competitor-overview] Exception details:', dbError.message);
     }
 
     return new Response(

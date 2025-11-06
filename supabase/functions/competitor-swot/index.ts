@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -270,35 +271,48 @@ CRITICAL RULES:
     console.log(`[competitor-swot] ✅ Analysis complete in ${processingTime}ms`);
     console.log(`[competitor-swot] Results: ${analysis.opportunities.length} opportunities, ${analysis.threats.length} threats`);
 
-    // Save SWOT analysis to database
+    // Save SWOT analysis to database using Supabase client
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
       
-      const updateResponse = await fetch(`${supabaseUrl}/rest/v1/company_competitors?id=eq.${competitorId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          swot_analysis: analysis,
-          strengths: analysis.strengths,
-          weaknesses: analysis.weaknesses,
-          last_analyzed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-      });
-
-      if (updateResponse.ok) {
-        console.log('[competitor-swot] ✅ Saved to database');
+      if (!supabaseUrl || !supabaseServiceKey) {
+        console.error('[competitor-swot] ⚠️ Missing Supabase credentials - cannot save to database');
+        console.error('[competitor-swot] SUPABASE_URL:', supabaseUrl ? 'present' : 'missing');
+        console.error('[competitor-swot] SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? 'present' : 'missing');
       } else {
-        console.error('[competitor-swot] ⚠️ Failed to save to database:', await updateResponse.text());
+        console.log('[competitor-swot] 💾 Saving SWOT analysis to database for competitor:', competitorId);
+        
+        const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        });
+
+        const { data, error } = await supabaseClient
+          .from('company_competitors')
+          .update({
+            swot_analysis: analysis,
+            strengths: analysis.strengths,
+            weaknesses: analysis.weaknesses,
+            last_analyzed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', competitorId)
+          .select();
+
+        if (error) {
+          console.error('[competitor-swot] ❌ Database save error:', error);
+          console.error('[competitor-swot] Error details:', JSON.stringify(error, null, 2));
+        } else {
+          console.log('[competitor-swot] ✅ Successfully saved to database');
+          console.log('[competitor-swot] Updated rows:', data?.length || 0);
+        }
       }
-    } catch (dbError) {
-      console.error('[competitor-swot] ⚠️ Database save error:', dbError);
+    } catch (dbError: any) {
+      console.error('[competitor-swot] 💥 Database save exception:', dbError);
+      console.error('[competitor-swot] Exception details:', dbError.message);
     }
 
     return new Response(
