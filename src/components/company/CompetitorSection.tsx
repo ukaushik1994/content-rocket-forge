@@ -28,6 +28,8 @@ import { AddCompetitorDialog } from './AddCompetitorDialog';
 import { ReviewCompetitorDialog } from './ReviewCompetitorDialog';
 import { CompetitorProfileDialog } from './CompetitorProfileDialog';
 import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
+import { autoFillFromWebsite } from '@/services/competitorIntelService';
+import { toast as sonnerToast } from 'sonner';
 
 const categoryIcons = {
   website: Globe,
@@ -255,6 +257,47 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
   const handleReviewBack = () => {
     setReviewDialogOpen(false);
     setAddDialogOpen(true);
+  };
+
+  const handleRefreshIntelligence = async (competitorId: string, website: string) => {
+    if (!userId) {
+      sonnerToast.error('User not authenticated');
+      return;
+    }
+
+    try {
+      console.log('🔄 Refreshing intelligence for competitor:', competitorId);
+      const result = await autoFillFromWebsite(website, userId);
+
+      if (!result) {
+        sonnerToast.error('Failed to fetch intelligence data');
+        return;
+      }
+
+      // Update the competitor with new intelligence data
+      const { error } = await supabase
+        .from('company_competitors')
+        .update({
+          description: result.profile.description,
+          market_position: result.profile.market_position,
+          strengths: result.profile.strengths,
+          weaknesses: result.profile.weaknesses,
+          resources: result.profile.resources,
+          notes: result.profile.notes,
+          intelligence_data: JSON.stringify(result.profile),
+          quality_metrics: JSON.stringify(result.diagnostics),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', competitorId);
+
+      if (error) throw error;
+
+      console.log('✅ Intelligence refreshed successfully');
+      await loadCompetitors();
+    } catch (error) {
+      console.error('❌ Error refreshing intelligence:', error);
+      throw error;
+    }
   };
 
   // Edit existing competitor (old flow)
@@ -645,12 +688,13 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
 
           {/* Profile Dialog */}
           {selectedCompetitor && (
-            <CompetitorProfileDialog
-              competitor={selectedCompetitor}
-              open={profileDialogOpen}
-              onOpenChange={setProfileDialogOpen}
-              onEdit={handleEdit}
-            />
+      <CompetitorProfileDialog
+        competitor={selectedCompetitor}
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+        onEdit={handleEdit}
+        onRefreshIntelligence={handleRefreshIntelligence}
+      />
           )}
         </div>
 

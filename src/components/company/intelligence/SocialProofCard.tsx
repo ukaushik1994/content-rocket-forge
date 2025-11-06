@@ -12,7 +12,23 @@ export function SocialProofCard({ data }: SocialProofCardProps) {
                   data.testimonial_highlights?.length || data.awards_certifications?.length || 
                   data.partnerships?.length;
 
-  if (!hasData) return null;
+  if (!hasData) {
+    return (
+      <GlassCard className="p-8">
+        <div className="flex flex-col items-center justify-center text-center space-y-3">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Award className="h-8 w-8 text-primary/50" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground mb-1">No Social Proof Data</h3>
+            <p className="text-sm text-muted-foreground">
+              Customer testimonials and credentials will appear here
+            </p>
+          </div>
+        </div>
+      </GlassCard>
+    );
+  }
 
   return (
     <GlassCard className="p-6">

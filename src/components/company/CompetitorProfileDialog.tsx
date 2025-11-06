@@ -6,6 +6,7 @@ import { CompanyCompetitor } from '@/contexts/content-builder/types/company-type
 import { Building2, Link as LinkIcon, TrendingUp, TrendingDown, Package, Bookmark, Edit2, Target, Globe, ExternalLink, Download, Lightbulb, Brain, CheckCircle2, Star, AlertTriangle, Calendar, RefreshCw, Share2, FileText, Briefcase, Megaphone, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { CompetitorSolutionsTab } from './CompetitorSolutionsTab';
 import ReactMarkdown from 'react-markdown';
 import { formatDistanceToNow } from 'date-fns';
@@ -20,18 +21,38 @@ import {
   CompetitiveDifferentiationCard,
   MarketInsightsCard 
 } from './intelligence';
+import React from 'react';
+
 interface CompetitorProfileDialogProps {
   competitor: CompanyCompetitor;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (competitor: CompanyCompetitor) => void;
+  onRefreshIntelligence?: (competitorId: string, website: string) => Promise<void>;
 }
 export function CompetitorProfileDialog({
   competitor,
   open,
   onOpenChange,
-  onEdit
+  onEdit,
+  onRefreshIntelligence
 }: CompetitorProfileDialogProps) {
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    if (!competitor.website || !onRefreshIntelligence) return;
+    
+    setIsRefreshing(true);
+    try {
+      await onRefreshIntelligence(competitor.id, competitor.website);
+      toast.success('Intelligence data refreshed successfully');
+    } catch (error) {
+      console.error('Failed to refresh intelligence:', error);
+      toast.error('Failed to refresh intelligence data');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   // Helper: Get category icon
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -148,6 +169,16 @@ export function CompetitorProfileDialog({
                 <div className="flex items-center gap-2">
                   {competitor.qualityMetrics && (
                     <QualityMetricsBadge metrics={competitor.qualityMetrics} />
+                  )}
+                  {competitor.website && onRefreshIntelligence && (
+                    <RefreshButton
+                      isRefreshing={isRefreshing}
+                      onClick={handleRefresh}
+                      size="sm"
+                      variant="outline"
+                    >
+                      Refresh
+                    </RefreshButton>
                   )}
                   <Button variant="outline" size="sm" onClick={() => {
                     onEdit(competitor);

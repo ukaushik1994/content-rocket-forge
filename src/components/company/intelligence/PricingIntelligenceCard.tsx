@@ -11,7 +11,23 @@ export function PricingIntelligenceCard({ data }: PricingIntelligenceCardProps) 
   const hasData = data.pricing_model || data.pricing_tiers?.length || 
                   data.has_free_trial !== undefined || data.has_free_plan !== undefined;
 
-  if (!hasData) return null;
+  if (!hasData) {
+    return (
+      <GlassCard className="p-8">
+        <div className="flex flex-col items-center justify-center text-center space-y-3">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <DollarSign className="h-8 w-8 text-primary/50" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground mb-1">No Pricing Intelligence</h3>
+            <p className="text-sm text-muted-foreground">
+              Pricing details will appear here after analysis
+            </p>
+          </div>
+        </div>
+      </GlassCard>
+    );
+  }
 
   return (
     <GlassCard className="p-6">

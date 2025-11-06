@@ -10,7 +10,23 @@ interface MarketInsightsCardProps {
 export function MarketInsightsCard({ data }: MarketInsightsCardProps) {
   const hasData = data.recent_developments?.length || data.growth_indicators || data.market_sentiment;
 
-  if (!hasData) return null;
+  if (!hasData) {
+    return (
+      <GlassCard className="p-8">
+        <div className="flex flex-col items-center justify-center text-center space-y-3">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <TrendingUp className="h-8 w-8 text-primary/50" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground mb-1">No Market Insights</h3>
+            <p className="text-sm text-muted-foreground">
+              Market trends and developments will appear here
+            </p>
+          </div>
+        </div>
+      </GlassCard>
+    );
+  }
 
   return (
     <GlassCard className="p-6">

@@ -15,10 +15,39 @@ import {
   TrendingUp,
   Loader2,
   RefreshCw,
-  Eye
+  Eye,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
 import { cn } from '@/lib/utils';
+
+const calculateCompleteness = (competitor: CompanyCompetitor): number => {
+  const fields = [
+    competitor.description,
+    competitor.marketPosition,
+    competitor.strengths.length > 0,
+    competitor.weaknesses.length > 0,
+    competitor.resources.length > 0,
+    competitor.notes,
+    competitor.intelligenceData?.company_size,
+    competitor.intelligenceData?.founded_year,
+    competitor.intelligenceData?.pricing_model,
+    competitor.intelligenceData?.key_features?.length > 0,
+    competitor.intelligenceData?.target_industries?.length > 0,
+    competitor.intelligenceData?.notable_customers?.length > 0
+  ];
+  
+  const filledFields = fields.filter(Boolean).length;
+  return Math.round((filledFields / fields.length) * 100);
+};
+
+const getCompletenessColor = (percentage: number): string => {
+  if (percentage >= 75) return 'text-success border-success/30 bg-success/10';
+  if (percentage >= 60) return 'text-primary border-primary/30 bg-primary/10';
+  if (percentage >= 40) return 'text-warning border-warning/30 bg-warning/10';
+  return 'text-destructive border-destructive/30 bg-destructive/10';
+};
 
 const categoryIcons = {
   website: Globe,
@@ -49,6 +78,9 @@ const getResourceColor = (category: string): string => {
 };
 
 export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFilling = false }: CompetitorCardProps) {
+  const completeness = calculateCompleteness(competitor);
+  const completenessColor = getCompletenessColor(completeness);
+  
   return (
     <Card className={cn(
       "group overflow-hidden transition-all duration-300 hover:shadow-neon border-border bg-card/60 backdrop-blur-xl relative",
@@ -60,6 +92,17 @@ export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFill
           <Badge className="bg-primary/20 text-primary border-primary/30 animate-pulse">
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             Analyzing...
+          </Badge>
+        </div>
+      )}
+      
+      {/* Completeness indicator */}
+      {!isAutoFilling && (
+        <div className="absolute top-2 left-2 z-10">
+          <Badge className={cn('text-xs font-semibold border', completenessColor)}>
+            {completeness >= 75 && <CheckCircle2 className="h-3 w-3 mr-1" />}
+            {completeness < 75 && <AlertCircle className="h-3 w-3 mr-1" />}
+            {completeness}% Complete
           </Badge>
         </div>
       )}
