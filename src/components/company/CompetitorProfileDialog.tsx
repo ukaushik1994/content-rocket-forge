@@ -527,27 +527,27 @@ export function CompetitorProfileDialog({
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <CompanyIntelligenceCard 
                   data={localCompetitor.intelligenceData}
-                  onExtract={() => onEdit(localCompetitor)}
+                  onExtract={localCompetitor.website && onRefreshIntelligence ? handleRefresh : undefined}
                   isExtracting={isRefreshing}
                 />
                 <PricingIntelligenceCard 
                   data={localCompetitor.intelligenceData}
-                  onExtract={() => onEdit(localCompetitor)}
+                  onExtract={localCompetitor.website && onRefreshIntelligence ? handleRefresh : undefined}
                   isExtracting={isRefreshing}
                 />
                 <ProductIntelligenceCard 
                   data={localCompetitor.intelligenceData}
-                  onExtract={() => onEdit(localCompetitor)}
+                  onExtract={localCompetitor.website && onRefreshIntelligence ? handleRefresh : undefined}
                   isExtracting={isRefreshing}
                 />
                 <TargetMarketCard 
                   data={localCompetitor.intelligenceData}
-                  onExtract={() => onEdit(localCompetitor)}
+                  onExtract={localCompetitor.website && onRefreshIntelligence ? handleRefresh : undefined}
                   isExtracting={isRefreshing}
                 />
                 <SocialProofCard 
                   data={localCompetitor.intelligenceData}
-                  onExtract={() => onEdit(localCompetitor)}
+                  onExtract={localCompetitor.website && onRefreshIntelligence ? handleRefresh : undefined}
                   isExtracting={isRefreshing}
                 />
               </div>
