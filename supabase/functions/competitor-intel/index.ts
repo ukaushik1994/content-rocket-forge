@@ -126,7 +126,8 @@ serve(async (req) => {
     // Step 3: Use AI to extract competitive intelligence
     const { profile, diagnostics } = await extractCompetitiveIntelligence(
       validPages,
-      website
+      website,
+      userId
     );
 
     const extractionTime = Date.now() - startTime;
@@ -384,17 +385,33 @@ function calculateUrlRelevanceScore(url: string, domain: string): number {
  */
 async function extractCompetitiveIntelligence(
   pages: Array<{ url: string; content: any }>,
-  website: string
+  website: string,
+  userId: string
 ): Promise<{
   profile: CompetitorProfile;
   diagnostics: any;
 }> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  
-  if (!LOVABLE_API_KEY) {
-    console.warn('[competitor-intel] No LOVABLE_API_KEY, using fallback');
+  // Initialize Supabase client to get user's AI provider
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Get user's active AI provider (same pattern as enhanced-ai-chat)
+  const { data: provider, error: providerError } = await supabase
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (providerError || !provider) {
+    console.error('[competitor-intel] ❌ No active AI provider configured');
     return createEnhancedFallbackProfile(website, pages);
   }
+
+  console.log(`[competitor-intel] 🤖 Using AI provider: ${provider.provider}, model: ${provider.preferred_model}`);
 
   // Build enhanced content summary from pages
   const pageTexts = pages.map((p, i) => {
@@ -503,34 +520,34 @@ Return ONLY valid JSON in this exact format:
     console.log('[competitor-intel] 📊 Prompt length:', prompt.length, 'chars');
     console.log('[competitor-intel] 📄 Pages being analyzed:', pages.length);
     
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp",
-        messages: [
-          { 
-            role: "system", 
-            content: "You are an expert competitive intelligence analyst. Return only valid JSON with comprehensive, actionable, and evidence-based competitive insights. Be specific and quantitative." 
-          },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 4000
-      })
+    // Call ai-proxy edge function (same pattern as enhanced-ai-chat and other AI functions)
+    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+      body: {
+        service: provider.provider,
+        endpoint: 'chat',
+        apiKey: provider.api_key,
+        params: {
+          model: provider.preferred_model,
+          messages: [
+            { 
+              role: "system", 
+              content: "You are an expert competitive intelligence analyst. Return only valid JSON with comprehensive, actionable, and evidence-based competitive insights. Be specific and quantitative." 
+            },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.2,
+          max_tokens: 4000
+        }
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[competitor-intel] ❌ AI extraction failed:', response.status, errorText);
+    if (aiProxyError || !aiProxyResult?.success) {
+      console.error('[competitor-intel] ❌ AI extraction failed:', aiProxyError?.message || aiProxyResult?.error);
       return createEnhancedFallbackProfile(website, pages);
     }
 
-    const aiData = await response.json();
-    const content = aiData.choices?.[0]?.message?.content || "{}";
+    const aiData = aiProxyResult.data;
+    const content = aiData?.choices?.[0]?.message?.content || "{}";
     
     console.log('[competitor-intel] ✅ AI response received');
     console.log('[competitor-intel] 📝 Raw AI content length:', content.length, 'chars');
