@@ -1,23 +1,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Building2,
-  Edit2,
-  Trash2,
   ExternalLink,
   Globe,
-  Users,
   FileText,
-  Target,
-  TrendingUp,
+  DollarSign,
   Loader2,
-  RefreshCw,
   Eye,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  FileCode,
+  BookOpen,
+  MoreVertical,
+  StickyNote
 } from 'lucide-react';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
 import { cn } from '@/lib/utils';
@@ -43,19 +42,35 @@ const calculateCompleteness = (competitor: CompanyCompetitor): number => {
 };
 
 const getCompletenessColor = (percentage: number): string => {
-  if (percentage >= 75) return 'text-success border-success/30 bg-success/10';
-  if (percentage >= 60) return 'text-primary border-primary/30 bg-primary/10';
-  if (percentage >= 40) return 'text-warning border-warning/30 bg-warning/10';
-  return 'text-destructive border-destructive/30 bg-destructive/10';
+  if (percentage >= 75) return 'from-success/20 to-success/5 border-success/30';
+  if (percentage >= 60) return 'from-primary/20 to-primary/5 border-primary/30';
+  if (percentage >= 40) return 'from-warning/20 to-warning/5 border-warning/30';
+  return 'from-destructive/20 to-destructive/5 border-destructive/30';
 };
 
-const categoryIcons = {
-  website: Globe,
-  social_media: Users,
-  documentation: FileText,
-  case_studies: Target,
-  marketing: TrendingUp,
-  other: ExternalLink
+const getCompletenessIcon = (percentage: number) => {
+  if (percentage >= 75) return <CheckCircle2 className="h-4 w-4 text-success" />;
+  return <AlertCircle className="h-4 w-4 text-warning" />;
+};
+
+const getCategoryIcon = (category: string) => {
+  const iconMap: Record<string, React.ReactNode> = {
+    website: <Globe className="h-4 w-4" />,
+    pricing: <DollarSign className="h-4 w-4" />,
+    documentation: <BookOpen className="h-4 w-4" />,
+    features: <FileCode className="h-4 w-4" />,
+    default: <FileText className="h-4 w-4" />
+  };
+  return iconMap[category] || iconMap.default;
+};
+
+const getDomain = (url: string): string => {
+  try {
+    const domain = new URL(url).hostname.replace('www.', '');
+    return domain;
+  } catch {
+    return url;
+  }
 };
 
 interface CompetitorCardProps {
@@ -65,212 +80,196 @@ interface CompetitorCardProps {
   isAutoFilling?: boolean;
 }
 
-const getResourceColor = (category: string): string => {
-  const colors = {
-    website: 'border-blue-400/30 text-blue-400',
-    social_media: 'border-purple-400/30 text-purple-400',
-    documentation: 'border-yellow-400/30 text-yellow-400',
-    case_studies: 'border-green-400/30 text-green-400',
-    marketing: 'border-orange-400/30 text-orange-400',
-    other: 'border-border text-muted-foreground'
-  };
-  return colors[category as keyof typeof colors] || colors.other;
-};
-
 export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFilling = false }: CompetitorCardProps) {
   const completeness = calculateCompleteness(competitor);
-  const completenessColor = getCompletenessColor(completeness);
+  const completenessGradient = getCompletenessColor(completeness);
+  const visibleResources = competitor.resources.slice(0, 3);
+  const remainingCount = competitor.resources.length - 3;
   
   return (
-    <Card className={cn(
-      "group overflow-hidden transition-all duration-300 hover:shadow-neon border-border bg-card/60 backdrop-blur-xl relative",
-      isAutoFilling && "animate-pulse border-primary/50"
-    )}>
-      {/* Auto-fill loading badge */}
-      {isAutoFilling && (
-        <div className="absolute top-2 left-2 z-10">
-          <Badge className="bg-primary/20 text-primary border-primary/30 animate-pulse">
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            Analyzing...
-          </Badge>
-        </div>
-      )}
-      
-      {/* Completeness indicator */}
-      {!isAutoFilling && (
-        <div className="absolute top-2 left-2 z-10">
-          <Badge className={cn('text-xs font-semibold border', completenessColor)}>
-            {completeness >= 75 && <CheckCircle2 className="h-3 w-3 mr-1" />}
-            {completeness < 75 && <AlertCircle className="h-3 w-3 mr-1" />}
-            {completeness}% Complete
-          </Badge>
-        </div>
-      )}
-      {/* Header with gradient - neon-blue theme for competitors */}
-      <CardHeader className="relative bg-gradient-to-br from-neon-blue/20 via-transparent to-transparent pb-4">
-        <div className="flex items-start space-x-3">
-          {/* Large avatar */}
-          <div className="w-16 h-16 bg-gradient-to-br from-neon-blue/20 to-neon-blue/5 rounded-lg flex items-center justify-center border border-border shrink-0">
-            {competitor.logoUrl ? (
-              <img 
-                src={competitor.logoUrl} 
-                alt={competitor.name} 
-                className="w-12 h-12 object-contain"
-              />
-            ) : (
-              <Building2 className="h-8 w-8 text-primary" />
-            )}
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-gradient text-lg leading-tight mb-1">
-              {competitor.name}
-            </CardTitle>
-            {competitor.marketPosition && (
-              <Badge variant="outline" className="mt-1 border-primary/30 text-xs">
-                {competitor.marketPosition}
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="h-full"
+    >
+      <GlassCard className={cn(
+        "group relative h-full flex flex-col overflow-hidden transition-all duration-300",
+        "hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30",
+        isAutoFilling && "animate-pulse border-primary/50"
+      )}>
+        {/* Auto-fill loading overlay */}
+        {isAutoFilling && (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent z-10 pointer-events-none">
+            <div className="absolute top-4 left-4">
+              <Badge className="bg-primary/20 text-primary border-primary/30 animate-pulse backdrop-blur-sm">
+                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                Analyzing...
               </Badge>
-            )}
+            </div>
           </div>
-        </div>
+        )}
+        
+        {/* Completeness indicator - Top Right */}
+        {!isAutoFilling && (
+          <div className="absolute top-3 right-3 z-10">
+            <div className={cn(
+              "px-3 py-1.5 rounded-full border backdrop-blur-md",
+              "bg-gradient-to-br shadow-sm",
+              "flex items-center gap-1.5 text-xs font-semibold transition-all duration-300",
+              "hover:scale-105",
+              completenessGradient
+            )}>
+              {getCompletenessIcon(completeness)}
+              <span>{completeness}%</span>
+            </div>
+          </div>
+        )}
+        
+        {/* Header Section */}
+        <div className="p-5 pb-4 space-y-3">
+          <div className="flex items-start gap-3">
+            {competitor.logoUrl ? (
+              <div className="relative">
+                <img 
+                  src={competitor.logoUrl} 
+                  alt={`${competitor.name} logo`}
+                  className="w-14 h-14 rounded-xl object-contain bg-background/50 p-2.5 border border-border/50 shadow-sm"
+                />
+              </div>
+            ) : (
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center border border-primary/20">
+                <Building2 className="h-7 w-7 text-primary" />
+              </div>
+            )}
+            
+            <div className="flex-1 min-w-0 pt-0.5">
+              <h3 className="text-lg font-semibold mb-1.5 text-gradient group-hover:opacity-90 transition-opacity">
+                {competitor.name}
+              </h3>
+              {competitor.marketPosition && (
+                <Badge variant="outline" className="text-xs font-medium">
+                  {competitor.marketPosition}
+                </Badge>
+              )}
+            </div>
+          </div>
 
-        {/* Action buttons - show on hover */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-primary/10"
-            onClick={() => onViewProfile(competitor)}
-            title="View Profile"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => onDelete(competitor.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="grid gap-4 pt-2">
-        {/* Website Link */}
-        {competitor.website && (
-          <div className="flex items-center gap-2 text-sm">
-            <Globe className="h-4 w-4 text-primary shrink-0" />
+          {/* Website Link */}
+          {competitor.website && (
             <a
               href={competitor.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline flex items-center gap-1 truncate"
+              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors group/link w-fit"
             >
-              {new URL(competitor.website).hostname}
-              <ExternalLink className="h-3 w-3 shrink-0" />
+              <Globe className="h-4 w-4" />
+              <span className="font-medium underline-offset-4 group-hover/link:underline">
+                {getDomain(competitor.website)}
+              </span>
+              <ExternalLink className="h-3 w-3 opacity-50" />
             </a>
-          </div>
-        )}
-
-        {/* Description */}
-        {competitor.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {competitor.description}
-          </p>
-        )}
-
-        {/* Strengths */}
-        {competitor.strengths.length > 0 && (
-          <div>
-            <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wide">
-              Strengths
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {competitor.strengths.slice(0, 3).map((strength, i) => (
-                <Badge
-                  key={i}
-                  className="bg-success/10 text-success border-success/20 hover:bg-success/20"
-                >
-                  {strength}
-                </Badge>
-              ))}
-              {competitor.strengths.length > 3 && (
-                <Badge variant="outline" className="text-xs border-border">
-                  +{competitor.strengths.length - 3} more
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Weaknesses */}
-        {competitor.weaknesses.length > 0 && (
-          <div>
-            <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wide">
-              Weaknesses
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {competitor.weaknesses.slice(0, 3).map((weakness, i) => (
-                <Badge
-                  key={i}
-                  className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
-                >
-                  {weakness}
-                </Badge>
-              ))}
-              {competitor.weaknesses.length > 3 && (
-                <Badge variant="outline" className="text-xs border-border">
-                  +{competitor.weaknesses.length - 3} more
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Resources */}
-        {competitor.resources.length > 0 && (
-          <div>
-            <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wide">
-              Resources
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {competitor.resources.slice(0, 4).map((resource, i) => {
-                const Icon = categoryIcons[resource.category];
-                const colorClass = getResourceColor(resource.category);
-                return (
-                  <Badge
-                    key={i}
-                    variant="outline"
-                    className={cn('text-xs', colorClass)}
-                  >
-                    <Icon className="h-3 w-3 mr-1" />
-                    {resource.title}
-                  </Badge>
-                );
-              })}
-              {competitor.resources.length > 4 && (
-                <Badge variant="outline" className="text-xs border-border">
-                  +{competitor.resources.length - 4} more
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
-      </CardContent>
-
-      <CardFooter className="flex justify-between items-center border-t border-border pt-4">
-        <span className="text-xs text-muted-foreground">
-          {competitor.resources.length} resource{competitor.resources.length !== 1 ? 's' : ''} tracked
-        </span>
-        <div className="flex items-center gap-2">
-          {competitor.notes && (
-            <Badge variant="secondary" className="text-xs">
-              Has Notes
-            </Badge>
           )}
         </div>
-      </CardFooter>
-    </Card>
+
+        {/* Description Section */}
+        <div className="px-5 pb-4">
+          {competitor.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+              {competitor.description}
+            </p>
+          )}
+        </div>
+        
+        {/* Resources Section */}
+        {competitor.resources.length > 0 && (
+          <div className="px-5 pb-4 space-y-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+              <FileText className="h-3.5 w-3.5" />
+              Resources
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {visibleResources.map((resource, idx) => (
+                <a
+                  key={idx}
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg",
+                    "bg-background/50 border border-border/50",
+                    "hover:bg-primary/10 hover:border-primary/30 hover:shadow-sm",
+                    "transition-all duration-200 group/resource",
+                    "text-xs font-medium truncate"
+                  )}
+                >
+                  <span className="text-primary group-hover/resource:scale-110 transition-transform">
+                    {getCategoryIcon(resource.category)}
+                  </span>
+                  <span className="truncate flex-1">{resource.title}</span>
+                  <ExternalLink className="h-3 w-3 opacity-0 group-hover/resource:opacity-50 transition-opacity" />
+                </a>
+              ))}
+              {remainingCount > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewProfile(competitor);
+                  }}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg",
+                    "bg-muted/30 border border-dashed border-border/50",
+                    "hover:bg-muted/50 hover:border-border",
+                    "transition-all duration-200",
+                    "text-xs font-medium text-muted-foreground"
+                  )}
+                >
+                  +{remainingCount} more
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Footer Section */}
+        <div className="mt-auto pt-4 px-5 pb-5 border-t border-border/30 bg-gradient-to-b from-transparent to-muted/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                <span className="font-medium">{competitor.resources.length} resources</span>
+              </div>
+              
+              {competitor.notes && (
+                <div className="flex items-center gap-1.5 text-primary">
+                  <StickyNote className="h-3.5 w-3.5" />
+                  <span className="font-medium">Has notes</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewProfile(competitor)}
+                className="h-8 px-3 hover:bg-primary/10 hover:text-primary transition-all duration-200"
+              >
+                <Eye className="h-4 w-4 mr-1.5" />
+                View
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(competitor.id)}
+                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </GlassCard>
+    </motion.div>
   );
 }
