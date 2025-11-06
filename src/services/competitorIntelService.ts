@@ -8,13 +8,14 @@ export interface CompetitorIntelResult {
 
 export async function autoFillFromWebsite(
   website: string,
-  userId: string
+  userId: string,
+  competitorId?: string
 ): Promise<CompetitorIntelResult | null> {
   try {
     console.log('🔍 Auto-filling competitor intel for:', website);
     
     const { data, error } = await supabase.functions.invoke('competitor-intel', {
-      body: { userId, website }
+      body: { userId, website, competitorId }
     });
     
     if (error) {

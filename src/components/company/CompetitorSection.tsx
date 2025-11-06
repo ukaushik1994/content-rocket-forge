@@ -267,7 +267,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
 
     try {
       console.log('🔄 Refreshing intelligence for competitor:', competitorId);
-      const result = await autoFillFromWebsite(website, userId);
+      const result = await autoFillFromWebsite(website, userId, competitorId);
 
       if (!result) {
         sonnerToast.error('Failed to fetch intelligence data');

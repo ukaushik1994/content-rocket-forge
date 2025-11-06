@@ -9,6 +9,7 @@ const corsHeaders = {
 interface CompetitorIntelRequest {
   userId: string;
   website: string;
+  competitorId?: string;
   maxPages?: number;
   recrawl?: boolean;
 }
@@ -66,13 +67,14 @@ serve(async (req) => {
 
   try {
     const startTime = Date.now();
-    const { userId, website, maxPages = 10, recrawl = false }: CompetitorIntelRequest = await req.json();
+    const { userId, website, competitorId, maxPages = 10, recrawl = false }: CompetitorIntelRequest = await req.json();
 
     if (!userId || !website) {
       throw new Error("Missing required fields: userId, website");
     }
 
     console.log(`[competitor-intel] Starting analysis for: ${website}`);
+    console.log(`[competitor-intel] Competitor ID: ${competitorId || 'N/A'}`);
     console.log(`[competitor-intel] Max pages: ${maxPages}, Recrawl: ${recrawl}`);
 
     // Step 1: Discover competitor pages using enhanced SERP queries
@@ -121,6 +123,40 @@ serve(async (req) => {
 
     const extractionTime = Date.now() - startTime;
     console.log(`[competitor-intel] ✅ Analysis complete in ${extractionTime}ms`);
+
+    // Save intelligence data to database if we have a competitorId
+    if (competitorId) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        
+        const updateResponse = await fetch(`${supabaseUrl}/rest/v1/company_competitors?id=eq.${competitorId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            intelligence_data: profile,
+            quality_metrics: diagnostics,
+            last_analyzed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        });
+
+        if (updateResponse.ok) {
+          console.log('[competitor-intel] ✅ Saved to database');
+        } else {
+          console.error('[competitor-intel] ⚠️ Failed to save to database:', await updateResponse.text());
+        }
+      } catch (dbError) {
+        console.error('[competitor-intel] ⚠️ Database save error:', dbError);
+      }
+    } else {
+      console.log('[competitor-intel] ⚠️ No competitorId provided, skipping database save');
+    }
 
     return new Response(
       JSON.stringify({

@@ -270,6 +270,37 @@ CRITICAL RULES:
     console.log(`[competitor-swot] ✅ Analysis complete in ${processingTime}ms`);
     console.log(`[competitor-swot] Results: ${analysis.opportunities.length} opportunities, ${analysis.threats.length} threats`);
 
+    // Save SWOT analysis to database
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      
+      const updateResponse = await fetch(`${supabaseUrl}/rest/v1/company_competitors?id=eq.${competitorId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseServiceKey,
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          swot_analysis: analysis,
+          strengths: analysis.strengths,
+          weaknesses: analysis.weaknesses,
+          last_analyzed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+      });
+
+      if (updateResponse.ok) {
+        console.log('[competitor-swot] ✅ Saved to database');
+      } else {
+        console.error('[competitor-swot] ⚠️ Failed to save to database:', await updateResponse.text());
+      }
+    } catch (dbError) {
+      console.error('[competitor-swot] ⚠️ Database save error:', dbError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

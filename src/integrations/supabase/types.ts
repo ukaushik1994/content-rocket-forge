@@ -1232,14 +1232,17 @@ export type Database = {
           description: string | null
           id: string
           intelligence_data: Json | null
+          last_analyzed_at: string | null
           logo_url: string | null
           market_position: string | null
           name: string
           notes: string | null
+          overview: Json | null
           priority_order: number | null
           quality_metrics: Json | null
           resources: Json | null
           strengths: Json | null
+          swot_analysis: Json | null
           updated_at: string
           user_id: string
           weaknesses: Json | null
@@ -1250,14 +1253,17 @@ export type Database = {
           description?: string | null
           id?: string
           intelligence_data?: Json | null
+          last_analyzed_at?: string | null
           logo_url?: string | null
           market_position?: string | null
           name: string
           notes?: string | null
+          overview?: Json | null
           priority_order?: number | null
           quality_metrics?: Json | null
           resources?: Json | null
           strengths?: Json | null
+          swot_analysis?: Json | null
           updated_at?: string
           user_id: string
           weaknesses?: Json | null
@@ -1268,14 +1274,17 @@ export type Database = {
           description?: string | null
           id?: string
           intelligence_data?: Json | null
+          last_analyzed_at?: string | null
           logo_url?: string | null
           market_position?: string | null
           name?: string
           notes?: string | null
+          overview?: Json | null
           priority_order?: number | null
           quality_metrics?: Json | null
           resources?: Json | null
           strengths?: Json | null
+          swot_analysis?: Json | null
           updated_at?: string
           user_id?: string
           weaknesses?: Json | null

@@ -68,6 +68,7 @@ export interface CompanyCompetitor {
   qualityMetrics?: CompetitorIntelDiagnostics;
   swotAnalysis?: SWOTAnalysis;
   overview?: CompetitorOverview;
+  lastAnalyzedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

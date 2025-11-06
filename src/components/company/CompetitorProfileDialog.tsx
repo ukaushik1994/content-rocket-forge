@@ -3,6 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Progress } from '@/components/ui/progress';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
+import { CompetitorAutoFillPayload, CompetitorIntelDiagnostics } from '@/types/competitor-intel';
+import { SWOTAnalysis } from '@/types/competitor-swot';
+import { CompetitorOverview } from '@/types/competitor-overview';
 import { Building2, Link as LinkIcon, TrendingUp, TrendingDown, Package, Edit2, Target, Globe, ExternalLink, Download, Lightbulb, Brain, CheckCircle2, Star, AlertTriangle, Calendar, RefreshCw, Share2, FileText, Briefcase, Megaphone, BarChart3, TrendingUp as TrendingUpIcon, Shield, Zap, Award } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -51,9 +54,43 @@ export function CompetitorProfileDialog({
 
   React.useEffect(() => {
     if (open && competitor.id) {
-      loadSolutions();
+      loadCompetitorData();
     }
   }, [open, competitor.id]);
+
+  const loadCompetitorData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('company_competitors')
+        .select(`
+          *,
+          competitor_solutions (
+            id, name, category, short_description,
+            features, pricing, target_audience
+          )
+        `)
+        .eq('id', competitor.id)
+        .single();
+
+      if (error) throw error;
+
+      // Merge database data with props (database is source of truth)
+      setLocalCompetitor({
+        ...competitor,
+        overview: data.overview as unknown as CompetitorOverview | undefined,
+        swotAnalysis: data.swot_analysis as unknown as SWOTAnalysis | undefined,
+        intelligenceData: data.intelligence_data as unknown as CompetitorAutoFillPayload | undefined,
+        qualityMetrics: data.quality_metrics as unknown as CompetitorIntelDiagnostics | undefined,
+        lastAnalyzedAt: data.last_analyzed_at
+      });
+
+      setSolutions(data.competitor_solutions || []);
+    } catch (error) {
+      console.error('Failed to load competitor data:', error);
+      // Fallback to props if database load fails
+      setSolutions([]);
+    }
+  };
 
   const loadSolutions = async () => {
     try {
@@ -70,6 +107,10 @@ export function CompetitorProfileDialog({
     setIsRefreshing(true);
     try {
       await onRefreshIntelligence(competitor.id, competitor.website);
+      
+      // Reload all data from database after refresh
+      await loadCompetitorData();
+      
       toast.success('Intelligence data refreshed successfully');
     } catch (error) {
       console.error('Failed to refresh intelligence:', error);
@@ -114,8 +155,9 @@ export function CompetitorProfileDialog({
       );
 
       if (swot) {
-        setLocalCompetitor(prev => ({ ...prev, swotAnalysis: swot }));
-        toast.success('SWOT analysis generated successfully');
+        // Reload from database to get saved data
+        await loadCompetitorData();
+        toast.success('SWOT analysis generated and saved');
       } else {
         toast.error('Failed to generate SWOT analysis');
       }
@@ -156,8 +198,9 @@ export function CompetitorProfileDialog({
       );
 
       if (overview) {
-        setLocalCompetitor(prev => ({ ...prev, overview }));
-        toast.success('Overview generated successfully');
+        // Reload from database to get saved data
+        await loadCompetitorData();
+        toast.success('Overview generated and saved');
       } else {
         toast.error('Failed to generate overview');
       }
@@ -271,10 +314,16 @@ export function CompetitorProfileDialog({
                     </a>
                   )}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-                    {localCompetitor.createdAt && (
+                   {localCompetitor.createdAt && (
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         Added {formatDistanceToNow(new Date(localCompetitor.createdAt), { addSuffix: true })}
+                      </div>
+                    )}
+                    {localCompetitor.lastAnalyzedAt && (
+                      <div className="flex items-center gap-1">
+                        <Brain className="w-3 h-3" />
+                        Analyzed {formatDistanceToNow(new Date(localCompetitor.lastAnalyzedAt), { addSuffix: true })}
                       </div>
                     )}
                     {localCompetitor.updatedAt && (

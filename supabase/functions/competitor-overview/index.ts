@@ -300,6 +300,35 @@ CRITICAL RULES:
     const processingTime = Date.now() - startTime;
     console.log(`[competitor-overview] ✅ Overview generated in ${processingTime}ms`);
 
+    // Save overview to database
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      
+      const updateResponse = await fetch(`${supabaseUrl}/rest/v1/company_competitors?id=eq.${competitorId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseServiceKey,
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          overview: overview,
+          last_analyzed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+      });
+
+      if (updateResponse.ok) {
+        console.log('[competitor-overview] ✅ Saved to database');
+      } else {
+        console.error('[competitor-overview] ⚠️ Failed to save to database:', await updateResponse.text());
+      }
+    } catch (dbError) {
+      console.error('[competitor-overview] ⚠️ Database save error:', dbError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
