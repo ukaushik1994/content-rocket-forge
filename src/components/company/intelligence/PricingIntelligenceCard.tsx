@@ -1,40 +1,98 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Check, Gift, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DollarSign, Check, Sparkles, Loader2, CheckCircle2, AlertCircle, Gift, Clock } from 'lucide-react';
 import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
 
 interface PricingIntelligenceCardProps {
-  data: CompetitorAutoFillPayload;
+  data?: CompetitorAutoFillPayload;
+  onExtract?: () => void;
+  isExtracting?: boolean;
 }
 
-export function PricingIntelligenceCard({ data }: PricingIntelligenceCardProps) {
-  const hasData = data.pricing_model || data.pricing_tiers?.length || 
-                  data.has_free_trial !== undefined || data.has_free_plan !== undefined;
+export function PricingIntelligenceCard({ data, onExtract, isExtracting }: PricingIntelligenceCardProps) {
+  const fields = [
+    { key: 'pricing_model', label: 'Pricing Model', value: data?.pricing_model },
+    { key: 'pricing_tiers', label: 'Pricing Tiers', value: data?.pricing_tiers?.length },
+    { key: 'has_free_trial', label: 'Free Trial', value: data?.has_free_trial },
+    { key: 'has_free_plan', label: 'Free Plan', value: data?.has_free_plan },
+  ];
 
-  if (!hasData) {
+  const extractedCount = fields.filter(f => f.value).length;
+  const completeness = Math.round((extractedCount / fields.length) * 100);
+  const hasData = data?.pricing_model || data?.pricing_tiers?.length || data?.has_free_trial || data?.has_free_plan;
+
+  if (!data) {
     return (
-      <GlassCard className="p-8">
-        <div className="flex flex-col items-center justify-center text-center space-y-3">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <DollarSign className="h-8 w-8 text-primary/50" />
+      <GlassCard className="p-6">
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">Pricing Intelligence</h3>
+            </div>
+            <Badge variant="outline" className="gap-1">
+              <AlertCircle className="w-3 h-3" />
+              No Data
+            </Badge>
           </div>
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">No Pricing Intelligence</h3>
-            <p className="text-sm text-muted-foreground">
-              Pricing details will appear here after analysis
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              Extract pricing model, tiers, and trial options
             </p>
+            {onExtract && (
+              <Button onClick={onExtract} disabled={isExtracting} size="sm" variant="outline">
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Extracting...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Extract Data
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </GlassCard>
     );
   }
 
+  if (!hasData) {
+    return (
+      <GlassCard className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold">Pricing Intelligence</h3>
+          </div>
+          <Badge variant="outline" className="gap-1">
+            <AlertCircle className="w-3 h-3" />
+            0% Complete
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground text-center py-4">
+          No pricing data extracted. Try running extraction again.
+        </p>
+      </GlassCard>
+    );
+  }
+
   return (
     <GlassCard className="p-6">
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <DollarSign className="w-5 h-5 text-primary" />
-        Pricing Intelligence
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold">Pricing Intelligence</h3>
+        </div>
+        <Badge variant={completeness >= 75 ? "default" : completeness >= 50 ? "secondary" : "outline"} className="gap-1">
+          {completeness >= 75 ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+          {completeness}% Complete
+        </Badge>
+      </div>
       <div className="space-y-4">
         {data.pricing_model && (
           <div>

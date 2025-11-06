@@ -17,9 +17,7 @@ import {
   PricingIntelligenceCard, 
   ProductIntelligenceCard, 
   TargetMarketCard, 
-  SocialProofCard, 
-  CompetitiveDifferentiationCard,
-  MarketInsightsCard 
+  SocialProofCard
 } from './intelligence';
 import React from 'react';
 import { generateCompetitorSWOT } from '@/services/competitorSwotService';
@@ -474,28 +472,33 @@ export function CompetitorProfileDialog({
 
             {/* INTELLIGENCE TAB */}
             <TabsContent value="intelligence" className="m-0 p-6">
-              {localCompetitor.intelligenceData ? (
-                <div className="grid gap-6">
-                  <CompanyIntelligenceCard data={localCompetitor.intelligenceData} />
-                  <PricingIntelligenceCard data={localCompetitor.intelligenceData} />
-                  <ProductIntelligenceCard data={localCompetitor.intelligenceData} />
-                  <TargetMarketCard data={localCompetitor.intelligenceData} />
-                  <SocialProofCard data={localCompetitor.intelligenceData} />
-                  <CompetitiveDifferentiationCard data={localCompetitor.intelligenceData} />
-                  <MarketInsightsCard data={localCompetitor.intelligenceData} />
-                </div>
-              ) : (
-                <GlassCard className="p-12 text-center">
-                  <Shield className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Intelligence Data</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Enhanced intelligence data is not available for this competitor yet.
-                  </p>
-                  <Button variant="outline" onClick={() => onEdit(localCompetitor)}>
-                    Run Auto-Fill Analysis
-                  </Button>
-                </GlassCard>
-              )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <CompanyIntelligenceCard 
+                  data={localCompetitor.intelligenceData}
+                  onExtract={() => onEdit(localCompetitor)}
+                  isExtracting={isRefreshing}
+                />
+                <PricingIntelligenceCard 
+                  data={localCompetitor.intelligenceData}
+                  onExtract={() => onEdit(localCompetitor)}
+                  isExtracting={isRefreshing}
+                />
+                <ProductIntelligenceCard 
+                  data={localCompetitor.intelligenceData}
+                  onExtract={() => onEdit(localCompetitor)}
+                  isExtracting={isRefreshing}
+                />
+                <TargetMarketCard 
+                  data={localCompetitor.intelligenceData}
+                  onExtract={() => onEdit(localCompetitor)}
+                  isExtracting={isRefreshing}
+                />
+                <SocialProofCard 
+                  data={localCompetitor.intelligenceData}
+                  onExtract={() => onEdit(localCompetitor)}
+                  isExtracting={isRefreshing}
+                />
+              </div>
             </TabsContent>
 
             {/* SOLUTIONS TAB */}

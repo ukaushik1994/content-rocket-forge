@@ -1,28 +1,61 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
-import { Building2, MapPin, Calendar, TrendingUp, Users, Target } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Building2, MapPin, Calendar, TrendingUp, Users, Target, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
 
 interface CompanyIntelligenceCardProps {
-  data: CompetitorAutoFillPayload;
+  data?: CompetitorAutoFillPayload;
+  onExtract?: () => void;
+  isExtracting?: boolean;
 }
 
-export function CompanyIntelligenceCard({ data }: CompanyIntelligenceCardProps) {
-  const hasData = data.company_size || data.founded_year || data.headquarters || 
-                  data.funding_stage || data.employee_count || data.customer_count;
+export function CompanyIntelligenceCard({ data, onExtract, isExtracting }: CompanyIntelligenceCardProps) {
+  const fields = [
+    { key: 'company_size', label: 'Company Size', icon: Target, value: data?.company_size },
+    { key: 'founded_year', label: 'Founded', icon: Calendar, value: data?.founded_year },
+    { key: 'headquarters', label: 'Headquarters', icon: MapPin, value: data?.headquarters },
+    { key: 'funding_stage', label: 'Funding Stage', icon: TrendingUp, value: data?.funding_stage },
+    { key: 'employee_count', label: 'Employees', icon: Users, value: data?.employee_count },
+    { key: 'customer_count', label: 'Customers', icon: Target, value: data?.customer_count },
+  ];
 
-  if (!hasData) {
+  const extractedCount = fields.filter(f => f.value).length;
+  const completeness = Math.round((extractedCount / fields.length) * 100);
+
+  if (!data) {
     return (
-      <GlassCard className="p-8">
-        <div className="flex flex-col items-center justify-center text-center space-y-3">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Building2 className="h-8 w-8 text-primary/50" />
+      <GlassCard className="p-6">
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">Company Intelligence</h3>
+            </div>
+            <Badge variant="outline" className="gap-1">
+              <AlertCircle className="w-3 h-3" />
+              No Data
+            </Badge>
           </div>
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">No Company Intelligence</h3>
-            <p className="text-sm text-muted-foreground">
-              Run auto-fill to extract company details
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              Extract company facts like size, location, funding stage
             </p>
+            {onExtract && (
+              <Button onClick={onExtract} disabled={isExtracting} size="sm" variant="outline">
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Extracting...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Extract Data
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </GlassCard>
@@ -31,65 +64,34 @@ export function CompanyIntelligenceCard({ data }: CompanyIntelligenceCardProps) 
 
   return (
     <GlassCard className="p-6">
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <Building2 className="w-5 h-5 text-primary" />
-        Company Intelligence
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold">Company Intelligence</h3>
+        </div>
+        <Badge variant={completeness >= 75 ? "default" : completeness >= 50 ? "secondary" : "outline"} className="gap-1">
+          {completeness >= 75 ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+          {completeness}% Complete
+        </Badge>
+      </div>
       <div className="grid grid-cols-2 gap-4">
-        {data.company_size && (
-          <div className="space-y-1">
+        {fields.map(field => (
+          <div key={field.key} className="space-y-1">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Target className="w-3 h-3" />
-              Company Size
+              <field.icon className="w-3 h-3" />
+              {field.label}
             </p>
-            <Badge variant="secondary">{data.company_size} employees</Badge>
+            {field.value ? (
+              field.key === 'company_size' || field.key === 'funding_stage' ? (
+                <Badge variant="secondary">{field.value}</Badge>
+              ) : (
+                <p className="text-sm font-medium">{field.value}</p>
+              )
+            ) : (
+              <p className="text-xs text-muted-foreground italic">Not available</p>
+            )}
           </div>
-        )}
-        {data.founded_year && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              Founded
-            </p>
-            <p className="text-sm font-medium">{data.founded_year}</p>
-          </div>
-        )}
-        {data.headquarters && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              Headquarters
-            </p>
-            <p className="text-sm font-medium">{data.headquarters}</p>
-          </div>
-        )}
-        {data.funding_stage && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
-              Funding Stage
-            </p>
-            <Badge variant="outline">{data.funding_stage}</Badge>
-          </div>
-        )}
-        {data.employee_count && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Users className="w-3 h-3" />
-              Employees
-            </p>
-            <p className="text-sm font-medium">{data.employee_count}</p>
-          </div>
-        )}
-        {data.customer_count && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Target className="w-3 h-3" />
-              Customers
-            </p>
-            <p className="text-sm font-medium">{data.customer_count}</p>
-          </div>
-        )}
+        ))}
       </div>
     </GlassCard>
   );
