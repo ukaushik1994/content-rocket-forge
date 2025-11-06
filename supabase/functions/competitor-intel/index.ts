@@ -79,14 +79,21 @@ serve(async (req) => {
     console.log(`[competitor-intel] Max pages: ${maxPages}, Recrawl: ${recrawl}`);
 
     // Step 1: Discover competitor pages using enhanced SERP queries
-    const discoveredUrls = await discoverCompetitorPages(website);
-    console.log(`[competitor-intel] Discovered ${discoveredUrls.length} competitor pages`);
+    let discoveredUrls = await discoverCompetitorPages(website);
+    console.log(`[competitor-intel] Discovered ${discoveredUrls.length} competitor pages via SERP`);
+
+    // Step 1b: Fallback to direct URL crawling if SERP failed
+    if (discoveredUrls.length === 0) {
+      console.log(`[competitor-intel] ⚠️ SERP failed - switching to direct URL crawling fallback`);
+      discoveredUrls = await fallbackDirectCrawl(website);
+      console.log(`[competitor-intel] Fallback crawling found ${discoveredUrls.length} URLs`);
+    }
 
     if (discoveredUrls.length === 0) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "No competitor pages found. Please try entering information manually."
+          error: "Could not discover competitor pages. The website may be blocking automated access. Please try entering information manually."
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -200,6 +207,61 @@ serve(async (req) => {
 });
 
 /**
+ * Fallback direct URL crawling when SERP is unavailable
+ */
+async function fallbackDirectCrawl(website: string): Promise<string[]> {
+  console.log(`[competitor-intel] 🔧 Starting fallback direct URL crawling for ${website}`);
+  
+  const baseUrl = website.endsWith('/') ? website.slice(0, -1) : website;
+  const urlsToTry = [
+    baseUrl,
+    `${baseUrl}/about`,
+    `${baseUrl}/about-us`,
+    `${baseUrl}/company`,
+    `${baseUrl}/pricing`,
+    `${baseUrl}/plans`,
+    `${baseUrl}/features`,
+    `${baseUrl}/product`,
+    `${baseUrl}/products`,
+    `${baseUrl}/solutions`,
+    `${baseUrl}/customers`,
+    `${baseUrl}/case-studies`,
+    `${baseUrl}/testimonials`,
+    `${baseUrl}/integrations`,
+    `${baseUrl}/partners`,
+    `${baseUrl}/enterprise`,
+    `${baseUrl}/contact`,
+    `${baseUrl}/blog`
+  ];
+
+  const validUrls: string[] = [];
+
+  // Test each URL with a HEAD request to see if it exists
+  for (const url of urlsToTry) {
+    try {
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; CompetitorIntel/1.0)'
+        },
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      
+      if (response.ok) {
+        validUrls.push(url);
+        console.log(`[competitor-intel] ✅ Found valid URL: ${url}`);
+      }
+    } catch (error) {
+      // Silently skip failed URLs
+      continue;
+    }
+  }
+
+  console.log(`[competitor-intel] 📊 Direct crawl found ${validUrls.length} valid URLs`);
+  return validUrls;
+}
+
+/**
  * Enhanced competitor page discovery with more targeted queries
  */
 async function discoverCompetitorPages(website: string): Promise<string[]> {
@@ -244,9 +306,14 @@ async function discoverCompetitorPages(website: string): Promise<string[]> {
 
       const data = await response.json();
       
-      // Handle rate limits gracefully
+      // Handle rate limits gracefully - stop trying SERP and use fallback instead
       if (response.status === 429 || data.isRateLimited) {
-        console.warn(`⚠️ SERP rate limited for query: ${query}`);
+        console.warn(`⚠️ SERP rate limited - stopping SERP queries and will use fallback`);
+        break; // Exit the loop immediately instead of continuing
+      }
+
+      if (!response.ok) {
+        console.warn(`⚠️ SERP query failed (${response.status}): ${query}`);
         continue;
       }
 

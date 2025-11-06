@@ -265,38 +265,36 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
       return;
     }
 
+    const toastId = sonnerToast.loading('🔍 Extracting competitor intelligence...', {
+      description: 'This may take 30-60 seconds'
+    });
+
     try {
       console.log('🔄 Refreshing intelligence for competitor:', competitorId);
       const result = await autoFillFromWebsite(website, userId, competitorId);
 
       if (!result) {
-        sonnerToast.error('Failed to fetch intelligence data');
+        sonnerToast.error('Failed to extract intelligence data', { id: toastId });
         return;
       }
 
-      // Update the competitor with new intelligence data
-      const { error } = await supabase
-        .from('company_competitors')
-        .update({
-          description: result.profile.description,
-          market_position: result.profile.market_position,
-          strengths: result.profile.strengths,
-          weaknesses: result.profile.weaknesses,
-          resources: result.profile.resources,
-          notes: result.profile.notes,
-          intelligence_data: JSON.stringify(result.profile),
-          quality_metrics: JSON.stringify(result.diagnostics),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', competitorId);
-
-      if (error) throw error;
-
-      console.log('✅ Intelligence refreshed successfully');
+      // Edge function already saved the data to database, just reload
+      console.log('✅ Intelligence extracted successfully');
+      sonnerToast.success('✅ Intelligence extracted successfully', { 
+        id: toastId,
+        description: `Analyzed ${result.diagnostics?.pages_fetched || 0} pages`
+      });
+      
       await loadCompetitors();
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error refreshing intelligence:', error);
-      throw error;
+      
+      // Show specific error message to user
+      const errorMessage = error.message || 'Failed to extract intelligence';
+      sonnerToast.error('Extraction failed', { 
+        id: toastId,
+        description: errorMessage
+      });
     }
   };
 

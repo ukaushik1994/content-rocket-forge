@@ -1154,29 +1154,88 @@ async function analyzeSerpstackKeyword(apiKey: string, params: any) {
 
 async function searchSerpstack(apiKey: string, params: any) {
   try {
-    console.log('🔍 Searching with Serpstack:', params.q);
+    console.log('🔍 Searching with Serpstack:', params.query || params.q);
     
     const searchParams = new URLSearchParams({
       access_key: apiKey,
-      query: params.q || params.keyword,
-      num: (params.limit || 10).toString(),
+      query: params.query || params.q || params.keyword,
+      num: (params.num || params.limit || 10).toString(),
       gl: 'us',
       hl: 'en'
     });
 
+    console.log('📡 Making request to Serpstack API:', `https://api.serpstack.com/search?access_key=[REDACTED]&query=${params.query || params.q}&num=${params.num || params.limit || 10}`);
+    
     const response = await fetch(`https://api.serpstack.com/search?${searchParams}`);
+    
+    console.log('📊 Serpstack response status:', response.status);
+    
     const data = await response.json();
+    
+    console.log('📊 Serpstack response data:', JSON.stringify(data).substring(0, 500));
+    
+    // Check for rate limit errors specifically
+    if (response.status === 429 || (data.error && data.error.type === 'rate_limit_reached')) {
+      console.error('❌ Serpstack HTTP error response:', response.status, response.statusText);
+      console.error('💥 Serpstack API rate limit error:', data.error?.info);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          isRateLimited: true,
+          error: `Serpstack API error: ${data.error?.info || 'Rate limit exceeded'}`,
+          message: 'SERP API rate limit reached. Intelligence extraction will use fallback crawling method.',
+          canContinue: true
+        }),
+        { 
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
     
     if (!response.ok || data.success === false) {
       throw new Error(data.error?.info || 'Serpstack API request failed');
     }
 
+    // Transform results to consistent format
+    const results = data.organic_results?.map((r: any) => ({
+      url: r.url,
+      title: r.title,
+      snippet: r.snippet
+    })) || [];
+
+    console.log('✅ Serpstack API test successful');
+    
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ 
+        success: true,
+        results,
+        totalResults: data.search_information?.total_results || 0,
+        provider: 'serpstack'
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
-    console.error('💥 Serpstack search error:', error);
+    console.error('💥 Serpstack search exception:', error);
+    
+    // Check if error message contains rate limit info
+    if (error.message?.includes('rate limit') || error.message?.includes('exceeded')) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          isRateLimited: true,
+          error: `Serpstack API error: ${error.message}`,
+          message: 'SERP API rate limit reached. Intelligence extraction will use fallback crawling method.',
+          canContinue: true
+        }),
+        { 
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -1860,6 +1919,12 @@ async function testSerpstackApi(apiKey: string) {
     
     console.log('📊 Serpstack response status:', response.status);
     console.log('📊 Serpstack response data:', JSON.stringify(data, null, 2));
+    
+    // Handle rate limit errors specifically (429 or error code 106)
+    if (response.status === 429 || (data.error && (data.error.code === 106 || data.error.type === 'rate_limit_reached'))) {
+      console.error('❌ Serpstack API rate limit hit');
+      throw new Error(`Serpstack API error: ${data.error?.info || 'Rate limit exceeded. Please wait a few minutes or upgrade your plan.'}`);
+    }
     
     // Handle successful responses
     if (response.ok) {
