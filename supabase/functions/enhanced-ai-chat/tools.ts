@@ -153,6 +153,80 @@ export const TOOL_DEFINITIONS = [
         }
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_competitors",
+      description: "Fetch competitor profiles with market position, SWOT analysis, intelligence data, and overview. Use when user asks about competitors, competitive landscape, market analysis, competitor strengths/weaknesses, or competitive intelligence.",
+      parameters: {
+        type: "object",
+        properties: {
+          competitor_name: { 
+            type: "string",
+            description: "Filter by specific competitor name (case-insensitive partial match)"
+          },
+          market_position: { 
+            type: "string",
+            description: "Filter by market position (e.g., 'Market Leader', 'Challenger', 'Niche Player')"
+          },
+          include_intelligence: { 
+            type: "boolean",
+            default: true,
+            description: "Include intelligence_data, overview, swot_analysis fields (default: true)"
+          },
+          include_solutions: { 
+            type: "boolean",
+            default: false,
+            description: "Include nested competitor_solutions data (default: false)"
+          },
+          limit: { 
+            type: "number", 
+            default: 10,
+            description: "Number of competitors to return (default 10, max 50)"
+          }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_competitor_solutions",
+      description: "Fetch competitor products/services with features, pricing, positioning, and technical specs. Use when user asks about competitor offerings, product comparisons, feature analysis, competitor pricing, or technical specifications.",
+      parameters: {
+        type: "object",
+        properties: {
+          competitor_id: { 
+            type: "string",
+            description: "Filter by specific competitor UUID"
+          },
+          competitor_name: { 
+            type: "string",
+            description: "Filter by competitor name (case-insensitive partial match)"
+          },
+          category: { 
+            type: "string",
+            description: "Filter by product category (e.g., 'Software', 'Service', 'Platform')"
+          },
+          include_pricing: { 
+            type: "boolean",
+            default: true,
+            description: "Include pricing information (default: true)"
+          },
+          include_technical_specs: { 
+            type: "boolean",
+            default: true,
+            description: "Include technical specifications and integrations (default: true)"
+          },
+          limit: { 
+            type: "number", 
+            default: 10,
+            description: "Number of solutions to return (default 10, max 50)"
+          }
+        }
+      }
+    }
   }
 ];
 
@@ -269,6 +343,57 @@ export async function executeToolCall(
             return await serpQuery
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 5, 20));
+            
+          case 'get_competitors':
+            let compQuery = supabase
+              .from('company_competitors')
+              .select(`
+                id, name, website, description, logo_url, 
+                market_position, strengths, weaknesses, notes,
+                priority_order, last_analyzed_at,
+                ${toolArgs.include_intelligence !== false ? 'intelligence_data, overview, swot_analysis,' : ''}
+                ${toolArgs.include_solutions ? 'competitor_solutions (id, name, category, short_description, positioning, features, pricing),' : ''}
+                resources, quality_metrics, created_at
+              `)
+              .eq('user_id', userId);
+            
+            if (toolArgs.competitor_name) {
+              compQuery = compQuery.ilike('name', `%${toolArgs.competitor_name}%`);
+            }
+            if (toolArgs.market_position) {
+              compQuery = compQuery.eq('market_position', toolArgs.market_position);
+            }
+            
+            return await compQuery
+              .order('priority_order', { ascending: true })
+              .limit(Math.min(toolArgs.limit || 10, 50));
+            
+          case 'get_competitor_solutions':
+            let solQuery = supabase
+              .from('competitor_solutions')
+              .select(`
+                id, competitor_id, name, category, 
+                short_description, long_description, external_url, logo_url,
+                positioning, unique_value_propositions, key_differentiators,
+                features, use_cases, pain_points, target_audience, benefits,
+                ${toolArgs.include_pricing !== false ? 'pricing,' : ''}
+                ${toolArgs.include_technical_specs !== false ? 'technical_specs, integrations,' : ''}
+                case_studies, resources, tags, market_data,
+                last_analyzed_at, created_at,
+                company_competitors!competitor_solutions_competitor_id_fkey (name, website)
+              `)
+              .eq('user_id', userId);
+            
+            if (toolArgs.competitor_id) {
+              solQuery = solQuery.eq('competitor_id', toolArgs.competitor_id);
+            }
+            if (toolArgs.category) {
+              solQuery = solQuery.eq('category', toolArgs.category);
+            }
+            
+            return await solQuery
+              .order('created_at', { ascending: false })
+              .limit(Math.min(toolArgs.limit || 10, 50));
             
           default:
             throw new Error(`Unknown tool: ${toolName}`);

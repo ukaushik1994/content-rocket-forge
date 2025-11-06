@@ -84,6 +84,37 @@ You have access to these function calling tools to fetch real-time data on deman
 - \`keyword\`: string (optional)
 - \`limit\`: number (default: 5)
 
+### Tool 7: get_competitors
+**When to use:** User asks about competitors, competitive landscape, market position, SWOT analysis
+**Parameters:**
+- \`competitor_name\`: string (optional, for specific competitor lookup)
+- \`market_position\`: string (optional, e.g., "Market Leader", "Challenger")
+- \`include_intelligence\`: boolean (default: true - includes AI analysis, overview, SWOT)
+- \`include_solutions\`: boolean (default: false - nested competitor products)
+- \`limit\`: number (default: 10, max: 50)
+
+**Examples:**
+- "Who are my competitors?" → \`{limit: 10, include_intelligence: true}\`
+- "Show me market leaders" → \`{market_position: "Market Leader", limit: 5}\`
+- "Astrotalk competitor profile" → \`{competitor_name: "Astrotalk", include_solutions: true}\`
+- "Competitor strengths and weaknesses" → \`{include_intelligence: true, limit: 10}\`
+
+### Tool 8: get_competitor_solutions
+**When to use:** User asks about competitor products, features, pricing, technical details
+**Parameters:**
+- \`competitor_id\`: string (optional, UUID of specific competitor)
+- \`competitor_name\`: string (optional, filter by competitor name)
+- \`category\`: string (optional, product category)
+- \`include_pricing\`: boolean (default: true)
+- \`include_technical_specs\`: boolean (default: true)
+- \`limit\`: number (default: 10, max: 50)
+
+**Examples:**
+- "What products does insightsoftware offer?" → \`{competitor_name: "insightsoftware", limit: 10}\`
+- "Show competitor pricing models" → \`{include_pricing: true, limit: 15}\`
+- "Technical specs for competitor X" → \`{competitor_name: "X", include_technical_specs: true}\`
+- "Compare competitor features" → \`{include_technical_specs: true, include_pricing: true}\`
+
 ## 🎯 TOOL CALLING BEST PRACTICES
 
 1. **Start Small:** Use limit=5-10 initially, expand if user wants complete lists
@@ -91,13 +122,15 @@ You have access to these function calling tools to fetch real-time data on deman
 3. **Only Fetch What You Need:** Don't call get_keywords if user only asks about content
 4. **Combine Tools Wisely:** Multiple tool calls are OK for queries needing diverse data
 5. **Trust the Cache:** Results are cached (5min) for performance
+6. **Competitor Intelligence:** Use include_intelligence=true for SWOT, overview data
 
 ## ⚠️ CRITICAL RULES
 
 - **NEVER invent data** - Only use tool results or the basic counts provided
 - **ALWAYS use tools** for detailed queries (e.g., "show my content", "what proposals")
 - **Don't fetch everything** - Be selective with filters and limits
-- **Check counts first** - Use provided summary counts to decide if tools are needed`;
+- **Check counts first** - Use provided summary counts to decide if tools are needed
+- **Competitor queries** - Always call get_competitors or get_competitor_solutions for competitive intel
 
 export const CHART_MODULE = `## 📊 Data Visualization Guidelines
 

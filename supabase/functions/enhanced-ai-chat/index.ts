@@ -79,6 +79,18 @@ function detectChartRequest(query: string): { requested: boolean, type: string |
     }
   }
   
+  // Competitor-specific chart patterns
+  if (/competitor|competitive/i.test(lowerQuery)) {
+    if (/compare|comparison|vs|versus/i.test(lowerQuery)) {
+      console.log('📊🏆 Competitor COMPARISON chart detected');
+      return { requested: true, type: 'competitor_comparison', confidence: 0.85 };
+    }
+    if (/landscape|market|position/i.test(lowerQuery)) {
+      console.log('📊🌍 Market LANDSCAPE chart detected');
+      return { requested: true, type: 'market_overview', confidence: 0.8 };
+    }
+  }
+  
   // Implicit chart patterns (medium-high confidence)
   const implicitChartPatterns = [
     /\b(trend|trending|growth|decline|increase|decrease|over time|timeline|progression)/,
@@ -97,7 +109,7 @@ function detectChartRequest(query: string): { requested: boolean, type: string |
   }
   
   // DEFAULT: Any data query should return a chart
-  const dataKeywords = ['show', 'how many', 'what', 'analyze', 'data', 'metrics', 'stats', 'count', 'total', 'performance', 'content', 'keyword', 'solution', 'proposal'];
+  const dataKeywords = ['show', 'how many', 'what', 'analyze', 'data', 'metrics', 'stats', 'count', 'total', 'performance', 'content', 'keyword', 'solution', 'proposal', 'competitor'];
   const hasDataKeyword = dataKeywords.some(kw => lowerQuery.includes(kw));
   
   if (hasDataKeyword) {
@@ -595,6 +607,16 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId);
 
+    const { count: competitorCount } = await supabase
+      .from('company_competitors')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    const { count: competitorSolutionCount } = await supabase
+      .from('competitor_solutions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
     // Build minimal context string with basic stats
     const contextString = `
 ## Available Data Summary (${new Date().toISOString()}):
@@ -602,10 +624,12 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
 - **AI Strategy Proposals**: ${proposalCount || 0} total
 - **Keywords**: ${keywordCount || 0} researched
 - **Solutions/Products**: ${solutionCount || 0} defined
+- **Competitors**: ${competitorCount || 0} tracked
+- **Competitor Solutions**: ${competitorSolutionCount || 0} products analyzed
 
 ## How to Access Detailed Data:
 
-You have access to 6 powerful tools to fetch exactly the data you need:
+You have access to 8 powerful tools to fetch exactly the data you need:
 
 1. **get_content_items** - Fetch content with filters (status, SEO score, type)
 2. **get_keywords** - Fetch keyword data (volume, difficulty)
@@ -613,6 +637,8 @@ You have access to 6 powerful tools to fetch exactly the data you need:
 4. **get_solutions** - Fetch solutions/products
 5. **get_seo_scores** - Fetch SEO performance metrics
 6. **get_serp_analysis** - Fetch fresh SERP analysis data
+7. **get_competitors** - Fetch competitor profiles, SWOT, intelligence (NEW)
+8. **get_competitor_solutions** - Fetch competitor products, features, pricing (NEW)
 
 **CRITICAL INSTRUCTIONS:**
 - When user asks about specific data, USE TOOLS to fetch it
@@ -624,6 +650,10 @@ You have access to 6 powerful tools to fetch exactly the data you need:
 - User: "Show my best content" → Call get_content_items with min_seo_score=80, limit=5
 - User: "What proposals are available?" → Call get_proposals with status="available", limit=10
 - User: "Analyze keyword performance" → Call get_keywords with limit=20
+- User: "Who are my competitors?" → Call get_competitors with limit=10, include_intelligence=true
+- User: "What products does [competitor] offer?" → Call get_competitor_solutions with competitor_name="...", limit=10
+- User: "Show competitor SWOT analysis" → Call get_competitors with include_intelligence=true
+- User: "Compare competitor pricing" → Call get_competitor_solutions with include_pricing=true
 
 **Remember:** The counts above show total data available. Use tools to dive deeper when needed.
 `;
@@ -635,7 +665,9 @@ You have access to 6 powerful tools to fetch exactly the data you need:
         contentCount: contentCount || 0,
         proposalCount: proposalCount || 0,
         keywordCount: keywordCount || 0,
-        solutionCount: solutionCount || 0
+        solutionCount: solutionCount || 0,
+        competitorCount: competitorCount || 0,
+        competitorSolutionCount: competitorSolutionCount || 0
       }
     };
   } catch (error) {
