@@ -485,12 +485,15 @@ export function CompetitorProfileDialog({
                         Recommended Actions
                       </h3>
                       <ul className="space-y-3">
-                        {localCompetitor.overview.recommendedActions.map((action, idx) => (
-                          <li key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-                            <span className="text-green-500 font-bold">{idx + 1}.</span>
-                            <span className="text-sm flex-1">{action}</span>
-                          </li>
-                        ))}
+                        {localCompetitor.overview.recommendedActions.map((action, idx) => {
+                          const actionText = typeof action === 'string' ? action : action?.action || JSON.stringify(action);
+                          return (
+                            <li key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+                              <span className="text-green-500 font-bold">{idx + 1}.</span>
+                              <span className="text-sm flex-1">{actionText}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   </GlassCard>

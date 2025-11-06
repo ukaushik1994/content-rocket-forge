@@ -13,7 +13,7 @@ export interface CompetitorOverview {
     description: string;
     priority: 'high' | 'medium' | 'low';
   }>;
-  recommendedActions: string[];
+  recommendedActions: Array<string | { action: string; priority?: string }>;
   marketContext: string;
 }
 
