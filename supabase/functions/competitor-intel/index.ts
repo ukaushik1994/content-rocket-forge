@@ -343,7 +343,7 @@ Content: ${p.content.mainText.substring(0, 4000)}
 
 COMPETITOR: ${website}
 
-EXTRACTED CONTENT FROM ${validPages.length} PAGES:
+EXTRACTED CONTENT FROM ${pages.length} PAGES:
 ${pageTexts.join("\n\n---PAGE BREAK---\n\n")}
 
 TASK: Extract comprehensive, actionable competitive intelligence in the following JSON structure.
@@ -432,7 +432,9 @@ Return ONLY valid JSON in this exact format:
 }`;
 
   try {
-    console.log('[competitor-intel] Calling AI for enhanced competitive intelligence extraction');
+    console.log('[competitor-intel] 🤖 Calling AI for enhanced competitive intelligence extraction');
+    console.log('[competitor-intel] 📊 Prompt length:', prompt.length, 'chars');
+    console.log('[competitor-intel] 📄 Pages being analyzed:', pages.length);
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -455,14 +457,16 @@ Return ONLY valid JSON in this exact format:
     });
 
     if (!response.ok) {
-      console.error(`AI extraction failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[competitor-intel] ❌ AI extraction failed:', response.status, errorText);
       return createEnhancedFallbackProfile(website, pages);
     }
 
     const aiData = await response.json();
     const content = aiData.choices?.[0]?.message?.content || "{}";
     
-    console.log('[competitor-intel] AI response received, parsing...');
+    console.log('[competitor-intel] ✅ AI response received');
+    console.log('[competitor-intel] 📝 Raw AI content length:', content.length, 'chars');
     
     // Enhanced JSON extraction (handle markdown wrapping)
     let jsonStr = content;
@@ -476,7 +480,10 @@ Return ONLY valid JSON in this exact format:
       }
     }
     
+    console.log('[competitor-intel] 🔍 Parsing JSON...');
     const extracted = JSON.parse(jsonStr);
+    console.log('[competitor-intel] ✅ JSON parsed successfully');
+    console.log('[competitor-intel] 📊 Extracted fields:', Object.keys(extracted).length);
 
     // Build validated profile with all fields
     const profile: CompetitorProfile = {
@@ -538,7 +545,8 @@ Return ONLY valid JSON in this exact format:
     const qualityMetrics = calculateQualityMetrics(profile);
     
     console.log(`[competitor-intel] ✅ Successfully extracted competitive intelligence`);
-    console.log(`[competitor-intel] Quality: ${qualityMetrics.quality_rating} (${qualityMetrics.completeness_score}% complete)`);
+    console.log(`[competitor-intel] 🎯 Quality: ${qualityMetrics.quality_rating} (${qualityMetrics.completeness_score}% complete)`);
+    console.log(`[competitor-intel] 📊 Fields: ${qualityMetrics.fields_extracted} extracted, ${qualityMetrics.fields_missing?.length} missing`);
 
     const diagnostics = {
       used_sitemap: false,
@@ -550,7 +558,8 @@ Return ONLY valid JSON in this exact format:
     return { profile, diagnostics };
 
   } catch (error: any) {
-    console.error("[competitor-intel] AI extraction error:", error);
+    console.error('[competitor-intel] ❌ AI extraction error:', error);
+    console.error('[competitor-intel] 💥 Error stack:', error.stack);
     return createEnhancedFallbackProfile(website, pages);
   }
 }
@@ -613,62 +622,415 @@ function calculateQualityMetrics(profile: CompetitorProfile) {
 }
 
 /**
- * Create enhanced fallback profile with smarter defaults
+ * Enhanced fallback profile with better extraction
  */
 function createEnhancedFallbackProfile(
-  website: string, 
+  website: string,
   pages: Array<{ url: string; content: any }>
 ): {
   profile: CompetitorProfile;
   diagnostics: any;
 } {
-  console.log('[competitor-intel] Creating enhanced fallback profile');
+  console.log('[competitor-intel] 🔄 Creating enhanced fallback profile');
+  console.log('[competitor-intel] 📄 Processing', pages.length, 'pages for fallback');
   
-  // Extract basic info from page content
-  const allText = pages.map(p => p.content.mainText).join(' ');
-  const allHeadings = pages.flatMap(p => p.content.headings);
+  // Extract basic data from page metadata
+  const firstPage = pages[0];
+  const description = firstPage?.content?.metaDescription || 
+    firstPage?.content?.title || 
+    `Competitor website: ${website}`;
+
+  console.log('[competitor-intel] 📋 Extracted description:', description);
+
+  // Infer product categories from headings
+  const allHeadings = pages.flatMap(p => p.content?.headings || []);
+  const product_categories = inferCategories(allHeadings);
+  console.log('[competitor-intel] 🏷️ Inferred categories:', product_categories);
+
+  // Extract features from headings and content
+  const key_features = extractFeatures(pages, allHeadings);
+  console.log('[competitor-intel] ✨ Extracted features:', key_features.length);
+
+  // Detect pricing info with better inference
+  const pricingPage = pages.find(p => p.url.toLowerCase().includes('pricing'));
+  const pricing_model = inferPricingModel(pages, pricingPage);
+  const pricing_tiers = extractPricingTiers(pricingPage);
+  console.log('[competitor-intel] 💰 Pricing model:', pricing_model);
+  console.log('[competitor-intel] 📊 Pricing tiers:', pricing_tiers?.length || 0);
+
+  // Extract company info from About pages
+  const aboutPage = pages.find(p => 
+    p.url.toLowerCase().includes('about') || 
+    p.url.toLowerCase().includes('company')
+  );
+  const companyInfo = extractCompanyInfo(aboutPage);
+  console.log('[competitor-intel] 🏢 Company info extracted:', Object.keys(companyInfo).length, 'fields');
+
+  // Extract customers and social proof
+  const socialProof = extractSocialProof(pages);
+  console.log('[competitor-intel] 👥 Social proof:', Object.keys(socialProof).length, 'fields');
   
-  // Try to infer features from headings
-  const inferredFeatures = allHeadings
-    .filter(h => h.length < 100 && (h.toLowerCase().includes('feature') || h.toLowerCase().includes('capability')))
-    .slice(0, 5);
-  
-  // Categorize resources by URL
-  const resources = pages.slice(0, 5).map(p => {
-    const url = p.url.toLowerCase();
-    let category = 'other';
-    if (url.includes('/pricing')) category = 'pricing';
-    else if (url.includes('/feature')) category = 'features';
-    else if (url.includes('/case')) category = 'case_studies';
-    else if (url.includes('/doc')) category = 'documentation';
-    else if (url.includes('/about')) category = 'website';
+  // Categorize resources
+  const resources = pages.map(p => ({
+    title: p.content?.title || 'Untitled Page',
+    url: p.url,
+    category: categorizeUrl(p.url),
+    description: p.content?.metaDescription || undefined
+  }));
+
+  const profile: CompetitorProfile = {
+    description,
+    market_position: 'Unknown',
+    strengths: inferStrengths(pages, key_features, socialProof),
+    weaknesses: inferWeaknesses(pages),
+    resources,
+    notes: `## Fallback Extraction\nData extracted from ${pages.length} pages using metadata and content analysis (AI extraction unavailable).\n\n## Available Data\n- ${key_features.length} features identified\n- ${product_categories.length} product categories\n- ${resources.length} resources catalogued\n- Pricing: ${pricing_model}\n\n## Recommendation\nFor more comprehensive intelligence, ensure LOVABLE_API_KEY is configured and retry extraction.`,
     
-    return {
-      title: p.content.title || "Discovered Page",
-      url: p.url,
-      category,
-      description: p.content.metaDescription || undefined
-    };
-  });
+    // Company Intelligence
+    ...companyInfo,
+    
+    // Product Intelligence
+    product_categories: product_categories.length > 0 ? product_categories : undefined,
+    key_features: key_features.length > 0 ? key_features : undefined,
+    technology_stack: inferTechStack(pages),
+    deployment_options: inferDeploymentOptions(pages),
+    
+    // Pricing Intelligence
+    pricing_model,
+    pricing_tiers: pricing_tiers && pricing_tiers.length > 0 ? pricing_tiers : undefined,
+    has_free_trial: detectFreeTrial(pages),
+    has_free_plan: detectFreePlan(pages),
+    
+    // Social Proof
+    ...socialProof,
+    
+    // Target Market
+    target_industries: inferIndustries(pages),
+    primary_use_cases: inferUseCases(allHeadings)
+  };
+
+  const completenessScore = calculateCompletenessScore(profile);
+  const qualityRating = determineQualityRating(profile);
   
+  console.log('[competitor-intel] ✅ Fallback profile complete');
+  console.log('[competitor-intel] 🎯 Completeness:', completenessScore + '%');
+  console.log('[competitor-intel] ⭐ Quality:', qualityRating);
+
   return {
-    profile: {
-      description: `Competitive analysis in progress for ${website}. AI extraction unavailable - basic information extracted from ${pages.length} pages.`,
-      market_position: "Unknown",
-      strengths: [],
-      weaknesses: [],
-      resources,
-      notes: "## Data Collection Status\n\nAI extraction was unavailable. Please review the discovered pages and add detailed competitive intelligence manually.\n\n## Discovered Resources\n\nSuccessfully discovered and extracted content from " + pages.length + " pages. Review the resources section for available pages.",
-      key_features: inferredFeatures.length > 0 ? inferredFeatures : undefined
-    },
+    profile,
     diagnostics: {
-      used_sitemap: false,
       ai_calls: 0,
       cache_hit: false,
-      completeness_score: 20,
-      confidence_score: 30,
-      fields_extracted: 4,
-      quality_rating: 'poor' as const
+      completeness_score: completenessScore,
+      confidence_score: 0.5,
+      fields_extracted: Object.keys(profile).filter(k => profile[k as keyof CompetitorProfile] != null).length,
+      quality_rating: qualityRating,
+      pricing_found: Boolean(pricing_model && pricing_model !== 'Unknown'),
+      quantitative_data_found: Boolean(companyInfo.employee_count || companyInfo.customer_count),
+      used_sitemap: false
     }
   };
+}
+
+// ============= HELPER FUNCTIONS FOR FALLBACK =============
+
+function inferCategories(headings: string[]): string[] {
+  const categories = new Set<string>();
+  const categoryKeywords = {
+    'CRM': ['crm', 'customer relationship'],
+    'Analytics': ['analytics', 'reporting', 'insights', 'data'],
+    'Marketing': ['marketing', 'campaigns', 'email'],
+    'Sales': ['sales', 'pipeline', 'deals'],
+    'Support': ['support', 'helpdesk', 'ticketing'],
+    'Project Management': ['project', 'task', 'collaboration'],
+    'Communication': ['chat', 'messaging', 'video']
+  };
+
+  for (const heading of headings) {
+    const lower = heading.toLowerCase();
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+      if (keywords.some(kw => lower.includes(kw))) {
+        categories.add(category);
+      }
+    }
+  }
+  
+  return Array.from(categories).slice(0, 5);
+}
+
+function extractFeatures(pages: Array<{ url: string; content: any }>, allHeadings: string[]): string[] {
+  const features = new Set<string>();
+  
+  // From headings
+  allHeadings
+    .filter(h => h.length < 100 && (
+      h.toLowerCase().includes('feature') || 
+      h.toLowerCase().includes('capability') ||
+      h.toLowerCase().includes('benefit')
+    ))
+    .forEach(h => features.add(h));
+  
+  // From feature page content
+  const featurePage = pages.find(p => p.url.toLowerCase().includes('feature'));
+  if (featurePage) {
+    featurePage.content.headings
+      .filter((h: string) => h.length > 10 && h.length < 100)
+      .slice(0, 10)
+      .forEach((h: string) => features.add(h));
+  }
+  
+  return Array.from(features).slice(0, 10);
+}
+
+function inferPricingModel(pages: Array<{ url: string; content: any }>, pricingPage?: { url: string; content: any }): string {
+  if (!pricingPage) return 'Unknown';
+  
+  const content = pricingPage.content.mainText.toLowerCase();
+  
+  if (content.includes('per user') || content.includes('per seat')) return 'Per-Seat';
+  if (content.includes('free') && content.includes('premium')) return 'Freemium';
+  if (content.includes('usage') || content.includes('pay as you go')) return 'Usage-Based';
+  if (content.includes('tier') || content.includes('plan')) return 'Tiered';
+  if (content.includes('subscription') || content.includes('/month')) return 'Subscription';
+  if (content.includes('enterprise') || content.includes('contact')) return 'Enterprise';
+  
+  return 'Subscription'; // default guess
+}
+
+function extractPricingTiers(pricingPage?: { url: string; content: any }): Array<{ name: string; price?: string; features?: string[] }> | undefined {
+  if (!pricingPage) return undefined;
+  
+  const tiers: Array<{ name: string; price?: string; features?: string[] }> = [];
+  const headings = pricingPage.content.headings;
+  const content = pricingPage.content.mainText;
+  
+  // Look for common tier names
+  const tierNames = ['free', 'starter', 'basic', 'professional', 'pro', 'business', 'enterprise', 'premium'];
+  
+  for (const heading of headings) {
+    const lower = heading.toLowerCase();
+    if (tierNames.some(name => lower.includes(name))) {
+      // Try to extract price from nearby content
+      const priceMatch = content.match(/\$\d+(?:\.\d{2})?(?:\/month|\/mo|\/year)?/i);
+      tiers.push({
+        name: heading,
+        price: priceMatch ? priceMatch[0] : undefined
+      });
+    }
+  }
+  
+  return tiers.length > 0 ? tiers.slice(0, 5) : undefined;
+}
+
+function extractCompanyInfo(aboutPage?: { url: string; content: any }): Partial<CompetitorProfile> {
+  if (!aboutPage) return {};
+  
+  const content = aboutPage.content.mainText;
+  const info: Partial<CompetitorProfile> = {};
+  
+  // Try to find founding year
+  const yearMatch = content.match(/founded in (\d{4})|since (\d{4})|established (\d{4})/i);
+  if (yearMatch) {
+    info.founded_year = yearMatch[1] || yearMatch[2] || yearMatch[3];
+  }
+  
+  // Try to find headquarters
+  const hqMatch = content.match(/based in ([A-Z][a-z]+(?:,?\s+[A-Z][a-z]+)*)|headquarters in ([A-Z][a-z]+(?:,?\s+[A-Z][a-z]+)*)/i);
+  if (hqMatch) {
+    info.headquarters = hqMatch[1] || hqMatch[2];
+  }
+  
+  // Try to find employee count
+  const empMatch = content.match(/(\d+[\+]?)\s+employees?/i);
+  if (empMatch) {
+    info.employee_count = empMatch[1] + ' employees';
+  }
+  
+  // Try to find customer count
+  const custMatch = content.match(/(\d+[,\d]*[\+]?)\s+(?:customers?|clients?|users?)/i);
+  if (custMatch) {
+    info.customer_count = custMatch[1] + ' customers';
+  }
+  
+  return info;
+}
+
+function extractSocialProof(pages: Array<{ url: string; content: any }>): Partial<CompetitorProfile> {
+  const proof: Partial<CompetitorProfile> = {};
+  
+  // Look for customer logos/names
+  const customers = new Set<string>();
+  for (const page of pages) {
+    const content = page.content.mainText.toLowerCase();
+    
+    // Common indicators
+    if (content.includes('trusted by') || content.includes('used by')) {
+      // Try to extract company names (simplified)
+      const matches = page.content.mainText.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g);
+      if (matches) {
+        matches.slice(0, 5).forEach((m: string) => customers.add(m));
+      }
+    }
+  }
+  
+  if (customers.size > 0) {
+    proof.notable_customers = Array.from(customers).slice(0, 10);
+  }
+  
+  // Count case studies
+  const caseStudyPages = pages.filter(p => 
+    p.url.toLowerCase().includes('case') || 
+    p.url.toLowerCase().includes('customer') ||
+    p.content.title.toLowerCase().includes('case study')
+  );
+  if (caseStudyPages.length > 0) {
+    proof.case_study_count = caseStudyPages.length;
+  }
+  
+  return proof;
+}
+
+function inferStrengths(pages: Array<{ url: string; content: any }>, features: string[], socialProof: Partial<CompetitorProfile>): string[] {
+  const strengths: string[] = [];
+  
+  if (features.length >= 5) {
+    strengths.push(`Comprehensive feature set with ${features.length}+ capabilities identified`);
+  }
+  
+  if (socialProof.notable_customers && socialProof.notable_customers.length > 0) {
+    strengths.push(`Established customer base with ${socialProof.notable_customers.length}+ notable clients`);
+  }
+  
+  if (socialProof.case_study_count && socialProof.case_study_count >= 3) {
+    strengths.push(`Strong social proof with ${socialProof.case_study_count}+ case studies published`);
+  }
+  
+  // Check for security/compliance mentions
+  const allContent = pages.map(p => p.content.mainText.toLowerCase()).join(' ');
+  if (allContent.includes('soc 2') || allContent.includes('iso') || allContent.includes('gdpr')) {
+    strengths.push('Security and compliance certifications mentioned');
+  }
+  
+  if (allContent.includes('api') || allContent.includes('integration')) {
+    strengths.push('Integration capabilities and API access available');
+  }
+  
+  return strengths;
+}
+
+function inferWeaknesses(pages: Array<{ url: string; content: any }>): string[] {
+  const weaknesses: string[] = [];
+  const allUrls = pages.map(p => p.url.toLowerCase());
+  const allContent = pages.map(p => p.content.mainText.toLowerCase()).join(' ');
+  
+  // Check for missing common pages
+  if (!allUrls.some(u => u.includes('pricing'))) {
+    weaknesses.push('Pricing information not readily available on website');
+  }
+  
+  if (!allUrls.some(u => u.includes('doc') || u.includes('api'))) {
+    weaknesses.push('Limited public documentation or API resources');
+  }
+  
+  if (!allContent.includes('mobile') && !allContent.includes('ios') && !allContent.includes('android')) {
+    weaknesses.push('No mobile app mentioned in available content');
+  }
+  
+  return weaknesses;
+}
+
+function inferTechStack(pages: Array<{ url: string; content: any }>): string[] | undefined {
+  const stack = new Set<string>();
+  const techKeywords = ['react', 'vue', 'angular', 'node', 'python', 'aws', 'azure', 'gcp', 'kubernetes', 'docker'];
+  
+  for (const page of pages) {
+    const content = page.content.mainText.toLowerCase();
+    for (const tech of techKeywords) {
+      if (content.includes(tech)) {
+        stack.add(tech.charAt(0).toUpperCase() + tech.slice(1));
+      }
+    }
+  }
+  
+  return stack.size > 0 ? Array.from(stack) : undefined;
+}
+
+function inferDeploymentOptions(pages: Array<{ url: string; content: any }>): string[] | undefined {
+  const options = new Set<string>();
+  const allContent = pages.map(p => p.content.mainText.toLowerCase()).join(' ');
+  
+  if (allContent.includes('cloud') || allContent.includes('saas')) options.add('Cloud');
+  if (allContent.includes('on-premise') || allContent.includes('on premise') || allContent.includes('self-hosted')) options.add('On-Premise');
+  if (allContent.includes('hybrid')) options.add('Hybrid');
+  
+  return options.size > 0 ? Array.from(options) : undefined;
+}
+
+function detectFreeTrial(pages: Array<{ url: string; content: any }>): boolean | undefined {
+  const allContent = pages.map(p => p.content.mainText.toLowerCase()).join(' ');
+  if (allContent.includes('free trial') || allContent.includes('try free')) return true;
+  return undefined;
+}
+
+function detectFreePlan(pages: Array<{ url: string; content: any }>): boolean | undefined {
+  const allContent = pages.map(p => p.content.mainText.toLowerCase()).join(' ');
+  if (allContent.includes('free plan') || allContent.includes('free forever') || allContent.includes('free tier')) return true;
+  return undefined;
+}
+
+function inferIndustries(pages: Array<{ url: string; content: any }>): string[] | undefined {
+  const industries = new Set<string>();
+  const industryKeywords = ['healthcare', 'finance', 'retail', 'education', 'manufacturing', 'technology', 'ecommerce', 'real estate'];
+  
+  const allContent = pages.map(p => p.content.mainText.toLowerCase()).join(' ');
+  
+  for (const industry of industryKeywords) {
+    if (allContent.includes(industry)) {
+      industries.add(industry.charAt(0).toUpperCase() + industry.slice(1));
+    }
+  }
+  
+  return industries.size > 0 ? Array.from(industries) : undefined;
+}
+
+function inferUseCases(headings: string[]): string[] | undefined {
+  const useCases = new Set<string>();
+  
+  for (const heading of headings) {
+    const lower = heading.toLowerCase();
+    if (lower.includes('use case') || lower.includes('solution') || lower.includes('for ')) {
+      useCases.add(heading);
+    }
+  }
+  
+  return useCases.size > 0 ? Array.from(useCases).slice(0, 5) : undefined;
+}
+
+function categorizeUrl(url: string): string {
+  const lower = url.toLowerCase();
+  if (lower.includes('pricing')) return 'pricing';
+  if (lower.includes('feature')) return 'features';
+  if (lower.includes('case') || lower.includes('customer') || lower.includes('testimonial')) return 'case_studies';
+  if (lower.includes('doc') || lower.includes('api') || lower.includes('developer')) return 'documentation';
+  if (lower.includes('about') || lower.includes('company')) return 'website';
+  if (lower.includes('blog') || lower.includes('news')) return 'marketing';
+  if (lower.includes('compare') || lower.includes('vs') || lower.includes('alternative')) return 'comparison';
+  if (lower.includes('linkedin') || lower.includes('twitter') || lower.includes('facebook')) return 'social_media';
+  return 'other';
+}
+
+function calculateCompletenessScore(profile: CompetitorProfile): number {
+  const fields = Object.keys(profile).filter(k => {
+    const val = profile[k as keyof CompetitorProfile];
+    return val !== undefined && val !== null && val !== 'Unknown' && (!Array.isArray(val) || val.length > 0);
+  });
+  return Math.round((fields.length / 35) * 100); // 35 total possible fields
+}
+
+function determineQualityRating(profile: CompetitorProfile): 'excellent' | 'good' | 'fair' | 'poor' {
+  const score = calculateCompletenessScore(profile);
+  if (score >= 75) return 'excellent';
+  if (score >= 60) return 'good';
+  if (score >= 40) return 'fair';
+  return 'poor';
 }
