@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { GlassCard } from '@/components/ui/GlassCard';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,15 +8,12 @@ import {
   ExternalLink,
   Globe,
   FileText,
-  DollarSign,
   Loader2,
   Eye,
   CheckCircle2,
   AlertCircle,
-  FileCode,
-  BookOpen,
-  MoreVertical,
-  StickyNote
+  StickyNote,
+  Bookmark
 } from 'lucide-react';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
 import { cn } from '@/lib/utils';
@@ -41,27 +38,9 @@ const calculateCompleteness = (competitor: CompanyCompetitor): number => {
   return Math.round((filledFields / fields.length) * 100);
 };
 
-const getCompletenessColor = (percentage: number): string => {
-  if (percentage >= 75) return 'from-success/20 to-success/5 border-success/30';
-  if (percentage >= 60) return 'from-primary/20 to-primary/5 border-primary/30';
-  if (percentage >= 40) return 'from-warning/20 to-warning/5 border-warning/30';
-  return 'from-destructive/20 to-destructive/5 border-destructive/30';
-};
-
 const getCompletenessIcon = (percentage: number) => {
-  if (percentage >= 75) return <CheckCircle2 className="h-4 w-4 text-success" />;
-  return <AlertCircle className="h-4 w-4 text-warning" />;
-};
-
-const getCategoryIcon = (category: string) => {
-  const iconMap: Record<string, React.ReactNode> = {
-    website: <Globe className="h-4 w-4" />,
-    pricing: <DollarSign className="h-4 w-4" />,
-    documentation: <BookOpen className="h-4 w-4" />,
-    features: <FileCode className="h-4 w-4" />,
-    default: <FileText className="h-4 w-4" />
-  };
-  return iconMap[category] || iconMap.default;
+  if (percentage >= 75) return <CheckCircle2 className="h-3.5 w-3.5" />;
+  return <AlertCircle className="h-3.5 w-3.5" />;
 };
 
 const getDomain = (url: string): string => {
@@ -82,19 +61,15 @@ interface CompetitorCardProps {
 
 export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFilling = false }: CompetitorCardProps) {
   const completeness = calculateCompleteness(competitor);
-  const completenessGradient = getCompletenessColor(completeness);
-  const visibleResources = competitor.resources.slice(0, 3);
-  const remainingCount = competitor.resources.length - 3;
   
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.2 }}
       className="h-full"
     >
-      <GlassCard className={cn(
-        "group relative h-full flex flex-col overflow-hidden transition-all duration-300",
-        "hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30",
+      <Card className={cn(
+        "overflow-hidden transition-all duration-300 hover:shadow-neon border border-white/10 bg-glass h-full flex flex-col",
         isAutoFilling && "animate-pulse border-primary/50"
       )}>
         {/* Auto-fill loading overlay */}
@@ -109,167 +84,199 @@ export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFill
           </div>
         )}
         
-        {/* Completeness indicator - Top Right */}
-        {!isAutoFilling && (
-          <div className="absolute top-3 right-3 z-10">
-            <div className={cn(
-              "px-3 py-1.5 rounded-full border backdrop-blur-md",
-              "bg-gradient-to-br shadow-sm",
-              "flex items-center gap-1.5 text-xs font-semibold transition-all duration-300",
-              "hover:scale-105",
-              completenessGradient
-            )}>
-              {getCompletenessIcon(completeness)}
-              <span>{completeness}%</span>
-            </div>
-          </div>
-        )}
-        
-        {/* Header Section */}
-        <div className="p-5 pb-4 space-y-3">
-          <div className="flex items-start gap-3">
-            {competitor.logoUrl ? (
-              <div className="relative">
+        {/* Header with gradient background */}
+        <CardHeader className="bg-gradient-to-br from-neon-purple/20 to-transparent">
+          <div className="flex items-center justify-between">
+            {/* Left: Logo + Title */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {competitor.logoUrl ? (
                 <img 
                   src={competitor.logoUrl} 
                   alt={`${competitor.name} logo`}
-                  className="w-14 h-14 rounded-xl object-contain bg-background/50 p-2.5 border border-border/50 shadow-sm"
+                  className="w-12 h-12 rounded-lg object-contain bg-background/50 p-2 border border-border/50"
                 />
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-transparent flex items-center justify-center border border-primary/20">
+                  <Building2 className="h-6 w-6 text-primary" />
+                </div>
+              )}
+              
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-gradient text-xl mb-1">
+                  {competitor.name}
+                </CardTitle>
+                {competitor.marketPosition && (
+                  <Badge variant="outline" className="text-xs">
+                    {competitor.marketPosition}
+                  </Badge>
+                )}
               </div>
-            ) : (
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center border border-primary/20">
-                <Building2 className="h-7 w-7 text-primary" />
-              </div>
-            )}
+            </div>
             
-            <div className="flex-1 min-w-0 pt-0.5">
-              <h3 className="text-lg font-semibold mb-1.5 text-gradient group-hover:opacity-90 transition-opacity">
-                {competitor.name}
-              </h3>
-              {competitor.marketPosition && (
-                <Badge variant="outline" className="text-xs font-medium">
-                  {competitor.marketPosition}
+            {/* Right: Completeness Badge + Bookmark */}
+            <div className="flex items-center gap-2">
+              {!isAutoFilling && (
+                <Badge className={cn(
+                  "px-2 py-1 text-xs font-semibold",
+                  completeness >= 75 ? "bg-success/20 text-success border-success/30" :
+                  completeness >= 60 ? "bg-primary/20 text-primary border-primary/30" :
+                  "bg-warning/20 text-warning border-warning/30"
+                )}>
+                  {getCompletenessIcon(completeness)}
+                  {completeness}%
                 </Badge>
               )}
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Bookmark className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-
-          {/* Website Link */}
+          
+          {/* Website link in header */}
           {competitor.website && (
-            <a
-              href={competitor.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors group/link w-fit"
-            >
-              <Globe className="h-4 w-4" />
-              <span className="font-medium underline-offset-4 group-hover/link:underline">
-                {getDomain(competitor.website)}
-              </span>
-              <ExternalLink className="h-3 w-3 opacity-50" />
-            </a>
+            <div className="mt-2 pt-2 border-t border-white/5">
+              <a
+                href={competitor.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors w-fit"
+              >
+                <Globe className="h-3.5 w-3.5" />
+                <span className="font-medium">{getDomain(competitor.website)}</span>
+                <ExternalLink className="h-3 w-3 opacity-50" />
+              </a>
+            </div>
           )}
-        </div>
+        </CardHeader>
 
-        {/* Description Section */}
-        <div className="px-5 pb-4">
+        {/* Content with badge-based sections */}
+        <CardContent className="pt-4 grid gap-4 flex-1">
+          {/* Description */}
           {competitor.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
               {competitor.description}
             </p>
           )}
-        </div>
-        
-        {/* Resources Section */}
-        {competitor.resources.length > 0 && (
-          <div className="px-5 pb-4 space-y-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-              <FileText className="h-3.5 w-3.5" />
-              Resources
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {visibleResources.map((resource, idx) => (
-                <a
-                  key={idx}
-                  href={resource.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg",
-                    "bg-background/50 border border-border/50",
-                    "hover:bg-primary/10 hover:border-primary/30 hover:shadow-sm",
-                    "transition-all duration-200 group/resource",
-                    "text-xs font-medium truncate"
-                  )}
-                >
-                  <span className="text-primary group-hover/resource:scale-110 transition-transform">
-                    {getCategoryIcon(resource.category)}
-                  </span>
-                  <span className="truncate flex-1">{resource.title}</span>
-                  <ExternalLink className="h-3 w-3 opacity-0 group-hover/resource:opacity-50 transition-opacity" />
-                </a>
-              ))}
-              {remainingCount > 0 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewProfile(competitor);
-                  }}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg",
-                    "bg-muted/30 border border-dashed border-border/50",
-                    "hover:bg-muted/50 hover:border-border",
-                    "transition-all duration-200",
-                    "text-xs font-medium text-muted-foreground"
-                  )}
-                >
-                  +{remainingCount} more
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Footer Section */}
-        <div className="mt-auto pt-4 px-5 pb-5 border-t border-border/30 bg-gradient-to-b from-transparent to-muted/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <FileText className="h-3.5 w-3.5" />
-                <span className="font-medium">{competitor.resources.length} resources</span>
+          
+          {/* Strengths */}
+          {competitor.strengths.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-muted-foreground">Strengths</h4>
+              <div className="flex flex-wrap gap-2">
+                {competitor.strengths.slice(0, 3).map((strength, i) => (
+                  <Badge key={i} variant="outline" className="border-neon-purple/30 text-foreground">
+                    {strength}
+                  </Badge>
+                ))}
+                {competitor.strengths.length > 3 && (
+                  <Badge variant="outline" className="border-neon-purple/30 text-muted-foreground">
+                    +{competitor.strengths.length - 3} more
+                  </Badge>
+                )}
               </div>
-              
+            </div>
+          )}
+          
+          {/* Weaknesses */}
+          {competitor.weaknesses.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-muted-foreground">Weaknesses</h4>
+              <div className="flex flex-wrap gap-2">
+                {competitor.weaknesses.slice(0, 3).map((weakness, i) => (
+                  <Badge key={i} variant="outline" className="border-neon-blue/30 text-foreground">
+                    {weakness}
+                  </Badge>
+                ))}
+                {competitor.weaknesses.length > 3 && (
+                  <Badge variant="outline" className="border-neon-blue/30 text-muted-foreground">
+                    +{competitor.weaknesses.length - 3} more
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Key Features */}
+          {competitor.intelligenceData?.key_features && competitor.intelligenceData.key_features.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-muted-foreground">Key Features</h4>
+              <div className="flex flex-wrap gap-2">
+                {competitor.intelligenceData.key_features.slice(0, 4).map((feature, i) => (
+                  <Badge key={i} className="bg-green-500/10 text-green-500 border-green-500/30">
+                    {feature}
+                  </Badge>
+                ))}
+                {competitor.intelligenceData.key_features.length > 4 && (
+                  <Badge className="bg-green-500/10 text-green-500 border-green-500/30">
+                    +{competitor.intelligenceData.key_features.length - 4} more
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Target Industries */}
+          {competitor.intelligenceData?.target_industries && competitor.intelligenceData.target_industries.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-muted-foreground">Target Industries</h4>
+              <div className="flex flex-wrap gap-2">
+                {competitor.intelligenceData.target_industries.slice(0, 3).map((industry, i) => (
+                  <Badge key={i} variant="secondary" className="bg-secondary/60">
+                    {industry}
+                  </Badge>
+                ))}
+                {competitor.intelligenceData.target_industries.length > 3 && (
+                  <Badge variant="secondary" className="bg-secondary/60">
+                    +{competitor.intelligenceData.target_industries.length - 3} more
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Resources - Simplified to count indicator */}
+          {competitor.resources.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+              <FileText className="h-3.5 w-3.5" />
+              <span>{competitor.resources.length} resources available</span>
               {competitor.notes && (
-                <div className="flex items-center gap-1.5 text-primary">
-                  <StickyNote className="h-3.5 w-3.5" />
-                  <span className="font-medium">Has notes</span>
-                </div>
+                <>
+                  <span className="text-primary">•</span>
+                  <StickyNote className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-primary">Has notes</span>
+                </>
               )}
             </div>
-            
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onViewProfile(competitor)}
-                className="h-8 px-3 hover:bg-primary/10 hover:text-primary transition-all duration-200"
-              >
-                <Eye className="h-4 w-4 mr-1.5" />
-                View
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(competitor.id)}
-                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </div>
+          )}
+        </CardContent>
+
+        {/* Footer with gradient button */}
+        <CardFooter className="flex justify-between border-t border-white/10 pt-4">
+          {/* Left: Company Info */}
+          <div className="flex items-center gap-2">
+            {competitor.intelligenceData?.company_size && (
+              <Badge variant="outline" className="text-xs">
+                {competitor.intelligenceData.company_size}
+              </Badge>
+            )}
+            {competitor.intelligenceData?.pricing_model && (
+              <Badge variant="outline" className="text-xs">
+                {competitor.intelligenceData.pricing_model}
+              </Badge>
+            )}
           </div>
-        </div>
-      </GlassCard>
+          
+          {/* Right: Action Button */}
+          <Button 
+            size="sm" 
+            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+            onClick={() => onViewProfile(competitor)}
+          >
+            <Eye className="h-4 w-4 mr-1.5" />
+            View Profile
+          </Button>
+        </CardFooter>
+      </Card>
     </motion.div>
   );
 }
