@@ -30,6 +30,7 @@ import { CompetitorProfileDialog } from './CompetitorProfileDialog';
 import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
 import { autoFillFromWebsite } from '@/services/competitorIntelService';
 import { toast as sonnerToast } from 'sonner';
+import { CompetitorIntelligenceHeader } from './CompetitorIntelligenceHeader';
 
 const categoryIcons = {
   website: Globe,
@@ -56,6 +57,7 @@ interface CompetitorSectionProps {
 export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) => {
   const [competitors, setCompetitors] = useState<CompanyCompetitor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Dialog state management
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -70,6 +72,13 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
   const [pendingCompetitor, setPendingCompetitor] = useState<{name: string, website: string} | null>(null);
   
   const { toast } = useToast();
+
+  // Filter competitors based on search term
+  const filteredCompetitors = competitors.filter(comp =>
+    comp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    comp.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    comp.marketPosition?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Form state
   const [formData, setFormData] = useState<{
@@ -447,22 +456,16 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className="glass-panel p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <Building2 className="h-6 w-6 text-primary" />
-            <div>
-              <h3 className="text-xl font-semibold">Competitor Intelligence</h3>
-              <p className="text-muted-foreground">Track and analyze your main competitors</p>
-            </div>
-          </div>
-          <Button onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Competitor
-          </Button>
+      <CompetitorIntelligenceHeader
+        competitorCount={competitors.length}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onAddCompetitor={() => setAddDialogOpen(true)}
+      />
 
-          {/* Edit Competitor Dialog (Traditional Form) */}
-          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Card className="glass-panel p-6">
+        {/* Edit Competitor Dialog (Traditional Form) */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogContent className="glass-panel max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Competitor</DialogTitle>
@@ -694,25 +697,31 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
         onRefreshIntelligence={handleRefreshIntelligence}
       />
           )}
-        </div>
 
-        {competitors.length === 0 ? (
+        {filteredCompetitors.length === 0 ? (
           <div className="text-center py-12 bg-gradient-to-br from-background to-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/20">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
               <Building2 className="h-8 w-8 text-primary" />
             </div>
-            <h4 className="text-lg font-semibold text-foreground mb-2">No competitors added yet</h4>
+            <h4 className="text-lg font-semibold text-foreground mb-2">
+              {searchTerm ? 'No competitors match your search' : 'No competitors added yet'}
+            </h4>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Start tracking your competition to gain valuable market insights and stay ahead of industry trends
+              {searchTerm 
+                ? 'Try adjusting your search terms or filters'
+                : 'Start tracking your competition to gain valuable market insights and stay ahead of industry trends'
+              }
             </p>
-            <Button onClick={() => setAddDialogOpen(true)} className="shadow-lg">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Competitor
-            </Button>
+            {!searchTerm && (
+              <Button onClick={() => setAddDialogOpen(true)} className="shadow-lg">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Competitor
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {competitors.map((competitor, index) => (
+            {filteredCompetitors.map((competitor, index) => (
               <motion.div
                 key={competitor.id}
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
