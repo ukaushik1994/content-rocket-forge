@@ -16,6 +16,7 @@ import {
   Bookmark,
   Target
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
 import { cn } from '@/lib/utils';
 
@@ -179,24 +180,45 @@ export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFill
             </div>
           )}
           
-          {/* Key Features */}
-          {competitor.intelligenceData?.key_features && competitor.intelligenceData.key_features.length > 0 && (
-            <div>
-              <h4 className="text-xs font-medium mb-1.5 text-muted-foreground">Key Features</h4>
-              <div className="flex flex-wrap gap-1.5">
-                {competitor.intelligenceData.key_features.slice(0, 3).map((feature, i) => (
-                  <Badge key={i} variant="outline" className="text-xs py-0 h-5 border-green-500/20 text-green-600">
-                    {feature}
-                  </Badge>
-                ))}
-                {competitor.intelligenceData.key_features.length > 3 && (
-                  <Badge variant="outline" className="text-xs py-0 h-5 border-green-500/20 text-muted-foreground">
-                    +{competitor.intelligenceData.key_features.length - 3}
-                  </Badge>
-                )}
-              </div>
+        {/* Key Features */}
+        {competitor.intelligenceData?.key_features && competitor.intelligenceData.key_features.length > 0 && (
+          <div>
+            <h4 className="text-xs font-medium mb-1.5 text-muted-foreground">Key Features</h4>
+            <div className="flex flex-wrap gap-1.5">
+              {competitor.intelligenceData.key_features.slice(0, 3).map((feature, i) => {
+                // Extract short version: text before colon or truncate
+                const shortFeature = feature.includes(':') 
+                  ? feature.split(':')[0].trim()
+                  : feature.length > 25 
+                    ? feature.substring(0, 25) + '...'
+                    : feature;
+                
+                return (
+                  <TooltipProvider key={i}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs py-0.5 h-6 border-emerald-500/20 text-emerald-400 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-colors cursor-help truncate max-w-[180px]"
+                        >
+                          {shortFeature}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs max-w-xs">{feature}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })}
+              {competitor.intelligenceData.key_features.length > 3 && (
+                <Badge variant="outline" className="text-xs py-0.5 h-6 border-emerald-500/20 text-muted-foreground">
+                  +{competitor.intelligenceData.key_features.length - 3}
+                </Badge>
+              )}
             </div>
-          )}
+          </div>
+        )}
           
           {/* Target Industries */}
           {competitor.intelligenceData?.target_industries && competitor.intelligenceData.target_industries.length > 0 && (
