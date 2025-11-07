@@ -186,6 +186,28 @@ export function OutlineGenerator() {
     }));
     dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
     
+    // ✨ AI: Estimate word count after outline is generated
+    try {
+      const { estimateOptimalWordCount } = await import('@/services/aiWordCountEstimator');
+      const estimatedWordCount = await estimateOptimalWordCount({
+        title: contentTitle || mainKeyword,
+        outline: outlineSections,
+        contentType: state.contentType,
+        contentFormat: state.contentFormat,
+        serpData: state.serpData,
+        selectedKeywords: selectedKeywords
+      });
+      
+      dispatch({ type: 'SET_AI_ESTIMATED_WORD_COUNT', payload: estimatedWordCount });
+      dispatch({ type: 'SET_WORD_COUNT_MODE', payload: 'ai' }); // Default to AI mode
+      
+      console.info(`✨ AI estimated word count: ${estimatedWordCount} words`);
+    } catch (error) {
+      console.error('Failed to estimate word count:', error);
+      // Fallback to default (1500)
+      dispatch({ type: 'SET_AI_ESTIMATED_WORD_COUNT', payload: 1500 });
+    }
+    
     // Generate smart title if none exists
     if (!contentTitle) {
       await generateAndSetSmartTitle();

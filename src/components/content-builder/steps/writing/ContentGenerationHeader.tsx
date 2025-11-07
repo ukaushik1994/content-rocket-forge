@@ -1,19 +1,14 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { Input } from '@/components/ui/input';
 import { TitleGenerationButton } from './TitleGenerationButton';
+import { WordCountToggle } from './WordCountToggle';
 import { 
   Sparkles, 
   ListTodo, 
-  CheckSquare,  
-  Save,
-  Bot, 
-  UserRound, 
-  Hash
+  CheckSquare
 } from 'lucide-react';
-import { AiProvider } from '@/services/aiService/types';
 import { formatDistanceToNow } from 'date-fns';
 import { SimpleAIServiceIndicator } from '../../ai/SimpleAIServiceIndicator';
 
@@ -23,12 +18,17 @@ interface ContentGenerationHeaderProps {
   handleToggleOutline: () => void;
   showOutline: boolean;
   outlineLength: number;
+  
+  // Word Count Props
+  wordCountMode: 'ai' | 'custom';
+  onWordCountModeChange: (mode: 'ai' | 'custom') => void;
+  aiEstimatedWordCount: number | null;
+  customWordCount: number;
+  onWordCountChange: (count: number) => void;
+  
   autoSaveTimestamp?: string | null;
   hasUnsavedChanges?: boolean;
   onManualSave?: () => void;
-  wordCountLimit?: number;
-  onWordCountChange?: (count: number) => void;
-  onGenerateTitle?: () => void;
 }
 
 export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
@@ -37,22 +37,17 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   handleToggleOutline,
   showOutline,
   outlineLength,
-  autoSaveTimestamp,
-  hasUnsavedChanges,
-  onManualSave,
-  wordCountLimit,
+  wordCountMode,
+  onWordCountModeChange,
+  aiEstimatedWordCount,
+  customWordCount,
   onWordCountChange,
-  onGenerateTitle
+  autoSaveTimestamp,
+  hasUnsavedChanges
 }) => {
-  const [wordCountInput, setWordCountInput] = useState(wordCountLimit?.toString() || '1500');
-  
-  const handleWordCountSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const count = parseInt(wordCountInput);
-    if (!isNaN(count) && count > 0 && onWordCountChange) {
-      onWordCountChange(count);
-    }
-  };
+  const activeWordCount = wordCountMode === 'ai' 
+    ? (aiEstimatedWordCount || 1500)
+    : customWordCount;
 
   return (
     <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6 shadow-lg">
@@ -65,9 +60,18 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
             size="lg"
           >
             {isGenerating ? (
-              <><Sparkles className="mr-2 h-4 w-4 animate-pulse" /> Generating...</>
+              <>
+                <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
+                Generating...
+              </>
             ) : (
-              <><Sparkles className="mr-2 h-4 w-4" /> Generate Content{wordCountLimit ? ` (${wordCountLimit} words)` : ''}</>
+              <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate Content
+                {activeWordCount > 0 && (
+                  <span className="ml-1.5 text-xs opacity-75">({activeWordCount} words)</span>
+                )}
+              </>
             )}
           </Button>
           
@@ -84,25 +88,14 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
           
           <TitleGenerationButton />
           
-          <form onSubmit={handleWordCountSubmit} className="flex items-center gap-2 bg-background/50 border border-border rounded-lg p-2">
-            <Hash className="h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="number"
-              value={wordCountInput}
-              onChange={(e) => setWordCountInput(e.target.value)}
-              className="w-20 h-8 text-sm bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:ring-offset-0"
-              placeholder="1500"
-              min="100"
-            />
-            <Button 
-              type="submit" 
-              size="sm" 
-              variant="secondary" 
-              className="h-8 px-3 text-sm"
-            >
-              Set
-            </Button>
-          </form>
+          {/* Word Count Toggle */}
+          <WordCountToggle
+            mode={wordCountMode}
+            onModeChange={onWordCountModeChange}
+            aiEstimate={aiEstimatedWordCount}
+            customValue={customWordCount}
+            onCustomValueChange={onWordCountChange}
+          />
         </div>
         
         <div className="flex items-center gap-4">

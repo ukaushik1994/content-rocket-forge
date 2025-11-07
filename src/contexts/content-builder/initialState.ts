@@ -71,5 +71,9 @@ export const initialState: ContentBuilderState = {
   location: '',
 
   // Strategy Source
-  strategySource: null
+  strategySource: null,
+
+  // Word Count Management
+  aiEstimatedWordCount: null,
+  wordCountMode: 'ai'
 };

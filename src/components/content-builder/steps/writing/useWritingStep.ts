@@ -15,7 +15,9 @@ export function useWritingStep() {
     serpData, 
     selectedSolution,
     contentTitle,
-    selectedKeywords
+    selectedKeywords,
+    aiEstimatedWordCount,
+    wordCountMode
   } = state;
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -28,7 +30,12 @@ export function useWritingStep() {
   const [aiProvider, setAiProvider] = useState<AiProvider>('openrouter');
   const [autoSaveTimestamp, setAutoSaveTimestamp] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [wordCountLimit, setWordCountLimit] = useState<number | undefined>(1500);
+  const [wordCountLimit, setWordCountLimit] = useState<number>(1500);
+  
+  // Determine active word count based on mode
+  const activeWordCount = wordCountMode === 'ai' 
+    ? (aiEstimatedWordCount || 1500)
+    : wordCountLimit;
   
   // Load saved word count from localStorage
   useEffect(() => {
@@ -44,6 +51,13 @@ export function useWritingStep() {
       setWordCountLimit(suggestedWordCount);
     }
   }, [serpData]);
+  
+  // If in AI mode but no estimate exists, fallback to 1500
+  useEffect(() => {
+    if (wordCountMode === 'ai' && !aiEstimatedWordCount) {
+      dispatch({ type: 'SET_AI_ESTIMATED_WORD_COUNT', payload: 1500 });
+    }
+  }, [wordCountMode, aiEstimatedWordCount, dispatch]);
 
   // Mark this step as complete when we have content
   useEffect(() => {
@@ -149,7 +163,16 @@ export function useWritingStep() {
   const handleWordCountChange = (count: number) => {
     setWordCountLimit(count);
     localStorage.setItem('content_builder_word_count', count.toString());
-    toast.success(`Word count set to ${count} words`);
+  };
+  
+  const handleWordCountModeChange = (mode: 'ai' | 'custom') => {
+    dispatch({ type: 'SET_WORD_COUNT_MODE', payload: mode });
+    
+    if (mode === 'ai') {
+      toast.info(`Using AI estimate: ${aiEstimatedWordCount || 1500} words`);
+    } else {
+      toast.info(`Using custom word count: ${wordCountLimit} words`);
+    }
   };
   
   const handleManualSave = () => {
@@ -199,12 +222,17 @@ export function useWritingStep() {
     autoSaveTimestamp,
     hasUnsavedChanges,
     wordCountLimit,
+    wordCountMode,
+    aiEstimatedWordCount,
+    customWordCount: wordCountLimit,
+    activeWordCount,
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
     handleManualSave,
-    handleWordCountChange
+    handleWordCountChange,
+    handleWordCountModeChange
   };
 }

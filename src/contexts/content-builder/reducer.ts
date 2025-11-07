@@ -305,6 +305,18 @@ export const contentBuilderReducer = (
         strategySource: action.payload
       };
 
+    case 'SET_AI_ESTIMATED_WORD_COUNT':
+      return {
+        ...state,
+        aiEstimatedWordCount: action.payload
+      };
+
+    case 'SET_WORD_COUNT_MODE':
+      return {
+        ...state,
+        wordCountMode: action.payload
+      };
+
     case 'LOAD_PRELOADED_DATA': {
       const { mainKeyword, selectedKeywords, location, serpData, step, strategySource } = action.payload;
       return {

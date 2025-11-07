@@ -37,13 +37,18 @@ export const ContentWritingStep = () => {
     autoSaveTimestamp,
     hasUnsavedChanges,
     wordCountLimit,
+    wordCountMode,
+    aiEstimatedWordCount,
+    customWordCount,
+    activeWordCount,
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
     handleManualSave,
-    handleWordCountChange
+    handleWordCountChange,
+    handleWordCountModeChange
   } = useWritingStep();
   
   const [writingStyle, setWritingStyle] = useState('Conversational');
@@ -82,7 +87,7 @@ export const ContentWritingStep = () => {
       secondaryKeywords: state.selectedKeywords?.join(', ') || '',
       writingStyle,
       expertiseLevel,
-      targetLength: wordCountLimit || 1500,
+      targetLength: activeWordCount || 1500,
       contentType,
       contentIntent: state.contentIntent,
       serpSelections: state.serpSelections || [],
@@ -146,11 +151,14 @@ export const ContentWritingStep = () => {
             handleToggleOutline={handleToggleOutline}
             showOutline={showOutline}
             outlineLength={state.outline.length}
+            wordCountMode={wordCountMode}
+            onWordCountModeChange={handleWordCountModeChange}
+            aiEstimatedWordCount={aiEstimatedWordCount}
+            customWordCount={customWordCount}
+            onWordCountChange={handleWordCountChange}
             autoSaveTimestamp={autoSaveTimestamp}
             hasUnsavedChanges={hasUnsavedChanges}
             onManualSave={handleManualSave}
-            wordCountLimit={wordCountLimit}
-            onWordCountChange={handleWordCountChange}
           />
         </div>
         

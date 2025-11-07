@@ -56,4 +56,6 @@ export type ContentBuilderAction =
   | { type: 'SET_SELECTED_KEYWORDS'; payload: string[] }
   | { type: 'SET_LOCATION'; payload: string }
   | { type: 'LOAD_PRELOADED_DATA'; payload: { mainKeyword?: string; selectedKeywords?: string[]; location?: string; serpData?: any; step?: number; strategySource?: any } }
-  | { type: 'SET_STRATEGY_SOURCE'; payload: { proposal_id: string; priority_tag: string; estimated_impressions: number; meta_suggestions?: { title: string; description: string } } | null };
+  | { type: 'SET_STRATEGY_SOURCE'; payload: { proposal_id: string; priority_tag: string; estimated_impressions: number; meta_suggestions?: { title: string; description: string } } | null }
+  | { type: 'SET_AI_ESTIMATED_WORD_COUNT'; payload: number }
+  | { type: 'SET_WORD_COUNT_MODE'; payload: 'ai' | 'custom' };

@@ -88,4 +88,8 @@ export interface ContentBuilderState {
       description: string;
     };
   } | null;
+
+  // Word Count Management
+  aiEstimatedWordCount: number | null;  // AI's calculated estimate from outline
+  wordCountMode: 'ai' | 'custom';       // User's selected mode
 }
