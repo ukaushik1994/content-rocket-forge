@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   AlertCircle,
   StickyNote,
-  Bookmark
+  Bookmark,
+  Target
 } from 'lucide-react';
 import { CompanyCompetitor } from '@/contexts/content-builder/types/company-types';
 import { cn } from '@/lib/utils';
@@ -57,9 +58,10 @@ interface CompetitorCardProps {
   onDelete: (id: string) => void;
   onViewProfile: (competitor: CompanyCompetitor) => void;
   isAutoFilling?: boolean;
+  solutionsCount?: number;
 }
 
-export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFilling = false }: CompetitorCardProps) {
+export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFilling = false, solutionsCount = 0 }: CompetitorCardProps) {
   const completeness = calculateCompleteness(competitor);
   
   return (
@@ -150,46 +152,27 @@ export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFill
         </CardHeader>
 
         {/* Content with badge-based sections */}
-        <CardContent className="pt-4 grid gap-4 flex-1">
-          {/* Description */}
+        <CardContent className="pt-3 grid gap-3 flex-1">
+          {/* Description - Single line */}
           {competitor.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-1">
               {competitor.description}
             </p>
           )}
           
-          {/* Strengths */}
-          {competitor.strengths.length > 0 && (
+          {/* Tech Stack */}
+          {competitor.intelligenceData?.technology_stack && competitor.intelligenceData.technology_stack.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2 text-muted-foreground">Strengths</h4>
-              <div className="flex flex-wrap gap-2">
-                {competitor.strengths.slice(0, 3).map((strength, i) => (
-                  <Badge key={i} variant="outline" className="border-neon-purple/30 text-foreground">
-                    {strength}
+              <h4 className="text-xs font-medium mb-1.5 text-muted-foreground">Tech Stack</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {competitor.intelligenceData.technology_stack.slice(0, 3).map((tech, i) => (
+                  <Badge key={i} variant="outline" className="text-xs py-0 h-5 border-neon-purple/20">
+                    {tech}
                   </Badge>
                 ))}
-                {competitor.strengths.length > 3 && (
-                  <Badge variant="outline" className="border-neon-purple/30 text-muted-foreground">
-                    +{competitor.strengths.length - 3} more
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* Weaknesses */}
-          {competitor.weaknesses.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium mb-2 text-muted-foreground">Weaknesses</h4>
-              <div className="flex flex-wrap gap-2">
-                {competitor.weaknesses.slice(0, 3).map((weakness, i) => (
-                  <Badge key={i} variant="outline" className="border-neon-blue/30 text-foreground">
-                    {weakness}
-                  </Badge>
-                ))}
-                {competitor.weaknesses.length > 3 && (
-                  <Badge variant="outline" className="border-neon-blue/30 text-muted-foreground">
-                    +{competitor.weaknesses.length - 3} more
+                {competitor.intelligenceData.technology_stack.length > 3 && (
+                  <Badge variant="outline" className="text-xs py-0 h-5 border-neon-purple/20 text-muted-foreground">
+                    +{competitor.intelligenceData.technology_stack.length - 3}
                   </Badge>
                 )}
               </div>
@@ -199,16 +182,16 @@ export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFill
           {/* Key Features */}
           {competitor.intelligenceData?.key_features && competitor.intelligenceData.key_features.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2 text-muted-foreground">Key Features</h4>
-              <div className="flex flex-wrap gap-2">
-                {competitor.intelligenceData.key_features.slice(0, 4).map((feature, i) => (
-                  <Badge key={i} className="bg-green-500/10 text-green-500 border-green-500/30">
+              <h4 className="text-xs font-medium mb-1.5 text-muted-foreground">Key Features</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {competitor.intelligenceData.key_features.slice(0, 3).map((feature, i) => (
+                  <Badge key={i} variant="outline" className="text-xs py-0 h-5 border-green-500/20 text-green-600">
                     {feature}
                   </Badge>
                 ))}
-                {competitor.intelligenceData.key_features.length > 4 && (
-                  <Badge className="bg-green-500/10 text-green-500 border-green-500/30">
-                    +{competitor.intelligenceData.key_features.length - 4} more
+                {competitor.intelligenceData.key_features.length > 3 && (
+                  <Badge variant="outline" className="text-xs py-0 h-5 border-green-500/20 text-muted-foreground">
+                    +{competitor.intelligenceData.key_features.length - 3}
                   </Badge>
                 )}
               </div>
@@ -218,33 +201,44 @@ export function CompetitorCard({ competitor, onDelete, onViewProfile, isAutoFill
           {/* Target Industries */}
           {competitor.intelligenceData?.target_industries && competitor.intelligenceData.target_industries.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2 text-muted-foreground">Target Industries</h4>
-              <div className="flex flex-wrap gap-2">
+              <h4 className="text-xs font-medium mb-1.5 text-muted-foreground">Target Industries</h4>
+              <div className="flex flex-wrap gap-1.5">
                 {competitor.intelligenceData.target_industries.slice(0, 3).map((industry, i) => (
-                  <Badge key={i} variant="secondary" className="bg-secondary/60">
+                  <Badge key={i} variant="secondary" className="text-xs py-0 h-5 bg-secondary/40">
                     {industry}
                   </Badge>
                 ))}
                 {competitor.intelligenceData.target_industries.length > 3 && (
-                  <Badge variant="secondary" className="bg-secondary/60">
-                    +{competitor.intelligenceData.target_industries.length - 3} more
+                  <Badge variant="secondary" className="text-xs py-0 h-5 bg-secondary/40 text-muted-foreground">
+                    +{competitor.intelligenceData.target_industries.length - 3}
                   </Badge>
                 )}
               </div>
             </div>
           )}
           
-          {/* Resources - Simplified to count indicator */}
-          {competitor.resources.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
-              <FileText className="h-3.5 w-3.5" />
-              <span>{competitor.resources.length} resources available</span>
+          {/* Solutions */}
+          {solutionsCount > 0 && (
+            <div className="flex items-center gap-2 text-xs text-primary/80 bg-primary/5 px-2 py-1.5 rounded-md border border-primary/10">
+              <Target className="h-3.5 w-3.5" />
+              <span className="font-medium">{solutionsCount} Solution{solutionsCount > 1 ? 's' : ''} Available</span>
+            </div>
+          )}
+          
+          {/* Resources - Compact indicator */}
+          {(competitor.resources.length > 0 || competitor.notes) && (
+            <div className="flex items-center gap-3 text-xs text-muted-foreground/70 pt-1 border-t border-white/5">
+              {competitor.resources.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  {competitor.resources.length}
+                </span>
+              )}
               {competitor.notes && (
-                <>
-                  <span className="text-primary">•</span>
-                  <StickyNote className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-primary">Has notes</span>
-                </>
+                <span className="flex items-center gap-1 text-primary/60">
+                  <StickyNote className="h-3 w-3" />
+                  Notes
+                </span>
               )}
             </div>
           )}

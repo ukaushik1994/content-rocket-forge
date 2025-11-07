@@ -29,6 +29,7 @@ import { ReviewCompetitorDialog } from './ReviewCompetitorDialog';
 import { CompetitorProfileDialog } from './CompetitorProfileDialog';
 import { CompetitorAutoFillPayload } from '@/types/competitor-intel';
 import { autoFillFromWebsite } from '@/services/competitorIntelService';
+import { getCompetitorSolutions } from '@/services/competitorSolutionsService';
 import { toast as sonnerToast } from 'sonner';
 import { CompetitorIntelligenceHeader } from './CompetitorIntelligenceHeader';
 
@@ -58,6 +59,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
   const [competitors, setCompetitors] = useState<CompanyCompetitor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [solutionsCounts, setSolutionsCounts] = useState<Record<string, number>>({});
   
   // Dialog state management
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -104,6 +106,27 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
   useEffect(() => {
     loadCompetitors();
   }, [userId]);
+
+  // Fetch solutions counts for all competitors
+  useEffect(() => {
+    const fetchSolutionsCounts = async () => {
+      const counts: Record<string, number> = {};
+      for (const comp of competitors) {
+        try {
+          const solutions = await getCompetitorSolutions(comp.id);
+          counts[comp.id] = solutions.length;
+        } catch (error) {
+          console.error(`Failed to fetch solutions for competitor ${comp.id}:`, error);
+          counts[comp.id] = 0;
+        }
+      }
+      setSolutionsCounts(counts);
+    };
+    
+    if (competitors.length > 0) {
+      fetchSolutionsCounts();
+    }
+  }, [competitors]);
 
   const loadCompetitors = async () => {
     try {
@@ -738,6 +761,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
                   onDelete={handleDelete}
                   onViewProfile={handleViewProfile}
                   isAutoFilling={false}
+                  solutionsCount={solutionsCounts[competitor.id] || 0}
                 />
               </motion.div>
             ))}
