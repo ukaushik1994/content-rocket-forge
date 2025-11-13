@@ -196,15 +196,10 @@ export const useChecklistItems = (allDataReady: boolean = false) => {
     try {
       toast.info('Running comprehensive content analysis...');
       
-      // Run solution integration analysis if solution is selected
-      if (state.selectedSolution) {
-        toast.info('Analyzing solution integration...');
-        const solutionMetrics = analyzeEnhancedSolutionIntegration(
-          state.content, 
-          state.selectedSolution
-        );
-        setLocalSolutionMetrics(solutionMetrics);
-        console.log('[useChecklistItems] Solution analysis completed:', solutionMetrics);
+      // Use existing solution metrics from state (already analyzed in prerequisite step)
+      if (state.selectedSolution && state.solutionIntegrationMetrics) {
+        setLocalSolutionMetrics(state.solutionIntegrationMetrics);
+        console.log('[useChecklistItems] Using existing solution metrics:', state.solutionIntegrationMetrics);
       }
       
       // Run compliance analysis (includes AI analysis)
