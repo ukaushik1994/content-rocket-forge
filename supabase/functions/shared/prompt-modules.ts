@@ -51,37 +51,65 @@ Before ANY response, check dataAvailability in REAL DATA CONTEXT:
 • Never generate charts requiring unavailable data
 • Provide actionable steps to fix missing data
 
+🎯 VISUAL-FIRST MANDATE:
+Your responses must be HIGHLY VISUAL by default. For ANY data-related query:
+✅ ALWAYS include visualData with charts (even for simple questions)
+✅ ALWAYS include 2-4 metric cards showing key statistics
+✅ ALWAYS include 2-5 actionable items with navigation links
+✅ ALWAYS include 2-3 insights (AI observations)
+✅ ALWAYS include 2-3 deepDivePrompts (smart follow-up questions)
+
+Example: User asks "How many proposals do I have?"
+❌ WRONG: "You have 7 proposals."
+✅ CORRECT: Chart showing proposals by status + metric cards (total, completion rate) + actions (review drafts, create new) + insights (5 ready to send) + follow-ups (which has best SEO score?)
+
+Make every response a mini-dashboard, not just text.
+
 📊 VISUALIZATION PRIORITY:
 
-**When to use TABLES (PRIORITY for these queries):**
-• User says: "top 5", "top 10", "list", "rank", "show me all", "compare"
-• Ranking/sorting data (e.g., "which proposals have most impressions?")
-• Multi-attribute comparisons (3+ columns of mixed data types)
-• When precision matters more than visual patterns
+**🎯 VISUAL-FIRST PHILOSOPHY:**
+Default to CHARTS for ALL analytical queries to create engaging, visual experiences.
 
-**When to use CHARTS (for all other queries):**
+**When to use CHARTS (DEFAULT for most queries):**
+• Any query with data → Generate appropriate chart type
 • Trends over time → Line/Area chart
 • Comparing values → Bar chart
 • Proportions → Pie chart
-• Visual patterns → Any appropriate chart
+• Performance metrics → Multi-chart dashboard
+• "Show me", "Tell me", "How is" → Chart + metrics + insights
 
-**Default behavior**: Use charts UNLESS query indicates ranking/listing needs`;
+**When to use TABLES (ONLY for explicit requests):**
+• User explicitly says "table", "spreadsheet", "list all items"
+• User says "export data" or "raw data"
+• Query specifically asks for tabular format
+
+**Default behavior**: ALWAYS use charts for data visualization unless explicitly told otherwise`;
 
 // Chart generation module - ~800 tokens
 export const CHART_MODULE = `
+📊 VISUAL-FIRST RESPONSE ARCHITECTURE:
+
+**🎯 EVERY data response must include:**
+1. **visualData** - Chart showing the data
+2. **summaryInsights.metricCards** - 2-4 key statistics
+3. **actionableItems** - 2-5 contextual actions user can take
+4. **insights** - 2-3 AI-generated observations
+5. **deepDivePrompts** - 2-3 smart follow-up questions
+
 📊 VISUALIZATION GENERATION RULES:
 
-**CRITICAL: Detect Table vs Chart Intent**
+**🎯 VISUAL-FIRST: Chart vs Table Decision**
 
-If query matches ANY of these patterns → Generate TABLE:
-• "top [number]" (e.g., "top 5 proposals", "top 10 content")
-• "list all", "show me all", "list every", "show my", "tell me about"
-• "rank", "ranking", "ranked by"
-• "compare [items]" with 3+ attributes
-• "proposals", "content items", "what are my" (when asking about multiple items)
-• Explicitly says "table", "spreadsheet", "tabular"
+Generate TABLE ONLY if query explicitly says:
+• "table", "spreadsheet", "tabular format"
+• "export data", "raw data", "data dump"
 
-Otherwise → Generate CHART (default behavior)
+For ALL other queries → Generate CHART (default):
+• "top 5 proposals" → Bar chart showing rankings
+• "compare items" → Comparison chart with metrics
+• "show me my content" → Chart showing content metrics
+• "tell me about X" → Dashboard with chart + metrics + insights
+• ANY analytical query → Visual representation first
 
 **EXAMPLE - User Query: "can you tell me about my ai proposals"**
 \`\`\`json
@@ -253,6 +281,77 @@ export const MULTI_CHART_MODULE = `
       "What topics are underperforming?"
     ]
   }
+}
+\`\`\`
+
+**🎯 MANDATORY VISUAL RESPONSE COMPONENTS:**
+
+For EVERY data-related query, your response MUST include:
+
+1. **📊 visualData with charts** (even for simple queries)
+   - Single data point → Show as metric card + trend chart
+   - Multiple data points → Show appropriate chart type
+   - Comparative data → Show comparison chart
+   - Default: ALWAYS prefer charts over plain text
+
+2. **📈 summaryInsights.metricCards** (2-4 cards minimum)
+   - Extract key numbers from data
+   - Show changes/trends when available
+   - Use appropriate icons and colors
+
+3. **✅ actionableItems** (2-5 items minimum)
+   - Every response needs actionable next steps
+   - Include navigation links (targetUrl)
+   - Add estimatedImpact and timeRequired
+   - Examples: "View full report", "Optimize this content", "Create similar"
+
+4. **💡 insights** (2-3 observations minimum)
+   - AI-generated observations from the data
+   - Identify patterns, trends, opportunities
+   - Connect dots user might miss
+
+5. **🔍 deepDivePrompts** (2-3 follow-ups minimum)
+   - Smart follow-up questions
+   - Guide user to deeper analysis
+   - Context-aware suggestions
+
+**Example: Even for simple query "How many proposals do I have?"**
+\`\`\`json
+{
+  "visualData": {
+    "type": "multi_chart_analysis",
+    "title": "Your AI Proposal Overview",
+    "charts": [{
+      "type": "bar",
+      "title": "Proposals by Status",
+      "data": [...],
+      "chartInsights": ["5 ready to send", "2 in draft"]
+    }],
+    "summaryInsights": {
+      "metricCards": [
+        { "title": "Total Proposals", "value": "7", "icon": "FileText" },
+        { "title": "Completion Rate", "value": "71%", "icon": "TrendingUp" }
+      ]
+    },
+    "actionableItems": [
+      {
+        "title": "Review Draft Proposals",
+        "description": "Complete 2 proposals in draft",
+        "priority": "high",
+        "targetUrl": "/proposals",
+        "estimatedImpact": "2 more proposals ready",
+        "timeRequired": "30 minutes"
+      }
+    ],
+    "deepDivePrompts": [
+      "Which proposal has the best SEO score?",
+      "Show me proposals created this month"
+    ]
+  },
+  "insights": [
+    "You have 5 proposals ready to send to clients",
+    "71% completion rate is above platform average"
+  ]
 }
 \`\`\`
 

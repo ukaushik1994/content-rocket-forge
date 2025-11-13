@@ -46,11 +46,23 @@ export function analyzeQueryIntent(query: string): QueryIntent {
     full: 80000
   };
   
+  // VISUAL-FIRST: Trigger visualizations for any analytical query
+  const visualTriggers = [
+    /chart|graph|visual|show|display|visuali[sz]e/i,
+    /performance|analytics|trend|compare|comparison/i,
+    /how (is|are|did|does|many|much)/i,
+    /what (is|are|were|did)/i,
+    /tell me about|show me|give me/i,
+    /\d+/  // Any query with numbers likely benefits from visualization
+  ];
+  
+  const requiresVisualData = visualTriggers.some(pattern => pattern.test(q));
+  
   return {
     scope,
     categories,
     estimatedTokens: tokenEstimates[scope],
-    requiresVisualData: /chart|graph|visual|show|display|visuali[sz]e/i.test(q),
+    requiresVisualData,
     confidence: categories.length > 0 ? 0.8 : 0.5
   };
 }
