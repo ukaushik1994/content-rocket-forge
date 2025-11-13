@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 /**
  * Custom hook to generate and manage the checklist items for the final review
  */
-export const useChecklistItems = () => {
+export const useChecklistItems = (allDataReady: boolean = false) => {
   const { state } = useContentBuilder();
   const { 
     mainKeyword,
@@ -230,13 +230,13 @@ export const useChecklistItems = () => {
     await runFullAnalysis();
   }, [runFullAnalysis]);
 
-  // Auto-run full analysis on load
+  // Only run when parent signals all prerequisites are ready
   useEffect(() => {
-    if (state.content && mainKeyword && !complianceResult && !localSolutionMetrics) {
-      console.log('[useChecklistItems] Auto-running full analysis on load');
+    if (allDataReady && state.content && mainKeyword) {
+      console.log('[useChecklistItems] All prerequisites ready, running checklist analysis...');
       runFullAnalysis();
     }
-  }, [state.content, mainKeyword, runFullAnalysis, complianceResult, localSolutionMetrics]);
+  }, [allDataReady, state.content, mainKeyword, runFullAnalysis]);
 
   // Calculate items on mount and when dependencies change
   useEffect(() => {

@@ -12,7 +12,7 @@ import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  
+  const [allPrerequisitesReady, setAllPrerequisitesReady] = useState(false);
   
   const { state, updateContent, setMetaTitle, setMetaDescription } = useContentBuilder();
   
@@ -30,7 +30,7 @@ export const OptimizeAndReviewStep = () => {
   } = useFinalReview();
   
   const { isSaving, isSavedToDraft, handleSaveToDraft, handlePublish } = useSaveContent();
-  const { checklistItems, passedChecks, totalChecks, completionPercentage } = useChecklistItems();
+  const { checklistItems, passedChecks, totalChecks, completionPercentage } = useChecklistItems(allPrerequisitesReady);
   
   // Auto-trigger existing button functions on component mount
   const hasAutoTriggered = useRef(false);
@@ -45,9 +45,21 @@ export const OptimizeAndReviewStep = () => {
     if (needsMeta || needsSolution) {
       hasAutoTriggered.current = true;
       
-      // Trigger the same functions that the buttons call
-      if (needsMeta) generateMeta();
-      if (needsSolution) analyzeSolutionUsage();
+      // Run sequentially: meta first, then solution, then signal checklist
+      (async () => {
+        console.log('Step 1: Generating meta...');
+        if (needsMeta) await generateMeta();
+        
+        console.log('Step 2: Analyzing solution integration...');
+        if (needsSolution) await analyzeSolutionUsage();
+        
+        console.log('Step 3: Prerequisites ready, signaling checklist...');
+        setAllPrerequisitesReady(true);
+      })();
+    } else {
+      // All data already exists, signal checklist immediately
+      console.log('All prerequisites already exist, signaling checklist...');
+      setAllPrerequisitesReady(true);
     }
   }, [state.content, state.metaTitle, state.metaDescription, state.selectedSolution, state.solutionIntegrationMetrics, generateMeta, analyzeSolutionUsage]);
   
