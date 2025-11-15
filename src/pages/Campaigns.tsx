@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { CampaignsHero } from '@/components/campaigns/CampaignsHero';
@@ -10,8 +10,10 @@ import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignStrategies } from '@/hooks/useCampaignStrategies';
 import { CampaignStrategy, CampaignInput as CampaignInputType } from '@/types/campaign-types';
+import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { solutionService } from '@/services/solutionService';
 import { toast } from 'sonner';
 
 const Campaigns = () => {
@@ -23,7 +25,26 @@ const Campaigns = () => {
   const [strategies, setStrategies] = useState<CampaignStrategy[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [editingStrategy, setEditingStrategy] = useState<CampaignStrategy | null>(null);
+  const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
   const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/campaigns` : '/campaigns';
+
+  // Fetch solution when strategies are generated with a solution ID
+  useEffect(() => {
+    const fetchSolution = async () => {
+      if (strategies.length > 0 && currentInput?.solutionId) {
+        try {
+          const solution = await solutionService.getSolutionById(currentInput.solutionId);
+          setSelectedSolution(solution);
+        } catch (error) {
+          console.error('Failed to fetch solution:', error);
+        }
+      } else {
+        setSelectedSolution(null);
+      }
+    };
+    
+    fetchSolution();
+  }, [strategies, currentInput]);
 
   const handleGenerateStrategies = async (input: CampaignInputType) => {
     if (!user) {
@@ -145,14 +166,15 @@ const Campaigns = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-8"
               >
-                <StrategyTiles
-                  strategies={strategies}
-                  selectedId={selectedStrategy}
-                  onSelect={setSelectedStrategy}
-                  onEdit={handleEditStrategy}
-                  onRegenerate={handleRegenerateStrategies}
-                  isRegenerating={isGenerating}
-                />
+              <StrategyTiles
+                strategies={strategies}
+                selectedId={selectedStrategy}
+                onSelect={setSelectedStrategy}
+                onEdit={handleEditStrategy}
+                onRegenerate={handleRegenerateStrategies}
+                isRegenerating={isGenerating}
+                solution={selectedSolution}
+              />
 
                 {selectedStrategy && selectedStrategyData && (
                   <motion.div

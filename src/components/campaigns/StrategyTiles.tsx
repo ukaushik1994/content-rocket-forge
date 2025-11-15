@@ -4,10 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Progress } from '@/components/ui/progress';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CampaignStrategy } from '@/types/campaign-types';
+import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { contentFormats } from '@/components/content-repurposing/formats';
 import { motion } from 'framer-motion';
-import { Check, Edit, RefreshCw, TrendingUp, Clock, Users, Heart, Target, Calendar, Sparkles, Zap, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Edit, RefreshCw, TrendingUp, Clock, Users, Heart, Target, Calendar, Sparkles, Zap, Package, ChevronDown, ChevronUp, CheckCircle2, Star, Shield, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StrategyTilesProps {
@@ -17,6 +19,7 @@ interface StrategyTilesProps {
   onEdit?: (strategy: CampaignStrategy) => void;
   onRegenerate: () => void;
   isRegenerating?: boolean;
+  solution?: EnhancedSolution | null;
 }
 
 export function StrategyTiles({
@@ -26,8 +29,18 @@ export function StrategyTiles({
   onEdit,
   onRegenerate,
   isRegenerating = false,
+  solution,
 }: StrategyTilesProps) {
   const [expandedFormats, setExpandedFormats] = useState<string[]>([]);
+  const [expandedCompetitors, setExpandedCompetitors] = useState<string[]>([]);
+  
+  const toggleExpandCompetitors = (strategyId: string) => {
+    setExpandedCompetitors(prev => 
+      prev.includes(strategyId) 
+        ? prev.filter(id => id !== strategyId)
+        : [...prev, strategyId]
+    );
+  };
 
   const getFormatIcon = (formatId: string) => {
     const format = contentFormats.find((f) => f.id === formatId);
@@ -106,6 +119,7 @@ export function StrategyTiles({
         {strategies.map((strategy, index) => {
           const isSelected = selectedId === strategy.id;
           const isExpanded = expandedFormats.includes(strategy.id);
+          const isCompetitorsExpanded = expandedCompetitors.includes(strategy.id);
           const visibleFormats = isExpanded ? strategy.contentMix : strategy.contentMix.slice(0, 4);
 
           return (
@@ -171,6 +185,195 @@ export function StrategyTiles({
                     </div>
                   )}
                 </div>
+
+                {/* Solution Branding Section */}
+                {solution && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Card className="p-4 bg-gradient-to-r from-primary/10 via-blue-500/10 to-purple-500/10 border-primary/30 backdrop-blur-sm">
+                      <div className="flex items-center gap-3">
+                        {solution.logoUrl && (
+                          <motion.img 
+                            src={solution.logoUrl} 
+                            alt={solution.name}
+                            className="w-12 h-12 rounded-lg object-cover ring-2 ring-primary/20"
+                            whileHover={{ scale: 1.05 }}
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Package className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <span className="text-xs text-muted-foreground">Promoting</span>
+                          </div>
+                          <h5 className="font-bold text-base truncate">{solution.name}</h5>
+                          {solution.shortDescription && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{solution.shortDescription}</p>
+                          )}
+                        </div>
+                        <Badge className="bg-primary/20 text-primary border-primary/30 shrink-0">
+                          <Star className="w-3 h-3 mr-1" />
+                          Featured
+                        </Badge>
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Unique Value Propositions */}
+                {solution?.uniqueValuePropositions && solution.uniqueValuePropositions.length > 0 && (
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      <span className="text-sm font-semibold">Unique Value Propositions</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {solution.uniqueValuePropositions.slice(0, 3).map((uvp, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3 + i * 0.1 }}
+                        >
+                          <Card className="p-3 bg-gradient-to-r from-yellow-500/5 to-orange-500/5 border-yellow-500/20 hover:border-yellow-500/40 transition-colors">
+                            <div className="flex items-start gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
+                              <p className="text-sm leading-relaxed">{uvp}</p>
+                            </div>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Key Differentiators */}
+                {solution?.keyDifferentiators && solution.keyDifferentiators.length > 0 && (
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-purple-500" />
+                      <span className="text-sm font-semibold">Key Differentiators</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {solution.keyDifferentiators.slice(0, 4).map((diff, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.4 + i * 0.05 }}
+                        >
+                          <Badge className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20 text-purple-700 dark:text-purple-300">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            {diff}
+                          </Badge>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Competitor Differentiation */}
+                {strategy.competitorDifferentiation && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.45 }}
+                  >
+                    <Card className="p-3 bg-gradient-to-r from-green-500/5 to-emerald-500/5 border-green-500/20">
+                      <div className="flex items-start gap-2">
+                        <TrendingUp className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">
+                            Competitive Advantage
+                          </p>
+                          <p className="text-sm leading-relaxed">{strategy.competitorDifferentiation}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Featured Solution Capabilities */}
+                {solution?.features && solution.features.length > 0 && (
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-purple-500" />
+                      <span className="text-sm font-semibold">Featured Capabilities</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {solution.features.slice(0, 6).map((feature, i) => (
+                        <Badge 
+                          key={i} 
+                          variant="outline"
+                          className="bg-purple-500/5 border-purple-500/20 hover:bg-purple-500/10 transition-colors"
+                        >
+                          {feature}
+                        </Badge>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Case Study Reference */}
+                {solution?.caseStudies && solution.caseStudies.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.55 }}
+                  >
+                    <Card className="p-4 bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-semibold text-green-700 dark:text-green-300">Proven Results</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {solution.caseStudies[0].company} achieved:
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {solution.caseStudies[0].results?.slice(0, 3).map((result, i) => (
+                            <Badge key={i} className="bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              {result}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Pricing Context */}
+                {solution?.pricing && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="flex items-center gap-2 p-3 bg-secondary/50 rounded-lg border border-border/50"
+                  >
+                    <DollarSign className="w-4 h-4 text-primary" />
+                    <span className="text-sm">
+                      {solution.pricing.model || 'Flexible pricing'} • {solution.pricing.startingPrice || 'Contact for pricing'}
+                    </span>
+                  </motion.div>
+                )}
 
                 {/* Content Mix Showcase */}
                 <div className="space-y-3">

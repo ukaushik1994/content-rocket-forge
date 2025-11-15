@@ -149,61 +149,91 @@ Generate 4 distinct campaign strategies as a JSON array with all the required an
 
       console.log('🤖 Generating campaign strategies with AIServiceController...');
       
-      // Step 4: Call AI service
-      const aiResponse = await AIServiceController.generate({
-        input: `${systemPrompt}\n\n${userPrompt}`,
-        use_case: 'strategy',
-        temperature: 0.7,
-        max_tokens: 6000,
-      });
+      // Step 4: Call AI service with dynamic token calculation
+      const estimatedTokens = solutionContext ? 12000 : 8000;
+      
+      let aiResponse;
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          aiResponse = await AIServiceController.generate({
+            input: `${systemPrompt}\n\n${userPrompt}`,
+            use_case: 'strategy',
+            temperature: 0.7,
+            max_tokens: estimatedTokens,
+          });
+          break; // Success, exit retry loop
+        } catch (error: any) {
+          retryCount++;
+          console.error(`❌ AI generation attempt ${retryCount} failed:`, error);
+          
+          if (retryCount >= maxRetries) {
+            throw new Error('Failed to generate strategies after multiple attempts. Please try again.');
+          }
+          
+          // Exponential backoff: 1s, 2s, 4s
+          const delay = Math.pow(2, retryCount - 1) * 1000;
+          console.log(`⏳ Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
 
-      console.log('✅ AI response received:', aiResponse.provider_used, aiResponse.model_used);
+      console.log('✅ AI response received:', aiResponse!.provider_used, aiResponse!.model_used);
 
-      // Step 4: Parse JSON response
+      // Step 5: Parse JSON response with improved error handling
       let strategies: CampaignStrategy[];
       try {
         // Try to extract JSON from markdown code blocks if present
-        let jsonContent = aiResponse.content.trim();
-        const jsonMatch = jsonContent.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-        if (jsonMatch) {
-          jsonContent = jsonMatch[1];
+        let jsonContent = aiResponse!.content.trim();
+        
+        // Remove markdown code fences if present
+        if (jsonContent.startsWith('```')) {
+          const firstNewline = jsonContent.indexOf('\n');
+          const lastCodeFence = jsonContent.lastIndexOf('```');
+          if (firstNewline !== -1 && lastCodeFence > firstNewline) {
+            jsonContent = jsonContent.substring(firstNewline + 1, lastCodeFence).trim();
+          }
         }
         
-        // Clean up trailing commas before parsing
-        jsonContent = jsonContent.replace(/,(\s*[}\]])/g, '$1');
+        // Try to find the last complete JSON object if truncated
+        if (!jsonContent.endsWith(']')) {
+          console.warn('⚠️ Response appears truncated, attempting to recover...');
+          const lastCompleteObject = jsonContent.lastIndexOf('}');
+          if (lastCompleteObject > 0) {
+            jsonContent = jsonContent.substring(0, lastCompleteObject + 1) + ']';
+            console.log('✅ Recovered truncated response');
+          }
+        }
         
         strategies = JSON.parse(jsonContent);
         
         if (!Array.isArray(strategies) || strategies.length === 0) {
-          throw new Error('Invalid strategies format: expected non-empty array');
+          throw new Error('AI response did not contain a valid array of strategies');
         }
         
-        console.log(`✅ Parsed ${strategies.length} campaign strategies`);
+        // Validate required fields
+        const validStrategies = strategies.filter(s => 
+          s.id && s.title && s.description && s.contentMix && Array.isArray(s.contentMix)
+        );
         
-        // Debug: Log first strategy structure to verify all required fields
-        if (strategies.length > 0) {
-          console.log('📊 Generated strategy structure:', {
-            id: strategies[0].id,
-            title: strategies[0].title,
-            hasStrategyScore: !!strategies[0].strategyScore,
-            strategyScore: strategies[0].strategyScore,
-            hasKeyStrengths: !!strategies[0].keyStrengths,
-            keyStrengthsCount: strategies[0].keyStrengths?.length,
-            hasExpectedEngagement: !!strategies[0].expectedEngagement,
-            expectedEngagement: strategies[0].expectedEngagement,
-            hasTargetAudience: !!strategies[0].targetAudience,
-            hasSolutionAlignment: !!strategies[0].solutionAlignment,
-            solutionAlignment: strategies[0].solutionAlignment,
-            hasMilestones: !!strategies[0].milestones,
-            milestonesCount: strategies[0].milestones?.length,
-            contentMixFormatIds: strategies[0].contentMix?.map((c: any) => c.formatId) || [],
-            hasCompetitorDifferentiation: !!strategies[0].competitorDifferentiation,
-          });
+        if (validStrategies.length === 0) {
+          throw new Error('No valid strategies found in AI response');
         }
+        
+        if (validStrategies.length < strategies.length) {
+          console.warn(`⚠️ ${strategies.length - validStrategies.length} strategies were invalid and filtered out`);
+        }
+        
+        strategies = validStrategies;
+        console.log(`✅ Successfully parsed and validated ${strategies.length} strategies`);
+        
       } catch (parseError) {
         console.error('❌ Failed to parse AI response as JSON:', parseError);
-        console.error('Raw response:', aiResponse.content);
-        throw new Error('Failed to parse campaign strategies. Please try again.');
+        console.log('Raw response (first 500 chars):', aiResponse!.content.substring(0, 500));
+        console.log('Raw response (last 500 chars):', aiResponse!.content.substring(Math.max(0, aiResponse!.content.length - 500)));
+        throw new Error('Failed to parse AI response. The AI returned invalid or incomplete data. Please try again.');
       }
 
       return strategies;
