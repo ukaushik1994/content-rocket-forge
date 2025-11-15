@@ -61,14 +61,17 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
   const suggestions = [
     {
       text: "What's my content performance this month?",
+      displayText: "What's my content performance this month?",
       action: 'send:Show me my content performance analytics for this month'
     },
     {
       text: "Find keyword opportunities",
+      displayText: "Find keyword opportunities",
       action: 'send:Help me find high-opportunity keywords for my solutions'
     },
     {
       text: "Optimize existing content",
+      displayText: "Optimize existing content",
       action: 'send:Analyze my existing content and suggest optimizations'
     }
   ];
@@ -91,7 +94,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
             >
               <Card 
                 className={`cursor-pointer transition-all duration-300 hover:scale-[1.02] bg-background/60 backdrop-blur-xl border-border/50 hover:border-primary/30 group overflow-hidden relative`}
-                onClick={() => onAction(action.action)}
+                onClick={() => onAction(action.action, { displayText: action.title })}
               >
                 <CardContent className="p-6 relative z-10">
                   <div className="flex items-start gap-4">
@@ -137,7 +140,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
               <Badge 
                 variant="outline" 
                 className="cursor-pointer px-4 py-2 text-sm bg-background/60 backdrop-blur-xl border-border/50 hover:bg-background/80 hover:border-primary/30 transition-all duration-200 text-muted-foreground hover:text-foreground"
-                onClick={() => onAction(suggestion.action)}
+                onClick={() => onAction(suggestion.action, { displayText: suggestion.displayText })}
               >
                 {suggestion.text}
               </Badge>
