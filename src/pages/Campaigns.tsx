@@ -157,6 +157,22 @@ const Campaigns = () => {
     setSelectedStrategy(null);
   };
 
+  const handleStartConversation = (message: string) => {
+    // Start a new campaign with the user's idea
+    setViewMode('create');
+    setShowInput(true);
+    setStrategies([]);
+    setCurrentInput({
+      idea: message,
+      targetAudience: '',
+      goal: undefined,
+      timeline: undefined
+    });
+    setCurrentCampaignId(null);
+    setSelectedStrategy(null);
+    toast.success('Let\'s build your campaign!');
+  };
+
   const handleArchiveCampaign = async (campaignId: string) => {
     await updateCampaignStatus(campaignId, 'archived');
   };
@@ -185,7 +201,10 @@ const Campaigns = () => {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-8"
         >
-          <CampaignsHero onCreateClick={handleStartNewCampaign} />
+      <CampaignsHero 
+        onCreateClick={handleStartNewCampaign}
+        onStartConversation={handleStartConversation}
+      />
           
           <AnimatePresence mode="wait">
             {viewMode === 'list' ? (
