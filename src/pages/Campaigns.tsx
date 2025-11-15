@@ -5,23 +5,30 @@ import { CampaignsHero } from '@/components/campaigns/CampaignsHero';
 import { CampaignInput } from '@/components/campaigns/CampaignInput';
 import { StrategyTiles } from '@/components/campaigns/StrategyTiles';
 import { StrategyEditModal } from '@/components/campaigns/StrategyEditModal';
+import { CampaignList } from '@/components/campaigns/CampaignList';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignStrategies } from '@/hooks/useCampaignStrategies';
+import { useCampaigns } from '@/hooks/useCampaigns';
 import { CampaignStrategy, CampaignInput as CampaignInputType } from '@/types/campaign-types';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { solutionService } from '@/services/solutionService';
+import { campaignService, SavedCampaign } from '@/services/campaignService';
 import { toast } from 'sonner';
+import { ArrowLeft, Plus } from 'lucide-react';
 
 const Campaigns = () => {
   const { user } = useAuth();
   const { generateStrategies, isGenerating } = useCampaignStrategies();
+  const { campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns, deleteCampaign, updateCampaignName, updateCampaignStatus } = useCampaigns();
   
+  const [viewMode, setViewMode] = useState<'list' | 'create' | 'view'>('list');
   const [showInput, setShowInput] = useState(false);
   const [currentInput, setCurrentInput] = useState<CampaignInputType | null>(null);
+  const [currentCampaignId, setCurrentCampaignId] = useState<string | null>(null);
   const [strategies, setStrategies] = useState<CampaignStrategy[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [editingStrategy, setEditingStrategy] = useState<CampaignStrategy | null>(null);
@@ -53,10 +60,10 @@ const Campaigns = () => {
     }
 
     setCurrentInput(input);
-    setStrategies([]); // Clear previous strategies to show loading state
+    setStrategies([]);
+    setViewMode('create');
 
     try {
-      // Fetch company info
       const { data: companyData } = await supabase
         .from('company_info')
         .select('name, description, industry')
@@ -75,7 +82,6 @@ const Campaigns = () => {
       toast.success('Campaign strategies generated!');
     } catch (error) {
       console.error('Error generating strategies:', error);
-      // Error already shown by hook
     }
   };
 
@@ -94,6 +100,65 @@ const Campaigns = () => {
     );
     setEditingStrategy(null);
     toast.success('Strategy updated');
+  };
+
+  const handleSelectStrategy = async (strategyId: string) => {
+    if (!user || !currentInput) return;
+    
+    const strategy = strategies.find((s) => s.id === strategyId);
+    if (!strategy) return;
+
+    try {
+      const campaignName = `${currentInput.idea.slice(0, 50)}${currentInput.idea.length > 50 ? '...' : ''}`;
+      const savedCampaign = await campaignService.saveCampaign(
+        user.id,
+        campaignName,
+        currentInput.idea,
+        strategy
+      );
+      
+      setCurrentCampaignId(savedCampaign.id);
+      setSelectedStrategy(strategyId);
+      toast.success('Campaign saved successfully!');
+      refetchCampaigns();
+    } catch (error) {
+      console.error('Error saving campaign:', error);
+      toast.error('Failed to save campaign');
+    }
+  };
+
+  const handleViewCampaign = (campaign: SavedCampaign) => {
+    setCurrentCampaignId(campaign.id);
+    setCurrentInput({ idea: campaign.original_idea });
+    
+    if (campaign.selected_strategy) {
+      setStrategies([campaign.selected_strategy]);
+      setSelectedStrategy(campaign.selected_strategy.id);
+    }
+    
+    setViewMode('view');
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setStrategies([]);
+    setCurrentInput(null);
+    setCurrentCampaignId(null);
+    setSelectedStrategy(null);
+    setShowInput(false);
+  };
+
+  const handleStartNewCampaign = () => {
+    setViewMode('create');
+    setShowInput(true);
+    setStrategies([]);
+    setCurrentInput(null);
+    setCurrentCampaignId(null);
+    setSelectedStrategy(null);
+  };
+
+  const handleArchiveCampaign = async (campaignId: string) => {
+    await updateCampaignStatus(campaignId, 'archived');
   };
 
   const selectedStrategyData = strategies.find((s) => s.id === selectedStrategy);
@@ -120,74 +185,127 @@ const Campaigns = () => {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-8"
         >
-          <CampaignsHero onCreateClick={() => setShowInput(true)} />
+          <CampaignsHero onCreateClick={handleStartNewCampaign} />
           
           <AnimatePresence mode="wait">
-            {showInput && (
-              <CampaignInput
-                onGenerate={handleGenerateStrategies}
-                onCancel={() => setShowInput(false)}
-                isGenerating={isGenerating}
-              />
-            )}
-
-            {isGenerating && strategies.length === 0 && !showInput && (
+            {viewMode === 'list' ? (
               <motion.div
+                key="list"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6"
               >
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="rounded-xl border bg-card/50 backdrop-blur-sm p-6 space-y-4 animate-pulse">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="h-5 bg-muted rounded w-20"></div>
-                      <div className="h-5 bg-muted rounded w-16"></div>
-                    </div>
-                    <div className="h-7 bg-muted rounded w-3/4 mb-3"></div>
-                    <div className="h-4 bg-muted rounded w-full mb-2"></div>
-                    <div className="h-4 bg-muted rounded w-5/6 mb-4"></div>
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      <div className="h-20 bg-muted rounded"></div>
-                      <div className="h-20 bg-muted rounded"></div>
-                      <div className="h-20 bg-muted rounded"></div>
-                      <div className="h-20 bg-muted rounded"></div>
-                    </div>
-                    <div className="h-10 bg-muted rounded"></div>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">My Campaigns</h2>
+                    <Button onClick={handleStartNewCampaign} className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      New Campaign
+                    </Button>
                   </div>
-                ))}
+                  
+                  <CampaignList
+                    campaigns={campaigns}
+                    isLoading={campaignsLoading}
+                    onViewCampaign={handleViewCampaign}
+                    onDeleteCampaign={deleteCampaign}
+                    onRenameCampaign={updateCampaignName}
+                    onArchiveCampaign={handleArchiveCampaign}
+                  />
+                </div>
               </motion.div>
-            )}
-
-            {strategies.length > 0 && !showInput && (
+            ) : (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="space-y-8"
+                key="create-view"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
-              <StrategyTiles
-                strategies={strategies}
-                selectedId={selectedStrategy}
-                onSelect={setSelectedStrategy}
-                onEdit={handleEditStrategy}
-                onRegenerate={handleRegenerateStrategies}
-                isRegenerating={isGenerating}
-                solution={selectedSolution}
-              />
+                <div className="mb-6">
+                  <Button variant="ghost" onClick={handleBackToList} className="gap-2">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Campaigns
+                  </Button>
+                </div>
 
-                {selectedStrategy && selectedStrategyData && (
+                {showInput ? (
+                  <CampaignInput
+                    onGenerate={handleGenerateStrategies}
+                    onCancel={handleBackToList}
+                    isGenerating={isGenerating}
+                  />
+                ) : null}
+
+                {isGenerating && strategies.length === 0 && !showInput && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  >
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="rounded-xl border bg-card/50 backdrop-blur-sm p-6 space-y-4 animate-pulse">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="h-5 bg-muted rounded w-20"></div>
+                          <div className="h-5 bg-muted rounded w-16"></div>
+                        </div>
+                        <div className="h-7 bg-muted rounded w-3/4 mb-3"></div>
+                        <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                        <div className="h-4 bg-muted rounded w-5/6 mb-4"></div>
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                          <div className="h-20 bg-muted rounded"></div>
+                          <div className="h-20 bg-muted rounded"></div>
+                          <div className="h-20 bg-muted rounded"></div>
+                          <div className="h-20 bg-muted rounded"></div>
+                        </div>
+                        <div className="h-10 bg-muted rounded"></div>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+
+                {strategies.length > 0 && !showInput && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex justify-center gap-4"
+                    exit={{ opacity: 0, y: -20 }}
+                    className="space-y-8"
                   >
-                    <Button
-                      size="lg"
-                      className="bg-gradient-to-r from-primary to-blue-500"
-                    >
-                      Generate Content for This Strategy
-                    </Button>
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-2xl font-bold">
+                        {viewMode === 'view' ? 'Campaign Details' : 'Generated Strategies'}
+                      </h2>
+                      {viewMode === 'create' && (
+                        <Button onClick={handleRegenerateStrategies} disabled={isGenerating}>
+                          Regenerate
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <StrategyTiles
+                      strategies={strategies}
+                      selectedId={selectedStrategy}
+                      onSelect={handleSelectStrategy}
+                      onEdit={handleEditStrategy}
+                      onRegenerate={handleRegenerateStrategies}
+                      isRegenerating={isGenerating}
+                      solution={selectedSolution}
+                    />
+
+                    {selectedStrategy && selectedStrategyData && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex justify-center gap-4"
+                      >
+                        <Button
+                          size="lg"
+                          className="bg-gradient-to-r from-primary to-blue-500"
+                        >
+                          Generate Content for This Strategy
+                        </Button>
+                      </motion.div>
+                    )}
                   </motion.div>
                 )}
               </motion.div>
