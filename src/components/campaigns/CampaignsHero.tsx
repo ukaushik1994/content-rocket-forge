@@ -123,21 +123,7 @@ export const CampaignsHero = React.memo(({ onCreateClick, onStartConversation }:
             Create comprehensive marketing campaigns with AI-powered strategy generation
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            className="flex justify-center"
-          >
-            <Button
-              onClick={onCreateClick}
-              size="lg"
-              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/90 hover:to-neon-blue/90 text-white font-semibold px-8 py-6 rounded-2xl text-lg shadow-2xl hover:shadow-neon-purple/50 transition-all duration-300 hover:scale-105"
-            >
-              <Megaphone className="mr-2 h-5 w-5" />
-              Create New Campaign
-            </Button>
-          </motion.div>
+          {/* Removed Create New Campaign button - using conversational input instead */}
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -203,7 +189,7 @@ export const CampaignsHero = React.memo(({ onCreateClick, onStartConversation }:
                     value={campaignIdea}
                     onChange={(e) => setCampaignIdea(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Describe your campaign idea and let AI help you build it..."
+                    placeholder="Start a conversation about your campaign idea..."
                     className="flex-1 bg-transparent text-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
                   />
                   
