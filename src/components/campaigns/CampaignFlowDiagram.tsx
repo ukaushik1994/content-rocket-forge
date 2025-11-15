@@ -1,4 +1,5 @@
 import { CampaignStrategy } from '@/types/campaign-types';
+import { MermaidDiagram } from '@/components/ui/mermaid-diagram';
 
 type TileId = 'summary' | 'content-mix' | 'effort' | 'audience' | 'seo' | 'distribution' | 'assets' | 'addons';
 type TabType = 'workflow' | 'timeline' | 'dependencies';
@@ -182,11 +183,10 @@ ${order}
 
   return (
     <div className="w-full h-full overflow-auto p-6">
-      <div className="mermaid-diagram bg-card border border-border rounded-lg p-4">
-        <pre className="text-sm">
-          <code>{mermaidCode}</code>
-        </pre>
-      </div>
+      <MermaidDiagram 
+        code={mermaidCode}
+        className="bg-card border border-border rounded-lg p-6"
+      />
     </div>
   );
 };
