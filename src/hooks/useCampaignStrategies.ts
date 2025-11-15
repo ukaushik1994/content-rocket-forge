@@ -49,6 +49,7 @@ Your role is to generate exactly 4 diverse, actionable campaign strategies based
 
 ${serpContext ? 'IMPORTANT: Leverage the SERP intelligence data to create SEO-optimized, data-driven strategies that align with current search trends and user intent.' : ''}
 
+CRITICAL: Return ONLY valid JSON - no markdown, no code blocks, no trailing commas.
 Return your response as a valid JSON array with exactly 4 strategy objects. Each object must have:
 - id: unique identifier (string)
 - title: compelling strategy name (string)
@@ -59,7 +60,11 @@ Return your response as a valid JSON array with exactly 4 strategy objects. Each
 - targetAudience: specific audience segment (string, optional)
 - postingSchedule: array of {formatId: string, frequency: string, platform?: string, bestTimes?: string[]}
 
-Format IDs can include: blog-post, social-media, video, infographic, email-newsletter, podcast, webinar, case-study, whitepaper, etc.`;
+Format IDs can include: blog-post, social-media, video, infographic, email-newsletter, podcast, webinar, case-study, whitepaper, etc.
+
+IMPORTANT: Ensure all JSON arrays have NO trailing commas. Example:
+CORRECT: ["item1", "item2"]
+WRONG: ["item1", "item2",]`;
 
       const userPrompt = `Campaign Idea: ${input.idea}
 ${input.targetAudience ? `Target Audience: ${input.targetAudience}` : ''}
@@ -90,6 +95,9 @@ Generate 4 distinct campaign strategies as a JSON array.`;
         if (jsonMatch) {
           jsonContent = jsonMatch[1];
         }
+        
+        // Clean up trailing commas before parsing
+        jsonContent = jsonContent.replace(/,(\s*[}\]])/g, '$1');
         
         strategies = JSON.parse(jsonContent);
         
