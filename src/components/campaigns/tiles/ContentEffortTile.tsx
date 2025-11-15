@@ -55,16 +55,18 @@ export const ContentEffortTile = ({ strategy }: ContentEffortTileProps) => {
               </Badge>
             </div>
             
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Recommended Order</p>
-              <div className="flex gap-2 flex-wrap">
-                {strategy.totalEffort.workflowOrder.map((formatId, idx) => (
-                  <Badge key={formatId} variant="outline">
-                    {idx + 1}. {formatNames[formatId] || formatId}
-                  </Badge>
-                ))}
+            {strategy.totalEffort.workflowOrder && strategy.totalEffort.workflowOrder.length > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Recommended Order</p>
+                <div className="flex gap-2 flex-wrap">
+                  {strategy.totalEffort.workflowOrder.map((formatId, idx) => (
+                    <Badge key={formatId} variant="outline">
+                      {idx + 1}. {formatNames[formatId] || formatId}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </>
         ) : (
           <div className="text-center py-4 text-muted-foreground">

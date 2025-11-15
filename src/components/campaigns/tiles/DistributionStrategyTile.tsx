@@ -42,16 +42,18 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
       </div>
       
       <div className="space-y-3">
-        <div>
-          <p className="text-xs text-muted-foreground mb-2">Channels</p>
-          <div className="flex gap-2 flex-wrap">
-            {distributionStrategy.channels.map((channel) => (
-              <Badge key={channel} className="bg-blue-500/20 text-blue-300">
-                {channel}
-              </Badge>
-            ))}
+        {distributionStrategy.channels && distributionStrategy.channels.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Channels</p>
+            <div className="flex gap-2 flex-wrap">
+              {distributionStrategy.channels.map((channel) => (
+                <Badge key={channel} className="bg-blue-500/20 text-blue-300">
+                  {channel}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         
         <div className="flex items-center gap-2 p-2 rounded-lg bg-background/40">
           <Calendar className="h-4 w-4 text-blue-400" />
@@ -61,17 +63,19 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
           </div>
         </div>
         
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Best Days/Times</p>
-          <div className="flex gap-2 flex-wrap">
-            {distributionStrategy.bestDaysAndTimes.map((time) => (
-              <Badge key={time} variant="outline" className="text-xs">
-                <Clock className="h-3 w-3 mr-1" />
-                {time}
-              </Badge>
-            ))}
+        {distributionStrategy.bestDaysAndTimes && distributionStrategy.bestDaysAndTimes.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Best Days/Times</p>
+            <div className="flex gap-2 flex-wrap">
+              {distributionStrategy.bestDaysAndTimes.map((time) => (
+                <Badge key={time} variant="outline" className="text-xs">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {time}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         
         <div className="pt-3 border-t border-blue-500/20">
           <p className="text-xs text-muted-foreground mb-1">Estimated Traffic Lift</p>
