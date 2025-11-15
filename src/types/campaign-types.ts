@@ -32,4 +32,5 @@ export interface CampaignInput {
   targetAudience?: string;
   goal?: CampaignGoal;
   timeline?: CampaignTimeline;
+  useSerpData?: boolean;
 }

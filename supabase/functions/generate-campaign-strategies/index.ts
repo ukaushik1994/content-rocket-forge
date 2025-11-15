@@ -10,7 +10,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, campaignIdea, targetAudience, goal, timeline, companyInfo } = await req.json();
+    const { userId, campaignIdea, targetAudience, goal, timeline, useSerpData, companyInfo } = await req.json();
 
     if (!userId || !campaignIdea) {
       return new Response(
@@ -28,6 +28,52 @@ serve(async (req) => {
 
     console.log('🎯 Generating campaign strategies for user:', userId);
 
+    // Fetch SERP data if requested
+    let serpEnrichment = ''
+    if (useSerpData) {
+      try {
+        console.log('🔍 Fetching SERP data for campaign enrichment...');
+        const serpResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/serp-analysis`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            keyword: campaignIdea.substring(0, 100),
+            location: 'United States',
+            language: 'en'
+          }),
+        });
+
+        if (serpResponse.ok) {
+          const serpData = await serpResponse.json();
+          console.log('✅ SERP data fetched successfully');
+          
+          // Extract valuable SERP insights
+          const keywords = serpData.topResults?.map((r: any) => r.title).slice(0, 5) || [];
+          const relatedSearches = serpData.relatedSearches?.map((r: any) => r.query).slice(0, 5) || [];
+          const paaQuestions = serpData.peopleAlsoAsk?.map((q: any) => q.question).slice(0, 5) || [];
+          
+          serpEnrichment = `
+
+## Real-time SERP Intelligence
+**Trending Topics from Search Results**: ${keywords.length > 0 ? keywords.join(', ') : 'No data'}
+**Related Searches**: ${relatedSearches.length > 0 ? relatedSearches.join(', ') : 'No data'}
+**People Also Ask Questions**: ${paaQuestions.length > 0 ? paaQuestions.join('; ') : 'No data'}
+**Estimated Search Volume**: ${serpData.searchVolume || 'N/A'}
+**Competition Level**: ${serpData.competitionScore ? (serpData.competitionScore * 100).toFixed(0) + '%' : 'N/A'}
+
+💡 Use these insights to align your campaign strategies with what audiences are actively searching for and discussing online.`;
+        } else {
+          console.warn('⚠️ SERP API returned non-OK status:', serpResponse.status);
+        }
+      } catch (serpError) {
+        console.error('❌ SERP enrichment failed:', serpError);
+        // Continue without SERP data - don't fail the entire request
+      }
+    }
+
     // Build context for AI
     let contextPrompt = `Campaign Idea: ${campaignIdea}\n`;
     if (targetAudience) contextPrompt += `Target Audience: ${targetAudience}\n`;
@@ -37,6 +83,9 @@ serve(async (req) => {
       if (companyInfo.name) contextPrompt += `Company: ${companyInfo.name}\n`;
       if (companyInfo.description) contextPrompt += `Description: ${companyInfo.description}\n`;
       if (companyInfo.industry) contextPrompt += `Industry: ${companyInfo.industry}\n`;
+    }
+    if (serpEnrichment) {
+      contextPrompt += serpEnrichment;
     }
 
     const systemPrompt = `You are an expert digital marketing strategist. Generate 4 diverse campaign strategies based on the user's idea.
@@ -60,6 +109,7 @@ Requirements:
 4. Include realistic posting frequencies
 5. Make strategies creative and actionable
 6. Consider the campaign goal and timeline provided
+${useSerpData ? '7. **CRITICAL**: Leverage the Real-time SERP Intelligence provided - use trending topics as content themes, incorporate "People Also Ask" questions into content ideas, and align with search volume and competition data' : ''}
 
 Return JSON with exactly 4 strategies in this structure:
 {
