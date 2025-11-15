@@ -55,13 +55,19 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
           </div>
         )}
         
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-background/40">
-          <Calendar className="h-4 w-4 text-blue-400" />
-          <div>
-            <p className="text-xs text-muted-foreground">Posting Cadence</p>
-            <p className="text-sm font-medium">{distributionStrategy.postingCadence}</p>
+        {distributionStrategy.postingCadence && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-background/40">
+            <Calendar className="h-4 w-4 text-blue-400" />
+            <div>
+              <p className="text-xs text-muted-foreground">Posting Cadence</p>
+              <p className="text-sm font-medium">
+                {typeof distributionStrategy.postingCadence === 'string' 
+                  ? distributionStrategy.postingCadence 
+                  : 'Varies by format'}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
         
         {distributionStrategy.bestDaysAndTimes && distributionStrategy.bestDaysAndTimes.length > 0 && (
           <div>
