@@ -2,7 +2,8 @@ import { CampaignStrategy } from '@/types/campaign-types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, CalendarDays, FileEdit, Download, FileText, Mail } from 'lucide-react';
+import { Plus, CalendarDays, FileEdit, Download, FileText, Mail, ArrowUpRight } from 'lucide-react';
+import { useCampaignFlow } from '@/contexts/CampaignFlowContext';
 
 interface OptionalAddonsTileProps {
   strategy: CampaignStrategy;
@@ -10,11 +11,16 @@ interface OptionalAddonsTileProps {
 }
 
 export const OptionalAddonsTile = ({ strategy, onAddonClick }: OptionalAddonsTileProps) => {
+  const { openFlowPanel } = useCampaignFlow();
   const optionalAddons = strategy.optionalAddons;
 
   if (!optionalAddons) {
     return (
-      <GlassCard className="p-5 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border-indigo-500/20">
+      <GlassCard 
+        className="p-5 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border-indigo-500/20 cursor-pointer transition-all duration-200 hover:border-neon-purple/50 hover:scale-[1.02] hover:shadow-lg hover:shadow-neon-purple/20 relative group"
+        onClick={() => openFlowPanel('addons', strategy)}
+      >
+        <ArrowUpRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex items-center gap-2 mb-4">
           <Plus className="h-5 w-5 text-indigo-400" />
           <h3 className="text-lg font-semibold">Optional Add-ons</h3>
@@ -73,7 +79,11 @@ export const OptionalAddonsTile = ({ strategy, onAddonClick }: OptionalAddonsTil
   ];
 
   return (
-    <GlassCard className="p-5 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border-indigo-500/20">
+    <GlassCard 
+      className="p-5 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border-indigo-500/20 cursor-pointer transition-all duration-200 hover:border-neon-purple/50 hover:scale-[1.02] hover:shadow-lg hover:shadow-neon-purple/20 relative group"
+      onClick={() => openFlowPanel('addons', strategy)}
+    >
+      <ArrowUpRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-center gap-2 mb-4">
         <Plus className="h-5 w-5 text-indigo-400" />
         <h3 className="text-lg font-semibold">Optional Add-ons</h3>

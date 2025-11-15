@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { SaveIndicator } from './SaveIndicator';
 import { CampaignStatusBadge } from './CampaignStatusBadge';
 import { useCampaignAutoSave } from '@/hooks/useCampaignAutoSave';
+import { CampaignFlowProvider } from '@/contexts/CampaignFlowContext';
+import { CampaignFlowPanel } from './CampaignFlowPanel';
 import {
   CampaignSummaryTile,
   ContentMixTile,
@@ -57,7 +59,9 @@ export const CampaignBreakdownView = ({
   });
 
   return (
-    <div className="space-y-6 w-full">
+    <CampaignFlowProvider>
+      <CampaignFlowPanel />
+      <div className="space-y-6 w-full">
       {/* Header with Status and Save Indicator */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -121,5 +125,6 @@ export const CampaignBreakdownView = ({
         </p>
       </div>
     </div>
+    </CampaignFlowProvider>
   );
 };
