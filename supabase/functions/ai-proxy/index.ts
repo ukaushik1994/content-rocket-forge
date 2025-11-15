@@ -230,34 +230,78 @@ async function chatOpenAI(apiKey: string, params: any) {
   delete requestBody.maxTokens;
   delete requestBody.max_tokens;
 
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+  const maxRetries = 3;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 OpenAI API call attempt ${attempt}/${maxRetries}`);
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ OpenAI chat failed:', response.status, errorData);
-      throw new Error(`OpenAI chat failed: ${response.statusText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        
+        // Handle rate limit (429) specifically
+        if (response.status === 429) {
+          console.error('❌ OpenAI chat failed:', response.status, errorText);
+          
+          // Try to parse wait time from error message
+          let waitTime = 2000 * attempt; // Default exponential backoff
+          try {
+            const errorData = JSON.parse(errorText);
+            const errorMsg = errorData.error?.message || '';
+            // Extract wait time from message like "Please try again in 1.812s"
+            const waitMatch = errorMsg.match(/try again in ([\d.]+)s/);
+            if (waitMatch) {
+              waitTime = Math.ceil(parseFloat(waitMatch[1]) * 1000); // Convert to ms
+              console.log(`⏰ Rate limit hit, waiting ${waitTime}ms as suggested by API`);
+            }
+          } catch (parseError) {
+            console.warn('Could not parse rate limit wait time, using exponential backoff');
+          }
+          
+          if (attempt < maxRetries) {
+            console.log(`⏳ Waiting ${waitTime}ms before retry ${attempt + 1}...`);
+            await new Promise(r => setTimeout(r, waitTime));
+            continue;
+          }
+        }
+        
+        // For other errors, throw immediately
+        console.error('❌ OpenAI chat failed:', response.status, errorText);
+        throw new Error(`OpenAI chat failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ OpenAI chat successful');
+      
+      return {
+        success: true,
+        data,
+        provider: 'OpenAI'
+      };
+    } catch (error: any) {
+      console.error(`💥 OpenAI chat exception on attempt ${attempt}:`, error);
+      
+      if (attempt === maxRetries) {
+        throw new Error(`OpenAI chat error: ${error.message}`);
+      }
+      
+      // Wait before retry for non-rate-limit errors
+      const waitTime = 2000 * attempt;
+      console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+      await new Promise(r => setTimeout(r, waitTime));
     }
-
-    const data = await response.json();
-    console.log('✅ OpenAI chat successful');
-    
-    return {
-      success: true,
-      data,
-      provider: 'OpenAI'
-    };
-  } catch (error: any) {
-    console.error('💥 OpenAI chat exception:', error);
-    throw new Error(`OpenAI chat error: ${error.message}`);
   }
+  
+  throw new Error('OpenAI chat failed after all retries');
 }
 
 async function completionOpenAI(apiKey: string, params: any) {
