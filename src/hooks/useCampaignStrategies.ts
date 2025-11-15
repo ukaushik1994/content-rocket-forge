@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { solutionService } from '@/services/solutionService';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { optimizeSolutionContext, optimizeCompetitorContext, optimizeSerpContext, estimateTokens } from '@/services/campaignStrategyOptimizer';
+import { normalizeCampaignStrategy } from '@/utils/campaignStrategyNormalizer';
 
 export const useCampaignStrategies = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -57,6 +58,45 @@ Provide:
 17. Distribution strategy (channels, posting cadence, best days/times, tone & messaging, estimated traffic lift)
 18. Asset requirements (copy needs, visual needs, CTA suggestions, target URLs)
 19. Optional add-ons (content calendar, draft copies, full SEO briefs, landing page copy, email sequences, export options)
+
+CRITICAL DATA TYPE REQUIREMENTS - FOLLOW EXACTLY:
+
+1. assetRequirements.copyNeeds: MUST be array of strings
+   Example: ["Social media captions", "Blog post drafts"]
+   NOT: {copyNeed1: "...", copyNeed2: "..."}
+
+2. assetRequirements.visualNeeds: MUST be array of strings
+   Example: ["Hero images", "Social graphics"]
+
+3. assetRequirements.ctaSuggestions: MUST be array of strings
+   Example: ["Get Started Free", "Learn More"]
+
+4. audienceIntelligence.personas: MUST be array of strings
+   Example: ["Marketing Directors", "Small Business Owners"]
+
+5. audienceIntelligence.industrySegments: MUST be array of strings
+   Example: ["SaaS", "E-commerce"]
+
+6. audienceIntelligence.painPoints: MUST be array of strings
+   Example: ["Lack of time", "Budget constraints"]
+
+7. distributionStrategy.postingCadence: MUST be a SINGLE STRING
+   Example: "3x weekly"
+   NOT: {blog: "weekly", twitter: "daily"}
+
+8. distributionStrategy.channels: MUST be array of strings
+   Example: ["LinkedIn", "Twitter", "Blog"]
+
+9. distributionStrategy.bestDaysAndTimes: MUST be array of strings
+   Example: ["Tuesday 10am", "Thursday 2pm"]
+
+10. seoIntelligence.secondaryKeywords: MUST be array of strings
+    Example: ["content marketing", "SEO strategy"]
+
+11. seoIntelligence.avgRankingDifficulty: MUST be "low", "medium", or "high"
+    NOT: "easy" or "hard"
+
+VALIDATION RULE: Before returning JSON, verify ALL array fields are actual arrays [], not objects {} or strings.
 
 CRITICAL: For each content format in contentMix, generate specific content briefs with:
 - Exact titles for each piece
@@ -223,19 +263,24 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
       try {
         // Try to extract JSON object from response
         const jsonMatch = content.match(/\{[\s\S]*\}/)?.[0];
-        strategy = JSON.parse(jsonMatch || content);
+        const rawStrategy = JSON.parse(jsonMatch || content);
+        
+        // ✨ CRITICAL: Normalize the strategy before using it
+        strategy = normalizeCampaignStrategy(rawStrategy);
+        
+        console.log('✅ Strategy normalized successfully');
       } catch (parseError) {
         console.error('Failed to parse strategy:', parseError);
         throw new Error('Invalid strategy format generated');
       }
 
-      // Auto-generate ID if missing
+      // Auto-generate ID if missing (normalization should handle this, but double-check)
       if (!strategy.id) {
         strategy.id = `strategy-${Date.now()}`;
       }
 
       // Validate required fields
-      if (!strategy.title || !strategy.description || !strategy.contentMix) {
+      if (!strategy.title || !strategy.description || !strategy.contentMix || strategy.contentMix.length === 0) {
         throw new Error('Strategy missing required fields');
       }
       
