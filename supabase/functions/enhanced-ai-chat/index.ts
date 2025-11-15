@@ -712,7 +712,8 @@ serve(async (req) => {
     }
 
     const { messages, context } = await req.json();
-    console.log("🚀 Processing enhanced AI chat request for user:", user.id);
+    const use_case = context?.use_case; // Extract use_case from context
+    console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '');
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Messages array is required" }), {
@@ -1169,6 +1170,23 @@ serve(async (req) => {
 
     console.log(`📝 AI Response received (${aiMessage.length} characters)`);
     console.log("🔍 Response preview:", aiMessage.substring(0, 300));
+    
+    // ✅ CRITICAL: Bypass JSON parser for strategy generation
+    if (use_case === 'strategy') {
+      console.log('📋 Strategy use case detected - returning raw JSON response');
+      return new Response(
+        JSON.stringify({
+          response: aiMessage, // Raw JSON array for strategies
+          content: aiMessage,  // Fallback
+          metadata: {
+            processed_at: new Date().toISOString(),
+            use_case: 'strategy',
+            bypass_json_parser: true
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Phase 4: Response size monitoring for large context models
     if (aiMessage.length > 15000) {

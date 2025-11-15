@@ -305,8 +305,8 @@ export function StrategyTiles({
                   </motion.div>
                 )}
 
-                {/* Featured Solution Capabilities */}
-                {solution?.features && solution.features.length > 0 && (
+                {/* Featured Solution Capabilities - Only show if solution exists */}
+                {solution && solution.features && solution.features.length > 0 && (
                   <motion.div 
                     className="space-y-2"
                     initial={{ opacity: 0, y: 10 }}
