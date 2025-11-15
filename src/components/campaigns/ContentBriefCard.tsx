@@ -26,11 +26,14 @@ export function ContentBriefCard({ brief, formatName, onCreateContent }: Content
   };
 
   return (
-    <GlassCard className="p-4 space-y-3 bg-card/60 hover:bg-card/80 transition-all group">
-      <div className="space-y-2">
+    <GlassCard className="p-4 space-y-3 bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-xl hover:border-primary/20 hover:shadow-md transition-all duration-300 group relative">
+      {/* Subtle gradient overlay on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none" />
+      
+      <div className="relative space-y-2">
         <div className="flex items-start justify-between gap-2">
           <h4 className="font-semibold text-sm leading-tight flex-1 line-clamp-2">{brief.title}</h4>
-          <Badge variant="outline" className="text-xs shrink-0 bg-primary/5">
+          <Badge variant="outline" className="text-xs shrink-0 bg-gradient-to-r from-primary/20 to-primary/10 border-primary/20">
             {formatName}
           </Badge>
         </div>
@@ -98,7 +101,7 @@ export function ContentBriefCard({ brief, formatName, onCreateContent }: Content
       {onCreateContent && (
         <Button 
           size="sm" 
-          className="w-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="relative w-full mt-2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 border-primary/30"
           onClick={onCreateContent}
         >
           <ExternalLink className="w-3 h-3 mr-2" />
