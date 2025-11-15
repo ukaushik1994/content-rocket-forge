@@ -1011,33 +1011,68 @@ serve(async (req) => {
     // Initialize tool cache for this request
     const toolCache = new Map<string, { data: any; timestamp: number }>();
 
-    // Call ai-proxy edge function with user's provider (including tools)
-    const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
-      body: {
-        service: provider.provider,
-        endpoint: 'chat',
-        apiKey: provider.api_key,
-        params: {
-          model: provider.preferred_model,
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt,
-            },
-            ...messages,
-          ],
-          tools: TOOL_DEFINITIONS, // ✅ Add tools for function calling
-          temperature: 0.7,
-          max_tokens: dynamicMaxTokens,
+    // Call ai-proxy edge function with user's provider (including tools) with retry logic
+    let aiProxyResult = null;
+    let aiProxyError = null;
+    const maxRetries = 3;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`🔄 AI call attempt ${attempt}/${maxRetries}`);
+      
+      const result = await supabase.functions.invoke('ai-proxy', {
+        body: {
+          service: provider.provider,
+          endpoint: 'chat',
+          apiKey: provider.api_key,
+          params: {
+            model: provider.preferred_model,
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              ...messages,
+            ],
+            tools: TOOL_DEFINITIONS, // ✅ Add tools for function calling
+            temperature: 0.7,
+            max_tokens: dynamicMaxTokens,
+          }
         }
+      });
+      
+      if (!result.error && result.data?.success) {
+        aiProxyResult = result.data;
+        aiProxyError = null;
+        console.log(`✅ AI call succeeded on attempt ${attempt}`);
+        break;
       }
-    });
+      
+      aiProxyError = result.error || result.data?.error;
+      
+      // Handle rate limiting with exponential backoff
+      const errorMsg = (typeof aiProxyError === 'string' ? aiProxyError : aiProxyError?.message) || '';
+      if (errorMsg.includes('429') || 
+          errorMsg.toLowerCase().includes('rate limit') ||
+          errorMsg.includes('Please try again')) {
+        console.warn(`⏰ Rate limit hit, attempt ${attempt}/${maxRetries}`);
+        if (attempt < maxRetries) {
+          const waitTime = 5000 * attempt;
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          await new Promise(r => setTimeout(r, waitTime));
+          continue;
+        }
+      } else if (attempt < maxRetries) {
+        const waitTime = 2000 * attempt;
+        console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+        await new Promise(r => setTimeout(r, waitTime));
+      }
+    }
 
     if (aiProxyError || !aiProxyResult?.success) {
-      console.error("AI request failed:", aiProxyError?.message || aiProxyResult?.error);
+      console.error("AI request failed after all retries:", aiProxyError);
       return new Response(JSON.stringify({ 
         error: "Failed to get AI response",
-        details: aiProxyError?.message || aiProxyResult?.error,
+        details: typeof aiProxyError === 'string' ? aiProxyError : (aiProxyError?.message || aiProxyResult?.error),
         message: "AI service temporarily unavailable. Please try again in a moment."
       }), {
         status: 500,
