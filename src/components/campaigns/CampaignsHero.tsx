@@ -3,7 +3,11 @@ import { motion } from 'framer-motion';
 import { Sparkles, Megaphone, Target, Zap, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export const CampaignsHero = React.memo(() => {
+interface CampaignsHeroProps {
+  onCreateClick?: () => void;
+}
+
+export const CampaignsHero = React.memo(({ onCreateClick }: CampaignsHeroProps) => {
   return (
     <motion.div 
       className="relative min-h-[60vh] flex items-center justify-center w-full"
@@ -13,14 +17,12 @@ export const CampaignsHero = React.memo(() => {
     >
       <div className="relative z-10 w-full px-6 pt-8 pb-12">
         <div className="text-center space-y-8 max-w-5xl mx-auto">
-          {/* Animated background blur */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-neon-purple/10 via-transparent to-neon-blue/10 rounded-3xl blur-3xl"
             animate={{ opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           />
 
-          {/* Status Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -38,7 +40,6 @@ export const CampaignsHero = React.memo(() => {
             </div>
           </motion.div>
 
-          {/* Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -55,7 +56,6 @@ export const CampaignsHero = React.memo(() => {
             </div>
           </motion.div>
           
-          {/* Description */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -65,7 +65,6 @@ export const CampaignsHero = React.memo(() => {
             Transform one idea into a complete multi-channel campaign strategy with AI-powered content generation
           </motion.p>
 
-          {/* Main Action Button */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -75,8 +74,8 @@ export const CampaignsHero = React.memo(() => {
             <Button 
               size="lg" 
               className="relative overflow-hidden group bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-primary-foreground border-0 shadow-2xl px-8 py-4 text-lg h-auto"
+              onClick={onCreateClick}
             >
-              {/* Shimmer effect */}
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                 animate={{ x: ['-100%', '200%'] }}
@@ -87,28 +86,43 @@ export const CampaignsHero = React.memo(() => {
             </Button>
           </motion.div>
 
-          {/* Stats Row - Placeholder for future */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto pt-12"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-3xl mx-auto"
           >
-            <StatCard 
-              icon={<Target className="h-5 w-5 text-primary" />}
-              label="Active Campaigns"
-              value="0"
-            />
-            <StatCard 
-              icon={<Sparkles className="h-5 w-5 text-blue-500" />}
-              label="Content Generated"
-              value="0"
-            />
-            <StatCard 
-              icon={<TrendingUp className="h-5 w-5 text-green-500" />}
-              label="Formats Used"
-              value="0"
-            />
+            {[
+              { icon: Target, label: 'Active Campaigns', value: '-', color: 'from-purple-500 to-pink-500' },
+              { icon: Zap, label: 'Content Generated', value: '-', color: 'from-blue-500 to-cyan-500' },
+              { icon: TrendingUp, label: 'Formats Used', value: '-', color: 'from-green-500 to-emerald-500' }
+            ].map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 + (index * 0.1), duration: 0.4 }}
+                  className="relative group"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity rounded-xl blur-xl"
+                    style={{ background: `linear-gradient(to right, ${stat.color})` }}
+                  />
+                  <div className="relative bg-card/50 backdrop-blur-sm p-6 rounded-xl border border-border/50 hover:border-primary/50 transition-all">
+                    <div className={`inline-flex p-3 rounded-lg bg-gradient-to-r ${stat.color} mb-3`}>
+                      <Icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="text-3xl font-bold text-foreground mb-1">
+                      {stat.value}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {stat.label}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </div>
@@ -117,13 +131,3 @@ export const CampaignsHero = React.memo(() => {
 });
 
 CampaignsHero.displayName = 'CampaignsHero';
-
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
-    <div className="flex items-center justify-between mb-2">
-      {icon}
-      <span className="text-2xl font-bold text-foreground">{value}</span>
-    </div>
-    <p className="text-sm text-muted-foreground">{label}</p>
-  </div>
-);
