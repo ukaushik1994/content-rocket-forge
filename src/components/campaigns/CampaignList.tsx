@@ -4,6 +4,8 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { CampaignStatusBadge } from './CampaignStatusBadge';
+import { CampaignStatus } from '@/types/campaign-types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,39 +74,6 @@ export const CampaignList: React.FC<CampaignListProps> = ({
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditingName('');
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return (
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-            <CheckCircle2 className="h-3 w-3 mr-1" />
-            Active
-          </Badge>
-        );
-      case 'draft':
-        return (
-          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-            <FileText className="h-3 w-3 mr-1" />
-            Draft
-          </Badge>
-        );
-      case 'archived':
-        return (
-          <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
-            <Archive className="h-3 w-3 mr-1" />
-            Archived
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-            <Clock className="h-3 w-3 mr-1" />
-            {status}
-          </Badge>
-        );
-    }
   };
 
   if (isLoading) {
@@ -215,7 +184,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({
 
                   {/* Status & Date */}
                   <div className="flex items-center justify-between">
-                    {getStatusBadge(campaign.status || 'draft')}
+                    <CampaignStatusBadge status={campaign.status as CampaignStatus || 'draft'} />
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       {format(new Date(campaign.created_at), 'MMM d, yyyy')}

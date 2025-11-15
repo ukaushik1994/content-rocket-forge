@@ -1131,31 +1131,40 @@ export type Database = {
       campaigns: {
         Row: {
           created_at: string | null
+          goal: string | null
           id: string
           name: string
           original_idea: string
           selected_strategy: Json | null
-          status: string | null
+          status: string
+          target_audience: string | null
+          timeline: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
+          goal?: string | null
           id?: string
           name: string
           original_idea: string
           selected_strategy?: Json | null
-          status?: string | null
+          status?: string
+          target_audience?: string | null
+          timeline?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
+          goal?: string | null
           id?: string
           name?: string
           original_idea?: string
           selected_strategy?: Json | null
-          status?: string | null
+          status?: string
+          target_audience?: string | null
+          timeline?: string | null
           updated_at?: string | null
           user_id?: string
         }

@@ -188,9 +188,9 @@ const Campaigns = () => {
     setCurrentCampaignId(campaign.id);
     setCurrentInput({
       idea: campaign.original_idea,
-      targetAudience: '',
-      goal: undefined,
-      timeline: undefined,
+      targetAudience: campaign.target_audience,
+      goal: campaign.goal as any,
+      timeline: campaign.timeline as any,
     });
     setStrategy(campaign.selected_strategy);
   };
@@ -230,7 +230,9 @@ const Campaigns = () => {
     await updateCampaignStatus(campaignId, 'archived');
   };
 
-  
+  const handleCampaignCreated = (newCampaignId: string) => {
+    setCurrentCampaignId(newCampaignId);
+  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -345,8 +347,15 @@ const Campaigns = () => {
                     <CampaignBreakdownView
                       strategy={strategy}
                       solution={selectedSolution}
+                      campaignId={currentCampaignId}
+                      campaignInput={currentInput}
+                      campaignStatus={
+                        campaigns.find(c => c.id === currentCampaignId)?.status as any || 'planned'
+                      }
+                      userId={user?.id}
                       onGenerateAssets={handleGenerateAssets}
                       onRegenerate={viewMode === 'create' ? handleRegenerate : undefined}
+                      onCampaignCreated={handleCampaignCreated}
                       isGenerating={isSaving}
                       isRegenerating={isGenerating}
                     />

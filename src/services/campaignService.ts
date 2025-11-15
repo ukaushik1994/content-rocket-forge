@@ -5,8 +5,11 @@ export interface SavedCampaign {
   id: string;
   name: string;
   original_idea: string;
+  target_audience?: string;
+  goal?: string;
+  timeline?: string;
   selected_strategy: CampaignStrategy | null;
-  status: string | null;
+  status: string;
   created_at: string | null;
   updated_at: string | null;
   user_id: string;
@@ -123,6 +126,31 @@ export const campaignService = {
       .update({
         selected_strategy: selectedStrategy as any,
         status: 'active',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', campaignId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Update campaign with strategy and context fields
+   */
+  async updateCampaign(
+    campaignId: string,
+    updates: {
+      selected_strategy?: CampaignStrategy;
+      target_audience?: string;
+      goal?: string;
+      timeline?: string;
+      status?: string;
+    }
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('campaigns')
+      .update({
+        ...updates,
+        selected_strategy: updates.selected_strategy as any,
         updated_at: new Date().toISOString(),
       })
       .eq('id', campaignId);
