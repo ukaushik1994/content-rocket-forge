@@ -3,7 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { CampaignsHero } from '@/components/campaigns/CampaignsHero';
 import { CampaignInput } from '@/components/campaigns/CampaignInput';
-import { StrategyTiles } from '@/components/campaigns/StrategyTiles';
+import { CampaignBreakdownView } from '@/components/campaigns/CampaignBreakdownView';
 import { StrategyEditModal } from '@/components/campaigns/StrategyEditModal';
 import { CampaignList } from '@/components/campaigns/CampaignList';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,8 +30,7 @@ const Campaigns = () => {
   const [showInput, setShowInput] = useState(false);
   const [currentInput, setCurrentInput] = useState<CampaignInputType | null>(null);
   const [currentCampaignId, setCurrentCampaignId] = useState<string | null>(null);
-  const [strategies, setStrategies] = useState<CampaignStrategy[]>([]);
-  const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
+  const [strategy, setStrategy] = useState<CampaignStrategy | null>(null);
   const [editingStrategy, setEditingStrategy] = useState<CampaignStrategy | null>(null);
   const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -56,10 +55,10 @@ const Campaigns = () => {
     cleanupDuplicates();
   }, [user, refetchCampaigns]);
 
-  // Fetch solution when strategies are generated with a solution ID
+  // Fetch solution when strategy is generated with a solution ID
   useEffect(() => {
     const fetchSolution = async () => {
-      if (strategies.length > 0 && currentInput?.solutionId) {
+      if (strategy && currentInput?.solutionId) {
         try {
           const solution = await solutionService.getSolutionById(currentInput.solutionId);
           setSelectedSolution(solution);
@@ -72,7 +71,7 @@ const Campaigns = () => {
     };
     
     fetchSolution();
-  }, [strategies, currentInput]);
+  }, [strategy, currentInput]);
 
   const handleGenerateStrategies = async (input: CampaignInputType) => {
     if (!user) {
@@ -81,7 +80,7 @@ const Campaigns = () => {
     }
 
     setCurrentInput(input);
-    setStrategies([]);
+    setStrategy(null);
     setViewMode('create');
 
     try {
@@ -97,18 +96,45 @@ const Campaigns = () => {
         industry: companyData.industry,
       } : undefined;
 
-      const newStrategies = await generateStrategies(input, user.id);
-      setStrategies(newStrategies);
-      setShowInput(false);
-      toast.success('Campaign strategies generated!');
+      const strategies = await generateStrategies(input, user.id);
+      
+      if (strategies && strategies.length > 0) {
+        setStrategy(strategies[0]);
+        setShowInput(false);
+        toast.success('Campaign breakdown generated!');
+      }
     } catch (error) {
-      console.error('Error generating strategies:', error);
+      console.error('Error generating strategy:', error);
+      toast.error('Failed to generate campaign. Please try again.');
     }
   };
 
-  const handleRegenerateStrategies = async () => {
-    if (!currentInput) return;
-    await handleGenerateStrategies(currentInput);
+  const handleRegenerate = async () => {
+    if (!currentInput || !user) return;
+
+    try {
+      const { data: companyData } = await supabase
+        .from('company_info')
+        .select('name, description, industry')
+        .eq('user_id', user.id)
+        .single();
+
+      const companyInfo = companyData ? {
+        name: companyData.name,
+        description: companyData.description,
+        industry: companyData.industry,
+      } : undefined;
+
+      const strategies = await generateStrategies(currentInput, user.id);
+      
+      if (strategies && strategies.length > 0) {
+        setStrategy(strategies[0]);
+        toast.success('New campaign breakdown generated!');
+      }
+    } catch (error) {
+      console.error('Error regenerating strategy:', error);
+      toast.error('Failed to regenerate campaign');
+    }
   };
 
   const handleEditStrategy = (strategy: CampaignStrategy) => {
@@ -116,35 +142,19 @@ const Campaigns = () => {
   };
 
   const handleSaveEditedStrategy = (updatedStrategy: CampaignStrategy) => {
-    setStrategies((prev) =>
-      prev.map((s) => (s.id === updatedStrategy.id ? updatedStrategy : s))
-    );
+    setStrategy(updatedStrategy);
     setEditingStrategy(null);
     toast.success('Strategy updated');
   };
 
-  const handleSelectStrategy = async (strategyId: string) => {
-    if (!user || !currentInput || isSaving) return;
+  const handleGenerateAssets = async () => {
+    if (!strategy || !user || !currentInput) return;
     
-    // Prevent saving if already selected
-    if (selectedStrategy === strategyId && currentCampaignId) {
-      toast.info('This strategy is already selected');
-      return;
-    }
-    
-    const strategy = strategies.find((s) => s.id === strategyId);
-    if (!strategy) return;
-
-    setIsSaving(true);
-    try {
-      const campaignName = `${currentInput.idea.slice(0, 50)}${currentInput.idea.length > 50 ? '...' : ''}`;
-      
-      // Update existing campaign instead of creating new one
-      if (currentCampaignId) {
-        await campaignService.updateSelectedStrategy(currentCampaignId, strategy);
-        setSelectedStrategy(strategyId);
-        toast.success('Strategy updated successfully!');
-      } else {
+    // Auto-save campaign if not already saved
+    if (!currentCampaignId) {
+      setIsSaving(true);
+      try {
+        const campaignName = `${currentInput.idea.slice(0, 50)}${currentInput.idea.length > 50 ? '...' : ''}`;
         const savedCampaign = await campaignService.saveCampaign(
           user.id,
           campaignName,
@@ -152,54 +162,60 @@ const Campaigns = () => {
           strategy
         );
         setCurrentCampaignId(savedCampaign.id);
-        setSelectedStrategy(strategyId);
-        toast.success('Campaign saved successfully!');
+        refetchCampaigns();
+      } catch (error) {
+        console.error('Error saving campaign:', error);
+        toast.error('Failed to save campaign');
+        setIsSaving(false);
+        return;
+      } finally {
+        setIsSaving(false);
       }
-      
-      refetchCampaigns();
+    }
+    
+    try {
+      toast.info('Asset generation coming soon!');
+      // TODO: Implement actual asset generation workflow
+      // This will trigger content creation for all pieces in the campaign
     } catch (error) {
-      console.error('Error saving campaign:', error);
-      toast.error('Failed to save campaign');
-    } finally {
-      setIsSaving(false);
+      console.error('Error generating assets:', error);
+      toast.error('Failed to generate assets');
     }
   };
 
-  const handleViewCampaign = (campaign: SavedCampaign) => {
-    setCurrentCampaignId(campaign.id);
-    setCurrentInput({ idea: campaign.original_idea });
-    
-    if (campaign.selected_strategy) {
-      setStrategies([campaign.selected_strategy]);
-      setSelectedStrategy(campaign.selected_strategy.id);
-    }
-    
+  const handleViewCampaign = async (campaign: SavedCampaign) => {
     setViewMode('view');
+    setCurrentCampaignId(campaign.id);
+    setCurrentInput({
+      idea: campaign.original_idea,
+      targetAudience: '',
+      goal: undefined,
+      timeline: undefined,
+    });
+    setStrategy(campaign.selected_strategy);
   };
 
   const handleBackToList = () => {
     setViewMode('list');
-    setStrategies([]);
+    setShowInput(false);
     setCurrentInput(null);
     setCurrentCampaignId(null);
-    setSelectedStrategy(null);
-    setShowInput(false);
+    setStrategy(null);
   };
 
   const handleStartNewCampaign = () => {
     setViewMode('create');
     setShowInput(true);
-    setStrategies([]);
+    setStrategy(null);
     setCurrentInput(null);
     setCurrentCampaignId(null);
-    setSelectedStrategy(null);
   };
 
   const handleStartConversation = (message: string) => {
     // Start a new campaign with the user's idea
     setViewMode('create');
     setShowInput(true);
-    setStrategies([]);
+    setStrategy(null);
     setCurrentInput({
       idea: message,
       targetAudience: '',
@@ -207,7 +223,6 @@ const Campaigns = () => {
       timeline: undefined
     });
     setCurrentCampaignId(null);
-    setSelectedStrategy(null);
     toast.success('Let\'s build your campaign!');
   };
 
@@ -215,7 +230,7 @@ const Campaigns = () => {
     await updateCampaignStatus(campaignId, 'archived');
   };
 
-  const selectedStrategyData = strategies.find((s) => s.id === selectedStrategy);
+  
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -293,7 +308,7 @@ const Campaigns = () => {
                   />
                 ) : null}
 
-                {isGenerating && strategies.length === 0 && !showInput && (
+                {isGenerating && !strategy && !showInput && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -321,48 +336,20 @@ const Campaigns = () => {
                   </motion.div>
                 )}
 
-                {strategies.length > 0 && !showInput && (
+                {strategy && !showInput && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="space-y-8"
                   >
-                    <div className="flex justify-between items-center">
-                      <h2 className="text-2xl font-bold">
-                        {viewMode === 'view' ? 'Campaign Details' : 'Generated Strategies'}
-                      </h2>
-                      {viewMode === 'create' && (
-                        <Button onClick={handleRegenerateStrategies} disabled={isGenerating}>
-                          Regenerate
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <StrategyTiles
-                      strategies={strategies}
-                      selectedId={selectedStrategy}
-                      onSelect={handleSelectStrategy}
-                      onEdit={handleEditStrategy}
-                      onRegenerate={handleRegenerateStrategies}
-                      isRegenerating={isGenerating}
+                    <CampaignBreakdownView
+                      strategy={strategy}
                       solution={selectedSolution}
+                      onGenerateAssets={handleGenerateAssets}
+                      onRegenerate={viewMode === 'create' ? handleRegenerate : undefined}
+                      isGenerating={isSaving}
+                      isRegenerating={isGenerating}
                     />
-
-                    {selectedStrategy && selectedStrategyData && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex justify-center gap-4"
-                      >
-                        <Button
-                          size="lg"
-                          className="bg-gradient-to-r from-primary to-blue-500"
-                        >
-                          Generate Content for This Strategy
-                        </Button>
-                      </motion.div>
-                    )}
                   </motion.div>
                 )}
               </motion.div>
