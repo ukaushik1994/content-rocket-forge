@@ -35,7 +35,21 @@ export const useCampaignStrategies = () => {
         }
       }
 
-      const systemPrompt = `Generate ONLY a raw JSON array of 3 campaign strategies. No markdown, no explanations.`;
+      const systemPrompt = `Generate ONLY a raw JSON array of 3 campaign strategies with this EXACT structure:
+[
+  {
+    "title": "Strategy Name",
+    "description": "Detailed description of the strategy",
+    "contentMix": [
+      { "formatId": "blog", "count": 3 },
+      { "formatId": "social", "count": 10 }
+    ],
+    "timeline": "3 months",
+    "targetAudience": "Target audience description",
+    "estimatedReach": "Estimated reach description"
+  }
+]
+Each strategy MUST have: title (string), description (string), contentMix (array of objects with formatId and count). No markdown, no explanations, just the JSON array.`;
       const userMessage = `Generate 3 strategies for: "${input.idea}"${solutionContext}${serpContext}`;
 
       let aiResponse = null;
