@@ -14,25 +14,25 @@ export function EnhancedContentMixCard({ format }: EnhancedContentMixCardProps) 
   const Icon = getFormatIconComponent(format.formatId);
 
   const seoPotentialColors = {
-    high: 'bg-green-500/10 text-green-600 border-green-500/20',
-    medium: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-    low: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+    high: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
+    medium: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
+    low: 'bg-muted text-muted-foreground border-border',
   };
 
   return (
-    <GlassCard className="p-3 space-y-2 bg-background/40 hover:bg-background/60 transition-all">
+    <GlassCard className="p-3 space-y-2 bg-background/30 hover:bg-background/50 transition-all duration-300 border-border/40">
       <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-primary/10">
+        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
           <Icon className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-sm truncate">{formatInfo.name}</h4>
-            <Badge variant="secondary" className="text-xs shrink-0">
+            <h4 className="font-semibold text-sm truncate text-foreground">{formatInfo.name}</h4>
+            <Badge variant="secondary" className="text-xs shrink-0 bg-primary/10">
               {format.count} {format.count === 1 ? 'piece' : 'pieces'}
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{formatInfo.description}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{formatInfo.description}</p>
         </div>
       </div>
 
@@ -46,7 +46,7 @@ export function EnhancedContentMixCard({ format }: EnhancedContentMixCardProps) 
 
         {format.bestTimes && format.bestTimes.length > 0 && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Zap className="w-3 h-3" />
+            <Zap className="w-3 h-3 text-yellow-500" />
             <span>Best times: {format.bestTimes.join(', ')}</span>
           </div>
         )}
