@@ -6,10 +6,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { CampaignStrategy } from '@/types/campaign-types';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { contentFormats } from '@/components/content-repurposing/formats';
-import { EnhancedContentMixCard } from './EnhancedContentMixCard';
 import { ContentBriefCard } from './ContentBriefCard';
 import { motion } from 'framer-motion';
-import { Edit, RefreshCw, Star, Package, ChevronDown, CheckCircle2, Shield, Users, Target, FileText, Eye, TrendingUp } from 'lucide-react';
+import { Edit, RefreshCw, Star, Package, ChevronDown, CheckCircle2, Shield, Users, Target, FileText, Eye, TrendingUp, Zap, Clock } from 'lucide-react';
+import { getFormatByIdOrDefault, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { cn } from '@/lib/utils';
 
 interface StrategyTilesProps {
@@ -82,7 +82,7 @@ export function StrategyTiles({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-6">
         {strategies.map((strategy, index) => {
           const isSelected = selectedId === strategy.id;
           const isSolutionExpanded = expandedSolutions.includes(strategy.id);
@@ -93,7 +93,7 @@ export function StrategyTiles({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.02, y: -2 }}
+              whileHover={{ scale: 1.005, y: -2 }}
               className="relative group h-full"
             >
               <motion.div
@@ -175,43 +175,157 @@ export function StrategyTiles({
                     </div>
                   </div>
                 
-                  {/* Key Metrics Section - Hero Style */}
-                  <div className="relative overflow-hidden rounded-xl p-4 bg-gradient-to-br from-emerald-500/15 via-green-500/10 to-emerald-600/5 border border-emerald-500/20">
-                    {/* Animated background effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                  {/* Main Content - Horizontal Layout */}
+                  <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
                     
-                    <div className="relative flex items-center justify-between">
-                      {/* Left: Piece count - Hero Display */}
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-emerald-500/20 backdrop-blur-xl">
-                          <Target className="h-6 w-6 text-emerald-400" />
-                        </div>
-                        <div>
-                          <div className="text-4xl font-bold text-white">
-                            {strategy.contentMix.reduce((sum, format) => sum + format.count, 0)}
+                    {/* Left Column: Campaign Metrics */}
+                    <div className="space-y-4">
+                      {/* Key Metrics Card */}
+                      <div className="relative overflow-hidden rounded-xl p-5 bg-gradient-to-br from-emerald-500/15 via-green-500/10 to-emerald-600/5 border border-emerald-500/20">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                        
+                        <div className="relative space-y-4">
+                          {/* Piece count */}
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-xl bg-emerald-500/20 backdrop-blur-xl">
+                              <Target className="h-5 w-5 text-emerald-400" />
+                            </div>
+                            <div>
+                              <div className="text-3xl font-bold text-white">
+                                {strategy.contentMix.reduce((sum, format) => sum + format.count, 0)}
+                              </div>
+                              <div className="text-xs text-emerald-400/80 font-medium">
+                                Content Pieces
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-xs text-emerald-400/80 font-medium">
-                            Content Pieces
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Right: Estimated reach */}
-                      {strategy.estimatedReach && (
-                        <div className="text-right">
-                          <div className="text-lg font-semibold text-white">
-                            {strategy.estimatedReach}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Est. Reach
-                          </div>
-                          {strategy.timeline && (
-                            <div className="text-xs text-emerald-400/70">
-                              over {strategy.timeline}
+                          
+                          {/* Reach & Timeline */}
+                          {strategy.estimatedReach && (
+                            <div className="pt-3 border-t border-emerald-500/20">
+                              <div className="text-lg font-semibold text-white">
+                                {strategy.estimatedReach}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Estimated Reach
+                              </div>
+                              {strategy.timeline && (
+                                <div className="text-xs text-emerald-400/70 mt-1">
+                                  over {strategy.timeline}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
+                      </div>
+
+                      {/* Campaign Intensity Indicator */}
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <Zap className="h-4 w-4 text-amber-400 shrink-0" />
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-amber-400">
+                            {strategy.contentMix.reduce((sum, format) => sum + format.count, 0) >= 8 ? 'High' : 
+                             strategy.contentMix.reduce((sum, format) => sum + format.count, 0) >= 5 ? 'Medium' : 'Light'} Intensity
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            ~{strategy.contentMix.reduce((sum, format) => {
+                              const baseHours = format.count * 2.5;
+                              return sum + baseHours;
+                            }, 0).toFixed(0)}h total effort
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Audience */}
+                      {strategy.targetAudience && (
+                        <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                          <Users className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="text-xs font-medium text-blue-400 mb-1">Target Audience</div>
+                            <div className="text-xs text-muted-foreground line-clamp-2">
+                              {strategy.targetAudience}
+                            </div>
+                          </div>
+                        </div>
                       )}
+                    </div>
+
+                    {/* Right Column: Content Breakdown */}
+                    <div className="space-y-4">
+                      {/* Inline Content Mix Summary */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-primary" />
+                          <h5 className="text-sm font-semibold text-foreground">Content Mix</h5>
+                          <Badge variant="secondary" className="text-xs bg-primary/10">
+                            {strategy.contentMix.length} formats
+                          </Badge>
+                        </div>
+                        
+                        {/* Content Type Badges */}
+                        <div className="flex flex-wrap gap-2">
+                          {strategy.contentMix.map((format, idx) => {
+                            const formatInfo = getFormatByIdOrDefault(format.formatId);
+                            const FormatIcon = getFormatIconComponent(format.formatId);
+                            
+                            return (
+                              <Badge 
+                                key={idx} 
+                                variant="outline" 
+                                className="gap-1.5 px-3 py-1.5 bg-background/60 border-border/50 hover:border-primary/30 transition-colors"
+                              >
+                                <FormatIcon className="h-3.5 w-3.5 text-primary" />
+                                <span className="font-semibold">{format.count}×</span>
+                                <span>{formatInfo.name}</span>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+
+                        {/* Additional Content Details */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                          {strategy.contentMix.map((format, idx) => {
+                            const formatInfo = getFormatByIdOrDefault(format.formatId);
+                            const FormatIcon = getFormatIconComponent(format.formatId);
+                            
+                            return (
+                              <div 
+                                key={idx}
+                                className="p-3 rounded-lg bg-background/40 border border-border/30 space-y-2"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <FormatIcon className="h-4 w-4 text-primary" />
+                                  <span className="text-sm font-medium">{formatInfo.name}</span>
+                                  <Badge variant="secondary" className="text-xs ml-auto">
+                                    {format.count}
+                                  </Badge>
+                                </div>
+                                
+                                {format.frequency && (
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{format.frequency}</span>
+                                  </div>
+                                )}
+                                
+                                {format.seoPotential && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={cn(
+                                      "text-xs",
+                                      format.seoPotential === 'high' && "bg-green-500/20 text-green-400 border-green-500/30",
+                                      format.seoPotential === 'medium' && "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+                                      format.seoPotential === 'low' && "bg-gray-500/20 text-gray-400 border-gray-500/30"
+                                    )}
+                                  >
+                                    {format.seoPotential.toUpperCase()} SEO
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -267,21 +381,6 @@ export function StrategyTiles({
                   </Collapsible>
                 )}
 
-                  {/* Content Mix */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-primary" />
-                      <h5 className="text-sm font-semibold text-foreground">Content Mix</h5>
-                      <Badge variant="secondary" className="text-xs bg-primary/10">
-                        {strategy.contentMix.length} formats
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3">
-                      {strategy.contentMix.map((format, idx) => (
-                        <EnhancedContentMixCard key={idx} format={format} />
-                      ))}
-                    </div>
-                  </div>
 
                 {/* Collapsible Sections */}
                 <div className="space-y-2">
@@ -318,20 +417,6 @@ export function StrategyTiles({
                     </Collapsible>
                   )}
 
-                  {/* Target Audience & Timeline */}
-                  {(strategy.targetAudience || strategy.timeline) && (
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-2">
-                      {strategy.timeline && (
-                        <Badge variant="secondary" className="text-xs">{strategy.timeline}</Badge>
-                      )}
-                      {strategy.targetAudience && (
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <span className="line-clamp-1">{strategy.targetAudience}</span>
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                   {/* Action Buttons */}
