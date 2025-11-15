@@ -1,0 +1,72 @@
+import { CampaignStrategy } from '@/types/campaign-types';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Badge } from '@/components/ui/badge';
+import { Users, AlertCircle } from 'lucide-react';
+
+interface AudienceIntelligenceTileProps {
+  strategy: CampaignStrategy;
+}
+
+export const AudienceIntelligenceTile = ({ strategy }: AudienceIntelligenceTileProps) => {
+  const audienceIntelligence = strategy.audienceIntelligence;
+
+  if (!audienceIntelligence) {
+    return (
+      <GlassCard className="p-5 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="h-5 w-5 text-purple-400" />
+          <h3 className="text-lg font-semibold">Audience Intelligence</h3>
+        </div>
+        <div className="text-center py-4 text-muted-foreground">
+          <p>Audience insights will be generated...</p>
+        </div>
+      </GlassCard>
+    );
+  }
+
+  return (
+    <GlassCard className="p-5 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+      <div className="flex items-center gap-2 mb-4">
+        <Users className="h-5 w-5 text-purple-400" />
+        <h3 className="text-lg font-semibold">Audience Intelligence</h3>
+      </div>
+      
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Ideal Buyer Personas</p>
+          <div className="flex gap-2 flex-wrap">
+            {audienceIntelligence.personas.map((persona) => (
+              <Badge key={persona} variant="secondary">{persona}</Badge>
+            ))}
+          </div>
+        </div>
+        
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Industry Segments</p>
+          <div className="flex gap-2 flex-wrap">
+            {audienceIntelligence.industrySegments.map((industry) => (
+              <Badge key={industry}>{industry}</Badge>
+            ))}
+          </div>
+        </div>
+        
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Pain Points</p>
+          <ul className="space-y-1">
+            {audienceIntelligence.painPoints.slice(0, 3).map((pain) => (
+              <li key={pain} className="text-sm flex items-start gap-2">
+                <AlertCircle className="h-3.5 w-3.5 text-purple-400 shrink-0 mt-0.5" />
+                {pain}
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        <div className="pt-3 border-t border-purple-500/20">
+          <p className="text-xs text-muted-foreground mb-1">Messaging Angle</p>
+          <p className="text-sm font-medium text-purple-300">{audienceIntelligence.messagingAngle}</p>
+        </div>
+      </div>
+    </GlassCard>
+  );
+};
