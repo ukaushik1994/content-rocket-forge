@@ -356,22 +356,22 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
               timestamp={message.timestamp}
             />
           )}
-        </div>
 
-        {/* Timestamp */}
-        <motion.div 
-          className={`mt-1 px-1 text-xs text-muted-foreground ${
-            isUser ? 'text-right' : 'text-left'
-          }`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          {message.timestamp.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          })}
-        </motion.div>
+          {/* Timestamp for assistant messages only */}
+          {!isUser && (
+            <motion.div 
+              className="mt-1 px-1 text-xs text-muted-foreground text-left"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              {message.timestamp.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </motion.div>
+          )}
+        </div>
       </div>
 
       {/* Avatar (only for user messages) */}
