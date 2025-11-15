@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -162,6 +162,14 @@ export default function NavItems() {
         icon={<Target className="h-4 w-4" />} 
         label="Strategy" 
         active={location.pathname === '/research/content-strategy'} 
+      />
+      
+      {/* Campaigns - Direct Navigation */}
+      <NavItem 
+        to="/campaigns" 
+        icon={<Megaphone className="h-4 w-4" />} 
+        label="Campaigns" 
+        active={location.pathname === '/campaigns'} 
       />
       
       

@@ -27,6 +27,7 @@ import TopicClusters from "./pages/research/TopicClusters";
 
 import ContentGapsPage from "./pages/research/ContentGaps";
 import CalendarPage from "./pages/research/Calendar";
+import Campaigns from "./pages/Campaigns";
 // Pipeline route removed - integrated into Content Strategy
 
 
@@ -151,6 +152,9 @@ const App = () => (
                    <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
                    <Route path="/research/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
                    <Route path="/research/pipeline" element={<Navigate to="/research/content-strategy#pipeline" replace />} />
+                   
+                   {/* Campaigns */}
+                   <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
                   
 
                    {/* Smart Actions Analytics */}
