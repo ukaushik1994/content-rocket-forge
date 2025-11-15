@@ -8,7 +8,7 @@ import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solu
 import { contentFormats } from '@/components/content-repurposing/formats';
 import { ContentBriefCard } from './ContentBriefCard';
 import { motion } from 'framer-motion';
-import { Edit, RefreshCw, Star, Package, ChevronDown, CheckCircle2, Shield, Users, Target, FileText, Eye, TrendingUp, Zap, Clock } from 'lucide-react';
+import { Edit, RefreshCw, Star, Package, ChevronDown, CheckCircle2, Shield, Users, Target, FileText, Eye, TrendingUp, Zap, Clock, Calendar, CalendarDays } from 'lucide-react';
 import { getFormatByIdOrDefault, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +50,16 @@ export function StrategyTiles({
         .join(' ');
     }
     return format.name;
+  };
+
+  const calculateTotalEffort = (count: number, effortPerPiece: string): string => {
+    const hoursMatch = effortPerPiece.match(/(\d+\.?\d*)\s*hours?/i);
+    if (hoursMatch) {
+      const hours = parseFloat(hoursMatch[1]);
+      const total = hours * count;
+      return `~${total} hours`;
+    }
+    return effortPerPiece;
   };
 
   return (
@@ -282,46 +292,156 @@ export function StrategyTiles({
                           })}
                         </div>
 
-                        {/* Additional Content Details */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        {/* Enhanced Content Type Cards */}
+                        <div className="grid grid-cols-1 gap-4 pt-2">
                           {strategy.contentMix.map((format, idx) => {
                             const formatInfo = getFormatByIdOrDefault(format.formatId);
                             const FormatIcon = getFormatIconComponent(format.formatId);
                             
                             return (
-                              <div 
+                              <GlassCard
                                 key={idx}
-                                className="p-3 rounded-lg bg-background/40 border border-border/30 space-y-2"
+                                className="p-4 space-y-3 bg-background/40 backdrop-blur-sm hover:bg-background/60 transition-all"
                               >
-                                <div className="flex items-center gap-2">
-                                  <FormatIcon className="h-4 w-4 text-primary" />
-                                  <span className="text-sm font-medium">{formatInfo.name}</span>
-                                  <Badge variant="secondary" className="text-xs ml-auto">
-                                    {format.count}
-                                  </Badge>
+                                {/* Header Section */}
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="p-2.5 rounded-lg bg-primary/10 flex-shrink-0">
+                                      <FormatIcon className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-semibold text-base">{formatInfo.name}</span>
+                                        <Badge variant="secondary">{format.count}× pieces</Badge>
+                                      </div>
+                                      {format.estimatedEffort && (
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                          ⏱️ {format.estimatedEffort}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {format.seoPotential && (
+                                    <Badge 
+                                      variant="outline" 
+                                      className={cn(
+                                        "text-xs flex-shrink-0",
+                                        format.seoPotential === 'high' && "border-green-500/50 text-green-400 bg-green-500/10",
+                                        format.seoPotential === 'medium' && "border-yellow-500/50 text-yellow-400 bg-yellow-500/10",
+                                        format.seoPotential === 'low' && "border-blue-500/50 text-blue-400 bg-blue-500/10"
+                                      )}
+                                    >
+                                      {format.seoPotential} SEO
+                                    </Badge>
+                                  )}
                                 </div>
-                                
-                                {format.frequency && (
-                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                    <Clock className="h-3 w-3" />
-                                    <span>{format.frequency}</span>
+
+                                {/* Metrics & Schedule Row */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                  {/* Frequency */}
+                                  {format.frequency && (
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                      <Calendar className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="text-xs text-muted-foreground">Frequency</div>
+                                        <div className="text-sm font-medium text-blue-400 truncate">{format.frequency}</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Best Times */}
+                                  {format.bestTimes && format.bestTimes.length > 0 && (
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                      <Clock className="h-4 w-4 text-purple-400 flex-shrink-0" />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="text-xs text-muted-foreground">Best Times</div>
+                                        <div className="text-sm font-medium text-purple-400 truncate">
+                                          {format.bestTimes.slice(0, 2).join(', ')}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Total Effort */}
+                                  {format.count && format.estimatedEffort && (
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                      <Zap className="h-4 w-4 text-amber-400 flex-shrink-0" />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="text-xs text-muted-foreground">Total Time</div>
+                                        <div className="text-sm font-medium text-amber-400 truncate">
+                                          {calculateTotalEffort(format.count, format.estimatedEffort)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Schedule Suggestion */}
+                                {format.scheduleSuggestion && (
+                                  <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
+                                    <div className="flex items-start gap-2">
+                                      <CalendarDays className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-medium text-indigo-400 mb-1">Recommended Schedule</div>
+                                        <p className="text-xs text-muted-foreground">{format.scheduleSuggestion}</p>
+                                      </div>
+                                    </div>
                                   </div>
                                 )}
-                                
-                                {format.seoPotential && (
-                                  <Badge 
-                                    variant="secondary" 
-                                    className={cn(
-                                      "text-xs",
-                                      format.seoPotential === 'high' && "bg-green-500/20 text-green-400 border-green-500/30",
-                                      format.seoPotential === 'medium' && "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-                                      format.seoPotential === 'low' && "bg-gray-500/20 text-gray-400 border-gray-500/30"
-                                    )}
-                                  >
-                                    {format.seoPotential.toUpperCase()} SEO
-                                  </Badge>
+
+                                {/* Content Briefs Preview */}
+                                {format.specificTopics && format.specificTopics.length > 0 && (
+                                  <Collapsible>
+                                    <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
+                                      <div className="flex items-center gap-2">
+                                        <FileText className="h-4 w-4 text-green-400" />
+                                        <span className="text-sm font-medium text-green-400">
+                                          {format.specificTopics.length} Content Briefs Ready
+                                        </span>
+                                      </div>
+                                      <ChevronDown className="h-4 w-4 text-green-400" />
+                                    </CollapsibleTrigger>
+                                    
+                                    <CollapsibleContent className="pt-2 space-y-2">
+                                      {format.specificTopics.slice(0, 3).map((brief, briefIdx) => (
+                                        <div key={briefIdx} className="pl-3 ml-3 border-l-2 border-green-500/20 text-xs space-y-1">
+                                          <div className="font-medium text-foreground">{brief.title}</div>
+                                          <div className="text-muted-foreground line-clamp-1">{brief.description}</div>
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <Badge variant="secondary" className="text-xs">
+                                              {brief.targetWordCount} words
+                                            </Badge>
+                                            {brief.difficulty && (
+                                              <Badge 
+                                                variant="secondary" 
+                                                className={cn(
+                                                  "text-xs",
+                                                  brief.difficulty === 'easy' && "bg-green-500/20 text-green-400",
+                                                  brief.difficulty === 'medium' && "bg-yellow-500/20 text-yellow-400",
+                                                  brief.difficulty === 'hard' && "bg-red-500/20 text-red-400"
+                                                )}
+                                              >
+                                                {brief.difficulty}
+                                              </Badge>
+                                            )}
+                                            {brief.serpOpportunity !== undefined && (
+                                              <Badge variant="secondary" className="text-xs">
+                                                {brief.serpOpportunity}% SERP
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {format.specificTopics.length > 3 && (
+                                        <div className="text-xs text-muted-foreground pl-3 ml-3">
+                                          +{format.specificTopics.length - 3} more briefs
+                                        </div>
+                                      )}
+                                    </CollapsibleContent>
+                                  </Collapsible>
                                 )}
-                              </div>
+                              </GlassCard>
                             );
                           })}
                         </div>
