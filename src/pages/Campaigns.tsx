@@ -305,10 +305,9 @@ const Campaigns = () => {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-bold">My Campaigns</h2>
-                    <Button onClick={handleStartNewCampaign} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      New Campaign
-                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      💬 Start a new conversation above to create a campaign
+                    </p>
                   </div>
                   
                   <CampaignList
