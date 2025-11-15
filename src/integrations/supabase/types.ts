@@ -1128,6 +1128,39 @@ export type Database = {
           },
         ]
       }
+      campaigns: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          original_idea: string
+          selected_strategy: Json | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          original_idea: string
+          selected_strategy?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          original_idea?: string
+          selected_strategy?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chart_insight_analytics: {
         Row: {
           action_taken: string | null
@@ -2198,6 +2231,7 @@ export type Database = {
       content_items: {
         Row: {
           approval_status: Database["public"]["Enums"]["approval_workflow_status"]
+          campaign_id: string | null
           content: string | null
           content_type: Database["public"]["Enums"]["content_type_enum"] | null
           created_at: string
@@ -2220,6 +2254,7 @@ export type Database = {
         }
         Insert: {
           approval_status?: Database["public"]["Enums"]["approval_workflow_status"]
+          campaign_id?: string | null
           content?: string | null
           content_type?: Database["public"]["Enums"]["content_type_enum"] | null
           created_at?: string
@@ -2242,6 +2277,7 @@ export type Database = {
         }
         Update: {
           approval_status?: Database["public"]["Enums"]["approval_workflow_status"]
+          campaign_id?: string | null
           content?: string | null
           content_type?: Database["public"]["Enums"]["content_type_enum"] | null
           created_at?: string
@@ -2263,6 +2299,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "content_items_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "content_items_glossary_id_fkey"
             columns: ["glossary_id"]
