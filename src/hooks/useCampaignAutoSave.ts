@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CampaignStrategy, CampaignInput } from '@/types/campaign-types';
 import { campaignService } from '@/services/campaignService';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface UseCampaignAutoSaveOptions {
@@ -27,8 +28,13 @@ export const useCampaignAutoSave = ({
 
   // Debounced auto-save effect (5 seconds after changes)
   useEffect(() => {
-    // Don't auto-save if no strategy or input
-    if (!strategy || !input || !userId) {
+    // Don't auto-save if no strategy or input or userId
+    if (!strategy || !input || !userId || userId.trim() === '') {
+      console.warn('Auto-save skipped: missing required data', { 
+        hasStrategy: !!strategy, 
+        hasInput: !!input, 
+        userId 
+      });
       return;
     }
 
@@ -48,6 +54,16 @@ export const useCampaignAutoSave = ({
       setSaveStatus('saving');
 
       try {
+        // Verify user is still authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session || session.user.id !== userId) {
+          console.error('Auth session invalid for auto-save');
+          setSaveStatus('error');
+          toast.error('Please sign in again to save your campaign');
+          isSavingRef.current = false;
+          return;
+        }
+
         if (campaignId) {
           // Update existing campaign
           await campaignService.updateCampaign(campaignId, {
@@ -89,8 +105,17 @@ export const useCampaignAutoSave = ({
         setLastSaved(new Date());
       } catch (error) {
         console.error('Auto-save failed:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        if (errorMessage.includes('JWT') || errorMessage.includes('auth')) {
+          toast.error('Session expired. Please sign in again.');
+        } else if (errorMessage.includes('RLS') || errorMessage.includes('policy')) {
+          toast.error('Permission denied. Please check your account.');
+        } else {
+          toast.error('Failed to save campaign. Check your connection.');
+        }
+        
         setSaveStatus('error');
-        toast.error('Failed to save campaign');
       } finally {
         isSavingRef.current = false;
       }

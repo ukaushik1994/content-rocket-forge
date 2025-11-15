@@ -25,6 +25,17 @@ export const campaignService = {
     originalIdea: string,
     selectedStrategy: CampaignStrategy | null = null
   ): Promise<SavedCampaign> {
+    // Validate inputs
+    if (!userId || userId.trim() === '') {
+      throw new Error('User ID is required to save campaign');
+    }
+    if (!name || name.trim() === '') {
+      throw new Error('Campaign name is required');
+    }
+    if (!originalIdea || originalIdea.trim() === '') {
+      throw new Error('Campaign idea is required');
+    }
+
     const { data, error } = await supabase
       .from('campaigns')
       .insert({
@@ -37,7 +48,15 @@ export const campaignService = {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Campaign save error:', error);
+      throw new Error(`Failed to save campaign: ${error.message}`);
+    }
+    
+    if (!data) {
+      throw new Error('Campaign saved but no data returned');
+    }
+    
     return {
       ...data,
       selected_strategy: data.selected_strategy as unknown as CampaignStrategy | null,
