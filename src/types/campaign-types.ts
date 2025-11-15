@@ -29,10 +29,26 @@ export interface CampaignStrategy {
   contentCategories?: Record<string, number>; // Group by Social, Video, Blog, etc.
 }
 
+export interface ContentBrief {
+  title: string;
+  description: string;
+  keywords: string[];
+  metaTitle: string;
+  metaDescription: string;
+  targetWordCount: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  serpOpportunity: number; // 0-100
+}
+
 export interface ContentFormatCount {
   formatId: string; // matches format.id from contentFormats
   count: number;
   scheduleSuggestion?: string;
+  frequency?: string; // "3x weekly", "Daily", etc.
+  bestTimes?: string[]; // ["Monday 9am", "Thursday 2pm"]
+  estimatedEffort?: string; // "2 hours per piece"
+  seoPotential?: 'high' | 'medium' | 'low';
+  specificTopics?: ContentBrief[]; // Detailed content briefs
 }
 
 export interface PostingSchedule {

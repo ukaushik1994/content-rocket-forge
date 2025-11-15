@@ -6,8 +6,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { CampaignStrategy } from '@/types/campaign-types';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { contentFormats } from '@/components/content-repurposing/formats';
+import { EnhancedContentMixCard } from './EnhancedContentMixCard';
+import { ContentBriefCard } from './ContentBriefCard';
 import { motion } from 'framer-motion';
-import { Edit, RefreshCw, Sparkles, Package, ChevronDown, CheckCircle2, Star, Shield, Users, Target } from 'lucide-react';
+import { Edit, RefreshCw, Sparkles, Package, ChevronDown, CheckCircle2, Star, Shield, Users, Target, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StrategyTilesProps {
@@ -184,28 +186,80 @@ export function StrategyTiles({
                   </Collapsible>
                 )}
 
-                {/* Compact Content Mix */}
-                {strategy.contentMix && strategy.contentMix.length > 0 && (
-                  <div className="text-xs text-muted-foreground">
-                    {strategy.contentMix.map((item, i) => (
-                      <span key={item.formatId}>
-                        {item.count} {getFormatName(item.formatId)}
-                        {i < strategy.contentMix.length - 1 ? ' • ' : ''}
+                {/* Content Mix - Enhanced with Icons */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Package className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-semibold">
+                        Content Plan
                       </span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {strategy.contentMix.reduce((acc, item) => acc + item.count, 0)} pieces
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {strategy.contentMix.map((format, idx) => (
+                      <EnhancedContentMixCard key={idx} format={format} />
                     ))}
                   </div>
-                )}
+                </div>
 
-                {/* Compact Info Row */}
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  {strategy.timeline && (
-                    <Badge variant="secondary" className="text-xs">{strategy.timeline}</Badge>
+                {/* Collapsible Sections */}
+                <div className="space-y-2">
+                  
+                  {/* Content Briefs - NEW */}
+                  {strategy.contentMix.some(format => format.specificTopics && format.specificTopics.length > 0) && (
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-accent/50 transition-colors group">
+                        <div className="flex items-center gap-1.5">
+                          <ChevronDown className="w-3.5 h-3.5 transition-transform group-data-[state=open]:rotate-180" />
+                          <span className="text-xs font-medium">Content Topics & SEO Briefs</span>
+                          <Badge variant="outline" className="text-xs ml-1">
+                            {strategy.contentMix.reduce((acc, format) => 
+                              acc + (format.specificTopics?.length || 0), 0
+                            )} ready
+                          </Badge>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-3 space-y-3">
+                        {strategy.contentMix.map((format, formatIdx) => 
+                          format.specificTopics && format.specificTopics.length > 0 ? (
+                            <div key={formatIdx} className="space-y-2">
+                              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                <FileText className="w-3 h-3" />
+                                {getFormatName(format.formatId)} Topics
+                              </div>
+                              <div className="grid grid-cols-1 gap-2">
+                                {format.specificTopics.map((brief, briefIdx) => (
+                                  <ContentBriefCard 
+                                    key={briefIdx}
+                                    brief={brief}
+                                    formatName={getFormatName(format.formatId)}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ) : null
+                        )}
+                      </CollapsibleContent>
+                    </Collapsible>
                   )}
-                  {strategy.targetAudience && (
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      <span className="line-clamp-1">{strategy.targetAudience}</span>
-                    </span>
+
+                  {/* Target Audience & Timeline */}
+                  {(strategy.targetAudience || strategy.timeline) && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      {strategy.timeline && (
+                        <Badge variant="secondary" className="text-xs">{strategy.timeline}</Badge>
+                      )}
+                      {strategy.targetAudience && (
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          <span className="line-clamp-1">{strategy.targetAudience}</span>
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 
