@@ -226,7 +226,7 @@ export const useEnhancedAIChatDB = () => {
   }, []);
 
   // Send message with enhanced features
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, displayContent?: string) => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -239,18 +239,18 @@ export const useEnhancedAIChatDB = () => {
     // Create conversation if none active
     let conversationId = activeConversation;
     if (!conversationId) {
-      conversationId = await createConversation(content.slice(0, 50));
+      conversationId = await createConversation((displayContent || content).slice(0, 50));
       if (!conversationId) return;
     }
 
     setIsLoading(true);
     setIsTyping(true);
 
-    // Add user message
+    // Add user message with display content if provided
     const userMessage: EnhancedChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content,
+      content: displayContent || content, // Show display content in chat
       timestamp: new Date()
     };
 
@@ -260,7 +260,7 @@ export const useEnhancedAIChatDB = () => {
     await saveMessage(userMessage, conversationId);
 
     try {
-      // Get enhanced AI response
+      // Get enhanced AI response (send actual content to AI, not display content)
       const aiResponse = await enhancedAIService.processEnhancedMessage(
         content,
         [...messages, userMessage],
@@ -402,7 +402,8 @@ export const useEnhancedAIChatDB = () => {
       await handleWorkflowAction(workflowAction, data);
     } else if (action.startsWith('send:')) {
       const message = action.replace('send:', '');
-      await sendMessage(message);
+      const displayText = data?.displayText || message;
+      await sendMessage(message, displayText);
     }
   }, [sendMessage, user]);
 
