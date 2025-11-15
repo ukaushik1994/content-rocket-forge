@@ -1,18 +1,24 @@
 import { CampaignStrategy } from '@/types/campaign-types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
-import { Megaphone, Calendar, Clock } from 'lucide-react';
+import { Megaphone, Calendar, Clock, ArrowUpRight } from 'lucide-react';
+import { useCampaignFlow } from '@/contexts/CampaignFlowContext';
 
 interface DistributionStrategyTileProps {
   strategy: CampaignStrategy;
 }
 
 export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileProps) => {
+  const { openFlowPanel } = useCampaignFlow();
   const distributionStrategy = strategy.distributionStrategy;
 
   if (!distributionStrategy) {
     return (
-      <GlassCard className="p-5 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+      <GlassCard 
+        className="p-5 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 cursor-pointer transition-all duration-200 hover:border-neon-purple/50 hover:scale-[1.02] hover:shadow-lg hover:shadow-neon-purple/20 relative group"
+        onClick={() => openFlowPanel('distribution', strategy)}
+      >
+        <ArrowUpRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex items-center gap-2 mb-4">
           <Megaphone className="h-5 w-5 text-blue-400" />
           <h3 className="text-lg font-semibold">Distribution Strategy</h3>
@@ -25,7 +31,11 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
   }
 
   return (
-    <GlassCard className="p-5 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+    <GlassCard 
+      className="p-5 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 cursor-pointer transition-all duration-200 hover:border-neon-purple/50 hover:scale-[1.02] hover:shadow-lg hover:shadow-neon-purple/20 relative group"
+      onClick={() => openFlowPanel('distribution', strategy)}
+    >
+      <ArrowUpRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-center gap-2 mb-4">
         <Megaphone className="h-5 w-5 text-blue-400" />
         <h3 className="text-lg font-semibold">Distribution Strategy</h3>
