@@ -32,6 +32,7 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const loadingRef = useRef(false);
+  const isInitialLoad = useRef(true);
 
   // Handle scroll events
   const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
@@ -53,13 +54,18 @@ export const InfiniteScrollMessages: React.FC<InfiniteScrollMessagesProps> = ({
     }
   }, [hasMoreMessages, isLoadingMore, onLoadMore, messages.length]);
 
-  // Auto-scroll to bottom when new messages arrive (only if user is near bottom)
+  // Auto-scroll to bottom when new messages arrive (only if user is near bottom, and not on initial load)
   useEffect(() => {
-    if (isNearBottom && scrollAreaRef.current) {
+    if (isNearBottom && scrollAreaRef.current && !isInitialLoad.current) {
       const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollElement) {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
+    }
+    
+    // Mark initial load complete after first render
+    if (isInitialLoad.current && messages.length > 0) {
+      isInitialLoad.current = false;
     }
   }, [messages, isTyping, isNearBottom]);
 

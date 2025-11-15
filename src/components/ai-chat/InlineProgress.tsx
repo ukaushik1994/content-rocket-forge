@@ -24,7 +24,8 @@ export const InlineProgress: React.FC<InlineProgressProps> = ({
   const isComplete = currentStep === totalSteps && totalSteps > 0;
   const displayProgress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : progress;
 
-  if (!isActive && currentStep === 0 && totalSteps === 0) {
+  // Hide when: no progress, inactive, OR complete and inactive
+  if ((!isActive && currentStep === 0 && totalSteps === 0) || (isComplete && !isActive)) {
     return null;
   }
 
