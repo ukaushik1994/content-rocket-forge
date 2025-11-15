@@ -58,7 +58,14 @@ export const useCampaignStrategies = () => {
 
       let content = (aiResponse.response || aiResponse.content || '').replace(/```json\s*/g, '').replace(/```/g, '').trim();
       let strategies: CampaignStrategy[] = JSON.parse(content.match(/\[[\s\S]*\]/)?.[0] || content);
-      const valid = strategies.filter(s => s.id && s.title);
+
+      // Auto-generate IDs if missing
+      strategies = strategies.map((s, index) => ({
+        ...s,
+        id: s.id || `strategy-${Date.now()}-${index}`
+      }));
+
+      const valid = strategies.filter(s => s.title && s.description && s.contentMix);
       
       if (valid.length === 0) throw new Error('No valid strategies');
       toast.success(`Generated ${valid.length} strategies`);
