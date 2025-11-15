@@ -1,7 +1,18 @@
 import { useState, useCallback } from 'react';
 import { CampaignInput, CampaignGoal, CampaignTimeline } from '@/types/campaign-types';
 
-export type ConversationStage = 'idea' | 'audience' | 'goal' | 'timeline' | 'complete';
+export type ConversationStage = 
+  | 'idea' 
+  | 'pain-points' 
+  | 'market-context' 
+  | 'unique-value'
+  | 'audience' 
+  | 'audience-details'
+  | 'goal' 
+  | 'success-metrics'
+  | 'timeline' 
+  | 'resources'
+  | 'complete';
 
 export interface CampaignConversationMessage {
   id: string;
@@ -10,18 +21,82 @@ export interface CampaignConversationMessage {
   timestamp: Date;
 }
 
+export interface EnhancedCampaignData {
+  idea?: string;
+  painPoints?: string;
+  competitors?: string;
+  uniqueValue?: string;
+  marketContext?: string;
+  targetAudience?: string;
+  audienceRoles?: string;
+  audienceCompanySize?: string;
+  audienceCurrentSolutions?: string;
+  goal?: CampaignGoal;
+  successMetrics?: string;
+  timeline?: CampaignTimeline;
+  budget?: string;
+  teamSkills?: string;
+  pastResults?: string;
+}
+
 interface ConversationState {
   stage: ConversationStage;
-  collectedData: Partial<CampaignInput>;
+  collectedData: EnhancedCampaignData;
   messages: CampaignConversationMessage[];
 }
 
+const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaignData): string => {
+  switch (stage) {
+    case 'idea':
+      return "Great! Let's create a winning campaign together. Tell me about your campaign idea - what specific product, feature, or service are you planning to promote?";
+    
+    case 'pain-points':
+      return `Interesting! So you're promoting "${data.idea}". Before we go further, let's dig deeper:\n\nWhat specific problem does this solve for your users? What pain point are you addressing? Be as specific as possible.`;
+    
+    case 'market-context':
+      return `Got it - you're solving ${data.painPoints ? 'the problem of ' + data.painPoints.toLowerCase() : 'a key problem'}.\n\nNow, let's talk competitive landscape:\n• Who are your main competitors in this space?\n• How does your approach differ from existing solutions?\n• What makes your timing right for this campaign?`;
+    
+    case 'unique-value':
+      return `Thanks for that context! Now, here's the million-dollar question:\n\nWhat's the ONE thing that sets you apart from ${data.competitors || 'competitors'}? What's your unique value proposition that no one else can claim?`;
+    
+    case 'audience':
+      return `Perfect! Now let's identify who feels this pain the most.\n\nWho is your ideal customer? Think about:\n• Their role/job title\n• Industry they work in\n• Company size\n• Current challenges they face`;
+    
+    case 'audience-details':
+      return `Great start! Let's get more specific about ${data.targetAudience || 'your audience'}:\n\n• What level of seniority? (Individual contributor, manager, executive?)\n• Do they have budget authority or need to convince someone?\n• What tools/solutions are they currently using?\n• What's their technical sophistication level?`;
+    
+    case 'goal':
+      return `Excellent! Now, what's your primary goal for this campaign with ${data.targetAudience || 'this audience'}?`;
+    
+    case 'success-metrics':
+      return `Good! You want to achieve ${data.goal}. But let's get specific:\n\nWhat numbers define success for you?\n• What KPIs will you track daily/weekly?\n• What's a realistic benchmark based on past campaigns?\n• What would make you say "This campaign was a huge success"?`;
+    
+    case 'timeline':
+      return `Perfect! Now, how much time do you have to execute this campaign and hit those metrics?`;
+    
+    case 'resources':
+      return `Almost done! Let's talk resources:\n\n• What's your budget range for this campaign?\n• Who's on your team? What skills do you have access to?\n• What marketing channels have worked best for you in the past?\n• Any constraints or limitations I should know about?`;
+    
+    case 'complete':
+      return "🎉 Excellent! I have everything I need. Let me analyze all this strategic context and generate highly targeted campaign strategies for you...";
+    
+    default:
+      return "Tell me more...";
+  }
+};
+
 const AI_QUESTIONS = {
-  idea: "Great! Let's create a winning campaign together. Tell me about your campaign idea - what are you planning to promote?",
-  audience: "Perfect! Now, who is your target audience? Who are you trying to reach with this campaign?",
-  goal: "Got it! What's your primary goal for this campaign?",
-  timeline: "Excellent! How much time do you have to execute this campaign?",
-  complete: "🎉 Perfect! I have all the information I need. Let me generate some powerful strategies for you..."
+  idea: generateDynamicQuestion('idea', {} as EnhancedCampaignData),
+  'pain-points': '',
+  'market-context': '',
+  'unique-value': '',
+  audience: '',
+  'audience-details': '',
+  goal: '',
+  'success-metrics': '',
+  timeline: '',
+  resources: '',
+  complete: ''
 };
 
 export const useCampaignConversation = (initialMessage?: string) => {
@@ -88,12 +163,41 @@ export const useCampaignConversation = (initialMessage?: string) => {
       switch (prev.stage) {
         case 'idea':
           newData.idea = message;
+          nextStage = 'pain-points';
+          break;
+        
+        case 'pain-points':
+          newData.painPoints = message;
+          nextStage = 'market-context';
+          break;
+        
+        case 'market-context':
+          newData.competitors = message;
+          // Extract market context from the response
+          newData.marketContext = message;
+          nextStage = 'unique-value';
+          break;
+        
+        case 'unique-value':
+          newData.uniqueValue = message;
           nextStage = 'audience';
           break;
+        
         case 'audience':
           newData.targetAudience = message;
+          nextStage = 'audience-details';
+          break;
+        
+        case 'audience-details':
+          // Parse audience details
+          const audienceText = message.toLowerCase();
+          if (audienceText.includes('manager') || audienceText.includes('executive') || audienceText.includes('director')) {
+            newData.audienceRoles = message;
+          }
+          newData.audienceCurrentSolutions = message;
           nextStage = 'goal';
           break;
+        
         case 'goal':
           // Parse goal from message
           const goalLower = message.toLowerCase();
@@ -108,8 +212,14 @@ export const useCampaignConversation = (initialMessage?: string) => {
           } else {
             newData.goal = 'awareness'; // Default
           }
+          nextStage = 'success-metrics';
+          break;
+        
+        case 'success-metrics':
+          newData.successMetrics = message;
           nextStage = 'timeline';
           break;
+        
         case 'timeline':
           // Parse timeline from message
           const timelineLower = message.toLowerCase();
@@ -122,6 +232,12 @@ export const useCampaignConversation = (initialMessage?: string) => {
           } else {
             newData.timeline = '4-week'; // Default
           }
+          nextStage = 'resources';
+          break;
+        
+        case 'resources':
+          newData.budget = message;
+          newData.teamSkills = message;
           nextStage = 'complete';
           break;
       }
@@ -137,9 +253,10 @@ export const useCampaignConversation = (initialMessage?: string) => {
     setTimeout(() => {
       setState(prev => {
         if (prev.stage !== 'complete') {
-          addMessage('assistant', AI_QUESTIONS[prev.stage]);
+          const dynamicQuestion = generateDynamicQuestion(prev.stage, prev.collectedData);
+          addMessage('assistant', dynamicQuestion);
         } else {
-          addMessage('assistant', AI_QUESTIONS.complete);
+          addMessage('assistant', generateDynamicQuestion('complete', prev.collectedData));
         }
         return prev;
       });
@@ -189,12 +306,23 @@ export const useCampaignConversation = (initialMessage?: string) => {
   }, [state]);
 
   const getProgress = useCallback(() => {
-    const stages: ConversationStage[] = ['idea', 'audience', 'goal', 'timeline'];
+    const stages: ConversationStage[] = [
+      'idea', 
+      'pain-points', 
+      'market-context', 
+      'unique-value',
+      'audience', 
+      'audience-details',
+      'goal', 
+      'success-metrics',
+      'timeline', 
+      'resources'
+    ];
     const currentIndex = stages.indexOf(state.stage);
     return {
       current: currentIndex + 1,
-      total: 4,
-      percentage: ((currentIndex + 1) / 4) * 100
+      total: 10,
+      percentage: ((currentIndex + 1) / 10) * 100
     };
   }, [state.stage]);
 
