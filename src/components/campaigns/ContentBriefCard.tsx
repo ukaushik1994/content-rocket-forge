@@ -26,16 +26,16 @@ export function ContentBriefCard({ brief, formatName, onCreateContent }: Content
   };
 
   return (
-    <GlassCard className="p-4 space-y-3 bg-background/40 hover:bg-background/60 transition-all group">
+    <GlassCard className="p-4 space-y-3 bg-card/60 hover:bg-card/80 transition-all group">
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <h4 className="font-semibold text-sm leading-tight flex-1">{brief.title}</h4>
-          <Badge variant="outline" className="text-xs shrink-0">
+          <h4 className="font-semibold text-sm leading-tight flex-1 line-clamp-2">{brief.title}</h4>
+          <Badge variant="outline" className="text-xs shrink-0 bg-primary/5">
             {formatName}
           </Badge>
         </div>
         
-        <p className="text-xs text-muted-foreground leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
           {brief.description}
         </p>
       </div>
