@@ -118,13 +118,12 @@ export function StrategyTiles({
               >
                 <GlassCard 
                   className={cn(
-                    "p-6 space-y-4 transition-all duration-300 cursor-pointer overflow-hidden relative h-full flex flex-col",
+                    "p-6 space-y-4 transition-all duration-300 overflow-hidden relative h-full flex flex-col",
                     "bg-background/60 backdrop-blur-xl",
                     isSelected 
                       ? "bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent border-blue-400/50 shadow-lg shadow-blue-500/20"
                       : "border-border/50 hover:border-primary/30 hover:shadow-lg"
                   )}
-                  onClick={() => onSelect(strategy.id)}
                 >
                 
                   {/* Selection Indicator */}
@@ -460,6 +459,7 @@ export function StrategyTiles({
                         variant="ghost"
                         size="sm"
                         className="w-full justify-between p-2 h-auto hover:bg-primary/5"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center gap-2">
                           <Package className="w-3.5 h-3.5 text-primary" />
@@ -513,6 +513,7 @@ export function StrategyTiles({
                           variant="ghost"
                           size="sm"
                           className="w-full justify-between p-2 h-auto hover:bg-accent/50"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center gap-2">
                             <FileText className="w-3.5 h-3.5 text-primary" />

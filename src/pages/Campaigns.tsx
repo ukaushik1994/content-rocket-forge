@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { solutionService } from '@/services/solutionService';
 import { campaignService, SavedCampaign } from '@/services/campaignService';
+import { campaignCleanupService } from '@/services/campaignCleanupService';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus } from 'lucide-react';
 
@@ -33,7 +34,27 @@ const Campaigns = () => {
   const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
   const [editingStrategy, setEditingStrategy] = useState<CampaignStrategy | null>(null);
   const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/campaigns` : '/campaigns';
+
+  // Clean up duplicate campaigns on mount
+  useEffect(() => {
+    const cleanupDuplicates = async () => {
+      if (!user) return;
+      
+      try {
+        const result = await campaignCleanupService.removeDuplicates(user.id);
+        if (result.removed > 0) {
+          console.log(`Cleaned up ${result.removed} duplicate campaigns`);
+          refetchCampaigns();
+        }
+      } catch (error) {
+        console.error('Failed to cleanup duplicates:', error);
+      }
+    };
+    
+    cleanupDuplicates();
+  }, [user, refetchCampaigns]);
 
   // Fetch solution when strategies are generated with a solution ID
   useEffect(() => {
@@ -103,27 +124,44 @@ const Campaigns = () => {
   };
 
   const handleSelectStrategy = async (strategyId: string) => {
-    if (!user || !currentInput) return;
+    if (!user || !currentInput || isSaving) return;
+    
+    // Prevent saving if already selected
+    if (selectedStrategy === strategyId && currentCampaignId) {
+      toast.info('This strategy is already selected');
+      return;
+    }
     
     const strategy = strategies.find((s) => s.id === strategyId);
     if (!strategy) return;
 
+    setIsSaving(true);
     try {
       const campaignName = `${currentInput.idea.slice(0, 50)}${currentInput.idea.length > 50 ? '...' : ''}`;
-      const savedCampaign = await campaignService.saveCampaign(
-        user.id,
-        campaignName,
-        currentInput.idea,
-        strategy
-      );
       
-      setCurrentCampaignId(savedCampaign.id);
-      setSelectedStrategy(strategyId);
-      toast.success('Campaign saved successfully!');
+      // Update existing campaign instead of creating new one
+      if (currentCampaignId) {
+        await campaignService.updateSelectedStrategy(currentCampaignId, strategy);
+        setSelectedStrategy(strategyId);
+        toast.success('Strategy updated successfully!');
+      } else {
+        const savedCampaign = await campaignService.saveCampaign(
+          user.id,
+          campaignName,
+          currentInput.idea,
+          strategy
+        );
+        setCurrentCampaignId(savedCampaign.id);
+        setSelectedStrategy(strategyId);
+        toast.success('Campaign saved successfully!');
+      }
+      
       refetchCampaigns();
     } catch (error) {
       console.error('Error saving campaign:', error);
       toast.error('Failed to save campaign');
+    } finally {
+      setIsSaving(false);
     }
   };
 
