@@ -69,7 +69,7 @@ const Campaigns = () => {
         industry: companyData.industry,
       } : undefined;
 
-      const newStrategies = await generateStrategies(input, user.id, companyInfo);
+      const newStrategies = await generateStrategies(input, user.id);
       setStrategies(newStrategies);
       setShowInput(false);
       toast.success('Campaign strategies generated!');
