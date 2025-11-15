@@ -13,6 +13,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { CampaignInput as CampaignInputType, CampaignGoal, CampaignTimeline } from '@/types/campaign-types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Collapsible,
   CollapsibleContent,
@@ -31,6 +32,7 @@ export function CampaignInput({ onGenerate, onCancel, isGenerating = false }: Ca
   const [goal, setGoal] = useState<CampaignGoal>('awareness');
   const [timeline, setTimeline] = useState<CampaignTimeline>('4-week');
   const [showOptional, setShowOptional] = useState(false);
+  const [useSerpData, setUseSerpData] = useState(true);
 
   const maxChars = 500;
   const minChars = 20;
@@ -44,6 +46,7 @@ export function CampaignInput({ onGenerate, onCancel, isGenerating = false }: Ca
       targetAudience: audience || undefined,
       goal,
       timeline,
+      useSerpData,
     };
 
     await onGenerate(input);
@@ -154,6 +157,23 @@ export function CampaignInput({ onGenerate, onCancel, isGenerating = false }: Ca
             </div>
           </CollapsibleContent>
         </Collapsible>
+
+        <div className="flex items-start space-x-3 rounded-lg border border-border/50 bg-muted/20 p-4">
+          <Checkbox
+            id="serp-data"
+            checked={useSerpData}
+            onCheckedChange={(checked) => setUseSerpData(checked as boolean)}
+            disabled={isGenerating}
+          />
+          <div className="flex-1 space-y-1">
+            <Label htmlFor="serp-data" className="text-sm font-medium cursor-pointer">
+              Enhance with SERP data
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Include real-time search trends, competitor keywords, and "People Also Ask" questions for data-driven strategies
+            </p>
+          </div>
+        </div>
 
         <div className="flex gap-3 pt-4">
           <Button

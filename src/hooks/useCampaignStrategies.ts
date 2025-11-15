@@ -25,6 +25,7 @@ export const useCampaignStrategies = () => {
             targetAudience: input.targetAudience,
             goal: input.goal,
             timeline: input.timeline,
+            useSerpData: input.useSerpData,
             companyInfo,
           },
         }
