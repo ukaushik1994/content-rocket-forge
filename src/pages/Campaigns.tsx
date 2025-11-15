@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { CampaignsHero } from '@/components/campaigns/CampaignsHero';
-import { CampaignInput } from '@/components/campaigns/CampaignInput';
+import { CampaignChatInterface } from '@/components/campaigns/CampaignChatInterface';
 import { CampaignBreakdownView } from '@/components/campaigns/CampaignBreakdownView';
 import { StrategyEditModal } from '@/components/campaigns/StrategyEditModal';
 import { CampaignList } from '@/components/campaigns/CampaignList';
@@ -336,10 +336,10 @@ const Campaigns = () => {
                 </div>
 
                 {showInput ? (
-                  <CampaignInput
-                    onGenerate={handleGenerateStrategies}
+                  <CampaignChatInterface
+                    initialMessage={currentInput?.idea}
+                    onComplete={handleGenerateStrategies}
                     onCancel={handleBackToList}
-                    isGenerating={isGenerating}
                   />
                 ) : null}
 
