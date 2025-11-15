@@ -113,6 +113,13 @@ export interface PostingSchedule {
 export type CampaignGoal = 'awareness' | 'conversion' | 'engagement' | 'education';
 export type CampaignTimeline = '1-week' | '2-week' | '4-week' | 'ongoing';
 
+export type CampaignStatus = 
+  | 'draft'       // Just created, no strategy yet
+  | 'planned'     // Strategy generated, not started
+  | 'active'      // Assets being generated
+  | 'completed'   // All assets generated
+  | 'archived';   // User archived it
+
 export interface CampaignInput {
   idea: string;
   targetAudience?: string;

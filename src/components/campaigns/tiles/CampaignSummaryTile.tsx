@@ -1,13 +1,15 @@
-import { CampaignStrategy } from '@/types/campaign-types';
+import { CampaignStrategy, CampaignStatus } from '@/types/campaign-types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
 import { Target, TrendingUp, Clock, Users, Zap } from 'lucide-react';
+import { CampaignStatusBadge } from '../CampaignStatusBadge';
 
 interface CampaignSummaryTileProps {
   strategy: CampaignStrategy;
+  status?: CampaignStatus;
 }
 
-export const CampaignSummaryTile = ({ strategy }: CampaignSummaryTileProps) => {
+export const CampaignSummaryTile = ({ strategy, status = 'planned' }: CampaignSummaryTileProps) => {
   const calculateIntensity = () => {
     const totalPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
     if (totalPieces >= 20) return 'High';
@@ -22,6 +24,7 @@ export const CampaignSummaryTile = ({ strategy }: CampaignSummaryTileProps) => {
           <div className="flex items-center gap-3 mb-2">
             <Target className="h-6 w-6 text-neon-purple" />
             <h2 className="text-2xl font-bold">{strategy.title}</h2>
+            <CampaignStatusBadge status={status} />
           </div>
           <p className="text-muted-foreground mb-4">{strategy.description}</p>
           
