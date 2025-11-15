@@ -10,6 +10,7 @@ import {
   Ticket,
   Radio,
   ListTree,
+  Globe,
   LucideIcon
 } from 'lucide-react';
 
@@ -75,6 +76,12 @@ export const contentFormats: ContentFormat[] = [
     name: 'Carousel Post',
     description: 'Multi-slide content for social platforms',
     icon: ListTree
+  },
+  {
+    id: 'landing-page',
+    name: 'Landing Page',
+    description: 'Conversion-optimized landing page',
+    icon: Globe
   }
 ];
 

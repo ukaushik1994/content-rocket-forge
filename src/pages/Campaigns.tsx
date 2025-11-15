@@ -1,12 +1,80 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { CampaignsHero } from '@/components/campaigns/CampaignsHero';
-import { motion } from 'framer-motion';
+import { CampaignInput } from '@/components/campaigns/CampaignInput';
+import { StrategyTiles } from '@/components/campaigns/StrategyTiles';
+import { StrategyEditModal } from '@/components/campaigns/StrategyEditModal';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCampaignStrategies } from '@/hooks/useCampaignStrategies';
+import { CampaignStrategy, CampaignInput as CampaignInputType } from '@/types/campaign-types';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Campaigns = () => {
+  const { user } = useAuth();
+  const { generateStrategies, isGenerating } = useCampaignStrategies();
+  
+  const [showInput, setShowInput] = useState(false);
+  const [currentInput, setCurrentInput] = useState<CampaignInputType | null>(null);
+  const [strategies, setStrategies] = useState<CampaignStrategy[]>([]);
+  const [selectedStrategy, setSelectedStrategy] = useState<string | null>(null);
+  const [editingStrategy, setEditingStrategy] = useState<CampaignStrategy | null>(null);
   const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/campaigns` : '/campaigns';
+
+  const handleGenerateStrategies = async (input: CampaignInputType) => {
+    if (!user) {
+      toast.error('Please sign in to generate campaigns');
+      return;
+    }
+
+    setCurrentInput(input);
+
+    try {
+      // Fetch company info
+      const { data: companyData } = await supabase
+        .from('company_info')
+        .select('name, description, industry')
+        .eq('user_id', user.id)
+        .single();
+
+      const companyInfo = companyData ? {
+        name: companyData.name,
+        description: companyData.description,
+        industry: companyData.industry,
+      } : undefined;
+
+      const newStrategies = await generateStrategies(input, user.id, companyInfo);
+      setStrategies(newStrategies);
+      setShowInput(false);
+      toast.success('Campaign strategies generated!');
+    } catch (error) {
+      console.error('Error generating strategies:', error);
+      // Error already shown by hook
+    }
+  };
+
+  const handleRegenerateStrategies = async () => {
+    if (!currentInput) return;
+    await handleGenerateStrategies(currentInput);
+  };
+
+  const handleEditStrategy = (strategy: CampaignStrategy) => {
+    setEditingStrategy(strategy);
+  };
+
+  const handleSaveEditedStrategy = (updatedStrategy: CampaignStrategy) => {
+    setStrategies((prev) =>
+      prev.map((s) => (s.id === updatedStrategy.id ? updatedStrategy : s))
+    );
+    setEditingStrategy(null);
+    toast.success('Strategy updated');
+  };
+
+  const selectedStrategyData = strategies.find((s) => s.id === selectedStrategy);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -30,14 +98,62 @@ const Campaigns = () => {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-8"
         >
-          <CampaignsHero />
+          <CampaignsHero onCreateClick={() => setShowInput(true)} />
           
-          {/* Placeholder for future content */}
-          <div className="text-center text-muted-foreground py-12">
-            Campaign builder coming soon...
-          </div>
+          <AnimatePresence mode="wait">
+            {showInput && (
+              <CampaignInput
+                onGenerate={handleGenerateStrategies}
+                onCancel={() => setShowInput(false)}
+                isGenerating={isGenerating}
+              />
+            )}
+
+            {strategies.length > 0 && !showInput && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-8"
+              >
+                <StrategyTiles
+                  strategies={strategies}
+                  selectedId={selectedStrategy}
+                  onSelect={setSelectedStrategy}
+                  onEdit={handleEditStrategy}
+                  onRegenerate={handleRegenerateStrategies}
+                  isRegenerating={isGenerating}
+                />
+
+                {selectedStrategy && selectedStrategyData && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-center gap-4"
+                  >
+                    <Button
+                      size="lg"
+                      className="bg-gradient-to-r from-primary to-blue-500"
+                    >
+                      Generate Content for This Strategy
+                    </Button>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </main>
+
+      {/* Edit Modal */}
+      {editingStrategy && (
+        <StrategyEditModal
+          open={!!editingStrategy}
+          onOpenChange={(open) => !open && setEditingStrategy(null)}
+          strategy={editingStrategy}
+          onSave={handleSaveEditedStrategy}
+        />
+      )}
     </div>
   );
 };
