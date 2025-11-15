@@ -32,6 +32,7 @@ const Campaigns = () => {
     }
 
     setCurrentInput(input);
+    setStrategies([]); // Clear previous strategies to show loading state
 
     try {
       // Fetch company info
@@ -107,6 +108,34 @@ const Campaigns = () => {
                 onCancel={() => setShowInput(false)}
                 isGenerating={isGenerating}
               />
+            )}
+
+            {isGenerating && strategies.length === 0 && !showInput && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="rounded-xl border bg-card/50 backdrop-blur-sm p-6 space-y-4 animate-pulse">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="h-5 bg-muted rounded w-20"></div>
+                      <div className="h-5 bg-muted rounded w-16"></div>
+                    </div>
+                    <div className="h-7 bg-muted rounded w-3/4 mb-3"></div>
+                    <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-5/6 mb-4"></div>
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <div className="h-20 bg-muted rounded"></div>
+                      <div className="h-20 bg-muted rounded"></div>
+                      <div className="h-20 bg-muted rounded"></div>
+                      <div className="h-20 bg-muted rounded"></div>
+                    </div>
+                    <div className="h-10 bg-muted rounded"></div>
+                  </div>
+                ))}
+              </motion.div>
             )}
 
             {strategies.length > 0 && !showInput && (

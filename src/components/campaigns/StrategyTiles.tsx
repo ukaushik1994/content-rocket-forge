@@ -31,12 +31,24 @@ export function StrategyTiles({
 
   const getFormatIcon = (formatId: string) => {
     const format = contentFormats.find((f) => f.id === formatId);
-    return format?.icon;
+    if (!format) {
+      console.warn(`⚠️ Unknown format ID: ${formatId}, using default FileText icon`);
+      return undefined; // Will use FileText as fallback in rendering
+    }
+    return format.icon;
   };
 
   const getFormatName = (formatId: string) => {
     const format = contentFormats.find((f) => f.id === formatId);
-    return format?.name || formatId;
+    if (!format) {
+      console.warn(`⚠️ Unknown format ID: ${formatId}, using formatted version`);
+      // Convert "blog-post" to "Blog Post" or "social-twitter" to "Social Twitter"
+      return formatId
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    return format.name;
   };
 
   const getCategoryGradient = (formatId: string) => {
