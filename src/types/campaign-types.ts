@@ -9,6 +9,24 @@ export interface CampaignStrategy {
   timeline?: string;
   targetAudience?: string;
   postingSchedule?: PostingSchedule[];
+  
+  // Enhanced fields for rich display
+  strategyScore?: number; // 0-100 AI confidence
+  keyStrengths?: string[]; // 3-5 key advantages
+  expectedEngagement?: 'low' | 'medium' | 'high';
+  solutionAlignment?: number; // 0-100 how well it promotes solution
+  competitorDifferentiation?: string; // How it stands out
+  milestones?: Array<{
+    week: number;
+    description: string;
+    contentTypes: string[];
+  }>;
+  expectedMetrics?: {
+    impressions: { min: number; max: number };
+    engagement: { min: number; max: number };
+    conversions?: { min: number; max: number };
+  };
+  contentCategories?: Record<string, number>; // Group by Social, Video, Blog, etc.
 }
 
 export interface ContentFormatCount {
@@ -33,4 +51,5 @@ export interface CampaignInput {
   goal?: CampaignGoal;
   timeline?: CampaignTimeline;
   useSerpData?: boolean;
+  solutionId?: string; // Selected solution to promote
 }

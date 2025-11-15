@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp, Package } from 'lucide-react';
 import { CampaignInput as CampaignInputType, CampaignGoal, CampaignTimeline } from '@/types/campaign-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,6 +19,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { solutionService } from '@/services/solutionService';
+import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 
 interface CampaignInputProps {
   onGenerate: (input: CampaignInputType) => Promise<void>;
@@ -33,6 +35,23 @@ export function CampaignInput({ onGenerate, onCancel, isGenerating = false }: Ca
   const [timeline, setTimeline] = useState<CampaignTimeline>('4-week');
   const [showOptional, setShowOptional] = useState(false);
   const [useSerpData, setUseSerpData] = useState(true);
+  const [selectedSolution, setSelectedSolution] = useState<string>('');
+  const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
+  const [loadingSolutions, setLoadingSolutions] = useState(true);
+
+  useEffect(() => {
+    const fetchSolutions = async () => {
+      try {
+        const data = await solutionService.getAllSolutions();
+        setSolutions(data || []);
+      } catch (error) {
+        console.error('Failed to fetch solutions:', error);
+      } finally {
+        setLoadingSolutions(false);
+      }
+    };
+    fetchSolutions();
+  }, []);
 
   const maxChars = 500;
   const minChars = 20;
@@ -47,6 +66,7 @@ export function CampaignInput({ onGenerate, onCancel, isGenerating = false }: Ca
       goal,
       timeline,
       useSerpData,
+      solutionId: selectedSolution || undefined,
     };
 
     await onGenerate(input);
@@ -154,6 +174,62 @@ export function CampaignInput({ onGenerate, onCancel, isGenerating = false }: Ca
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="solution">Solution to Promote (Optional)</Label>
+              <Select value={selectedSolution} onValueChange={setSelectedSolution} disabled={isGenerating || loadingSolutions}>
+                <SelectTrigger id="solution">
+                  <SelectValue placeholder={loadingSolutions ? "Loading solutions..." : "Select a solution"}>
+                    {selectedSolution && solutions.find(s => s.id === selectedSolution) && (
+                      <div className="flex items-center gap-2">
+                        {solutions.find(s => s.id === selectedSolution)?.logoUrl && (
+                          <img 
+                            src={solutions.find(s => s.id === selectedSolution)?.logoUrl || ''} 
+                            alt=""
+                            className="w-4 h-4 rounded object-cover"
+                          />
+                        )}
+                        <Package className="w-4 h-4" />
+                        <span>{solutions.find(s => s.id === selectedSolution)?.name}</span>
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">
+                    <span className="text-muted-foreground">No solution selected</span>
+                  </SelectItem>
+                  {solutions.map((solution) => (
+                    <SelectItem key={solution.id} value={solution.id}>
+                      <div className="flex items-center gap-2">
+                        {solution.logoUrl ? (
+                          <img 
+                            src={solution.logoUrl} 
+                            alt={solution.name}
+                            className="w-5 h-5 rounded object-cover"
+                          />
+                        ) : (
+                          <Package className="w-5 h-5 text-muted-foreground" />
+                        )}
+                        <div className="flex flex-col">
+                          <span className="font-medium">{solution.name}</span>
+                          {solution.shortDescription && (
+                            <span className="text-xs text-muted-foreground line-clamp-1">
+                              {solution.shortDescription}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedSolution && solutions.find(s => s.id === selectedSolution) && (
+                <p className="text-xs text-muted-foreground">
+                  Campaign will leverage {solutions.find(s => s.id === selectedSolution)?.name} features and positioning
+                </p>
+              )}
             </div>
           </CollapsibleContent>
         </Collapsible>
