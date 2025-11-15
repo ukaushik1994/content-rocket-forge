@@ -90,12 +90,12 @@ export const CampaignsHero = React.memo(({ onCreateClick }: CampaignsHeroProps) 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-3xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 max-w-3xl mx-auto"
           >
             {[
-              { icon: Target, label: 'Active Campaigns', value: '-', color: 'from-purple-500 to-pink-500' },
-              { icon: Zap, label: 'Content Generated', value: '-', color: 'from-blue-500 to-cyan-500' },
-              { icon: TrendingUp, label: 'Formats Used', value: '-', color: 'from-green-500 to-emerald-500' }
+              { icon: Target, label: 'Active Campaigns', value: '-', bgColor: 'bg-primary/10', iconColor: 'text-primary' },
+              { icon: Zap, label: 'Content Generated', value: '-', bgColor: 'bg-blue-500/10', iconColor: 'text-blue-500' },
+              { icon: TrendingUp, label: 'Formats Used', value: '-', bgColor: 'bg-green-500/10', iconColor: 'text-green-500' }
             ].map((stat, index) => {
               const Icon = stat.icon;
               return (
@@ -103,21 +103,21 @@ export const CampaignsHero = React.memo(({ onCreateClick }: CampaignsHeroProps) 
                   key={stat.label}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.02 }}
                   transition={{ delay: 0.8 + (index * 0.1), duration: 0.4 }}
-                  className="relative group"
+                  className="relative"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity rounded-xl blur-xl"
-                    style={{ background: `linear-gradient(to right, ${stat.color})` }}
-                  />
-                  <div className="relative bg-card/50 backdrop-blur-sm p-6 rounded-xl border border-border/50 hover:border-primary/50 transition-all">
-                    <div className={`inline-flex p-3 rounded-lg bg-gradient-to-r ${stat.color} mb-3`}>
-                      <Icon className="h-6 w-6 text-white" />
+                  <div className="flex items-center gap-4 bg-background/60 backdrop-blur-xl p-6 rounded-xl border border-border/50 hover:bg-background/80 transition-all">
+                    <div className={`flex-shrink-0 p-3 rounded-lg ${stat.bgColor} backdrop-blur-xl`}>
+                      <Icon className={`h-6 w-6 ${stat.iconColor}`} />
                     </div>
-                    <div className="text-3xl font-bold text-foreground mb-1">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {stat.label}
+                    <div className="text-left">
+                      <div className="text-2xl font-bold text-foreground mb-1">
+                        {stat.value}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {stat.label}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
