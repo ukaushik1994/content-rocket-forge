@@ -169,7 +169,7 @@ Example structure:
 ]
 
 IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs with complete SEO metadata. Make topics actionable and specific, not generic.`;
-      const userMessage = `Generate 3 strategies for: "${input.idea}"${solutionContext}${serpContext}`;
+      const userMessage = `Generate 1 comprehensive campaign strategy for: "${input.idea}"${solutionContext}${serpContext}`;
 
       let aiResponse = null;
       const maxRetries = 3;
