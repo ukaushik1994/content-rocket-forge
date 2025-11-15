@@ -172,22 +172,49 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
       const userMessage = `Generate 3 strategies for: "${input.idea}"${solutionContext}${serpContext}`;
 
       let aiResponse = null;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
-          body: {
-            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
-            context: { use_case: 'strategy' }
+      const maxRetries = 3;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`🔄 Attempt ${attempt}/${maxRetries} to generate strategies`);
+          
+          const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+            body: {
+              messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+              context: { use_case: 'strategy' }
+            }
+          });
+          
+          if (!error && data) {
+            aiResponse = data;
+            console.log('✅ Response:', (data.response || data.content).length, 'chars');
+            break;
           }
-        });
-        if (!error && data) {
-          aiResponse = data;
-          console.log('✅ Response:', (data.response || data.content).length, 'chars');
-          break;
+          
+          // Handle rate limiting errors
+          if (error && (error.message?.includes('429') || error.message?.includes('rate limit') || error.message?.includes('Rate limit'))) {
+            console.warn(`⏰ Rate limit hit on attempt ${attempt}, waiting before retry...`);
+            if (attempt < maxRetries) {
+              await new Promise(r => setTimeout(r, 5000 * attempt));
+              continue;
+            }
+          }
+          
+          if (attempt < maxRetries) {
+            await new Promise(r => setTimeout(r, 2000 * attempt));
+          }
+        } catch (retryError) {
+          console.error(`❌ Attempt ${attempt} failed:`, retryError);
+          if (attempt === maxRetries) {
+            throw new Error('Failed to generate strategies after multiple attempts. Please try again in a moment.');
+          }
+          await new Promise(r => setTimeout(r, 2000 * attempt));
         }
-        if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt));
       }
 
-      if (!aiResponse) throw new Error('Failed to generate strategy');
+      if (!aiResponse) {
+        throw new Error('AI service temporarily unavailable. Please try again in a moment.');
+      }
 
       let content = (aiResponse.response || aiResponse.content || '').replace(/```json\s*/g, '').replace(/```/g, '').trim();
       
