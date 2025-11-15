@@ -93,26 +93,47 @@ ${serpContext ? 'IMPORTANT: Leverage the SERP intelligence data to create SEO-op
 
 ${solutionContext ? 'CRITICAL: This campaign is promoting a specific solution. All strategies MUST highlight the solution\'s unique value, features, and differentiators. Ensure content mix and messaging directly support solution awareness and conversion.' : ''}
 
+CRITICAL FORMAT ID REQUIREMENTS - You MUST use these EXACT format IDs:
+- blog (for blog posts)
+- social-twitter (for Twitter/X posts)
+- social-linkedin (for LinkedIn posts)
+- social-facebook (for Facebook posts)
+- social-instagram (for Instagram posts)
+- script (for video scripts)
+- email (for email newsletters)
+- landing-page (for landing pages)
+- case-study (for case studies)
+- whitepaper (for whitepapers)
+- meme (for meme content)
+- carousel (for carousel posts)
+
+DO NOT use variations like "blog-post", "social-media", "email-newsletter" - use the EXACT IDs above!
+
+CRITICAL REQUIRED FIELDS - ALL strategies MUST include:
+1. strategyScore: number between 0-100 (overall strategy quality score)
+2. keyStrengths: array of 3-5 strings (main advantages of this strategy)
+3. expectedEngagement: string - must be 'low', 'medium', or 'high'
+4. targetAudience: string (specific audience description)
+${solutionContext ? '5. solutionAlignment: number between 0-100 (how well strategy aligns with solution)\n6. competitorDifferentiation: string (how this differentiates from competitors)' : ''}
+
 CRITICAL: Return ONLY valid JSON - no markdown, no code blocks, no trailing commas.
 Return your response as a valid JSON array with exactly 4 strategy objects. Each object must have:
 - id: unique identifier (string)
 - title: compelling strategy name (string)
 - description: detailed explanation of the strategy (string)
+- strategyScore: AI confidence score 0-100 (number) [REQUIRED]
+- keyStrengths: 3-5 key advantages (string array) [REQUIRED]
+- expectedEngagement: 'low', 'medium', or 'high' (string) [REQUIRED]
+- targetAudience: specific audience segment (string) [REQUIRED]
 - contentMix: array of {formatId: string, count: number, scheduleSuggestion?: string}
 - estimatedReach: estimated audience reach (string, optional)
 - timeline: execution timeline (string, optional)
-- targetAudience: specific audience segment (string, optional)
 - postingSchedule: array of {formatId: string, frequency: string, platform?: string, bestTimes?: string[]}
-- strategyScore: AI confidence score 0-100 (number)
-- keyStrengths: 3-5 key advantages of this strategy (string array)
-- expectedEngagement: 'low', 'medium', or 'high' (string)
-- solutionAlignment: 0-100 how well it promotes the solution (number, optional)
-- competitorDifferentiation: how this strategy stands out from competitors (string, optional)
+- solutionAlignment: 0-100 how well it promotes the solution (number, optional but required if solution context is provided)
+- competitorDifferentiation: how this strategy stands out (string, optional but required if solution context is provided)
 - milestones: array of {week: number, description: string, contentTypes: string[]} (optional)
 - expectedMetrics: {impressions: {min: number, max: number}, engagement: {min: number, max: number}, conversions: {min: number, max: number}} (optional)
 - contentCategories: object grouping content by category like {"Social": 24, "Blog": 12, "Video": 6} (optional)
-
-Format IDs can include: blog-post, social-media, video, infographic, email-newsletter, podcast, webinar, case-study, whitepaper, etc.
 
 IMPORTANT: Ensure all JSON arrays have NO trailing commas. Example:
 CORRECT: ["item1", "item2"]
@@ -158,6 +179,27 @@ Generate 4 distinct campaign strategies as a JSON array with all the required an
         }
         
         console.log(`✅ Parsed ${strategies.length} campaign strategies`);
+        
+        // Debug: Log first strategy structure to verify all required fields
+        if (strategies.length > 0) {
+          console.log('📊 Generated strategy structure:', {
+            id: strategies[0].id,
+            title: strategies[0].title,
+            hasStrategyScore: !!strategies[0].strategyScore,
+            strategyScore: strategies[0].strategyScore,
+            hasKeyStrengths: !!strategies[0].keyStrengths,
+            keyStrengthsCount: strategies[0].keyStrengths?.length,
+            hasExpectedEngagement: !!strategies[0].expectedEngagement,
+            expectedEngagement: strategies[0].expectedEngagement,
+            hasTargetAudience: !!strategies[0].targetAudience,
+            hasSolutionAlignment: !!strategies[0].solutionAlignment,
+            solutionAlignment: strategies[0].solutionAlignment,
+            hasMilestones: !!strategies[0].milestones,
+            milestonesCount: strategies[0].milestones?.length,
+            contentMixFormatIds: strategies[0].contentMix?.map((c: any) => c.formatId) || [],
+            hasCompetitorDifferentiation: !!strategies[0].competitorDifferentiation,
+          });
+        }
       } catch (parseError) {
         console.error('❌ Failed to parse AI response as JSON:', parseError);
         console.error('Raw response:', aiResponse.content);
