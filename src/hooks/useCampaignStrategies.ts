@@ -35,9 +35,9 @@ export const useCampaignStrategies = () => {
         }
       }
 
-      const systemPrompt = `You are an expert content marketing strategist specializing in SEO and data-driven campaign planning. Generate 3 diverse campaign strategies based on the user's input.
+      const systemPrompt = `You are an expert content marketing strategist specializing in SEO and data-driven campaign planning. Generate 1 comprehensive campaign strategy based on the user's input.
 
-For each strategy, provide:
+Provide:
 1. A compelling title and detailed description
 2. A content mix with specific format types, counts, AND detailed content briefs with SEO metadata
 3. Estimated reach and timeline
@@ -51,6 +51,12 @@ For each strategy, provide:
 11. Weekly milestones with content types
 12. Expected metrics (impressions, engagement, conversions ranges)
 13. Content grouped by category (Social, Video, Blog, etc.)
+14. Total effort (aggregate hours, complexity level, recommended workflow order)
+15. Audience intelligence (personas, industry segments, pain points, purchase motivations, messaging angle)
+16. SEO intelligence (primary keyword, secondary keywords, avg ranking difficulty, expected SEO impact, brief count)
+17. Distribution strategy (channels, posting cadence, best days/times, tone & messaging, estimated traffic lift)
+18. Asset requirements (copy needs, visual needs, CTA suggestions, target URLs)
+19. Optional add-ons (content calendar, draft copies, full SEO briefs, landing page copy, email sequences, export options)
 
 CRITICAL: For each content format in contentMix, generate specific content briefs with:
 - Exact titles for each piece
@@ -63,11 +69,10 @@ CRITICAL: For each content format in contentMix, generate specific content brief
 
 Use these content format IDs: blog, social-twitter, social-linkedin, social-facebook, social-instagram, script, email, meme, carousel, landing-page
 
-Return ONLY a valid JSON array of 3 strategies. No markdown, no explanation, just the JSON array.
+Return ONLY a valid JSON object (single strategy). No markdown, no explanation, just the JSON object.
 
 Example structure:
-[
-  {
+{
     "title": "Content-First Growth Strategy",
     "description": "Focus on high-quality, SEO-optimized content to establish thought leadership and drive organic traffic",
     "contentMix": [
@@ -182,22 +187,33 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
         if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt));
       }
 
-      if (!aiResponse) throw new Error('Failed to generate strategies');
+      if (!aiResponse) throw new Error('Failed to generate strategy');
 
       let content = (aiResponse.response || aiResponse.content || '').replace(/```json\s*/g, '').replace(/```/g, '').trim();
-      let strategies: CampaignStrategy[] = JSON.parse(content.match(/\[[\s\S]*\]/)?.[0] || content);
-
-      // Auto-generate IDs if missing
-      strategies = strategies.map((s, index) => ({
-        ...s,
-        id: s.id || `strategy-${Date.now()}-${index}`
-      }));
-
-      const valid = strategies.filter(s => s.title && s.description && s.contentMix);
       
-      if (valid.length === 0) throw new Error('No valid strategies');
-      toast.success(`Generated ${valid.length} strategies`);
-      return valid;
+      // Parse single strategy object (not array)
+      let strategy: CampaignStrategy;
+      try {
+        // Try to extract JSON object from response
+        const jsonMatch = content.match(/\{[\s\S]*\}/)?.[0];
+        strategy = JSON.parse(jsonMatch || content);
+      } catch (parseError) {
+        console.error('Failed to parse strategy:', parseError);
+        throw new Error('Invalid strategy format generated');
+      }
+
+      // Auto-generate ID if missing
+      if (!strategy.id) {
+        strategy.id = `strategy-${Date.now()}`;
+      }
+
+      // Validate required fields
+      if (!strategy.title || !strategy.description || !strategy.contentMix) {
+        throw new Error('Strategy missing required fields');
+      }
+      
+      toast.success('Generated comprehensive campaign strategy');
+      return [strategy]; // Return as array for compatibility
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed';
       setError(msg);

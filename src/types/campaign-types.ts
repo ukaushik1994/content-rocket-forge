@@ -27,6 +27,58 @@ export interface CampaignStrategy {
     conversions?: { min: number; max: number };
   };
   contentCategories?: Record<string, number>; // Group by Social, Video, Blog, etc.
+  
+  // NEW: Aggregate effort metrics
+  totalEffort?: {
+    hours: number;
+    complexity: 'beginner' | 'skilled' | 'expert';
+    workflowOrder: string[]; // Format IDs in recommended order
+  };
+  
+  // NEW: Audience intelligence
+  audienceIntelligence?: {
+    personas: string[];
+    industrySegments: string[];
+    painPoints: string[];
+    purchaseMotivations: string[];
+    messagingAngle: string;
+  };
+  
+  // NEW: SEO intelligence (aggregated)
+  seoIntelligence?: {
+    primaryKeyword: string;
+    secondaryKeywords: string[];
+    avgRankingDifficulty: 'low' | 'medium' | 'high';
+    expectedSeoImpact: string;
+    briefTemplatesAvailable: number;
+  };
+  
+  // NEW: Distribution strategy
+  distributionStrategy?: {
+    channels: string[];
+    postingCadence: string;
+    bestDaysAndTimes: string[];
+    toneAndMessaging: string;
+    estimatedTrafficLift: string;
+  };
+  
+  // NEW: Asset requirements
+  assetRequirements?: {
+    copyNeeds: string[];
+    visualNeeds: string[];
+    ctaSuggestions: string[];
+    targetUrls: string[];
+  };
+  
+  // NEW: Optional add-ons
+  optionalAddons?: {
+    contentCalendar: boolean;
+    draftCopies: boolean;
+    fullSeoBriefs: boolean;
+    landingPageCopy: boolean;
+    emailSequences: boolean;
+    exportOptions: string[];
+  };
 }
 
 export interface ContentBrief {
