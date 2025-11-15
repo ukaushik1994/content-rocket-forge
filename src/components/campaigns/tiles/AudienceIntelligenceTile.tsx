@@ -42,40 +42,48 @@ export const AudienceIntelligenceTile = ({ strategy }: AudienceIntelligenceTileP
       </div>
       
       <div className="space-y-3">
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Ideal Buyer Personas</p>
-          <div className="flex gap-2 flex-wrap">
-            {audienceIntelligence.personas.map((persona) => (
-              <Badge key={persona} variant="secondary">{persona}</Badge>
-            ))}
+        {audienceIntelligence.personas && Array.isArray(audienceIntelligence.personas) && audienceIntelligence.personas.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Ideal Buyer Personas</p>
+            <div className="flex gap-2 flex-wrap">
+              {audienceIntelligence.personas.map((persona) => (
+                <Badge key={persona} variant="secondary">{persona}</Badge>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Industry Segments</p>
-          <div className="flex gap-2 flex-wrap">
-            {audienceIntelligence.industrySegments.map((industry) => (
-              <Badge key={industry}>{industry}</Badge>
-            ))}
+        {audienceIntelligence.industrySegments && Array.isArray(audienceIntelligence.industrySegments) && audienceIntelligence.industrySegments.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Industry Segments</p>
+            <div className="flex gap-2 flex-wrap">
+              {audienceIntelligence.industrySegments.map((industry) => (
+                <Badge key={industry}>{industry}</Badge>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Pain Points</p>
-          <ul className="space-y-1">
-            {audienceIntelligence.painPoints.slice(0, 3).map((pain) => (
-              <li key={pain} className="text-sm flex items-start gap-2">
-                <AlertCircle className="h-3.5 w-3.5 text-purple-400 shrink-0 mt-0.5" />
-                {pain}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {audienceIntelligence.painPoints && Array.isArray(audienceIntelligence.painPoints) && audienceIntelligence.painPoints.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Pain Points</p>
+            <ul className="space-y-1">
+              {audienceIntelligence.painPoints.slice(0, 3).map((pain) => (
+                <li key={pain} className="text-sm flex items-start gap-2">
+                  <AlertCircle className="h-3.5 w-3.5 text-purple-400 shrink-0 mt-0.5" />
+                  {pain}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         
-        <div className="pt-3 border-t border-purple-500/20">
-          <p className="text-xs text-muted-foreground mb-1">Messaging Angle</p>
-          <p className="text-sm font-medium text-purple-300">{audienceIntelligence.messagingAngle}</p>
-        </div>
+        {audienceIntelligence.messagingAngle && (
+          <div className="pt-3 border-t border-purple-500/20">
+            <p className="text-xs text-muted-foreground mb-1">Messaging Angle</p>
+            <p className="text-sm font-medium text-purple-300">{audienceIntelligence.messagingAngle}</p>
+          </div>
+        )}
       </div>
     </GlassCard>
   );
