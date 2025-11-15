@@ -371,7 +371,7 @@ const Campaigns = () => {
                   </motion.div>
                 )}
 
-                {strategy && !showInput && (
+                {strategy && !showInput && user && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -385,13 +385,22 @@ const Campaigns = () => {
                       campaignStatus={
                         campaigns.find(c => c.id === currentCampaignId)?.status as any || 'planned'
                       }
-                      userId={user?.id}
+                      userId={user.id}
                       onGenerateAssets={handleGenerateAssets}
                       onRegenerate={viewMode === 'create' ? handleRegenerate : undefined}
                       onCampaignCreated={handleCampaignCreated}
                       isGenerating={isSaving}
                       isRegenerating={isGenerating}
                     />
+                  </motion.div>
+                )}
+                {strategy && !showInput && !user && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="p-8 text-center"
+                  >
+                    <p className="text-muted-foreground">Please sign in to save your campaign</p>
                   </motion.div>
                 )}
               </motion.div>
