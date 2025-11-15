@@ -20,15 +20,18 @@ export function EnhancedContentMixCard({ format }: EnhancedContentMixCardProps) 
   };
 
   return (
-    <GlassCard className="p-3 space-y-2 bg-card/60 hover:bg-card/80 transition-all duration-300 border-border/60">
-      <div className="flex items-start gap-3">
-        <div className="p-2.5 rounded-lg bg-primary/10 shrink-0">
+    <GlassCard className="p-4 space-y-3 bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-xl border-border/60 hover:border-primary/30 hover:shadow-md transition-all duration-300 group relative">
+      {/* Subtle gradient overlay on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none" />
+      
+      <div className="relative flex items-start gap-3">
+        <div className="p-3 rounded-xl bg-primary/10 backdrop-blur-xl shrink-0 group-hover:bg-primary/15 transition-colors">
           <Icon className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-semibold text-sm truncate text-foreground">{formatInfo.name}</h4>
-            <Badge variant="secondary" className="text-xs shrink-0 bg-primary/10 font-semibold">
+            <Badge variant="secondary" className="text-xs shrink-0 bg-gradient-to-r from-primary/20 to-primary/10 font-semibold border-primary/20">
               {format.count}
             </Badge>
           </div>
@@ -36,31 +39,31 @@ export function EnhancedContentMixCard({ format }: EnhancedContentMixCardProps) 
         </div>
       </div>
 
-      <div className="space-y-1.5 pl-11">
+      <div className="relative space-y-1.5 pl-11">
         {format.frequency && (
-          <div className="flex items-center gap-1.5 text-xs">
-            <CheckCircle2 className="w-3 h-3 text-green-500" />
-            <span className="text-muted-foreground">{format.frequency}</span>
+          <div className="flex items-center gap-1.5 text-xs group/item hover:text-foreground transition-colors">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+            <span className="text-muted-foreground group-hover/item:text-foreground transition-colors">{format.frequency}</span>
           </div>
         )}
 
         {format.bestTimes && format.bestTimes.length > 0 && (
-          <div className="flex items-center gap-1.5 text-xs">
-            <CheckCircle2 className="w-3 h-3 text-green-500" />
-            <span className="text-muted-foreground">Best: {format.bestTimes.join(', ')}</span>
+          <div className="flex items-center gap-1.5 text-xs group/item hover:text-foreground transition-colors">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+            <span className="text-muted-foreground group-hover/item:text-foreground transition-colors">Best: {format.bestTimes.join(', ')}</span>
           </div>
         )}
 
         {format.estimatedEffort && (
-          <div className="flex items-center gap-1.5 text-xs">
-            <CheckCircle2 className="w-3 h-3 text-green-500" />
-            <span className="text-muted-foreground">{format.estimatedEffort}</span>
+          <div className="flex items-center gap-1.5 text-xs group/item hover:text-foreground transition-colors">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+            <span className="text-muted-foreground group-hover/item:text-foreground transition-colors">{format.estimatedEffort}</span>
           </div>
         )}
 
         {format.seoPotential && (
           <div className="flex items-center gap-1.5">
-            <TrendingUp className="w-3 h-3" />
+            <TrendingUp className="w-3.5 h-3.5" />
             <Badge 
               variant="outline" 
               className={`text-xs font-semibold ${seoPotentialColors[format.seoPotential]}`}

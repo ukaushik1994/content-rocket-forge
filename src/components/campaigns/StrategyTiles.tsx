@@ -9,7 +9,7 @@ import { contentFormats } from '@/components/content-repurposing/formats';
 import { EnhancedContentMixCard } from './EnhancedContentMixCard';
 import { ContentBriefCard } from './ContentBriefCard';
 import { motion } from 'framer-motion';
-import { Edit, RefreshCw, Star, Package, ChevronDown, CheckCircle2, Shield, Users, Target, FileText, Eye } from 'lucide-react';
+import { Edit, RefreshCw, Star, Package, ChevronDown, CheckCircle2, Shield, Users, Target, FileText, Eye, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StrategyTilesProps {
@@ -93,88 +93,127 @@ export function StrategyTiles({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="relative group"
+              whileHover={{ scale: 1.02, y: -2 }}
+              className="relative group h-full"
             >
-              <GlassCard 
-                className={cn(
-                  "p-4 space-y-3 transition-all duration-300 cursor-pointer hover:scale-[1.01]",
-                  isSelected 
-                    ? "bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-blue-500/20 border-blue-400/50 shadow-xl shadow-blue-500/20"
-                    : "bg-card/90 border-border/60 hover:bg-card hover:border-border/80 hover:shadow-lg"
-                )}
-                onClick={() => onSelect(strategy.id)}
+              <motion.div
+                initial={false}
+                animate={{
+                  borderColor: isSelected ? 'rgba(96, 165, 250, 0.5)' : 'rgba(255, 255, 255, 0.1)',
+                  boxShadow: isSelected 
+                    ? '0 20px 25px -5px rgba(59, 130, 246, 0.2)' 
+                    : '0 0 0 0 rgba(0, 0, 0, 0)'
+                }}
+                transition={{ duration: 0.3 }}
               >
+                <GlassCard 
+                  className={cn(
+                    "p-6 space-y-4 transition-all duration-300 cursor-pointer overflow-hidden relative h-full flex flex-col",
+                    "bg-background/60 backdrop-blur-xl",
+                    isSelected 
+                      ? "bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent border-blue-400/50 shadow-lg shadow-blue-500/20"
+                      : "border-border/50 hover:border-primary/30 hover:shadow-lg"
+                  )}
+                  onClick={() => onSelect(strategy.id)}
+                >
                 
-                {/* Selection Indicator */}
-                {isSelected && (
-                  <div className="absolute top-3 left-3 z-10">
-                    <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse shadow-lg shadow-blue-500/50" />
-                  </div>
-                )}
+                  {/* Selection Indicator */}
+                  {isSelected && (
+                    <div className="absolute top-3 left-3 z-10">
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 backdrop-blur-xl border border-blue-400/30">
+                        <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse shadow-lg shadow-blue-500/50" />
+                        <span className="text-xs font-medium text-blue-400">Selected</span>
+                      </div>
+                    </div>
+                  )}
                 
-                {/* Header with Score and Edit */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
+                  {/* Header with Score and Edit */}
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
                         {strategy.strategyScore && (
-                          <Badge className="bg-gradient-to-r from-primary to-blue-500 text-primary-foreground text-xs font-semibold">
-                            <Star className="w-3 h-3 mr-1 fill-current" />
-                            {strategy.strategyScore}
+                          <Badge className="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-400 border-amber-400/30">
+                            <Star className="w-3.5 h-3.5 mr-1.5 fill-amber-400" />
+                            <span className="font-bold">{strategy.strategyScore}</span>
+                            <span className="text-xs opacity-70 ml-1">/ 100</span>
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
                         {strategy.expectedEngagement && (
-                          <Badge variant="outline" className="text-xs border-border/50 bg-background/20">
-                            {strategy.expectedEngagement}
+                          <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-400/30">
+                            <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+                            <span className="font-semibold">{strategy.expectedEngagement}</span>
                           </Badge>
                         )}
                         {onEdit && (
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-7 w-7 shrink-0 bg-background/20 border-border/50 hover:bg-background/40"
+                            className="h-8 w-8 shrink-0 bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30"
                             onClick={(e) => {
                               e.stopPropagation();
                               onEdit(strategy);
                             }}
                           >
-                            <Edit className="h-3 w-3" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
                     </div>
-                    <h4 className="text-lg font-semibold leading-tight line-clamp-2 text-foreground">
-                      {isSelected && <CheckCircle2 className="h-4 w-4 text-blue-400 inline mr-1" />}
-                      {strategy.title}
-                    </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                      {strategy.description}
-                    </p>
+                    
+                    {/* Gradient Divider */}
+                    <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                    
+                    <div className="space-y-2">
+                      <h4 className="text-xl font-bold leading-tight line-clamp-2 text-foreground">
+                        {strategy.title}
+                      </h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                        {strategy.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
                 
-                {/* Key Metrics Section */}
-                <div className="flex items-center justify-between gap-4 p-3 bg-emerald-950/50 rounded-lg border border-emerald-500/20">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-emerald-500/10">
-                      <Target className="h-5 w-5 text-emerald-400" />
-                    </div>
-                    <div>
-                      <div className="text-3xl font-bold text-foreground">
-                        {strategy.contentMix.reduce((sum, format) => sum + format.count, 0)}
+                  {/* Key Metrics Section - Hero Style */}
+                  <div className="relative overflow-hidden rounded-xl p-4 bg-gradient-to-br from-emerald-500/15 via-green-500/10 to-emerald-600/5 border border-emerald-500/20">
+                    {/* Animated background effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                    
+                    <div className="relative flex items-center justify-between">
+                      {/* Left: Piece count - Hero Display */}
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-emerald-500/20 backdrop-blur-xl">
+                          <Target className="h-6 w-6 text-emerald-400" />
+                        </div>
+                        <div>
+                          <div className="text-4xl font-bold text-white">
+                            {strategy.contentMix.reduce((sum, format) => sum + format.count, 0)}
+                          </div>
+                          <div className="text-xs text-emerald-400/80 font-medium">
+                            Content Pieces
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">pieces</div>
+                      
+                      {/* Right: Estimated reach */}
+                      {strategy.estimatedReach && (
+                        <div className="text-right">
+                          <div className="text-lg font-semibold text-white">
+                            {strategy.estimatedReach}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Est. Reach
+                          </div>
+                          {strategy.timeline && (
+                            <div className="text-xs text-emerald-400/70">
+                              over {strategy.timeline}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  {strategy.estimatedReach && (
-                    <div className="text-right">
-                      <div className="text-xs text-muted-foreground">Est. Reach</div>
-                      <div className="text-sm font-semibold text-foreground">{strategy.estimatedReach}</div>
-                    </div>
-                  )}
-                </div>
 
                 {/* Collapsible Solution Context */}
                 {solution && (
@@ -228,18 +267,21 @@ export function StrategyTiles({
                   </Collapsible>
                 )}
 
-                {/* Content Mix */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-primary" />
-                    <h5 className="text-sm font-semibold text-foreground/80">Content Mix</h5>
+                  {/* Content Mix */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <h5 className="text-sm font-semibold text-foreground">Content Mix</h5>
+                      <Badge variant="secondary" className="text-xs bg-primary/10">
+                        {strategy.contentMix.length} formats
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {strategy.contentMix.map((format, idx) => (
+                        <EnhancedContentMixCard key={idx} format={format} />
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {strategy.contentMix.map((format, idx) => (
-                      <EnhancedContentMixCard key={idx} format={format} />
-                    ))}
-                  </div>
-                </div>
 
                 {/* Collapsible Sections */}
                 <div className="space-y-2">
@@ -292,28 +334,28 @@ export function StrategyTiles({
                   )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="pt-3 border-t border-border/30">
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelect(strategy.id);
-                    }}
-                    size="sm"
-                    variant={isSelected ? "default" : "outline"}
-                    className={cn(
-                      "gap-2 w-full",
-                      isSelected 
-                        ? 'bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/30'
-                        : 'bg-background/20 border-border/50 hover:bg-background/40'
-                    )}
-                  >
-                    <FileText className="h-4 w-4" />
-                    {isSelected ? 'Selected' : 'Select Strategy'}
-                  </Button>
-                </div>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-4 mt-auto border-t border-border/40">
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(strategy.id);
+                      }}
+                      size="lg"
+                      className={cn(
+                        "flex-1 gap-2 text-base font-semibold transition-all duration-300",
+                        isSelected 
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 border-0'
+                          : 'bg-gradient-to-r from-white/10 to-white/5 border-white/20 text-white/90 hover:bg-white/20 hover:border-white/30'
+                      )}
+                    >
+                      <FileText className="h-5 w-5" />
+                      {isSelected ? 'Selected' : 'Select Strategy'}
+                    </Button>
+                  </div>
 
-              </GlassCard>
+                </GlassCard>
+              </motion.div>
             </motion.div>
           );
         })}
