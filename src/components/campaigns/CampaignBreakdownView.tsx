@@ -21,6 +21,7 @@ import {
   AssetRequirementsTile,
   OptionalAddonsTile,
 } from './tiles';
+import { TileErrorBoundary } from './TileErrorBoundary';
 
 interface CampaignBreakdownViewProps {
   strategy: CampaignStrategy;
@@ -155,24 +156,38 @@ export const CampaignBreakdownView = ({
       
       {/* Row 2: Content Mix + Content Effort */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ContentMixTile strategy={strategy} />
-        <ContentEffortTile strategy={strategy} />
+        <TileErrorBoundary tileName="Content Mix">
+          <ContentMixTile strategy={strategy} />
+        </TileErrorBoundary>
+        <TileErrorBoundary tileName="Content Effort">
+          <ContentEffortTile strategy={strategy} />
+        </TileErrorBoundary>
       </div>
       
       {/* Row 3: Audience Intelligence + SEO Intelligence */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AudienceIntelligenceTile strategy={strategy} />
-        <SeoIntelligenceTile strategy={strategy} />
+        <TileErrorBoundary tileName="Audience Intelligence">
+          <AudienceIntelligenceTile strategy={strategy} />
+        </TileErrorBoundary>
+        <TileErrorBoundary tileName="SEO Intelligence">
+          <SeoIntelligenceTile strategy={strategy} />
+        </TileErrorBoundary>
       </div>
       
       {/* Row 4: Distribution Strategy + Asset Requirements */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DistributionStrategyTile strategy={strategy} />
-        <AssetRequirementsTile strategy={strategy} />
+        <TileErrorBoundary tileName="Distribution Strategy">
+          <DistributionStrategyTile strategy={strategy} />
+        </TileErrorBoundary>
+        <TileErrorBoundary tileName="Asset Requirements">
+          <AssetRequirementsTile strategy={strategy} />
+        </TileErrorBoundary>
       </div>
       
       {/* Row 5: Optional Add-ons - Full Width */}
-      <OptionalAddonsTile strategy={strategy} />
+      <TileErrorBoundary tileName="Optional Add-ons">
+        <OptionalAddonsTile strategy={strategy} />
+      </TileErrorBoundary>
       
       {/* Row 6: Generate Assets CTA - Centered */}
       <div className="flex flex-col items-center gap-4 py-8">
