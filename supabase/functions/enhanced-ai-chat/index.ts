@@ -1094,27 +1094,60 @@ serve(async (req) => {
       
       // Call AI again with tool results
       console.log(`🔧 Calling AI again with ${toolResults.length} tool results`);
-      const { data: secondCallResult, error: secondCallError } = await supabase.functions.invoke('ai-proxy', {
-        body: {
-          service: provider.provider,
-          endpoint: 'chat',
-          apiKey: provider.api_key,
-          params: {
-            model: provider.preferred_model,
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt,
-              },
-              ...messages,
-              data.choices[0].message, // Original AI message with tool_calls
-              ...toolResults // Tool results
-            ],
-            temperature: 0.7,
-            max_tokens: dynamicMaxTokens,
+      
+      let secondCallResult = null;
+      let secondCallError = null;
+      const maxRetries = 3;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const result = await supabase.functions.invoke('ai-proxy', {
+          body: {
+            service: provider.provider,
+            endpoint: 'chat',
+            apiKey: provider.api_key,
+            params: {
+              model: provider.preferred_model,
+              messages: [
+                {
+                  role: "system",
+                  content: systemPrompt,
+                },
+                ...messages,
+                data.choices[0].message, // Original AI message with tool_calls
+                ...toolResults // Tool results
+              ],
+              temperature: 0.7,
+              max_tokens: dynamicMaxTokens,
+            }
           }
+        });
+        
+        if (!result.error && result.data?.success) {
+          secondCallResult = result.data;
+          secondCallError = null;
+          console.log(`✅ Second AI call succeeded on attempt ${attempt}`);
+          break;
         }
-      });
+        
+        secondCallError = result.error;
+        
+        // Handle rate limiting with exponential backoff
+        if (secondCallError && (
+          secondCallError.message?.includes('429') || 
+          secondCallError.message?.includes('rate limit') || 
+          secondCallError.message?.includes('Rate limit')
+        )) {
+          console.warn(`⏰ Rate limit hit on second call, attempt ${attempt}/${maxRetries}`);
+          if (attempt < maxRetries) {
+            const waitTime = 5000 * attempt;
+            console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+            await new Promise(r => setTimeout(r, waitTime));
+            continue;
+          }
+        } else if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+        }
+      }
       
       if (secondCallError || !secondCallResult?.success) {
         console.error("❌ Second AI call failed after tools:", secondCallError);
