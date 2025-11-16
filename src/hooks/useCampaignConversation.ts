@@ -197,6 +197,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
         if (userResponse === 'none' || userResponse.includes('no') || userResponse.includes('not')) {
           // User is not promoting an existing solution
           newData.solutionId = null;
+          nextStage = 'audience';
         } else {
           // Try to match user response to a solution
           const matchedSolution = availableSolutions.find((sol: any) => 
@@ -205,12 +206,53 @@ export const useCampaignConversation = (initialMessage?: string) => {
           
           if (matchedSolution) {
             newData.solutionId = matchedSolution.id;
+            
+            // Fetch full solution details to get target audience
+            try {
+              const { data: solutionData } = await supabase
+                .from('solutions')
+                .select('target_audience')
+                .eq('id', matchedSolution.id)
+                .single();
+              
+              if (solutionData?.target_audience) {
+                // Auto-populate target audience from solution
+                const targetAudienceData = solutionData.target_audience as any;
+                
+                // Build audience description from solution data
+                let audienceDescription = '';
+                if (targetAudienceData.primary) {
+                  audienceDescription = targetAudienceData.primary;
+                } else if (Array.isArray(targetAudienceData)) {
+                  audienceDescription = targetAudienceData.join(', ');
+                } else if (typeof targetAudienceData === 'string') {
+                  audienceDescription = targetAudienceData;
+                } else if (targetAudienceData.segments) {
+                  audienceDescription = targetAudienceData.segments.join(', ');
+                }
+                
+                if (audienceDescription) {
+                  newData.targetAudience = audienceDescription;
+                  (newData as any)._autoPopulatedAudience = true; // Flag for message
+                  console.log('[Campaign] Auto-populated target audience from solution:', audienceDescription);
+                  nextStage = 'timeline'; // Skip audience question
+                } else {
+                  nextStage = 'audience'; // Ask for audience
+                }
+              } else {
+                nextStage = 'audience'; // No target audience in solution, ask
+              }
+            } catch (error) {
+              console.error('Failed to fetch solution details:', error);
+              nextStage = 'audience'; // Fall back to asking
+            }
+          } else {
+            nextStage = 'audience';
           }
         }
         
         // Clean up temporary data
         delete (newData as any).availableSolutions;
-        nextStage = 'audience';
         break;
       
       case 'audience':
@@ -313,17 +355,40 @@ export const useCampaignConversation = (initialMessage?: string) => {
 
       let aiQuestion: string;
       
-      try {
-        // Now we have the complete conversation history including user's message
-        aiQuestion = await generateAIQuestion(
-          nextStage,  // Use calculated nextStage, not state.stage
-          newData,    // Use calculated newData, not state.collectedData
-          conversationHistory,  // Manually built history with all messages
-          user.id
-        );
-      } catch (aiError) {
-        console.warn('[Campaign] AI generation failed, using fallback:', aiError);
-        aiQuestion = getFallbackQuestion(nextStage, newData);
+      // Check if we auto-populated audience from solution
+      const autoPopulatedAudience = (newData as any)._autoPopulatedAudience;
+      if (autoPopulatedAudience && nextStage === 'timeline') {
+        // Add info message about using solution's target audience
+        const infoMessage = `✅ Great! I've pulled the target audience from your solution: **${newData.targetAudience}**\n\nNow, `;
+        
+        try {
+          const timelineQuestion = await generateAIQuestion(
+            nextStage,
+            newData,
+            conversationHistory,
+            user.id
+          );
+          aiQuestion = infoMessage + timelineQuestion.charAt(0).toLowerCase() + timelineQuestion.slice(1);
+        } catch (aiError) {
+          console.warn('[Campaign] AI generation failed, using fallback:', aiError);
+          aiQuestion = infoMessage + getFallbackQuestion(nextStage, newData).charAt(0).toLowerCase() + getFallbackQuestion(nextStage, newData).slice(1);
+        }
+        
+        // Clean up the flag
+        delete (newData as any)._autoPopulatedAudience;
+      } else {
+        try {
+          // Now we have the complete conversation history including user's message
+          aiQuestion = await generateAIQuestion(
+            nextStage,  // Use calculated nextStage, not state.stage
+            newData,    // Use calculated newData, not state.collectedData
+            conversationHistory,  // Manually built history with all messages
+            user.id
+          );
+        } catch (aiError) {
+          console.warn('[Campaign] AI generation failed, using fallback:', aiError);
+          aiQuestion = getFallbackQuestion(nextStage, newData);
+        }
       }
 
       console.log('[Campaign] Generated question (first 100 chars):', aiQuestion.substring(0, 100));
