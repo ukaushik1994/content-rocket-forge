@@ -8,6 +8,9 @@ import { SaveIndicator } from './SaveIndicator';
 import { CampaignStatusBadge } from './CampaignStatusBadge';
 import { ContentLibrary } from './ContentLibrary';
 import { ExportCampaignButton } from './ExportCampaignButton';
+import { PublishingPanel } from './PublishingPanel';
+import { CalendarIntegration } from './CalendarIntegration';
+import { PublicationStatusTracker } from './PublicationStatusTracker';
 import { useCampaignAutoSave } from '@/hooks/useCampaignAutoSave';
 import { campaignService } from '@/services/campaignService';
 import { toast } from 'sonner';
@@ -251,9 +254,31 @@ export const CampaignBreakdownView = ({
         <p className="text-sm text-muted-foreground text-center">
           This will create {totalContentPieces} content pieces and a full execution plan
         </p>
-        </div>
+      </div>
+
+      {/* Publishing & Distribution Section */}
+      {campaignId && (
+        <div className="mt-8 bg-accent/20 border-2 border-accent rounded-lg p-6">
+          <h3 className="text-xl font-semibold mb-4">Publishing & Distribution</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <PublishingPanel
+                campaignId={campaignId}
+                contentItems={[]}
+                onPublishComplete={() => {}}
+              />
+              <CalendarIntegration
+                campaignId={campaignId}
+                contentItems={[]}
+                onScheduleComplete={() => {}}
+              />
+            </div>
+            <PublicationStatusTracker contentItems={[]} />
+          </div>
         </div>
       )}
-    </ContentGenerationProvider>
+    </div>
+  )}
+</ContentGenerationProvider>
   );
 };
