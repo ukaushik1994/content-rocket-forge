@@ -73,6 +73,8 @@ export const useCampaignAutoSave = ({
             timeline: input.timeline,
             status: 'planned', // Strategy exists, so it's planned
           });
+          
+          console.log('📊 [Auto-Save] Campaign status maintained as "planned"');
         } else {
           // Create new campaign
           const generateCampaignName = (idea: string) => {
@@ -94,6 +96,8 @@ export const useCampaignAutoSave = ({
             timeline: input.timeline,
             status: 'planned',
           });
+          
+          console.log('📊 [Auto-Save] New campaign created with status "planned"');
 
           // Notify parent component that campaign was created
           if (onCampaignCreated) {

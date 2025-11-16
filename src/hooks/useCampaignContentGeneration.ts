@@ -171,6 +171,21 @@ export const useCampaignContentGeneration = () => {
       status: 'generating'
     });
 
+    console.log(`🚀 [Content Generation] Starting generation for ${items.length} items`);
+    
+    // Update campaign status to 'active' when generation starts
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      await supabase
+        .from('campaigns')
+        .update({ status: 'active', updated_at: new Date().toISOString() })
+        .eq('id', campaignId);
+      
+      console.log('📊 [Campaign Status] Updated to "active" - content generation started');
+    } catch (error) {
+      console.error('Failed to update campaign status to active:', error);
+    }
+
     let completed = 0;
     let failed = 0;
 
@@ -210,6 +225,21 @@ export const useCampaignContentGeneration = () => {
       status: 'completed',
       current: 0
     }));
+
+    // Update campaign status to 'completed' when all content is generated
+    if (failed === 0) {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase
+          .from('campaigns')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('id', campaignId);
+        
+        console.log('📊 [Campaign Status] Updated to "completed" - all content generated successfully');
+      } catch (error) {
+        console.error('Failed to update campaign status to completed:', error);
+      }
+    }
 
     toast({
       title: "Generation Complete!",
