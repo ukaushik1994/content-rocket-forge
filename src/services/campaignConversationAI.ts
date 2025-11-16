@@ -32,112 +32,36 @@ function getStageContext(stage: ConversationStage, data: EnhancedCampaignData): 
   const previousContext = buildPreviousContext(data);
   
   switch (stage) {
-    case 'idea':
-      return `OBJECTIVE: Get them to describe their campaign idea - what product, feature, or service they're promoting.
+    case 'goal-idea':
+      return `OBJECTIVE: Get them to describe both their campaign idea AND goal in one response.
       
-Keep it simple and welcoming. This is the first question.`;
+Ask what they're promoting and what they want to achieve (awareness, conversions, etc.).`;
 
-    case 'pain-points':
+    case 'solution-detection':
       return `PREVIOUS: They're promoting "${data.idea}"
 ${previousContext}
 
-OBJECTIVE: Understand the specific problem this solves. What pain point are they addressing?
+OBJECTIVE: Determine if they're promoting an existing solution from their account.
 
-Reference their idea and ask about the problem it solves.`;
-
-    case 'market-context':
-      return `PREVIOUS: 
-- Campaign idea: "${data.idea}"
-- Pain point: "${data.painPoints}"
-${previousContext}
-
-OBJECTIVE: Understand the competitive landscape:
-- Who are their main competitors?
-- How does their approach differ?
-- What makes the timing right?
-
-Ask about competitors and market positioning.`;
-
-    case 'unique-value':
-      return `PREVIOUS:
-- Campaign: "${data.idea}"
-- Solving: "${data.painPoints}"
-- Competitors: "${data.competitors}"
-${previousContext}
-
-OBJECTIVE: Identify their unique value proposition - what sets them apart from competitors.
-
-Ask about what makes them unique compared to ${data.competitors || 'competitors'}.`;
+Show available solutions and ask them to select one or type "None".`;
 
     case 'audience':
-      return `PREVIOUS:
-- Campaign: "${data.idea}"
-- Unique value: "${data.uniqueValue}"
+      return `PREVIOUS: 
+- Campaign idea: "${data.idea}"
 ${previousContext}
 
-OBJECTIVE: Identify their target audience:
-- Role/job title
-- Industry
-- Company size
-- Current challenges
+OBJECTIVE: Identify their target audience - be specific about roles, industries, company size if they mention it.
 
-Ask who would benefit most from this solution.`;
+Ask who they're targeting with this campaign.`;
 
-    case 'audience-details':
-      return `PREVIOUS:
-- Target audience: "${data.targetAudience}"
-${previousContext}
-
-OBJECTIVE: Get specific about the audience:
-- Seniority level
-- Budget authority
-- Current tools/solutions
-- Technical sophistication
-
-Dig deeper into ${data.targetAudience || 'their audience'}.`;
-
-    case 'goal':
+    case 'timeline':
       return `PREVIOUS:
 - Audience: "${data.targetAudience}"
 ${previousContext}
 
-OBJECTIVE: Understand their primary campaign goal (awareness, conversion, engagement, or education).
-
-Ask what they want to achieve with this campaign.`;
-
-    case 'success-metrics':
-      return `PREVIOUS:
-- Goal: "${data.goal}"
-${previousContext}
-
-OBJECTIVE: Define specific success metrics:
-- KPIs to track
-- Realistic benchmarks
-- Definition of success
-
-Ask how they'll measure if the campaign succeeds.`;
-
-    case 'timeline':
-      return `PREVIOUS:
-- Success looks like: "${data.successMetrics}"
-${previousContext}
-
 OBJECTIVE: Understand the timeline (1-week, 2-week, 4-week, or ongoing).
 
-Ask how much time they have to execute and see results.`;
-
-    case 'resources':
-      return `PREVIOUS:
-- Timeline: "${data.timeline}"
-${previousContext}
-
-OBJECTIVE: Understand available resources:
-- Budget range
-- Team size and skills
-- Successful past channels
-- Constraints/limitations
-
-Ask about their resources and any constraints.`;
+Ask how much time they have for this campaign.`;
 
     case 'complete':
       return `All information collected! Acknowledge receipt and let them know you're generating strategies.`;
@@ -244,38 +168,20 @@ export async function generateAIQuestion(
  */
 export function getFallbackQuestion(stage: ConversationStage, data: EnhancedCampaignData): string {
   switch (stage) {
-    case 'idea':
-      return "Let's create a winning campaign together! Tell me about your campaign idea - what specific product, feature, or service are you planning to promote?";
+    case 'goal-idea':
+      return "Let's create a winning campaign together! Tell me about your campaign idea and what you want to achieve.";
     
-    case 'pain-points':
-      return `Great! You're promoting "${data.idea}". What specific problem does this solve for your users? What pain point are you addressing?`;
-    
-    case 'market-context':
-      return `Got it! Now, let's talk competitive landscape:\n• Who are your main competitors?\n• How does your approach differ?\n• What makes your timing right?`;
-    
-    case 'unique-value':
-      return `Thanks! What's the ONE thing that sets you apart from ${data.competitors || 'competitors'}? What's your unique value proposition?`;
+    case 'solution-detection':
+      return `Are you promoting one of your existing solutions? Type the solution name or 'None'.`;
     
     case 'audience':
-      return `Perfect! Who is your ideal customer? Think about their role, industry, company size, and current challenges.`;
-    
-    case 'audience-details':
-      return `Let's get more specific about ${data.targetAudience || 'your audience'}:\n• What level of seniority?\n• Budget authority?\n• Current tools/solutions?`;
-    
-    case 'goal':
-      return `Excellent! What's your primary goal for this campaign with ${data.targetAudience || 'this audience'}?`;
-    
-    case 'success-metrics':
-      return `Good! You want to achieve ${data.goal}. What numbers define success? What KPIs will you track?`;
+      return `Great! For "${data.idea}", who is your target audience?`;
     
     case 'timeline':
-      return `Perfect! How much time do you have to execute this campaign and hit those metrics?`;
-    
-    case 'resources':
-      return `Almost done! Let's talk resources:\n• Budget range?\n• Team size and skills?\n• What channels have worked best?`;
+      return `Perfect! What's your timeline for this campaign?`;
     
     case 'complete':
-      return "🎉 Excellent! I have everything I need. Let me generate highly targeted campaign strategies for you...";
+      return "🎉 Perfect! I have everything I need. Let me generate highly targeted campaign strategies for you...";
     
     default:
       return "Tell me more...";

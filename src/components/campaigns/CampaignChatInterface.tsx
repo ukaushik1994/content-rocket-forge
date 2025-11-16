@@ -75,12 +75,6 @@ export function CampaignChatInterface({
   };
 
   const quickReplies = {
-    goal: [
-      { label: 'Brand Awareness', value: 'awareness', icon: Target },
-      { label: 'Conversions', value: 'conversion', icon: Target },
-      { label: 'Engagement', value: 'engagement', icon: Users },
-      { label: 'Education', value: 'education', icon: Users }
-    ],
     timeline: [
       { label: '1 Week', value: '1-week', icon: Calendar },
       { label: '2 Weeks', value: '2-week', icon: Calendar },
@@ -156,14 +150,14 @@ export function CampaignChatInterface({
               selectedId={selectedSummaryId}
               onSelect={selectSummary}
               onRegenerate={regenerateSummaries}
-              onEditAnswers={() => goBackToStage('resources')}
+              onEditAnswers={() => goBackToStage('timeline')}
               isLoading={isLoading}
             />
           </motion.div>
         )}
 
         {/* Quick Reply Buttons */}
-        {!isComplete && stage !== 'strategy-selection' && (stage === 'goal' || stage === 'timeline') && (
+        {!isComplete && stage !== 'strategy-selection' && stage === 'timeline' && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -193,12 +187,10 @@ export function CampaignChatInterface({
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             placeholder={
-              stage === 'idea' 
-                ? "Describe your campaign idea..." 
+              stage === 'goal-idea' 
+                ? "Describe your campaign idea and goal..." 
                 : stage === 'audience'
                 ? "Who are you trying to reach?"
-                : stage === 'goal'
-                ? "What's your main goal?"
                 : "How much time do you have?"
             }
           />
