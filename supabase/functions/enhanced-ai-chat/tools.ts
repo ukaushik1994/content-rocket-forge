@@ -395,6 +395,12 @@ export async function executeToolCall(
               .order('created_at', { ascending: false })
               .limit(Math.min(toolArgs.limit || 10, 50));
             
+          case 'generate_campaign_strategies':
+            // This is a formatting tool, not a data-fetching tool
+            // Just return the structured data from the AI
+            console.log(`[TOOL] ${toolName} | FORMATTING TOOL | Returning AI-structured data`);
+            return { data: toolArgs, error: null };
+            
           default:
             throw new Error(`Unknown tool: ${toolName}`);
         }
