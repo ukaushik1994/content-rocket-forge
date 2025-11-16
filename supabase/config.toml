@@ -137,3 +137,6 @@ verify_jwt = true
 [functions.campaign-content-generator]
 verify_jwt = true
 
+[functions.generate-campaign-briefs]
+verify_jwt = true
+
