@@ -190,23 +190,44 @@ export const ContentGenerationPanel = () => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="fixed right-0 top-0 bottom-0 w-full lg:w-2/3 bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+            className="fixed right-0 top-16 bottom-0 w-full lg:w-2/3 bg-background/95 backdrop-blur-xl border-l border-border/40 shadow-2xl ring-1 ring-black/5 dark:ring-white/5 z-50 flex flex-col"
             role="dialog"
             aria-modal="true"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div>
-                <h2 className="text-2xl font-bold">Content Generation</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {totalPieces} pieces · {readyCount} ready · {totalPieces - readyCount} pending
-                </p>
+            <div className="flex items-center justify-between p-6 border-b border-border/40 bg-gradient-to-r from-background/60 to-primary/5 backdrop-blur-sm">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-primary/10 to-blue-500/10 rounded-lg border border-primary/20">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-primary">
+                    Content Generation
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary" className="bg-background/60 backdrop-blur-sm">
+                    <FileText className="h-3 w-3 mr-1" />
+                    {totalPieces} pieces
+                  </Badge>
+                  <Badge variant="default" className="bg-green-500/90">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    {readyCount} ready
+                  </Badge>
+                  {totalPieces - readyCount > 0 && (
+                    <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {totalPieces - readyCount} pending
+                    </Badge>
+                  )}
+                </div>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={closePanel}
                 aria-label="Close panel"
+                className="hover:bg-background/80"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -216,10 +237,16 @@ export const ContentGenerationPanel = () => {
             <ScrollArea className="flex-1">
               <div className="p-6 space-y-4">
                 {loadingBriefs ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center space-y-3">
-                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-                      <p className="text-muted-foreground">Generating content briefs...</p>
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center space-y-4">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-full blur-xl" />
+                        <Loader2 className="relative h-12 w-12 animate-spin mx-auto text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-medium text-foreground">Generating content briefs</p>
+                        <p className="text-sm text-muted-foreground">AI is crafting your content strategy...</p>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -228,10 +255,14 @@ export const ContentGenerationPanel = () => {
                     
                     return (
                       <div key={formatItem.formatId} className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-primary" />
-                          <h3 className="font-semibold">{formatName}</h3>
-                          <Badge variant="secondary">{formatItem.count} pieces</Badge>
+                        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl border border-primary/10">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <FileText className="h-4 w-4 text-primary" />
+                          </div>
+                          <h3 className="font-semibold text-foreground">{formatName}</h3>
+                          <Badge variant="secondary" className="ml-auto bg-background/60">
+                            {formatItem.count} {formatItem.count === 1 ? 'piece' : 'pieces'}
+                          </Badge>
                         </div>
 
                         <div className="grid gap-3">
@@ -242,23 +273,23 @@ export const ContentGenerationPanel = () => {
                             const isExpanded = expandedContent === key;
 
                             return (
-                              <Card key={key} className="p-4">
+                              <Card key={key} className="p-4 hover:shadow-lg hover:border-primary/20 transition-all duration-300 hover:scale-[1.01] bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/50">
                                 <div className="space-y-3">
                                   {/* Header */}
                                   <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="font-medium truncate">
+                                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <h4 className="font-medium text-foreground">
                                           {brief?.title || `${formatName} #${index + 1}`}
                                         </h4>
                                         {generated?.status === 'ready' && (
-                                          <Badge variant="default" className="bg-green-500">
+                                          <Badge variant="default" className="bg-green-500/90 text-white shadow-sm">
                                             <CheckCircle2 className="h-3 w-3 mr-1" />
                                             Ready
                                           </Badge>
                                         )}
                                         {generated?.status === 'generating' && (
-                                          <Badge variant="default">
+                                          <Badge variant="default" className="bg-primary/90 shadow-sm">
                                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                                             Generating...
                                           </Badge>
