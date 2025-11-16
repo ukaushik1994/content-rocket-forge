@@ -134,3 +134,6 @@ verify_jwt = true
 [functions.publish-wix]
 verify_jwt = true
 
+[functions.campaign-content-generator]
+verify_jwt = true
+

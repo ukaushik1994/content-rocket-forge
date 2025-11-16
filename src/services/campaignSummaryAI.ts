@@ -4,6 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { solutionService } from './solutionService';
 
 /**
+ * Campaign Strategy Generation Service
+ * 
+ * Uses: enhanced-ai-chat edge function
+ * AI Providers: User-configured providers from ai_service_providers table
+ * (OpenRouter, Anthropic, OpenAI, Gemini, Mistral, etc.)
+ * 
+ * IMPORTANT: Does NOT use Lovable AI - uses your personal API keys
+ */
+
+/**
  * Generates 3-4 lightweight strategy summary options for user selection
  */
 export async function generateCampaignSummaries(

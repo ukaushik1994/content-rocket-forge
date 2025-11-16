@@ -2,6 +2,16 @@ import { ConversationStage, EnhancedCampaignData } from '@/hooks/useCampaignConv
 import { supabase } from '@/integrations/supabase/client';
 
 /**
+ * Campaign AI Generation Service
+ * 
+ * Uses: enhanced-ai-chat edge function
+ * AI Providers: User-configured providers from ai_service_providers table
+ * (OpenRouter, Anthropic, OpenAI, Gemini, Mistral, etc.)
+ * 
+ * IMPORTANT: Does NOT use Lovable AI - uses your personal API keys
+ */
+
+/**
  * Generates a system prompt for the campaign conversation AI
  */
 function buildSystemPrompt(stage: ConversationStage, collectedData: EnhancedCampaignData): string {
