@@ -249,7 +249,7 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          console.log(`🔄 Attempt ${attempt}/${maxRetries} to generate strategies`);
+          console.log(`📊 [Campaign Strategies] 🔄 Attempt ${attempt}/${maxRetries} to generate strategies`);
           
           const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
             body: {
@@ -258,26 +258,38 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
             }
           });
           
+          console.log(`📊 [Campaign Strategies] Response received:`, {
+            hasData: !!data,
+            hasError: !!error,
+            dataKeys: data ? Object.keys(data) : [],
+            errorMessage: error?.message
+          });
+          
           if (!error && data) {
             aiResponse = data;
-            console.log('✅ Response:', (data.response || data.content).length, 'chars');
+            const responseLength = (data.response || data.content || '').length;
+            console.log(`📊 [Campaign Strategies] ✅ Response: ${responseLength} chars`);
+            console.log(`📊 [Campaign Strategies] Response preview:`, 
+              (data.response || data.content || '').substring(0, 200));
             break;
           }
           
           // Handle rate limiting errors
           if (error && (error.message?.includes('429') || error.message?.includes('rate limit') || error.message?.includes('Rate limit'))) {
-            console.warn(`⏰ Rate limit hit on attempt ${attempt}, waiting before retry...`);
+            console.warn(`📊 [Campaign Strategies] ⏰ Rate limit hit on attempt ${attempt}, waiting before retry...`);
             if (attempt < maxRetries) {
               await new Promise(r => setTimeout(r, 5000 * attempt));
               continue;
             }
           }
           
+          console.error(`📊 [Campaign Strategies] ❌ Error on attempt ${attempt}:`, error);
           if (attempt < maxRetries) {
+            console.log(`📊 [Campaign Strategies] ⏳ Waiting ${2000 * attempt}ms before retry...`);
             await new Promise(r => setTimeout(r, 2000 * attempt));
           }
         } catch (retryError) {
-          console.error(`❌ Attempt ${attempt} failed:`, retryError);
+          console.error(`📊 [Campaign Strategies] ❌ Attempt ${attempt} exception:`, retryError);
           if (attempt === maxRetries) {
             throw new Error('Failed to generate strategies after multiple attempts. Please try again in a moment.');
           }
@@ -286,38 +298,73 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
       }
 
       if (!aiResponse) {
+        console.error('📊 [Campaign Strategies] ❌ No AI response after all retries');
         throw new Error('AI service temporarily unavailable. Please try again in a moment.');
       }
 
+      console.log('📊 [Campaign Strategies] Processing AI response...');
       let content = (aiResponse.response || aiResponse.content || '').replace(/```json\s*/g, '').replace(/```/g, '').trim();
+      console.log('📊 [Campaign Strategies] Content extracted:', {
+        length: content.length,
+        preview: content.substring(0, 200),
+        hasResponse: !!aiResponse.response,
+        hasContent: !!aiResponse.content
+      });
       
       // Parse single strategy object (not array)
       let strategy: CampaignStrategy;
       try {
+        console.log('📊 [Campaign Strategies] Parsing JSON...');
         // Try to extract JSON object from response
         const jsonMatch = content.match(/\{[\s\S]*\}/)?.[0];
+        if (!jsonMatch) {
+          console.error('📊 [Campaign Strategies] ❌ No JSON object found in content');
+          throw new Error('No valid JSON object in response');
+        }
+        
+        console.log('📊 [Campaign Strategies] JSON match found:', jsonMatch.substring(0, 200));
         const rawStrategy = JSON.parse(jsonMatch || content);
+        console.log('📊 [Campaign Strategies] ✅ JSON parsed successfully');
+        console.log('📊 [Campaign Strategies] Raw strategy keys:', Object.keys(rawStrategy));
         
         // ✨ CRITICAL: Normalize the strategy before using it
+        console.log('📊 [Campaign Strategies] Normalizing strategy...');
         strategy = normalizeCampaignStrategy(rawStrategy);
         
-        console.log('✅ Strategy normalized successfully');
+        console.log('📊 [Campaign Strategies] ✅ Strategy normalized successfully');
+        console.log('📊 [Campaign Strategies] Normalized strategy:', {
+          title: strategy.title,
+          contentMixCount: strategy.contentMix?.length || 0,
+          hasId: !!strategy.id,
+          hasDescription: !!strategy.description
+        });
       } catch (parseError) {
-        console.error('Failed to parse strategy:', parseError);
+        console.error('📊 [Campaign Strategies] ❌ Failed to parse/normalize strategy:', parseError);
+        console.error('📊 [Campaign Strategies] Content that failed to parse:', content);
         throw new Error('Invalid strategy format generated');
       }
 
       // Auto-generate ID if missing (normalization should handle this, but double-check)
       if (!strategy.id) {
+        console.warn('📊 [Campaign Strategies] ⚠️ No ID found, generating one...');
         strategy.id = `strategy-${Date.now()}`;
       }
 
       // Validate required fields
+      console.log('📊 [Campaign Strategies] Validating required fields...');
       if (!strategy.title || !strategy.description || !strategy.contentMix || strategy.contentMix.length === 0) {
+        console.error('📊 [Campaign Strategies] ❌ Validation failed:', {
+          hasTitle: !!strategy.title,
+          hasDescription: !!strategy.description,
+          hasContentMix: !!strategy.contentMix,
+          contentMixLength: strategy.contentMix?.length || 0
+        });
         throw new Error('Strategy missing required fields');
       }
       
+      console.log('📊 [Campaign Strategies] ✅ Validation passed');
       toast.success('Generated comprehensive campaign strategy');
+      console.log('📊 [Campaign Strategies] 🎉 Returning strategy:', strategy.title);
       return [strategy]; // Return as array for compatibility
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed';

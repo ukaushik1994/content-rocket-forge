@@ -116,6 +116,16 @@ STRATEGY REQUIREMENTS:
 Focus on creating ACTIONABLE, SPECIFIC strategies tailored to the user's exact campaign context.`;
 
   try {
+    console.log('📋 [Campaign Summary AI] Starting strategy generation...');
+    console.log('📋 [Campaign Summary AI] Context:', {
+      idea: collectedData.idea,
+      targetAudience: collectedData.targetAudience,
+      goal: collectedData.goal,
+      timeline: collectedData.timeline,
+      solutionId: solutionId,
+      hasSolutionContext: !!solutionContext
+    });
+    
     // Use tool calling for reliable structured output
     const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
       body: {
@@ -128,42 +138,90 @@ Focus on creating ACTIONABLE, SPECIFIC strategies tailored to the user's exact c
       }
     });
 
-    if (error) throw error;
+    console.log('📋 [Campaign Summary AI] Edge function response:', {
+      hasData: !!data,
+      hasError: !!error,
+      dataKeys: data ? Object.keys(data) : [],
+      errorDetails: error
+    });
 
-    // Extract from tool call result (no manual parsing needed)
+    if (error) {
+      console.error('📋 [Campaign Summary AI] Edge function error:', error);
+      throw error;
+    }
+
+    // ✅ VALIDATION: Check fast path response structure
+    console.log('📋 [Campaign Summary AI] Validating fast path response...');
     const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
     
-    if (!toolCall || toolCall.function?.name !== 'generate_campaign_strategies') {
-      console.error('No tool call found, falling back to content parsing');
+    if (!toolCall) {
+      console.error('📋 [Campaign Summary AI] ❌ No tool call found in response');
+      console.error('📋 [Campaign Summary AI] Response structure:', JSON.stringify(data, null, 2));
       
       // Fallback: Try manual parsing
+      console.log('📋 [Campaign Summary AI] Attempting fallback content parsing...');
       const content = data?.choices?.[0]?.message?.content;
-      if (!content) throw new Error('No response from AI');
+      if (!content) {
+        console.error('📋 [Campaign Summary AI] ❌ No content in response either');
+        throw new Error('No response from AI - invalid response structure');
+      }
       
       const jsonMatch = content.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
       const jsonText = jsonMatch ? jsonMatch[1] : content;
       const summaries = JSON.parse(jsonText);
       
       if (!Array.isArray(summaries) || summaries.length < 3) {
+        console.error('📋 [Campaign Summary AI] ❌ Insufficient strategies:', summaries?.length || 0);
         throw new Error('AI generated insufficient strategies');
       }
       
+      console.log('📋 [Campaign Summary AI] ✅ Fallback parsing successful:', summaries.length, 'strategies');
       return enrichStrategies(summaries);
     }
+
+    // ✅ VALIDATION: Verify tool call function name
+    if (toolCall.function?.name !== 'generate_campaign_strategies') {
+      console.error('📋 [Campaign Summary AI] ❌ Wrong tool call:', toolCall.function?.name);
+      throw new Error(`Unexpected tool call: ${toolCall.function?.name}`);
+    }
+
+    console.log('📋 [Campaign Summary AI] ✅ Tool call validated:', toolCall.function.name);
 
     // Parse tool call arguments
     const parsedArgs = JSON.parse(toolCall.function.arguments);
     const strategies = parsedArgs.strategies;
 
-    if (!Array.isArray(strategies) || strategies.length < 3) {
-      throw new Error('AI generated insufficient strategies. Please try again.');
+    console.log('📋 [Campaign Summary AI] Parsed strategies:', {
+      count: strategies?.length || 0,
+      isArray: Array.isArray(strategies),
+      firstStrategyKeys: strategies?.[0] ? Object.keys(strategies[0]) : []
+    });
+
+    if (!Array.isArray(strategies)) {
+      console.error('📋 [Campaign Summary AI] ❌ Strategies is not an array:', typeof strategies);
+      throw new Error('Invalid strategies format - expected array');
     }
 
+    if (strategies.length < 3) {
+      console.error('📋 [Campaign Summary AI] ❌ Insufficient strategies:', strategies.length);
+      throw new Error(`AI generated only ${strategies.length} strategies. Need at least 3.`);
+    }
+
+    console.log('📋 [Campaign Summary AI] ✅ Strategies validated, enriching...');
+    
     // Enrich with additional fields
-    return enrichStrategies(strategies);
+    const enrichedStrategies = enrichStrategies(strategies);
+    
+    console.log('📋 [Campaign Summary AI] ✅ Strategy generation complete:', {
+      count: enrichedStrategies.length,
+      titles: enrichedStrategies.map(s => s.title)
+    });
+    
+    return enrichedStrategies;
 
   } catch (error) {
-    console.error('Error generating campaign summaries:', error);
+    console.error('📋 [Campaign Summary AI] ❌ Fatal error:', error);
+    console.error('📋 [Campaign Summary AI] Error stack:', error instanceof Error ? error.stack : 'N/A');
     throw error;
   }
 }
