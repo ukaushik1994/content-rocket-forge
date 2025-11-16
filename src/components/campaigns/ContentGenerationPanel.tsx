@@ -56,6 +56,8 @@ export const ContentGenerationPanel = () => {
     if (!strategy) return;
 
     setLoadingBriefs(true);
+    console.log('📋 [Generation Panel] Starting brief generation for all formats');
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -73,24 +75,37 @@ export const ContentGenerationPanel = () => {
       }
 
       const newBriefs = new Map<string, ContentBrief>();
+      let totalGenerated = 0;
 
       for (const formatItem of strategy.contentMix) {
+        console.log(`📋 [Generation Panel] Generating ${formatItem.count} briefs for ${formatItem.formatId}`);
+        
         const generatedBriefs = await generateContentBriefs(
           formatItem,
           strategy,
           solutionData,
-          user.id
+          user.id,
+          (current, total) => {
+            console.log(`📋 [Generation Panel] Progress: ${current}/${total} for ${formatItem.formatId}`);
+          }
         );
 
         generatedBriefs.forEach((brief, index) => {
           const key = `${formatItem.formatId}-${index}`;
           newBriefs.set(key, brief);
+          totalGenerated++;
         });
       }
 
+      console.log(`📋 [Generation Panel] ✓ Generated ${totalGenerated} briefs`);
       setBriefs(newBriefs);
+      
+      toast({
+        title: "Briefs Ready",
+        description: `${totalGenerated} detailed content briefs generated`,
+      });
     } catch (error: any) {
-      console.error('Failed to generate briefs:', error);
+      console.error('📋 [Generation Panel] Brief generation failed:', error);
       toast({
         title: "Brief Generation Failed",
         description: error.message || "Could not generate content briefs",
