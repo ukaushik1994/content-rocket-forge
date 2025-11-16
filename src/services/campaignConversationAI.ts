@@ -179,13 +179,17 @@ export async function generateAIQuestion(
     
     const systemPrompt = buildSystemPrompt(stage, collectedData);
     
+    // Build messages array with system prompt + conversation history
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory.slice(-5) // Only send last 5 messages for context
+    ];
+    
+    console.log('[Campaign AI] Sending request with', messages.length, 'messages');
+    
     const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
       body: {
-        message: 'Generate the next campaign planning question',
-        conversationHistory: [
-          { role: 'system', content: systemPrompt },
-          ...conversationHistory.slice(-5) // Only send last 5 messages for context
-        ],
+        messages, // Send as 'messages' not 'conversationHistory'
         userId
       }
     });
