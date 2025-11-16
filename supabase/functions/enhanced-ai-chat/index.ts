@@ -1144,6 +1144,25 @@ serve(async (req) => {
       const totalToolTime = Date.now() - toolExecutionStart;
       console.log(`✅ All tools executed in ${totalToolTime}ms`);
       
+      // Check if this is a formatting-only tool (like generate_campaign_strategies)
+      const isFormattingTool = toolCalls.some(tc => 
+        tc.function.name === 'generate_campaign_strategies'
+      );
+      
+      if (isFormattingTool) {
+        // Return raw tool call data directly for formatting tools
+        console.log(`✅ Returning raw tool data for formatting tool`);
+        return new Response(JSON.stringify({
+          choices: [{
+            message: {
+              tool_calls: toolCalls
+            }
+          }]
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      
       // Call AI again with tool results
       console.log(`🔧 Calling AI again with ${toolResults.length} tool results`);
       
