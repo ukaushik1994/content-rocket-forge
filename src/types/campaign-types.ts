@@ -141,3 +141,16 @@ export interface CampaignInput {
   useSerpData?: boolean;
   solutionId?: string; // Selected solution to promote
 }
+
+export interface GeneratedContent {
+  id: string;
+  title: string;
+  content: string;
+  formatId: string;
+  status: 'generating' | 'ready' | 'error';
+  brief: ContentBrief;
+  wordCount: number;
+  seoScore?: number;
+  createdAt: Date;
+  error?: string;
+}

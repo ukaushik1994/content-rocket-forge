@@ -99,8 +99,8 @@ export function StrategyEnhancedContentGenerator({ proposal }: StrategyEnhancedC
         });
       } else if (error.message?.includes('402') || error.message?.includes('credits')) {
         toast({
-          title: "Insufficient Credits",
-          description: "Please add credits to your Lovable AI workspace.",
+          title: "Configuration Error",
+          description: "Please check your AI provider configuration in Settings.",
           variant: "destructive"
         });
       } else {
