@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { CampaignStrategy, CampaignInput, CampaignStatus } from '@/types/campaign-types';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RefreshCw, Save } from 'lucide-react';
+import { Sparkles, RefreshCw, Save, FileText, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SaveIndicator } from './SaveIndicator';
 import { CampaignStatusBadge } from './CampaignStatusBadge';
+import { ContentLibrary } from './ContentLibrary';
+import { ExportCampaignButton } from './ExportCampaignButton';
 import { useCampaignAutoSave } from '@/hooks/useCampaignAutoSave';
 import { campaignService } from '@/services/campaignService';
 import { toast } from 'sonner';
@@ -52,6 +54,7 @@ export const CampaignBreakdownView = ({
 }: CampaignBreakdownViewProps) => {
   const totalContentPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
   const [isManualSaving, setIsManualSaving] = useState(false);
+  const [showContentLibrary, setShowContentLibrary] = useState(false);
 
   // Auto-save hook
   const { saveStatus, lastSaved } = useCampaignAutoSave({
@@ -120,16 +123,54 @@ export const CampaignBreakdownView = ({
   return (
     <ContentGenerationProvider>
       <ContentGenerationPanel />
-      <div className="space-y-6 w-full">
-      {/* Header with Status and Save Indicator */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold">Campaign Strategy</h2>
-          <CampaignStatusBadge status={campaignStatus} />
+      
+      {showContentLibrary && campaignId ? (
+        <div className="space-y-6 w-full">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Content Library</h2>
+            <div className="flex items-center gap-2">
+              <ExportCampaignButton 
+                campaignId={campaignId} 
+                campaignName={strategy.title}
+              />
+              <Button
+                variant="outline"
+                onClick={() => setShowContentLibrary(false)}
+              >
+                Back to Strategy
+              </Button>
+            </div>
+          </div>
+          <ContentLibrary campaignId={campaignId} />
         </div>
-        <div className="flex items-center gap-4">
-          <SaveIndicator status={saveStatus} lastSaved={lastSaved} />
-          {saveStatus === 'error' && (
+      ) : (
+        <div className="space-y-6 w-full">
+      {/* Header with Status and Save Indicator */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold">Campaign Strategy</h2>
+            <CampaignStatusBadge status={campaignStatus} />
+          </div>
+          <div className="flex items-center gap-4">
+            <SaveIndicator status={saveStatus} lastSaved={lastSaved} />
+            {campaignId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowContentLibrary(true)}
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                View Content Library
+              </Button>
+            )}
+            {campaignId && (
+              <ExportCampaignButton 
+                campaignId={campaignId} 
+                campaignName={strategy.title}
+              />
+            )}
+            {saveStatus === 'error' && (
             <Button
               variant="outline"
               size="sm"
@@ -211,7 +252,8 @@ export const CampaignBreakdownView = ({
           This will create {totalContentPieces} content pieces and a full execution plan
         </p>
         </div>
-      </div>
+        </div>
+      )}
     </ContentGenerationProvider>
   );
 };
