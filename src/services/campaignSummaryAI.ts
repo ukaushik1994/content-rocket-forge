@@ -113,10 +113,21 @@ For each strategy provide:
 1. **title**: SPECIFIC, actionable campaign name (following patterns above)
 2. **description**: 1-2 sentences explaining the tactical approach (not generic benefits)
 3. **contentMix**: Array of {formatId, count} - use these format IDs:
-   - "blog-post", "social-post", "video", "infographic", "case-study", "guide", "whitepaper", "email", "webinar", "podcast", "google-ads"
+   - "blog", "email", "social-linkedin", "social-twitter", "social-facebook", "social-instagram", "script", "landing-page", "carousel", "meme", "google-ads"
 4. **expectedOutcome**: 1 specific sentence on what THIS campaign achieves for THIS solution
 5. **focus**: "awareness" | "conversion" | "engagement" | "education"
 6. **effortLevel**: "low" | "medium" | "high"
+7. **totalEffort**: REQUIRED object with:
+   - hours: number (calculate based on content mix, e.g., blog=4hrs, social=1hr, video=8hrs)
+   - complexity: "beginner" | "skilled" | "expert"
+   - workflowOrder: array of formatIds in recommended creation order
+8. **optionalAddons**: REQUIRED object with:
+   - contentCalendar: true
+   - draftCopies: true
+   - fullSeoBriefs: true
+   - landingPageCopy: boolean
+   - emailSequences: boolean
+   - exportOptions: ["PDF", "Notion", "Google Docs"]
 
 REMEMBER: Use the user's actual idea, solution details, and target audience to create CUSTOM strategy names. No generic templates!
 

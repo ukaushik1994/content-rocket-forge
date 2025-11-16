@@ -1,24 +1,20 @@
 import { CampaignStrategy } from '@/types/campaign-types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
-import { Package, FileText, Image, ArrowUpRight } from 'lucide-react';
-import { useCampaignFlow } from '@/contexts/CampaignFlowContext';
+import { Package, FileText, Image } from 'lucide-react';
 
 interface AssetRequirementsTileProps {
   strategy: CampaignStrategy;
 }
 
 export const AssetRequirementsTile = ({ strategy }: AssetRequirementsTileProps) => {
-  const { openFlowPanel } = useCampaignFlow();
   const assetRequirements = strategy.assetRequirements;
 
   if (!assetRequirements) {
     return (
       <GlassCard 
-        className="p-5 bg-gradient-to-br from-rose-500/10 to-pink-500/10 border-rose-500/20 cursor-pointer transition-all duration-200 hover:border-neon-purple/50 hover:scale-[1.02] hover:shadow-lg hover:shadow-neon-purple/20 relative group"
-        onClick={() => openFlowPanel('assets', strategy)}
+        className="p-5 bg-gradient-to-br from-rose-500/10 to-pink-500/10 border-rose-500/20"
       >
-        <ArrowUpRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex items-center gap-2 mb-4">
           <Package className="h-5 w-5 text-rose-400" />
           <h3 className="text-lg font-semibold">Asset Requirements</h3>
@@ -32,10 +28,8 @@ export const AssetRequirementsTile = ({ strategy }: AssetRequirementsTileProps) 
 
   return (
     <GlassCard 
-      className="p-5 bg-gradient-to-br from-rose-500/10 to-pink-500/10 border-rose-500/20 cursor-pointer transition-all duration-200 hover:border-neon-purple/50 hover:scale-[1.02] hover:shadow-lg hover:shadow-neon-purple/20 relative group"
-      onClick={() => openFlowPanel('assets', strategy)}
+      className="p-5 bg-gradient-to-br from-rose-500/10 to-pink-500/10 border-rose-500/20"
     >
-      <ArrowUpRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-center gap-2 mb-4">
         <Package className="h-5 w-5 text-rose-400" />
         <h3 className="text-lg font-semibold">Asset Requirements</h3>
