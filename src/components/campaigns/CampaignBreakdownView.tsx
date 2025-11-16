@@ -76,8 +76,10 @@ export const CampaignBreakdownView = ({
           target_audience: campaignInput.targetAudience,
           goal: campaignInput.goal,
           timeline: campaignInput.timeline,
-          status: 'planned',
+          status: 'planned', // Update status to planned when strategy is saved
         });
+        
+        console.log('📊 [Campaign Status] Updated to "planned" after strategy save');
         toast.success('Campaign saved successfully');
       } else {
         const generateCampaignName = (idea: string) => {
@@ -96,18 +98,20 @@ export const CampaignBreakdownView = ({
           target_audience: campaignInput.targetAudience,
           goal: campaignInput.goal,
           timeline: campaignInput.timeline,
-          status: 'planned',
+          status: 'planned', // Set status to planned when strategy is first saved
         });
 
+        console.log('📊 [Campaign Status] Set to "planned" after initial save');
+        
         if (onCampaignCreated) {
           onCampaignCreated(saved.id);
         }
-        
-        toast.success('Campaign created successfully');
+
+        toast.success('Campaign created and saved');
       }
     } catch (error) {
-      console.error('Manual save failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to save campaign');
+      console.error('Failed to save campaign:', error);
+      toast.error('Failed to save campaign');
     } finally {
       setIsManualSaving(false);
     }

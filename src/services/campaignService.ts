@@ -119,6 +119,28 @@ export const campaignService = {
       .eq('id', campaignId);
 
     if (error) throw error;
+    
+    console.log(`📊 [Campaign Service] Status updated to "${status}" for campaign ${campaignId}`);
+  },
+
+  /**
+   * Transition campaign status based on workflow
+   * draft → planned (strategy selected)
+   * planned → active (content generation started)
+   * active → completed (all content generated)
+   */
+  async transitionCampaignStatus(
+    campaignId: string,
+    event: 'strategy_selected' | 'generation_started' | 'generation_completed'
+  ): Promise<void> {
+    const statusMap = {
+      'strategy_selected': 'planned',
+      'generation_started': 'active',
+      'generation_completed': 'completed'
+    };
+
+    const newStatus = statusMap[event];
+    await this.updateCampaignStatus(campaignId, newStatus);
   },
 
   /**
