@@ -11,6 +11,7 @@ import {
   Radio,
   ListTree,
   Globe,
+  Target,
   LucideIcon
 } from 'lucide-react';
 
@@ -82,6 +83,12 @@ export const contentFormats: ContentFormat[] = [
     name: 'Landing Page',
     description: 'Conversion-optimized landing page',
     icon: Globe
+  },
+  {
+    id: 'google-ads',
+    name: 'Google Ads',
+    description: 'Paid search advertising campaigns',
+    icon: Target
   }
 ];
 

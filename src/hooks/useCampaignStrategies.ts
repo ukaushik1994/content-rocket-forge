@@ -28,15 +28,22 @@ export const useCampaignStrategies = () => {
 
       let solutionContext = '';
       if (input.solutionId) {
-        const [solution, competitors] = await Promise.all([
-          solutionService.getSolutionById(input.solutionId),
-          supabase.from('company_competitors').select('*').eq('user_id', userId)
-        ]);
+        const { data: solution } = await supabase
+          .from('solutions')
+          .select(`
+            id, name, short_description, description,
+            features, benefits, key_differentiators,
+            use_cases, target_audience, pricing_model, category
+          `)
+          .eq('id', input.solutionId)
+          .single();
+          
         if (solution) {
-          const opt = optimizeSolutionContext(solution);
-          const comps = optimizeCompetitorContext(competitors.data || []);
-          solutionContext = `\n\nSOLUTION: ${opt.name}\n${opt.shortDescription || ''}\nFeatures: ${opt.features?.join(', ')}\nDifferentiators: ${opt.keyDifferentiators?.join(', ')}${comps.length > 0 ? `\nCompetitors: ${comps.map(c => c.name).join(', ')}` : ''}`;
-          console.log('📊 Context tokens:', estimateTokens(solutionContext));
+          solutionContext = `
+SOLUTION DETAILS:
+${JSON.stringify(solution, null, 2)}
+
+Use this complete solution data to generate highly relevant, specific campaign strategies.`;
         }
       }
 
@@ -133,7 +140,7 @@ CRITICAL: For each content format in contentMix, generate specific content brief
 - Difficulty level (easy/medium/hard)
 - SERP opportunity score (0-100, higher = better ranking potential)
 
-Use these content format IDs: blog, social-twitter, social-linkedin, social-facebook, social-instagram, script, email, meme, carousel, landing-page
+Use these content format IDs: blog, social-twitter, social-linkedin, social-facebook, social-instagram, script, email, meme, carousel, landing-page, google-ads
 
 Return ONLY a valid JSON object (single strategy). No markdown, no explanation, just the JSON object.
 
