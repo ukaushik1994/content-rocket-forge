@@ -6,6 +6,7 @@ import { analyzeQueryIntent } from './query-analyzer.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
 import { estimateTokens } from '../shared/token-counter.ts';
 import { TOOL_DEFINITIONS, executeToolCall } from './tools.ts';
+import { CAMPAIGN_STRATEGY_TOOL } from './campaign-strategy-tool.ts';
 import { 
   analyzeSerpIntent, 
   executeSerpAnalysis,
@@ -806,6 +807,46 @@ serve(async (req) => {
     }
 
     console.log(`🔑 Using active provider: ${provider.provider} (model: ${provider.preferred_model})`)
+    
+    // FAST PATH: Campaign strategy generation - skip expensive context fetching
+    if (useCampaignStrategyTool) {
+      console.log('🎯 Campaign strategy fast path - minimal context, direct tool execution');
+      
+      // Queue AI call with campaign strategy tool only
+      const response = await aiRequestQueue.enqueue(async () => {
+        return await makeAICallWithRetry(
+          provider,
+          messages,
+          [CAMPAIGN_STRATEGY_TOOL],
+          3,
+          false
+        );
+      });
+      
+      // Return raw tool call data directly
+      const toolCalls = response?.choices?.[0]?.message?.tool_calls;
+      if (toolCalls && toolCalls.length > 0) {
+        console.log('✅ Returning campaign strategy tool data');
+        return new Response(JSON.stringify({
+          choices: [{
+            message: {
+              tool_calls: toolCalls
+            }
+          }]
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      
+      // Fallback if no tool call (shouldn't happen)
+      console.error('❌ No tool call in campaign strategy response');
+      return new Response(JSON.stringify({ 
+        error: 'Failed to generate campaign strategies' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
     // Analyze the user query for intent and SERP opportunities
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
@@ -1143,25 +1184,6 @@ serve(async (req) => {
       
       const totalToolTime = Date.now() - toolExecutionStart;
       console.log(`✅ All tools executed in ${totalToolTime}ms`);
-      
-      // Check if this is a formatting-only tool (like generate_campaign_strategies)
-      const isFormattingTool = toolCalls.some(tc => 
-        tc.function.name === 'generate_campaign_strategies'
-      );
-      
-      if (isFormattingTool) {
-        // Return raw tool call data directly for formatting tools
-        console.log(`✅ Returning raw tool data for formatting tool`);
-        return new Response(JSON.stringify({
-          choices: [{
-            message: {
-              tool_calls: toolCalls
-            }
-          }]
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
       
       // Call AI again with tool results
       console.log(`🔧 Calling AI again with ${toolResults.length} tool results`);
