@@ -811,9 +811,11 @@ serve(async (req) => {
     // FAST PATH: Campaign strategy generation - skip expensive context fetching
     if (useCampaignStrategyTool) {
       console.log('🎯 Campaign strategy fast path - minimal context, direct tool execution');
+      console.log('🎯 Messages:', messages.length, 'messages');
       
       // Queue AI call with campaign strategy tool only
       const response = await aiRequestQueue.enqueue(async () => {
+        console.log('🎯 Calling AI with campaign strategy tool...');
         return await makeAICallWithRetry(
           provider,
           messages,
@@ -823,10 +825,35 @@ serve(async (req) => {
         );
       });
       
+      console.log('🎯 AI response received:', {
+        hasResponse: !!response,
+        hasChoices: !!response?.choices,
+        choicesLength: response?.choices?.length || 0,
+        hasMessage: !!response?.choices?.[0]?.message,
+        hasToolCalls: !!response?.choices?.[0]?.message?.tool_calls
+      });
+      
       // Return raw tool call data directly
       const toolCalls = response?.choices?.[0]?.message?.tool_calls;
       if (toolCalls && toolCalls.length > 0) {
-        console.log('✅ Returning campaign strategy tool data');
+        console.log('🎯✅ Returning campaign strategy tool data:', {
+          toolCallCount: toolCalls.length,
+          functionName: toolCalls[0]?.function?.name,
+          hasArguments: !!toolCalls[0]?.function?.arguments
+        });
+        
+        // Log arguments preview for debugging
+        try {
+          const args = JSON.parse(toolCalls[0].function.arguments);
+          console.log('🎯 Tool arguments preview:', {
+            hasStrategies: !!args.strategies,
+            strategiesCount: args.strategies?.length || 0,
+            firstStrategyTitle: args.strategies?.[0]?.title
+          });
+        } catch (e) {
+          console.error('🎯 Failed to parse tool arguments for logging:', e);
+        }
+        
         return new Response(JSON.stringify({
           choices: [{
             message: {
@@ -839,9 +866,12 @@ serve(async (req) => {
       }
       
       // Fallback if no tool call (shouldn't happen)
-      console.error('❌ No tool call in campaign strategy response');
+      console.error('🎯❌ No tool call in campaign strategy response');
+      console.error('🎯 Response structure:', JSON.stringify(response, null, 2));
       return new Response(JSON.stringify({ 
-        error: 'Failed to generate campaign strategies' 
+        error: 'Failed to generate campaign strategies',
+        details: 'AI did not return a tool call',
+        response: response
       }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
