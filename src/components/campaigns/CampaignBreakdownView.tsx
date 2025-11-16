@@ -151,8 +151,10 @@ export const CampaignBreakdownView = ({
         </div>
       </div>
 
-      {/* Row 1: Campaign Summary - Full Width */}
-      <CampaignSummaryTile strategy={strategy} status={campaignStatus} />
+        {/* Row 1: Campaign Summary - Full Width */}
+        <TileErrorBoundary tileName="Campaign Summary">
+          <CampaignSummaryTile strategy={strategy} status={campaignStatus} />
+        </TileErrorBoundary>
       
       {/* Row 2: Content Mix + Content Effort */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
