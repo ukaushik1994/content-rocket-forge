@@ -9,8 +9,8 @@ import { CampaignStatusBadge } from './CampaignStatusBadge';
 import { useCampaignAutoSave } from '@/hooks/useCampaignAutoSave';
 import { campaignService } from '@/services/campaignService';
 import { toast } from 'sonner';
-import { CampaignFlowProvider } from '@/contexts/CampaignFlowContext';
-import { CampaignFlowPanel } from './CampaignFlowPanel';
+import { ContentGenerationProvider } from '@/contexts/ContentGenerationContext';
+import { ContentGenerationPanel } from './ContentGenerationPanel';
 import {
   CampaignSummaryTile,
   ContentMixTile,
@@ -114,8 +114,8 @@ export const CampaignBreakdownView = ({
   };
 
   return (
-    <CampaignFlowProvider>
-      <CampaignFlowPanel />
+    <ContentGenerationProvider>
+      <ContentGenerationPanel />
       <div className="space-y-6 w-full">
       {/* Header with Status and Save Indicator */}
       <div className="flex items-center justify-between">
@@ -206,8 +206,8 @@ export const CampaignBreakdownView = ({
         <p className="text-sm text-muted-foreground text-center">
           This will create {totalContentPieces} content pieces and a full execution plan
         </p>
+        </div>
       </div>
-    </div>
-    </CampaignFlowProvider>
+    </ContentGenerationProvider>
   );
 };

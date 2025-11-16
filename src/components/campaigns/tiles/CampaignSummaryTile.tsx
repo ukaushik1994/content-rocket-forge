@@ -1,9 +1,8 @@
 import { CampaignStrategy, CampaignStatus } from '@/types/campaign-types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
-import { Target, TrendingUp, Clock, Users, Zap, ArrowUpRight } from 'lucide-react';
+import { Target, TrendingUp, Clock, Users, Zap } from 'lucide-react';
 import { CampaignStatusBadge } from '../CampaignStatusBadge';
-import { useCampaignFlow } from '@/contexts/CampaignFlowContext';
 
 interface CampaignSummaryTileProps {
   strategy: CampaignStrategy;
@@ -11,8 +10,6 @@ interface CampaignSummaryTileProps {
 }
 
 export const CampaignSummaryTile = ({ strategy, status = 'planned' }: CampaignSummaryTileProps) => {
-  const { openFlowPanel } = useCampaignFlow();
-  
   const calculateIntensity = () => {
     const totalPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
     if (totalPieces >= 20) return 'High';
@@ -22,10 +19,8 @@ export const CampaignSummaryTile = ({ strategy, status = 'planned' }: CampaignSu
 
   return (
     <GlassCard 
-      className="p-6 bg-gradient-to-br from-purple-900/30 to-blue-900/20 cursor-pointer transition-all duration-200 hover:border-neon-purple/50 hover:scale-[1.02] hover:shadow-lg hover:shadow-neon-purple/20 relative group"
-      onClick={() => openFlowPanel('summary', strategy)}
+      className="p-6 bg-gradient-to-br from-purple-900/30 to-blue-900/20"
     >
-      <ArrowUpRight className="absolute top-3 right-3 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
