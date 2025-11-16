@@ -248,23 +248,42 @@ async function chatOpenAI(apiKey: string, params: any) {
       if (!response.ok) {
         const errorText = await response.text();
         
-        // Handle rate limit (429) specifically
+        // Handle rate limit (429) specifically with intelligent TPM/RPM detection
         if (response.status === 429) {
           console.error('❌ OpenAI chat failed:', response.status, errorText);
           
-          // Try to parse wait time from error message
           let waitTime = 2000 * attempt; // Default exponential backoff
           try {
             const errorData = JSON.parse(errorText);
             const errorMsg = errorData.error?.message || '';
-            // Extract wait time from message like "Please try again in 1.812s"
+            
+            // Detect TPM vs RPM limit type
+            const isTPM = errorMsg.includes('tokens per min') || errorMsg.includes('TPM');
+            const isRPM = errorMsg.includes('requests per min') || errorMsg.includes('RPM');
+            
+            // Check for Retry-After header
+            const retryAfter = response.headers.get('Retry-After');
             const waitMatch = errorMsg.match(/try again in ([\d.]+)s/);
-            if (waitMatch) {
-              waitTime = Math.ceil(parseFloat(waitMatch[1]) * 1000); // Convert to ms
-              console.log(`⏰ Rate limit hit, waiting ${waitTime}ms as suggested by API`);
+            
+            if (retryAfter) {
+              waitTime = parseInt(retryAfter) * 1000;
+              console.log(`⏰ Rate limit (Retry-After header): ${waitTime}ms`);
+            } else if (waitMatch) {
+              waitTime = Math.ceil(parseFloat(waitMatch[1]) * 1000);
+              console.log(`⏰ Rate limit (extracted from message): ${waitTime}ms`);
+            } else if (isTPM) {
+              // TPM limits need much longer waits - at least 30s
+              waitTime = 30000 + (10000 * attempt); // 30s, 40s, 50s
+              console.log(`⏰ TPM Rate limit detected, waiting ${waitTime}ms (attempt ${attempt})`);
+            } else if (isRPM) {
+              // RPM limits can use shorter waits
+              waitTime = 5000 * attempt; // 5s, 10s, 15s
+              console.log(`⏰ RPM Rate limit detected, waiting ${waitTime}ms (attempt ${attempt})`);
             }
+            
+            console.log(`🔍 Rate limit details: ${isTPM ? 'TPM' : isRPM ? 'RPM' : 'Unknown'} - ${errorMsg.substring(0, 200)}`);
           } catch (parseError) {
-            console.warn('Could not parse rate limit wait time, using exponential backoff');
+            console.warn('Could not parse rate limit details, using default backoff');
           }
           
           if (attempt < maxRetries) {
