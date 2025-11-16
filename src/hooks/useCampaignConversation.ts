@@ -5,17 +5,10 @@ import { generateAIQuestion, getFallbackQuestion } from '@/services/campaignConv
 import { generateCampaignSummaries } from '@/services/campaignSummaryAI';
 
 export type ConversationStage = 
-  | 'idea' 
-  | 'solution-detection'
-  | 'pain-points' 
-  | 'market-context' 
-  | 'unique-value'
-  | 'audience' 
-  | 'audience-details'
-  | 'goal' 
-  | 'success-metrics'
-  | 'timeline' 
-  | 'resources'
+  | 'goal-idea'          // Combined: idea + goal in one question
+  | 'solution-detection' // Optional: only if solutions exist
+  | 'audience'           // Simplified: single audience question
+  | 'timeline'           // Quick selection
   | 'complete'
   | 'strategy-selection'
   | 'generating-full';
@@ -57,8 +50,8 @@ interface ConversationState {
 
 const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaignData): string => {
   switch (stage) {
-    case 'idea':
-      return "Great! Let's create a winning campaign together. Tell me about your campaign idea - what specific product, feature, or service are you planning to promote?";
+    case 'goal-idea':
+      return "Let's create a winning campaign! Tell me:\n\n• What product/service are you promoting?\n• What do you want to achieve? (e.g., increase signups, boost awareness, drive sales)\n\nBe as specific as you like - I'll use this to create targeted campaign strategies.";
     
     case 'solution-detection':
       const solutions = (data as any).availableSolutions || [];
@@ -68,35 +61,14 @@ const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaig
       }
       return "Are you promoting one of your existing solutions? Please reply with the solution name, or type 'None' if this is for something else.";
     
-    case 'pain-points':
-      return `Interesting! So you're promoting "${data.idea}". Before we go further, let's dig deeper:\n\nWhat specific problem does this solve for your users? What pain point are you addressing? Be as specific as possible.`;
-    
-    case 'market-context':
-      return `Got it - you're solving ${data.painPoints ? 'the problem of ' + data.painPoints.toLowerCase() : 'a key problem'}.\n\nNow, let's talk competitive landscape:\n• Who are your main competitors in this space?\n• How does your approach differ from existing solutions?\n• What makes your timing right for this campaign?`;
-    
-    case 'unique-value':
-      return `Thanks for that context! Now, here's the million-dollar question:\n\nWhat's the ONE thing that sets you apart from ${data.competitors || 'competitors'}? What's your unique value proposition that no one else can claim?`;
-    
     case 'audience':
-      return `Perfect! Now let's identify who feels this pain the most.\n\nWho is your ideal customer? Think about:\n• Their role/job title\n• Industry they work in\n• Company size\n• Current challenges they face`;
-    
-    case 'audience-details':
-      return `Great start! Let's get more specific about ${data.targetAudience || 'your audience'}:\n\n• What level of seniority? (Individual contributor, manager, executive?)\n• Do they have budget authority or need to convince someone?\n• What tools/solutions are they currently using?\n• What's their technical sophistication level?`;
-    
-    case 'goal':
-      return `Excellent! Now, what's your primary goal for this campaign with ${data.targetAudience || 'this audience'}?`;
-    
-    case 'success-metrics':
-      return `Good! You want to achieve ${data.goal}. But let's get specific:\n\nWhat numbers define success for you?\n• What KPIs will you track daily/weekly?\n• What's a realistic benchmark based on past campaigns?\n• What would make you say "This campaign was a huge success"?`;
+      return `Great! Now, who is this campaign for?\n\nDescribe your target audience (e.g., "B2B SaaS founders", "enterprise CFOs", "small business owners"). Include company size or roles if relevant.`;
     
     case 'timeline':
-      return `Perfect! Now, how much time do you have to execute this campaign and hit those metrics?`;
-    
-    case 'resources':
-      return `Almost done! Let's talk resources:\n\n• What's your budget range for this campaign?\n• Who's on your team? What skills do you have access to?\n• What marketing channels have worked best for you in the past?\n• Any constraints or limitations I should know about?`;
+      return `Perfect! What's your timeline for this campaign?`;
     
     case 'complete':
-      return "🎉 Excellent! I have everything I need. Let me analyze all this strategic context and generate highly targeted campaign strategies for you...";
+      return "🎉 Perfect! I have everything I need. Let me generate highly targeted campaign strategies for you...";
     
     default:
       return "Tell me more...";
@@ -104,16 +76,10 @@ const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaig
 };
 
 const AI_QUESTIONS = {
-  idea: generateDynamicQuestion('idea', {} as EnhancedCampaignData),
-  'pain-points': '',
-  'market-context': '',
-  'unique-value': '',
+  'goal-idea': generateDynamicQuestion('goal-idea', {} as EnhancedCampaignData),
+  'solution-detection': '',
   audience: '',
-  'audience-details': '',
-  goal: '',
-  'success-metrics': '',
   timeline: '',
-  resources: '',
   complete: ''
 };
 
@@ -131,7 +97,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
       initialMessages.push({
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: AI_QUESTIONS.audience,
+        content: generateDynamicQuestion('audience', { idea: initialMessage }),
         timestamp: new Date()
       });
       return {
@@ -147,12 +113,12 @@ export const useCampaignConversation = (initialMessage?: string) => {
     initialMessages.push({
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: AI_QUESTIONS.idea,
+      content: AI_QUESTIONS['goal-idea'],
       timestamp: new Date()
     });
     
     return {
-      stage: 'idea',
+      stage: 'goal-idea',
       collectedData: {},
       messages: initialMessages,
       strategySummaries: [],
@@ -179,8 +145,23 @@ export const useCampaignConversation = (initialMessage?: string) => {
     
     // Process based on current stage
     switch (state.stage) {
-      case 'idea':
+      case 'goal-idea':
+        // Extract both idea and goal from single response
         newData.idea = message;
+        
+        // Parse goal from message (AI will also infer this during generation)
+        const goalLower = message.toLowerCase();
+        if (goalLower.includes('awareness') || goalLower.includes('brand')) {
+          newData.goal = 'awareness';
+        } else if (goalLower.includes('conversion') || goalLower.includes('sale') || goalLower.includes('signup')) {
+          newData.goal = 'conversion';
+        } else if (goalLower.includes('engagement') || goalLower.includes('engage')) {
+          newData.goal = 'engagement';
+        } else if (goalLower.includes('education') || goalLower.includes('educate')) {
+          newData.goal = 'education';
+        } else {
+          newData.goal = 'awareness'; // Default
+        }
         
         // Check if user has solutions to detect
         try {
@@ -197,15 +178,15 @@ export const useCampaignConversation = (initialMessage?: string) => {
               (newData as any).availableSolutions = solutions;
               nextStage = 'solution-detection';
             } else {
-              // No solutions, skip detection
-              nextStage = 'pain-points';
+              // No solutions, skip to audience
+              nextStage = 'audience';
             }
           } else {
-            nextStage = 'pain-points';
+            nextStage = 'audience';
           }
         } catch (error) {
           console.error('Failed to fetch solutions:', error);
-          nextStage = 'pain-points';
+          nextStage = 'audience';
         }
         break;
       
@@ -229,77 +210,25 @@ export const useCampaignConversation = (initialMessage?: string) => {
         
         // Clean up temporary data
         delete (newData as any).availableSolutions;
-        nextStage = 'pain-points';
-        break;
-      
-      case 'pain-points':
-        newData.painPoints = message;
-        nextStage = 'market-context';
-        break;
-      
-      case 'market-context':
-        newData.competitors = message;
-        newData.marketContext = message;
-        nextStage = 'unique-value';
-        break;
-      
-      case 'unique-value':
-        newData.uniqueValue = message;
         nextStage = 'audience';
         break;
       
       case 'audience':
         newData.targetAudience = message;
-        nextStage = 'audience-details';
-        break;
-      
-      case 'audience-details':
-        const audienceText = message.toLowerCase();
-        if (audienceText.includes('manager') || audienceText.includes('executive') || audienceText.includes('director')) {
-          newData.audienceRoles = message;
-        }
-        newData.audienceCurrentSolutions = message;
-        nextStage = 'goal';
-        break;
-      
-      case 'goal':
-        const goalLower = message.toLowerCase();
-        if (goalLower.includes('awareness') || goalLower.includes('brand')) {
-          newData.goal = 'awareness';
-        } else if (goalLower.includes('conversion') || goalLower.includes('sale')) {
-          newData.goal = 'conversion';
-        } else if (goalLower.includes('engagement') || goalLower.includes('engage')) {
-          newData.goal = 'engagement';
-        } else if (goalLower.includes('education') || goalLower.includes('educate')) {
-          newData.goal = 'education';
-        } else {
-          newData.goal = 'awareness';
-        }
-        nextStage = 'success-metrics';
-        break;
-      
-      case 'success-metrics':
-        newData.successMetrics = message;
         nextStage = 'timeline';
         break;
       
       case 'timeline':
         const timelineLower = message.toLowerCase();
-        if (timelineLower.includes('1 week') || timelineLower.includes('one week') || timelineLower.includes('7 days')) {
+        if (timelineLower.includes('1 week') || timelineLower.includes('one week') || timelineLower.includes('7 days') || timelineLower.includes('1-week')) {
           newData.timeline = '1-week';
-        } else if (timelineLower.includes('2 week') || timelineLower.includes('two week') || timelineLower.includes('14 days')) {
+        } else if (timelineLower.includes('2 week') || timelineLower.includes('two week') || timelineLower.includes('14 days') || timelineLower.includes('2-week')) {
           newData.timeline = '2-week';
         } else if (timelineLower.includes('ongoing') || timelineLower.includes('continuous')) {
           newData.timeline = 'ongoing';
         } else {
-          newData.timeline = '4-week';
+          newData.timeline = '4-week'; // Default
         }
-        nextStage = 'resources';
-        break;
-      
-      case 'resources':
-        newData.budget = message;
-        newData.teamSkills = message;
         nextStage = 'strategy-selection';
         break;
     }
@@ -439,15 +368,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
   const handleQuickReplyOld = useCallback((value: CampaignGoal | CampaignTimeline) => {
     let message = '';
     
-    if (state.stage === 'goal') {
-      const goalLabels: Record<CampaignGoal, string> = {
-        awareness: 'Brand Awareness',
-        conversion: 'Conversions',
-        engagement: 'Engagement',
-        education: 'Education'
-      };
-      message = goalLabels[value as CampaignGoal];
-    } else if (state.stage === 'timeline') {
+    if (state.stage === 'timeline') {
       const timelineLabels: Record<CampaignTimeline, string> = {
         '1-week': '1 Week',
         '2-week': '2 Weeks',
@@ -527,21 +448,23 @@ export const useCampaignConversation = (initialMessage?: string) => {
 
   const getProgress = useCallback(() => {
     const stages: ConversationStage[] = [
-      'idea', 
-      'pain-points', 
-      'market-context', 
-      'unique-value',
-      'audience', 
-      'audience-details',
-      'goal', 
-      'success-metrics',
-      'timeline', 
-      'resources'
+      'goal-idea',
+      'solution-detection',
+      'audience',
+      'timeline'
     ];
+    
     const currentIndex = stages.indexOf(state.stage);
+    let total = 3;
+    if (state.collectedData.solutionId !== undefined) {
+      total = 4;
+    }
+    
+    const current = currentIndex >= 0 ? currentIndex + 1 : 0;
+    
     return {
-      current: currentIndex + 1,
-      total: 10,
+      current: Math.min(current, total),
+      total,
       percentage: ((currentIndex + 1) / 10) * 100
     };
   }, [state.stage]);

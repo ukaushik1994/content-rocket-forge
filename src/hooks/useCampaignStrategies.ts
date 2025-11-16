@@ -57,6 +57,13 @@ IMPORTANT: Generate the FULL detailed strategy following this selected approach.
       const systemPrompt = `You are an expert content marketing strategist specializing in SEO and data-driven campaign planning. Generate 1 comprehensive campaign strategy based on the user's input${selectedSummary ? ' and their selected strategy approach' : ''}.
 ${summaryContext}
 
+IMPORTANT CONTEXT: The user provided only essential campaign details. You must INTELLIGENTLY INFER missing details:
+• Pain points from goal + solution context
+• Unique value propositions from solution features or market positioning
+• Competitors and competitive landscape from industry knowledge
+• Success metrics aligned with stated goals
+• Resource requirements based on timeline and scope
+
 Provide:
 1. A compelling title and detailed description
 2. A content mix with specific format types, counts, AND detailed content briefs with SEO metadata

@@ -41,7 +41,24 @@ CAMPAIGN OVERVIEW:
 - Timeline: ${collectedData.timeline}
 ${solutionContext}`;
 
-  const systemPrompt = `You are an expert content marketing strategist. Generate 3-4 DISTINCT campaign strategy OPTIONS (not full strategies - just summaries).
+  const systemPrompt = `You are an expert B2B SaaS marketing strategist and content planner.
+
+Your task: Generate 3-4 HIGH-QUALITY campaign strategy summaries for promoting a B2B SaaS product/solution.
+
+USER PROVIDED (ESSENTIALS):
+- Campaign goal/idea: ${collectedData.idea || 'Not specified'}
+- Target audience: ${collectedData.targetAudience || 'Not specified'}
+- Goal: ${collectedData.goal || 'awareness'}
+- Timeline: ${collectedData.timeline || '4-week'}${solutionContext}
+
+IMPORTANT: The user only provided basic essentials. You MUST INTELLIGENTLY INFER:
+• Pain points (based on goal + solution context or industry knowledge)
+• Unique value propositions (from solution data or competitive market insights)
+• Competitive context (from market research and industry trends)
+• Success metrics (aligned with campaign goal)
+• Resource requirements (based on timeline + scope)
+
+Use your deep market knowledge, solution data (if available), and B2B SaaS expertise to fill gaps intelligently. Create strategies that are comprehensive despite limited input.
 
 Each option should be SIGNIFICANTLY DIFFERENT from the others:
 - Different content mixes (some blog-heavy, some social-heavy, some video-focused)
