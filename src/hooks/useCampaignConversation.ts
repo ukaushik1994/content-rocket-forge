@@ -465,7 +465,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
     return {
       current: Math.min(current, total),
       total,
-      percentage: ((currentIndex + 1) / 10) * 100
+      percentage: ((currentIndex + 1) / total) * 100
     };
   }, [state.stage]);
 
