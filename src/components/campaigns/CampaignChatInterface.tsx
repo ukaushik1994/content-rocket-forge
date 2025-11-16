@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { MessageInput } from '@/components/ai-chat/MessageInput';
-import { MessageBubble } from '@/components/ai-chat/MessageBubble';
+import { CampaignMessageBubble } from './CampaignMessageBubble';
 import { useCampaignConversation } from '@/hooks/useCampaignConversation';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { CampaignInput as CampaignInputType } from '@/types/campaign-types';
 import { ArrowLeft, Target, Users, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +38,17 @@ export function CampaignChatInterface({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('[Campaign UI] Messages updated:', messages.length);
+    console.log('[Campaign UI] Current stage:', stage);
+    console.log('[Campaign UI] Is complete:', isComplete);
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      console.log('[Campaign UI] Last message:', lastMsg.role, lastMsg.content.substring(0, 50));
+    }
+  }, [messages, stage, isComplete]);
 
   // Trigger completion when ready
   useEffect(() => {
@@ -106,16 +118,19 @@ export function CampaignChatInterface({
         <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 pr-2">
           <AnimatePresence>
             {messages.map((message, index) => (
-              <MessageBubble
+              <ErrorBoundary
                 key={message.id}
-                message={{
-                  id: message.id,
-                  role: message.role,
-                  content: message.content,
-                  timestamp: message.timestamp
-                }}
-                isLatest={index === messages.length - 1}
-              />
+                FallbackComponent={() => (
+                  <div className="text-red-500 text-sm p-2 border border-red-500/20 rounded">
+                    Failed to render message
+                  </div>
+                )}
+              >
+                <CampaignMessageBubble
+                  message={message}
+                  isLatest={index === messages.length - 1}
+                />
+              </ErrorBoundary>
             ))}
           </AnimatePresence>
           <div ref={messagesEndRef} />
