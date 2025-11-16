@@ -154,159 +154,157 @@ export const useCampaignConversation = (initialMessage?: string) => {
   const processUserResponse = useCallback(async (message: string) => {
     console.log('[Campaign] Processing user response:', message);
     
-    // First, add user message and update collected data
-    setState(prev => {
-      console.log('[Campaign] Current stage:', prev.stage);
-      console.log('[Campaign] Current messages count:', prev.messages.length);
+    // Calculate next state values BEFORE setState
+    const newData = { ...state.collectedData };
+    let nextStage: ConversationStage = state.stage;
+    
+    // Process based on current stage
+    switch (state.stage) {
+      case 'idea':
+        newData.idea = message;
+        nextStage = 'pain-points';
+        break;
       
-      const newData = { ...prev.collectedData };
-      let nextStage: ConversationStage = prev.stage;
+      case 'pain-points':
+        newData.painPoints = message;
+        nextStage = 'market-context';
+        break;
       
-      // Process based on current stage
-      switch (prev.stage) {
-        case 'idea':
-          newData.idea = message;
-          nextStage = 'pain-points';
-          break;
-        
-        case 'pain-points':
-          newData.painPoints = message;
-          nextStage = 'market-context';
-          break;
-        
-        case 'market-context':
-          newData.competitors = message;
-          newData.marketContext = message;
-          nextStage = 'unique-value';
-          break;
-        
-        case 'unique-value':
-          newData.uniqueValue = message;
-          nextStage = 'audience';
-          break;
-        
-        case 'audience':
-          newData.targetAudience = message;
-          nextStage = 'audience-details';
-          break;
-        
-        case 'audience-details':
-          const audienceText = message.toLowerCase();
-          if (audienceText.includes('manager') || audienceText.includes('executive') || audienceText.includes('director')) {
-            newData.audienceRoles = message;
-          }
-          newData.audienceCurrentSolutions = message;
-          nextStage = 'goal';
-          break;
-        
-        case 'goal':
-          const goalLower = message.toLowerCase();
-          if (goalLower.includes('awareness') || goalLower.includes('brand')) {
-            newData.goal = 'awareness';
-          } else if (goalLower.includes('conversion') || goalLower.includes('sale')) {
-            newData.goal = 'conversion';
-          } else if (goalLower.includes('engagement') || goalLower.includes('engage')) {
-            newData.goal = 'engagement';
-          } else if (goalLower.includes('education') || goalLower.includes('educate')) {
-            newData.goal = 'education';
-          } else {
-            newData.goal = 'awareness';
-          }
-          nextStage = 'success-metrics';
-          break;
-        
-        case 'success-metrics':
-          newData.successMetrics = message;
-          nextStage = 'timeline';
-          break;
-        
-        case 'timeline':
-          const timelineLower = message.toLowerCase();
-          if (timelineLower.includes('1 week') || timelineLower.includes('one week') || timelineLower.includes('7 days')) {
-            newData.timeline = '1-week';
-          } else if (timelineLower.includes('2 week') || timelineLower.includes('two week') || timelineLower.includes('14 days')) {
-            newData.timeline = '2-week';
-          } else if (timelineLower.includes('ongoing') || timelineLower.includes('continuous')) {
-            newData.timeline = 'ongoing';
-          } else {
-            newData.timeline = '4-week';
-          }
-          nextStage = 'resources';
-          break;
-        
-        case 'resources':
-          newData.budget = message;
-          newData.teamSkills = message;
-          nextStage = 'complete';
-          break;
+      case 'market-context':
+        newData.competitors = message;
+        newData.marketContext = message;
+        nextStage = 'unique-value';
+        break;
+      
+      case 'unique-value':
+        newData.uniqueValue = message;
+        nextStage = 'audience';
+        break;
+      
+      case 'audience':
+        newData.targetAudience = message;
+        nextStage = 'audience-details';
+        break;
+      
+      case 'audience-details':
+        const audienceText = message.toLowerCase();
+        if (audienceText.includes('manager') || audienceText.includes('executive') || audienceText.includes('director')) {
+          newData.audienceRoles = message;
+        }
+        newData.audienceCurrentSolutions = message;
+        nextStage = 'goal';
+        break;
+      
+      case 'goal':
+        const goalLower = message.toLowerCase();
+        if (goalLower.includes('awareness') || goalLower.includes('brand')) {
+          newData.goal = 'awareness';
+        } else if (goalLower.includes('conversion') || goalLower.includes('sale')) {
+          newData.goal = 'conversion';
+        } else if (goalLower.includes('engagement') || goalLower.includes('engage')) {
+          newData.goal = 'engagement';
+        } else if (goalLower.includes('education') || goalLower.includes('educate')) {
+          newData.goal = 'education';
+        } else {
+          newData.goal = 'awareness';
+        }
+        nextStage = 'success-metrics';
+        break;
+      
+      case 'success-metrics':
+        newData.successMetrics = message;
+        nextStage = 'timeline';
+        break;
+      
+      case 'timeline':
+        const timelineLower = message.toLowerCase();
+        if (timelineLower.includes('1 week') || timelineLower.includes('one week') || timelineLower.includes('7 days')) {
+          newData.timeline = '1-week';
+        } else if (timelineLower.includes('2 week') || timelineLower.includes('two week') || timelineLower.includes('14 days')) {
+          newData.timeline = '2-week';
+        } else if (timelineLower.includes('ongoing') || timelineLower.includes('continuous')) {
+          newData.timeline = 'ongoing';
+        } else {
+          newData.timeline = '4-week';
+        }
+        nextStage = 'resources';
+        break;
+      
+      case 'resources':
+        newData.budget = message;
+        newData.teamSkills = message;
+        nextStage = 'complete';
+        break;
+    }
+    
+    console.log('[Campaign] Next stage:', nextStage);
+    
+    // Create user message
+    const userMessage: CampaignConversationMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: message,
+      timestamp: new Date()
+    };
+    
+    // Build conversation history BEFORE setState (includes new user message)
+    const conversationHistory = [
+      ...state.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })),
+      {
+        role: userMessage.role,
+        content: userMessage.content
       }
-      
-      console.log('[Campaign] Next stage:', nextStage);
-      
-      // Create user message
-      const userMessage: CampaignConversationMessage = {
-        id: crypto.randomUUID(),
-        role: 'user',
-        content: message,
-        timestamp: new Date()
-      };
-      
-      return {
-        ...prev,
-        collectedData: newData,
-        stage: nextStage,
-        messages: [...prev.messages, userMessage],
-        isLoadingAI: true
-      };
-    });
+    ];
+    
+    console.log('[Campaign] Conversation history length:', conversationHistory.length);
+    
+    // Update state with user message
+    setState(prev => ({
+      ...prev,
+      collectedData: newData,
+      stage: nextStage,
+      messages: [...prev.messages, userMessage],
+      isLoadingAI: true
+    }));
 
-    // Then, generate AI response
+    // Generate AI response with correct conversation history
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('User not authenticated');
       }
 
-      // Get current state for AI generation
-      const currentState = state;
-      const conversationHistory = currentState.messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-
       let aiQuestion: string;
       
       try {
-        // Try to generate AI question
+        // Now we have the complete conversation history including user's message
         aiQuestion = await generateAIQuestion(
-          currentState.stage,
-          currentState.collectedData,
-          conversationHistory,
+          nextStage,  // Use calculated nextStage, not state.stage
+          newData,    // Use calculated newData, not state.collectedData
+          conversationHistory,  // Manually built history with all messages
           user.id
         );
       } catch (aiError) {
         console.warn('[Campaign] AI generation failed, using fallback:', aiError);
-        // Fallback to static question
-        aiQuestion = getFallbackQuestion(currentState.stage, currentState.collectedData);
+        aiQuestion = getFallbackQuestion(nextStage, newData);
       }
 
       console.log('[Campaign] Generated question (first 100 chars):', aiQuestion.substring(0, 100));
 
       // Add AI message
-      setState(prev => {
-        const aiMessage: CampaignConversationMessage = {
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, {
           id: crypto.randomUUID(),
           role: 'assistant',
           content: aiQuestion,
           timestamp: new Date()
-        };
-
-        return {
-          ...prev,
-          messages: [...prev.messages, aiMessage],
-          isLoadingAI: false
-        };
-      });
+        }],
+        isLoadingAI: false
+      }));
     } catch (error) {
       console.error('[Campaign] Error generating AI response:', error);
       
