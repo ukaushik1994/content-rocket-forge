@@ -1,7 +1,7 @@
 import React from 'react';
 import { CampaignStrategySummary } from '@/types/campaign-types';
 import { motion } from 'framer-motion';
-import { Check, Sparkles, Target, TrendingUp, Users } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -13,20 +13,6 @@ interface StrategySummaryCardsProps {
   onEditAnswers: () => void;
   isLoading?: boolean;
 }
-
-const focusIcons = {
-  awareness: Users,
-  conversion: Target,
-  engagement: Sparkles,
-  education: TrendingUp
-};
-
-const focusColors = {
-  awareness: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  conversion: 'bg-green-500/10 text-green-600 border-green-500/20',
-  engagement: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  education: 'bg-orange-500/10 text-orange-600 border-orange-500/20'
-};
 
 const effortLabels = {
   low: { text: 'Low Effort', color: 'text-green-600' },
@@ -71,7 +57,6 @@ export function StrategySummaryCards({
       {/* Summary Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {summaries.map((summary, index) => {
-          const FocusIcon = focusIcons[summary.focus];
           const isSelected = selectedId === summary.id;
           
           return (
@@ -100,31 +85,17 @@ export function StrategySummaryCards({
                 </motion.div>
               )}
 
-              {/* Header with Focus Badge */}
+              {/* Header */}
               <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-foreground mb-1">
-                    {summary.title}
-                  </h4>
-                  <div className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border",
-                    focusColors[summary.focus]
-                  )}>
-                    <FocusIcon className="h-3.5 w-3.5" />
-                    {summary.focus.charAt(0).toUpperCase() + summary.focus.slice(1)}
-                  </div>
-                </div>
+                <h4 className="text-lg font-semibold text-foreground">
+                  {summary.title}
+                </h4>
                 
                 {/* Effort Level */}
-                <div className={cn("text-xs font-medium", effortLabels[summary.effortLevel].color)}>
+                <div className={cn("text-xs font-medium whitespace-nowrap ml-4", effortLabels[summary.effortLevel].color)}>
                   ⏱️ {effortLabels[summary.effortLevel].text}
                 </div>
               </div>
-
-              {/* Description */}
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                {summary.description}
-              </p>
 
               {/* Content Mix */}
               <div className="mb-4">

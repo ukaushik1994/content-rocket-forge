@@ -12,15 +12,18 @@ export async function generateCampaignSummaries(
   userId: string
 ): Promise<CampaignStrategySummary[]> {
   
-  // Fetch solution data for context
+  // Fetch solution data for context (only name for summary generation)
   let solutionContext = '';
   if (solutionId) {
     try {
-      const solution = await solutionService.getSolutionById(solutionId);
+      const { data: solution } = await supabase
+        .from('solutions')
+        .select('name')
+        .eq('id', solutionId)
+        .single();
+
       if (solution) {
-        solutionContext = `\n\nSOLUTION TO PROMOTE: ${solution.name}
-Features: ${solution.features?.slice(0, 5).join(', ')}
-Target audience: ${solution.targetAudience?.join(', ')}`;
+        solutionContext = `\n\nSOLUTION TO PROMOTE: ${solution.name}`;
       }
     } catch (error) {
       console.error('Failed to fetch solution:', error);

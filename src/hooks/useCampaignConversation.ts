@@ -6,6 +6,7 @@ import { generateCampaignSummaries } from '@/services/campaignSummaryAI';
 
 export type ConversationStage = 
   | 'idea' 
+  | 'solution-detection'
   | 'pain-points' 
   | 'market-context' 
   | 'unique-value'
@@ -58,6 +59,14 @@ const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaig
   switch (stage) {
     case 'idea':
       return "Great! Let's create a winning campaign together. Tell me about your campaign idea - what specific product, feature, or service are you planning to promote?";
+    
+    case 'solution-detection':
+      const solutions = (data as any).availableSolutions || [];
+      if (solutions.length > 0) {
+        const solutionList = solutions.map((s: any) => `• ${s.name}`).join('\n');
+        return `Are you promoting one of these solutions?\n\n${solutionList}\n\nReply with the solution name, or type "None" if promoting something else.`;
+      }
+      return "Are you promoting one of your existing solutions? Please reply with the solution name, or type 'None' if this is for something else.";
     
     case 'pain-points':
       return `Interesting! So you're promoting "${data.idea}". Before we go further, let's dig deeper:\n\nWhat specific problem does this solve for your users? What pain point are you addressing? Be as specific as possible.`;
@@ -172,6 +181,54 @@ export const useCampaignConversation = (initialMessage?: string) => {
     switch (state.stage) {
       case 'idea':
         newData.idea = message;
+        
+        // Check if user has solutions to detect
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: solutions } = await supabase
+              .from('solutions')
+              .select('id, name')
+              .eq('user_id', user.id)
+              .limit(5);
+            
+            if (solutions && solutions.length > 0) {
+              // Store solutions for next stage
+              (newData as any).availableSolutions = solutions;
+              nextStage = 'solution-detection';
+            } else {
+              // No solutions, skip detection
+              nextStage = 'pain-points';
+            }
+          } else {
+            nextStage = 'pain-points';
+          }
+        } catch (error) {
+          console.error('Failed to fetch solutions:', error);
+          nextStage = 'pain-points';
+        }
+        break;
+      
+      case 'solution-detection':
+        const userResponse = message.toLowerCase();
+        const availableSolutions = (newData as any).availableSolutions || [];
+        
+        if (userResponse === 'none' || userResponse.includes('no') || userResponse.includes('not')) {
+          // User is not promoting an existing solution
+          newData.solutionId = null;
+        } else {
+          // Try to match user response to a solution
+          const matchedSolution = availableSolutions.find((sol: any) => 
+            userResponse.includes(sol.name.toLowerCase())
+          );
+          
+          if (matchedSolution) {
+            newData.solutionId = matchedSolution.id;
+          }
+        }
+        
+        // Clean up temporary data
+        delete (newData as any).availableSolutions;
         nextStage = 'pain-points';
         break;
       
