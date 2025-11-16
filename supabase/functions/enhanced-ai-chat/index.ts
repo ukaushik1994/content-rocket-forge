@@ -712,9 +712,10 @@ serve(async (req) => {
       });
     }
 
-    const { messages, context } = await req.json();
+    const body = await req.json();
+    const { messages, context, useCampaignStrategyTool } = body;
     const use_case = context?.use_case; // Extract use_case from context
-    console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '');
+    console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Messages array is required" }), {
@@ -1012,6 +1013,18 @@ serve(async (req) => {
     // Initialize tool cache for this request
     const toolCache = new Map<string, { data: any; timestamp: number }>();
 
+    // Determine which tools to use
+    let toolsToUse = TOOL_DEFINITIONS; // Default tools
+    let toolChoice: any = undefined; // Default: let AI decide
+    
+    // Check if campaign strategy tool is requested
+    if (useCampaignStrategyTool) {
+      const { CAMPAIGN_STRATEGY_TOOL } = await import('./campaign-strategy-tool.ts');
+      toolsToUse = [CAMPAIGN_STRATEGY_TOOL]; // Use only this tool for focused generation
+      toolChoice = { type: "function", function: { name: "generate_campaign_strategies" } };
+      console.log('🎯 Using campaign strategy tool for structured generation');
+    }
+
     // Call ai-proxy edge function with user's provider (including tools) with retry logic
     let aiProxyResult = null;
     let aiProxyError = null;
@@ -1035,7 +1048,8 @@ serve(async (req) => {
                 },
                 ...messages,
               ],
-              tools: TOOL_DEFINITIONS, // ✅ Add tools for function calling
+              tools: toolsToUse, // ✅ Use conditional tools
+              tool_choice: toolChoice, // ✅ Force campaign tool when requested
               temperature: 0.7,
               max_tokens: dynamicMaxTokens,
             }

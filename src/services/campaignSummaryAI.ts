@@ -73,113 +73,177 @@ CAMPAIGN OVERVIEW:
 - Timeline: ${collectedData.timeline}
 ${solutionContext}`;
 
-  const systemPrompt = `You are an expert B2B SaaS marketing strategist and content planner.
+  const systemPrompt = `You are an expert B2B SaaS marketing strategist.
 
-Your task: Generate 3-4 HIGHLY SPECIFIC campaign strategy options based on the user's exact idea and context.
+Generate 3-4 SPECIFIC campaign strategies for this user's campaign:
 
-USER'S CAMPAIGN CONTEXT:
+CAMPAIGN CONTEXT:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-Campaign Idea: ${collectedData.idea || 'Not specified'}
-Target Audience: ${collectedData.targetAudience || 'Not specified'}
-Primary Goal: ${collectedData.goal || 'awareness'}
-Timeline: ${collectedData.timeline || '4-week'}${solutionContext}
+- Campaign Idea: ${collectedData.idea || 'Not specified'}
+- Target Audience: ${collectedData.targetAudience || 'Not specified'}
+- Primary Goal: ${collectedData.goal || 'awareness'}
+- Timeline: ${collectedData.timeline || '4-week'}${solutionContext}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CRITICAL INSTRUCTIONS FOR STRATEGY NAMING:
-❌ DO NOT use generic names like "Content Authority Builder", "Social Amplification Strategy", or "Video-First Awareness"
-✅ DO create specific, actionable strategy names that directly reflect the USER'S IDEA and SOLUTION
+STRATEGY REQUIREMENTS:
 
-NAMING PATTERN EXAMPLES (based on different scenarios):
+1. **Each strategy must be SIGNIFICANTLY DIFFERENT:**
+   - Vary content mix: some blog-heavy, some social-heavy, some video-focused
+   - Vary channels: organic social, paid ads, email, content marketing, events
+   - Vary effort: low (5-20hrs), medium (20-50hrs), high (50-150hrs)
 
-Example 1 - User promoting AI invoice tool to CFOs:
-• "CFO LinkedIn Thought Leadership: Finance Automation"
-• "Webinar Series: Transform Your Invoice Processing"  
-• "Finance Industry Email Drip: AI-Powered Efficiency"
+2. **Title Format:** "[Audience] [Channel/Type]: [Solution Benefit]"
+   Examples:
+   - "CFO LinkedIn: Finance Automation"
+   - "Startup Founders Email Series: Project Management Tips"
+   - "Enterprise CISO Webinar: Security Best Practices"
 
-Example 2 - User promoting project management tool to startups:
-• "Startup Founder Content Hub: Project Management Tips"
-• "Twitter Campaign: Productivity Hacks for Founders"
-• "Case Study Showcase: Startup Success Stories"
+3. **Content Mix Calculation:**
+   - blog = 4 hours each
+   - email = 2 hours each
+   - social (LinkedIn/Twitter/Facebook/Instagram) = 1 hour each
+   - video/script = 8 hours each
+   - landing-page = 6 hours each
+   - carousel = 3 hours each
+   - meme = 0.5 hours each
+   - google-ads = 2 hours each
 
-Example 3 - User promoting cybersecurity solution to enterprises:
-• "Enterprise CISO Education: Security Best Practices"
-• "LinkedIn + Blog: Threat Intelligence Insights"
-• "Gated Whitepaper Campaign: Zero Trust Architecture"
+4. **Complexity Assessment:**
+   - Beginner: Social media only
+   - Skilled: Blogs, emails, landing pages
+   - Expert: Video, paid ads, complex funnels
 
-YOUR STRATEGY TITLES MUST:
-1. Mention the TARGET AUDIENCE or INDUSTRY (e.g., "CFO", "Startup Founders", "Enterprise CISO")
-2. Reference the ACTUAL SOLUTION CATEGORY or BENEFIT (e.g., "Finance Automation", "Project Management", "Security")
-3. Specify the PRIMARY CHANNEL or CONTENT TYPE (e.g., "LinkedIn", "Webinar Series", "Email Drip")
-4. Be 5-8 words maximum
-5. Sound like a real campaign name, not a generic bucket
-
-Each strategy should be SIGNIFICANTLY DIFFERENT:
-• Different content mixes (some blog-heavy, some social-heavy, some video-focused, some paid ads)
-• Different focuses (awareness vs conversion vs engagement vs education)  
-• Different effort levels (low, medium, high)
-• Different channels (organic social, paid ads, email, content marketing, events)
-
-For each strategy provide:
-1. **title**: SPECIFIC, actionable campaign name (following patterns above)
-2. **description**: 1-2 sentences explaining the tactical approach (not generic benefits)
-3. **contentMix**: Array of {formatId, count} - use these format IDs:
-   - "blog", "email", "social-linkedin", "social-twitter", "social-facebook", "social-instagram", "script", "landing-page", "carousel", "meme", "google-ads"
-4. **expectedOutcome**: 1 specific sentence on what THIS campaign achieves for THIS solution
-5. **focus**: "awareness" | "conversion" | "engagement" | "education"
-6. **effortLevel**: "low" | "medium" | "high"
-7. **totalEffort**: REQUIRED object with:
-   - hours: number (calculate based on content mix, e.g., blog=4hrs, social=1hr, video=8hrs)
-   - complexity: "beginner" | "skilled" | "expert"
-   - workflowOrder: array of formatIds in recommended creation order
-8. **optionalAddons**: REQUIRED object with:
-   - contentCalendar: true
-   - draftCopies: true
-   - fullSeoBriefs: true
-   - landingPageCopy: boolean
-   - emailSequences: boolean
-   - exportOptions: ["PDF", "Notion", "Google Docs"]
-
-REMEMBER: Use the user's actual idea, solution details, and target audience to create CUSTOM strategy names. No generic templates!
-
-Return ONLY valid JSON array with 3-4 options. Each option must have a unique id (use uuid format).`;
+Focus on creating ACTIONABLE, SPECIFIC strategies tailored to the user's exact campaign context.`;
 
   try {
+    // Use tool calling for reliable structured output
     const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
       body: {
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate 3-4 distinct strategy options for this campaign:\n${contextSummary}` }
+          { role: 'user', content: `Generate 3-4 distinct, specific strategies for this campaign.` }
         ],
+        useCampaignStrategyTool: true, // ← Enable campaign strategy tool
         stream: false
       }
     });
 
     if (error) throw error;
 
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) throw new Error('No response from AI');
-
-    // Parse JSON response
-    let summaries: CampaignStrategySummary[];
-    try {
-      // Try to extract JSON from markdown code blocks if present
+    // Extract from tool call result (no manual parsing needed)
+    const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
+    
+    if (!toolCall || toolCall.function?.name !== 'generate_campaign_strategies') {
+      console.error('No tool call found, falling back to content parsing');
+      
+      // Fallback: Try manual parsing
+      const content = data?.choices?.[0]?.message?.content;
+      if (!content) throw new Error('No response from AI');
+      
       const jsonMatch = content.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
       const jsonText = jsonMatch ? jsonMatch[1] : content;
-      summaries = JSON.parse(jsonText);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      throw new Error('Failed to parse AI-generated strategies. Please try again.');
+      const summaries = JSON.parse(jsonText);
+      
+      if (!Array.isArray(summaries) || summaries.length < 3) {
+        throw new Error('AI generated insufficient strategies');
+      }
+      
+      return enrichStrategies(summaries);
     }
 
-    // Validate and ensure we have 3-4 summaries
-    if (!Array.isArray(summaries) || summaries.length < 3) {
+    // Parse tool call arguments
+    const parsedArgs = JSON.parse(toolCall.function.arguments);
+    const strategies = parsedArgs.strategies;
+
+    if (!Array.isArray(strategies) || strategies.length < 3) {
       throw new Error('AI generated insufficient strategies. Please try again.');
     }
 
-    return summaries.slice(0, 4); // Max 4 options
+    // Enrich with additional fields
+    return enrichStrategies(strategies);
 
   } catch (error) {
     console.error('Error generating campaign summaries:', error);
     throw error;
   }
+}
+
+/**
+ * Enrich strategies with additional computed fields
+ */
+function enrichStrategies(strategies: any[]): CampaignStrategySummary[] {
+  return strategies.slice(0, 4).map(s => ({
+    ...s,
+    id: s.id || crypto.randomUUID(),
+    totalEffort: {
+      hours: s.totalHours || calculateHours(s.contentMix),
+      complexity: s.complexity || inferComplexity(s.contentMix),
+      workflowOrder: generateWorkflowOrder(s.contentMix)
+    },
+    optionalAddons: {
+      contentCalendar: true,
+      draftCopies: true,
+      fullSeoBriefs: true,
+      landingPageCopy: s.contentMix?.some((c: any) => c.formatId === 'landing-page') || false,
+      emailSequences: s.contentMix?.some((c: any) => c.formatId === 'email') || false,
+      exportOptions: ["PDF", "Notion", "Google Docs"]
+    }
+  }));
+}
+
+/**
+ * Calculate total hours from content mix
+ */
+function calculateHours(contentMix: Array<{ formatId: string; count: number }>): number {
+  const hourMap: Record<string, number> = {
+    blog: 4,
+    email: 2,
+    'social-linkedin': 1,
+    'social-twitter': 1,
+    'social-facebook': 1,
+    'social-instagram': 1,
+    script: 8,
+    'landing-page': 6,
+    carousel: 3,
+    meme: 0.5,
+    'google-ads': 2
+  };
+  
+  return contentMix.reduce((total, item) => {
+    return total + (hourMap[item.formatId] || 2) * item.count;
+  }, 0);
+}
+
+/**
+ * Infer complexity from content mix
+ */
+function inferComplexity(contentMix: Array<{ formatId: string; count: number }>): 'beginner' | 'skilled' | 'expert' {
+  const hasExpert = contentMix.some(c => ['script', 'google-ads'].includes(c.formatId));
+  const hasSkilled = contentMix.some(c => ['blog', 'email', 'landing-page', 'carousel'].includes(c.formatId));
+  
+  if (hasExpert) return 'expert';
+  if (hasSkilled) return 'skilled';
+  return 'beginner';
+}
+
+/**
+ * Generate workflow order for content creation
+ */
+function generateWorkflowOrder(contentMix: Array<{ formatId: string; count: number }>): string[] {
+  const priorityOrder = [
+    'landing-page',
+    'blog',
+    'email',
+    'script',
+    'carousel',
+    'social-linkedin',
+    'social-twitter',
+    'social-facebook',
+    'social-instagram',
+    'meme',
+    'google-ads'
+  ];
+  
+  const formats = contentMix.map(c => c.formatId);
+  return priorityOrder.filter(f => formats.includes(f));
 }
