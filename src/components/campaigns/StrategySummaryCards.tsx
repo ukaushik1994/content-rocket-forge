@@ -30,7 +30,8 @@ const formatIcons: Record<string, string> = {
   'whitepaper': '📑',
   'email': '✉️',
   'webinar': '🎯',
-  'podcast': '🎙️'
+  'podcast': '🎙️',
+  'google-ads': '🎯'
 };
 
 export function StrategySummaryCards({

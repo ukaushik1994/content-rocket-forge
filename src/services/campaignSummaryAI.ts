@@ -12,18 +12,40 @@ export async function generateCampaignSummaries(
   userId: string
 ): Promise<CampaignStrategySummary[]> {
   
-  // Fetch solution data for context (only name for summary generation)
+  // Fetch complete solution data for rich context
   let solutionContext = '';
   if (solutionId) {
     try {
       const { data: solution } = await supabase
         .from('solutions')
-        .select('name')
+        .select(`
+          id,
+          name,
+          short_description,
+          description,
+          features,
+          benefits,
+          key_differentiators,
+          use_cases,
+          target_audience,
+          pricing_model,
+          category
+        `)
         .eq('id', solutionId)
         .single();
 
       if (solution) {
-        solutionContext = `\n\nSOLUTION TO PROMOTE: ${solution.name}`;
+        solutionContext = `
+
+SOLUTION TO PROMOTE:
+- Name: ${solution.name}
+- Description: ${solution.short_description || solution.description || 'Not specified'}
+- Target Audience: ${Array.isArray(solution.target_audience) ? solution.target_audience.join(', ') : (solution.target_audience as any) || 'Not specified'}
+- Key Features: ${Array.isArray(solution.features) ? solution.features.join(', ') : 'Not specified'}
+- Key Benefits: ${Array.isArray(solution.benefits) ? solution.benefits.join(', ') : 'Not specified'}
+- Differentiators: ${Array.isArray(solution.key_differentiators) ? solution.key_differentiators.join(', ') : 'Not specified'}
+- Use Cases: ${Array.isArray(solution.use_cases) ? solution.use_cases.join(', ') : 'Not specified'}
+- Category: ${solution.category || 'Not specified'}`;
       }
     } catch (error) {
       console.error('Failed to fetch solution:', error);
@@ -43,51 +65,62 @@ ${solutionContext}`;
 
   const systemPrompt = `You are an expert B2B SaaS marketing strategist and content planner.
 
-Your task: Generate 3-4 HIGH-QUALITY campaign strategy summaries for promoting a B2B SaaS product/solution.
+Your task: Generate 3-4 HIGHLY SPECIFIC campaign strategy options based on the user's exact idea and context.
 
-USER PROVIDED (ESSENTIALS):
-- Campaign goal/idea: ${collectedData.idea || 'Not specified'}
-- Target audience: ${collectedData.targetAudience || 'Not specified'}
-- Goal: ${collectedData.goal || 'awareness'}
-- Timeline: ${collectedData.timeline || '4-week'}${solutionContext}
+USER'S CAMPAIGN CONTEXT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+Campaign Idea: ${collectedData.idea || 'Not specified'}
+Target Audience: ${collectedData.targetAudience || 'Not specified'}
+Primary Goal: ${collectedData.goal || 'awareness'}
+Timeline: ${collectedData.timeline || '4-week'}${solutionContext}
+━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-IMPORTANT: The user only provided basic essentials. You MUST INTELLIGENTLY INFER:
-• Pain points (based on goal + solution context or industry knowledge)
-• Unique value propositions (from solution data or competitive market insights)
-• Competitive context (from market research and industry trends)
-• Success metrics (aligned with campaign goal)
-• Resource requirements (based on timeline + scope)
+CRITICAL INSTRUCTIONS FOR STRATEGY NAMING:
+❌ DO NOT use generic names like "Content Authority Builder", "Social Amplification Strategy", or "Video-First Awareness"
+✅ DO create specific, actionable strategy names that directly reflect the USER'S IDEA and SOLUTION
 
-Use your deep market knowledge, solution data (if available), and B2B SaaS expertise to fill gaps intelligently. Create strategies that are comprehensive despite limited input.
+NAMING PATTERN EXAMPLES (based on different scenarios):
 
-Each option should be SIGNIFICANTLY DIFFERENT from the others:
-- Different content mixes (some blog-heavy, some social-heavy, some video-focused)
-- Different focuses (awareness vs conversion vs engagement vs education)
-- Different effort levels (low, medium, high)
+Example 1 - User promoting AI invoice tool to CFOs:
+• "CFO LinkedIn Thought Leadership: Finance Automation"
+• "Webinar Series: Transform Your Invoice Processing"  
+• "Finance Industry Email Drip: AI-Powered Efficiency"
 
-For each option provide:
-1. title: Short, catchy title (5-8 words max)
-2. description: 1-2 sentences explaining the approach
-3. contentMix: Array of {formatId, count} - use these format IDs:
-   - "blog-post", "social-post", "video", "infographic", "case-study", "guide", "whitepaper", "email", "webinar", "podcast"
-4. expectedOutcome: 1 sentence on what this achieves
-5. focus: "awareness" | "conversion" | "engagement" | "education"
-6. effortLevel: "low" | "medium" | "high"
+Example 2 - User promoting project management tool to startups:
+• "Startup Founder Content Hub: Project Management Tips"
+• "Twitter Campaign: Productivity Hacks for Founders"
+• "Case Study Showcase: Startup Success Stories"
 
-CRITICAL: Return ONLY valid JSON array with 3-4 options. Each option must have a unique id (use uuid format).
+Example 3 - User promoting cybersecurity solution to enterprises:
+• "Enterprise CISO Education: Security Best Practices"
+• "LinkedIn + Blog: Threat Intelligence Insights"
+• "Gated Whitepaper Campaign: Zero Trust Architecture"
 
-Example format:
-[
-  {
-    "id": "abc-123",
-    "title": "Content Authority Builder",
-    "description": "Establish thought leadership through comprehensive blog content and case studies.",
-    "contentMix": [{"formatId": "blog-post", "count": 8}, {"formatId": "case-study", "count": 3}],
-    "expectedOutcome": "Build trust and domain authority with high-value educational content",
-    "focus": "awareness",
-    "effortLevel": "medium"
-  }
-]`;
+YOUR STRATEGY TITLES MUST:
+1. Mention the TARGET AUDIENCE or INDUSTRY (e.g., "CFO", "Startup Founders", "Enterprise CISO")
+2. Reference the ACTUAL SOLUTION CATEGORY or BENEFIT (e.g., "Finance Automation", "Project Management", "Security")
+3. Specify the PRIMARY CHANNEL or CONTENT TYPE (e.g., "LinkedIn", "Webinar Series", "Email Drip")
+4. Be 5-8 words maximum
+5. Sound like a real campaign name, not a generic bucket
+
+Each strategy should be SIGNIFICANTLY DIFFERENT:
+• Different content mixes (some blog-heavy, some social-heavy, some video-focused, some paid ads)
+• Different focuses (awareness vs conversion vs engagement vs education)  
+• Different effort levels (low, medium, high)
+• Different channels (organic social, paid ads, email, content marketing, events)
+
+For each strategy provide:
+1. **title**: SPECIFIC, actionable campaign name (following patterns above)
+2. **description**: 1-2 sentences explaining the tactical approach (not generic benefits)
+3. **contentMix**: Array of {formatId, count} - use these format IDs:
+   - "blog-post", "social-post", "video", "infographic", "case-study", "guide", "whitepaper", "email", "webinar", "podcast", "google-ads"
+4. **expectedOutcome**: 1 specific sentence on what THIS campaign achieves for THIS solution
+5. **focus**: "awareness" | "conversion" | "engagement" | "education"
+6. **effortLevel**: "low" | "medium" | "high"
+
+REMEMBER: Use the user's actual idea, solution details, and target audience to create CUSTOM strategy names. No generic templates!
+
+Return ONLY valid JSON array with 3-4 options. Each option must have a unique id (use uuid format).`;
 
   try {
     const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
@@ -114,196 +147,18 @@ Example format:
       summaries = JSON.parse(jsonText);
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
-      // Fallback to default summaries
-      summaries = getFallbackSummaries(collectedData);
+      throw new Error('Failed to parse AI-generated strategies. Please try again.');
     }
 
     // Validate and ensure we have 3-4 summaries
     if (!Array.isArray(summaries) || summaries.length < 3) {
-      summaries = getFallbackSummaries(collectedData);
+      throw new Error('AI generated insufficient strategies. Please try again.');
     }
 
     return summaries.slice(0, 4); // Max 4 options
 
   } catch (error) {
     console.error('Error generating campaign summaries:', error);
-    return getFallbackSummaries(collectedData);
+    throw error;
   }
-}
-
-/**
- * Fallback summaries based on campaign goal
- */
-function getFallbackSummaries(data: EnhancedCampaignData): CampaignStrategySummary[] {
-  const goal = data.goal || 'awareness';
-  
-  const summaries: Record<string, CampaignStrategySummary[]> = {
-    awareness: [
-      {
-        id: crypto.randomUUID(),
-        title: 'Content Authority Builder',
-        description: 'Establish thought leadership through comprehensive blog content and educational resources.',
-        contentMix: [
-          { formatId: 'blog-post', count: 8 },
-          { formatId: 'guide', count: 2 },
-          { formatId: 'infographic', count: 3 }
-        ],
-        expectedOutcome: 'Build brand awareness and domain authority with high-value content',
-        focus: 'awareness',
-        effortLevel: 'medium'
-      },
-      {
-        id: crypto.randomUUID(),
-        title: 'Social Amplification Strategy',
-        description: 'Maximize reach through consistent social media presence and viral content.',
-        contentMix: [
-          { formatId: 'social-post', count: 20 },
-          { formatId: 'video', count: 5 },
-          { formatId: 'infographic', count: 4 }
-        ],
-        expectedOutcome: 'Rapid brand awareness growth across social channels',
-        focus: 'awareness',
-        effortLevel: 'high'
-      },
-      {
-        id: crypto.randomUUID(),
-        title: 'Video-First Awareness',
-        description: 'Leverage video content for maximum engagement and shareability.',
-        contentMix: [
-          { formatId: 'video', count: 8 },
-          { formatId: 'social-post', count: 12 },
-          { formatId: 'blog-post', count: 3 }
-        ],
-        expectedOutcome: 'High engagement rates and viral potential through video',
-        focus: 'awareness',
-        effortLevel: 'high'
-      }
-    ],
-    conversion: [
-      {
-        id: crypto.randomUUID(),
-        title: 'Lead Generation Funnel',
-        description: 'Drive conversions with targeted case studies, whitepapers, and strategic CTAs.',
-        contentMix: [
-          { formatId: 'case-study', count: 4 },
-          { formatId: 'whitepaper', count: 2 },
-          { formatId: 'email', count: 6 },
-          { formatId: 'blog-post', count: 5 }
-        ],
-        expectedOutcome: 'Generate qualified leads through gated premium content',
-        focus: 'conversion',
-        effortLevel: 'medium'
-      },
-      {
-        id: crypto.randomUUID(),
-        title: 'Webinar-Driven Conversion',
-        description: 'Build trust and convert through live webinars and follow-up sequences.',
-        contentMix: [
-          { formatId: 'webinar', count: 3 },
-          { formatId: 'email', count: 8 },
-          { formatId: 'case-study', count: 3 }
-        ],
-        expectedOutcome: 'High-intent leads from engaged webinar attendees',
-        focus: 'conversion',
-        effortLevel: 'high'
-      },
-      {
-        id: crypto.randomUUID(),
-        title: 'Social Proof Strategy',
-        description: 'Convert through customer success stories and testimonials.',
-        contentMix: [
-          { formatId: 'case-study', count: 6 },
-          { formatId: 'video', count: 4 },
-          { formatId: 'social-post', count: 10 }
-        ],
-        expectedOutcome: 'Build trust and drive conversions through social proof',
-        focus: 'conversion',
-        effortLevel: 'medium'
-      }
-    ],
-    engagement: [
-      {
-        id: crypto.randomUUID(),
-        title: 'Community Building Campaign',
-        description: 'Foster engagement through interactive content and community discussions.',
-        contentMix: [
-          { formatId: 'social-post', count: 25 },
-          { formatId: 'podcast', count: 4 },
-          { formatId: 'webinar', count: 2 }
-        ],
-        expectedOutcome: 'Build an active, engaged community around your brand',
-        focus: 'engagement',
-        effortLevel: 'high'
-      },
-      {
-        id: crypto.randomUUID(),
-        title: 'Interactive Content Hub',
-        description: 'Drive engagement with polls, quizzes, and user-generated content.',
-        contentMix: [
-          { formatId: 'social-post', count: 20 },
-          { formatId: 'infographic', count: 5 },
-          { formatId: 'video', count: 6 }
-        ],
-        expectedOutcome: 'High engagement rates through interactive formats',
-        focus: 'engagement',
-        effortLevel: 'medium'
-      },
-      {
-        id: crypto.randomUUID(),
-        title: 'Podcast-Led Engagement',
-        description: 'Build deep connections through long-form podcast conversations.',
-        contentMix: [
-          { formatId: 'podcast', count: 8 },
-          { formatId: 'social-post', count: 16 },
-          { formatId: 'blog-post', count: 8 }
-        ],
-        expectedOutcome: 'Loyal audience through consistent podcast content',
-        focus: 'engagement',
-        effortLevel: 'medium'
-      }
-    ],
-    education: [
-      {
-        id: crypto.randomUUID(),
-        title: 'Comprehensive Learning Path',
-        description: 'Educate through detailed guides, tutorials, and step-by-step resources.',
-        contentMix: [
-          { formatId: 'guide', count: 5 },
-          { formatId: 'blog-post', count: 10 },
-          { formatId: 'video', count: 6 }
-        ],
-        expectedOutcome: 'Position as industry educator and build trust through value',
-        focus: 'education',
-        effortLevel: 'high'
-      },
-      {
-        id: crypto.randomUUID(),
-        title: 'Video Tutorial Series',
-        description: 'Teach through engaging video tutorials and how-to content.',
-        contentMix: [
-          { formatId: 'video', count: 12 },
-          { formatId: 'blog-post', count: 6 },
-          { formatId: 'infographic', count: 4 }
-        ],
-        expectedOutcome: 'Educate audience through visual, easy-to-follow content',
-        focus: 'education',
-        effortLevel: 'high'
-      },
-      {
-        id: crypto.randomUUID(),
-        title: 'Webinar Education Series',
-        description: 'Deep-dive educational webinars with expert insights and Q&A.',
-        contentMix: [
-          { formatId: 'webinar', count: 4 },
-          { formatId: 'guide', count: 3 },
-          { formatId: 'email', count: 6 }
-        ],
-        expectedOutcome: 'Establish expertise through in-depth educational sessions',
-        focus: 'education',
-        effortLevel: 'medium'
-      }
-    ]
-  };
-
-  return summaries[goal] || summaries.awareness;
 }
