@@ -15,6 +15,7 @@ import {
 } from './serp-intelligence.ts';
 import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
+import { aiRequestQueue } from './request-queue.ts';
 
 // PHASE 1: Multi-chart detection - detects when user needs multiple perspectives
 function shouldGenerateMultipleCharts(query: string): boolean {
@@ -1019,26 +1020,28 @@ serve(async (req) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       console.log(`🔄 AI call attempt ${attempt}/${maxRetries}`);
       
-      const result = await supabase.functions.invoke('ai-proxy', {
-        body: {
-          service: provider.provider,
-          endpoint: 'chat',
-          apiKey: provider.api_key,
-          params: {
-            model: provider.preferred_model,
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt,
-              },
-              ...messages,
-            ],
-            tools: TOOL_DEFINITIONS, // ✅ Add tools for function calling
-            temperature: 0.7,
-            max_tokens: dynamicMaxTokens,
+      const result = await aiRequestQueue.enqueue(() =>
+        supabase.functions.invoke('ai-proxy', {
+          body: {
+            service: provider.provider,
+            endpoint: 'chat',
+            apiKey: provider.api_key,
+            params: {
+              model: provider.preferred_model,
+              messages: [
+                {
+                  role: "system",
+                  content: systemPrompt,
+                },
+                ...messages,
+              ],
+              tools: TOOL_DEFINITIONS, // ✅ Add tools for function calling
+              temperature: 0.7,
+              max_tokens: dynamicMaxTokens,
+            }
           }
-        }
-      });
+        })
+      );
       
       if (!result.error && result.data?.success) {
         aiProxyResult = result.data;

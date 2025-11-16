@@ -174,17 +174,15 @@ export async function generateAIQuestion(
   conversationHistory: Array<{ role: string; content: string }>,
   userId: string
 ): Promise<string> {
+  // Build messages array outside try block so it's accessible in catch
+  const systemPrompt = buildSystemPrompt(stage, collectedData);
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...conversationHistory.slice(-5) // Only send last 5 messages for context
+  ];
+  
   try {
     console.log('[Campaign AI] Generating question for stage:', stage);
-    
-    const systemPrompt = buildSystemPrompt(stage, collectedData);
-    
-    // Build messages array with system prompt + conversation history
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...conversationHistory.slice(-5) // Only send last 5 messages for context
-    ];
-    
     console.log('[Campaign AI] Sending request with', messages.length, 'messages');
     
     const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
@@ -203,9 +201,41 @@ export async function generateAIQuestion(
     console.log('[Campaign AI] Generated question (first 100 chars):', aiResponse.substring(0, 100));
     
     return aiResponse;
-  } catch (error) {
-    console.error('[Campaign AI] Failed to generate AI question:', error);
-    throw error;
+  } catch (error: any) {
+    const errorMsg = error.message || '';
+    console.error('[Campaign AI] Error generating question:', error);
+    
+    // Check if it's a TPM rate limit error
+    if (errorMsg.includes('TPM') || errorMsg.includes('tokens per min') || errorMsg.includes('Rate limit')) {
+      console.warn('[Campaign AI] TPM rate limit detected, implementing cooldown and retry...');
+      
+      try {
+        // Wait 30 seconds for TPM limit to reset
+        console.log('[Campaign AI] Waiting 30s for rate limit cooldown...');
+        await new Promise(r => setTimeout(r, 30000));
+        
+        // Single retry after cooldown
+        console.log('[Campaign AI] Retrying after cooldown...');
+        const { data: retryData, error: retryError } = await supabase.functions.invoke('enhanced-ai-chat', {
+          body: {
+            messages,
+            userId
+          }
+        });
+        
+        if (!retryError && retryData?.message) {
+          console.log('[Campaign AI] Retry successful after cooldown');
+          return retryData.message || retryData.content || '';
+        }
+        
+        console.warn('[Campaign AI] Retry failed, using fallback');
+      } catch (retryError) {
+        console.error('[Campaign AI] Retry failed:', retryError);
+      }
+    }
+    
+    // Fallback to a hardcoded question based on the stage
+    return getFallbackQuestion(stage, collectedData);
   }
 }
 
