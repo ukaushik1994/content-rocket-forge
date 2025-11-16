@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CampaignInput, CampaignStrategy } from '@/types/campaign-types';
+import { CampaignInput, CampaignStrategy, CampaignStrategySummary } from '@/types/campaign-types';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { solutionService } from '@/services/solutionService';
@@ -11,7 +11,11 @@ export const useCampaignStrategies = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generateStrategies = async (input: CampaignInput, userId: string): Promise<CampaignStrategy[]> => {
+  const generateStrategies = async (
+    input: CampaignInput, 
+    userId: string,
+    selectedSummary?: CampaignStrategySummary
+  ): Promise<CampaignStrategy[]> => {
     setIsGenerating(true);
     setError(null);
 
@@ -36,7 +40,22 @@ export const useCampaignStrategies = () => {
         }
       }
 
-      const systemPrompt = `You are an expert content marketing strategist specializing in SEO and data-driven campaign planning. Generate 1 comprehensive campaign strategy based on the user's input.
+      // Build context from selected summary if provided
+      let summaryContext = '';
+      if (selectedSummary) {
+        summaryContext = `\n\nUSER SELECTED THIS STRATEGY APPROACH:
+Title: ${selectedSummary.title}
+Description: ${selectedSummary.description}
+Content Mix: ${selectedSummary.contentMix.map(c => `${c.count} ${c.formatId}`).join(', ')}
+Expected Outcome: ${selectedSummary.expectedOutcome}
+Focus: ${selectedSummary.focus}
+Effort Level: ${selectedSummary.effortLevel}
+
+IMPORTANT: Generate the FULL detailed strategy following this selected approach. Maintain the content mix ratios and focus area while expanding with all required details.`;
+      }
+
+      const systemPrompt = `You are an expert content marketing strategist specializing in SEO and data-driven campaign planning. Generate 1 comprehensive campaign strategy based on the user's input${selectedSummary ? ' and their selected strategy approach' : ''}.
+${summaryContext}
 
 Provide:
 1. A compelling title and detailed description
