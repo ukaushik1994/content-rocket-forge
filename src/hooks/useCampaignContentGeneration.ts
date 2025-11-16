@@ -34,6 +34,35 @@ export const useCampaignContentGeneration = () => {
   ): Promise<GeneratedContent> => {
     const key = `${formatId}-${pieceIndex}`;
     
+    // Validate brief before generation
+    const isValidBrief = !!(
+      brief.title &&
+      brief.description &&
+      brief.keywords?.length > 0 &&
+      brief.targetWordCount > 0 &&
+      brief.metaTitle &&
+      brief.metaDescription
+    );
+
+    if (!isValidBrief) {
+      console.warn(`⚠️ [Content Generation] Invalid brief detected for ${key}:`, {
+        hasTitle: !!brief.title,
+        hasDescription: !!brief.description,
+        keywordCount: brief.keywords?.length || 0,
+        hasWordCount: brief.targetWordCount > 0,
+        hasMetaTitle: !!brief.metaTitle,
+        hasMetaDescription: !!brief.metaDescription
+      });
+    } else {
+      console.log(`✓ [Content Generation] Brief validated for ${key}:`, {
+        title: brief.title,
+        keywords: brief.keywords.length,
+        wordCount: brief.targetWordCount,
+        difficulty: brief.difficulty,
+        serpOpportunity: brief.serpOpportunity
+      });
+    }
+    
     // Set status to generating
     const tempContent: GeneratedContent = {
       id: key,

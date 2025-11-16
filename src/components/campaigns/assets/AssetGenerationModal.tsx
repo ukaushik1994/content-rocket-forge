@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CampaignStrategy } from '@/types/campaign-types';
+import { CampaignStrategy, ContentBrief } from '@/types/campaign-types';
 import { CampaignAsset } from '@/types/asset-types';
 import { 
   Dialog, 
@@ -11,9 +11,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Clock, CheckSquare, Filter } from 'lucide-react';
+import { Sparkles, Clock, CheckSquare, Filter, Loader2 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { AssetPreviewCard } from './AssetPreviewCard';
 import { generateAssetListFromStrategy, calculateAssetTotals, groupAssetsByType } from '@/utils/assetGenerator';
+import { generateContentBriefs } from '@/services/contentBriefGenerator';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AssetGenerationModalProps {
   strategy: CampaignStrategy;
@@ -33,14 +37,92 @@ export const AssetGenerationModal = ({
   const [assets, setAssets] = useState<CampaignAsset[]>([]);
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
   const [filterType, setFilterType] = useState<string>('all');
+  const [isBriefsLoading, setIsBriefsLoading] = useState(false);
+  const [briefProgress, setBriefProgress] = useState({ current: 0, total: 0 });
+  const { toast } = useToast();
   
   useEffect(() => {
     if (isOpen && strategy) {
+      generateAllBriefs();
+    }
+  }, [isOpen, strategy, campaignId]);
+
+  const generateAllBriefs = async () => {
+    setIsBriefsLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Calculate total pieces
+      const totalPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
+      setBriefProgress({ current: 0, total: totalPieces });
+
+      console.log(`🎯 [Asset Modal] Generating briefs for ${totalPieces} pieces`);
+
+      // Fetch solution data if strategy references one
+      let solutionData = null;
+      const solutionId = (strategy as any).solutionId;
+      if (solutionId) {
+        const { data } = await supabase
+          .from('solutions')
+          .select('*')
+          .eq('id', solutionId)
+          .single();
+        solutionData = data;
+      }
+
+      let completed = 0;
+      
+      // Generate briefs for each format
+      for (const formatItem of strategy.contentMix) {
+        console.log(`🎯 [Asset Modal] Generating ${formatItem.count} briefs for ${formatItem.formatId}`);
+        
+        const briefs = await generateContentBriefs(
+          formatItem,
+          strategy,
+          solutionData,
+          user.id,
+          (current, total) => {
+            setBriefProgress({ current: completed + current, total: totalPieces });
+          }
+        );
+        
+        // Update formatItem with generated briefs
+        formatItem.specificTopics = briefs;
+        completed += formatItem.count;
+        setBriefProgress({ current: completed, total: totalPieces });
+      }
+
+      console.log(`🎯 [Asset Modal] ✓ All briefs generated, creating asset list`);
+
+      // Now generate assets with REAL briefs
       const generatedAssets = generateAssetListFromStrategy(strategy, campaignId);
       setAssets(generatedAssets);
       setSelectedAssets(new Set(generatedAssets.map(a => a.id)));
+
+      toast({
+        title: "Briefs Generated",
+        description: `${totalPieces} detailed content briefs ready`,
+      });
+
+    } catch (error: any) {
+      console.error('🎯 [Asset Modal] Brief generation failed:', error);
+      
+      // Generate assets with placeholder briefs as fallback
+      const generatedAssets = generateAssetListFromStrategy(strategy, campaignId);
+      setAssets(generatedAssets);
+      setSelectedAssets(new Set(generatedAssets.map(a => a.id)));
+
+      toast({
+        title: "Using Placeholder Briefs",
+        description: error.message || "Brief generation failed, using defaults",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBriefsLoading(false);
     }
-  }, [isOpen, strategy, campaignId]);
+  };
   
   const filteredAssets = useMemo(() => {
     if (filterType === 'all') return assets;
@@ -87,13 +169,45 @@ export const AssetGenerationModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
-          <DialogTitle className="text-2xl">Campaign Assets Overview</DialogTitle>
+          <DialogTitle className="text-2xl">
+            {isBriefsLoading ? 'Generating Content Briefs...' : 'Campaign Assets Overview'}
+          </DialogTitle>
           <DialogDescription>
-            Review and select which assets to generate. Estimates shown are for AI processing time and credits.
+            {isBriefsLoading 
+              ? `Creating detailed briefs for ${briefProgress.total} pieces...`
+              : 'Review and select which assets to generate. Estimates shown are for AI processing time and credits.'
+            }
           </DialogDescription>
         </DialogHeader>
+
+        {isBriefsLoading && (
+          <div className="px-6 py-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">
+                    Generating briefs... {briefProgress.current} of {briefProgress.total}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round((briefProgress.current / briefProgress.total) * 100)}%
+                  </span>
+                </div>
+                <Progress 
+                  value={(briefProgress.current / briefProgress.total) * 100} 
+                  className="h-2"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Creating unique titles, keywords, and SEO metadata for each piece...
+            </p>
+          </div>
+        )}
         
-        <div className="px-6 py-4 border-b border-border bg-muted/20">
+        {!isBriefsLoading && (
+          <>
+            <div className="px-6 py-4 border-b border-border bg-muted/20">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex gap-2 flex-wrap">
               <Button 
@@ -183,6 +297,8 @@ export const AssetGenerationModal = ({
             </Button>
           </div>
         </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
