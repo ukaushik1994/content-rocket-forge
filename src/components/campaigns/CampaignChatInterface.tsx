@@ -29,7 +29,8 @@ export function CampaignChatInterface({
     processUserResponse,
     handleQuickReply,
     getCampaignInput,
-    isComplete
+    isComplete,
+    isLoading
   } = useCampaignConversation(initialMessage);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -165,7 +166,7 @@ export function CampaignChatInterface({
         {!isComplete && (
           <MessageInput
             onSendMessage={handleSendMessage}
-            isLoading={false}
+            isLoading={isLoading}
             placeholder={
               stage === 'idea' 
                 ? "Describe your campaign idea..." 

@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { CampaignInput, CampaignGoal, CampaignTimeline } from '@/types/campaign-types';
+import { supabase } from '@/integrations/supabase/client';
+import { generateAIQuestion, getFallbackQuestion } from '@/services/campaignConversationAI';
 
 export type ConversationStage = 
   | 'idea' 
@@ -43,6 +45,7 @@ interface ConversationState {
   stage: ConversationStage;
   collectedData: EnhancedCampaignData;
   messages: CampaignConversationMessage[];
+  isLoadingAI: boolean;
 }
 
 const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaignData): string => {
@@ -119,7 +122,8 @@ export const useCampaignConversation = (initialMessage?: string) => {
       return {
         stage: 'audience',
         collectedData: { idea: initialMessage },
-        messages: initialMessages
+        messages: initialMessages,
+        isLoadingAI: false
       };
     }
     
@@ -133,7 +137,8 @@ export const useCampaignConversation = (initialMessage?: string) => {
     return {
       stage: 'idea',
       collectedData: {},
-      messages: initialMessages
+      messages: initialMessages,
+      isLoadingAI: false
     };
   });
 
@@ -146,9 +151,10 @@ export const useCampaignConversation = (initialMessage?: string) => {
     }
   }, [state.messages]);
 
-  const processUserResponse = useCallback((message: string) => {
+  const processUserResponse = useCallback(async (message: string) => {
     console.log('[Campaign] Processing user response:', message);
     
+    // First, add user message and update collected data
     setState(prev => {
       console.log('[Campaign] Current stage:', prev.stage);
       console.log('[Campaign] Current messages count:', prev.messages.length);
@@ -245,28 +251,82 @@ export const useCampaignConversation = (initialMessage?: string) => {
         timestamp: new Date()
       };
       
-      // Generate AI question for next stage
-      const aiQuestion = generateDynamicQuestion(nextStage, newData);
-      console.log('[Campaign] Generated AI question (first 100 chars):', aiQuestion.substring(0, 100));
-      
-      const aiMessage: CampaignConversationMessage = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: aiQuestion,
-        timestamp: new Date()
-      };
-      
-      const updatedMessages = [...prev.messages, userMessage, aiMessage];
-      console.log('[Campaign] Updated messages count:', updatedMessages.length);
-      
       return {
         ...prev,
         collectedData: newData,
         stage: nextStage,
-        messages: updatedMessages
+        messages: [...prev.messages, userMessage],
+        isLoadingAI: true
       };
     });
-  }, []);
+
+    // Then, generate AI response
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get current state for AI generation
+      const currentState = state;
+      const conversationHistory = currentState.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      let aiQuestion: string;
+      
+      try {
+        // Try to generate AI question
+        aiQuestion = await generateAIQuestion(
+          currentState.stage,
+          currentState.collectedData,
+          conversationHistory,
+          user.id
+        );
+      } catch (aiError) {
+        console.warn('[Campaign] AI generation failed, using fallback:', aiError);
+        // Fallback to static question
+        aiQuestion = getFallbackQuestion(currentState.stage, currentState.collectedData);
+      }
+
+      console.log('[Campaign] Generated question (first 100 chars):', aiQuestion.substring(0, 100));
+
+      // Add AI message
+      setState(prev => {
+        const aiMessage: CampaignConversationMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: aiQuestion,
+          timestamp: new Date()
+        };
+
+        return {
+          ...prev,
+          messages: [...prev.messages, aiMessage],
+          isLoadingAI: false
+        };
+      });
+    } catch (error) {
+      console.error('[Campaign] Error generating AI response:', error);
+      
+      // Add fallback message
+      setState(prev => {
+        const fallbackMessage: CampaignConversationMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: getFallbackQuestion(prev.stage, prev.collectedData),
+          timestamp: new Date()
+        };
+
+        return {
+          ...prev,
+          messages: [...prev.messages, fallbackMessage],
+          isLoadingAI: false
+        };
+      });
+    }
+  }, [state]);
 
   const handleQuickReply = useCallback((value: string) => {
     console.log('[Campaign] Quick reply selected:', value);
@@ -343,6 +403,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
     processUserResponse,
     handleQuickReply,
     getCampaignInput,
-    isComplete: state.stage === 'complete'
+    isComplete: state.stage === 'complete',
+    isLoading: state.isLoadingAI
   };
 };
