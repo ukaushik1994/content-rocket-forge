@@ -13,7 +13,7 @@ import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignStrategies } from '@/hooks/useCampaignStrategies';
 import { useCampaigns } from '@/hooks/useCampaigns';
-import { CampaignStrategy, CampaignInput as CampaignInputType } from '@/types/campaign-types';
+import { CampaignStrategy, CampaignInput as CampaignInputType, CampaignStrategySummary } from '@/types/campaign-types';
 import { CampaignAsset } from '@/types/asset-types';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,7 @@ const Campaigns = () => {
     fetchSolution();
   }, [strategy, currentInput]);
 
-  const handleGenerateStrategies = async (input: CampaignInputType) => {
+  const handleGenerateStrategies = async (input: CampaignInputType, selectedSummary?: CampaignStrategySummary) => {
     if (!user) {
       toast.error('Please sign in to generate campaigns');
       return;
@@ -102,7 +102,7 @@ const Campaigns = () => {
         industry: companyData.industry,
       } : undefined;
 
-      const strategies = await generateStrategies(input, user.id);
+      const strategies = await generateStrategies(input, user.id, selectedSummary);
       
       if (strategies && strategies.length > 0) {
         setStrategy(strategies[0]);

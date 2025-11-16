@@ -5,15 +5,16 @@ import { Progress } from '@/components/ui/progress';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { MessageInput } from '@/components/ai-chat/MessageInput';
 import { CampaignMessageBubble } from './CampaignMessageBubble';
+import { StrategySummaryCards } from './StrategySummaryCards';
 import { useCampaignConversation } from '@/hooks/useCampaignConversation';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { CampaignInput as CampaignInputType } from '@/types/campaign-types';
+import { CampaignInput as CampaignInputType, CampaignStrategySummary } from '@/types/campaign-types';
 import { ArrowLeft, Target, Users, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface CampaignChatInterfaceProps {
   initialMessage?: string;
-  onComplete: (input: CampaignInputType) => void;
+  onComplete: (input: CampaignInputType, selectedSummary?: CampaignStrategySummary) => void;
   onCancel: () => void;
 }
 
@@ -30,7 +31,12 @@ export function CampaignChatInterface({
     handleQuickReply,
     getCampaignInput,
     isComplete,
-    isLoading
+    isLoading,
+    strategySummaries,
+    selectedSummaryId,
+    selectSummary,
+    regenerateSummaries,
+    goBackToStage
   } = useCampaignConversation(initialMessage);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -55,13 +61,14 @@ export function CampaignChatInterface({
   useEffect(() => {
     if (isComplete) {
       const input = getCampaignInput();
+      const selectedSummary = strategySummaries.find(s => s.id === selectedSummaryId);
       if (input) {
         setTimeout(() => {
-          onComplete(input);
+          onComplete(input, selectedSummary);
         }, 1500);
       }
     }
-  }, [isComplete, getCampaignInput, onComplete]);
+  }, [isComplete, getCampaignInput, onComplete, selectedSummaryId, strategySummaries]);
 
   const handleSendMessage = (message: string) => {
     processUserResponse(message);
@@ -137,8 +144,26 @@ export function CampaignChatInterface({
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Strategy Summary Selection */}
+        {stage === 'strategy-selection' && strategySummaries.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="py-6"
+          >
+            <StrategySummaryCards
+              summaries={strategySummaries}
+              selectedId={selectedSummaryId}
+              onSelect={selectSummary}
+              onRegenerate={regenerateSummaries}
+              onEditAnswers={() => goBackToStage('resources')}
+              isLoading={isLoading}
+            />
+          </motion.div>
+        )}
+
         {/* Quick Reply Buttons */}
-        {!isComplete && (stage === 'goal' || stage === 'timeline') && (
+        {!isComplete && stage !== 'strategy-selection' && (stage === 'goal' || stage === 'timeline') && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -163,7 +188,7 @@ export function CampaignChatInterface({
         )}
 
         {/* Message Input */}
-        {!isComplete && (
+        {!isComplete && stage !== 'strategy-selection' && (
           <MessageInput
             onSendMessage={handleSendMessage}
             isLoading={isLoading}

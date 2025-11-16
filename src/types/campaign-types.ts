@@ -113,6 +113,19 @@ export interface PostingSchedule {
 export type CampaignGoal = 'awareness' | 'conversion' | 'engagement' | 'education';
 export type CampaignTimeline = '1-week' | '2-week' | '4-week' | 'ongoing';
 
+export interface CampaignStrategySummary {
+  id: string;
+  title: string; // Short, catchy title (5-8 words max)
+  description: string; // 1-2 sentences max
+  contentMix: Array<{
+    formatId: string;
+    count: number;
+  }>;
+  expectedOutcome: string; // What it might achieve (1 sentence)
+  focus: 'awareness' | 'conversion' | 'engagement' | 'education'; // Primary focus
+  effortLevel: 'low' | 'medium' | 'high';
+}
+
 export type CampaignStatus = 
   | 'draft'       // Just created, no strategy yet
   | 'planned'     // Strategy generated, not started
