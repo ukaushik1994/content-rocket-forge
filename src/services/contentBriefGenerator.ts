@@ -8,131 +8,121 @@ export async function generateContentBriefs(
   formatItem: ContentFormatCount,
   strategy: CampaignStrategy,
   solutionData: any | null,
-  userId: string
+  userId: string,
+  onProgress?: (current: number, total: number) => void
 ): Promise<ContentBrief[]> {
   
-  const briefs: ContentBrief[] = [];
+  console.log(`📝 [Brief Generator] Starting generation for ${formatItem.count} ${formatItem.formatId} pieces`);
   
-  // Generate a brief for each piece of this format
-  for (let i = 0; i < formatItem.count; i++) {
-    const brief = await generateSingleBrief(
-      formatItem.formatId,
-      i + 1,
-      formatItem.count,
-      strategy,
-      solutionData,
-      userId
-    );
-    briefs.push(brief);
-  }
-  
-  return briefs;
-}
-
-/**
- * Generates a single content brief
- */
-async function generateSingleBrief(
-  formatId: string,
-  pieceNumber: number,
-  totalPieces: number,
-  strategy: CampaignStrategy,
-  solutionData: any | null,
-  userId: string
-): Promise<ContentBrief> {
-  
-  // Build context for AI
-  const context = {
-    format: formatId,
-    pieceNumber,
-    totalPieces,
-    campaignTitle: strategy.title,
-    campaignDescription: strategy.description,
-    targetAudience: strategy.targetAudience,
-    goal: strategy.expectedEngagement,
-    solution: solutionData ? {
-      name: solutionData.name,
-      description: solutionData.short_description || solutionData.description,
-      features: solutionData.features,
-      benefits: solutionData.benefits,
-      targetAudience: solutionData.target_audience
-    } : null
-  };
-
-  const systemPrompt = `You are an expert content strategist creating detailed briefs.
-  
-Generate a content brief with:
-- 3-5 title suggestions (specific and compelling)
-- 1 primary keyword (highly relevant)
-- 5-7 LSI keywords (semantic variations)
-- Content angle/hook (unique perspective)
-- Recommended CTA (clear action)
-- Target word count (appropriate for format)
-- SEO metadata (meta title, meta description)
-- Difficulty rating (easy/medium/hard)
-- SERP opportunity score (0-100, higher = better ranking potential)
-
-Format: ${formatId}
-Campaign: ${strategy.title}
-Target Audience: ${strategy.targetAudience || 'Not specified'}
-Solution: ${solutionData ? solutionData.name : 'None'}
-
-Return ONLY a JSON object with this structure:
-{
-  "title": "Main title suggestion",
-  "description": "Brief description of what this content will cover",
-  "keywords": ["primary keyword", "secondary 1", "secondary 2", "..."],
-  "metaTitle": "SEO-optimized meta title (60 chars max)",
-  "metaDescription": "SEO-optimized meta description (160 chars max)",
-  "targetWordCount": 1200,
-  "difficulty": "medium",
-  "serpOpportunity": 75
-}`;
-
   try {
-    const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+    // Call the edge function to generate all briefs at once
+    const { data, error } = await supabase.functions.invoke('generate-campaign-briefs', {
       body: {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate brief for piece #${pieceNumber} of ${totalPieces}` }
-        ],
-        userId,
-        extractJson: true
+        formatId: formatItem.formatId,
+        count: formatItem.count,
+        strategy: {
+          title: strategy.title,
+          description: strategy.description,
+          targetAudience: strategy.targetAudience,
+          expectedEngagement: strategy.expectedEngagement
+        },
+        solutionData,
+        userId
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('📝 [Brief Generator] Edge function error:', error);
+      throw error;
+    }
 
-    const briefData = typeof data.content === 'string' 
-      ? JSON.parse(data.content) 
-      : data.content;
-
-    return {
-      title: briefData.title || `${formatId} #${pieceNumber}`,
-      description: briefData.description || 'Content description',
-      keywords: briefData.keywords || [],
-      metaTitle: briefData.metaTitle || briefData.title,
-      metaDescription: briefData.metaDescription || briefData.description,
-      targetWordCount: briefData.targetWordCount || 800,
-      difficulty: briefData.difficulty || 'medium',
-      serpOpportunity: briefData.serpOpportunity || 50
-    };
-
-  } catch (error) {
-    console.error('Failed to generate brief:', error);
+    const briefs = data.briefs as ContentBrief[];
     
-    // Fallback brief
-    return {
-      title: `${formatId} #${pieceNumber}`,
-      description: `Content piece for ${strategy.title}`,
-      keywords: [strategy.targetAudience || 'general'],
-      metaTitle: `${formatId} | ${strategy.title}`,
-      metaDescription: strategy.description.substring(0, 160),
-      targetWordCount: getDefaultWordCount(formatId),
-      difficulty: 'medium',
-      serpOpportunity: 50
-    };
+    console.log(`📝 [Brief Generator] ✓ Generated ${briefs.length} briefs in ${data.timing?.totalMs}ms`);
+    
+    // Report progress
+    if (onProgress) {
+      onProgress(briefs.length, formatItem.count);
+    }
+    
+    // Validate briefs
+    const validatedBriefs = briefs.map((brief, index) => validateBrief(brief, formatItem.formatId, index));
+    
+    return validatedBriefs;
+
+  } catch (error: any) {
+    console.error('📝 [Brief Generator] Failed to generate briefs:', error);
+    
+    // Handle specific error types
+    if (error.message?.includes('429')) {
+      console.warn('📝 [Brief Generator] Rate limit exceeded, using fallback briefs');
+    } else if (error.message?.includes('402')) {
+      console.warn('📝 [Brief Generator] Payment required, using fallback briefs');
+    }
+    
+    // Generate fallback briefs
+    const fallbackBriefs: ContentBrief[] = [];
+    for (let i = 0; i < formatItem.count; i++) {
+      fallbackBriefs.push(generateFallbackBrief(formatItem.formatId, i + 1, strategy));
+    }
+    
+    return fallbackBriefs;
   }
+}
+
+/**
+ * Validates and enriches a brief with defaults
+ */
+function validateBrief(brief: ContentBrief, formatId: string, index: number): ContentBrief {
+  const isValid = !!(
+    brief.title &&
+    brief.description &&
+    brief.keywords?.length > 0 &&
+    brief.targetWordCount > 0 &&
+    brief.metaTitle &&
+    brief.metaDescription
+  );
+
+  if (!isValid) {
+    console.warn(`📝 [Brief Validator] Brief ${index + 1} incomplete, applying defaults`);
+  }
+
+  return {
+    title: brief.title || `${formatId} Piece #${index + 1}`,
+    description: brief.description || 'Content description',
+    keywords: Array.isArray(brief.keywords) && brief.keywords.length > 0 
+      ? brief.keywords 
+      : ['content'],
+    metaTitle: brief.metaTitle || brief.title || `${formatId} Content`,
+    metaDescription: brief.metaDescription || brief.description || 'Content description',
+    targetWordCount: brief.targetWordCount > 0 ? brief.targetWordCount : getDefaultWordCount(formatId),
+    difficulty: ['easy', 'medium', 'hard'].includes(brief.difficulty as string) 
+      ? brief.difficulty 
+      : 'medium',
+    serpOpportunity: typeof brief.serpOpportunity === 'number' 
+      ? Math.min(100, Math.max(0, brief.serpOpportunity))
+      : 50
+  };
+}
+
+/**
+ * Generates a fallback brief when AI generation fails
+ */
+function generateFallbackBrief(
+  formatId: string,
+  pieceNumber: number,
+  strategy: CampaignStrategy
+): ContentBrief {
+  return {
+    title: `${formatId} Content Piece #${pieceNumber}`,
+    description: `Content piece for ${strategy.title}`,
+    keywords: [strategy.targetAudience || 'general'],
+    metaTitle: `${formatId} | ${strategy.title}`,
+    metaDescription: strategy.description.substring(0, 160),
+    targetWordCount: getDefaultWordCount(formatId),
+    difficulty: 'medium',
+    serpOpportunity: 50
+  };
 }
 
 /**
