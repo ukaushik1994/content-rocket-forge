@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { CampaignInput, CampaignGoal, CampaignTimeline } from '@/types/campaign-types';
 
 export type ConversationStage = 
@@ -137,28 +137,25 @@ export const useCampaignConversation = (initialMessage?: string) => {
     };
   });
 
-  const addMessage = useCallback((role: 'user' | 'assistant', content: string) => {
-    const newMessage: CampaignConversationMessage = {
-      id: crypto.randomUUID(),
-      role,
-      content,
-      timestamp: new Date()
-    };
-    
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, newMessage]
-    }));
-  }, []);
+  // State persistence debug logging
+  useEffect(() => {
+    console.log('[Campaign State] Messages count:', state.messages.length);
+    if (state.messages.length > 0) {
+      const lastMsg = state.messages[state.messages.length - 1];
+      console.log('[Campaign State] Last message:', lastMsg.role, lastMsg.content.substring(0, 30));
+    }
+  }, [state.messages]);
 
   const processUserResponse = useCallback((message: string) => {
-    // Add user message
-    addMessage('user', message);
-
+    console.log('[Campaign] Processing user response:', message);
+    
     setState(prev => {
+      console.log('[Campaign] Current stage:', prev.stage);
+      console.log('[Campaign] Current messages count:', prev.messages.length);
+      
       const newData = { ...prev.collectedData };
       let nextStage: ConversationStage = prev.stage;
-
+      
       // Process based on current stage
       switch (prev.stage) {
         case 'idea':
@@ -173,7 +170,6 @@ export const useCampaignConversation = (initialMessage?: string) => {
         
         case 'market-context':
           newData.competitors = message;
-          // Extract market context from the response
           newData.marketContext = message;
           nextStage = 'unique-value';
           break;
@@ -189,7 +185,6 @@ export const useCampaignConversation = (initialMessage?: string) => {
           break;
         
         case 'audience-details':
-          // Parse audience details
           const audienceText = message.toLowerCase();
           if (audienceText.includes('manager') || audienceText.includes('executive') || audienceText.includes('director')) {
             newData.audienceRoles = message;
@@ -199,7 +194,6 @@ export const useCampaignConversation = (initialMessage?: string) => {
           break;
         
         case 'goal':
-          // Parse goal from message
           const goalLower = message.toLowerCase();
           if (goalLower.includes('awareness') || goalLower.includes('brand')) {
             newData.goal = 'awareness';
@@ -210,7 +204,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
           } else if (goalLower.includes('education') || goalLower.includes('educate')) {
             newData.goal = 'education';
           } else {
-            newData.goal = 'awareness'; // Default
+            newData.goal = 'awareness';
           }
           nextStage = 'success-metrics';
           break;
@@ -221,7 +215,6 @@ export const useCampaignConversation = (initialMessage?: string) => {
           break;
         
         case 'timeline':
-          // Parse timeline from message
           const timelineLower = message.toLowerCase();
           if (timelineLower.includes('1 week') || timelineLower.includes('one week') || timelineLower.includes('7 days')) {
             newData.timeline = '1-week';
@@ -230,7 +223,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
           } else if (timelineLower.includes('ongoing') || timelineLower.includes('continuous')) {
             newData.timeline = 'ongoing';
           } else {
-            newData.timeline = '4-week'; // Default
+            newData.timeline = '4-week';
           }
           nextStage = 'resources';
           break;
@@ -241,29 +234,46 @@ export const useCampaignConversation = (initialMessage?: string) => {
           nextStage = 'complete';
           break;
       }
-
+      
+      console.log('[Campaign] Next stage:', nextStage);
+      
+      // Create user message
+      const userMessage: CampaignConversationMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: message,
+        timestamp: new Date()
+      };
+      
+      // Generate AI question for next stage
+      const aiQuestion = generateDynamicQuestion(nextStage, newData);
+      console.log('[Campaign] Generated AI question (first 100 chars):', aiQuestion.substring(0, 100));
+      
+      const aiMessage: CampaignConversationMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: aiQuestion,
+        timestamp: new Date()
+      };
+      
+      const updatedMessages = [...prev.messages, userMessage, aiMessage];
+      console.log('[Campaign] Updated messages count:', updatedMessages.length);
+      
       return {
         ...prev,
+        collectedData: newData,
         stage: nextStage,
-        collectedData: newData
+        messages: updatedMessages
       };
     });
+  }, []);
 
-    // Add AI response after a brief delay
-    setTimeout(() => {
-      setState(prev => {
-        if (prev.stage !== 'complete') {
-          const dynamicQuestion = generateDynamicQuestion(prev.stage, prev.collectedData);
-          addMessage('assistant', dynamicQuestion);
-        } else {
-          addMessage('assistant', generateDynamicQuestion('complete', prev.collectedData));
-        }
-        return prev;
-      });
-    }, 500);
-  }, [addMessage]);
+  const handleQuickReply = useCallback((value: string) => {
+    console.log('[Campaign] Quick reply selected:', value);
+    processUserResponse(value);
+  }, [processUserResponse]);
 
-  const handleQuickReply = useCallback((value: CampaignGoal | CampaignTimeline) => {
+  const handleQuickReplyOld = useCallback((value: CampaignGoal | CampaignTimeline) => {
     let message = '';
     
     if (state.stage === 'goal') {
