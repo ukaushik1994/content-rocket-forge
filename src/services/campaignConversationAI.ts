@@ -199,7 +199,7 @@ export async function generateAIQuestion(
       throw error;
     }
 
-    const aiResponse = data.response || data.text || '';
+    const aiResponse = data.message || data.content || '';
     console.log('[Campaign AI] Generated question (first 100 chars):', aiResponse.substring(0, 100));
     
     return aiResponse;
