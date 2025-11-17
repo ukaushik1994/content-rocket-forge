@@ -1238,30 +1238,6 @@ export type Database = {
           },
         ]
       }
-      campaign_generation_limits: {
-        Row: {
-          created_at: string | null
-          generation_count: number | null
-          last_reset: string | null
-          user_id: string
-          window_start: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          generation_count?: number | null
-          last_reset?: string | null
-          user_id: string
-          window_start?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          generation_count?: number | null
-          last_reset?: string | null
-          user_id?: string
-          window_start?: string | null
-        }
-        Relationships: []
-      }
       campaigns: {
         Row: {
           created_at: string | null
