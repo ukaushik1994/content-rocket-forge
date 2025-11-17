@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Sparkles, CheckCircle2, AlertCircle, Loader2, Eye, Copy } from 'lucide-react';
+import { X, FileText, Sparkles, CheckCircle2, AlertCircle, Loader2, Eye, Copy, RefreshCw, Trash2, Play } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useContentGeneration } from '@/contexts/ContentGenerationContext';
 import { useCampaignContentGeneration } from '@/hooks/useCampaignContentGeneration';
+import { useContentQueue } from '@/hooks/useContentQueue';
 import { generateContentBriefs } from '@/services/contentBriefGenerator';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ContentBrief } from '@/types/campaign-types';
 import { supabase } from '@/integrations/supabase/client';
+import { Progress } from '@/components/ui/progress';
 
 const formatNames: Record<string, string> = {
   'blog': 'Blog Post',
@@ -27,8 +29,9 @@ const formatNames: Record<string, string> = {
 };
 
 export const ContentGenerationPanel = () => {
-  const { isOpen, closePanel, strategy } = useContentGeneration();
+  const { isOpen, closePanel, strategy, campaignId } = useContentGeneration();
   const { generateContent, generatedItems } = useCampaignContentGeneration();
+  const { queueItems, stats, loading: queueLoading, startProcessing, retryItem, cancelItem, clearCompleted } = useContentQueue(campaignId || null);
   const [briefs, setBriefs] = useState<Map<string, ContentBrief>>(new Map());
   const [loadingBriefs, setLoadingBriefs] = useState(false);
   const [expandedContent, setExpandedContent] = useState<string | null>(null);
