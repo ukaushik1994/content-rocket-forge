@@ -11,6 +11,10 @@ import { ExportCampaignButton } from './ExportCampaignButton';
 import { PublishingPanel } from './PublishingPanel';
 import { CalendarIntegration } from './CalendarIntegration';
 import { PublicationStatusTracker } from './PublicationStatusTracker';
+import { CampaignAnalytics } from './CampaignAnalytics';
+import { PerformanceInsights } from './PerformanceInsights';
+import { CampaignROI } from './CampaignROI';
+import { CampaignComparison } from './CampaignComparison';
 import { useCampaignAutoSave } from '@/hooks/useCampaignAutoSave';
 import { campaignService } from '@/services/campaignService';
 import { toast } from 'sonner';
@@ -58,6 +62,7 @@ export const CampaignBreakdownView = ({
   const totalContentPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
   const [isManualSaving, setIsManualSaving] = useState(false);
   const [showContentLibrary, setShowContentLibrary] = useState(false);
+  const [activeTab, setActiveTab] = useState<'strategy' | 'content' | 'publishing' | 'analytics'>('strategy');
 
   // Auto-save hook
   const { saveStatus, lastSaved } = useCampaignAutoSave({
@@ -156,23 +161,28 @@ export const CampaignBreakdownView = ({
           </div>
           <div className="flex items-center gap-4">
             <SaveIndicator status={saveStatus} lastSaved={lastSaved} />
-            {campaignId && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowContentLibrary(true)}
-                className="gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                View Content Library
+            
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-2 border-l pl-4">
+              <Button variant={activeTab === 'strategy' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('strategy')}>
+                Strategy
               </Button>
-            )}
-            {campaignId && (
-              <ExportCampaignButton 
-                campaignId={campaignId} 
-                campaignName={strategy.title}
-              />
-            )}
+              {campaignId && (
+                <>
+                  <Button variant={activeTab === 'content' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('content')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Content
+                  </Button>
+                  <Button variant={activeTab === 'publishing' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('publishing')}>
+                    Publishing
+                  </Button>
+                  <Button variant={activeTab === 'analytics' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('analytics')}>
+                    📊 Analytics
+                  </Button>
+                  {activeTab === 'content' && <ExportCampaignButton campaignId={campaignId} campaignName={strategy.title} />}
+                </>
+              )}
+            </div>
             {saveStatus === 'error' && (
             <Button
               variant="outline"

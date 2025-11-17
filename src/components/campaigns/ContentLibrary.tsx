@@ -16,7 +16,10 @@ import {
   List,
   TrendingUp,
   Type,
-  Target
+  Target,
+  Eye,
+  MousePointerClick,
+  Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentPreview } from './ContentPreview';
@@ -33,6 +36,14 @@ interface ContentItem {
   meta_description?: string;
   created_at: string;
   updated_at: string;
+  performance_metrics?: {
+    views: number;
+    engagement: number;
+    clicks: number;
+    shares: number;
+    conversions: number;
+    last_updated: string | null;
+  };
 }
 
 interface ContentLibraryProps {
@@ -262,7 +273,8 @@ export const ContentLibrary = ({ campaignId }: ContentLibraryProps) => {
                   className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
                   onClick={() => setSelectedContent({
                     ...item,
-                    keywords: Array.isArray(item.keywords) ? item.keywords.map(k => String(k)) : []
+                    keywords: Array.isArray(item.keywords) ? item.keywords.map(k => String(k)) : [],
+                    performance_metrics: item.performance_metrics as any
                   } as ContentItem)}
                 >
                   <div className="flex items-start justify-between mb-3">
