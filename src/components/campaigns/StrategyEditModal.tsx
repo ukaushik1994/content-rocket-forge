@@ -21,6 +21,8 @@ import { CampaignStrategy, ContentFormatCount } from '@/types/campaign-types';
 import { contentFormats } from '@/components/content-repurposing/formats';
 import { Plus, Minus, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { sanitizeHtml } from '@/utils/inputValidation';
+import { toast } from 'sonner';
 
 interface StrategyEditModalProps {
   open: boolean;
@@ -68,11 +70,12 @@ export function StrategyEditModal({
   };
 
   const updateSchedule = (formatId: string, schedule: string) => {
+    const sanitized = sanitizeHtml(schedule).substring(0, 100);
     setEditedStrategy((prev) => ({
       ...prev,
       contentMix: prev.contentMix.map((item) =>
         item.formatId === formatId
-          ? { ...item, scheduleSuggestion: schedule }
+          ? { ...item, scheduleSuggestion: sanitized }
           : item
       ),
     }));
@@ -88,7 +91,23 @@ export function StrategyEditModal({
   );
 
   const handleSave = () => {
-    onSave(editedStrategy);
+    // Validate minimum content
+    if (totalContent < 3) {
+      toast.error('Strategy must have at least 3 content pieces');
+      return;
+    }
+    
+    // Sanitize all text fields before saving
+    const sanitizedStrategy = {
+      ...editedStrategy,
+      title: sanitizeHtml(editedStrategy.title).substring(0, 200),
+      contentMix: editedStrategy.contentMix.map(item => ({
+        ...item,
+        scheduleSuggestion: sanitizeHtml(item.scheduleSuggestion || '').substring(0, 100)
+      }))
+    };
+    
+    onSave(sanitizedStrategy);
     onOpenChange(false);
   };
 
@@ -110,8 +129,12 @@ export function StrategyEditModal({
               <Input
                 id="title"
                 value={editedStrategy.title}
+                maxLength={200}
                 onChange={(e) =>
-                  setEditedStrategy((prev) => ({ ...prev, title: e.target.value }))
+                  setEditedStrategy((prev) => ({ 
+                    ...prev, 
+                    title: sanitizeHtml(e.target.value).substring(0, 200)
+                  }))
                 }
               />
             </div>

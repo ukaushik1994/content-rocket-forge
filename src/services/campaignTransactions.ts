@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { CampaignStrategy } from '@/types/campaign-types';
 
 export interface CampaignInput {
   idea: string;
@@ -8,14 +9,6 @@ export interface CampaignInput {
   solutionId?: string;
   useSerpData?: boolean;
   useCompetitorData?: boolean;
-}
-
-export interface CampaignStrategy {
-  title: string;
-  description: string;
-  contentTypes: string[];
-  timeline: string;
-  [key: string]: any;
 }
 
 export async function createCampaignAtomic(

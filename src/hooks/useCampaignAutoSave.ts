@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CampaignStrategy, CampaignInput } from '@/types/campaign-types';
 import { campaignService } from '@/services/campaignService';
+import { createCampaignAtomic } from '@/services/campaignTransactions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -76,32 +77,25 @@ export const useCampaignAutoSave = ({
           
           console.log('📊 [Auto-Save] Campaign status maintained as "planned"');
         } else {
-          // Create new campaign
+          // Create new campaign atomically
           const generateCampaignName = (idea: string) => {
             const words = idea.split(' ').slice(0, 5).join(' ');
             return words.length > 50 ? words.substring(0, 47) + '...' : words;
           };
 
-          const saved = await campaignService.saveCampaign(
+          const campaign = await createCampaignAtomic(
             userId,
             generateCampaignName(input.idea),
             input.idea,
+            input,
             strategy
           );
-
-          // Update the campaign with context fields
-          await campaignService.updateCampaign(saved.id, {
-            target_audience: input.targetAudience,
-            goal: input.goal,
-            timeline: input.timeline,
-            status: 'planned',
-          });
           
-          console.log('📊 [Auto-Save] New campaign created with status "planned"');
+          console.log('📊 [Auto-Save] New campaign created atomically with status "planned"');
 
           // Notify parent component that campaign was created
           if (onCampaignCreated) {
-            onCampaignCreated(saved.id);
+            onCampaignCreated(campaign.id);
           }
         }
 

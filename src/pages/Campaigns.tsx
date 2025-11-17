@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { solutionService } from '@/services/solutionService';
 import { campaignService, SavedCampaign } from '@/services/campaignService';
+import { createCampaignAtomic } from '@/services/campaignTransactions';
 import { campaignCleanupService } from '@/services/campaignCleanupService';
 import { generateAssetListFromStrategy } from '@/utils/assetGenerator';
 import { toast } from 'sonner';
@@ -159,14 +160,20 @@ const Campaigns = () => {
     if (!currentCampaignId) {
       setIsSaving(true);
       try {
-        const campaignName = `${currentInput?.idea.slice(0, 50)}${currentInput?.idea && currentInput.idea.length > 50 ? '...' : ''}`;
-        const savedCampaign = await campaignService.saveCampaign(
+        // Create campaign atomically if not exists
+        const generateCampaignName = (idea: string) => {
+          const words = idea.split(' ').slice(0, 5).join(' ');
+          return words.length > 50 ? words.substring(0, 47) + '...' : words;
+        };
+        
+        const campaign = await createCampaignAtomic(
           user.id,
-          campaignName,
+          generateCampaignName(currentInput?.idea || ''),
           currentInput?.idea || '',
+          currentInput || { idea: '' },
           strategy
         );
-        setCurrentCampaignId(savedCampaign.id);
+        setCurrentCampaignId(campaign.id);
         refetchCampaigns();
       } catch (error) {
         console.error('Error saving campaign:', error);
