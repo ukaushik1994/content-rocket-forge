@@ -75,6 +75,114 @@ const CAMPAIGN_STRATEGY_TOOL = {
                 type: "string",
                 enum: ["beginner", "skilled", "expert"],
                 description: "Skill level required. Expert = video/paid ads, Skilled = blog/email/landing pages, Beginner = social media"
+              },
+              totalEffort: {
+                type: "object",
+                description: "Detailed effort breakdown with workflow order",
+                properties: {
+                  hours: { type: "integer", description: "Same as totalHours field" },
+                  complexity: { type: "string", enum: ["beginner", "skilled", "expert"] },
+                  workflowOrder: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "Recommended creation order (formatIds from contentMix)"
+                  }
+                }
+              },
+              audienceIntelligence: {
+                type: "object",
+                description: "Target audience insights based on campaign context",
+                properties: {
+                  personas: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "3-4 buyer personas (e.g., 'CFO at Mid-Market SaaS')"
+                  },
+                  industrySegments: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "2-3 target industries"
+                  },
+                  painPoints: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "3-5 specific pain points this campaign addresses"
+                  },
+                  messagingAngle: { 
+                    type: "string",
+                    description: "1 sentence describing the core messaging approach"
+                  }
+                }
+              },
+              seoIntelligence: {
+                type: "object",
+                description: "SEO insights for content optimization",
+                properties: {
+                  primaryKeyword: { type: "string", description: "Main keyword focus" },
+                  secondaryKeywords: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "5-8 related keywords"
+                  },
+                  avgRankingDifficulty: { 
+                    type: "string", 
+                    enum: ["low", "medium", "high"],
+                    description: "Overall keyword difficulty"
+                  },
+                  expectedSeoImpact: { 
+                    type: "string",
+                    description: "Expected impact (e.g., 'High organic visibility', 'Moderate search traffic')"
+                  },
+                  briefTemplatesAvailable: { 
+                    type: "integer",
+                    description: "Number of content briefs (equals total content pieces from contentMix)"
+                  }
+                }
+              },
+              distributionStrategy: {
+                type: "object",
+                description: "Content distribution and publishing plan",
+                properties: {
+                  channels: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "Distribution channels (e.g., 'LinkedIn', 'Email', 'Blog')"
+                  },
+                  postingCadence: { 
+                    type: "string",
+                    description: "Frequency (e.g., '3x per week', 'Daily')"
+                  },
+                  bestDaysAndTimes: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "Optimal posting times (e.g., 'Tue/Thu 10am EST')"
+                  },
+                  estimatedTrafficLift: { 
+                    type: "string",
+                    description: "Expected traffic increase (e.g., '+40% organic traffic')"
+                  }
+                }
+              },
+              assetRequirements: {
+                type: "object",
+                description: "Assets needed to execute this campaign",
+                properties: {
+                  copyNeeds: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "Copy requirements (e.g., 'Product descriptions', 'Case studies')"
+                  },
+                  visualNeeds: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "Visual/creative needs (e.g., 'Hero images', 'Infographics')"
+                  },
+                  ctaSuggestions: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "3-5 CTA variations (e.g., 'Start Free Trial', 'Book a Demo')"
+                  }
+                }
               }
             },
             required: ["id", "title", "description", "contentMix", "expectedOutcome", "focus", "effortLevel", "totalHours", "complexity"]
@@ -214,7 +322,16 @@ Deno.serve(async (req) => {
             messages: [
               {
                 role: 'system',
-                content: 'You are a campaign strategy expert. Generate a comprehensive campaign strategy with title, description, content types, timeline, target channels, and key messaging.'
+                content: `You are a B2B SaaS marketing strategist. Generate 3-4 distinct, specific campaign strategies based on the user's campaign context.
+
+CRITICAL: For EACH strategy, you MUST generate ALL enriched fields including:
+- totalEffort (with workflow order based on the contentMix)
+- audienceIntelligence (personas, industry segments, pain points, messaging angle)
+- seoIntelligence (primary/secondary keywords, difficulty, impact, brief count)
+- distributionStrategy (channels, posting cadence, best times, traffic lift estimate)
+- assetRequirements (copy needs, visual needs, 3-5 CTA suggestions)
+
+Each strategy should be concrete and actionable, not generic. Focus on the specific solution/product mentioned in the campaign context. Be specific and tactical with all enriched fields.`
               },
               {
                 role: 'user',
