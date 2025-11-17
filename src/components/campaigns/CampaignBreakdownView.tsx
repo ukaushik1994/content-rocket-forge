@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CampaignStrategy, CampaignInput, CampaignStatus } from '@/types/campaign-types';
+import { supabase } from '@/integrations/supabase/client';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
 import { Sparkles, RefreshCw, Save, FileText, Download } from 'lucide-react';
@@ -63,6 +64,7 @@ export const CampaignBreakdownView = ({
   const [isManualSaving, setIsManualSaving] = useState(false);
   const [showContentLibrary, setShowContentLibrary] = useState(false);
   const [activeTab, setActiveTab] = useState<'strategy' | 'content' | 'publishing' | 'analytics'>('strategy');
+  const [contentItems, setContentItems] = useState<any[]>([]);
 
   // Auto-save hook
   const { saveStatus, lastSaved } = useCampaignAutoSave({
@@ -72,6 +74,28 @@ export const CampaignBreakdownView = ({
     userId: userId || '',
     onCampaignCreated,
   });
+
+  // Fetch content items when publishing or content tab is active
+  useEffect(() => {
+    const fetchContentItems = async () => {
+      if (!campaignId || (activeTab !== 'publishing' && activeTab !== 'content')) return;
+      
+      const { data, error } = await supabase
+        .from('content_items')
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching content items:', error);
+        return;
+      }
+      
+      setContentItems(data || []);
+    };
+
+    fetchContentItems();
+  }, [campaignId, activeTab]);
 
   const handleManualSave = async () => {
     if (!userId || !campaignInput) {
@@ -209,84 +233,106 @@ export const CampaignBreakdownView = ({
         </div>
       </div>
 
-        {/* Row 1: Campaign Summary - Full Width */}
-        <TileErrorBoundary tileName="Campaign Summary">
-          <CampaignSummaryTile strategy={strategy} status={campaignStatus} />
-        </TileErrorBoundary>
-      
-      {/* Row 2: Content Mix + Content Effort */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TileErrorBoundary tileName="Content Mix">
-          <ContentMixTile strategy={strategy} />
-        </TileErrorBoundary>
-        <TileErrorBoundary tileName="Content Effort">
-          <ContentEffortTile strategy={strategy} />
-        </TileErrorBoundary>
-      </div>
-      
-      {/* Row 3: Audience Intelligence + SEO Intelligence */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TileErrorBoundary tileName="Audience Intelligence">
-          <AudienceIntelligenceTile strategy={strategy} />
-        </TileErrorBoundary>
-        <TileErrorBoundary tileName="SEO Intelligence">
-          <SeoIntelligenceTile strategy={strategy} />
-        </TileErrorBoundary>
-      </div>
-      
-      {/* Row 4: Distribution Strategy + Asset Requirements */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TileErrorBoundary tileName="Distribution Strategy">
-          <DistributionStrategyTile strategy={strategy} />
-        </TileErrorBoundary>
-        <TileErrorBoundary tileName="Asset Requirements">
-          <AssetRequirementsTile strategy={strategy} />
-        </TileErrorBoundary>
-      </div>
-      
-      {/* Row 5: Optional Add-ons - Full Width */}
-      <TileErrorBoundary tileName="Optional Add-ons">
-        <OptionalAddonsTile strategy={strategy} />
-      </TileErrorBoundary>
-      
-      {/* Row 6: Generate Assets CTA - Centered */}
-      <div className="flex flex-col items-center gap-4 py-8">
-        <Button
-          size="lg"
-          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-opacity px-12 py-6 text-lg font-semibold shadow-xl"
-          onClick={onGenerateAssets}
-          disabled={isGenerating}
-        >
-          <Sparkles className="h-5 w-5 mr-2" />
-          {isGenerating ? 'Generating Assets...' : 'Generate Campaign Assets'}
-        </Button>
-        
-        <p className="text-sm text-muted-foreground text-center">
-          This will create {totalContentPieces} content pieces and a full execution plan
-        </p>
-      </div>
-
-      {/* Publishing & Distribution Section */}
-      {campaignId && (
-        <div className="mt-8 bg-accent/20 border-2 border-accent rounded-lg p-6">
-          <h3 className="text-xl font-semibold mb-4">Publishing & Distribution</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <PublishingPanel
-                campaignId={campaignId}
-                contentItems={[]}
-                onPublishComplete={() => {}}
-              />
-              <CalendarIntegration
-                campaignId={campaignId}
-                contentItems={[]}
-                onScheduleComplete={() => {}}
-              />
+        {/* Strategy Tab */}
+        {activeTab === 'strategy' && (
+          <>
+            {/* Row 1: Campaign Summary - Full Width */}
+            <TileErrorBoundary tileName="Campaign Summary">
+              <CampaignSummaryTile strategy={strategy} status={campaignStatus} />
+            </TileErrorBoundary>
+          
+            {/* Row 2: Content Mix + Content Effort */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <TileErrorBoundary tileName="Content Mix">
+                <ContentMixTile strategy={strategy} />
+              </TileErrorBoundary>
+              <TileErrorBoundary tileName="Content Effort">
+                <ContentEffortTile strategy={strategy} />
+              </TileErrorBoundary>
             </div>
-            <PublicationStatusTracker contentItems={[]} />
+            
+            {/* Row 3: Audience Intelligence + SEO Intelligence */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <TileErrorBoundary tileName="Audience Intelligence">
+                <AudienceIntelligenceTile strategy={strategy} />
+              </TileErrorBoundary>
+              <TileErrorBoundary tileName="SEO Intelligence">
+                <SeoIntelligenceTile strategy={strategy} />
+              </TileErrorBoundary>
+            </div>
+            
+            {/* Row 4: Distribution Strategy + Asset Requirements */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <TileErrorBoundary tileName="Distribution Strategy">
+                <DistributionStrategyTile strategy={strategy} />
+              </TileErrorBoundary>
+              <TileErrorBoundary tileName="Asset Requirements">
+                <AssetRequirementsTile strategy={strategy} />
+              </TileErrorBoundary>
+            </div>
+            
+            {/* Row 5: Optional Add-ons - Full Width */}
+            <TileErrorBoundary tileName="Optional Add-ons">
+              <OptionalAddonsTile strategy={strategy} />
+            </TileErrorBoundary>
+            
+            {/* Row 6: Generate Assets CTA - Centered */}
+            <div className="flex flex-col items-center gap-4 py-8">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-opacity px-12 py-6 text-lg font-semibold shadow-xl"
+                onClick={onGenerateAssets}
+                disabled={isGenerating}
+              >
+                <Sparkles className="h-5 w-5 mr-2" />
+                {isGenerating ? 'Generating Assets...' : 'Generate Campaign Assets'}
+              </Button>
+              
+              <p className="text-sm text-muted-foreground text-center">
+                This will create {totalContentPieces} content pieces and a full execution plan
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* Content Tab */}
+        {activeTab === 'content' && campaignId && (
+          <ContentLibrary campaignId={campaignId} />
+        )}
+
+        {/* Publishing Tab */}
+        {activeTab === 'publishing' && campaignId && (
+          <div className="bg-accent/20 border-2 border-accent rounded-lg p-6">
+            <h3 className="text-xl font-semibold mb-4">Publishing & Distribution</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <PublishingPanel
+                  campaignId={campaignId}
+                  contentItems={contentItems}
+                  onPublishComplete={() => {}}
+                />
+                <CalendarIntegration
+                  campaignId={campaignId}
+                  contentItems={contentItems}
+                  onScheduleComplete={() => {}}
+                />
+              </div>
+              <PublicationStatusTracker contentItems={contentItems} />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && campaignId && (
+          <div className="space-y-6">
+            <CampaignAnalytics campaignId={campaignId} />
+            <PerformanceInsights campaignId={campaignId} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <CampaignROI campaignId={campaignId} />
+              <CampaignComparison />
+            </div>
+          </div>
+        )}
     </div>
   )}
 </ContentGenerationProvider>
