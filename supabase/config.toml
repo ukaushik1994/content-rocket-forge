@@ -119,6 +119,9 @@ verify_jwt = true
 [functions.migrate-strategy-proposals]
 verify_jwt = true
 
+[functions.process-content-queue]
+verify_jwt = false
+
 [functions.test-wordpress-connection]
 verify_jwt = true
 
