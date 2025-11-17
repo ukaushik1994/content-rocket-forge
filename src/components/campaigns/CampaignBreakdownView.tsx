@@ -3,7 +3,7 @@ import { CampaignStrategy, CampaignInput, CampaignStatus } from '@/types/campaig
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RefreshCw, Save, FileText, Download } from 'lucide-react';
+import { Sparkles, RefreshCw, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { SaveIndicator } from './SaveIndicator';
@@ -13,10 +13,6 @@ import { ExportCampaignButton } from './ExportCampaignButton';
 import { PublishingPanel } from './PublishingPanel';
 import { CalendarIntegration } from './CalendarIntegration';
 import { PublicationStatusTracker } from './PublicationStatusTracker';
-import { CampaignAnalytics } from './CampaignAnalytics';
-import { PerformanceInsights } from './PerformanceInsights';
-import { CampaignROI } from './CampaignROI';
-import { CampaignComparison } from './CampaignComparison';
 import { useCampaignAutoSave } from '@/hooks/useCampaignAutoSave';
 import { campaignService } from '@/services/campaignService';
 import { createCampaignAtomic } from '@/services/campaignTransactions';
@@ -282,6 +278,26 @@ export const CampaignBreakdownView = ({
               <p className="text-sm text-muted-foreground text-center">
                 This will create {totalContentPieces} content pieces and a full execution plan
               </p>
+              
+              {/* Navigation Links */}
+              {campaignId && (
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/repository?tab=campaigns')}
+                  >
+                    View Generated Content →
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/analytics?tab=campaigns')}
+                  >
+                    View Campaign Analytics →
+                  </Button>
+                </div>
+              )}
             </div>
           </>
         )}
