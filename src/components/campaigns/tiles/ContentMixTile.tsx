@@ -50,7 +50,7 @@ const SeoIndicator = ({ level }: { level?: string }) => {
   );
 };
 
-export const ContentMixTile = ({ strategy }: ContentMixTileProps) => {
+export const ContentMixTile = ({ strategy, campaignId }: ContentMixTileProps) => {
   const { openPanel } = useContentGeneration();
   const totalPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
 
