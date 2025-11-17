@@ -813,28 +813,84 @@ serve(async (req) => {
       console.log('🎯 Campaign strategy fast path - minimal context, direct tool execution');
       console.log('🎯 Messages:', messages.length, 'messages');
       
-      // Queue AI call with campaign strategy tool only
-      const response = await aiRequestQueue.enqueue(async () => {
-        console.log('🎯 Calling AI with campaign strategy tool...');
-        return await makeAICallWithRetry(
-          provider,
-          messages,
-          [CAMPAIGN_STRATEGY_TOOL],
-          3,
-          false
+      // Retry logic with exponential backoff
+      let aiProxyResult = null;
+      let aiProxyError = null;
+      const maxRetries = 3;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        console.log(`🎯 AI call attempt ${attempt}/${maxRetries} with campaign strategy tool`);
+        
+        const result = await aiRequestQueue.enqueue(() =>
+          supabase.functions.invoke('ai-proxy', {
+            body: {
+              service: provider.provider,
+              endpoint: 'chat',
+              apiKey: provider.api_key,
+              params: {
+                model: provider.preferred_model,
+                messages: messages,
+                tools: [CAMPAIGN_STRATEGY_TOOL],
+                tool_choice: { type: "function", function: { name: "generate_campaign_strategies" } },
+                temperature: 0.7,
+                max_tokens: 4096,
+              }
+            }
+          })
         );
-      });
+        
+        if (!result.error && result.data?.success) {
+          aiProxyResult = result.data;
+          aiProxyError = null;
+          console.log(`✅ AI call succeeded on attempt ${attempt}`);
+          break;
+        }
+        
+        aiProxyError = result.error || result.data?.error;
+        
+        // Handle rate limiting with exponential backoff
+        const errorMsg = (typeof aiProxyError === 'string' ? aiProxyError : aiProxyError?.message) || '';
+        if (errorMsg.includes('429') || 
+            errorMsg.toLowerCase().includes('rate limit') ||
+            errorMsg.includes('Please try again')) {
+          console.warn(`⏰ Rate limit hit, attempt ${attempt}/${maxRetries}`);
+          if (attempt < maxRetries) {
+            const waitTime = 5000 * attempt;
+            console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+            await new Promise(r => setTimeout(r, waitTime));
+            continue;
+          }
+        } else if (attempt < maxRetries) {
+          const waitTime = 2000 * attempt;
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          await new Promise(r => setTimeout(r, waitTime));
+        }
+      }
+      
+      if (aiProxyError || !aiProxyResult?.success) {
+        console.error("🎯❌ Campaign strategy generation failed after all retries:", aiProxyError);
+        return new Response(JSON.stringify({ 
+          error: "Failed to generate campaign strategies",
+          details: typeof aiProxyError === 'string' ? aiProxyError : (aiProxyError?.message || aiProxyResult?.error),
+          message: "AI service temporarily unavailable. Please try again in a moment."
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      // Extract tool calls from response
+      const data = aiProxyResult.data;
+      const toolCalls = data?.choices?.[0]?.message?.tool_calls;
       
       console.log('🎯 AI response received:', {
-        hasResponse: !!response,
-        hasChoices: !!response?.choices,
-        choicesLength: response?.choices?.length || 0,
-        hasMessage: !!response?.choices?.[0]?.message,
-        hasToolCalls: !!response?.choices?.[0]?.message?.tool_calls
+        hasData: !!data,
+        hasChoices: !!data?.choices,
+        choicesLength: data?.choices?.length || 0,
+        hasMessage: !!data?.choices?.[0]?.message,
+        hasToolCalls: !!toolCalls
       });
       
-      // Return raw tool call data directly
-      const toolCalls = response?.choices?.[0]?.message?.tool_calls;
       if (toolCalls && toolCalls.length > 0) {
         console.log('🎯✅ Returning campaign strategy tool data:', {
           toolCallCount: toolCalls.length,
@@ -867,11 +923,11 @@ serve(async (req) => {
       
       // Fallback if no tool call (shouldn't happen)
       console.error('🎯❌ No tool call in campaign strategy response');
-      console.error('🎯 Response structure:', JSON.stringify(response, null, 2));
+      console.error('🎯 Response data:', JSON.stringify(data, null, 2));
       return new Response(JSON.stringify({ 
         error: 'Failed to generate campaign strategies',
         details: 'AI did not return a tool call',
-        response: response
+        response: data
       }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
