@@ -248,68 +248,37 @@ Example structure:
 IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs with complete SEO metadata. Make topics actionable and specific, not generic.`;
       const userMessage = `Generate 1 comprehensive campaign strategy for: "${input.idea}"${solutionContext}${serpContext}`;
 
-      let aiResponse = null;
-      const maxRetries = 3;
+      console.log(`📊 [Campaign Strategies] Generating strategy...`);
       
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          console.log(`📊 [Campaign Strategies] 🔄 Attempt ${attempt}/${maxRetries} to generate strategies`);
-          
-          // Use new secure edge function with retry logic
-          const { data, error } = await retryWithBackoff(
-            () => supabase.functions.invoke('generate-campaign-strategy', {
-              body: {
-                input: sanitizedInput,
-                userId,
-                selectedSummary,
-                serpContext,
-                solutionContext: solutionContext ? { solution: solutionContext } : undefined,
-                competitorContext: undefined
-              }
-            }),
-            { maxRetries: 3, initialDelay: 2000 }
-          );
-          
-          console.log(`📊 [Campaign Strategies] Response received:`, {
-            hasData: !!data,
-            hasError: !!error,
-            dataKeys: data ? Object.keys(data) : [],
-            errorMessage: error?.message
-          });
-          
-          if (!error && data?.strategy) {
-            aiResponse = data;
-            console.log(`📊 [Campaign Strategies] ✅ Strategy generated successfully`);
-            break;
+      // Use edge function with retry logic (max 3 attempts)
+      const { data, error } = await retryWithBackoff(
+        () => supabase.functions.invoke('generate-campaign-strategy', {
+          body: {
+            input: sanitizedInput,
+            userId,
+            selectedSummary,
+            serpContext,
+            solutionContext: solutionContext ? { solution: solutionContext } : undefined,
+            competitorContext: undefined
           }
-          
-          // Handle rate limiting errors
-          if (error && (error.message?.includes('429') || error.message?.includes('rate limit') || error.message?.includes('Rate limit'))) {
-            console.warn(`📊 [Campaign Strategies] ⏰ Rate limit hit on attempt ${attempt}, waiting before retry...`);
-            if (attempt < maxRetries) {
-              await new Promise(r => setTimeout(r, 5000 * attempt));
-              continue;
-            }
-          }
-          
-          console.error(`📊 [Campaign Strategies] ❌ Error on attempt ${attempt}:`, error);
-          if (attempt < maxRetries) {
-            console.log(`📊 [Campaign Strategies] ⏳ Waiting ${2000 * attempt}ms before retry...`);
-            await new Promise(r => setTimeout(r, 2000 * attempt));
-          }
-        } catch (retryError) {
-          console.error(`📊 [Campaign Strategies] ❌ Attempt ${attempt} exception:`, retryError);
-          if (attempt === maxRetries) {
-            throw new Error('Failed to generate strategies after multiple attempts. Please try again in a moment.');
-          }
-          await new Promise(r => setTimeout(r, 2000 * attempt));
-        }
+        }),
+        { maxRetries: 3, initialDelay: 2000 }
+      );
+      
+      console.log(`📊 [Campaign Strategies] Response received:`, {
+        hasData: !!data,
+        hasError: !!error,
+        dataKeys: data ? Object.keys(data) : [],
+        errorMessage: error?.message
+      });
+      
+      if (error || !data?.strategy) {
+        console.error(`📊 [Campaign Strategies] ❌ Error:`, error);
+        throw new Error(error?.message || 'Failed to generate strategy');
       }
 
-      if (!aiResponse || !aiResponse.strategy) {
-        console.error('📊 [Campaign Strategies] ❌ No AI response after all retries');
-        throw new Error('AI service temporarily unavailable. Please try again in a moment.');
-      }
+      const aiResponse = data;
+      console.log(`📊 [Campaign Strategies] ✅ Strategy generated successfully`);
 
       console.log('📊 [Campaign Strategies] Processing AI response...');
       const rawStrategy = aiResponse.strategy;
