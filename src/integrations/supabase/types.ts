@@ -2302,6 +2302,87 @@ export type Database = {
           },
         ]
       }
+      content_generation_queue: {
+        Row: {
+          brief: Json
+          campaign_context: Json | null
+          campaign_id: string
+          completed_at: string | null
+          content_id: string | null
+          created_at: string
+          error_message: string | null
+          format_id: string
+          id: string
+          max_retries: number | null
+          piece_index: number
+          priority: number | null
+          retry_count: number | null
+          solution_data: Json | null
+          solution_id: string | null
+          started_at: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brief: Json
+          campaign_context?: Json | null
+          campaign_id: string
+          completed_at?: string | null
+          content_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          format_id: string
+          id?: string
+          max_retries?: number | null
+          piece_index: number
+          priority?: number | null
+          retry_count?: number | null
+          solution_data?: Json | null
+          solution_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brief?: Json
+          campaign_context?: Json | null
+          campaign_id?: string
+          completed_at?: string | null
+          content_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          format_id?: string
+          id?: string
+          max_retries?: number | null
+          piece_index?: number
+          priority?: number | null
+          retry_count?: number | null
+          solution_data?: Json | null
+          solution_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_generation_queue_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_generation_queue_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_goals: {
         Row: {
           created_at: string
