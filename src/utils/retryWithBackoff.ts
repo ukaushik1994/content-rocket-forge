@@ -22,13 +22,16 @@ export async function retryWithBackoff<T>(
     } catch (error) {
       lastError = error as Error;
       
-      // Don't retry on authentication or validation errors
+      // Don't retry on authentication, validation, or rate limit errors
       const errorMessage = error?.message?.toLowerCase() || '';
       if (
         errorMessage.includes('auth') || 
         errorMessage.includes('permission') ||
         errorMessage.includes('validation') ||
-        errorMessage.includes('invalid')
+        errorMessage.includes('invalid') ||
+        errorMessage.includes('rate limit') ||
+        errorMessage.includes('quota') ||
+        errorMessage.includes('429')
       ) {
         throw error;
       }

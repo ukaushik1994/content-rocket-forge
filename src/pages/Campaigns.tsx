@@ -112,7 +112,8 @@ const Campaigns = () => {
       }
     } catch (error) {
       console.error('Error generating strategy:', error);
-      toast.error('Failed to generate campaign. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate campaign. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -140,7 +141,8 @@ const Campaigns = () => {
       }
     } catch (error) {
       console.error('Error regenerating strategy:', error);
-      toast.error('Failed to regenerate campaign');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to regenerate campaign';
+      toast.error(errorMessage);
     }
   };
 
