@@ -41,6 +41,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fetch user's configured AI provider
+    const { data: providerData, error: providerError } = await supabase
+      .from('ai_service_providers')
+      .select('provider, api_key, preferred_model')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('priority', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (providerError || !providerData) {
+      return new Response(
+        JSON.stringify({ error: 'No active AI provider configured. Please configure an AI provider in Settings.' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Check rate limiting
     const { data: limitData, error: limitError } = await supabase
       .from('campaign_generation_limits')
@@ -115,53 +135,79 @@ Deno.serve(async (req) => {
       try {
         const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-proxy', {
           body: {
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a campaign strategy expert. Generate a comprehensive campaign strategy with title, description, content types, timeline, target channels, and key messaging.'
-              },
-              {
-                role: 'user',
-                content: contextPrompt
-              }
-            ],
-            tools: [
-              {
-                type: 'function',
-                function: {
-                  name: 'generate_campaign_strategies',
-                  description: 'Generate campaign strategies',
-                  parameters: {
-                    type: 'object',
-                    properties: {
-                      strategies: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            title: { type: 'string' },
-                            description: { type: 'string' },
-                            contentTypes: { type: 'array', items: { type: 'string' } },
-                            timeline: { type: 'string' },
-                            targetChannels: { type: 'array', items: { type: 'string' } },
-                            keyMessaging: { type: 'array', items: { type: 'string' } }
-                          },
-                          required: ['title', 'description', 'contentTypes', 'timeline']
+            service: providerData.provider,
+            endpoint: 'chat',
+            apiKey: providerData.api_key,
+            params: {
+              model: providerData.preferred_model || 'gpt-4',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are a campaign strategy expert. Generate a comprehensive campaign strategy with title, description, content types, timeline, target channels, and key messaging.'
+                },
+                {
+                  role: 'user',
+                  content: contextPrompt
+                }
+              ],
+              tools: [
+                {
+                  type: 'function',
+                  function: {
+                    name: 'generate_campaign_strategies',
+                    description: 'Generate campaign strategies',
+                    parameters: {
+                      type: 'object',
+                      properties: {
+                        strategies: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              title: { type: 'string' },
+                              description: { type: 'string' },
+                              contentTypes: { type: 'array', items: { type: 'string' } },
+                              timeline: { type: 'string' },
+                              targetChannels: { type: 'array', items: { type: 'string' } },
+                              keyMessaging: { type: 'array', items: { type: 'string' } }
+                            },
+                            required: ['title', 'description', 'contentTypes', 'timeline']
+                          }
                         }
-                      }
-                    },
-                    required: ['strategies']
+                      },
+                      required: ['strategies']
+                    }
                   }
                 }
-              }
-            ],
-            tool_choice: { type: 'function', function: { name: 'generate_campaign_strategies' } }
+              ],
+              tool_choice: { type: 'function', function: { name: 'generate_campaign_strategies' } },
+              temperature: 0.7,
+              max_tokens: 4096
+            }
           }
         });
 
         if (aiError) throw aiError;
 
-        const strategy = aiData?.tool_calls?.[0]?.function?.arguments?.strategies?.[0] || aiData;
+        if (!aiData?.success) {
+          throw new Error(aiData?.error || 'AI proxy returned unsuccessful response');
+        }
+
+        // Extract tool calls from the response
+        const toolCalls = aiData?.data?.choices?.[0]?.message?.tool_calls;
+        if (!toolCalls || toolCalls.length === 0) {
+          throw new Error('No tool calls in AI response');
+        }
+
+        // Parse the function arguments
+        const functionArgs = JSON.parse(toolCalls[0].function.arguments);
+        const strategies = functionArgs.strategies;
+
+        if (!strategies || strategies.length === 0) {
+          throw new Error('No strategies generated');
+        }
+
+        const strategy = strategies[0];
 
         // Update rate limit counter
         await supabase.from('campaign_generation_limits').upsert({
@@ -177,10 +223,22 @@ Deno.serve(async (req) => {
 
       } catch (error) {
         lastError = error;
-        console.error(`Attempt ${attempt + 1} failed:`, error);
+        console.error(`❌ Attempt ${attempt + 1} failed:`, {
+          errorName: error?.name,
+          errorMessage: error?.message,
+          aiError: aiError,
+          attempt: attempt + 1
+        });
+        
+        // Don't retry on auth/config errors
+        if (error?.message?.includes('No active AI provider') || 
+            error?.message?.includes('Unauthorized')) {
+          throw error; // Fast fail on config issues
+        }
         
         if (attempt < 2) {
           const delay = Math.pow(2, attempt) * 1000;
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
