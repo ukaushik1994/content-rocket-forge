@@ -3,6 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { AnalyticsHero } from '@/components/analytics/AnalyticsHero';
 import { ContentAnalyticsTab } from '@/components/analytics/ContentAnalyticsTab';
+import { CampaignAnalyticsTab } from '@/components/analytics/CampaignAnalyticsTab';
 import { DrilldownChart } from '@/components/analytics/DrilldownChart';
 import { ContentDetailModal } from '@/components/analytics/ContentDetailModal';
 import { CustomDateRangePicker } from '@/components/analytics/CustomDateRangePicker';
@@ -504,7 +505,7 @@ const Analytics = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <Card className="bg-background/60 backdrop-blur-xl border-border/50">
                   <CardContent className="p-2">
-                    <TabsList className="w-full grid grid-cols-3 gap-1 bg-transparent">
+                    <TabsList className="w-full grid grid-cols-4 gap-1 bg-transparent">
                       <TabsTrigger 
                         value="overview" 
                         className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
@@ -518,6 +519,13 @@ const Analytics = () => {
                       >
                         <FileText className="h-4 w-4" />
                         <span className="font-medium">Content</span>
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="campaigns" 
+                        className="gap-2 py-3 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
+                      >
+                        <Target className="h-4 w-4" />
+                        <span className="font-medium">Campaigns</span>
                       </TabsTrigger>
                       <TabsTrigger 
                         value="performance" 
@@ -536,6 +544,10 @@ const Analytics = () => {
                 
                 <TabsContent value="content">
                   <ContentAnalyticsTab />
+                </TabsContent>
+                
+                <TabsContent value="campaigns">
+                  <CampaignAnalyticsTab />
                 </TabsContent>
                     
                 <TabsContent value="performance">

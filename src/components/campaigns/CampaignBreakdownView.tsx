@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
 import { Sparkles, RefreshCw, Save, FileText, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { SaveIndicator } from './SaveIndicator';
 import { CampaignStatusBadge } from './CampaignStatusBadge';
@@ -60,10 +61,11 @@ export const CampaignBreakdownView = ({
   isGenerating = false,
   isRegenerating = false,
 }: CampaignBreakdownViewProps) => {
+  const navigate = useNavigate();
   const totalContentPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
   const [isManualSaving, setIsManualSaving] = useState(false);
   const [showContentLibrary, setShowContentLibrary] = useState(false);
-  const [activeTab, setActiveTab] = useState<'strategy' | 'content' | 'publishing' | 'analytics'>('strategy');
+  const [activeTab, setActiveTab] = useState<'strategy' | 'publishing'>('strategy');
   const [contentItems, setContentItems] = useState<any[]>([]);
 
   // Auto-save hook
@@ -75,10 +77,10 @@ export const CampaignBreakdownView = ({
     onCampaignCreated,
   });
 
-  // Fetch content items when publishing or content tab is active
+  // Fetch content items when publishing tab is active
   useEffect(() => {
     const fetchContentItems = async () => {
-      if (!campaignId || (activeTab !== 'publishing' && activeTab !== 'content')) return;
+      if (!campaignId || activeTab !== 'publishing') return;
       
       const { data, error } = await supabase
         .from('content_items')
@@ -188,22 +190,14 @@ export const CampaignBreakdownView = ({
             
             {/* Tab Navigation */}
             <div className="flex items-center gap-2 border-l pl-4">
-              <Button variant={activeTab === 'strategy' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('strategy')}>
-                Strategy
-              </Button>
-              {campaignId && (
+              {campaignStatus !== 'draft' && (
                 <>
-                  <Button variant={activeTab === 'content' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('content')}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Content
+                  <Button variant={activeTab === 'strategy' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('strategy')}>
+                    📋 Strategy
                   </Button>
                   <Button variant={activeTab === 'publishing' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('publishing')}>
-                    Publishing
+                    🚀 Publishing
                   </Button>
-                  <Button variant={activeTab === 'analytics' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('analytics')}>
-                    📊 Analytics
-                  </Button>
-                  {activeTab === 'content' && <ExportCampaignButton campaignId={campaignId} campaignName={strategy.title} />}
                 </>
               )}
             </div>
@@ -295,11 +289,6 @@ export const CampaignBreakdownView = ({
           </>
         )}
 
-        {/* Content Tab */}
-        {activeTab === 'content' && campaignId && (
-          <ContentLibrary campaignId={campaignId} />
-        )}
-
         {/* Publishing Tab */}
         {activeTab === 'publishing' && campaignId && (
           <div className="bg-accent/20 border-2 border-accent rounded-lg p-6">
@@ -319,17 +308,21 @@ export const CampaignBreakdownView = ({
               </div>
               <PublicationStatusTracker contentItems={contentItems} />
             </div>
-          </div>
-        )}
-
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && campaignId && (
-          <div className="space-y-6">
-            <CampaignAnalytics campaignId={campaignId} />
-            <PerformanceInsights campaignId={campaignId} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <CampaignROI campaignId={campaignId} />
-              <CampaignComparison />
+            <div className="mt-6 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/repository?tab=campaigns')}
+              >
+                View Generated Content →
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/analytics?tab=campaigns')}
+              >
+                View Campaign Analytics →
+              </Button>
             </div>
           </div>
         )}
