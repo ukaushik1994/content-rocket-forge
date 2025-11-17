@@ -61,27 +61,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check rate limiting
-    const { data: limitData, error: limitError } = await supabase
-      .from('campaign_generation_limits')
-      .select('generation_count, window_start')
-      .eq('user_id', user.id)
-      .single();
-
-    if (limitData) {
-      const windowStart = new Date(limitData.window_start);
-      const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
-      
-      if (windowStart > hourAgo && limitData.generation_count >= 10) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Maximum 10 generations per hour.' }), 
-          {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-    }
+    // Rate limiting handled by external AI/SERP services only
 
     const body = await req.json();
     const { input, selectedSummary, serpContext, solutionContext, competitorContext } = body;
@@ -233,13 +213,6 @@ Deno.serve(async (req) => {
 
         const strategy = strategies[0];
 
-        // Update rate limit counter
-        await supabase.from('campaign_generation_limits').upsert({
-          user_id: user.id,
-          generation_count: (limitData?.generation_count || 0) + 1,
-          window_start: limitData ? limitData.window_start : new Date().toISOString(),
-          last_reset: new Date().toISOString()
-        });
 
         return new Response(JSON.stringify({ strategy }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
