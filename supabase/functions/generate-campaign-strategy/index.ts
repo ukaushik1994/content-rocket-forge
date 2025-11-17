@@ -203,15 +203,17 @@ Deno.serve(async (req) => {
           hasData: !!aiData,
           hasError: !!aiError,
           dataKeys: aiData ? Object.keys(aiData) : [],
-          errorDetails: aiError
+          errorDetails: aiError,
+          fullResponse: aiData
         });
 
         if (aiError) {
-          console.error('❌ AI-proxy returned error:', aiError);
+          console.error('❌ AI-proxy returned error:', JSON.stringify(aiError, null, 2));
           throw aiError;
         }
 
         if (!aiData?.success) {
+          console.error('❌ AI proxy unsuccessful:', JSON.stringify(aiData, null, 2));
           throw new Error(aiData?.error || 'AI proxy returned unsuccessful response');
         }
 
