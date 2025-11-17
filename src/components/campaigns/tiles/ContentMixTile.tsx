@@ -7,6 +7,7 @@ import { useContentGeneration } from '@/contexts/ContentGenerationContext';
 
 interface ContentMixTileProps {
   strategy: CampaignStrategy;
+  campaignId?: string | null;
 }
 
 const formatIcons: Record<string, any> = {
@@ -61,7 +62,11 @@ export const ContentMixTile = ({ strategy }: ContentMixTileProps) => {
           <h3 className="text-lg font-semibold">Content Mix</h3>
           <Badge variant="outline">{totalPieces} pieces</Badge>
         </div>
-        <Button size="sm" onClick={() => openPanel(strategy)}>
+        <Button 
+          size="sm" 
+          onClick={() => campaignId && openPanel(strategy, campaignId)}
+          disabled={!campaignId}
+        >
           <Sparkles className="h-4 w-4 mr-2" />
           Start Generating
         </Button>

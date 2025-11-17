@@ -17,10 +17,12 @@ export interface QueueItem {
   retry_count: number;
   max_retries: number;
   error_message: string | null;
-  result: any | null;
+  result?: any | null;
+  content_id?: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  last_error_at?: string | null;
 }
 
 export interface QueueStats {
@@ -61,8 +63,8 @@ export const useContentQueue = (campaignId: string | null) => {
 
       if (error) throw error;
 
-      setQueueItems(data || []);
-      calculateStats(data || []);
+      setQueueItems((data as any[]) as QueueItem[] || []);
+      calculateStats((data as any[]) as QueueItem[] || []);
     } catch (error: any) {
       console.error('Failed to fetch queue items:', error);
       toast.error('Failed to load generation queue');
