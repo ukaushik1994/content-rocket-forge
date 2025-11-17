@@ -5,8 +5,9 @@ interface ContentGenerationContextType {
   isOpen: boolean;
   selectedContent: ContentFormatCount | null;
   strategy: CampaignStrategy | null;
+  campaignId: string | null;
   generatedContent: Map<string, GeneratedContent>;
-  openPanel: (strategy: CampaignStrategy, content?: ContentFormatCount) => void;
+  openPanel: (strategy: CampaignStrategy, campaignId: string, content?: ContentFormatCount) => void;
   closePanel: () => void;
   setSelectedContent: (content: ContentFormatCount | null) => void;
   updateGeneratedContent: (key: string, content: GeneratedContent) => void;
@@ -19,10 +20,12 @@ export function ContentGenerationProvider({ children }: { children: ReactNode })
   const [isOpen, setIsOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<ContentFormatCount | null>(null);
   const [strategy, setStrategy] = useState<CampaignStrategy | null>(null);
+  const [campaignId, setCampaignId] = useState<string | null>(null);
   const [generatedContent, setGeneratedContent] = useState<Map<string, GeneratedContent>>(new Map());
 
-  const openPanel = (newStrategy: CampaignStrategy, content?: ContentFormatCount) => {
+  const openPanel = (newStrategy: CampaignStrategy, newCampaignId: string, content?: ContentFormatCount) => {
     setStrategy(newStrategy);
+    setCampaignId(newCampaignId);
     setSelectedContent(content || null);
     setIsOpen(true);
   };
@@ -32,6 +35,7 @@ export function ContentGenerationProvider({ children }: { children: ReactNode })
     setTimeout(() => {
       setSelectedContent(null);
       setStrategy(null);
+      setCampaignId(null);
     }, 300);
   };
 
@@ -50,6 +54,7 @@ export function ContentGenerationProvider({ children }: { children: ReactNode })
         isOpen,
         selectedContent,
         strategy,
+        campaignId,
         generatedContent,
         openPanel,
         closePanel,

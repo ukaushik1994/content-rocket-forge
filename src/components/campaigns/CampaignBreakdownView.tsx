@@ -231,7 +231,7 @@ export const CampaignBreakdownView = ({
             {/* Row 2: Content Mix + Content Effort */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <TileErrorBoundary tileName="Content Mix">
-                <ContentMixTile strategy={strategy} />
+                <ContentMixTile strategy={strategy} campaignId={campaignId} />
               </TileErrorBoundary>
               <TileErrorBoundary tileName="Content Effort">
                 <ContentEffortTile strategy={strategy} />
