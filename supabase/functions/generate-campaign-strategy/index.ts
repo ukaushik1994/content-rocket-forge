@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { CAMPAIGN_STRATEGY_TOOL } from '../enhanced-ai-chat/campaign-strategy-tool.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -136,36 +137,7 @@ Deno.serve(async (req) => {
                 content: contextPrompt
               }
             ],
-            tools: [
-              {
-                type: 'function',
-                function: {
-                  name: 'generate_campaign_strategies',
-                  description: 'Generate campaign strategies',
-                  parameters: {
-                    type: 'object',
-                    properties: {
-                      strategies: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            title: { type: 'string' },
-                            description: { type: 'string' },
-                            contentTypes: { type: 'array', items: { type: 'string' } },
-                            timeline: { type: 'string' },
-                            targetChannels: { type: 'array', items: { type: 'string' } },
-                            keyMessaging: { type: 'array', items: { type: 'string' } }
-                          },
-                          required: ['title', 'description', 'contentTypes', 'timeline']
-                        }
-                      }
-                    },
-                    required: ['strategies']
-                  }
-                }
-              }
-            ],
+            tools: [CAMPAIGN_STRATEGY_TOOL],
             tool_choice: { type: 'function', function: { name: 'generate_campaign_strategies' } },
             temperature: 0.7,
             max_tokens: 4096
@@ -212,6 +184,21 @@ Deno.serve(async (req) => {
         }
 
         const strategy = strategies[0];
+
+        // Verify strategy structure
+        console.log('🔍 Strategy structure:', {
+          hasId: !!strategy.id,
+          hasTitle: !!strategy.title,
+          hasDescription: !!strategy.description,
+          hasContentMix: !!strategy.contentMix,
+          contentMixLength: strategy.contentMix?.length || 0,
+          contentMixSample: strategy.contentMix?.[0],
+          hasExpectedOutcome: !!strategy.expectedOutcome,
+          hasFocus: !!strategy.focus,
+          hasEffortLevel: !!strategy.effortLevel,
+          hasTotalHours: !!strategy.totalHours,
+          hasComplexity: !!strategy.complexity
+        });
 
 
         return new Response(JSON.stringify({ strategy }), {
