@@ -19,6 +19,7 @@ import { CampaignROI } from './CampaignROI';
 import { CampaignComparison } from './CampaignComparison';
 import { useCampaignAutoSave } from '@/hooks/useCampaignAutoSave';
 import { campaignService } from '@/services/campaignService';
+import { createCampaignAtomic } from '@/services/campaignTransactions';
 import { toast } from 'sonner';
 import { ContentGenerationProvider } from '@/contexts/ContentGenerationContext';
 import { ContentGenerationPanel } from './ContentGenerationPanel';
@@ -119,29 +120,25 @@ export const CampaignBreakdownView = ({
         console.log('📊 [Campaign Status] Updated to "planned" after strategy save');
         toast.success('Campaign saved successfully');
       } else {
+        // Create new campaign atomically
         const generateCampaignName = (idea: string) => {
           const words = idea.split(' ').slice(0, 5).join(' ');
           return words.length > 50 ? words.substring(0, 47) + '...' : words;
         };
 
-        const saved = await campaignService.saveCampaign(
+        const name = generateCampaignName(campaignInput.idea);
+        const campaign = await createCampaignAtomic(
           userId,
-          generateCampaignName(campaignInput.idea),
+          name,
           campaignInput.idea,
+          campaignInput,
           strategy
         );
 
-        await campaignService.updateCampaign(saved.id, {
-          target_audience: campaignInput.targetAudience,
-          goal: campaignInput.goal,
-          timeline: campaignInput.timeline,
-          status: 'planned', // Set status to planned when strategy is first saved
-        });
-
-        console.log('📊 [Campaign Status] Set to "planned" after initial save');
+        console.log('📊 [Campaign Status] Set to "planned" after atomic creation');
         
         if (onCampaignCreated) {
-          onCampaignCreated(saved.id);
+          onCampaignCreated(campaign.id);
         }
 
         toast.success('Campaign created and saved');

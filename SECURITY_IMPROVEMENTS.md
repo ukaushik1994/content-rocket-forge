@@ -1,4 +1,8 @@
-# Phase 2: Security & Data Integrity Improvements
+# Phase 2: Production Security Hardening ✅ COMPLETE
+
+This document tracks security improvements made to the campaign system to ensure production readiness.
+
+**Status:** Phase 2 implementation complete. All critical security vulnerabilities addressed.
 
 ## Overview
 Implemented comprehensive security hardening and performance optimizations for the campaign system.
@@ -166,6 +170,78 @@ CREATE POLICY "Users can create analytics for their own campaigns"
 - [x] Retries succeed after transient 500 error
 - [x] Auth errors fail fast without retry
 - [x] Rate limit errors handled gracefully
+
+---
+
+## Developer Migration Guide
+
+### Campaign Creation
+**❌ OLD (deprecated):**
+```typescript
+const saved = await campaignService.saveCampaign(userId, name, idea, strategy);
+await campaignService.updateCampaign(saved.id, { target_audience, goal });
+```
+
+**✅ NEW (atomic):**
+```typescript
+import { createCampaignAtomic } from '@/services/campaignTransactions';
+const campaign = await createCampaignAtomic(
+  userId,
+  name,
+  description,
+  { idea, targetAudience, goal, timeline, solutionId },
+  strategy
+);
+```
+
+### Input Validation
+**Always validate user inputs:**
+```typescript
+import { validateCampaignInput, sanitizeHtml } from '@/utils/inputValidation';
+const sanitized = validateCampaignInput(rawInput);
+```
+
+### Edge Function Invocation
+**Use retry logic for resilience:**
+```typescript
+import { retryWithBackoff } from '@/utils/retry';
+const { data } = await retryWithBackoff(() =>
+  supabase.functions.invoke('generate-campaign-strategy', { body })
+);
+```
+
+---
+
+## Configuration
+
+### Rate Limiting Adjustment
+To change the generation limit per hour:
+```sql
+-- Update the edge function check (generate-campaign-strategy/index.ts)
+if (windowStart > hourAgo && limitData.generation_count >= 20) { -- Change 10 to 20
+  return new Response(...)
+}
+```
+
+### Retry Configuration
+Adjust retry parameters in edge function calls:
+```typescript
+await retryWithBackoff(
+  operation,
+  5,    // maxRetries (default: 3)
+  2000  // baseDelay in ms (default: 1000)
+);
+```
+
+---
+
+## Documentation
+
+- **Campaign Workflow:** `docs/CAMPAIGN_WORKFLOW.md`
+- **Security Overview:** This file
+- **Input Validation:** `src/utils/inputValidation.ts`
+- **Atomic Transactions:** `src/services/campaignTransactions.ts`
+- **Edge Functions:** `supabase/functions/generate-campaign-strategy/`
 
 ## Known Linter Warnings
 

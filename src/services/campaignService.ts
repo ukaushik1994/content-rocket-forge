@@ -17,6 +17,10 @@ export interface SavedCampaign {
 
 export const campaignService = {
   /**
+   * @deprecated Use createCampaignAtomic from campaignTransactions.ts instead.
+   * This method performs direct inserts without atomic transaction support.
+   * Will be removed in a future version.
+   * 
    * Save a campaign with selected strategy
    */
   async saveCampaign(
@@ -25,6 +29,7 @@ export const campaignService = {
     originalIdea: string,
     selectedStrategy: CampaignStrategy | null = null
   ): Promise<SavedCampaign> {
+    console.warn('⚠️ saveCampaign is deprecated. Use createCampaignAtomic instead.');
     // Validate inputs
     if (!userId || userId.trim() === '') {
       throw new Error('User ID is required to save campaign');
