@@ -1128,6 +1128,116 @@ export type Database = {
           },
         ]
       }
+      campaign_analytics: {
+        Row: {
+          campaign_id: string | null
+          clicks: number | null
+          content_id: string | null
+          conversions: number | null
+          created_at: string | null
+          date: string
+          engagement_count: number | null
+          id: string
+          metadata: Json | null
+          platform: string | null
+          revenue: number | null
+          shares: number | null
+          source: string | null
+          user_id: string | null
+          views: number | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          clicks?: number | null
+          content_id?: string | null
+          conversions?: number | null
+          created_at?: string | null
+          date: string
+          engagement_count?: number | null
+          id?: string
+          metadata?: Json | null
+          platform?: string | null
+          revenue?: number | null
+          shares?: number | null
+          source?: string | null
+          user_id?: string | null
+          views?: number | null
+        }
+        Update: {
+          campaign_id?: string | null
+          clicks?: number | null
+          content_id?: string | null
+          conversions?: number | null
+          created_at?: string | null
+          date?: string
+          engagement_count?: number | null
+          id?: string
+          metadata?: Json | null
+          platform?: string | null
+          revenue?: number | null
+          shares?: number | null
+          source?: string | null
+          user_id?: string | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_analytics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_costs: {
+        Row: {
+          amount: number
+          campaign_id: string | null
+          cost_type: string
+          created_at: string | null
+          date: string | null
+          description: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          campaign_id?: string | null
+          cost_type: string
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          campaign_id?: string | null
+          cost_type?: string
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_costs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           created_at: string | null
@@ -2250,6 +2360,7 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           metadata: Json | null
+          performance_metrics: Json | null
           published_url: string | null
           review_deadline: string | null
           reviewer_id: string | null
@@ -2273,6 +2384,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           metadata?: Json | null
+          performance_metrics?: Json | null
           published_url?: string | null
           review_deadline?: string | null
           reviewer_id?: string | null
@@ -2296,6 +2408,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           metadata?: Json | null
+          performance_metrics?: Json | null
           published_url?: string | null
           review_deadline?: string | null
           reviewer_id?: string | null
