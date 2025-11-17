@@ -130,64 +130,86 @@ Deno.serve(async (req) => {
     }
 
     // Call AI proxy with retry logic
+    console.log('🎯 Starting campaign strategy generation');
+    console.log(`   Provider: ${providerData.provider}`);
+    console.log(`   Model: ${providerData.preferred_model || 'gpt-4'}`);
+    console.log(`   Context length: ${contextPrompt.length} chars`);
+    
     let lastError;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-proxy', {
-          body: {
-            service: providerData.provider,
-            endpoint: 'chat',
-            apiKey: providerData.api_key,
-            params: {
-              model: providerData.preferred_model || 'gpt-4',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'You are a campaign strategy expert. Generate a comprehensive campaign strategy with title, description, content types, timeline, target channels, and key messaging.'
-                },
-                {
-                  role: 'user',
-                  content: contextPrompt
-                }
-              ],
-              tools: [
-                {
-                  type: 'function',
-                  function: {
-                    name: 'generate_campaign_strategies',
-                    description: 'Generate campaign strategies',
-                    parameters: {
-                      type: 'object',
-                      properties: {
-                        strategies: {
-                          type: 'array',
-                          items: {
-                            type: 'object',
-                            properties: {
-                              title: { type: 'string' },
-                              description: { type: 'string' },
-                              contentTypes: { type: 'array', items: { type: 'string' } },
-                              timeline: { type: 'string' },
-                              targetChannels: { type: 'array', items: { type: 'string' } },
-                              keyMessaging: { type: 'array', items: { type: 'string' } }
-                            },
-                            required: ['title', 'description', 'contentTypes', 'timeline']
-                          }
+        console.log(`🔄 Attempt ${attempt + 1}/3 - Calling ai-proxy`);
+        
+        const requestBody = {
+          service: providerData.provider,
+          endpoint: 'chat',
+          apiKey: providerData.api_key,
+          params: {
+            model: providerData.preferred_model || 'gpt-4',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a campaign strategy expert. Generate a comprehensive campaign strategy with title, description, content types, timeline, target channels, and key messaging.'
+              },
+              {
+                role: 'user',
+                content: contextPrompt
+              }
+            ],
+            tools: [
+              {
+                type: 'function',
+                function: {
+                  name: 'generate_campaign_strategies',
+                  description: 'Generate campaign strategies',
+                  parameters: {
+                    type: 'object',
+                    properties: {
+                      strategies: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            title: { type: 'string' },
+                            description: { type: 'string' },
+                            contentTypes: { type: 'array', items: { type: 'string' } },
+                            timeline: { type: 'string' },
+                            targetChannels: { type: 'array', items: { type: 'string' } },
+                            keyMessaging: { type: 'array', items: { type: 'string' } }
+                          },
+                          required: ['title', 'description', 'contentTypes', 'timeline']
                         }
-                      },
-                      required: ['strategies']
-                    }
+                      }
+                    },
+                    required: ['strategies']
                   }
                 }
-              ],
-              tool_choice: { type: 'function', function: { name: 'generate_campaign_strategies' } },
-              temperature: 0.7,
-              max_tokens: 4096
-            }
+              }
+            ],
+            tool_choice: { type: 'function', function: { name: 'generate_campaign_strategies' } },
+            temperature: 0.7,
+            max_tokens: 4096
           }
+        };
+        
+        console.log('📤 Request body keys:', Object.keys(requestBody));
+        console.log('📤 Request params keys:', Object.keys(requestBody.params || {}));
+        
+        const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-proxy', {
+          body: requestBody
         });
 
-        if (aiError) throw aiError;
+        console.log('📥 AI-proxy response:', {
+          hasData: !!aiData,
+          hasError: !!aiError,
+          dataKeys: aiData ? Object.keys(aiData) : [],
+          errorDetails: aiError
+        });
+
+        if (aiError) {
+          console.error('❌ AI-proxy returned error:', aiError);
+          throw aiError;
+        }
 
         if (!aiData?.success) {
           throw new Error(aiData?.error || 'AI proxy returned unsuccessful response');
