@@ -35,36 +35,6 @@ export const useCampaignContentGeneration = () => {
   ): Promise<GeneratedContent> => {
     const key = `${formatId}-${pieceIndex}`;
     
-    // Validate brief before generation
-    const isValidBrief = !!(
-      brief.title &&
-      brief.description &&
-      brief.keywords?.length > 0 &&
-      brief.targetWordCount > 0 &&
-      brief.metaTitle &&
-      brief.metaDescription
-    );
-
-    if (!isValidBrief) {
-      console.warn(`⚠️ [Content Generation] Invalid brief detected for ${key}:`, {
-        hasTitle: !!brief.title,
-        hasDescription: !!brief.description,
-        keywordCount: brief.keywords?.length || 0,
-        hasWordCount: brief.targetWordCount > 0,
-        hasMetaTitle: !!brief.metaTitle,
-        hasMetaDescription: !!brief.metaDescription
-      });
-    } else {
-      console.log(`✓ [Content Generation] Brief validated for ${key}:`, {
-        title: brief.title,
-        keywords: brief.keywords.length,
-        wordCount: brief.targetWordCount,
-        difficulty: brief.difficulty,
-        serpOpportunity: brief.serpOpportunity
-      });
-    }
-    
-    // Set status to generating
     const tempContent: GeneratedContent = {
       id: key,
       title: brief.title,
@@ -79,8 +49,6 @@ export const useCampaignContentGeneration = () => {
     setGeneratedItems(prev => new Map(prev).set(key, tempContent));
 
     try {
-      console.log('[Content Generation] Starting generation:', key);
-
       const { data, error } = await retryWithBackoff(
         () => supabase.functions.invoke('campaign-content-generator', {
           body: {
@@ -130,126 +98,91 @@ export const useCampaignContentGeneration = () => {
 
       setGeneratedItems(prev => new Map(prev).set(key, errorContent));
 
-      // Handle specific errors
-      if (error.message?.includes('AI provider')) {
-        toast({
-          title: "Configuration Error",
-          description: "Please configure an AI provider in Settings.",
-          variant: "destructive"
-        });
-      } else if (error.message?.includes('rate limit') || error.message?.includes('429')) {
-        toast({
-          title: "Rate Limit Exceeded",
-          description: "Please wait a moment and try again.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Generation Failed",
-          description: error.message || 'Failed to generate content',
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Generation Failed",
+        description: error.message || 'Failed to generate content',
+        variant: "destructive"
+      });
 
       throw error;
     }
   }, [toast]);
 
   const generateAllContent = useCallback(async (
-    items: Array<{
-      brief: ContentBrief;
-      formatId: string;
-      index: number;
-    }>,
+    items: Array<{ brief: ContentBrief; formatId: string; index: number; }>,
     campaignId: string,
     solutionId: string | null,
     campaignContext: any,
     solutionData: any | null,
     userId: string
   ) => {
+    console.log(`🚀 [Queue System] Adding ${items.length} items to generation queue`);
+    
     setGenerationProgress({
+      status: 'generating',
       total: items.length,
-      completed: 0,
       current: 0,
-      failed: 0,
-      status: 'generating'
+      completed: 0,
+      failed: 0
     });
 
-    console.log(`🚀 [Content Generation] Starting generation for ${items.length} items`);
-    
-    // Update campaign status to 'active' when generation starts
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       await supabase
         .from('campaigns')
-        .update({ status: 'active', updated_at: new Date().toISOString() })
+        .update({ status: 'planned', updated_at: new Date().toISOString() })
         .eq('id', campaignId);
-      
-      console.log('📊 [Campaign Status] Updated to "active" - content generation started');
-    } catch (error) {
-      console.error('Failed to update campaign status to active:', error);
-    }
 
-    let completed = 0;
-    let failed = 0;
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      
-      setGenerationProgress(prev => ({
-        ...prev,
-        current: i + 1
+      const queueItems = items.map((item, index) => ({
+        campaign_id: campaignId,
+        user_id: userId,
+        format_id: item.formatId,
+        piece_index: item.index,
+        brief: item.brief as any,
+        campaign_context: campaignContext as any,
+        solution_data: solutionData as any,
+        status: 'pending' as const,
+        priority: items.length - index,
+        retry_count: 0,
+        max_retries: 3,
       }));
 
-      try {
-        await generateContent(
-          item.brief,
-          campaignId,
-          solutionId,
-          item.formatId,
-          item.index,
-          campaignContext,
-          solutionData,
-          userId
-        );
-        completed++;
-      } catch (error) {
-        failed++;
-      }
+      const { error: insertError } = await supabase
+        .from('content_generation_queue')
+        .insert(queueItems);
 
-      setGenerationProgress(prev => ({
-        ...prev,
-        completed,
-        failed
-      }));
+      if (insertError) throw insertError;
+
+      const { error: processError } = await supabase.functions.invoke('process-content-queue');
+      
+      toast({
+        title: "Generation Started!",
+        description: `${items.length} content pieces are being generated. You can close this and come back anytime.`,
+      });
+
+      setGenerationProgress({
+        status: 'completed',
+        total: items.length,
+        current: 0,
+        completed: 0,
+        failed: 0
+      });
+
+    } catch (error: any) {
+      console.error('Failed to add items to queue:', error);
+      toast({
+        title: "Queue Error",
+        description: error.message || "Failed to start content generation",
+      });
+      
+      setGenerationProgress({
+        status: 'idle',
+        total: 0,
+        current: 0,
+        completed: 0,
+        failed: 0
+      });
     }
-
-    setGenerationProgress(prev => ({
-      ...prev,
-      status: 'completed',
-      current: 0
-    }));
-
-    // Update campaign status to 'completed' when all content is generated
-    if (failed === 0) {
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        await supabase
-          .from('campaigns')
-          .update({ status: 'completed', updated_at: new Date().toISOString() })
-          .eq('id', campaignId);
-        
-        console.log('📊 [Campaign Status] Updated to "completed" - all content generated successfully');
-      } catch (error) {
-        console.error('Failed to update campaign status to completed:', error);
-      }
-    }
-
-    toast({
-      title: "Generation Complete!",
-      description: `${completed} pieces generated successfully${failed > 0 ? `, ${failed} failed` : ''}`,
-    });
-  }, [generateContent, toast]);
+  }, [toast]);
 
   const getContentByKey = useCallback((formatId: string, index: number): GeneratedContent | undefined => {
     const key = `${formatId}-${index}`;
