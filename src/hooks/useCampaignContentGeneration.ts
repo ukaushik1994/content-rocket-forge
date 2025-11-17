@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBrief, GeneratedContent } from '@/types/campaign-types';
+import { retryWithBackoff } from '@/utils/retryWithBackoff';
 
 interface GenerationProgress {
   total: number;
@@ -80,17 +81,20 @@ export const useCampaignContentGeneration = () => {
     try {
       console.log('[Content Generation] Starting generation:', key);
 
-      const { data, error } = await supabase.functions.invoke('campaign-content-generator', {
-        body: {
-          brief,
-          campaignId,
-          solutionId,
-          formatId,
-          campaignContext,
-          solutionData,
-          userId
-        }
-      });
+      const { data, error } = await retryWithBackoff(
+        () => supabase.functions.invoke('campaign-content-generator', {
+          body: {
+            brief,
+            campaignId,
+            solutionId,
+            formatId,
+            campaignContext,
+            solutionData,
+            userId
+          }
+        }),
+        { maxRetries: 3, initialDelay: 2000 }
+      );
 
       if (error) throw error;
 

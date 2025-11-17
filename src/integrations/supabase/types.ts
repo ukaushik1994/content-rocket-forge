@@ -1238,6 +1238,30 @@ export type Database = {
           },
         ]
       }
+      campaign_generation_limits: {
+        Row: {
+          created_at: string | null
+          generation_count: number | null
+          last_reset: string | null
+          user_id: string
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          generation_count?: number | null
+          last_reset?: string | null
+          user_id: string
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          generation_count?: number | null
+          last_reset?: string | null
+          user_id?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           created_at: string | null
@@ -6721,6 +6745,35 @@ export type Database = {
       cleanup_expired_notifications: { Args: never; Returns: undefined }
       cleanup_expired_serp_history: { Args: never; Returns: undefined }
       cleanup_old_serp_monitoring: { Args: never; Returns: undefined }
+      create_campaign_atomic: {
+        Args: {
+          p_description: string
+          p_input: Json
+          p_status: string
+          p_strategy: Json
+          p_title: string
+          p_user_id: string
+        }
+        Returns: {
+          created_at: string | null
+          goal: string | null
+          id: string
+          name: string
+          original_idea: string
+          selected_strategy: Json | null
+          status: string
+          target_audience: string | null
+          timeline: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "campaigns"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_conversation_messages: {
         Args: { conv_id: string; limit_count?: number; offset_count?: number }
         Returns: {
