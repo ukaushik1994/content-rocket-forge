@@ -6,6 +6,8 @@ import { solutionService } from '@/services/solutionService';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { optimizeSolutionContext, optimizeCompetitorContext, optimizeSerpContext, estimateTokens } from '@/services/campaignStrategyOptimizer';
 import { normalizeCampaignStrategy } from '@/utils/campaignStrategyNormalizer';
+import { validateCampaignInput } from '@/utils/inputValidation';
+import { retryWithBackoff } from '@/utils/retryWithBackoff';
 
 export const useCampaignStrategies = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -20,14 +22,16 @@ export const useCampaignStrategies = () => {
     setError(null);
 
     try {
+      // Validate and sanitize input
+      const sanitizedInput = validateCampaignInput(input);
       let serpContext = '';
-      if (input.useSerpData && input.idea) {
-        const serpData = await analyzeKeywordSerp(input.idea);
+      if (sanitizedInput.useSerpData && sanitizedInput.idea) {
+        const serpData = await analyzeKeywordSerp(sanitizedInput.idea);
         if (serpData) serpContext = optimizeSerpContext(serpData);
       }
 
       let solutionContext = '';
-      if (input.solutionId) {
+      if (sanitizedInput.solutionId) {
         const { data: solution } = await supabase
           .from('solutions')
           .select(`
@@ -35,7 +39,7 @@ export const useCampaignStrategies = () => {
             features, benefits, key_differentiators,
             use_cases, target_audience, pricing_model, category
           `)
-          .eq('id', input.solutionId)
+          .eq('id', sanitizedInput.solutionId)
           .single();
           
         if (solution) {
@@ -251,12 +255,20 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
         try {
           console.log(`📊 [Campaign Strategies] 🔄 Attempt ${attempt}/${maxRetries} to generate strategies`);
           
-          const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
-            body: {
-              messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
-              context: { use_case: 'strategy' }
-            }
-          });
+          // Use new secure edge function with retry logic
+          const { data, error } = await retryWithBackoff(
+            () => supabase.functions.invoke('generate-campaign-strategy', {
+              body: {
+                input: sanitizedInput,
+                userId,
+                selectedSummary,
+                serpContext,
+                solutionContext: solutionContext ? { solution: solutionContext } : undefined,
+                competitorContext: undefined
+              }
+            }),
+            { maxRetries: 3, initialDelay: 2000 }
+          );
           
           console.log(`📊 [Campaign Strategies] Response received:`, {
             hasData: !!data,
@@ -265,12 +277,9 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
             errorMessage: error?.message
           });
           
-          if (!error && data) {
+          if (!error && data?.strategy) {
             aiResponse = data;
-            const responseLength = (data.response || data.content || '').length;
-            console.log(`📊 [Campaign Strategies] ✅ Response: ${responseLength} chars`);
-            console.log(`📊 [Campaign Strategies] Response preview:`, 
-              (data.response || data.content || '').substring(0, 200));
+            console.log(`📊 [Campaign Strategies] ✅ Strategy generated successfully`);
             break;
           }
           
@@ -297,54 +306,26 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
         }
       }
 
-      if (!aiResponse) {
+      if (!aiResponse || !aiResponse.strategy) {
         console.error('📊 [Campaign Strategies] ❌ No AI response after all retries');
         throw new Error('AI service temporarily unavailable. Please try again in a moment.');
       }
 
       console.log('📊 [Campaign Strategies] Processing AI response...');
-      let content = (aiResponse.response || aiResponse.content || '').replace(/```json\s*/g, '').replace(/```/g, '').trim();
-      console.log('📊 [Campaign Strategies] Content extracted:', {
-        length: content.length,
-        preview: content.substring(0, 200),
-        hasResponse: !!aiResponse.response,
-        hasContent: !!aiResponse.content
-      });
+      const rawStrategy = aiResponse.strategy;
       
-      // Parse single strategy object (not array)
-      let strategy: CampaignStrategy;
-      try {
-        console.log('📊 [Campaign Strategies] Parsing JSON...');
-        // Try to extract JSON object from response
-        const jsonMatch = content.match(/\{[\s\S]*\}/)?.[0];
-        if (!jsonMatch) {
-          console.error('📊 [Campaign Strategies] ❌ No JSON object found in content');
-          throw new Error('No valid JSON object in response');
-        }
-        
-        console.log('📊 [Campaign Strategies] JSON match found:', jsonMatch.substring(0, 200));
-        const rawStrategy = JSON.parse(jsonMatch || content);
-        console.log('📊 [Campaign Strategies] ✅ JSON parsed successfully');
-        console.log('📊 [Campaign Strategies] Raw strategy keys:', Object.keys(rawStrategy));
-        
-        // ✨ CRITICAL: Normalize the strategy before using it
-        console.log('📊 [Campaign Strategies] Normalizing strategy...');
-        strategy = normalizeCampaignStrategy(rawStrategy);
-        
-        console.log('📊 [Campaign Strategies] ✅ Strategy normalized successfully');
-        console.log('📊 [Campaign Strategies] Normalized strategy:', {
-          title: strategy.title,
-          contentMixCount: strategy.contentMix?.length || 0,
-          hasId: !!strategy.id,
-          hasDescription: !!strategy.description
-        });
-      } catch (parseError) {
-        console.error('📊 [Campaign Strategies] ❌ Failed to parse/normalize strategy:', parseError);
-        console.error('📊 [Campaign Strategies] Content that failed to parse:', content);
-        throw new Error('Invalid strategy format generated');
-      }
+      console.log('📊 [Campaign Strategies] Normalizing strategy...');
+      const strategy = normalizeCampaignStrategy(rawStrategy);
+      
+      console.log('📊 [Campaign Strategies] ✅ Strategy normalized successfully');
+      console.log('📊 [Campaign Strategies] Normalized strategy:', {
+        title: strategy.title,
+        contentMixCount: strategy.contentMix?.length || 0,
+        hasId: !!strategy.id,
+        hasDescription: !!strategy.description
+      });
 
-      // Auto-generate ID if missing (normalization should handle this, but double-check)
+      // Auto-generate ID if missing
       if (!strategy.id) {
         console.warn('📊 [Campaign Strategies] ⚠️ No ID found, generating one...');
         strategy.id = `strategy-${Date.now()}`;

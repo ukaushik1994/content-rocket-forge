@@ -25,7 +25,7 @@ export async function createCampaignAtomic(
   input: CampaignInput,
   strategy: CampaignStrategy
 ) {
-  const { data, error } = await supabase.rpc('create_campaign_atomic', {
+  const { data, error } = await supabase.rpc('create_campaign_atomic' as any, {
     p_user_id: userId,
     p_title: title,
     p_description: description,
@@ -39,6 +39,6 @@ export async function createCampaignAtomic(
     throw new Error(`Failed to create campaign: ${error.message}`);
   }
   
-  console.log('✅ Campaign created atomically:', data.id);
-  return data;
+  console.log('✅ Campaign created atomically:', (data as any).id);
+  return data as any;
 }
