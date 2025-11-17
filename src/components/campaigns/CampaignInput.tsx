@@ -24,6 +24,8 @@ import {
 import { solutionService } from '@/services/solutionService';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { cn } from '@/lib/utils';
+import { validateCampaignInput } from '@/utils/inputValidation';
+import { toast } from 'sonner';
 
 interface CampaignInputProps {
   onGenerate: (input: CampaignInputType) => Promise<void>;
@@ -65,15 +67,27 @@ export function CampaignInput({ onGenerate, onCancel, isGenerating = false }: Ca
 
   const handleSubmit = async () => {
     if (!isValid) return;
-    const input: CampaignInputType = {
-      idea: campaignIdea,
-      targetAudience: audience || undefined,
-      goal,
-      timeline,
-      useSerpData,
-      solutionId: selectedSolution || undefined,
-    };
-    await onGenerate(input);
+    
+    try {
+      // Build input object
+      const input: CampaignInputType = {
+        idea: campaignIdea,
+        targetAudience: audience || undefined,
+        goal,
+        timeline,
+        useSerpData,
+        solutionId: selectedSolution || undefined,
+      };
+      
+      // Validate and sanitize input
+      const validatedInput = validateCampaignInput(input);
+      
+      // Pass validated input to parent
+      await onGenerate(validatedInput);
+    } catch (error) {
+      console.error('Input validation error:', error);
+      toast.error(error instanceof Error ? error.message : 'Invalid input');
+    }
   };
 
   return (
