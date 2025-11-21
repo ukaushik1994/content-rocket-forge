@@ -34,6 +34,13 @@ export interface EnhancedCampaignData {
   pastResults?: string;
   solutionId?: string | null;
   distributionChannels?: string[];
+  whatTheyrePromoting?: string;
+  features?: string[];
+  benefits?: string[];
+  useCases?: string[];
+  solutionContext?: string;
+  messagingTone?: string;
+  campaignAngle?: string;
 }
 
 interface ConversationState {
@@ -83,6 +90,40 @@ export const useCampaignConversation = (
   onStatusUpdate?: ServiceStatusCallback
 ) => {
   const { generateStrategies } = useCampaignStrategies();
+  
+  // Auto-fetch solution data when solutionId is detected
+  const fetchSolutionData = useCallback(async (solutionId: string) => {
+    try {
+      const { data: solution, error } = await supabase
+        .from('solutions')
+        .select('name, description, features, benefits, target_audience, pain_points, use_cases')
+        .eq('id', solutionId)
+        .single();
+
+      if (error) throw error;
+
+      if (solution) {
+        console.log('✅ Auto-fetched solution data:', solution.name);
+        // Pre-populate campaign data with solution information
+        return {
+          whatTheyrePromoting: solution.name,
+          features: Array.isArray(solution.features) ? solution.features : [],
+          benefits: Array.isArray(solution.benefits) ? solution.benefits : [],
+          targetAudience: typeof solution.target_audience === 'string' 
+            ? solution.target_audience 
+            : Array.isArray(solution.target_audience) 
+              ? solution.target_audience.join(', ')
+              : '',
+          painPoints: Array.isArray(solution.pain_points) ? solution.pain_points.join(', ') : '',
+          useCases: Array.isArray(solution.use_cases) ? solution.use_cases : [],
+          solutionContext: solution.description || ''
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching solution data:', error);
+    }
+    return null;
+  }, []);
   
   const [state, setState] = useState<ConversationState>(() => {
     const initialMessages: CampaignConversationMessage[] = [];
@@ -165,18 +206,33 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
     // Extract data from message
     newData.idea = newData.idea || message;
     
-    // Try to detect solution from message
+    // Try to detect solution from message and auto-fetch its data
     const messageLower = message.toLowerCase();
     try {
-      const { data: solutions } = await supabase
-        .from('solutions')
-        .select('id, name')
-        .ilike('name', `%${message}%`)
-        .limit(1);
-      
-      if (solutions && solutions.length > 0 && !newData.solutionId) {
-        newData.solutionId = solutions[0].id;
-        console.log('[Campaign] Auto-detected solution:', solutions[0].name);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: solutions } = await supabase
+          .from('solutions')
+          .select('id, name')
+          .eq('user_id', user.id);
+        
+        if (solutions) {
+          const matchedSolution = solutions.find(sol => 
+            messageLower.includes(sol.name.toLowerCase())
+          );
+          
+          if (matchedSolution && !newData.solutionId) {
+            newData.solutionId = matchedSolution.id;
+            console.log('[Campaign] Auto-detected solution:', matchedSolution.name);
+            
+            // Auto-fetch and pre-populate solution data
+            const solutionData = await fetchSolutionData(matchedSolution.id);
+            if (solutionData) {
+              Object.assign(newData, solutionData);
+              console.log('✅ Auto-populated campaign data from solution');
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('[Campaign] Solution detection error:', error);
@@ -238,9 +294,11 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
     // Simplified data requirements - only need WHAT and WHO
     const hasWhatTheyrePromoting = newData.idea && newData.idea.length > 10;
     const hasWhoItsFor = newData.targetAudience && newData.targetAudience.length > 5;
+    const hasSolutionData = !!newData.solutionId;
     
     // Auto-generate as soon as we know WHAT and WHO
-    if (hasWhatTheyrePromoting && hasWhoItsFor) {
+    // If solution data is available, we can skip even more questions
+    if (hasWhatTheyrePromoting && (hasWhoItsFor || hasSolutionData)) {
       // We have enough! Use smart defaults for the rest
       if (!newData.goal) newData.goal = 'awareness';
       if (!newData.timeline) newData.timeline = '4-week';
