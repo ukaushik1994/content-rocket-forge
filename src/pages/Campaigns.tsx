@@ -268,6 +268,44 @@ const Campaigns = () => {
     toast.success('Let\'s build your campaign!');
   };
 
+  const handleExpressMode = async (data: { 
+    idea: string; 
+    audience: string; 
+    timeline: string; 
+    goal: string 
+  }) => {
+    if (!user) {
+      toast.error('Please sign in to generate campaigns');
+      return;
+    }
+
+    const input: CampaignInputType = {
+      idea: data.idea,
+      targetAudience: data.audience,
+      goal: data.goal as any,
+      timeline: data.timeline as any,
+      useSerpData: true
+    };
+
+    setCurrentInput(input);
+    setViewMode('create');
+    setShowInput(false);
+    
+    toast.success('Generating strategies...');
+    
+    try {
+      const strategies = await generateStrategies(input, user.id);
+      
+      if (strategies && strategies.length > 0) {
+        setStrategy(strategies[0]);
+        toast.success('Campaign strategies generated!');
+      }
+    } catch (error) {
+      console.error('Error generating strategy:', error);
+      toast.error('Failed to generate campaign');
+    }
+  };
+
   const handleArchiveCampaign = async (campaignId: string) => {
     await updateCampaignStatus(campaignId, 'archived');
   };
@@ -301,6 +339,7 @@ const Campaigns = () => {
       <CampaignsHero 
         onCreateClick={handleStartNewCampaign}
         onStartConversation={handleStartConversation}
+        onExpressMode={handleExpressMode}
       />
           
           <AnimatePresence mode="wait">

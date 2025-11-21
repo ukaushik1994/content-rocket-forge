@@ -47,7 +47,10 @@ interface ConversationState {
 const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaignData): string => {
   switch (stage) {
     case 'collecting':
-      return "Let's create a winning campaign! Tell me:\n\n• What product/service are you promoting?\n• Who is your target audience?\n• What do you want to achieve?\n• What's your timeline?\n\nBe as specific as you like - I'll use this to create targeted campaign strategies.";
+      if (data.idea) {
+        return "Great! I can help you create a campaign for that. Just tell me a bit more about your target audience and timeline, or I can generate strategies right away if you'd like.";
+      }
+      return "Let's create a winning campaign! What's your campaign idea or what are you looking to promote?";
     
     case 'generating':
       return "🎉 Perfect! I have everything I need. Let me generate highly targeted campaign strategies for you...";
@@ -58,6 +61,13 @@ const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaig
     default:
       return "Tell me more...";
   }
+};
+
+// Detect if message mentions a solution/product/feature
+const detectSolutionContext = (message: string): boolean => {
+  const solutionKeywords = ['solution', 'feature', 'product', 'service', 'tool', 'platform'];
+  const messageLower = message.toLowerCase();
+  return solutionKeywords.some(keyword => messageLower.includes(keyword));
 };
 
 const AI_QUESTIONS = {
@@ -76,18 +86,35 @@ export const useCampaignConversation = (
     const initialMessages: CampaignConversationMessage[] = [];
     
     if (initialMessage) {
+      const hasSolutionContext = detectSolutionContext(initialMessage);
+      
       initialMessages.push({
         id: crypto.randomUUID(),
         role: 'user',
         content: initialMessage,
         timestamp: new Date()
       });
-      initialMessages.push({
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: generateDynamicQuestion('collecting', { idea: initialMessage }),
-        timestamp: new Date()
-      });
+      
+      if (hasSolutionContext) {
+        // Skip detailed questions - go straight to minimal data collection
+        initialMessages.push({
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: `Perfect! I'll create campaign strategies to promote "${initialMessage}". 
+
+Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enterprise CTOs")`,
+          timestamp: new Date()
+        });
+      } else {
+        // Regular question for non-solution campaigns
+        initialMessages.push({
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: generateDynamicQuestion('collecting', { idea: initialMessage }),
+          timestamp: new Date()
+        });
+      }
+      
       return {
         stage: 'collecting',
         collectedData: { idea: initialMessage },
@@ -166,10 +193,17 @@ export const useCampaignConversation = (
       }
     }
     
-    // Check if we have all required data
-    const hasAllData = newData.idea && newData.goal && newData.targetAudience && newData.timeline;
+    // Check if we have minimal or all required data
+    const hasMinimalData = newData.idea && newData.targetAudience;
+    const hasAllData = hasMinimalData && newData.goal && newData.timeline;
     
-    if (hasAllData) {
+    // Smart auto-generation: offer to proceed with minimal data
+    if (hasMinimalData && !hasAllData && !messageLower.includes('timeline') && !messageLower.includes('goal')) {
+      // User provided audience - offer to generate now with defaults
+      if (newData.targetAudience && newData.targetAudience !== newData.idea) {
+        nextStage = 'generating'; // Auto-generate with smart defaults
+      }
+    } else if (hasAllData) {
       nextStage = 'generating';
     }
     
