@@ -85,7 +85,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 min-w-0">
         <AnimatePresence mode="popLayout">
           {campaigns.map((campaign, index) => (
             <motion.div
