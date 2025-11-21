@@ -132,19 +132,27 @@ export const useCampaignContentGeneration = () => {
         .update({ status: 'planned', updated_at: new Date().toISOString() })
         .eq('id', campaignId);
 
-      const queueItems = items.map((item, index) => ({
-        campaign_id: campaignId,
-        user_id: userId,
-        format_id: item.formatId,
-        piece_index: item.index,
-        brief: item.brief as any,
-        campaign_context: campaignContext as any,
-        solution_data: solutionData as any,
-        status: 'pending' as const,
-        priority: items.length - index,
-        retry_count: 0,
-        max_retries: 3,
-      }));
+      const queueItems = items.map((item, index) => {
+        // Validate piece_index is a valid number
+        if (typeof item.index !== 'number' || isNaN(item.index)) {
+          console.error(`Invalid piece_index for item:`, item);
+          throw new Error(`Invalid content index: ${item.index}`);
+        }
+        
+        return {
+          campaign_id: campaignId,
+          user_id: userId,
+          format_id: item.formatId,
+          piece_index: item.index, // Now guaranteed to be a valid number
+          brief: item.brief as any,
+          campaign_context: campaignContext as any,
+          solution_data: solutionData as any,
+          status: 'pending' as const,
+          priority: items.length - index,
+          retry_count: 0,
+          max_retries: 3,
+        };
+      });
 
       const { error: insertError } = await supabase
         .from('content_generation_queue')
@@ -169,9 +177,15 @@ export const useCampaignContentGeneration = () => {
 
     } catch (error: any) {
       console.error('Failed to add items to queue:', error);
+      
+      const errorMessage = error.message?.includes('piece_index') 
+        ? 'Invalid content format. Please regenerate content briefs.'
+        : error.message || 'Failed to start content generation';
+      
       toast({
         title: "Queue Error",
-        description: error.message || "Failed to start content generation",
+        description: errorMessage,
+        variant: "destructive"
       });
       
       setGenerationProgress({

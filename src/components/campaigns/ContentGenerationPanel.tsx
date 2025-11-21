@@ -90,6 +90,7 @@ export const ContentGenerationPanel = () => {
 
         generatedBriefs.forEach((brief, index) => {
           const key = `${formatItem.formatId}-${index}`;
+          console.log(`📝 Generated brief key: "${key}"`);
           newBriefs.set(key, brief);
           totalGenerated++;
         });
@@ -138,14 +139,29 @@ export const ContentGenerationPanel = () => {
         goal: strategy.expectedEngagement
       };
 
-      const items = Array.from(briefs.entries()).map(([key, brief]) => {
-        const [formatId, indexStr] = key.split('-');
-        return {
-          brief,
-          formatId,
-          index: parseInt(indexStr, 10)
-        };
-      });
+      const items = Array.from(briefs.entries())
+        .map(([key, brief]) => {
+          const [formatId, indexStr] = key.split('-');
+          const index = parseInt(indexStr, 10);
+          
+          // Validate that index is a valid number
+          if (!formatId || isNaN(index)) {
+            console.error(`Invalid brief key format: "${key}". Expected format: "formatId-index"`);
+            return null;
+          }
+          
+          return {
+            brief,
+            formatId,
+            index
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null); // Remove invalid items
+
+      // Validate we have items to generate
+      if (items.length === 0) {
+        throw new Error('No valid content briefs found. Please regenerate briefs.');
+      }
 
       await generateAllContent(
         items,
@@ -158,25 +174,27 @@ export const ContentGenerationPanel = () => {
     } catch (error: any) {
       console.error('Generate all error:', error);
       
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        toast({
-          title: "Authentication Error",
-          description: "Please configure your AI provider in Settings.",
-          variant: "destructive"
-        });
-      } else if (error.message?.includes('No AI provider')) {
-        toast({
-          title: "AI Provider Required",
-          description: "Please configure an AI provider in Settings to generate content.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Generation Failed",
-          description: error.message || "Could not generate content. Please try again.",
-          variant: "destructive"
-        });
-      }
+      const errorMessage = error.message?.includes('piece_index') 
+        ? 'Invalid content format. Please regenerate content briefs.'
+        : error.message?.includes('401') || error.message?.includes('Unauthorized')
+        ? "Please configure your AI provider in Settings."
+        : error.message?.includes('No AI provider')
+        ? "Please configure an AI provider in Settings to generate content."
+        : error.message || "Could not generate content. Please try again.";
+      
+      const errorTitle = error.message?.includes('piece_index')
+        ? "Invalid Content Format"
+        : error.message?.includes('401') || error.message?.includes('Unauthorized')
+        ? "Authentication Error"
+        : error.message?.includes('No AI provider')
+        ? "AI Provider Required"
+        : "Generation Failed";
+      
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: "destructive"
+      });
     }
   };
 
