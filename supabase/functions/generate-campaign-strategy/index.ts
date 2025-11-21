@@ -322,16 +322,20 @@ Deno.serve(async (req) => {
             messages: [
               {
                 role: 'system',
-                content: `You are a B2B SaaS marketing strategist. Generate 3-4 distinct, specific campaign strategies based on the user's campaign context.
+                content: `You are a B2B SaaS marketing strategist. Generate 2-4 distinct, complete campaign strategies based on the user's campaign context.
 
-CRITICAL: For EACH strategy, you MUST generate ALL enriched fields including:
+CRITICAL: Generate COMPLETE strategies with ALL fields populated immediately (no summaries):
+- Full title and detailed description
+- Complete contentMix with ALL format counts
 - totalEffort (with workflow order based on the contentMix)
 - audienceIntelligence (personas, industry segments, pain points, messaging angle)
 - seoIntelligence (primary/secondary keywords, difficulty, impact, brief count)
 - distributionStrategy (channels, posting cadence, best times, traffic lift estimate)
 - assetRequirements (copy needs, visual needs, 3-5 CTA suggestions)
+- expectedOutcome, focus, effortLevel, totalHours, complexity
+- milestones, expectedMetrics, contentCategories, strategyScore, keyStrengths
 
-Each strategy should be concrete and actionable, not generic. Focus on the specific solution/product mentioned in the campaign context. Be specific and tactical with all enriched fields.`
+Each strategy should be concrete and actionable with FULL details ready for immediate use. Campaign managers need to see ALL decision-making data in ONE response.`
               },
               {
                 role: 'user',
@@ -341,7 +345,7 @@ Each strategy should be concrete and actionable, not generic. Focus on the speci
             tools: [CAMPAIGN_STRATEGY_TOOL],
             tool_choice: { type: 'function', function: { name: 'generate_campaign_strategies' } },
             temperature: 0.7,
-            max_tokens: 4096
+            max_tokens: 12000
           }
         };
         
@@ -384,27 +388,13 @@ Each strategy should be concrete and actionable, not generic. Focus on the speci
           throw new Error('No strategies generated');
         }
 
-        const strategy = strategies[0];
-
-        // Verify strategy structure
-        console.log('🔍 Strategy structure:', {
-          hasId: !!strategy.id,
-          hasTitle: !!strategy.title,
-          hasDescription: !!strategy.description,
-          hasContentMix: !!strategy.contentMix,
-          contentMixLength: strategy.contentMix?.length || 0,
-          contentMixSample: strategy.contentMix?.[0],
-          hasExpectedOutcome: !!strategy.expectedOutcome,
-          hasFocus: !!strategy.focus,
-          hasEffortLevel: !!strategy.effortLevel,
-          hasTotalHours: !!strategy.totalHours,
-          hasComplexity: !!strategy.complexity
-        });
-
-
-        return new Response(JSON.stringify({ strategy }), {
+        // Return ALL strategies (2-4), not just the first one
+        console.log(`✅ Generated ${strategies.length} complete strategies`);
+        
+        return new Response(JSON.stringify({ strategies }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+
 
       } catch (error) {
         lastError = error;

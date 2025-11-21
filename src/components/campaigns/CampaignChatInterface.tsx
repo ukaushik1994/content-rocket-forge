@@ -139,7 +139,7 @@ export function CampaignChatInterface({
         </div>
 
         {/* Strategy Summary Selection */}
-        {stage === 'strategy-selection' && strategySummaries.length > 0 && (
+        {stage === 'complete' && strategySummaries.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -150,20 +150,20 @@ export function CampaignChatInterface({
               selectedId={selectedSummaryId}
               onSelect={selectSummary}
               onRegenerate={regenerateSummaries}
-              onEditAnswers={() => goBackToStage('timeline')}
+              onEditAnswers={() => goBackToStage('collecting')}
               isLoading={isLoading}
             />
           </motion.div>
         )}
 
         {/* Quick Reply Buttons */}
-        {!isComplete && stage !== 'strategy-selection' && stage === 'timeline' && (
+        {!isComplete && stage === 'collecting' && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-wrap gap-2 justify-center"
           >
-            {quickReplies[stage].map((reply) => {
+            {quickReplies.timeline.map((reply) => {
               const Icon = reply.icon;
               return (
                 <Button
@@ -182,16 +182,14 @@ export function CampaignChatInterface({
         )}
 
         {/* Message Input */}
-        {!isComplete && stage !== 'strategy-selection' && (
+        {!isComplete && stage !== 'complete' && (
           <MessageInput
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             placeholder={
-              stage === 'goal-idea' 
-                ? "Describe your campaign idea and goal..." 
-                : stage === 'audience'
-                ? "Who are you trying to reach?"
-                : "How much time do you have?"
+              stage === 'collecting' 
+                ? "Tell me about your campaign idea, audience, goals, and timeline..." 
+                : "Tell me more..."
             }
           />
         )}
