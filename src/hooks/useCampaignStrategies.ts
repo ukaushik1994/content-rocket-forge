@@ -9,6 +9,11 @@ import { normalizeCampaignStrategy } from '@/utils/campaignStrategyNormalizer';
 import { validateCampaignInput } from '@/utils/inputValidation';
 import { retryWithBackoff } from '@/utils/retryWithBackoff';
 
+export type ServiceStatusCallback = (
+  type: 'serp-analyzing' | 'serp-complete' | 'serp-error' | 'ai-generating' | 'ai-complete' | 'ai-error',
+  data?: { message?: string; provider?: string; count?: number }
+) => void;
+
 export const useCampaignStrategies = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +21,8 @@ export const useCampaignStrategies = () => {
   const generateStrategies = async (
     input: CampaignInput, 
     userId: string,
-    selectedSummary?: CampaignStrategySummary
+    selectedSummary?: CampaignStrategySummary,
+    onStatusUpdate?: ServiceStatusCallback
   ): Promise<CampaignStrategy[]> => {
     setIsGenerating(true);
     setError(null);
@@ -27,13 +33,27 @@ export const useCampaignStrategies = () => {
       let serpContext = '';
       if (sanitizedInput.useSerpData && sanitizedInput.idea) {
         try {
+          onStatusUpdate?.('serp-analyzing', { 
+            message: 'Analyzing search trends and competitor data...' 
+          });
+          
           const serpData = await analyzeKeywordSerp(sanitizedInput.idea);
           if (serpData) {
             serpContext = optimizeSerpContext(serpData);
+            // Try to extract search volume if available
+            const searchVolume = (serpData as any).organic_results?.[0]?.estimated_search_volume || 0;
+            onStatusUpdate?.('serp-complete', { 
+              message: searchVolume > 0 
+                ? `Found ${searchVolume.toLocaleString()} monthly searches` 
+                : 'Search analysis complete'
+            });
             toast.success('✅ SERP analysis complete');
           }
         } catch (serpError) {
           console.warn('⚠️ SERP API unavailable:', serpError);
+          onStatusUpdate?.('serp-error', { 
+            message: 'SERP API unavailable - continuing without search data' 
+          });
           toast.info('⚠️ SERP API unavailable - generating strategies without search data');
           // Continue without SERP data - graceful degradation
         }
@@ -259,6 +279,23 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
 
       console.log(`📊 [Campaign Strategies] Generating strategy...`);
       
+      // Get AI provider name for status update
+      const { data: providers } = await supabase
+        .from('ai_service_providers')
+        .select('provider')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('priority', { ascending: true })
+        .limit(1)
+        .single();
+      
+      const providerName = providers?.provider || 'AI';
+      
+      onStatusUpdate?.('ai-generating', { 
+        provider: providerName,
+        message: 'Analyzing requirements and building comprehensive strategies...' 
+      });
+      
       // Use edge function with retry logic (max 3 attempts)
       const { data, error } = await retryWithBackoff(
         () => supabase.functions.invoke('generate-campaign-strategy', {
@@ -312,11 +349,16 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
       }
       
       console.log('📊 [Campaign Strategies] ✅ Validation passed');
+      onStatusUpdate?.('ai-complete', { 
+        count: strategies.length,
+        message: `Generated ${strategies.length} strategy option${strategies.length > 1 ? 's' : ''}` 
+      });
       toast.success(`Generated ${strategies.length} comprehensive campaign strategies`);
       return strategies;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed';
       setError(msg);
+      onStatusUpdate?.('ai-error', { message: msg });
       toast.error(msg);
       throw err;
     } finally {
