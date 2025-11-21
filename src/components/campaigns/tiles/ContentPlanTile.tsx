@@ -37,24 +37,18 @@ const formatNames: Record<string, string> = {
   'meme': 'Meme Posts',
 };
 
-const complexityColors = {
-  beginner: 'bg-green-500/20 text-green-400 border-green-400/30',
-  skilled: 'bg-amber-500/20 text-amber-400 border-amber-400/30',
-  expert: 'bg-red-500/20 text-red-400 border-red-400/30',
-};
-
 export const ContentPlanTile = ({ strategy, campaignId }: ContentPlanTileProps) => {
   const { openPanel } = useContentGeneration();
   const totalPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <GlassCard className="p-8 bg-gradient-to-br from-background/40 via-background/60 to-background/40 backdrop-blur-2xl border-2 border-transparent bg-gradient-to-br before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-br before:from-purple-500/20 before:via-transparent before:to-pink-500/20 before:-z-10">
+    <GlassCard className="p-6 bg-background/60 backdrop-blur-xl border border-white/5">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-full bg-purple-500/10">
             <FileText className="h-5 w-5 text-purple-400" />
           </div>
-          <h3 className="text-2xl font-bold tracking-tight">Content Plan</h3>
+          <h3 className="text-xl font-bold tracking-tight">Content Plan</h3>
         </div>
         <Button 
           size="sm" 
@@ -68,9 +62,9 @@ export const ContentPlanTile = ({ strategy, campaignId }: ContentPlanTileProps) 
       </div>
       
       {/* Content Mix */}
-      <div className="space-y-5 mb-6">
+      <div className="space-y-4 mb-6">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Content Formats</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Content Formats</p>
           <Badge variant="outline" className="font-bold px-3 py-1">{totalPieces} pieces total</Badge>
         </div>
         <div className="grid grid-cols-1 gap-3">
@@ -79,21 +73,18 @@ export const ContentPlanTile = ({ strategy, campaignId }: ContentPlanTileProps) 
             const name = formatNames[format.formatId] || format.formatId;
             
             return (
-              <div key={format.formatId} className="group relative p-4 rounded-xl bg-gradient-to-br from-card/40 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/50 hover:to-card/70 transition-all duration-300 hover:scale-[1.02]">
+              <div key={format.formatId} className="group relative p-4 rounded-xl bg-card/40 border border-white/5 hover:border-white/10 transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-lg bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
-                      <Icon className="h-6 w-6 text-purple-400" />
+                    <div className="p-2.5 rounded-lg bg-purple-500/10">
+                      <Icon className="h-5 w-5 text-purple-400" />
                     </div>
                     <div>
-                      <p className="font-bold text-base leading-relaxed">{name}</p>
-                      <p className="text-xs text-muted-foreground/70">Ready to generate</p>
+                      <p className="font-bold text-sm leading-relaxed">{name}</p>
+                      <p className="text-xs text-muted-foreground">Ready to generate</p>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <Badge className="text-lg font-bold px-4 py-1 bg-gradient-to-r from-primary/20 to-primary/30">{format.count}×</Badge>
-                    <p className="text-xs text-muted-foreground/70">pieces</p>
-                  </div>
+                  <Badge variant="outline" className="text-base font-bold px-3 py-1">{format.count}×</Badge>
                 </div>
               </div>
             );
@@ -101,39 +92,24 @@ export const ContentPlanTile = ({ strategy, campaignId }: ContentPlanTileProps) 
         </div>
       </div>
 
-      {/* Effort Summary */}
+      {/* Effort Summary + Brief Access */}
       {strategy.totalEffort && (
-        <div className="pt-6 border-t border-white/5">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="p-2.5 rounded-full bg-amber-500/10">
-              <Zap className="h-5 w-5 text-amber-400" />
+        <div className="pt-5 border-t border-white/5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-full bg-purple-500/10">
+                <Zap className="h-4 w-4 text-purple-400" />
+              </div>
+              <p className="text-sm font-semibold uppercase tracking-wide">Total Hours</p>
             </div>
-            <p className="text-sm font-semibold uppercase tracking-wide">Time & Effort</p>
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground/60 mb-2 font-medium">Total Hours</p>
-              <p className="text-3xl font-black text-amber-400">{strategy.totalEffort.hours}h</p>
-            </div>
-            <div className="p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground/60 mb-2 font-medium">Skill Level</p>
-              <Badge className={cn(complexityColors[strategy.totalEffort.complexity], "text-sm font-bold px-3 py-1.5 mt-1")}>
-                {strategy.totalEffort.complexity}
-              </Badge>
-            </div>
+            <p className="text-2xl font-bold text-purple-400">{strategy.totalEffort.hours}h</p>
           </div>
           
-          {strategy.totalEffort.workflowOrder && strategy.totalEffort.workflowOrder.length > 0 && (
-            <div className="mt-5">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground/60 mb-3 font-medium">Recommended Order</p>
-              <div className="flex gap-2.5 flex-wrap">
-                {strategy.totalEffort.workflowOrder.map((formatId, idx) => (
-                  <Badge key={formatId} variant="outline" className="text-xs font-bold px-3 py-1.5 hover:scale-105 transition-transform">
-                    {idx + 1}. {formatNames[formatId] || formatId}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+          {strategy.seoIntelligence?.briefTemplatesAvailable && strategy.seoIntelligence.briefTemplatesAvailable > 0 && (
+            <Button variant="outline" size="sm" className="w-full gap-2 mt-4">
+              <FileText className="h-4 w-4" />
+              View {strategy.seoIntelligence.briefTemplatesAvailable} Content Briefs
+            </Button>
           )}
         </div>
       )}
