@@ -287,6 +287,138 @@ export const ContentGenerationPanel = () => {
                     <p className="font-medium">Generating content briefs...</p>
                   </div>
                 </div>
+              ) : queueItems.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Queue Progress */}
+                  <Card className="p-6 bg-gradient-to-br from-primary/10 to-blue-500/10 border-primary/20">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold">Generation Progress</h3>
+                        <span className="text-sm text-muted-foreground">
+                          {stats.completed} of {stats.total} completed
+                        </span>
+                      </div>
+                      <Progress value={(stats.completed / stats.total) * 100} className="h-3" />
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex gap-4 text-sm">
+                          {stats.pending > 0 && (
+                            <span className="text-muted-foreground">{stats.pending} pending</span>
+                          )}
+                          {stats.processing > 0 && (
+                            <span className="text-blue-400">{stats.processing} processing</span>
+                          )}
+                          {stats.failed > 0 && (
+                            <span className="text-red-400">{stats.failed} failed</span>
+                          )}
+                        </div>
+                        {stats.completed > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearCompleted}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Clear Completed
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Queue Items */}
+                  <div className="space-y-3">
+                    {queueItems.map((item) => {
+                      const formatName = formatNames[item.format_id] || item.format_id;
+                      const brief = item.brief as ContentBrief;
+                      
+                      return (
+                        <Card 
+                          key={item.id} 
+                          className={`p-4 transition-all ${
+                            item.status === 'completed' ? 'bg-emerald-500/5 border-emerald-500/20' :
+                            item.status === 'failed' ? 'bg-red-500/5 border-red-500/20' :
+                            item.status === 'processing' ? 'bg-blue-500/5 border-blue-500/20' :
+                            'bg-background/60'
+                          }`}
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold truncate">{brief?.title || 'Untitled'}</h3>
+                                  <Badge variant="outline" className="shrink-0">{formatName}</Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                  {brief?.description || 'No description'}
+                                </p>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 shrink-0">
+                                {item.status === 'pending' && (
+                                  <Badge variant="outline" className="bg-slate-500/20 text-slate-400">
+                                    Pending
+                                  </Badge>
+                                )}
+                                {item.status === 'processing' && (
+                                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400">
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    Processing
+                                  </Badge>
+                                )}
+                                {item.status === 'completed' && (
+                                  <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    Completed
+                                  </Badge>
+                                )}
+                                {item.status === 'failed' && (
+                                  <Badge variant="outline" className="bg-red-500/20 text-red-400">
+                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                    Failed
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            {item.error_message && (
+                              <div className="text-xs text-red-400 bg-red-500/10 rounded p-2">
+                                {item.error_message}
+                              </div>
+                            )}
+
+                            {(item.status === 'failed' || item.status === 'cancelled') && (
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => retryItem(item.id)}
+                                  className="gap-1"
+                                >
+                                  <RefreshCw className="h-3 w-3" />
+                                  Retry
+                                </Button>
+                              </div>
+                            )}
+
+                            {(item.status === 'pending' || item.status === 'processing') && (
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => cancelItem(item.id)}
+                                  className="gap-1 text-muted-foreground hover:text-foreground"
+                                >
+                                  <X className="h-3 w-3" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-6">
                   {Array.from(briefs.entries()).map(([key, brief]) => {
