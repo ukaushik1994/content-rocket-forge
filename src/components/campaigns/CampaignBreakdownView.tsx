@@ -63,6 +63,32 @@ export const CampaignBreakdownView = ({
   const [activeTab, setActiveTab] = useState<'strategy' | 'publishing'>('strategy');
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [campaignData, setCampaignData] = useState<any>(null);
+
+  // Fetch campaign data including solution when campaignId exists
+  useEffect(() => {
+    const fetchCampaignData = async () => {
+      if (!campaignId) return;
+      
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select(`
+          *,
+          solution:solutions(*)
+        `)
+        .eq('id', campaignId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching campaign data:', error);
+        return;
+      }
+      
+      setCampaignData(data);
+    };
+
+    fetchCampaignData();
+  }, [campaignId]);
 
   // Auto-save hook
   const { saveStatus, lastSaved } = useCampaignAutoSave({
@@ -127,7 +153,9 @@ export const CampaignBreakdownView = ({
           name,
           campaignInput.idea,
           campaignInput,
-          strategy
+          strategy,
+          campaignInput.solutionId,
+          strategy.description // Use strategy description as objective
         );
 
         console.log('📊 [Campaign Status] Set to "planned" after atomic creation');
@@ -224,7 +252,12 @@ export const CampaignBreakdownView = ({
           <>
             {/* Row 1: Campaign Overview - Full Width */}
             <TileErrorBoundary tileName="Campaign Overview">
-              <CampaignOverviewTile strategy={strategy} status={campaignStatus} />
+              <CampaignOverviewTile 
+                strategy={strategy} 
+                status={campaignStatus}
+                solution={campaignData?.solution || solution}
+                campaignObjective={campaignData?.objective}
+              />
             </TileErrorBoundary>
           
             {/* Row 2: Content Plan + Target Audience & Messaging */}

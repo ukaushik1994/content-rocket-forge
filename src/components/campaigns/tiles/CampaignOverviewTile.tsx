@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 interface CampaignOverviewTileProps {
   strategy: CampaignStrategy;
   status: CampaignStatus;
+  solution?: any | null;
+  campaignObjective?: string;
 }
 
 const statusConfig = {
@@ -17,7 +19,7 @@ const statusConfig = {
   archived: { label: 'Archived', color: 'text-gray-400', border: 'border-gray-500/50', bg: 'bg-gray-500/10' },
 } as const;
 
-export const CampaignOverviewTile = ({ strategy, status }: CampaignOverviewTileProps) => {
+export const CampaignOverviewTile = ({ strategy, status, solution, campaignObjective }: CampaignOverviewTileProps) => {
   const config = statusConfig[status] || statusConfig.draft;
   
   // Calculate progress metrics
@@ -56,6 +58,44 @@ export const CampaignOverviewTile = ({ strategy, status }: CampaignOverviewTileP
         >
           {config.label}
         </Badge>
+      </div>
+      
+      {/* Solution Branding Header */}
+      {solution && (
+        <div className="mb-6 p-5 rounded-xl bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 border-2 border-primary/20 shadow-lg shadow-primary/10">
+          <div className="flex items-center gap-4">
+            {solution.logo_url ? (
+              <img 
+                src={solution.logo_url} 
+                alt={solution.name}
+                className="h-16 w-16 rounded-xl object-contain bg-white/10 p-2 border border-white/5"
+              />
+            ) : (
+              <div className="h-16 w-16 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+                <Sparkles className="h-8 w-8 text-primary" />
+              </div>
+            )}
+            <div className="flex-1">
+              <p className="text-xs text-primary/70 uppercase tracking-wider mb-1 font-medium">Promoting</p>
+              <p className="text-xl font-bold">{solution.name}</p>
+              {solution.short_description && (
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{solution.short_description}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Campaign Objective Summary */}
+      <div className="mb-6 p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-l-4 border-blue-500">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="h-5 w-5 text-blue-400" />
+          <p className="text-sm font-semibold uppercase tracking-wider text-blue-400">What We're Achieving</p>
+        </div>
+        <p className="text-sm leading-relaxed font-medium">
+          {campaignObjective || 
+           `Launching a ${strategy.timeline || '4-week'} campaign to ${strategy.targetAudience || 'target audience'} with ${strategy.contentMix.reduce((sum, item) => sum + item.count, 0)} pieces of content across ${strategy.contentMix.length} formats, aiming for ${strategy.expectedMetrics?.impressions ? `${strategy.expectedMetrics.impressions.min}K-${strategy.expectedMetrics.impressions.max}K impressions` : 'maximum reach and engagement'}.`}
+        </p>
       </div>
       
       {/* Progress Tracker */}
