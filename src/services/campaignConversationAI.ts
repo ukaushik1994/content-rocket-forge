@@ -84,6 +84,9 @@ function buildPreviousContext(data: EnhancedCampaignData): string {
   if (data.goal) context.push(`Goal: ${data.goal}`);
   if (data.successMetrics) context.push(`Success Metrics: ${data.successMetrics}`);
   if (data.timeline) context.push(`Timeline: ${data.timeline}`);
+  if (data.distributionChannels && data.distributionChannels.length > 0) {
+    context.push(`Distribution Channels: ${data.distributionChannels.join(', ')}`);
+  }
   if (data.solutionId) context.push(`Solution: Linked to specific solution`);
   
   return context.length > 0 ? `\nPREVIOUSLY COLLECTED:\n${context.join('\n')}` : '';

@@ -33,6 +33,7 @@ export interface EnhancedCampaignData {
   teamSkills?: string;
   pastResults?: string;
   solutionId?: string | null;
+  distributionChannels?: string[];
 }
 
 interface ConversationState {
@@ -42,6 +43,7 @@ interface ConversationState {
   strategies: CampaignStrategy[];
   selectedStrategyId: string | null;
   isLoadingAI: boolean;
+  showChannelSelector: boolean;
 }
 
 const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaignData): string => {
@@ -121,7 +123,8 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
         messages: initialMessages,
         strategies: [],
         selectedStrategyId: null,
-        isLoadingAI: false
+        isLoadingAI: false,
+        showChannelSelector: false
       };
     }
     
@@ -138,7 +141,8 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
       messages: initialMessages,
       strategies: [],
       selectedStrategyId: null,
-      isLoadingAI: false
+      isLoadingAI: false,
+      showChannelSelector: false
     };
   });
 
@@ -196,6 +200,28 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
       newData.targetAudience = message;
     }
     
+    // Parse distribution channels from message
+    const channelKeywords = {
+      'social': 'Social Media',
+      'email': 'Email Marketing',
+      'webinar': 'Webinars',
+      'blog': 'Blog/Content',
+      'paid ad': 'Paid Ads',
+      'event': 'Events',
+      'seo': 'SEO/Organic',
+      'outreach': 'Direct Outreach'
+    };
+    
+    if (!newData.distributionChannels) {
+      newData.distributionChannels = [];
+    }
+    
+    Object.entries(channelKeywords).forEach(([keyword, channelName]) => {
+      if (messageLower.includes(keyword) && !newData.distributionChannels?.includes(channelName)) {
+        newData.distributionChannels!.push(channelName);
+      }
+    });
+    
     // Parse timeline if not set
     if (!newData.timeline) {
       if (messageLower.includes('1 week') || messageLower.includes('one week') || messageLower.includes('7 days')) {
@@ -223,6 +249,13 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
     }
     
     console.log('[Campaign] Next stage:', nextStage);
+    
+    // Check if we should show channel selector
+    const shouldShowChannelSelector = 
+      nextStage === 'collecting' && 
+      hasWhatTheyrePromoting && 
+      hasWhoItsFor && 
+      (!newData.distributionChannels || newData.distributionChannels.length === 0);
     
     // Create user message
     const userMessage: CampaignConversationMessage = {
@@ -252,7 +285,8 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
       collectedData: newData,
       stage: nextStage,
       messages: [...prev.messages, userMessage],
-      isLoadingAI: true
+      isLoadingAI: true,
+      showChannelSelector: shouldShowChannelSelector
     }));
 
     // If we're at generating stage, trigger strategy generation
@@ -330,6 +364,11 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
 
       console.log('[Campaign] Generated question (first 100 chars):', aiQuestion.substring(0, 100));
 
+      // Detect if AI is asking about channels
+      const askingAboutChannels = aiQuestion.toLowerCase().includes('channel') || 
+                                   aiQuestion.toLowerCase().includes('promote') ||
+                                   aiQuestion.toLowerCase().includes('distribution');
+      
       // Add AI message
       setState(prev => ({
         ...prev,
@@ -339,7 +378,8 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
           content: aiQuestion,
           timestamp: new Date()
         }],
-        isLoadingAI: false
+        isLoadingAI: false,
+        showChannelSelector: askingAboutChannels && !prev.collectedData.distributionChannels?.length
       }));
     } catch (error) {
       console.error('[Campaign] Error generating AI response:', error);
@@ -450,9 +490,26 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
       stage: targetStage,
       strategies: [],
       selectedStrategyId: null,
-      isLoadingAI: false
+      isLoadingAI: false,
+      showChannelSelector: false
     }));
   }, []);
+
+  const selectChannels = useCallback((channels: string[]) => {
+    console.log('[Campaign] Channels selected:', channels);
+    setState(prev => ({
+      ...prev,
+      collectedData: {
+        ...prev.collectedData,
+        distributionChannels: channels
+      },
+      showChannelSelector: false
+    }));
+    
+    // Auto-submit the selected channels as a message
+    const channelMessage = `I want to use: ${channels.join(', ')}`;
+    processUserResponse(channelMessage);
+  }, [processUserResponse]);
 
   const getProgress = useCallback(() => {
     const stages: ConversationStage[] = ['collecting', 'generating', 'complete'];
@@ -474,11 +531,13 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
     getCampaignInput,
     isComplete: state.stage === 'complete',
     isLoading: state.isLoadingAI,
-    strategySummaries: state.strategies, // Renamed for compatibility with existing code
+    strategySummaries: state.strategies,
     selectedSummaryId: state.selectedStrategyId,
     selectSummary: selectStrategy,
     regenerateSummaries,
     goBackToStage,
-    collectedData: state.collectedData
+    collectedData: state.collectedData,
+    showChannelSelector: state.showChannelSelector,
+    selectChannels
   };
 };
