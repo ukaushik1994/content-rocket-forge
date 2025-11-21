@@ -26,8 +26,17 @@ export const useCampaignStrategies = () => {
       const sanitizedInput = validateCampaignInput(input);
       let serpContext = '';
       if (sanitizedInput.useSerpData && sanitizedInput.idea) {
-        const serpData = await analyzeKeywordSerp(sanitizedInput.idea);
-        if (serpData) serpContext = optimizeSerpContext(serpData);
+        try {
+          const serpData = await analyzeKeywordSerp(sanitizedInput.idea);
+          if (serpData) {
+            serpContext = optimizeSerpContext(serpData);
+            toast.success('✅ SERP analysis complete');
+          }
+        } catch (serpError) {
+          console.warn('⚠️ SERP API unavailable:', serpError);
+          toast.info('⚠️ SERP API unavailable - generating strategies without search data');
+          // Continue without SERP data - graceful degradation
+        }
       }
 
       let solutionContext = '';
@@ -272,50 +281,39 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
         errorMessage: error?.message
       });
       
-      if (error || !data?.strategy) {
+      if (error || !data?.strategies) {
         console.error(`📊 [Campaign Strategies] ❌ Error:`, error);
-        throw new Error(error?.message || 'Failed to generate strategy');
+        throw new Error(error?.message || 'Failed to generate strategies');
       }
 
       const aiResponse = data;
-      console.log(`📊 [Campaign Strategies] ✅ Strategy generated successfully`);
+      console.log(`📊 [Campaign Strategies] ✅ Generated ${aiResponse.strategies.length} complete strategies`);
 
-      console.log('📊 [Campaign Strategies] Processing AI response...');
-      const rawStrategy = aiResponse.strategy;
-      
-      console.log('📊 [Campaign Strategies] Normalizing strategy...');
-      const strategy = normalizeCampaignStrategy(rawStrategy);
-      
-      console.log('📊 [Campaign Strategies] ✅ Strategy normalized successfully');
-      console.log('📊 [Campaign Strategies] Normalized strategy:', {
-        title: strategy.title,
-        contentMixCount: strategy.contentMix?.length || 0,
-        hasId: !!strategy.id,
-        hasDescription: !!strategy.description
-      });
+      // Process and normalize ALL strategies
+      const strategies = aiResponse.strategies.map((rawStrategy: any) => {
+        const strategy = normalizeCampaignStrategy(rawStrategy);
+        
+        // Auto-generate ID if missing
+        if (!strategy.id) {
+          strategy.id = `strategy-${Date.now()}-${Math.random()}`;
+        }
+        
+        // Validate required fields
+        if (!strategy.title || !strategy.description || !strategy.contentMix || strategy.contentMix.length === 0) {
+          console.error('📊 [Campaign Strategies] ❌ Strategy missing required fields');
+          return null;
+        }
+        
+        return strategy;
+      }).filter(Boolean); // Remove any null entries
 
-      // Auto-generate ID if missing
-      if (!strategy.id) {
-        console.warn('📊 [Campaign Strategies] ⚠️ No ID found, generating one...');
-        strategy.id = `strategy-${Date.now()}`;
-      }
-
-      // Validate required fields
-      console.log('📊 [Campaign Strategies] Validating required fields...');
-      if (!strategy.title || !strategy.description || !strategy.contentMix || strategy.contentMix.length === 0) {
-        console.error('📊 [Campaign Strategies] ❌ Validation failed:', {
-          hasTitle: !!strategy.title,
-          hasDescription: !!strategy.description,
-          hasContentMix: !!strategy.contentMix,
-          contentMixLength: strategy.contentMix?.length || 0
-        });
-        throw new Error('Strategy missing required fields');
+      if (strategies.length === 0) {
+        throw new Error('No valid strategies generated');
       }
       
       console.log('📊 [Campaign Strategies] ✅ Validation passed');
-      toast.success('Generated comprehensive campaign strategy');
-      console.log('📊 [Campaign Strategies] 🎉 Returning strategy:', strategy.title);
-      return [strategy]; // Return as array for compatibility
+      toast.success(`Generated ${strategies.length} comprehensive campaign strategies`);
+      return strategies;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed';
       setError(msg);

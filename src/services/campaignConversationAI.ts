@@ -42,39 +42,24 @@ function getStageContext(stage: ConversationStage, data: EnhancedCampaignData): 
   const previousContext = buildPreviousContext(data);
   
   switch (stage) {
-    case 'goal-idea':
-      return `OBJECTIVE: Get them to describe both their campaign idea AND goal in one response.
-      
-Ask what they're promoting and what they want to achieve (awareness, conversions, etc.).`;
+    case 'collecting':
+      return `OBJECTIVE: Gather campaign requirements in a conversational way.
 
-    case 'solution-detection':
-      return `PREVIOUS: They're promoting "${data.idea}"
-${previousContext}
+Ask smart questions to collect:
+1. Campaign idea/product being promoted
+2. Target audience (roles, company size, industries)
+3. Goal (awareness, conversion, engagement, education)
+4. Timeline (1-week, 2-week, 4-week, ongoing)
 
-OBJECTIVE: Determine if they're promoting an existing solution from their account.
+Be flexible - if they provide multiple details in one message, acknowledge and ask for what's missing.
 
-Show available solutions and ask them to select one or type "None".`;
+${previousContext}`;
 
-    case 'audience':
-      return `PREVIOUS: 
-- Campaign idea: "${data.idea}"
-${previousContext}
-
-OBJECTIVE: Identify their target audience - be specific about roles, industries, company size if they mention it.
-
-Ask who they're targeting with this campaign.`;
-
-    case 'timeline':
-      return `PREVIOUS:
-- Audience: "${data.targetAudience}"
-${previousContext}
-
-OBJECTIVE: Understand the timeline (1-week, 2-week, 4-week, or ongoing).
-
-Ask how much time they have for this campaign.`;
+    case 'generating':
+      return `All information collected! Acknowledge receipt and let them know you're generating strategies.`;
 
     case 'complete':
-      return `All information collected! Acknowledge receipt and let them know you're generating strategies.`;
+      return `Strategies have been generated and are ready for selection.`;
 
     default:
       return 'Ask them to continue...';
@@ -178,20 +163,14 @@ export async function generateAIQuestion(
  */
 export function getFallbackQuestion(stage: ConversationStage, data: EnhancedCampaignData): string {
   switch (stage) {
-    case 'goal-idea':
-      return "Let's create a winning campaign together! Tell me about your campaign idea and what you want to achieve.";
+    case 'collecting':
+      return "Let's create a winning campaign together! Tell me about your campaign idea, target audience, goals, and timeline.";
     
-    case 'solution-detection':
-      return `Are you promoting one of your existing solutions? Type the solution name or 'None'.`;
-    
-    case 'audience':
-      return `Great! For "${data.idea}", who is your target audience?`;
-    
-    case 'timeline':
-      return `Perfect! What's your timeline for this campaign?`;
+    case 'generating':
+      return "🎉 Perfect! I have everything I need. Let me generate highly targeted campaign strategies for you...";
     
     case 'complete':
-      return "🎉 Perfect! I have everything I need. Let me generate highly targeted campaign strategies for you...";
+      return "✅ Your campaign strategies are ready!";
     
     default:
       return "Tell me more...";

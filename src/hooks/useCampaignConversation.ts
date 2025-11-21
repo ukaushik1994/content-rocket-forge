@@ -5,13 +5,9 @@ import { generateAIQuestion, getFallbackQuestion } from '@/services/campaignConv
 import { generateCampaignSummaries } from '@/services/campaignSummaryAI';
 
 export type ConversationStage = 
-  | 'goal-idea'          // Combined: idea + goal in one question
-  | 'solution-detection' // Optional: only if solutions exist
-  | 'audience'           // Simplified: single audience question
-  | 'timeline'           // Quick selection
-  | 'complete'
-  | 'strategy-selection'
-  | 'generating-full';
+  | 'collecting'    // Gathering all required data dynamically
+  | 'generating'    // Generating strategies
+  | 'complete';     // Ready to use strategies
 
 export interface CampaignConversationMessage {
   id: string;
@@ -50,25 +46,14 @@ interface ConversationState {
 
 const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaignData): string => {
   switch (stage) {
-    case 'goal-idea':
-      return "Let's create a winning campaign! Tell me:\n\n• What product/service are you promoting?\n• What do you want to achieve? (e.g., increase signups, boost awareness, drive sales)\n\nBe as specific as you like - I'll use this to create targeted campaign strategies.";
+    case 'collecting':
+      return "Let's create a winning campaign! Tell me:\n\n• What product/service are you promoting?\n• Who is your target audience?\n• What do you want to achieve?\n• What's your timeline?\n\nBe as specific as you like - I'll use this to create targeted campaign strategies.";
     
-    case 'solution-detection':
-      const solutions = (data as any).availableSolutions || [];
-      if (solutions.length > 0) {
-        const solutionList = solutions.map((s: any) => `• ${s.name}`).join('\n');
-        return `Are you promoting one of these solutions?\n\n${solutionList}\n\nReply with the solution name, or type "None" if promoting something else.`;
-      }
-      return "Are you promoting one of your existing solutions? Please reply with the solution name, or type 'None' if this is for something else.";
-    
-    case 'audience':
-      return `Great! Now, who is this campaign for?\n\nDescribe your target audience (e.g., "B2B SaaS founders", "enterprise CFOs", "small business owners"). Include company size or roles if relevant.`;
-    
-    case 'timeline':
-      return `Perfect! What's your timeline for this campaign?`;
+    case 'generating':
+      return "🎉 Perfect! I have everything I need. Let me generate highly targeted campaign strategies for you...";
     
     case 'complete':
-      return "🎉 Perfect! I have everything I need. Let me generate highly targeted campaign strategies for you...";
+      return "✅ Your campaign strategies are ready!";
     
     default:
       return "Tell me more...";
@@ -76,11 +61,9 @@ const generateDynamicQuestion = (stage: ConversationStage, data: EnhancedCampaig
 };
 
 const AI_QUESTIONS = {
-  'goal-idea': generateDynamicQuestion('goal-idea', {} as EnhancedCampaignData),
-  'solution-detection': '',
-  audience: '',
-  timeline: '',
-  complete: ''
+  'collecting': generateDynamicQuestion('collecting', {} as EnhancedCampaignData),
+  'generating': '',
+  'complete': ''
 };
 
 export const useCampaignConversation = (initialMessage?: string) => {
@@ -97,11 +80,11 @@ export const useCampaignConversation = (initialMessage?: string) => {
       initialMessages.push({
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: generateDynamicQuestion('audience', { idea: initialMessage }),
+        content: generateDynamicQuestion('collecting', { idea: initialMessage }),
         timestamp: new Date()
       });
       return {
-        stage: 'audience',
+        stage: 'collecting',
         collectedData: { idea: initialMessage },
         messages: initialMessages,
         strategySummaries: [],
@@ -113,12 +96,12 @@ export const useCampaignConversation = (initialMessage?: string) => {
     initialMessages.push({
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: AI_QUESTIONS['goal-idea'],
+      content: AI_QUESTIONS['collecting'],
       timestamp: new Date()
     });
     
     return {
-      stage: 'goal-idea',
+      stage: 'collecting',
       collectedData: {},
       messages: initialMessages,
       strategySummaries: [],
@@ -143,136 +126,46 @@ export const useCampaignConversation = (initialMessage?: string) => {
     const newData = { ...state.collectedData };
     let nextStage: ConversationStage = state.stage;
     
-    // Process based on current stage
-    switch (state.stage) {
-      case 'goal-idea':
-        // Extract both idea and goal from single response
-        newData.idea = message;
-        
-        // Parse goal from message (AI will also infer this during generation)
-        const goalLower = message.toLowerCase();
-        if (goalLower.includes('awareness') || goalLower.includes('brand')) {
-          newData.goal = 'awareness';
-        } else if (goalLower.includes('conversion') || goalLower.includes('sale') || goalLower.includes('signup')) {
-          newData.goal = 'conversion';
-        } else if (goalLower.includes('engagement') || goalLower.includes('engage')) {
-          newData.goal = 'engagement';
-        } else if (goalLower.includes('education') || goalLower.includes('educate')) {
-          newData.goal = 'education';
-        } else {
-          newData.goal = 'awareness'; // Default
-        }
-        
-        // Check if user has solutions to detect
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { data: solutions } = await supabase
-              .from('solutions')
-              .select('id, name')
-              .eq('user_id', user.id)
-              .limit(5);
-            
-            if (solutions && solutions.length > 0) {
-              // Store solutions for next stage
-              (newData as any).availableSolutions = solutions;
-              nextStage = 'solution-detection';
-            } else {
-              // No solutions, skip to audience
-              nextStage = 'audience';
-            }
-          } else {
-            nextStage = 'audience';
-          }
-        } catch (error) {
-          console.error('Failed to fetch solutions:', error);
-          nextStage = 'audience';
-        }
-        break;
-      
-      case 'solution-detection':
-        const userResponse = message.toLowerCase();
-        const availableSolutions = (newData as any).availableSolutions || [];
-        
-        if (userResponse === 'none' || userResponse.includes('no') || userResponse.includes('not')) {
-          // User is not promoting an existing solution
-          newData.solutionId = null;
-          nextStage = 'audience';
-        } else {
-          // Try to match user response to a solution
-          const matchedSolution = availableSolutions.find((sol: any) => 
-            userResponse.includes(sol.name.toLowerCase())
-          );
-          
-          if (matchedSolution) {
-            newData.solutionId = matchedSolution.id;
-            
-            // Fetch full solution details to get target audience
-            try {
-              const { data: solutionData } = await supabase
-                .from('solutions')
-                .select('target_audience')
-                .eq('id', matchedSolution.id)
-                .single();
-              
-              if (solutionData?.target_audience) {
-                // Auto-populate target audience from solution
-                const targetAudienceData = solutionData.target_audience as any;
-                
-                // Build audience description from solution data
-                let audienceDescription = '';
-                if (targetAudienceData.primary) {
-                  audienceDescription = targetAudienceData.primary;
-                } else if (Array.isArray(targetAudienceData)) {
-                  audienceDescription = targetAudienceData.join(', ');
-                } else if (typeof targetAudienceData === 'string') {
-                  audienceDescription = targetAudienceData;
-                } else if (targetAudienceData.segments) {
-                  audienceDescription = targetAudienceData.segments.join(', ');
-                }
-                
-                if (audienceDescription) {
-                  newData.targetAudience = audienceDescription;
-                  (newData as any)._autoPopulatedAudience = true; // Flag for message
-                  console.log('[Campaign] Auto-populated target audience from solution:', audienceDescription);
-                  nextStage = 'timeline'; // Skip audience question
-                } else {
-                  nextStage = 'audience'; // Ask for audience
-                }
-              } else {
-                nextStage = 'audience'; // No target audience in solution, ask
-              }
-            } catch (error) {
-              console.error('Failed to fetch solution details:', error);
-              nextStage = 'audience'; // Fall back to asking
-            }
-          } else {
-            nextStage = 'audience';
-          }
-        }
-        
-        // Clean up temporary data
-        delete (newData as any).availableSolutions;
-        break;
-      
-      case 'audience':
-        newData.targetAudience = message;
-        nextStage = 'timeline';
-        break;
-      
-      case 'timeline':
-        const timelineLower = message.toLowerCase();
-        if (timelineLower.includes('1 week') || timelineLower.includes('one week') || timelineLower.includes('7 days') || timelineLower.includes('1-week')) {
-          newData.timeline = '1-week';
-        } else if (timelineLower.includes('2 week') || timelineLower.includes('two week') || timelineLower.includes('14 days') || timelineLower.includes('2-week')) {
-          newData.timeline = '2-week';
-        } else if (timelineLower.includes('ongoing') || timelineLower.includes('continuous')) {
-          newData.timeline = 'ongoing';
-        } else {
-          newData.timeline = '4-week'; // Default
-        }
-        nextStage = 'strategy-selection';
-        break;
+    // Extract data from message
+    newData.idea = newData.idea || message;
+    
+    // Parse goal from message
+    const messageLower = message.toLowerCase();
+    if (messageLower.includes('awareness') || messageLower.includes('brand')) {
+      newData.goal = 'awareness';
+    } else if (messageLower.includes('conversion') || messageLower.includes('sale') || messageLower.includes('signup')) {
+      newData.goal = 'conversion';
+    } else if (messageLower.includes('engagement') || messageLower.includes('engage')) {
+      newData.goal = 'engagement';
+    } else if (messageLower.includes('education') || messageLower.includes('educate')) {
+      newData.goal = 'education';
+    } else if (!newData.goal) {
+      newData.goal = 'awareness'; // Default
+    }
+    
+    // Parse target audience if not set
+    if (!newData.targetAudience && (messageLower.includes('target') || messageLower.includes('audience'))) {
+      newData.targetAudience = message;
+    }
+    
+    // Parse timeline if not set
+    if (!newData.timeline) {
+      if (messageLower.includes('1 week') || messageLower.includes('one week') || messageLower.includes('7 days')) {
+        newData.timeline = '1-week';
+      } else if (messageLower.includes('2 week') || messageLower.includes('two week') || messageLower.includes('14 days')) {
+        newData.timeline = '2-week';
+      } else if (messageLower.includes('ongoing') || messageLower.includes('continuous')) {
+        newData.timeline = 'ongoing';
+      } else {
+        newData.timeline = '4-week'; // Default
+      }
+    }
+    
+    // Check if we have all required data
+    const hasAllData = newData.idea && newData.goal && newData.targetAudience && newData.timeline;
+    
+    if (hasAllData) {
+      nextStage = 'generating';
     }
     
     console.log('[Campaign] Next stage:', nextStage);
@@ -285,7 +178,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
       timestamp: new Date()
     };
     
-    // Build conversation history BEFORE setState (includes new user message)
+    // Build conversation history BEFORE setState
     const conversationHistory = [
       ...state.messages.map(msg => ({
         role: msg.role,
@@ -308,37 +201,29 @@ export const useCampaignConversation = (initialMessage?: string) => {
       isLoadingAI: true
     }));
 
-    // If we're at strategy-selection stage, generate summaries
-    if (nextStage === 'strategy-selection') {
+    // If we're at generating stage, trigger strategy generation
+    if (nextStage === 'generating') {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
-
-        // Get solutionId from collectedData
-        const solutionId = newData.solutionId || null;
-        
-        const summaries = await generateCampaignSummaries(newData, solutionId, user.id);
-        
         setState(prev => ({
           ...prev,
-          strategySummaries: summaries,
           isLoadingAI: false,
+          stage: 'complete',
           messages: [...prev.messages, {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: '🎯 Perfect! I\'ve analyzed your needs and created 3-4 distinct strategy options for you. Select the one that best fits your goals and resources.',
+            content: '🎯 Perfect! I have everything I need. Generating comprehensive campaign strategies...',
             timestamp: new Date()
           }]
         }));
       } catch (error) {
-        console.error('[Campaign] Error generating summaries:', error);
+        console.error('[Campaign] Error:', error);
         setState(prev => ({
           ...prev,
           isLoadingAI: false,
           messages: [...prev.messages, {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: 'I had trouble generating strategy options. Let me try again...',
+            content: 'I had trouble processing your request. Please try again.',
             timestamp: new Date()
           }]
         }));
@@ -346,50 +231,19 @@ export const useCampaignConversation = (initialMessage?: string) => {
       return;
     }
 
-    // Generate AI response with correct conversation history
+    // Generate AI response
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('User not authenticated');
       }
 
-      let aiQuestion: string;
-      
-      // Check if we auto-populated audience from solution
-      const autoPopulatedAudience = (newData as any)._autoPopulatedAudience;
-      if (autoPopulatedAudience && nextStage === 'timeline') {
-        // Add info message about using solution's target audience
-        const infoMessage = `✅ Great! I've pulled the target audience from your solution: **${newData.targetAudience}**\n\nNow, `;
-        
-        try {
-          const timelineQuestion = await generateAIQuestion(
-            nextStage,
-            newData,
-            conversationHistory,
-            user.id
-          );
-          aiQuestion = infoMessage + timelineQuestion.charAt(0).toLowerCase() + timelineQuestion.slice(1);
-        } catch (aiError) {
-          console.warn('[Campaign] AI generation failed, using fallback:', aiError);
-          aiQuestion = infoMessage + getFallbackQuestion(nextStage, newData).charAt(0).toLowerCase() + getFallbackQuestion(nextStage, newData).slice(1);
-        }
-        
-        // Clean up the flag
-        delete (newData as any)._autoPopulatedAudience;
-      } else {
-        try {
-          // Now we have the complete conversation history including user's message
-          aiQuestion = await generateAIQuestion(
-            nextStage,  // Use calculated nextStage, not state.stage
-            newData,    // Use calculated newData, not state.collectedData
-            conversationHistory,  // Manually built history with all messages
-            user.id
-          );
-        } catch (aiError) {
-          console.warn('[Campaign] AI generation failed, using fallback:', aiError);
-          aiQuestion = getFallbackQuestion(nextStage, newData);
-        }
-      }
+      const aiQuestion = await generateAIQuestion(
+        nextStage,
+        newData,
+        conversationHistory,
+        user.id
+      );
 
       console.log('[Campaign] Generated question (first 100 chars):', aiQuestion.substring(0, 100));
 
@@ -433,23 +287,21 @@ export const useCampaignConversation = (initialMessage?: string) => {
   const handleQuickReplyOld = useCallback((value: CampaignGoal | CampaignTimeline) => {
     let message = '';
     
-    if (state.stage === 'timeline') {
-      const timelineLabels: Record<CampaignTimeline, string> = {
-        '1-week': '1 Week',
-        '2-week': '2 Weeks',
-        '4-week': '4 Weeks',
-        'ongoing': 'Ongoing'
-      };
-      message = timelineLabels[value as CampaignTimeline];
-    }
+    const timelineLabels: Record<CampaignTimeline, string> = {
+      '1-week': '1 Week',
+      '2-week': '2 Weeks',
+      '4-week': '4 Weeks',
+      'ongoing': 'Ongoing'
+    };
+    message = timelineLabels[value as CampaignTimeline];
     
     if (message) {
       processUserResponse(message);
     }
-  }, [state.stage, processUserResponse]);
+  }, [processUserResponse]);
 
   const getCampaignInput = useCallback((): CampaignInput | null => {
-    if (state.stage !== 'generating-full') return null;
+    if (state.stage !== 'complete') return null;
     
     const { idea, targetAudience, goal, timeline, solutionId } = state.collectedData;
     
@@ -469,7 +321,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
     setState(prev => ({
       ...prev,
       selectedSummaryId: summaryId,
-      stage: 'generating-full'
+      stage: 'complete'
     }));
   }, []);
 
@@ -512,25 +364,13 @@ export const useCampaignConversation = (initialMessage?: string) => {
   }, []);
 
   const getProgress = useCallback(() => {
-    const stages: ConversationStage[] = [
-      'goal-idea',
-      'solution-detection',
-      'audience',
-      'timeline'
-    ];
-    
+    const stages: ConversationStage[] = ['collecting', 'generating', 'complete'];
     const currentIndex = stages.indexOf(state.stage);
-    let total = 3;
-    if (state.collectedData.solutionId !== undefined) {
-      total = 4;
-    }
-    
-    const current = currentIndex >= 0 ? currentIndex + 1 : 0;
     
     return {
-      current: Math.min(current, total),
-      total,
-      percentage: ((currentIndex + 1) / total) * 100
+      current: currentIndex + 1,
+      total: 3,
+      percentage: ((currentIndex + 1) / 3) * 100
     };
   }, [state.stage]);
 
@@ -541,7 +381,7 @@ export const useCampaignConversation = (initialMessage?: string) => {
     processUserResponse,
     handleQuickReply,
     getCampaignInput,
-    isComplete: state.stage === 'generating-full',
+    isComplete: state.stage === 'complete',
     isLoading: state.isLoadingAI,
     strategySummaries: state.strategySummaries,
     selectedSummaryId: state.selectedSummaryId,
