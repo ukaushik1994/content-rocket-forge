@@ -3,7 +3,7 @@ import { CampaignStrategy, CampaignInput, CampaignStatus } from '@/types/campaig
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RefreshCw, Save } from 'lucide-react';
+import { Sparkles, RefreshCw, Save, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { SaveIndicator } from './SaveIndicator';
@@ -19,6 +19,7 @@ import { createCampaignAtomic } from '@/services/campaignTransactions';
 import { toast } from 'sonner';
 import { ContentGenerationProvider } from '@/contexts/ContentGenerationContext';
 import { ContentGenerationPanel } from './ContentGenerationPanel';
+import { ContentPreviewModal } from './ContentPreviewModal';
 import {
   CampaignSummaryTile,
   ContentMixTile,
@@ -64,6 +65,7 @@ export const CampaignBreakdownView = ({
   const [showContentLibrary, setShowContentLibrary] = useState(false);
   const [activeTab, setActiveTab] = useState<'strategy' | 'publishing'>('strategy');
   const [contentItems, setContentItems] = useState<any[]>([]);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Auto-save hook
   const { saveStatus, lastSaved } = useCampaignAutoSave({
@@ -265,18 +267,29 @@ export const CampaignBreakdownView = ({
             
             {/* Row 6: Generate Assets CTA - Centered */}
             <div className="flex flex-col items-center gap-4 py-8">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-opacity px-12 py-6 text-lg font-semibold shadow-xl"
-                onClick={onGenerateAssets}
-                disabled={isGenerating}
-              >
-                <Sparkles className="h-5 w-5 mr-2" />
-                {isGenerating ? 'Generating Assets...' : 'Generate Campaign Assets'}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setShowPreviewModal(true)}
+                  className="gap-2"
+                >
+                  <Eye className="h-5 w-5" />
+                  👁️ Preview Content Plan
+                </Button>
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-opacity px-12 py-6 text-lg font-semibold shadow-xl"
+                  onClick={onGenerateAssets}
+                  disabled={isGenerating}
+                >
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  {isGenerating ? 'Generating Assets...' : 'Generate Campaign Assets'}
+                </Button>
+              </div>
               
               <p className="text-sm text-muted-foreground text-center">
-                This will create {totalContentPieces} content pieces and a full execution plan
+                Preview the plan or generate {totalContentPieces} content pieces now
               </p>
               
               {/* Navigation Links */}
@@ -341,6 +354,14 @@ export const CampaignBreakdownView = ({
         )}
     </div>
   )}
+
+      {/* Content Preview Modal */}
+      <ContentPreviewModal
+        open={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        strategy={strategy}
+        campaignId={campaignId}
+      />
 </ContentGenerationProvider>
   );
 };
