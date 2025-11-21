@@ -30,14 +30,15 @@ import {
   DollarSign,
   MessageCircle,
   Search,
+  Sparkles,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface EnhancedCampaignCardProps {
   campaign: SavedCampaign;
-  onView: () => void;
+  onView: (id: string) => void;
   onStartEdit: () => void;
   onDelete: () => void;
   onArchive: () => void;
@@ -51,58 +52,45 @@ interface EnhancedCampaignCardProps {
 const statusConfig = {
   draft: {
     dot: '⚪',
-    color: 'text-muted-foreground',
-    border: 'border-border/50',
+    color: 'from-gray-500/20 to-gray-500/30 text-gray-300',
     label: 'Draft',
   },
   planned: {
     dot: '🔵',
-    color: 'text-blue-400',
-    border: 'border-blue-500/30',
+    color: 'from-blue-500/20 to-blue-500/30 text-blue-300',
     label: 'Planned',
   },
   active: {
     dot: '🟣',
-    color: 'text-purple-400',
-    border: 'border-purple-500/30',
+    color: 'from-purple-500/20 to-purple-500/30 text-purple-300',
     label: 'Active',
   },
   completed: {
     dot: '🟢',
-    color: 'text-green-400',
-    border: 'border-green-500/30',
+    color: 'from-green-500/20 to-green-500/30 text-green-300',
     label: 'Completed',
   },
   archived: {
     dot: '⚫',
-    color: 'text-muted-foreground',
-    border: 'border-border/50',
+    color: 'from-gray-500/20 to-gray-500/30 text-gray-300',
     label: 'Archived',
   },
 };
 
-const timelineStatusConfig = {
-  'on-track': { icon: CheckCircle2, color: 'text-green-400', label: 'On track' },
-  'behind': { icon: Clock, color: 'text-amber-400', label: 'Behind' },
-  'overdue': { icon: AlertTriangle, color: 'text-red-400', label: 'Overdue' },
-  'unknown': { icon: Clock, color: 'text-gray-400', label: 'TBD' },
+const channelIcons = {
+  'social': Share2,
+  'email': Mail,
+  'webinars': Video,
+  'blog': FileText,
+  'paid ads': DollarSign,
+  'events': Calendar,
+  'seo': Search,
+  'direct outreach': MessageCircle,
 };
 
-const healthConfig = {
-  healthy: 'border-green-500/30',
-  warning: 'border-amber-500/30',
-  critical: 'border-red-500/30',
-};
-
-const channelIcons: Record<string, React.ReactNode> = {
-  'social': <Share2 className="h-3.5 w-3.5" />,
-  'email': <Mail className="h-3.5 w-3.5" />,
-  'webinars': <Video className="h-3.5 w-3.5" />,
-  'blog': <FileText className="h-3.5 w-3.5" />,
-  'paid ads': <DollarSign className="h-3.5 w-3.5" />,
-  'events': <Calendar className="h-3.5 w-3.5" />,
-  'seo': <Search className="h-3.5 w-3.5" />,
-  'direct outreach': <MessageCircle className="h-3.5 w-3.5" />,
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 },
 };
 
 export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
@@ -118,89 +106,73 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
   onCancelEdit,
 }) => {
   const config = statusConfig[campaign.status as keyof typeof statusConfig] || statusConfig.draft;
-  const timelineConfig = timelineStatusConfig[campaign.timelineStatus || 'unknown'];
-  const healthIndicator = campaign.healthIndicator || 'warning';
-  const hasStrategy = !!campaign.selected_strategy;
-
-  const progressPercentage = campaign.progressPercentage || 0;
-  const progressColor = 
-    progressPercentage >= 71 ? 'bg-green-500' :
-    progressPercentage >= 31 ? 'bg-amber-500' :
-    'bg-red-500';
+  const contentCount = campaign.contentCount || 0;
+  const plannedCount = campaign.plannedCount || 0;
+  const progressPercentage = plannedCount > 0 ? Math.round((contentCount / plannedCount) * 100) : 0;
+  const estimatedReach = campaign.estimatedReach || '—';
+  const daysRemaining = campaign.daysRemaining !== undefined ? campaign.daysRemaining : '—';
+  const goalDisplay = campaign.goal || campaign.selected_strategy?.expectedEngagement || 'Awareness';
+  const nextAction = campaign.nextAction;
+  const distributionChannels = campaign.distributionChannels || [];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      transition={{ duration: 0.2 }}
+      variants={itemVariants}
+      className="group"
     >
       <GlassCard
         className={cn(
-          'p-6 bg-background/60 backdrop-blur-xl border hover:bg-background/80 hover:scale-[1.01] hover:shadow-xl transition-all duration-300',
-          config.border
+          "relative overflow-hidden transition-all duration-500 cursor-pointer",
+          "bg-gradient-to-br from-background/40 via-background/60 to-background/40",
+          "backdrop-blur-2xl backdrop-saturate-150",
+          "border-2 border-white/5 hover:border-white/10",
+          "shadow-2xl hover:shadow-3xl hover:shadow-primary/10",
+          "ring-1 ring-white/5 hover:ring-white/10",
+          "hover:-translate-y-1"
         )}
+        onClick={() => onView(campaign.id)}
       >
-        <div className="space-y-4">
+        <div className="p-8 space-y-6">
           {/* Header */}
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
-              {isEditing ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={editingName}
-                    onChange={(e) => onEditingNameChange(e.target.value)}
-                    className="text-lg font-bold"
-                    autoFocus
-                  />
-                  <Button size="sm" onClick={onSaveEdit}>Save</Button>
-                  <Button size="sm" variant="outline" onClick={onCancelEdit}>Cancel</Button>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <h3 className="text-2xl font-bold line-clamp-2">
-                    {campaign.selected_strategy?.title || campaign.name}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${config.color}`}>
-                      {config.dot} {config.label}
-                    </span>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-2 mt-2">
-                {campaign.timelineStatus && campaign.timelineStatus !== 'unknown' && (
-                  <div className="flex items-center gap-1.5 text-sm">
-                    <timelineConfig.icon className={`h-4 w-4 ${timelineConfig.color}`} />
-                    <span className={timelineConfig.color}>{timelineConfig.label}</span>
-                  </div>
-                )}
-                {campaign.created_at && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(campaign.created_at), { addSuffix: true })}
-                  </span>
-                )}
+              <h3 className="text-3xl font-extrabold mb-2 group-hover:text-primary transition-colors line-clamp-2 tracking-tight">
+                {campaign.selected_strategy?.title || campaign.name}
+              </h3>
+              <div className="flex items-center gap-3">
+                <span className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold",
+                  "bg-gradient-to-r backdrop-blur-sm shadow-sm transition-all duration-300",
+                  config.color,
+                  campaign.status === 'active' && "shadow-primary/30 animate-pulse-slow"
+                )}>
+                  <span className="text-base">{config.dot}</span>
+                  {config.label}
+                </span>
+                <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">
+                  {format(new Date(campaign.created_at), 'MMM d, yyyy')}
+                </span>
               </div>
             </div>
-            
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="hover:bg-primary/10">
+                  <MoreVertical className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onStartEdit}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Rename
                 </DropdownMenuItem>
                 {campaign.status !== 'archived' && (
-                  <DropdownMenuItem onClick={onArchive}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive(); }}>
                     <Archive className="h-4 w-4 mr-2" />
                     Archive
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={onDelete} className="text-red-400">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-red-400">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </DropdownMenuItem>
@@ -208,115 +180,127 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
             </DropdownMenu>
           </div>
 
-          {/* Next Action Badge */}
-          {campaign.nextAction && (
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <p className="text-sm">
-                <span className="text-muted-foreground">Next: </span>
-                <span className="font-medium text-primary">{campaign.nextAction}</span>
-              </p>
-            </div>
-          )}
-
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Key Metrics Grid */}
+          <div className="grid grid-cols-2 gap-6">
             {/* Content Progress */}
-            <div className="p-4 rounded-lg bg-card/40">
-              <div className="flex items-center gap-2 mb-1">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Content Progress</span>
+            <div className="group/metric p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-full bg-purple-500/10 group-hover/metric:bg-purple-500/20 transition-colors">
+                  <FileText className="h-5 w-5 text-purple-400" />
+                </div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Content</p>
               </div>
-              <p className="text-2xl font-bold">
-                {campaign.contentCount || 0}
-                <span className="text-sm text-muted-foreground">/{campaign.plannedCount || 0}</span>
-              </p>
+              <p className="text-3xl font-black">{contentCount}/{plannedCount}</p>
+              <p className="text-xs text-muted-foreground/70 mt-1.5">pieces created</p>
             </div>
 
             {/* Estimated Reach */}
-            <div className="p-4 rounded-lg bg-card/40">
-              <div className="flex items-center gap-2 mb-1">
-                <Eye className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Estimated Reach</span>
+            <div className="group/metric p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-full bg-blue-500/10 group-hover/metric:bg-blue-500/20 transition-colors">
+                  <Eye className="h-5 w-5 text-blue-400" />
+                </div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Est. Reach</p>
               </div>
-              <p className="text-2xl font-bold">
-                {campaign.estimatedReach || '—'}
-              </p>
+              <p className="text-3xl font-black">{estimatedReach}</p>
+              <p className="text-xs text-muted-foreground/70 mt-1.5">impressions</p>
             </div>
 
             {/* Timeline */}
-            <div className="p-4 rounded-lg bg-card/40">
-              <div className="flex items-center gap-2 mb-1">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Timeline</span>
+            <div className="group/metric p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-full bg-green-500/10 group-hover/metric:bg-green-500/20 transition-colors">
+                  <Calendar className="h-5 w-5 text-green-400" />
+                </div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Timeline</p>
               </div>
-              <p className="text-lg font-bold">
-                {campaign.daysRemaining !== undefined
-                  ? campaign.daysRemaining > 0
-                    ? `${campaign.daysRemaining}d left`
-                    : `${Math.abs(campaign.daysRemaining)}d overdue`
-                  : campaign.timeline || '—'}
-              </p>
+              <p className="text-3xl font-black">{daysRemaining}</p>
+              <p className="text-xs text-muted-foreground/70 mt-1.5">days remaining</p>
             </div>
 
             {/* Goal */}
-            <div className="p-4 rounded-lg bg-card/40">
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Goal</span>
+            <div className="group/metric p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-full bg-amber-500/10 group-hover/metric:bg-amber-500/20 transition-colors">
+                  <Target className="h-5 w-5 text-amber-400" />
+                </div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Goal</p>
               </div>
-              <p className="text-sm font-medium line-clamp-2">
-                {campaign.goal || campaign.selected_strategy?.expectedEngagement || 'Awareness'}
-              </p>
+              <Badge variant="secondary" className="mt-2 text-sm font-bold px-3 py-1">
+                {goalDisplay}
+              </Badge>
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Completion</span>
-              <span className="text-sm font-bold">{progressPercentage}%</span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold tracking-wide">Campaign Progress</span>
+              <span className="text-sm font-black text-primary">{progressPercentage}%</span>
             </div>
-            <div className="h-3 bg-background/60 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${progressColor} transition-all duration-700 ease-out`}
-                style={{ width: `${progressPercentage}%` }}
+            <div className="h-4 bg-gradient-to-r from-background/40 to-background/80 rounded-full overflow-hidden border border-white/5">
+              <motion.div
+                className={cn(
+                  "h-full rounded-full transition-all duration-700 ease-out relative",
+                  progressPercentage < 30 && "bg-gradient-to-r from-red-500 to-red-400 shadow-lg shadow-red-500/30",
+                  progressPercentage >= 30 && progressPercentage < 70 && "bg-gradient-to-r from-amber-500 to-amber-400 shadow-lg shadow-amber-500/30",
+                  progressPercentage >= 70 && "bg-gradient-to-r from-green-500 to-emerald-400 shadow-lg shadow-green-500/30"
+                )}
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercentage}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
               />
             </div>
           </div>
 
           {/* Distribution Channels */}
-          {campaign.distributionChannels && campaign.distributionChannels.length > 0 && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">Distribution Channels</p>
-              <div className="flex gap-2 items-center">
-                {campaign.distributionChannels.slice(0, 5).map((channel) => {
-                  const icon = channelIcons[channel.toLowerCase()];
-                  return icon ? (
-                    <div
-                      key={channel}
-                      className="flex items-center justify-center h-8 w-8 rounded-lg bg-card/60 border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
+          {distributionChannels.length > 0 && (
+            <div className="flex items-center gap-3">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Channels:</p>
+              <div className="flex gap-2.5">
+                {distributionChannels.slice(0, 5).map((channel, idx) => {
+                  const Icon = channelIcons[channel as keyof typeof channelIcons] || Share2;
+                  return (
+                    <div 
+                      key={idx} 
+                      className="group/channel h-10 w-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/20 flex items-center justify-center hover:from-primary/20 hover:to-primary/30 hover:scale-110 transition-all duration-300 cursor-pointer"
                       title={channel}
                     >
-                      {icon}
+                      <Icon className="h-5 w-5 text-primary group-hover/channel:scale-110 transition-transform" />
                     </div>
-                  ) : null;
+                  );
                 })}
-                {campaign.distributionChannels.length > 5 && (
-                  <span className="text-xs text-muted-foreground">
-                    +{campaign.distributionChannels.length - 5}
-                  </span>
+                {distributionChannels.length > 5 && (
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-muted/50 to-muted border border-border/50 flex items-center justify-center">
+                    <span className="text-xs font-bold">+{distributionChannels.length - 5}</span>
+                  </div>
                 )}
               </div>
             </div>
           )}
 
+          {/* Next Action */}
+          {nextAction && (
+            <div className="pt-6 border-t border-white/5">
+              <div className="group/action relative flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 border-l-4 border-primary shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all duration-300 animate-pulse-slow">
+                <div className="p-2 rounded-lg bg-primary/20 group-hover/action:scale-110 transition-transform">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-primary/70 font-medium">Next Action</p>
+                  <p className="text-sm font-bold text-foreground">{nextAction}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Action Footer */}
-          <div className="flex items-center gap-2 pt-4 border-t border-border/30">
-            <Button onClick={onView} className="flex-1">
+          <div className="flex items-center gap-3 pt-6 border-t border-white/5">
+            <Button onClick={(e) => { e.stopPropagation(); onView(campaign.id); }} className="flex-1 font-bold hover:scale-105 transition-transform">
               View Campaign
             </Button>
-            <Button variant="outline" size="icon" onClick={() => {}}>
-              <TrendingUp className="h-4 w-4" />
+            <Button variant="outline" size="icon" className="hover:bg-primary/10 hover:scale-110 transition-all">
+              <TrendingUp className="h-5 w-5" />
             </Button>
           </div>
         </div>
