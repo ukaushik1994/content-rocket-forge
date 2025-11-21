@@ -13,6 +13,12 @@ export interface SavedCampaign {
   created_at: string | null;
   updated_at: string | null;
   user_id: string;
+  // Enhanced metrics
+  contentCount?: number;
+  plannedCount?: number;
+  progressPercentage?: number;
+  estimatedReach?: string;
+  distributionChannels?: string[];
 }
 
 export const campaignService = {
@@ -69,20 +75,55 @@ export const campaignService = {
   },
 
   /**
-   * Get all campaigns for a user
+   * Get all campaigns for a user with enhanced metrics
    */
   async getUserCampaigns(userId: string): Promise<SavedCampaign[]> {
+    // Fetch campaigns with content count
     const { data, error } = await supabase
       .from('campaigns')
-      .select('*')
+      .select(`
+        *,
+        content_items!content_items_campaign_id_fkey(id)
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map((campaign) => ({
-      ...campaign,
-      selected_strategy: campaign.selected_strategy as unknown as CampaignStrategy | null,
-    }));
+    
+    return (data || []).map((campaign: any) => {
+      const strategy = campaign.selected_strategy as unknown as CampaignStrategy | null;
+      
+      // Calculate content metrics
+      const contentCount = campaign.content_items?.length || 0;
+      const plannedCount = strategy?.contentMix 
+        ? Object.values(strategy.contentMix).reduce((sum: number, val: any) => {
+            return sum + (typeof val === 'number' ? val : (val?.count || 0));
+          }, 0)
+        : 0;
+      const progressPercentage = plannedCount > 0 ? Math.round((contentCount / plannedCount) * 100) : 0;
+      
+      // Extract distribution channels
+      const distributionChannels = strategy?.distributionStrategy?.channels || [];
+      
+      return {
+        id: campaign.id,
+        name: campaign.name,
+        original_idea: campaign.original_idea,
+        target_audience: campaign.target_audience,
+        goal: campaign.goal,
+        timeline: campaign.timeline,
+        selected_strategy: strategy,
+        status: campaign.status,
+        created_at: campaign.created_at,
+        updated_at: campaign.updated_at,
+        user_id: campaign.user_id,
+        contentCount,
+        plannedCount,
+        progressPercentage,
+        estimatedReach: strategy?.estimatedReach,
+        distributionChannels,
+      };
+    });
   },
 
   /**
