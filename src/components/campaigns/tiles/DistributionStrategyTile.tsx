@@ -14,8 +14,8 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
     return (
       <GlassCard className="p-6 bg-background/60 backdrop-blur-xl border border-white/5">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-full bg-purple-500/10">
-            <Share2 className="h-5 w-5 text-purple-400" />
+          <div className="p-2.5 rounded-full bg-cyan-500/10">
+            <Share2 className="h-5 w-5 text-cyan-400" />
           </div>
           <h3 className="text-xl font-bold tracking-tight">Distribution Plan</h3>
         </div>
@@ -29,8 +29,8 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
   return (
     <GlassCard className="p-6 bg-background/60 backdrop-blur-xl border border-white/5">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 rounded-full bg-purple-500/10">
-          <Share2 className="h-5 w-5 text-purple-400" />
+        <div className="p-2.5 rounded-full bg-cyan-500/10">
+          <Share2 className="h-5 w-5 text-cyan-400" />
         </div>
         <h3 className="text-xl font-bold tracking-tight">Distribution Plan</h3>
       </div>
@@ -51,8 +51,8 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
         
         {distributionStrategy.postingCadence && (
           <div className="flex items-center gap-3 p-4 rounded-xl bg-card/40 border border-white/5">
-            <div className="p-2 rounded-lg bg-purple-500/10">
-              <Calendar className="h-5 w-5 text-purple-400" />
+            <div className="p-2 rounded-lg bg-cyan-500/10">
+              <Calendar className="h-5 w-5 text-cyan-400" />
             </div>
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Posting Cadence</p>

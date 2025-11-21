@@ -73,11 +73,17 @@ export const ContentPlanTile = ({ strategy, campaignId }: ContentPlanTileProps) 
             const name = formatNames[format.formatId] || format.formatId;
             
             return (
-              <div key={format.formatId} className="group relative p-4 rounded-xl bg-card/40 border border-white/5 hover:border-white/10 transition-all">
-                <div className="flex items-center justify-between">
+              <div 
+                key={format.formatId} 
+                className="group relative p-4 rounded-xl bg-gradient-to-br from-card/40 via-card/60 to-card/40 border border-white/5 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 hover:scale-[1.02] transition-all duration-300"
+              >
+                {/* Gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/0 group-hover:from-purple-500/5 group-hover:to-transparent rounded-xl transition-all duration-300" />
+                
+                <div className="relative flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="p-2.5 rounded-lg bg-purple-500/10">
-                      <Icon className="h-5 w-5 text-purple-400" />
+                    <div className="p-2.5 rounded-lg bg-purple-500/10 group-hover:ring-2 group-hover:ring-purple-500/30 transition-all duration-300">
+                      <Icon className="h-5 w-5 text-purple-400 group-hover:text-purple-300 transition-colors" />
                     </div>
                     <div>
                       <p className="font-bold text-sm leading-relaxed">{name}</p>
@@ -95,14 +101,18 @@ export const ContentPlanTile = ({ strategy, campaignId }: ContentPlanTileProps) 
       {/* Effort Summary + Brief Access */}
       {strategy.totalEffort && (
         <div className="pt-5 border-t border-white/5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-full bg-purple-500/10">
-                <Zap className="h-4 w-4 text-purple-400" />
+          <div className="p-4 rounded-xl bg-gradient-to-br from-card/40 via-card/60 to-card/40 border border-white/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-full bg-purple-500/10">
+                  <Zap className="h-4 w-4 text-purple-400" />
+                </div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Total Time Required</p>
               </div>
-              <p className="text-sm font-semibold uppercase tracking-wide">Total Hours</p>
+              <p className="text-3xl font-black bg-gradient-to-br from-purple-400 to-purple-600 bg-clip-text text-transparent">
+                {strategy.totalEffort.hours}h
+              </p>
             </div>
-            <p className="text-2xl font-bold text-purple-400">{strategy.totalEffort.hours}h</p>
           </div>
           
           {strategy.seoIntelligence?.briefTemplatesAvailable && strategy.seoIntelligence.briefTemplatesAvailable > 0 && (
