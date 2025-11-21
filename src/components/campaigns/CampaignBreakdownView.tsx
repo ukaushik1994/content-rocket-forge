@@ -360,7 +360,11 @@ export const CampaignBreakdownView = ({
         open={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}
         strategy={strategy}
-        campaignId={campaignId}
+        onConfirm={(selectedFormats) => {
+          console.log('Selected formats for generation:', selectedFormats);
+          setShowPreviewModal(false);
+          // User can now proceed to generate only selected formats
+        }}
       />
 </ContentGenerationProvider>
   );
