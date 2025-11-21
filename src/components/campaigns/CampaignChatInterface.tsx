@@ -200,30 +200,35 @@ export function CampaignChatInterface({
           </motion.div>
         )}
 
-        {/* Quick Reply Buttons */}
-        {!isComplete && stage === 'collecting' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap gap-2 justify-center"
-          >
-            {quickReplies.timeline.map((reply) => {
-              const Icon = reply.icon;
-              return (
-                <Button
-                  key={reply.value}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickReply(reply.value as any)}
-                  className="gap-2 border-primary/20 hover:border-primary/40 hover:bg-primary/10"
-                >
-                  <Icon className="h-4 w-4" />
-                  {reply.label}
-                </Button>
-              );
-            })}
-          </motion.div>
-        )}
+        {/* Quick Reply Buttons - Only show when contextually relevant */}
+        {!isComplete && stage === 'collecting' && (() => {
+          const lastMessage = messages[messages.length - 1]?.content.toLowerCase() || '';
+          const showTimelineButtons = lastMessage.includes('timeline');
+          
+          return showTimelineButtons ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-wrap gap-2 justify-center"
+            >
+              {quickReplies.timeline.map((reply) => {
+                const Icon = reply.icon;
+                return (
+                  <Button
+                    key={reply.value}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickReply(reply.value as any)}
+                    className="gap-2 border-primary/20 hover:border-primary/40 hover:bg-primary/10"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {reply.label}
+                  </Button>
+                );
+              })}
+            </motion.div>
+          ) : null;
+        })()}
 
         {/* Message Input */}
         {!isComplete && stage !== 'complete' && (
