@@ -155,8 +155,28 @@ export const ContentGenerationPanel = () => {
         solutionData,
         user.id
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Generate all error:', error);
+      
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        toast({
+          title: "Authentication Error",
+          description: "Please configure your AI provider in Settings.",
+          variant: "destructive"
+        });
+      } else if (error.message?.includes('No AI provider')) {
+        toast({
+          title: "AI Provider Required",
+          description: "Please configure an AI provider in Settings to generate content.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Generation Failed",
+          description: error.message || "Could not generate content. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

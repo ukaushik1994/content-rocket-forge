@@ -82,6 +82,9 @@ serve(async (req) => {
 
     // Call user's configured AI provider through enhanced-ai-chat
     const { data: aiResponse, error: aiError } = await supabase.functions.invoke('enhanced-ai-chat', {
+      headers: {
+        Authorization: `Bearer ${supabaseKey}`
+      },
       body: {
         messages: [
           { role: 'system', content: systemPrompt },
