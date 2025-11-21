@@ -36,6 +36,39 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+// Utility function to format reach values intelligently
+const formatReach = (reach: string | number): { value: string; period?: string } => {
+  if (reach === '—' || !reach) return { value: '—' };
+  
+  const reachStr = String(reach);
+  
+  // Handle ranges like "60,000-80,000 impressions over 4 weeks"
+  const rangeMatch = reachStr.match(/(\d[\d,\-]+)\s*(?:impressions?)?\s*(?:over\s+(.+))?/i);
+  
+  if (rangeMatch) {
+    const numbers = rangeMatch[1];
+    const period = rangeMatch[2];
+    
+    // Convert "60,000-80,000" to "60K-80K"
+    const formatted = numbers
+      .split('-')
+      .map(n => {
+        const num = parseInt(n.replace(/,/g, ''));
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${Math.round(num / 1000)}K`;
+        return n;
+      })
+      .join('-');
+    
+    return {
+      value: formatted,
+      period: period || undefined
+    };
+  }
+  
+  return { value: reachStr };
+};
+
 interface EnhancedCampaignCardProps {
   campaign: SavedCampaign;
   onView: (id: string) => void;
@@ -110,6 +143,7 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
   const plannedCount = campaign.plannedCount || 0;
   const progressPercentage = plannedCount > 0 ? Math.round((contentCount / plannedCount) * 100) : 0;
   const estimatedReach = campaign.estimatedReach || '—';
+  const { value: reachValue, period: reachPeriod } = formatReach(estimatedReach);
   const daysRemaining = campaign.daysRemaining !== undefined ? campaign.daysRemaining : '—';
   const goalDisplay = campaign.goal || campaign.selected_strategy?.expectedEngagement || 'Awareness';
   const nextAction = campaign.nextAction;
@@ -136,7 +170,7 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
-              <h3 className="text-3xl font-extrabold mb-2 group-hover:text-primary transition-colors line-clamp-2 tracking-tight">
+              <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold mb-2 group-hover:text-primary transition-colors line-clamp-3 tracking-tight leading-tight">
                 {campaign.selected_strategy?.title || campaign.name}
               </h3>
               <div className="flex items-center gap-3">
@@ -183,50 +217,52 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
           {/* Key Metrics Grid */}
           <div className="grid grid-cols-2 gap-6">
             {/* Content Progress */}
-            <div className="group/metric p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2.5 rounded-full bg-purple-500/10 group-hover/metric:bg-purple-500/20 transition-colors">
+            <div className="group/metric p-4 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300 min-w-0 overflow-hidden">
+              <div className="flex items-center gap-3 mb-3 min-w-0">
+                <div className="p-2.5 rounded-full bg-purple-500/10 group-hover/metric:bg-purple-500/20 transition-colors flex-shrink-0">
                   <FileText className="h-5 w-5 text-purple-400" />
                 </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Content</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium truncate">Content</p>
               </div>
-              <p className="text-3xl font-black">{contentCount}/{plannedCount}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1.5">pieces created</p>
+              <p className="text-2xl lg:text-3xl font-black leading-tight">{contentCount}/{plannedCount}</p>
+              <p className="text-xs text-muted-foreground/70 mt-1.5 truncate">pieces created</p>
             </div>
 
             {/* Estimated Reach */}
-            <div className="group/metric p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2.5 rounded-full bg-blue-500/10 group-hover/metric:bg-blue-500/20 transition-colors">
+            <div className="group/metric p-4 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300 min-w-0 overflow-hidden">
+              <div className="flex items-center gap-3 mb-3 min-w-0">
+                <div className="p-2.5 rounded-full bg-blue-500/10 group-hover/metric:bg-blue-500/20 transition-colors flex-shrink-0">
                   <Eye className="h-5 w-5 text-blue-400" />
                 </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Est. Reach</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium truncate">Est. Reach</p>
               </div>
-              <p className="text-3xl font-black">{estimatedReach}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1.5">impressions</p>
+              <p className="text-xl lg:text-2xl font-bold leading-tight break-words">{reachValue}</p>
+              <p className="text-xs text-muted-foreground/70 mt-1.5 truncate">
+                {reachPeriod ? `over ${reachPeriod}` : 'impressions'}
+              </p>
             </div>
 
             {/* Timeline */}
-            <div className="group/metric p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2.5 rounded-full bg-green-500/10 group-hover/metric:bg-green-500/20 transition-colors">
+            <div className="group/metric p-4 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300 min-w-0 overflow-hidden">
+              <div className="flex items-center gap-3 mb-3 min-w-0">
+                <div className="p-2.5 rounded-full bg-green-500/10 group-hover/metric:bg-green-500/20 transition-colors flex-shrink-0">
                   <Calendar className="h-5 w-5 text-green-400" />
                 </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Timeline</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium truncate">Timeline</p>
               </div>
-              <p className="text-3xl font-black">{daysRemaining}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1.5">days remaining</p>
+              <p className="text-2xl lg:text-3xl font-black leading-tight">{daysRemaining}</p>
+              <p className="text-xs text-muted-foreground/70 mt-1.5 truncate">days remaining</p>
             </div>
 
             {/* Goal */}
-            <div className="group/metric p-5 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2.5 rounded-full bg-amber-500/10 group-hover/metric:bg-amber-500/20 transition-colors">
+            <div className="group/metric p-4 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300 min-w-0 overflow-hidden">
+              <div className="flex items-center gap-3 mb-3 min-w-0">
+                <div className="p-2.5 rounded-full bg-amber-500/10 group-hover/metric:bg-amber-500/20 transition-colors flex-shrink-0">
                   <Target className="h-5 w-5 text-amber-400" />
                 </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Goal</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium truncate">Goal</p>
               </div>
-              <Badge variant="secondary" className="mt-2 text-sm font-bold px-3 py-1">
+              <Badge variant="secondary" className="mt-2 text-sm font-bold px-3 py-1 truncate max-w-full">
                 {goalDisplay}
               </Badge>
             </div>
