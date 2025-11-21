@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -6,6 +6,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { MessageInput } from '@/components/ai-chat/MessageInput';
 import { CampaignMessageBubble } from './CampaignMessageBubble';
 import { StrategySummaryCards } from './StrategySummaryCards';
+import { ServiceStatusBar, ServiceStatus } from './ServiceStatusBar';
 import { useCampaignConversation } from '@/hooks/useCampaignConversation';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { CampaignInput as CampaignInputType, CampaignStrategySummary } from '@/types/campaign-types';
@@ -23,6 +24,46 @@ export function CampaignChatInterface({
   onComplete, 
   onCancel 
 }: CampaignChatInterfaceProps) {
+  const [serviceStatus, setServiceStatus] = useState<ServiceStatus>({ type: 'idle' });
+
+  const handleStatusUpdate = (
+    type: 'serp-analyzing' | 'serp-complete' | 'serp-error' | 'ai-generating' | 'ai-complete' | 'ai-error',
+    data?: { message?: string; provider?: string; count?: number }
+  ) => {
+    switch (type) {
+      case 'serp-analyzing':
+        setServiceStatus({ type: 'serp-analyzing', message: data?.message || '' });
+        break;
+      case 'serp-complete':
+        setServiceStatus({ type: 'serp-complete', message: data?.message || '' });
+        setTimeout(() => setServiceStatus({ type: 'idle' }), 3000);
+        break;
+      case 'serp-error':
+        setServiceStatus({ type: 'serp-error', message: data?.message || '' });
+        setTimeout(() => setServiceStatus({ type: 'idle' }), 5000);
+        break;
+      case 'ai-generating':
+        setServiceStatus({ 
+          type: 'ai-generating', 
+          provider: data?.provider || 'AI', 
+          message: data?.message || '' 
+        });
+        break;
+      case 'ai-complete':
+        setServiceStatus({ 
+          type: 'ai-complete', 
+          count: data?.count || 0, 
+          message: data?.message || '' 
+        });
+        setTimeout(() => setServiceStatus({ type: 'idle' }), 3000);
+        break;
+      case 'ai-error':
+        setServiceStatus({ type: 'ai-error', message: data?.message || '' });
+        setTimeout(() => setServiceStatus({ type: 'idle' }), 5000);
+        break;
+    }
+  };
+
   const {
     messages,
     stage,
@@ -37,7 +78,7 @@ export function CampaignChatInterface({
     selectSummary,
     regenerateSummaries,
     goBackToStage
-  } = useCampaignConversation(initialMessage);
+  } = useCampaignConversation(initialMessage, handleStatusUpdate);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -115,6 +156,9 @@ export function CampaignChatInterface({
             </div>
           )}
         </div>
+
+        {/* Service Status Indicator */}
+        <ServiceStatusBar status={serviceStatus} />
 
         {/* Messages Area */}
         <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 pr-2">

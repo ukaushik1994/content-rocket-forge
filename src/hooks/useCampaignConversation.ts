@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { CampaignInput, CampaignGoal, CampaignTimeline, CampaignStrategy } from '@/types/campaign-types';
 import { supabase } from '@/integrations/supabase/client';
 import { generateAIQuestion, getFallbackQuestion } from '@/services/campaignConversationAI';
-import { useCampaignStrategies } from './useCampaignStrategies';
+import { useCampaignStrategies, ServiceStatusCallback } from './useCampaignStrategies';
 
 export type ConversationStage = 
   | 'collecting'    // Gathering all required data dynamically
@@ -66,7 +66,10 @@ const AI_QUESTIONS = {
   'complete': ''
 };
 
-export const useCampaignConversation = (initialMessage?: string, onStatusUpdate?: (status: any) => void) => {
+export const useCampaignConversation = (
+  initialMessage?: string, 
+  onStatusUpdate?: ServiceStatusCallback
+) => {
   const { generateStrategies } = useCampaignStrategies();
   
   const [state, setState] = useState<ConversationState>(() => {
@@ -231,7 +234,7 @@ export const useCampaignConversation = (initialMessage?: string, onStatusUpdate?
           solutionId: newData.solutionId
         };
         
-        const strategies = await generateStrategies(input, user.id);
+        const strategies = await generateStrategies(input, user.id, undefined, onStatusUpdate);
         
         setState(prev => ({
           ...prev,
@@ -372,7 +375,7 @@ export const useCampaignConversation = (initialMessage?: string, onStatusUpdate?
         solutionId: state.collectedData.solutionId
       };
       
-      const strategies = await generateStrategies(input, user.id);
+      const strategies = await generateStrategies(input, user.id, undefined, onStatusUpdate);
       
       setState(prev => ({
         ...prev,
