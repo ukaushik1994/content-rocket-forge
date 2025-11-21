@@ -7,6 +7,7 @@ import { MessageInput } from '@/components/ai-chat/MessageInput';
 import { CampaignMessageBubble } from './CampaignMessageBubble';
 import { StrategySummaryCards } from './StrategySummaryCards';
 import { ServiceStatusBar, ServiceStatus } from './ServiceStatusBar';
+import { ChannelSelector } from './ChannelSelector';
 import { useCampaignConversation } from '@/hooks/useCampaignConversation';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { CampaignInput as CampaignInputType, CampaignStrategySummary } from '@/types/campaign-types';
@@ -76,7 +77,9 @@ export function CampaignChatInterface({
     selectedSummaryId,
     selectSummary,
     regenerateSummaries,
-    goBackToStage
+    goBackToStage,
+    showChannelSelector,
+    selectChannels
   } = useCampaignConversation(initialMessage, handleStatusUpdate);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -190,6 +193,16 @@ export function CampaignChatInterface({
           </motion.div>
         )}
 
+        {/* Channel Selector - Show when contextually relevant */}
+        {showChannelSelector && stage === 'collecting' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4"
+          >
+            <ChannelSelector onSelect={selectChannels} />
+          </motion.div>
+        )}
 
         {/* Message Input */}
         {!isComplete && stage !== 'complete' && (
