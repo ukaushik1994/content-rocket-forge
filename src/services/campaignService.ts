@@ -19,6 +19,11 @@ export interface SavedCampaign {
   progressPercentage?: number;
   estimatedReach?: string;
   distributionChannels?: string[];
+  // Campaign manager metrics
+  timelineStatus?: 'on-track' | 'behind' | 'overdue' | 'unknown';
+  daysRemaining?: number;
+  nextAction?: string;
+  healthIndicator?: 'healthy' | 'warning' | 'critical';
 }
 
 export const campaignService = {
@@ -105,6 +110,19 @@ export const campaignService = {
       // Extract distribution channels
       const distributionChannels = strategy?.distributionStrategy?.channels || [];
       
+      // Calculate timeline status
+      const { timelineStatus, daysRemaining } = this.calculateTimelineStatus(
+        campaign.created_at,
+        campaign.timeline || strategy?.timeline,
+        progressPercentage
+      );
+      
+      // Calculate next action
+      const nextAction = this.calculateNextAction(campaign.status, contentCount, plannedCount);
+      
+      // Calculate health indicator
+      const healthIndicator = this.calculateHealthIndicator(timelineStatus, progressPercentage);
+      
       return {
         id: campaign.id,
         name: campaign.name,
@@ -122,8 +140,91 @@ export const campaignService = {
         progressPercentage,
         estimatedReach: strategy?.estimatedReach,
         distributionChannels,
+        timelineStatus,
+        daysRemaining,
+        nextAction,
+        healthIndicator,
       };
     });
+  },
+
+  /**
+   * Calculate timeline status based on created date and timeline
+   */
+  calculateTimelineStatus(
+    createdAt: string | null,
+    timeline: string | undefined,
+    progressPercentage: number
+  ): { timelineStatus: 'on-track' | 'behind' | 'overdue' | 'unknown'; daysRemaining: number | undefined } {
+    if (!createdAt || !timeline) {
+      return { timelineStatus: 'unknown', daysRemaining: undefined };
+    }
+
+    const created = new Date(createdAt);
+    const now = new Date();
+    const daysPassed = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Parse timeline (e.g., "4 weeks", "2 weeks", "1 week")
+    const timelineMatch = timeline.match(/(\d+)\s*(week|month)/i);
+    if (!timelineMatch) {
+      return { timelineStatus: 'unknown', daysRemaining: undefined };
+    }
+    
+    const duration = parseInt(timelineMatch[1]);
+    const unit = timelineMatch[2].toLowerCase();
+    const totalDays = unit === 'week' ? duration * 7 : duration * 30;
+    const daysRemaining = totalDays - daysPassed;
+    
+    // Determine status based on progress vs time
+    const expectedProgress = (daysPassed / totalDays) * 100;
+    
+    if (daysRemaining < 0) {
+      return { timelineStatus: 'overdue', daysRemaining };
+    } else if (progressPercentage < expectedProgress - 20) {
+      return { timelineStatus: 'behind', daysRemaining };
+    } else {
+      return { timelineStatus: 'on-track', daysRemaining };
+    }
+  },
+
+  /**
+   * Calculate next action based on campaign status
+   */
+  calculateNextAction(status: string, contentCount: number, plannedCount: number): string {
+    switch (status) {
+      case 'draft':
+        return 'Select strategy';
+      case 'planned':
+        return 'Start content generation';
+      case 'active':
+        if (contentCount === 0) {
+          return `${plannedCount} pieces generating...`;
+        } else if (contentCount < plannedCount) {
+          return `${plannedCount - contentCount} pieces pending`;
+        } else {
+          return 'Ready to publish';
+        }
+      case 'completed':
+        return 'Review performance';
+      default:
+        return 'View campaign';
+    }
+  },
+
+  /**
+   * Calculate health indicator
+   */
+  calculateHealthIndicator(
+    timelineStatus: 'on-track' | 'behind' | 'overdue' | 'unknown',
+    progressPercentage: number
+  ): 'healthy' | 'warning' | 'critical' {
+    if (timelineStatus === 'overdue' || progressPercentage < 20) {
+      return 'critical';
+    } else if (timelineStatus === 'behind' || progressPercentage < 50) {
+      return 'warning';
+    } else {
+      return 'healthy';
+    }
   },
 
   /**

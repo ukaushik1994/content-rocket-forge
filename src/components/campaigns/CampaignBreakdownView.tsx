@@ -21,14 +21,10 @@ import { ContentGenerationProvider } from '@/contexts/ContentGenerationContext';
 import { ContentGenerationPanel } from './ContentGenerationPanel';
 import { ContentPreviewModal } from './ContentPreviewModal';
 import {
-  CampaignSummaryTile,
-  ContentMixTile,
-  ContentEffortTile,
-  AudienceIntelligenceTile,
-  SeoIntelligenceTile,
+  CampaignOverviewTile,
+  ContentPlanTile,
+  AudienceSeoTile,
   DistributionStrategyTile,
-  AssetRequirementsTile,
-  OptionalAddonsTile,
 } from './tiles';
 import { TileErrorBoundary } from './TileErrorBoundary';
 
@@ -225,47 +221,27 @@ export const CampaignBreakdownView = ({
         {/* Strategy Tab */}
         {activeTab === 'strategy' && (
           <>
-            {/* Row 1: Campaign Summary - Full Width */}
-            <TileErrorBoundary tileName="Campaign Summary">
-              <CampaignSummaryTile strategy={strategy} status={campaignStatus} />
+            {/* Row 1: Campaign Overview - Full Width */}
+            <TileErrorBoundary tileName="Campaign Overview">
+              <CampaignOverviewTile strategy={strategy} status={campaignStatus} />
             </TileErrorBoundary>
           
-            {/* Row 2: Content Mix + Content Effort */}
+            {/* Row 2: Content Plan + Audience & SEO */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TileErrorBoundary tileName="Content Mix">
-                <ContentMixTile strategy={strategy} campaignId={campaignId} />
+              <TileErrorBoundary tileName="Content Plan">
+                <ContentPlanTile strategy={strategy} campaignId={campaignId} />
               </TileErrorBoundary>
-              <TileErrorBoundary tileName="Content Effort">
-                <ContentEffortTile strategy={strategy} />
+              <TileErrorBoundary tileName="Audience & SEO Strategy">
+                <AudienceSeoTile strategy={strategy} />
               </TileErrorBoundary>
             </div>
             
-            {/* Row 3: Audience Intelligence + SEO Intelligence */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TileErrorBoundary tileName="Audience Intelligence">
-                <AudienceIntelligenceTile strategy={strategy} />
-              </TileErrorBoundary>
-              <TileErrorBoundary tileName="SEO Intelligence">
-                <SeoIntelligenceTile strategy={strategy} />
-              </TileErrorBoundary>
-            </div>
-            
-            {/* Row 4: Distribution Strategy + Asset Requirements */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TileErrorBoundary tileName="Distribution Strategy">
-                <DistributionStrategyTile strategy={strategy} />
-              </TileErrorBoundary>
-              <TileErrorBoundary tileName="Asset Requirements">
-                <AssetRequirementsTile strategy={strategy} />
-              </TileErrorBoundary>
-            </div>
-            
-            {/* Row 5: Optional Add-ons - Full Width */}
-            <TileErrorBoundary tileName="Optional Add-ons">
-              <OptionalAddonsTile strategy={strategy} />
+            {/* Row 3: Distribution Strategy - Full Width */}
+            <TileErrorBoundary tileName="Distribution Strategy">
+              <DistributionStrategyTile strategy={strategy} />
             </TileErrorBoundary>
             
-            {/* Row 6: Generate Assets CTA - Centered */}
+            {/* Row 4: Generate Assets CTA - Centered */}
             <div className="flex flex-col items-center gap-4 py-8">
               <div className="flex gap-3">
                 <Button

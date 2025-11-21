@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SavedCampaign } from '@/services/campaignService';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import { CampaignStatusBadge } from './CampaignStatusBadge';
-import { CampaignStatus } from '@/types/campaign-types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,17 +12,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  FileText,
+  Eye,
   Calendar,
+  Target,
   MoreVertical,
   Pencil,
   Trash2,
   Archive,
-  Eye,
-  FileText,
-  Target,
-  Clock,
-  TrendingUp,
   CheckCircle2,
+  Clock,
+  AlertTriangle,
+  TrendingUp,
   Share2,
   Mail,
   Video,
@@ -33,7 +31,8 @@ import {
   MessageCircle,
   Search,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface EnhancedCampaignCardProps {
@@ -48,6 +47,52 @@ interface EnhancedCampaignCardProps {
   onSaveEdit: () => void;
   onCancelEdit: () => void;
 }
+
+const statusConfig = {
+  draft: {
+    gradient: 'from-gray-500/20 to-gray-600/20',
+    border: 'border-gray-500/30',
+    badge: 'bg-gray-500/20 text-gray-400 border-gray-400/30',
+    label: 'Draft',
+  },
+  planned: {
+    gradient: 'from-blue-500/20 to-cyan-500/20',
+    border: 'border-blue-500/30',
+    badge: 'bg-blue-500/20 text-blue-400 border-blue-400/30',
+    label: 'Planned',
+  },
+  active: {
+    gradient: 'from-purple-500/20 to-pink-500/20',
+    border: 'border-purple-500/30',
+    badge: 'bg-purple-500/20 text-purple-400 border-purple-400/30',
+    label: 'Active',
+  },
+  completed: {
+    gradient: 'from-green-500/20 to-emerald-500/20',
+    border: 'border-green-500/30',
+    badge: 'bg-green-500/20 text-green-400 border-green-400/30',
+    label: 'Completed',
+  },
+  archived: {
+    gradient: 'from-gray-500/20 to-gray-600/20',
+    border: 'border-gray-500/30',
+    badge: 'bg-gray-500/20 text-gray-400 border-gray-400/30',
+    label: 'Archived',
+  },
+};
+
+const timelineStatusConfig = {
+  'on-track': { icon: CheckCircle2, color: 'text-green-400', label: 'On track' },
+  'behind': { icon: Clock, color: 'text-amber-400', label: 'Behind' },
+  'overdue': { icon: AlertTriangle, color: 'text-red-400', label: 'Overdue' },
+  'unknown': { icon: Clock, color: 'text-gray-400', label: 'TBD' },
+};
+
+const healthConfig = {
+  healthy: 'border-green-500/30',
+  warning: 'border-amber-500/30',
+  critical: 'border-red-500/30',
+};
 
 const channelIcons: Record<string, React.ReactNode> = {
   'social': <Share2 className="h-3.5 w-3.5" />,
@@ -72,232 +117,197 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
   onSaveEdit,
   onCancelEdit,
 }) => {
+  const config = statusConfig[campaign.status as keyof typeof statusConfig] || statusConfig.draft;
+  const timelineConfig = timelineStatusConfig[campaign.timelineStatus || 'unknown'];
+  const healthIndicator = campaign.healthIndicator || 'warning';
   const hasStrategy = !!campaign.selected_strategy;
-  const contentCount = campaign.contentCount || 0;
-  const plannedCount = campaign.plannedCount || 0;
+
   const progressPercentage = campaign.progressPercentage || 0;
-  const estimatedReach = campaign.estimatedReach || 'TBD';
-  const timeline = campaign.timeline || campaign.selected_strategy?.timeline || 'Ongoing';
-  const goal = campaign.goal || 'Brand Awareness';
-  const channels = campaign.distributionChannels || [];
-
-  // Progress bar color based on percentage
-  const getProgressColor = () => {
-    if (progressPercentage >= 70) return 'bg-emerald-500';
-    if (progressPercentage >= 30) return 'bg-amber-500';
-    return 'bg-red-500';
-  };
-
-  // Status border color
-  const getStatusBorderColor = () => {
-    switch (campaign.status) {
-      case 'active':
-        return 'border-primary/40 hover:border-primary/60';
-      case 'completed':
-        return 'border-emerald-500/40 hover:border-emerald-500/60';
-      case 'archived':
-        return 'border-muted/40 hover:border-muted/60';
-      default:
-        return 'border-border/40 hover:border-border/60';
-    }
-  };
+  const progressColor = 
+    progressPercentage >= 71 ? 'bg-green-500' :
+    progressPercentage >= 31 ? 'bg-amber-500' :
+    'bg-red-500';
 
   return (
-    <GlassCard
-      className={cn(
-        'p-5 transition-all group relative overflow-hidden',
-        getStatusBorderColor()
-      )}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.2 }}
     >
-      {/* Gradient overlay based on status */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        <div className={cn(
-          'absolute inset-0',
-          campaign.status === 'active' && 'bg-gradient-to-br from-primary/5 to-transparent',
-          campaign.status === 'completed' && 'bg-gradient-to-br from-emerald-500/5 to-transparent',
-        )} />
-      </div>
-
-      <div className="relative space-y-4">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            {isEditing ? (
-              <div className="flex gap-2">
-                <Input
-                  value={editingName}
-                  onChange={(e) => onEditingNameChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') onSaveEdit();
-                    if (e.key === 'Escape') onCancelEdit();
-                  }}
-                  className="h-9 text-sm"
-                  autoFocus
-                />
-                <Button
-                  size="sm"
-                  onClick={onSaveEdit}
-                  className="h-9 w-9 p-0"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-colors">
-                {campaign.name}
-              </h3>
-            )}
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-60 group-hover:opacity-100">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onView}>
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onStartEdit}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Rename
-              </DropdownMenuItem>
-              {campaign.status !== 'archived' && (
-                <DropdownMenuItem onClick={onArchive}>
-                  <Archive className="h-4 w-4 mr-2" />
-                  Archive
-                </DropdownMenuItem>
+      <GlassCard
+        className={cn(
+          'p-6 bg-gradient-to-br border-2 hover:shadow-xl transition-all duration-300',
+          config.gradient,
+          config.border,
+          healthConfig[healthIndicator]
+        )}
+      >
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              {isEditing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={editingName}
+                    onChange={(e) => onEditingNameChange(e.target.value)}
+                    className="text-lg font-bold"
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={onSaveEdit}>Save</Button>
+                  <Button size="sm" variant="outline" onClick={onCancelEdit}>Cancel</Button>
+                </div>
+              ) : (
+                <h3 className="text-xl font-bold mb-1 line-clamp-2">{campaign.name}</h3>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={onDelete}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Status & Date Row */}
-        <div className="flex items-center justify-between">
-          <CampaignStatusBadge status={campaign.status as CampaignStatus || 'draft'} />
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            {campaign.created_at ? format(new Date(campaign.created_at), 'MMM d, yyyy') : 'N/A'}
-          </div>
-        </div>
-
-        {hasStrategy ? (
-          <>
-            {/* Key Metrics Grid */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              {/* Content Progress */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <FileText className="h-3.5 w-3.5" />
-                  <span className="font-medium">Content</span>
-                </div>
-                <p className="text-sm font-semibold">
-                  {contentCount} of {plannedCount}
-                </p>
-              </div>
-
-              {/* Estimated Reach */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  <span className="font-medium">Reach</span>
-                </div>
-                <p className="text-sm font-semibold truncate">
-                  {estimatedReach}
-                </p>
-              </div>
-
-              {/* Timeline */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span className="font-medium">Timeline</span>
-                </div>
-                <p className="text-sm font-semibold truncate">
-                  {timeline}
-                </p>
-              </div>
-
-              {/* Goal */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Target className="h-3.5 w-3.5" />
-                  <span className="font-medium">Goal</span>
-                </div>
-                <Badge variant="secondary" className="text-xs px-2 py-0.5 truncate max-w-full">
-                  {goal}
-                </Badge>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge className={config.badge}>{config.label}</Badge>
+                {campaign.timelineStatus && (
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <timelineConfig.icon className={`h-4 w-4 ${timelineConfig.color}`} />
+                    <span className={timelineConfig.color}>{timelineConfig.label}</span>
+                  </div>
+                )}
+                {campaign.created_at && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(campaign.created_at), { addSuffix: true })}
+                  </span>
+                )}
               </div>
             </div>
-
-            {/* Progress Bar */}
-            {plannedCount > 0 && (
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground font-medium">Progress</span>
-                  <span className="font-semibold">{progressPercentage}%</span>
-                </div>
-                <Progress value={progressPercentage} className="h-2" />
-              </div>
-            )}
-
-            {/* Distribution Channels */}
-            {channels.length > 0 && (
-              <div className="flex items-center gap-2 pt-2">
-                <span className="text-xs text-muted-foreground font-medium">Channels:</span>
-                <div className="flex items-center gap-1.5">
-                  {channels.slice(0, 4).map((channel, idx) => {
-                    const normalizedChannel = channel.toLowerCase();
-                    const icon = channelIcons[normalizedChannel] || <Share2 className="h-3.5 w-3.5" />;
-                    return (
-                      <div
-                        key={idx}
-                        className="p-1.5 rounded-md bg-primary/10 text-primary"
-                        title={channel}
-                      >
-                        {icon}
-                      </div>
-                    );
-                  })}
-                  {channels.length > 4 && (
-                    <span className="text-xs text-muted-foreground ml-1">
-                      +{channels.length - 4} more
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          /* No Strategy State */
-          <div className="py-4 text-center border border-dashed border-border/50 rounded-lg">
-            <p className="text-sm text-muted-foreground">Strategy Pending</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">
-              Complete conversation to generate strategy
-            </p>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onStartEdit}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Rename
+                </DropdownMenuItem>
+                {campaign.status !== 'archived' && (
+                  <DropdownMenuItem onClick={onArchive}>
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={onDelete} className="text-red-400">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        )}
 
-        {/* View Campaign Button */}
-        <Button
-          onClick={onView}
-          variant="outline"
-          size="sm"
-          className="w-full mt-2"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          View Campaign
-        </Button>
-      </div>
-    </GlassCard>
+          {/* Next Action Badge */}
+          {campaign.nextAction && (
+            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+              <p className="text-sm">
+                <span className="text-muted-foreground">Next: </span>
+                <span className="font-medium text-primary">{campaign.nextAction}</span>
+              </p>
+            </div>
+          )}
+
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Content Progress */}
+            <div className="p-3 rounded-lg bg-background/40">
+              <div className="flex items-center gap-2 mb-1">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Content Progress</span>
+              </div>
+              <p className="text-2xl font-bold">
+                {campaign.contentCount || 0}
+                <span className="text-sm text-muted-foreground">/{campaign.plannedCount || 0}</span>
+              </p>
+            </div>
+
+            {/* Estimated Reach */}
+            <div className="p-3 rounded-lg bg-background/40">
+              <div className="flex items-center gap-2 mb-1">
+                <Eye className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Estimated Reach</span>
+              </div>
+              <p className="text-2xl font-bold">
+                {campaign.estimatedReach || 'TBD'}
+              </p>
+            </div>
+
+            {/* Timeline */}
+            <div className="p-3 rounded-lg bg-background/40">
+              <div className="flex items-center gap-2 mb-1">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Timeline</span>
+              </div>
+              <p className="text-lg font-bold">
+                {campaign.daysRemaining !== undefined
+                  ? campaign.daysRemaining > 0
+                    ? `${campaign.daysRemaining}d left`
+                    : `${Math.abs(campaign.daysRemaining)}d overdue`
+                  : campaign.timeline || 'TBD'}
+              </p>
+            </div>
+
+            {/* Goal */}
+            <div className="p-3 rounded-lg bg-background/40">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Goal</span>
+              </div>
+              <p className="text-sm font-medium line-clamp-2">
+                {campaign.goal || campaign.selected_strategy?.expectedEngagement || 'Awareness'}
+              </p>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Completion</span>
+              <span className="text-sm font-bold">{progressPercentage}%</span>
+            </div>
+            <div className="h-2 bg-background/60 rounded-full overflow-hidden">
+              <div
+                className={`h-full ${progressColor} transition-all duration-500`}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Distribution Channels */}
+          {campaign.distributionChannels && campaign.distributionChannels.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Distribution Channels</p>
+              <div className="flex gap-2">
+                {campaign.distributionChannels.slice(0, 4).map((channel) => (
+                  <Badge key={channel} variant="outline" className="text-xs">
+                    {channel}
+                  </Badge>
+                ))}
+                {campaign.distributionChannels.length > 4 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{campaign.distributionChannels.length - 4} more
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Action Footer */}
+          <div className="flex items-center gap-2 pt-4 border-t border-border/30">
+            <Button onClick={onView} className="flex-1">
+              View Campaign
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => {}}>
+              <TrendingUp className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </GlassCard>
+    </motion.div>
   );
 };

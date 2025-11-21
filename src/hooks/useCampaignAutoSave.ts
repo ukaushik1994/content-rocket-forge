@@ -66,32 +66,34 @@ export const useCampaignAutoSave = ({
         }
 
         if (campaignId) {
-          // Update existing campaign
+          // Update existing campaign (sync title with strategy)
           await campaignService.updateCampaign(campaignId, {
             selected_strategy: strategy,
             target_audience: input.targetAudience,
             goal: input.goal,
             timeline: input.timeline,
-            status: 'planned', // Strategy exists, so it's planned
+            status: 'planned',
           });
           
-          console.log('📊 [Auto-Save] Campaign status maintained as "planned"');
+          // Sync campaign name with strategy title
+          if (strategy.title) {
+            await campaignService.updateCampaignName(campaignId, strategy.title);
+          }
+          
+          console.log('📊 [Auto-Save] Campaign synced with strategy title');
         } else {
-          // Create new campaign atomically
-          const generateCampaignName = (idea: string) => {
-            const words = idea.split(' ').slice(0, 5).join(' ');
-            return words.length > 50 ? words.substring(0, 47) + '...' : words;
-          };
+          // Create new campaign atomically using strategy title
+          const campaignName = strategy.title || input.idea.split(' ').slice(0, 8).join(' ');
 
           const campaign = await createCampaignAtomic(
             userId,
-            generateCampaignName(input.idea),
+            campaignName,
             input.idea,
             input,
             strategy
           );
           
-          console.log('📊 [Auto-Save] New campaign created atomically with status "planned"');
+          console.log('📊 [Auto-Save] New campaign created with strategy title');
 
           // Notify parent component that campaign was created
           if (onCampaignCreated) {
