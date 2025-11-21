@@ -23,7 +23,8 @@ import { ContentPreviewModal } from './ContentPreviewModal';
 import {
   CampaignOverviewTile,
   ContentPlanTile,
-  AudienceSeoTile,
+  TargetAudienceMessagingTile,
+  SeoStrategyTile,
   DistributionStrategyTile,
 } from './tiles';
 import { TileErrorBoundary } from './TileErrorBoundary';
@@ -226,22 +227,27 @@ export const CampaignBreakdownView = ({
               <CampaignOverviewTile strategy={strategy} status={campaignStatus} />
             </TileErrorBoundary>
           
-            {/* Row 2: Content Plan + Audience & SEO */}
+            {/* Row 2: Content Plan + Target Audience & Messaging */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <TileErrorBoundary tileName="Content Plan">
                 <ContentPlanTile strategy={strategy} campaignId={campaignId} />
               </TileErrorBoundary>
-              <TileErrorBoundary tileName="Audience & SEO Strategy">
-                <AudienceSeoTile strategy={strategy} />
+              <TileErrorBoundary tileName="Target Audience & Messaging">
+                <TargetAudienceMessagingTile strategy={strategy} />
               </TileErrorBoundary>
             </div>
             
-            {/* Row 3: Distribution Strategy - Full Width */}
+            {/* Row 3: SEO Strategy - Full Width */}
+            <TileErrorBoundary tileName="SEO Strategy">
+              <SeoStrategyTile strategy={strategy} />
+            </TileErrorBoundary>
+            
+            {/* Row 4: Distribution Strategy - Full Width */}
             <TileErrorBoundary tileName="Distribution Strategy">
               <DistributionStrategyTile strategy={strategy} />
             </TileErrorBoundary>
             
-            {/* Row 4: Generate Assets CTA - Centered */}
+            {/* Row 5: Generate Assets CTA - Centered */}
             <div className="flex flex-col items-center gap-4 py-8">
               <div className="flex gap-3">
                 <Button
