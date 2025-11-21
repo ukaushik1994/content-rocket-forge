@@ -314,6 +314,23 @@ const Campaigns = () => {
     setCurrentCampaignId(newCampaignId);
   };
 
+  const handleSyncTitles = async () => {
+    if (!user) return;
+    
+    try {
+      const result = await campaignService.syncAllCampaignTitles(user.id);
+      if (result.synced > 0) {
+        toast.success(`Synced ${result.synced} campaign titles`);
+        refetchCampaigns();
+      } else {
+        toast.info('All campaign titles are already in sync');
+      }
+    } catch (error) {
+      console.error('Failed to sync titles:', error);
+      toast.error('Failed to sync campaign titles');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <Helmet>
@@ -353,9 +370,19 @@ const Campaigns = () => {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-bold">My Campaigns</h2>
-                    <p className="text-sm text-muted-foreground">
-                      💬 Start a new conversation above to create a campaign
-                    </p>
+                    <div className="flex items-center gap-4">
+                      <p className="text-sm text-muted-foreground">
+                        💬 Start a new conversation above to create a campaign
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSyncTitles}
+                        className="text-xs"
+                      >
+                        Sync Titles
+                      </Button>
+                    </div>
                   </div>
                   
                   <CampaignList

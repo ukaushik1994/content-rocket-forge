@@ -50,33 +50,33 @@ interface EnhancedCampaignCardProps {
 
 const statusConfig = {
   draft: {
-    gradient: 'from-gray-500/20 to-gray-600/20',
-    border: 'border-gray-500/30',
-    badge: 'bg-gray-500/20 text-gray-400 border-gray-400/30',
+    dot: '⚪',
+    color: 'text-muted-foreground',
+    border: 'border-border/50',
     label: 'Draft',
   },
   planned: {
-    gradient: 'from-blue-500/20 to-cyan-500/20',
+    dot: '🔵',
+    color: 'text-blue-400',
     border: 'border-blue-500/30',
-    badge: 'bg-blue-500/20 text-blue-400 border-blue-400/30',
     label: 'Planned',
   },
   active: {
-    gradient: 'from-purple-500/20 to-pink-500/20',
+    dot: '🟣',
+    color: 'text-purple-400',
     border: 'border-purple-500/30',
-    badge: 'bg-purple-500/20 text-purple-400 border-purple-400/30',
     label: 'Active',
   },
   completed: {
-    gradient: 'from-green-500/20 to-emerald-500/20',
+    dot: '🟢',
+    color: 'text-green-400',
     border: 'border-green-500/30',
-    badge: 'bg-green-500/20 text-green-400 border-green-400/30',
     label: 'Completed',
   },
   archived: {
-    gradient: 'from-gray-500/20 to-gray-600/20',
-    border: 'border-gray-500/30',
-    badge: 'bg-gray-500/20 text-gray-400 border-gray-400/30',
+    dot: '⚫',
+    color: 'text-muted-foreground',
+    border: 'border-border/50',
     label: 'Archived',
   },
 };
@@ -137,10 +137,8 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
     >
       <GlassCard
         className={cn(
-          'p-6 bg-gradient-to-br border-2 hover:shadow-xl transition-all duration-300',
-          config.gradient,
-          config.border,
-          healthConfig[healthIndicator]
+          'p-6 bg-background/60 backdrop-blur-xl border hover:bg-background/80 hover:scale-[1.01] hover:shadow-xl transition-all duration-300',
+          config.border
         )}
       >
         <div className="space-y-4">
@@ -159,11 +157,19 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
                   <Button size="sm" variant="outline" onClick={onCancelEdit}>Cancel</Button>
                 </div>
               ) : (
-                <h3 className="text-xl font-bold mb-1 line-clamp-2">{campaign.name}</h3>
+                <div className="space-y-1">
+                  <h3 className="text-2xl font-bold line-clamp-2">
+                    {campaign.selected_strategy?.title || campaign.name}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${config.color}`}>
+                      {config.dot} {config.label}
+                    </span>
+                  </div>
+                </div>
               )}
               <div className="flex items-center gap-2 mt-2">
-                <Badge className={config.badge}>{config.label}</Badge>
-                {campaign.timelineStatus && (
+                {campaign.timelineStatus && campaign.timelineStatus !== 'unknown' && (
                   <div className="flex items-center gap-1.5 text-sm">
                     <timelineConfig.icon className={`h-4 w-4 ${timelineConfig.color}`} />
                     <span className={timelineConfig.color}>{timelineConfig.label}</span>
@@ -215,7 +221,7 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
           {/* Metrics Grid */}
           <div className="grid grid-cols-2 gap-4">
             {/* Content Progress */}
-            <div className="p-3 rounded-lg bg-background/40">
+            <div className="p-4 rounded-lg bg-card/40">
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Content Progress</span>
@@ -227,18 +233,18 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
             </div>
 
             {/* Estimated Reach */}
-            <div className="p-3 rounded-lg bg-background/40">
+            <div className="p-4 rounded-lg bg-card/40">
               <div className="flex items-center gap-2 mb-1">
                 <Eye className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Estimated Reach</span>
               </div>
               <p className="text-2xl font-bold">
-                {campaign.estimatedReach || 'TBD'}
+                {campaign.estimatedReach || '—'}
               </p>
             </div>
 
             {/* Timeline */}
-            <div className="p-3 rounded-lg bg-background/40">
+            <div className="p-4 rounded-lg bg-card/40">
               <div className="flex items-center gap-2 mb-1">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Timeline</span>
@@ -248,12 +254,12 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
                   ? campaign.daysRemaining > 0
                     ? `${campaign.daysRemaining}d left`
                     : `${Math.abs(campaign.daysRemaining)}d overdue`
-                  : campaign.timeline || 'TBD'}
+                  : campaign.timeline || '—'}
               </p>
             </div>
 
             {/* Goal */}
-            <div className="p-3 rounded-lg bg-background/40">
+            <div className="p-4 rounded-lg bg-card/40">
               <div className="flex items-center gap-2 mb-1">
                 <Target className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Goal</span>
@@ -270,9 +276,9 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
               <span className="text-xs text-muted-foreground">Completion</span>
               <span className="text-sm font-bold">{progressPercentage}%</span>
             </div>
-            <div className="h-2 bg-background/60 rounded-full overflow-hidden">
+            <div className="h-3 bg-background/60 rounded-full overflow-hidden">
               <div
-                className={`h-full ${progressColor} transition-all duration-500`}
+                className={`h-full ${progressColor} transition-all duration-700 ease-out`}
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
@@ -282,16 +288,23 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
           {campaign.distributionChannels && campaign.distributionChannels.length > 0 && (
             <div>
               <p className="text-xs text-muted-foreground mb-2">Distribution Channels</p>
-              <div className="flex gap-2">
-                {campaign.distributionChannels.slice(0, 4).map((channel) => (
-                  <Badge key={channel} variant="outline" className="text-xs">
-                    {channel}
-                  </Badge>
-                ))}
-                {campaign.distributionChannels.length > 4 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{campaign.distributionChannels.length - 4} more
-                  </Badge>
+              <div className="flex gap-2 items-center">
+                {campaign.distributionChannels.slice(0, 5).map((channel) => {
+                  const icon = channelIcons[channel.toLowerCase()];
+                  return icon ? (
+                    <div
+                      key={channel}
+                      className="flex items-center justify-center h-8 w-8 rounded-lg bg-card/60 border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
+                      title={channel}
+                    >
+                      {icon}
+                    </div>
+                  ) : null;
+                })}
+                {campaign.distributionChannels.length > 5 && (
+                  <span className="text-xs text-muted-foreground">
+                    +{campaign.distributionChannels.length - 5}
+                  </span>
                 )}
               </div>
             </div>
