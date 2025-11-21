@@ -107,6 +107,9 @@ export const campaignService = {
         : 0;
       const progressPercentage = plannedCount > 0 ? Math.round((contentCount / plannedCount) * 100) : 0;
       
+      // Extract estimated reach from strategy
+      const estimatedReach = this.extractEstimatedReach(strategy);
+      
       // Extract distribution channels
       const distributionChannels = strategy?.distributionStrategy?.channels || [];
       
@@ -138,7 +141,7 @@ export const campaignService = {
         contentCount,
         plannedCount,
         progressPercentage,
-        estimatedReach: strategy?.estimatedReach,
+        estimatedReach,
         distributionChannels,
         timelineStatus,
         daysRemaining,
@@ -146,6 +149,31 @@ export const campaignService = {
         healthIndicator,
       };
     });
+  },
+
+  /**
+   * Extract estimated reach from strategy with fallbacks
+   */
+  extractEstimatedReach(strategy: CampaignStrategy | null): string | undefined {
+    if (!strategy) return undefined;
+    
+    // Try estimatedReach field first
+    if (strategy.estimatedReach) {
+      return strategy.estimatedReach;
+    }
+    
+    // Try to calculate from impressions
+    if (strategy.expectedMetrics?.impressions) {
+      const { min, max } = strategy.expectedMetrics.impressions;
+      return `${min.toLocaleString()}-${max.toLocaleString()}`;
+    }
+    
+    // Try traffic lift estimate
+    if (strategy.distributionStrategy?.estimatedTrafficLift) {
+      return strategy.distributionStrategy.estimatedTrafficLift;
+    }
+    
+    return undefined;
   },
 
   /**
@@ -344,5 +372,29 @@ export const campaignService = {
       .eq('id', campaignId);
 
     if (error) throw error;
+  },
+
+  /**
+   * Sync campaign names from strategy titles (one-time migration utility)
+   */
+  async syncAllCampaignTitles(userId: string): Promise<{ synced: number }> {
+    const { data: campaigns, error } = await supabase
+      .from('campaigns')
+      .select('id, name, selected_strategy')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    
+    let synced = 0;
+    
+    for (const campaign of campaigns || []) {
+      const strategy = campaign.selected_strategy as any;
+      if (strategy?.title && campaign.name !== strategy.title) {
+        await this.updateCampaignName(campaign.id, strategy.title);
+        synced++;
+      }
+    }
+    
+    return { synced };
   },
 };
