@@ -173,7 +173,9 @@ const Campaigns = () => {
           generateCampaignName(currentInput?.idea || ''),
           currentInput?.idea || '',
           currentInput || { idea: '' },
-          strategy
+          strategy,
+          currentInput?.solutionId,
+          strategy.description // Use strategy description as objective
         );
         setCurrentCampaignId(campaign.id);
         refetchCampaigns();

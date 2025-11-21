@@ -167,6 +167,37 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
         onClick={() => onView(campaign.id)}
       >
         <div className="p-8 space-y-6">
+          {/* Solution Branding */}
+          {campaign.solution && (
+            <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+              {campaign.solution.logo_url ? (
+                <img 
+                  src={campaign.solution.logo_url} 
+                  alt={campaign.solution.name}
+                  className="h-10 w-10 rounded-lg object-contain bg-white/5 p-1"
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-muted-foreground/70 uppercase tracking-wider">Promoting</p>
+                <p className="text-sm font-bold">{campaign.solution.name}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Campaign Objective */}
+          {campaign.objective && (
+            <div className="mb-4 p-4 rounded-xl bg-card/40 border-l-4 border-blue-500">
+              <p className="text-xs text-blue-400 uppercase tracking-wider mb-1">Campaign Objective</p>
+              <p className="text-sm font-medium leading-relaxed line-clamp-2">
+                {campaign.objective}
+              </p>
+            </div>
+          )}
+          
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
