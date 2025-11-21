@@ -15,81 +15,131 @@ import { supabase } from '@/integrations/supabase/client';
  * Generates a system prompt for the campaign conversation AI
  */
 function buildSystemPrompt(stage: ConversationStage, collectedData: EnhancedCampaignData): string {
-  const basePrompt = `You are an expert marketing strategist conducting a campaign planning conversation. You ask thoughtful, contextual questions to gather campaign requirements.
+  const hasSolutionData = !!collectedData.solutionId;
+  
+  const basePrompt = `You are a marketing campaign assistant. Your job is to collect information through natural conversation.
 
-CRITICAL RULES:
-1. Ask ONE focused question at a time
-2. Reference their previous responses naturally to show you're listening
-3. Be conversational and encouraging
-4. Keep questions specific and actionable
-5. Use bullet points for sub-questions when needed
-6. Your response should ONLY be the next question - no explanations, no analysis yet`;
+RULES:
+- Ask ONE question at a time
+- Keep questions short and conversational
+- Don't ask about information already provided
+- Use singular form, not bullet points
+- Be friendly and natural
+${hasSolutionData ? '- CRITICAL: Solution data is auto-filled. DO NOT ask about features, benefits, target audience, or pain points. Only ask about campaign tone, style, or messaging angle if needed.' : ''}`;
 
   const stageContext = getStageContext(stage, collectedData);
   
   return `${basePrompt}
 
-CURRENT STAGE: ${stage}
-${stageContext}
-
-Remember: Your job is ONLY to ask the next question. Keep it conversational and reference what they've told you so far.`;
+${stageContext}`;
 }
 
 /**
  * Provides context about what information to gather at each stage
  */
 function getStageContext(stage: ConversationStage, data: EnhancedCampaignData): string {
+  const hasWhatTheyrePromoting = !!data.whatTheyrePromoting || !!data.idea;
+  const hasWhoItsFor = !!data.targetAudience;
+  const hasSolutionData = !!data.solutionId;
   const previousContext = buildPreviousContext(data);
   
-  switch (stage) {
-    case 'collecting':
-      return `OBJECTIVE: Have a natural conversation to understand their campaign.
+  if (stage === 'collecting') {
+    if (!hasWhatTheyrePromoting) {
+      return `Your task: Ask what they want to promote.\n${previousContext}`;
+    }
+    
+    // Skip asking about target audience if it's auto-filled from solution
+    if (!hasWhoItsFor && !hasSolutionData) {
+      return `Your task: Ask who the target audience is. Keep it simple - just ask "Who is it for?"\n${previousContext}`;
+    }
 
-KEEP IT SIMPLE - Ask about:
-1. What are they promoting? (product, service, feature, or general campaign idea)
-2. Who is it for? (target audience in simple terms - don't ask for roles/sizes/industries separately)
-3. Timeline preference (if not mentioned)
+    // If solution data is available, ask about campaign tone/style instead of redundant questions
+    if (hasSolutionData && (!data.messagingTone || !data.campaignAngle)) {
+      return `Your task: Since we have the solution details, ask about campaign tone or messaging style. For example: "What tone should we use - professional, friendly, or technical?" or "Any specific angle you want to focus on?"\n${previousContext}`;
+    }
 
-RULES:
-- ONE simple question at a time
-- NO sub-bullets or detailed breakdowns
-- Be conversational and natural
-- If they mention a solution/product name, note it but don't make a big deal about it
-- Once you have WHAT and WHO, you can generate
-
-${previousContext}`;
-
-    case 'generating':
-      return `All information collected! Acknowledge receipt and let them know you're generating strategies.`;
-
-    case 'complete':
-      return `Strategies have been generated and are ready for selection.`;
-
-    default:
-      return 'Ask them to continue...';
+    // Once we have essentials, ask about channels if not provided
+    if (!data.distributionChannels || data.distributionChannels.length === 0) {
+      return `Your task: Ask about distribution channels. Say something like "Where would you like to promote this?"\n${previousContext}`;
+    }
+    
+    return `You have enough information. Say something like "Perfect! Let me generate some campaign strategies for you." and end the conversation.\n${previousContext}`;
   }
+  
+  if (stage === 'generating') {
+    return 'All information collected! Acknowledge receipt and let them know you\'re generating strategies.';
+  }
+  
+  if (stage === 'complete') {
+    return 'Strategies have been generated and are ready for selection.';
+  }
+  
+  return 'Ask them to continue...';
 }
 
 /**
  * Builds a summary of previously collected data
  */
 function buildPreviousContext(data: EnhancedCampaignData): string {
-  const context: string[] = [];
+  const parts: string[] = [];
+  const autoFilledParts: string[] = [];
   
-  if (data.idea) context.push(`Campaign: ${data.idea}`);
-  if (data.painPoints) context.push(`Pain Point: ${data.painPoints}`);
-  if (data.competitors) context.push(`Competitors: ${data.competitors}`);
-  if (data.uniqueValue) context.push(`Unique Value: ${data.uniqueValue}`);
-  if (data.targetAudience) context.push(`Audience: ${data.targetAudience}`);
-  if (data.goal) context.push(`Goal: ${data.goal}`);
-  if (data.successMetrics) context.push(`Success Metrics: ${data.successMetrics}`);
-  if (data.timeline) context.push(`Timeline: ${data.timeline}`);
-  if (data.distributionChannels && data.distributionChannels.length > 0) {
-    context.push(`Distribution Channels: ${data.distributionChannels.join(', ')}`);
+  if (data.whatTheyrePromoting || data.idea) {
+    parts.push(`Promoting: ${data.whatTheyrePromoting || data.idea}`);
   }
-  if (data.solutionId) context.push(`Solution: Linked to specific solution`);
+
+  // Track auto-filled solution data
+  if (data.solutionId) {
+    autoFilledParts.push('IMPORTANT: The following information was auto-filled from the solution database:');
+    
+    if (data.features && data.features.length > 0) {
+      autoFilledParts.push(`- Features: ${data.features.join(', ')}`);
+    }
+    
+    if (data.benefits && data.benefits.length > 0) {
+      autoFilledParts.push(`- Benefits: ${data.benefits.join(', ')}`);
+    }
+    
+    if (data.targetAudience) {
+      autoFilledParts.push(`- Target audience: ${data.targetAudience}`);
+    }
+
+    if (data.painPoints) {
+      autoFilledParts.push(`- Pain points: ${data.painPoints}`);
+    }
+
+    if (data.useCases && data.useCases.length > 0) {
+      autoFilledParts.push(`- Use cases: ${data.useCases.join(', ')}`);
+    }
+
+    autoFilledParts.push('\nDO NOT ask about these auto-filled fields. Only ask about missing campaign-specific details like tone, messaging style, or specific angles.');
+  }
   
-  return context.length > 0 ? `\nPREVIOUSLY COLLECTED:\n${context.join('\n')}` : '';
+  if (data.targetAudience && !data.solutionId) {
+    parts.push(`Target audience: ${data.targetAudience}`);
+  }
+
+  if (data.goal) {
+    parts.push(`Goal: ${data.goal}`);
+  }
+
+  if (data.timeline) {
+    parts.push(`Timeline: ${data.timeline}`);
+  }
+
+  if (data.distributionChannels && data.distributionChannels.length > 0) {
+    parts.push(`Distribution channels: ${data.distributionChannels.join(', ')}`);
+  }
+
+  let context = '';
+  if (autoFilledParts.length > 0) {
+    context += '\n' + autoFilledParts.join('\n');
+  }
+  if (parts.length > 0) {
+    context += '\n\nPrevious context:\n' + parts.join('\n');
+  }
+  
+  return context;
 }
 
 /**
