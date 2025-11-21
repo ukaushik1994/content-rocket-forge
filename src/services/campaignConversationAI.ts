@@ -43,15 +43,19 @@ function getStageContext(stage: ConversationStage, data: EnhancedCampaignData): 
   
   switch (stage) {
     case 'collecting':
-      return `OBJECTIVE: Gather campaign requirements in a conversational way.
+      return `OBJECTIVE: Have a natural conversation to understand their campaign.
 
-Ask smart questions to collect:
-1. Campaign idea/product being promoted
-2. Target audience (roles, company size, industries)
-3. Goal (awareness, conversion, engagement, education)
-4. Timeline (1-week, 2-week, 4-week, ongoing)
+KEEP IT SIMPLE - Ask about:
+1. What are they promoting? (product, service, feature, or general campaign idea)
+2. Who is it for? (target audience in simple terms - don't ask for roles/sizes/industries separately)
+3. Timeline preference (if not mentioned)
 
-Be flexible - if they provide multiple details in one message, acknowledge and ask for what's missing.
+RULES:
+- ONE simple question at a time
+- NO sub-bullets or detailed breakdowns
+- Be conversational and natural
+- If they mention a solution/product name, note it but don't make a big deal about it
+- Once you have WHAT and WHO, you can generate
 
 ${previousContext}`;
 
@@ -80,6 +84,7 @@ function buildPreviousContext(data: EnhancedCampaignData): string {
   if (data.goal) context.push(`Goal: ${data.goal}`);
   if (data.successMetrics) context.push(`Success Metrics: ${data.successMetrics}`);
   if (data.timeline) context.push(`Timeline: ${data.timeline}`);
+  if (data.solutionId) context.push(`Solution: Linked to specific solution`);
   
   return context.length > 0 ? `\nPREVIOUSLY COLLECTED:\n${context.join('\n')}` : '';
 }
