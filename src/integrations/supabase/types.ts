@@ -1244,8 +1244,10 @@ export type Database = {
           goal: string | null
           id: string
           name: string
+          objective: string | null
           original_idea: string
           selected_strategy: Json | null
+          solution_id: string | null
           status: string
           target_audience: string | null
           timeline: string | null
@@ -1257,8 +1259,10 @@ export type Database = {
           goal?: string | null
           id?: string
           name: string
+          objective?: string | null
           original_idea: string
           selected_strategy?: Json | null
+          solution_id?: string | null
           status?: string
           target_audience?: string | null
           timeline?: string | null
@@ -1270,15 +1274,25 @@ export type Database = {
           goal?: string | null
           id?: string
           name?: string
+          objective?: string | null
           original_idea?: string
           selected_strategy?: Json | null
+          solution_id?: string | null
           status?: string
           target_audience?: string | null
           timeline?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chart_insight_analytics: {
         Row: {
@@ -6816,8 +6830,10 @@ export type Database = {
           goal: string | null
           id: string
           name: string
+          objective: string | null
           original_idea: string
           selected_strategy: Json | null
+          solution_id: string | null
           status: string
           target_audience: string | null
           timeline: string | null

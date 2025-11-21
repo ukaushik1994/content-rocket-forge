@@ -13,6 +13,9 @@ export interface SavedCampaign {
   created_at: string | null;
   updated_at: string | null;
   user_id: string;
+  solution_id?: string | null;
+  objective?: string | null;
+  solution?: any | null; // Will be populated from join
   // Enhanced metrics
   contentCount?: number;
   plannedCount?: number;
@@ -83,12 +86,13 @@ export const campaignService = {
    * Get all campaigns for a user with enhanced metrics
    */
   async getUserCampaigns(userId: string): Promise<SavedCampaign[]> {
-    // Fetch campaigns with content count
+    // Fetch campaigns with content count and solution data
     const { data, error } = await supabase
       .from('campaigns')
       .select(`
         *,
-        content_items!content_items_campaign_id_fkey(id)
+        content_items!content_items_campaign_id_fkey(id),
+        solution:solutions(*)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -138,6 +142,9 @@ export const campaignService = {
         created_at: campaign.created_at,
         updated_at: campaign.updated_at,
         user_id: campaign.user_id,
+        solution_id: campaign.solution_id,
+        objective: campaign.objective,
+        solution: campaign.solution,
         contentCount,
         plannedCount,
         progressPercentage,

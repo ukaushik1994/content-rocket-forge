@@ -16,7 +16,9 @@ export async function createCampaignAtomic(
   title: string,
   description: string,
   input: CampaignInput,
-  strategy: CampaignStrategy
+  strategy: CampaignStrategy,
+  solutionId?: string,
+  objective?: string
 ) {
   const { data, error } = await supabase.rpc('create_campaign_atomic' as any, {
     p_user_id: userId,
@@ -24,7 +26,9 @@ export async function createCampaignAtomic(
     p_description: description,
     p_status: 'draft',
     p_input: input as any,
-    p_strategy: strategy as any
+    p_strategy: strategy as any,
+    p_solution_id: solutionId || null,
+    p_objective: objective || null
   });
   
   if (error) {
