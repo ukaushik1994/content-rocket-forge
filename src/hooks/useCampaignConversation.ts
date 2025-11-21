@@ -161,8 +161,24 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
     // Extract data from message
     newData.idea = newData.idea || message;
     
-    // Parse goal from message
+    // Try to detect solution from message
     const messageLower = message.toLowerCase();
+    try {
+      const { data: solutions } = await supabase
+        .from('solutions')
+        .select('id, name')
+        .ilike('name', `%${message}%`)
+        .limit(1);
+      
+      if (solutions && solutions.length > 0 && !newData.solutionId) {
+        newData.solutionId = solutions[0].id;
+        console.log('[Campaign] Auto-detected solution:', solutions[0].name);
+      }
+    } catch (error) {
+      console.error('[Campaign] Solution detection error:', error);
+    }
+    
+    // Parse goal from message
     if (messageLower.includes('awareness') || messageLower.includes('brand')) {
       newData.goal = 'awareness';
     } else if (messageLower.includes('conversion') || messageLower.includes('sale') || messageLower.includes('signup')) {
@@ -193,18 +209,17 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
       }
     }
     
-    // Check if we have minimal or all required data
-    const hasMinimalData = newData.idea && newData.targetAudience;
-    const hasAllData = hasMinimalData && newData.goal && newData.timeline;
+    // Simplified data requirements - only need WHAT and WHO
+    const hasWhatTheyrePromoting = newData.idea && newData.idea.length > 10;
+    const hasWhoItsFor = newData.targetAudience && newData.targetAudience.length > 5;
     
-    // Smart auto-generation: offer to proceed with minimal data
-    if (hasMinimalData && !hasAllData && !messageLower.includes('timeline') && !messageLower.includes('goal')) {
-      // User provided audience - offer to generate now with defaults
-      if (newData.targetAudience && newData.targetAudience !== newData.idea) {
-        nextStage = 'generating'; // Auto-generate with smart defaults
-      }
-    } else if (hasAllData) {
-      nextStage = 'generating';
+    // Auto-generate as soon as we know WHAT and WHO
+    if (hasWhatTheyrePromoting && hasWhoItsFor) {
+      // We have enough! Use smart defaults for the rest
+      if (!newData.goal) newData.goal = 'awareness';
+      if (!newData.timeline) newData.timeline = '4-week';
+      
+      nextStage = 'generating'; // Go straight to generation
     }
     
     console.log('[Campaign] Next stage:', nextStage);
