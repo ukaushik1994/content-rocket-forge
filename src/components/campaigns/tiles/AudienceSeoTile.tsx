@@ -14,8 +14,8 @@ export const AudienceSeoTile = ({ strategy }: AudienceSeoTileProps) => {
   return (
     <GlassCard className="p-6 bg-background/60 backdrop-blur-xl border border-white/5">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 rounded-full bg-purple-500/10">
-          <TrendingUp className="h-5 w-5 text-purple-400" />
+        <div className="p-2.5 rounded-full bg-blue-500/10">
+          <TrendingUp className="h-5 w-5 text-blue-400" />
         </div>
         <h3 className="text-xl font-bold tracking-tight">Strategy Insights</h3>
       </div>
@@ -35,8 +35,8 @@ export const AudienceSeoTile = ({ strategy }: AudienceSeoTileProps) => {
         {audienceIntelligence?.personas && audienceIntelligence.personas.length > 0 && (
           <div className="p-4 rounded-xl bg-card/40 border border-white/5">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <Users className="h-4 w-4 text-purple-400" />
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Users className="h-4 w-4 text-blue-400" />
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Target Personas</p>
