@@ -61,10 +61,10 @@ export function CampaignChatInterface({
   useEffect(() => {
     if (isComplete) {
       const input = getCampaignInput();
-      const selectedSummary = strategySummaries.find(s => s.id === selectedSummaryId);
-      if (input) {
+      const selectedStrategy = strategySummaries.find(s => s.id === selectedSummaryId);
+      if (input && selectedStrategy) {
         setTimeout(() => {
-          onComplete(input, selectedSummary);
+          onComplete(input, selectedStrategy as any); // Cast to match expected type
         }, 1500);
       }
     }
@@ -146,8 +146,8 @@ export function CampaignChatInterface({
             className="py-6"
           >
             <StrategySummaryCards
-              summaries={strategySummaries}
-              selectedId={selectedSummaryId}
+              strategies={strategySummaries}
+              selectedId={selectedSummaryId || ''}
               onSelect={selectSummary}
               onRegenerate={regenerateSummaries}
               onEditAnswers={() => goBackToStage('collecting')}

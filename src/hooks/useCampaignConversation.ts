@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { CampaignInput, CampaignGoal, CampaignTimeline, CampaignStrategySummary } from '@/types/campaign-types';
+import { CampaignInput, CampaignGoal, CampaignTimeline, CampaignStrategy } from '@/types/campaign-types';
 import { supabase } from '@/integrations/supabase/client';
 import { generateAIQuestion, getFallbackQuestion } from '@/services/campaignConversationAI';
-import { generateCampaignSummaries } from '@/services/campaignSummaryAI';
+import { useCampaignStrategies } from './useCampaignStrategies';
 
 export type ConversationStage = 
   | 'collecting'    // Gathering all required data dynamically
@@ -39,8 +39,8 @@ interface ConversationState {
   stage: ConversationStage;
   collectedData: EnhancedCampaignData;
   messages: CampaignConversationMessage[];
-  strategySummaries: CampaignStrategySummary[];
-  selectedSummaryId: string | null;
+  strategies: CampaignStrategy[];
+  selectedStrategyId: string | null;
   isLoadingAI: boolean;
 }
 
@@ -66,7 +66,9 @@ const AI_QUESTIONS = {
   'complete': ''
 };
 
-export const useCampaignConversation = (initialMessage?: string) => {
+export const useCampaignConversation = (initialMessage?: string, onStatusUpdate?: (status: any) => void) => {
+  const { generateStrategies } = useCampaignStrategies();
+  
   const [state, setState] = useState<ConversationState>(() => {
     const initialMessages: CampaignConversationMessage[] = [];
     
@@ -87,8 +89,8 @@ export const useCampaignConversation = (initialMessage?: string) => {
         stage: 'collecting',
         collectedData: { idea: initialMessage },
         messages: initialMessages,
-        strategySummaries: [],
-        selectedSummaryId: null,
+        strategies: [],
+        selectedStrategyId: null,
         isLoadingAI: false
       };
     }
@@ -104,8 +106,8 @@ export const useCampaignConversation = (initialMessage?: string) => {
       stage: 'collecting',
       collectedData: {},
       messages: initialMessages,
-      strategySummaries: [],
-      selectedSummaryId: null,
+      strategies: [],
+      selectedStrategyId: null,
       isLoadingAI: false
     };
   });
@@ -204,10 +206,13 @@ export const useCampaignConversation = (initialMessage?: string) => {
     // If we're at generating stage, trigger strategy generation
     if (nextStage === 'generating') {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+        
         setState(prev => ({
           ...prev,
-          isLoadingAI: false,
-          stage: 'complete',
+          isLoadingAI: true,
+          stage: 'generating',
           messages: [...prev.messages, {
             id: crypto.randomUUID(),
             role: 'assistant',
@@ -215,15 +220,41 @@ export const useCampaignConversation = (initialMessage?: string) => {
             timestamp: new Date()
           }]
         }));
-      } catch (error) {
-        console.error('[Campaign] Error:', error);
+        
+        // Generate full strategies directly (no summaries)
+        const input: CampaignInput = {
+          idea: newData.idea || '',
+          targetAudience: newData.targetAudience,
+          goal: newData.goal || 'awareness',
+          timeline: newData.timeline || '4-week',
+          useSerpData: true,
+          solutionId: newData.solutionId
+        };
+        
+        const strategies = await generateStrategies(input, user.id);
+        
         setState(prev => ({
           ...prev,
+          strategies,
           isLoadingAI: false,
+          stage: 'complete',
           messages: [...prev.messages, {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: 'I had trouble processing your request. Please try again.',
+            content: `✅ Generated ${strategies.length} comprehensive campaign strategies! Review them below and select the one that best fits your needs.`,
+            timestamp: new Date()
+          }]
+        }));
+      } catch (error) {
+        console.error('[Campaign] Error generating strategies:', error);
+        setState(prev => ({
+          ...prev,
+          isLoadingAI: false,
+          stage: 'collecting',
+          messages: [...prev.messages, {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: 'I had trouble generating strategies. Please try again or provide more details.',
             timestamp: new Date()
           }]
         }));
@@ -317,10 +348,10 @@ export const useCampaignConversation = (initialMessage?: string) => {
     };
   }, [state]);
 
-  const selectSummary = useCallback((summaryId: string) => {
+  const selectStrategy = useCallback((strategyId: string) => {
     setState(prev => ({
       ...prev,
-      selectedSummaryId: summaryId,
+      selectedStrategyId: strategyId,
       stage: 'complete'
     }));
   }, []);
@@ -332,12 +363,20 @@ export const useCampaignConversation = (initialMessage?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const solutionId = state.collectedData.solutionId || null;
-      const summaries = await generateCampaignSummaries(state.collectedData, solutionId, user.id);
+      const input: CampaignInput = {
+        idea: state.collectedData.idea || '',
+        targetAudience: state.collectedData.targetAudience,
+        goal: state.collectedData.goal || 'awareness',
+        timeline: state.collectedData.timeline || '4-week',
+        useSerpData: true,
+        solutionId: state.collectedData.solutionId
+      };
+      
+      const strategies = await generateStrategies(input, user.id);
       
       setState(prev => ({
         ...prev,
-        strategySummaries: summaries,
+        strategies,
         isLoadingAI: false,
         messages: [...prev.messages, {
           id: crypto.randomUUID(),
@@ -347,18 +386,18 @@ export const useCampaignConversation = (initialMessage?: string) => {
         }]
       }));
     } catch (error) {
-      console.error('[Campaign] Error regenerating summaries:', error);
+      console.error('[Campaign] Error regenerating strategies:', error);
       setState(prev => ({ ...prev, isLoadingAI: false }));
     }
-  }, [state.collectedData]);
+  }, [state.collectedData, generateStrategies]);
 
   const goBackToStage = useCallback((targetStage: ConversationStage) => {
     // Reset to the target stage while keeping collected data up to that point
     setState(prev => ({
       ...prev,
       stage: targetStage,
-      strategySummaries: [],
-      selectedSummaryId: null,
+      strategies: [],
+      selectedStrategyId: null,
       isLoadingAI: false
     }));
   }, []);
@@ -383,9 +422,9 @@ export const useCampaignConversation = (initialMessage?: string) => {
     getCampaignInput,
     isComplete: state.stage === 'complete',
     isLoading: state.isLoadingAI,
-    strategySummaries: state.strategySummaries,
-    selectedSummaryId: state.selectedSummaryId,
-    selectSummary,
+    strategySummaries: state.strategies, // Renamed for compatibility with existing code
+    selectedSummaryId: state.selectedStrategyId,
+    selectSummary: selectStrategy,
     regenerateSummaries,
     goBackToStage,
     collectedData: state.collectedData
