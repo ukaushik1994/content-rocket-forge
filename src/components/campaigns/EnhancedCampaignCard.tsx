@@ -238,46 +238,46 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
           </div>
 
           {/* Key Metrics Grid - Single row on desktop, stacked on mobile */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {/* Content Progress */}
-            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
+            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-[120px]">
               <div className="flex items-center gap-2 mb-1.5">
                 <FileText className="h-4 w-4 text-purple-400 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">Content</p>
               </div>
               <p className="text-lg md:text-xl font-bold">{contentCount}/{plannedCount}</p>
-              <p className="text-xs text-muted-foreground truncate">pieces</p>
+              <p className="text-xs text-muted-foreground">pieces</p>
             </div>
 
             {/* Estimated Reach */}
-            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
+            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-[120px]">
               <div className="flex items-center gap-2 mb-1.5">
                 <Eye className="h-4 w-4 text-blue-400 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">Reach</p>
               </div>
               <p className="text-lg md:text-xl font-bold truncate">{reachValue}</p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground text-wrap break-words">
                 {reachPeriod || 'impressions'}
               </p>
             </div>
 
             {/* Timeline */}
-            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
+            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-[120px]">
               <div className="flex items-center gap-2 mb-1.5">
                 <Calendar className="h-4 w-4 text-green-400 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">Timeline</p>
               </div>
               <p className="text-lg md:text-xl font-bold">{daysRemaining}</p>
-              <p className="text-xs text-muted-foreground truncate">days left</p>
+              <p className="text-xs text-muted-foreground">days left</p>
             </div>
 
             {/* Goal */}
-            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
+            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-[120px]">
               <div className="flex items-center gap-2 mb-1.5">
                 <Target className="h-4 w-4 text-amber-400 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">Goal</p>
               </div>
-              <Badge variant="secondary" className="text-xs px-2 py-0.5 truncate max-w-full mt-1">
+              <Badge variant="secondary" className="text-xs px-2 py-0.5 whitespace-nowrap mt-1">
                 {goalDisplay}
               </Badge>
             </div>
