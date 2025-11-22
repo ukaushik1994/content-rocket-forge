@@ -55,12 +55,18 @@ export const CampaignList: React.FC<CampaignListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <GlassCard key={i} className="p-6 animate-pulse">
-            <div className="h-6 bg-muted rounded mb-4" />
-            <div className="h-4 bg-muted rounded mb-2" />
-            <div className="h-4 bg-muted rounded w-3/4" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <GlassCard key={i} className="p-5 animate-pulse">
+            <div className="h-4 bg-muted rounded mb-3" />
+            <div className="h-3 bg-muted rounded mb-2 w-3/4" />
+            <div className="grid grid-cols-4 gap-3 mt-4">
+              <div className="h-16 bg-muted rounded" />
+              <div className="h-16 bg-muted rounded" />
+              <div className="h-16 bg-muted rounded" />
+              <div className="h-16 bg-muted rounded" />
+            </div>
+            <div className="h-2 bg-muted rounded mt-4" />
           </GlassCard>
         ))}
       </div>
@@ -85,7 +91,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 min-w-0">
         <AnimatePresence mode="popLayout">
           {campaigns.map((campaign, index) => (
             <motion.div
