@@ -175,8 +175,8 @@ export function CampaignChatInterface({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Strategy Summary Selection */}
-        {stage === 'complete' && strategySummaries.length > 0 && (
+        {/* Strategy Summary Selection - Only show when complete AND strategies exist */}
+        {stage === 'complete' && strategySummaries.length > 0 && !isLoading && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -204,21 +204,17 @@ export function CampaignChatInterface({
           </motion.div>
         )}
 
-        {/* Message Input */}
-        {!isComplete && stage !== 'complete' && (
+        {/* Message Input - Hide when complete or generating */}
+        {stage === 'collecting' && !isLoading && (
           <MessageInput
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
-            placeholder={
-              stage === 'collecting' 
-                ? "Tell me about your campaign idea, audience, goals, and timeline..." 
-                : "Tell me more..."
-            }
+            placeholder="Tell me about your campaign idea, audience, goals, and timeline..."
           />
         )}
 
-        {/* Loading State */}
-        {isComplete && (
+        {/* Loading State - Only show during generation */}
+        {(stage === 'generating' || (stage === 'complete' && strategySummaries.length === 0 && isLoading)) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

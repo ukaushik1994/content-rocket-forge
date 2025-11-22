@@ -423,7 +423,7 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
           messages: [...prev.messages, {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `✅ Generated ${strategies.length} comprehensive campaign strategies! Review them below and select the one that best fits your needs.`,
+            content: `✅ Generated ${strategies.length} comprehensive campaign ${strategies.length === 1 ? 'strategy' : 'strategies'}! Review them below and select the one that best fits your needs.`,
             timestamp: new Date()
           }]
         }));
