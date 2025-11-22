@@ -79,6 +79,63 @@ export interface CampaignStrategy {
     emailSequences: boolean;
     exportOptions: string[];
   };
+  
+  // NEW: Complete campaign management fields
+  campaignBudget?: {
+    contentCreation: number;
+    paidPromotion: number;
+    tools: number;
+    total: number;
+  };
+  
+  expectedROI?: {
+    investment: number;
+    projectedRevenue: number;
+    roi: number;
+    costPerLead: number;
+    breakEvenPoint: string;
+  };
+  
+  teamRequirements?: {
+    roles: Array<{
+      role: string;
+      hours: number;
+      tasks: string[];
+    }>;
+    approvalWorkflow: Array<{
+      stage: string;
+      approver: string;
+      sla: string;
+    }>;
+  };
+  
+  riskManagement?: {
+    complianceChecklist: string[];
+    contingencyPlan: string;
+    competitorResponse: string;
+  };
+  
+  analyticsSetup?: {
+    kpis: string[];
+    dashboardTools: string[];
+    reportingFrequency: string;
+  };
+  
+  contentBriefs?: Array<{
+    formatId: string;
+    pieceIndex: number;
+    title: string;
+    description: string;
+    keywords: string[];
+    metaTitle: string;
+    metaDescription: string;
+    targetWordCount: number;
+    difficulty: 'easy' | 'medium' | 'hard';
+    serpOpportunity: number;
+    ctaText: string;
+    publishDate: string;
+    utmParams: any;
+  }>;
 }
 
 export interface ContentBrief {

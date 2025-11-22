@@ -17,15 +17,16 @@ import { supabase } from '@/integrations/supabase/client';
 function buildSystemPrompt(stage: ConversationStage, collectedData: EnhancedCampaignData): string {
   const hasSolutionData = !!collectedData.solutionId;
   
-  const basePrompt = `You are a marketing campaign assistant. Your job is to collect information through natural conversation.
+  const basePrompt = `You are a marketing campaign assistant. Your job is to collect campaign essentials through natural conversation.
 
 RULES:
 - Ask ONE question at a time
-- Keep questions short and conversational
-- Don't ask about information already provided
-- Use singular form, not bullet points
-- Be friendly and natural
-${hasSolutionData ? '- CRITICAL: Solution data is auto-filled. DO NOT ask about features, benefits, target audience, or pain points. Only ask about campaign tone, style, or messaging angle if needed.' : ''}`;
+- Keep responses under 2 sentences
+- NEVER ask about solution details if solutionId exists (we have that data)
+- Required: campaign idea + campaign duration
+- Optional: target audience (only if not clear from solution)
+- Be natural and conversational
+${hasSolutionData ? '\n🎯 SOLUTION DATA AVAILABLE - Skip all questions about features, benefits, target audience, pain points, use cases. Focus ONLY on campaign duration.' : ''}`;
 
   const stageContext = getStageContext(stage, collectedData);
   
@@ -38,43 +39,35 @@ ${stageContext}`;
  * Provides context about what information to gather at each stage
  */
 function getStageContext(stage: ConversationStage, data: EnhancedCampaignData): string {
-  const hasWhatTheyrePromoting = !!data.whatTheyrePromoting || !!data.idea;
-  const hasWhoItsFor = !!data.targetAudience;
+  const hasIdea = !!data.whatTheyrePromoting || !!data.idea;
+  const hasTimeline = !!data.timeline;
   const hasSolutionData = !!data.solutionId;
   const previousContext = buildPreviousContext(data);
   
   if (stage === 'collecting') {
-    if (!hasWhatTheyrePromoting) {
-      return `Your task: Ask what they want to promote.\n${previousContext}`;
+    // Step 1: Get the campaign idea
+    if (!hasIdea) {
+      return `Your task: Ask what campaign they want to create. Be conversational and simple.\n${previousContext}`;
     }
     
-    // Skip asking about target audience if it's auto-filled from solution
-    if (!hasWhoItsFor && !hasSolutionData) {
-      return `Your task: Ask who the target audience is. Keep it simple - just ask "Who is it for?"\n${previousContext}`;
-    }
-
-    // If solution data is available, ask about campaign tone/style instead of redundant questions
-    if (hasSolutionData && (!data.messagingTone || !data.campaignAngle)) {
-      return `Your task: Since we have the solution details, ask about campaign tone or messaging style. For example: "What tone should we use - professional, friendly, or technical?" or "Any specific angle you want to focus on?"\n${previousContext}`;
-    }
-
-    // Once we have essentials, ask about channels if not provided
-    if (!data.distributionChannels || data.distributionChannels.length === 0) {
-      return `Your task: Ask about distribution channels. Say something like "Where would you like to promote this?"\n${previousContext}`;
+    // Step 2: Get campaign duration (required)
+    if (!hasTimeline) {
+      return `Your task: Ask how long they want to run this campaign. Options: 1 week, 2 weeks, 4 weeks, or ongoing. Keep it natural.\n${previousContext}`;
     }
     
-    return `You have enough information. Say something like "Perfect! Let me generate some campaign strategies for you." and end the conversation.\n${previousContext}`;
+    // If we have idea + timeline, we're done!
+    return `You have enough information (idea + duration${hasSolutionData ? ' + solution data' : ''}). Say "Perfect! Let me generate comprehensive campaign strategies for you." and end.\n${previousContext}`;
   }
   
   if (stage === 'generating') {
-    return 'All information collected! Acknowledge receipt and let them know you\'re generating strategies.';
+    return 'Information collected! Let them know you\'re building comprehensive strategies.';
   }
   
   if (stage === 'complete') {
-    return 'Strategies have been generated and are ready for selection.';
+    return 'Strategies are ready for selection.';
   }
   
-  return 'Ask them to continue...';
+  return 'Continue...';
 }
 
 /**

@@ -183,9 +183,119 @@ const CAMPAIGN_STRATEGY_TOOL = {
                     description: "3-5 CTA variations (e.g., 'Start Free Trial', 'Book a Demo')"
                   }
                 }
+              },
+              campaignBudget: {
+                type: "object",
+                description: "Detailed budget breakdown for campaign execution",
+                properties: {
+                  contentCreation: { type: "number", description: "Cost for content creation (writing, design)" },
+                  paidPromotion: { type: "number", description: "Budget for paid advertising/promotion" },
+                  tools: { type: "number", description: "Software/tools costs" },
+                  total: { type: "number", description: "Total campaign budget" }
+                }
+              },
+              expectedROI: {
+                type: "object",
+                description: "ROI projections and financial metrics",
+                properties: {
+                  investment: { type: "number", description: "Total investment (same as budget total)" },
+                  projectedRevenue: { type: "number", description: "Expected revenue from campaign" },
+                  roi: { type: "number", description: "ROI percentage" },
+                  costPerLead: { type: "number", description: "Expected cost per lead" },
+                  breakEvenPoint: { type: "string", description: "When campaign breaks even (e.g., 'Week 3')" }
+                }
+              },
+              teamRequirements: {
+                type: "object",
+                description: "Team roles and hours needed",
+                properties: {
+                  roles: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        role: { type: "string", description: "Role name (e.g., 'Content Writer', 'Designer')" },
+                        hours: { type: "number", description: "Hours required" },
+                        tasks: { type: "array", items: { type: "string" }, description: "Key tasks" }
+                      }
+                    }
+                  },
+                  approvalWorkflow: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        stage: { type: "string", description: "Stage name (e.g., 'Draft Review', 'Final Approval')" },
+                        approver: { type: "string", description: "Who approves (role or title)" },
+                        sla: { type: "string", description: "Turnaround time (e.g., '24 hours')" }
+                      }
+                    }
+                  }
+                }
+              },
+              riskManagement: {
+                type: "object",
+                description: "Risk assessment and mitigation",
+                properties: {
+                  complianceChecklist: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "Legal/compliance items to check"
+                  },
+                  contingencyPlan: { 
+                    type: "string",
+                    description: "Backup plan if campaign underperforms"
+                  },
+                  competitorResponse: { 
+                    type: "string",
+                    description: "How to handle competitor counter-campaigns"
+                  }
+                }
+              },
+              analyticsSetup: {
+                type: "object",
+                description: "Performance tracking configuration",
+                properties: {
+                  kpis: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "Key metrics to track (e.g., 'CTR', 'Conversion Rate')"
+                  },
+                  dashboardTools: { 
+                    type: "array", 
+                    items: { type: "string" },
+                    description: "Analytics tools to use (e.g., 'Google Analytics', 'HubSpot')"
+                  },
+                  reportingFrequency: { 
+                    type: "string",
+                    description: "How often to review metrics (e.g., 'Weekly', 'Daily')"
+                  }
+                }
+              },
+              contentBriefs: {
+                type: "array",
+                description: "Detailed briefs for ALL content pieces in contentMix (ready for batch generation)",
+                items: {
+                  type: "object",
+                  properties: {
+                    formatId: { type: "string", description: "Content format ID" },
+                    pieceIndex: { type: "number", description: "Index of this piece (0-based)" },
+                    title: { type: "string", description: "Exact content title" },
+                    description: { type: "string", description: "What this content covers" },
+                    keywords: { type: "array", items: { type: "string" }, description: "5-8 target keywords" },
+                    metaTitle: { type: "string", description: "SEO-optimized meta title" },
+                    metaDescription: { type: "string", description: "SEO-optimized meta description" },
+                    targetWordCount: { type: "number", description: "Target word count" },
+                    difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
+                    serpOpportunity: { type: "number", description: "0-100 ranking potential" },
+                    ctaText: { type: "string", description: "Call-to-action text" },
+                    publishDate: { type: "string", description: "Suggested publish date" },
+                    utmParams: { type: "object", description: "UTM parameters for tracking" }
+                  }
+                }
               }
             },
-            required: ["id", "title", "description", "contentMix", "expectedOutcome", "focus", "effortLevel", "totalHours", "complexity"]
+            required: ["id", "title", "description", "contentMix", "expectedOutcome", "focus", "effortLevel", "totalHours", "complexity", "contentBriefs", "campaignBudget", "expectedROI", "teamRequirements"]
           }
         }
       },
@@ -324,9 +434,17 @@ Deno.serve(async (req) => {
                 role: 'system',
                 content: `You are a B2B SaaS marketing strategist. Generate 2-4 distinct, complete campaign strategies based on the user's campaign context.
 
-CRITICAL: Generate COMPLETE strategies with ALL fields populated immediately (no summaries):
+CRITICAL: Generate COMPLETE campaign strategies with ALL fields populated for immediate execution:
+
+STRATEGY FIELDS (ALL REQUIRED):
 - Full title and detailed description
 - Complete contentMix with ALL format counts
+- contentBriefs: Detailed brief for EVERY piece in contentMix (ready for batch generation)
+- campaignBudget: Budget breakdown (contentCreation, paidPromotion, tools, total)
+- expectedROI: ROI projections (investment, projectedRevenue, roi, costPerLead, breakEvenPoint)
+- teamRequirements: Team roles with hours/tasks + approval workflow
+- riskManagement: Compliance checklist, contingency plan, competitor response
+- analyticsSetup: KPIs, dashboard tools, reporting frequency
 - totalEffort (with workflow order based on the contentMix)
 - audienceIntelligence (personas, industry segments, pain points, messaging angle)
 - seoIntelligence (primary/secondary keywords, difficulty, impact, brief count)
@@ -335,7 +453,25 @@ CRITICAL: Generate COMPLETE strategies with ALL fields populated immediately (no
 - expectedOutcome, focus, effortLevel, totalHours, complexity
 - milestones, expectedMetrics, contentCategories, strategyScore, keyStrengths
 
-Each strategy should be concrete and actionable with FULL details ready for immediate use. Campaign managers need to see ALL decision-making data in ONE response.`
+BATCH CONTENT GENERATION REQUIREMENT:
+Generate a contentBriefs array with one detailed brief for EVERY piece in contentMix:
+- If contentMix has 5 blog posts + 10 tweets = 15 total briefs required
+- Each brief must have: formatId, pieceIndex, title, description, keywords, metaTitle, metaDescription, targetWordCount, difficulty, serpOpportunity, ctaText, publishDate, utmParams
+- Briefs should be production-ready (no placeholders, specific titles, real keywords, exact word counts)
+
+FINANCIAL INTELLIGENCE:
+- Calculate realistic budget based on content types and timeline
+- Estimate ROI based on industry benchmarks for this solution type
+- Provide cost per lead estimates based on distribution channels
+- Identify break-even point in campaign timeline
+
+TEAM & WORKFLOW:
+- List specific roles needed (Content Writer, Designer, Social Media Manager, etc.)
+- Assign hour estimates per role based on content mix
+- Define approval workflow stages with realistic turnaround times
+- Include external resource needs if applicable
+
+Each strategy should be a complete campaign-in-a-box ready for immediate execution. Campaign managers should be able to start execution without asking follow-up questions.`
               },
               {
                 role: 'user',
