@@ -199,8 +199,8 @@ export const campaignService = {
     const now = new Date();
     const daysPassed = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Parse timeline (e.g., "4 weeks", "2 weeks", "1 week")
-    const timelineMatch = timeline.match(/(\d+)\s*(week|month)/i);
+    // Parse timeline (e.g., "4 weeks", "4-week", "2 months", "4-week campaign")
+    const timelineMatch = timeline.match(/(\d+)[\s-]*(weeks?|months?)/i);
     if (!timelineMatch) {
       return { timelineStatus: 'unknown', daysRemaining: undefined };
     }
