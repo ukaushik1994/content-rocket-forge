@@ -189,15 +189,22 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
 
   // State persistence debug logging
   useEffect(() => {
-    console.log('[Campaign State] Messages count:', state.messages.length);
+    console.log('📍 [Campaign State] Stage:', state.stage, '| Messages:', state.messages.length, '| Solution ID:', state.collectedData.solutionId);
     if (state.messages.length > 0) {
       const lastMsg = state.messages[state.messages.length - 1];
-      console.log('[Campaign State] Last message:', lastMsg.role, lastMsg.content.substring(0, 30));
+      console.log('📍 [Campaign State] Last message:', lastMsg.role, '-', lastMsg.content.substring(0, 50));
     }
-  }, [state.messages]);
+    console.log('📍 [Campaign State] Collected data:', {
+      idea: state.collectedData.idea?.substring(0, 30),
+      targetAudience: state.collectedData.targetAudience,
+      solutionId: state.collectedData.solutionId,
+      goal: state.collectedData.goal,
+      timeline: state.collectedData.timeline
+    });
+  }, [state.messages, state.stage, state.collectedData]);
 
   const processUserResponse = useCallback(async (message: string) => {
-    console.log('[Campaign] Processing user response:', message);
+    console.log('🔵 [Campaign] Processing user response:', message);
     
     // Calculate next state values BEFORE setState
     const newData = { ...state.collectedData };
@@ -223,13 +230,17 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
           
           if (matchedSolution && !newData.solutionId) {
             newData.solutionId = matchedSolution.id;
-            console.log('[Campaign] Auto-detected solution:', matchedSolution.name);
+            console.log('✅ [Campaign] Auto-detected solution:', matchedSolution.name);
             
             // Auto-fetch and pre-populate solution data
             const solutionData = await fetchSolutionData(matchedSolution.id);
             if (solutionData) {
               Object.assign(newData, solutionData);
-              console.log('✅ Auto-populated campaign data from solution');
+              console.log('✅ [Campaign] Auto-populated solution data:', {
+                targetAudience: solutionData.targetAudience,
+                features: solutionData.features?.length,
+                benefits: solutionData.benefits?.length
+              });
             }
           }
         }
@@ -251,9 +262,26 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
       newData.goal = 'awareness'; // Default
     }
     
-    // Parse target audience if not set
+    // SMART Target Audience Detection
+    // Check if the last AI message was asking about target audience
+    const lastAIMessage = state.messages.filter(m => m.role === 'assistant').pop();
+    const lastAIMessageLower = lastAIMessage?.content.toLowerCase() || '';
+    const isAskingAboutAudience = 
+      lastAIMessageLower.includes('target audience') || 
+      lastAIMessageLower.includes("who's your") ||
+      lastAIMessageLower.includes('who is your') ||
+      lastAIMessageLower.includes('who are you targeting');
+    
+    // If AI just asked about audience, capture ANY response as target audience
+    if (!newData.targetAudience && isAskingAboutAudience) {
+      newData.targetAudience = message;
+      console.log('✅ [Campaign] Captured target audience from response:', message);
+    }
+    
+    // Fallback: also check if message explicitly mentions target/audience keywords
     if (!newData.targetAudience && (messageLower.includes('target') || messageLower.includes('audience'))) {
       newData.targetAudience = message;
+      console.log('✅ [Campaign] Captured target audience from keywords:', message);
     }
     
     // Parse distribution channels from message
@@ -296,6 +324,15 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
     const hasWhoItsFor = newData.targetAudience && newData.targetAudience.length > 5;
     const hasSolutionData = !!newData.solutionId;
     
+    console.log('📊 [Campaign] Data check:', {
+      hasWhatTheyrePromoting,
+      hasWhoItsFor,
+      hasSolutionData,
+      idea: newData.idea?.substring(0, 50),
+      targetAudience: newData.targetAudience,
+      solutionId: newData.solutionId
+    });
+    
     // Auto-generate as soon as we know WHAT and WHO
     // If solution data is available, we can skip even more questions
     if (hasWhatTheyrePromoting && (hasWhoItsFor || hasSolutionData)) {
@@ -303,10 +340,11 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
       if (!newData.goal) newData.goal = 'awareness';
       if (!newData.timeline) newData.timeline = '4-week';
       
+      console.log('🚀 [Campaign] READY TO GENERATE! Transitioning to generating stage...');
       nextStage = 'generating'; // Go straight to generation
     }
     
-    console.log('[Campaign] Next stage:', nextStage);
+    console.log('🔄 [Campaign] Next stage:', nextStage);
     
     // Check if we should show channel selector
     const shouldShowChannelSelector = 
