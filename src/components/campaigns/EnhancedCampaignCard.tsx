@@ -37,17 +37,16 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 // Utility function to format reach values intelligently
-const formatReach = (reach: string | number): { value: string; period?: string } => {
-  if (reach === '—' || !reach) return { value: '—' };
+const formatReach = (reach: string | number): string => {
+  if (reach === '—' || !reach) return '—';
   
   const reachStr = String(reach);
   
-  // Handle ranges like "60,000-80,000 impressions over 4 weeks"
-  const rangeMatch = reachStr.match(/(\d[\d,\-]+)\s*(?:impressions?)?\s*(?:over\s+(.+))?/i);
+  // Handle ranges like "60,000-80,000 impressions over 4 weeks" or "60,000-80,000"
+  const rangeMatch = reachStr.match(/(\d[\d,\-]+)/);
   
   if (rangeMatch) {
     const numbers = rangeMatch[1];
-    const period = rangeMatch[2];
     
     // Convert "60,000-80,000" to "60K-80K"
     const formatted = numbers
@@ -60,13 +59,10 @@ const formatReach = (reach: string | number): { value: string; period?: string }
       })
       .join('-');
     
-    return {
-      value: formatted,
-      period: period || undefined
-    };
+    return formatted;
   }
   
-  return { value: reachStr };
+  return reachStr;
 };
 
 interface EnhancedCampaignCardProps {
@@ -143,7 +139,7 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
   const plannedCount = campaign.plannedCount || 0;
   const progressPercentage = plannedCount > 0 ? Math.round((contentCount / plannedCount) * 100) : 0;
   const estimatedReach = campaign.estimatedReach || '—';
-  const { value: reachValue, period: reachPeriod } = formatReach(estimatedReach);
+  const reachValue = formatReach(estimatedReach);
   const daysRemaining = campaign.daysRemaining !== undefined ? campaign.daysRemaining : '—';
   const goalDisplay = campaign.goal || campaign.selected_strategy?.expectedEngagement || 'Awareness';
   const nextAction = campaign.nextAction;
@@ -256,9 +252,7 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
                 <p className="text-xs text-muted-foreground truncate">Reach</p>
               </div>
               <p className="text-lg md:text-xl font-bold truncate">{reachValue}</p>
-              <p className="text-xs text-muted-foreground text-wrap break-words">
-                {reachPeriod || 'impressions'}
-              </p>
+              <p className="text-xs text-muted-foreground">impressions</p>
             </div>
 
             {/* Timeline */}
