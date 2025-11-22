@@ -207,7 +207,7 @@ export const campaignService = {
     
     const duration = parseInt(timelineMatch[1]);
     const unit = timelineMatch[2].toLowerCase();
-    const totalDays = unit === 'week' ? duration * 7 : duration * 30;
+    const totalDays = unit.startsWith('week') ? duration * 7 : duration * 30;
     const daysRemaining = totalDays - daysPassed;
     
     // Determine status based on progress vs time
