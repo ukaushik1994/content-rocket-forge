@@ -156,65 +156,57 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
     >
       <GlassCard
         className={cn(
-          "relative overflow-hidden transition-all duration-500 cursor-pointer",
-          "bg-gradient-to-br from-background/40 via-background/60 to-background/40",
-          "backdrop-blur-2xl backdrop-saturate-150",
-          "border-2 border-white/5 hover:border-white/10",
-          "shadow-2xl hover:shadow-3xl hover:shadow-primary/10",
-          "ring-1 ring-white/5 hover:ring-white/10",
-          "hover:-translate-y-1"
+          "relative overflow-hidden transition-all duration-300 cursor-pointer",
+          "bg-background/60 backdrop-blur-xl",
+          "border border-border/50 hover:border-border",
+          "shadow-md hover:shadow-xl",
+          "hover:scale-[1.01]"
         )}
         onClick={() => onView(campaign.id)}
       >
-        <div className="p-8 space-y-6">
-          {/* Solution Branding */}
-          {campaign.solution && (
-            <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-              {campaign.solution.logo_url ? (
-                <img 
-                  src={campaign.solution.logo_url} 
-                  alt={campaign.solution.name}
-                  className="h-10 w-10 rounded-lg object-contain bg-white/5 p-1"
-                />
-              ) : (
-                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-primary" />
+        <div className="p-5 space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              {/* Solution Badge (if exists) */}
+              {campaign.solution && (
+                <div className="flex items-center gap-2 mb-2">
+                  {campaign.solution.logo_url ? (
+                    <img 
+                      src={campaign.solution.logo_url} 
+                      alt={campaign.solution.name}
+                      className="h-5 w-5 rounded object-contain"
+                    />
+                  ) : (
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  )}
+                  <span className="text-xs text-muted-foreground">Promoting {campaign.solution.name}</span>
                 </div>
               )}
-              <div>
-                <p className="text-xs text-muted-foreground/70 uppercase tracking-wider">Promoting</p>
-                <p className="text-sm font-bold">{campaign.solution.name}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Campaign Objective */}
-          {campaign.objective && (
-            <div className="mb-4 p-4 rounded-xl bg-card/40 border-l-4 border-blue-500">
-              <p className="text-xs text-blue-400 uppercase tracking-wider mb-1">Campaign Objective</p>
-              <p className="text-sm font-medium leading-relaxed line-clamp-2">
-                {campaign.objective}
-              </p>
-            </div>
-          )}
-          
-          {/* Header */}
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold mb-2 group-hover:text-primary transition-colors line-clamp-3 tracking-tight leading-tight">
+              
+              {/* Title */}
+              <h3 className="text-base md:text-lg font-bold mb-1 group-hover:text-primary transition-colors line-clamp-2">
                 {campaign.selected_strategy?.title || campaign.name}
               </h3>
-              <div className="flex items-center gap-3">
+              
+              {/* Objective as subtitle */}
+              {campaign.objective && (
+                <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                  {campaign.objective}
+                </p>
+              )}
+              
+              {/* Status and Date */}
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold",
-                  "bg-gradient-to-r backdrop-blur-sm shadow-sm transition-all duration-300",
-                  config.color,
-                  campaign.status === 'active' && "shadow-primary/30 animate-pulse-slow"
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+                  "bg-gradient-to-r backdrop-blur-sm",
+                  config.color
                 )}>
-                  <span className="text-base">{config.dot}</span>
+                  <span className="text-sm">{config.dot}</span>
                   {config.label}
                 </span>
-                <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">
+                <span className="text-xs text-muted-foreground">
                   {format(new Date(campaign.created_at), 'MMM d, yyyy')}
                 </span>
               </div>
@@ -245,101 +237,93 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
             </DropdownMenu>
           </div>
 
-          {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 gap-6">
+          {/* Key Metrics Grid - Single row on desktop, stacked on mobile */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Content Progress */}
-            <div className="group/metric p-4 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300 min-w-0 overflow-hidden">
-              <div className="flex items-center gap-3 mb-3 min-w-0">
-                <div className="p-2.5 rounded-full bg-purple-500/10 group-hover/metric:bg-purple-500/20 transition-colors flex-shrink-0">
-                  <FileText className="h-5 w-5 text-purple-400" />
-                </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium truncate">Content</p>
+            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <FileText className="h-4 w-4 text-purple-400 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground truncate">Content</p>
               </div>
-              <p className="text-2xl lg:text-3xl font-black leading-tight">{contentCount}/{plannedCount}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1.5 truncate">pieces created</p>
+              <p className="text-lg md:text-xl font-bold">{contentCount}/{plannedCount}</p>
+              <p className="text-xs text-muted-foreground truncate">pieces</p>
             </div>
 
             {/* Estimated Reach */}
-            <div className="group/metric p-4 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300 min-w-0 overflow-hidden">
-              <div className="flex items-center gap-3 mb-3 min-w-0">
-                <div className="p-2.5 rounded-full bg-blue-500/10 group-hover/metric:bg-blue-500/20 transition-colors flex-shrink-0">
-                  <Eye className="h-5 w-5 text-blue-400" />
-                </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium truncate">Est. Reach</p>
+            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Eye className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground truncate">Reach</p>
               </div>
-              <p className="text-xl lg:text-2xl font-bold leading-tight break-words">{reachValue}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1.5 truncate">
-                {reachPeriod ? `over ${reachPeriod}` : 'impressions'}
+              <p className="text-lg md:text-xl font-bold truncate">{reachValue}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {reachPeriod || 'impressions'}
               </p>
             </div>
 
             {/* Timeline */}
-            <div className="group/metric p-4 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300 min-w-0 overflow-hidden">
-              <div className="flex items-center gap-3 mb-3 min-w-0">
-                <div className="p-2.5 rounded-full bg-green-500/10 group-hover/metric:bg-green-500/20 transition-colors flex-shrink-0">
-                  <Calendar className="h-5 w-5 text-green-400" />
-                </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium truncate">Timeline</p>
+            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Calendar className="h-4 w-4 text-green-400 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground truncate">Timeline</p>
               </div>
-              <p className="text-2xl lg:text-3xl font-black leading-tight">{daysRemaining}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1.5 truncate">days remaining</p>
+              <p className="text-lg md:text-xl font-bold">{daysRemaining}</p>
+              <p className="text-xs text-muted-foreground truncate">days left</p>
             </div>
 
             {/* Goal */}
-            <div className="group/metric p-4 rounded-xl bg-gradient-to-br from-card/30 to-card/60 border border-white/5 hover:border-white/10 hover:from-card/40 hover:to-card/70 transition-all duration-300 min-w-0 overflow-hidden">
-              <div className="flex items-center gap-3 mb-3 min-w-0">
-                <div className="p-2.5 rounded-full bg-amber-500/10 group-hover/metric:bg-amber-500/20 transition-colors flex-shrink-0">
-                  <Target className="h-5 w-5 text-amber-400" />
-                </div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium truncate">Goal</p>
+            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Target className="h-4 w-4 text-amber-400 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground truncate">Goal</p>
               </div>
-              <Badge variant="secondary" className="mt-2 text-sm font-bold px-3 py-1 truncate max-w-full">
+              <Badge variant="secondary" className="text-xs px-2 py-0.5 truncate max-w-full mt-1">
                 {goalDisplay}
               </Badge>
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold tracking-wide">Campaign Progress</span>
-              <span className="text-sm font-black text-primary">{progressPercentage}%</span>
+              <span className="text-xs text-muted-foreground">Progress</span>
+              <span className="text-xs font-bold text-primary">{progressPercentage}%</span>
             </div>
-            <div className="h-4 bg-gradient-to-r from-background/40 to-background/80 rounded-full overflow-hidden border border-white/5">
+            <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
               <motion.div
                 className={cn(
-                  "h-full rounded-full transition-all duration-700 ease-out relative",
-                  progressPercentage < 30 && "bg-gradient-to-r from-red-500 to-red-400 shadow-lg shadow-red-500/30",
-                  progressPercentage >= 30 && progressPercentage < 70 && "bg-gradient-to-r from-amber-500 to-amber-400 shadow-lg shadow-amber-500/30",
-                  progressPercentage >= 70 && "bg-gradient-to-r from-green-500 to-emerald-400 shadow-lg shadow-green-500/30"
+                  "h-full rounded-full transition-all duration-700",
+                  progressPercentage < 30 && "bg-red-500",
+                  progressPercentage >= 30 && progressPercentage < 70 && "bg-amber-500",
+                  progressPercentage >= 70 && "bg-gradient-to-r from-green-500 to-emerald-400"
                 )}
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercentage}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
               />
             </div>
           </div>
 
           {/* Distribution Channels */}
           {distributionChannels.length > 0 && (
-            <div className="flex items-center gap-3">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">Channels:</p>
-              <div className="flex gap-2.5">
-                {distributionChannels.slice(0, 5).map((channel, idx) => {
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs text-muted-foreground">Channels:</p>
+              <div className="flex gap-1.5">
+                {distributionChannels.slice(0, 4).map((channel, idx) => {
                   const Icon = channelIcons[channel as keyof typeof channelIcons] || Share2;
                   return (
                     <div 
                       key={idx} 
-                      className="group/channel h-10 w-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/20 flex items-center justify-center hover:from-primary/20 hover:to-primary/30 hover:scale-110 transition-all duration-300 cursor-pointer"
+                      className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
                       title={channel}
                     >
-                      <Icon className="h-5 w-5 text-primary group-hover/channel:scale-110 transition-transform" />
+                      <Icon className="h-4 w-4 text-primary" />
                     </div>
                   );
                 })}
-                {distributionChannels.length > 5 && (
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-muted/50 to-muted border border-border/50 flex items-center justify-center">
-                    <span className="text-xs font-bold">+{distributionChannels.length - 5}</span>
+                {distributionChannels.length > 4 && (
+                  <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                    <span className="text-xs font-medium">+{distributionChannels.length - 4}</span>
                   </div>
                 )}
               </div>
@@ -348,27 +332,46 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
 
           {/* Next Action */}
           {nextAction && (
-            <div className="pt-6 border-t border-white/5">
-              <div className="group/action relative flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 border-l-4 border-primary shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all duration-300 animate-pulse-slow">
-                <div className="p-2 rounded-lg bg-primary/20 group-hover/action:scale-110 transition-transform">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-primary/70 font-medium">Next Action</p>
-                  <p className="text-sm font-bold text-foreground">{nextAction}</p>
+            <div className="pt-3 border-t border-border/50">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-primary/70">Next:</p>
+                  <p className="text-xs font-medium truncate">{nextAction}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Action Footer */}
-          <div className="flex items-center gap-3 pt-6 border-t border-white/5">
-            <Button onClick={(e) => { e.stopPropagation(); onView(campaign.id); }} className="flex-1 font-bold hover:scale-105 transition-transform">
-              View Campaign
+          {/* Action Footer - Icon buttons only */}
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-border/50">
+            <Button 
+              onClick={(e) => { e.stopPropagation(); onView(campaign.id); }} 
+              variant="ghost" 
+              size="sm"
+              className="flex-1 justify-start hover:bg-primary/10"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View
             </Button>
-            <Button variant="outline" size="icon" className="hover:bg-primary/10 hover:scale-110 transition-all">
-              <TrendingUp className="h-5 w-5" />
-            </Button>
+            <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-8 w-8 hover:bg-primary/10"
+                onClick={(e) => { e.stopPropagation(); }}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-8 w-8 hover:bg-primary/10"
+                onClick={(e) => { e.stopPropagation(); }}
+              >
+                <TrendingUp className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </GlassCard>
