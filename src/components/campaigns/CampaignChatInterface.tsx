@@ -8,10 +8,11 @@ import { CampaignMessageBubble } from './CampaignMessageBubble';
 import { StrategySummaryCards } from './StrategySummaryCards';
 import { ServiceStatusBar, ServiceStatus } from './ServiceStatusBar';
 import { ChannelSelector } from './ChannelSelector';
+import { CampaignSettingsPanel } from './CampaignSettingsPanel';
 import { useCampaignConversation } from '@/hooks/useCampaignConversation';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { CampaignInput as CampaignInputType, CampaignStrategySummary } from '@/types/campaign-types';
-import { ArrowLeft, Target, Users, Calendar } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface CampaignChatInterfaceProps {
@@ -26,6 +27,9 @@ export function CampaignChatInterface({
   onCancel
 }: CampaignChatInterfaceProps) {
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus>({ type: 'idle' });
+  const [showSettings, setShowSettings] = useState(false);
+  const [selectedSolutionId, setSelectedSolutionId] = useState<string | null>(null);
+  const [platformPreferences, setPlatformPreferences] = useState<Record<string, number>>({});
 
   const handleStatusUpdate = (
     type: 'serp-analyzing' | 'serp-complete' | 'serp-error' | 'ai-generating' | 'ai-complete' | 'ai-error',
@@ -80,7 +84,12 @@ export function CampaignChatInterface({
     goBackToStage,
     showChannelSelector,
     selectChannels
-  } = useCampaignConversation(initialMessage, handleStatusUpdate);
+  } = useCampaignConversation(
+    initialMessage, 
+    handleStatusUpdate,
+    selectedSolutionId,
+    platformPreferences
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -153,6 +162,16 @@ export function CampaignChatInterface({
         {/* Service Status Indicator */}
         <ServiceStatusBar status={serviceStatus} />
 
+        {/* Campaign Settings Panel */}
+        <CampaignSettingsPanel
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          selectedSolutionId={selectedSolutionId}
+          onSolutionChange={setSelectedSolutionId}
+          platformPreferences={platformPreferences}
+          onPlatformPreferencesChange={setPlatformPreferences}
+        />
+
         {/* Messages Area */}
         <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 pr-2">
           <AnimatePresence>
@@ -206,11 +225,25 @@ export function CampaignChatInterface({
 
         {/* Message Input - Hide when complete or generating */}
         {stage === 'collecting' && !isLoading && (
-          <MessageInput
-            onSendMessage={handleSendMessage}
-            isLoading={isLoading}
-            placeholder="Tell me about your campaign idea, audience, goals, and timeline..."
-          />
+          <div className="flex items-end gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowSettings(!showSettings)}
+              className={showSettings ? "bg-primary/10" : ""}
+              title="Campaign Settings"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex-1">
+              <MessageInput
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                placeholder="Tell me about your campaign idea, audience, goals, and timeline..."
+              />
+            </div>
+          </div>
         )}
 
         {/* Loading State - Only show during generation */}

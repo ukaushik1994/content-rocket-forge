@@ -87,7 +87,9 @@ const AI_QUESTIONS = {
 
 export const useCampaignConversation = (
   initialMessage?: string, 
-  onStatusUpdate?: ServiceStatusCallback
+  onStatusUpdate?: ServiceStatusCallback,
+  solutionId?: string | null,
+  platformPreferences?: Record<string, number>
 ) => {
   const { generateStrategies } = useCampaignStrategies();
   
@@ -410,7 +412,8 @@ Quick question: Who's your target audience? (e.g., "B2B SaaS founders" or "Enter
           goal: newData.goal || 'awareness',
           timeline: newData.timeline || '4-week',
           useSerpData: true,
-          solutionId: newData.solutionId
+          solutionId: solutionId || newData.solutionId,
+          platformPreferences: platformPreferences
         };
         
         const strategies = await generateStrategies(input, user.id, undefined, onStatusUpdate);

@@ -172,6 +172,38 @@ export function StrategySummaryCards({
                       </div>
                     </div>
 
+                    {/* Content Briefs Preview */}
+                    {strategy.contentBriefs && strategy.contentBriefs.length > 0 && (
+                      <div className="mb-4 space-y-2">
+                        <div className="text-xs font-medium text-muted-foreground">
+                          Content Pieces Preview:
+                        </div>
+                        <div className="space-y-1.5">
+                          {strategy.contentBriefs.slice(0, 3).map((brief, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-start gap-2 p-2 rounded-md bg-secondary/50 text-xs"
+                            >
+                              <span className="text-base">{formatIcons[brief.formatId] || '📄'}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-foreground truncate">
+                                  {brief.title}
+                                </div>
+                                <div className="text-muted-foreground text-[10px] capitalize">
+                                  {brief.formatId.replace('-', ' ')}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {strategy.contentBriefs.length > 3 && (
+                            <div className="text-xs text-muted-foreground text-center pt-1">
+                              + {strategy.contentBriefs.length - 3} more pieces
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Quick Stats */}
                     {(strategy.totalEffort || strategy.seoIntelligence) && (
                       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
