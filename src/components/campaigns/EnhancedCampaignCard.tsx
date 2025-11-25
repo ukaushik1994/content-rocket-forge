@@ -31,6 +31,8 @@ import {
   MessageCircle,
   Search,
   Sparkles,
+  Circle,
+  Zap,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -80,41 +82,63 @@ interface EnhancedCampaignCardProps {
 
 const statusConfig = {
   draft: {
-    dot: '⚪',
+    icon: Circle,
+    iconColor: 'text-gray-400',
     color: 'from-gray-500/20 to-gray-500/30 text-gray-300',
     label: 'Draft',
   },
   planned: {
-    dot: '🔵',
+    icon: Clock,
+    iconColor: 'text-blue-400',
     color: 'from-blue-500/20 to-blue-500/30 text-blue-300',
     label: 'Planned',
   },
   active: {
-    dot: '🟣',
+    icon: Zap,
+    iconColor: 'text-purple-400',
     color: 'from-purple-500/20 to-purple-500/30 text-purple-300',
     label: 'Active',
   },
   completed: {
-    dot: '🟢',
+    icon: CheckCircle2,
+    iconColor: 'text-green-400',
     color: 'from-green-500/20 to-green-500/30 text-green-300',
     label: 'Completed',
   },
   archived: {
-    dot: '⚫',
+    icon: Archive,
+    iconColor: 'text-gray-400',
     color: 'from-gray-500/20 to-gray-500/30 text-gray-300',
     label: 'Archived',
   },
 };
 
-const channelIcons = {
+const channelIcons: Record<string, any> = {
   'social': Share2,
+  'social media': Share2,
   'email': Mail,
+  'email marketing': Mail,
   'webinars': Video,
+  'video': Video,
   'blog': FileText,
+  'blog/content': FileText,
+  'content': FileText,
   'paid ads': DollarSign,
+  'google ads': DollarSign,
   'events': Calendar,
   'seo': Search,
+  'seo/organic': Search,
   'direct outreach': MessageCircle,
+  'linkedin': Share2,
+  'twitter': MessageCircle,
+  'facebook': Share2,
+  'instagram': Share2,
+};
+
+// Helper to get channel icon with fallback
+const getChannelIcon = (channel: string) => {
+  const normalized = channel.toLowerCase().trim();
+  return channelIcons[normalized] || Share2;
 };
 
 const itemVariants = {
@@ -195,11 +219,11 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
               {/* Status and Date */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+                  "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
                   "bg-gradient-to-r backdrop-blur-sm",
                   config.color
                 )}>
-                  <span className="text-sm">{config.dot}</span>
+                  <config.icon className={cn("h-3 w-3", config.iconColor)} />
                   {config.label}
                 </span>
                 <span className="text-xs text-muted-foreground">
@@ -234,44 +258,50 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
           </div>
 
           {/* Key Metrics Grid - Single row on desktop, stacked on mobile */}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Content Progress */}
-            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-[120px]">
+            <div className="p-2.5 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
                 <FileText className="h-4 w-4 text-purple-400 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">Content</p>
               </div>
-              <p className="text-lg md:text-xl font-bold">{contentCount}/{plannedCount}</p>
-              <p className="text-xs text-muted-foreground">pieces</p>
+              <p className="text-base md:text-lg font-bold">{contentCount}/{plannedCount}</p>
+              <p className="text-xs text-muted-foreground truncate">pieces</p>
             </div>
 
             {/* Estimated Reach */}
-            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-[120px]">
+            <div className="p-2.5 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
                 <Eye className="h-4 w-4 text-blue-400 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">Reach</p>
               </div>
-              <p className="text-lg md:text-xl font-bold truncate">{reachValue}</p>
-              <p className="text-xs text-muted-foreground">impressions</p>
+              <p className="text-base md:text-lg font-bold truncate" title={String(estimatedReach)}>
+                {reachValue}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">impressions</p>
             </div>
 
             {/* Timeline */}
-            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-[120px]">
+            <div className="p-2.5 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
                 <Calendar className="h-4 w-4 text-green-400 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">Timeline</p>
               </div>
-              <p className="text-lg md:text-xl font-bold">{daysRemaining}</p>
-              <p className="text-xs text-muted-foreground">days left</p>
+              <p className="text-base md:text-lg font-bold">{daysRemaining}</p>
+              <p className="text-xs text-muted-foreground truncate">days left</p>
             </div>
 
             {/* Goal */}
-            <div className="p-3 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-[120px]">
+            <div className="p-2.5 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
                 <Target className="h-4 w-4 text-amber-400 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">Goal</p>
               </div>
-              <Badge variant="secondary" className="text-xs px-2 py-0.5 whitespace-nowrap mt-1">
+              <Badge 
+                variant="secondary" 
+                className="text-xs px-2 py-0.5 mt-1 max-w-full truncate" 
+                title={goalDisplay}
+              >
                 {goalDisplay}
               </Badge>
             </div>
@@ -304,7 +334,7 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
               <p className="text-xs text-muted-foreground">Channels:</p>
               <div className="flex gap-1.5">
                 {distributionChannels.slice(0, 4).map((channel, idx) => {
-                  const Icon = channelIcons[channel as keyof typeof channelIcons] || Share2;
+                  const Icon = getChannelIcon(channel);
                   return (
                     <div 
                       key={idx} 
