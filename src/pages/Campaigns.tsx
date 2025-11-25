@@ -108,7 +108,32 @@ const Campaigns = () => {
       if (strategies && strategies.length > 0) {
         setStrategy(strategies[0]);
         setShowInput(false);
-        toast.success('Campaign breakdown generated!');
+        
+        // Create campaign immediately so campaignId is available
+        try {
+          const generateCampaignName = (idea: string) => {
+            const words = idea.split(' ').slice(0, 5).join(' ');
+            return words.length > 50 ? words.substring(0, 47) + '...' : words;
+          };
+          
+          const campaign = await createCampaignAtomic(
+            user.id,
+            generateCampaignName(input.idea || ''),
+            input.idea || '',
+            input,
+            strategies[0],
+            input.solutionId,
+            strategies[0].description
+          );
+          
+          setCurrentCampaignId(campaign.id);
+          console.log('✅ Campaign created immediately:', campaign.id);
+          toast.success('Campaign breakdown generated!');
+          refetchCampaigns();
+        } catch (campaignError) {
+          console.error('Failed to create campaign:', campaignError);
+          toast.error('Campaign generated but failed to save');
+        }
       }
     } catch (error) {
       console.error('Error generating strategy:', error);
