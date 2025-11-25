@@ -1,13 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Megaphone, Target, Zap, TrendingUp, Mic, MicOff, MessageSquare } from 'lucide-react';
+import { Sparkles, Megaphone, Target, Zap, TrendingUp, Mic, MicOff, MessageSquare, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { CampaignSettingsPanel } from './CampaignSettingsPanel';
+
 interface CampaignsHeroProps {
   onCreateClick?: () => void;
-  onStartConversation?: (message: string) => void;
+  onStartConversation?: (message: string, settings: {
+    solutionId: string | null;
+    platformPreferences: Record<string, number>;
+  }) => void;
   onExpressMode?: (data: {
     idea: string;
     audience: string;
@@ -25,6 +30,11 @@ export const CampaignsHero = React.memo(({
   const [campaignIdea, setCampaignIdea] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Settings panel state
+  const [showSettings, setShowSettings] = useState(false);
+  const [selectedSolutionId, setSelectedSolutionId] = useState<string | null>(null);
+  const [platformPreferences, setPlatformPreferences] = useState<Record<string, number>>({});
 
   // Express mode form fields
   const [expressData, setExpressData] = useState({
@@ -59,7 +69,10 @@ export const CampaignsHero = React.memo(({
   }, []);
   const handleSubmit = () => {
     if (campaignIdea.trim() && onStartConversation) {
-      onStartConversation(campaignIdea.trim());
+      onStartConversation(campaignIdea.trim(), {
+        solutionId: selectedSolutionId,
+        platformPreferences: platformPreferences
+      });
       setCampaignIdea('');
     }
   };
@@ -236,7 +249,17 @@ export const CampaignsHero = React.memo(({
         }} transition={{
           delay: 1.1,
           duration: 0.4
-        }} className="mt-6 max-w-3xl mx-auto">
+        }} className="mt-6 max-w-3xl mx-auto space-y-4">
+              {/* Campaign Settings Panel */}
+              <CampaignSettingsPanel
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+                selectedSolutionId={selectedSolutionId}
+                onSolutionChange={setSelectedSolutionId}
+                platformPreferences={platformPreferences}
+                onPlatformPreferencesChange={setPlatformPreferences}
+              />
+
               <div className="relative group">
                 {/* Gradient glow on hover */}
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -254,6 +277,18 @@ export const CampaignsHero = React.memo(({
                     {/* Input */}
                     <input type="text" value={campaignIdea} onChange={e => setCampaignIdea(e.target.value)} onKeyDown={handleKeyDown} placeholder="Start a conversation about your campaign idea..." className="flex-1 bg-transparent text-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none" />
                     
+                    {/* Settings Button */}
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowSettings(!showSettings)}
+                      className={`p-2 ${showSettings ? 'text-primary' : 'text-muted-foreground'} hover:bg-white/10`}
+                      title="Campaign Settings"
+                    >
+                      <SlidersHorizontal className="h-5 w-5" />
+                    </Button>
+
                     {/* Voice Button */}
                     {hasVoiceSupport && <Button type="button" variant="ghost" size="sm" onClick={toggleVoiceInput} className={`p-2 ${isListening ? 'text-red-500' : 'text-muted-foreground'} hover:bg-white/10`}>
                         <motion.div animate={isListening ? {
