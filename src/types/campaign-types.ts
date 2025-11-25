@@ -197,6 +197,7 @@ export interface CampaignInput {
   timeline?: CampaignTimeline;
   useSerpData?: boolean;
   solutionId?: string; // Selected solution to promote
+  platformPreferences?: Record<string, number>; // User-specified platform quantities
 }
 
 export interface GeneratedContent {

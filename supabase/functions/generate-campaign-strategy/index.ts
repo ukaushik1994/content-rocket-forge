@@ -230,6 +230,7 @@ interface CampaignInput {
   solutionId?: string;
   useSerpData?: boolean;
   useCompetitorData?: boolean;
+  platformPreferences?: Record<string, number>;
 }
 
 Deno.serve(async (req) => {
@@ -301,7 +302,8 @@ Deno.serve(async (req) => {
       timeline: input.timeline,
       solutionId: input.solutionId,
       useSerpData: input.useSerpData,
-      useCompetitorData: input.useCompetitorData
+      useCompetitorData: input.useCompetitorData,
+      platformPreferences: input.platformPreferences
     };
 
     // Build context for AI
@@ -315,6 +317,20 @@ Deno.serve(async (req) => {
     if (sanitizedInput.timeline) {
       contextPrompt += `Timeline: ${sanitizedInput.timeline}\n`;
     }
+    
+    // Add platform preferences if specified
+    if (sanitizedInput.platformPreferences && Object.keys(sanitizedInput.platformPreferences).length > 0) {
+      const preferences = Object.entries(sanitizedInput.platformPreferences)
+        .filter(([_, count]) => count > 0)
+        .map(([platform, count]) => `${count}x ${platform}`)
+        .join(', ');
+      
+      if (preferences) {
+        contextPrompt += `\nUser-Specified Platform Mix: ${preferences}\n`;
+        contextPrompt += `IMPORTANT: Your contentMix MUST include exactly these platform quantities. Do not deviate from user preferences.\n`;
+      }
+    }
+    
     if (selectedSummary) {
       contextPrompt += `\nSolution Context: ${JSON.stringify(selectedSummary)}\n`;
     }
