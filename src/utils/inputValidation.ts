@@ -7,7 +7,8 @@ export const CampaignInputSchema = z.object({
   timeline: z.enum(['1-week', '2-week', '4-week', 'ongoing']).optional(),
   solutionId: z.string().uuid().optional(),
   useSerpData: z.boolean().optional(),
-  useCompetitorData: z.boolean().optional()
+  useCompetitorData: z.boolean().optional(),
+  platformPreferences: z.record(z.string(), z.number().min(0).max(20)).optional()
 });
 
 export function sanitizeHtml(input: string): string {
@@ -27,6 +28,7 @@ export function validateCampaignInput(input: unknown) {
   return {
     ...result.data,
     idea: sanitizeHtml(result.data.idea),
-    targetAudience: result.data.targetAudience ? sanitizeHtml(result.data.targetAudience) : undefined
+    targetAudience: result.data.targetAudience ? sanitizeHtml(result.data.targetAudience) : undefined,
+    platformPreferences: result.data.platformPreferences
   };
 }

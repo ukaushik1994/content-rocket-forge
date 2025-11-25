@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CampaignStrategy } from '@/types/campaign-types';
 import { motion } from 'framer-motion';
-import { Check, ChevronDown, BarChart3, Calendar, Users, Target, TrendingUp, Package } from 'lucide-react';
+import { Check, ChevronDown, BarChart3, Calendar, Users, Target, TrendingUp, Package, FileText, Share2, Mail, Video, Globe, Layers, Laugh, FileIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -22,18 +22,27 @@ const complexityLabels = {
   expert: { text: 'Expert', color: 'text-red-500' }
 };
 
-const formatIcons: Record<string, string> = {
-  'blog-post': '📝',
-  'social-post': '📱',
-  'video': '🎥',
-  'infographic': '📊',
-  'case-study': '📄',
-  'guide': '📖',
-  'whitepaper': '📑',
-  'email': '✉️',
-  'webinar': '🎯',
-  'podcast': '🎙️',
-  'google-ads': '🎯'
+const formatIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  'blog': FileText,
+  'blog-post': FileText,
+  'social-linkedin': Share2,
+  'social-twitter': Share2,
+  'social-facebook': Share2,
+  'social-instagram': Share2,
+  'social-post': Share2,
+  'email': Mail,
+  'script': Video,
+  'video': Video,
+  'landing-page': Globe,
+  'carousel': Layers,
+  'meme': Laugh,
+  'google-ads': Target,
+  'webinar': Target,
+  'infographic': BarChart3,
+  'case-study': FileIcon,
+  'guide': FileText,
+  'whitepaper': FileIcon,
+  'podcast': Video
 };
 
 export function StrategySummaryCards({
@@ -152,18 +161,21 @@ export function StrategySummaryCards({
                     {/* Content Mix Preview */}
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-2">
-                        {strategy.contentMix.slice(0, 4).map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground text-xs"
-                          >
-                            <span>{formatIcons[item.formatId] || '📄'}</span>
-                            <span className="font-medium">{item.count}</span>
-                            <span className="capitalize">
-                              {item.formatId.replace('-', ' ')}
-                            </span>
-                          </div>
-                        ))}
+                        {strategy.contentMix.slice(0, 4).map((item, idx) => {
+                          const IconComponent = formatIconMap[item.formatId] || FileText;
+                          return (
+                            <div
+                              key={idx}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground text-xs"
+                            >
+                              <IconComponent className="h-3.5 w-3.5" />
+                              <span className="font-medium">{item.count}</span>
+                              <span className="capitalize">
+                                {item.formatId.replace('-', ' ')}
+                              </span>
+                            </div>
+                          );
+                        })}
                         {strategy.contentMix.length > 4 && (
                           <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs">
                             +{strategy.contentMix.length - 4} more
@@ -179,22 +191,27 @@ export function StrategySummaryCards({
                           Content Pieces Preview:
                         </div>
                         <div className="space-y-1.5">
-                          {strategy.contentBriefs.slice(0, 3).map((brief, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-start gap-2 p-2 rounded-md bg-secondary/50 text-xs"
-                            >
-                              <span className="text-base">{formatIcons[brief.formatId] || '📄'}</span>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-foreground truncate">
-                                  {brief.title}
+                          {strategy.contentBriefs.slice(0, 3).map((brief, idx) => {
+                            const IconComponent = formatIconMap[brief.formatId] || FileText;
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-start gap-2 p-2 rounded-md bg-secondary/50 text-xs"
+                              >
+                                <div className="flex-shrink-0 p-1.5 rounded-md bg-primary/10">
+                                  <IconComponent className="h-3 w-3 text-primary" />
                                 </div>
-                                <div className="text-muted-foreground text-[10px] capitalize">
-                                  {brief.formatId.replace('-', ' ')}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-foreground truncate">
+                                    {brief.title}
+                                  </div>
+                                  <div className="text-muted-foreground text-[10px] capitalize">
+                                    {brief.formatId.replace('-', ' ')}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                           {strategy.contentBriefs.length > 3 && (
                             <div className="text-xs text-muted-foreground text-center pt-1">
                               + {strategy.contentBriefs.length - 3} more pieces
