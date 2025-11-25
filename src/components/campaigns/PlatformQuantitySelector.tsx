@@ -1,7 +1,8 @@
 import React from 'react';
-import { FileText, Share2, Mail, Video, Globe, Image, Layers, Laugh, Target } from 'lucide-react';
+import { FileText, Share2, Mail, Video, Globe, Image, Layers, Laugh, Target, Sparkles, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface Platform {
   id: string;
@@ -42,53 +43,96 @@ export function PlatformQuantitySelector({ preferences, onChange }: PlatformQuan
     }
   };
 
+  const totalSelected = Object.values(preferences).reduce((sum, count) => sum + count, 0);
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Premium Header */}
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-foreground">Platform Content Quantity</h4>
-        <span className="text-xs text-muted-foreground">0 = AI Decides</span>
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 to-blue-500/10">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">Platform Content Quantity</h4>
+            {totalSelected > 0 && (
+              <p className="text-xs text-primary">{totalSelected} pieces selected</p>
+            )}
+          </div>
+        </div>
+        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50 text-xs text-muted-foreground">
+          0 = AI Decides
+        </div>
       </div>
       
+      {/* Platform Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {PLATFORMS.map((platform) => {
+        {PLATFORMS.map((platform, index) => {
           const Icon = platform.icon;
           const count = preferences[platform.id] || 0;
           const hasValue = count > 0;
           
           return (
-            <div
+            <motion.div
               key={platform.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: index * 0.03 }}
               className={cn(
-                "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
-                "bg-background/60 backdrop-blur-sm",
+                "group relative flex flex-col items-center gap-2.5 p-4 rounded-xl border transition-all duration-300",
+                "bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm",
                 hasValue 
-                  ? "border-primary/50 ring-1 ring-primary/20" 
-                  : "border-border/50 hover:border-border"
+                  ? "border-primary/40 ring-2 ring-primary/20 shadow-lg shadow-primary/10" 
+                  : "border-border/30 hover:border-border/50 hover:shadow-md hover:scale-[1.02]"
               )}
             >
-              <div className={cn(
-                "p-2 rounded-full",
-                hasValue ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+              {/* Icon Container */}
+              <motion.div 
+                className={cn(
+                  "p-2.5 rounded-xl transition-all duration-300",
+                  hasValue 
+                    ? "bg-gradient-to-br from-primary/20 to-blue-500/20 ring-1 ring-primary/30 shadow-lg shadow-primary/20" 
+                    : "bg-muted/50 group-hover:bg-muted/70"
+                )}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Icon className={cn(
+                  "h-5 w-5 transition-colors",
+                  hasValue ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                )} />
+              </motion.div>
+              
+              {/* Platform Name */}
+              <span className={cn(
+                "text-xs font-semibold text-center transition-colors",
+                hasValue ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
               )}>
-                <Icon className="h-4 w-4" />
-              </div>
+                {platform.name}
+              </span>
               
-              <span className="text-xs font-medium text-center">{platform.name}</span>
-              
+              {/* Quantity Controls */}
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleDecrement(platform.id)}
                   disabled={count === 0}
-                  className="h-6 w-6 p-0"
+                  className={cn(
+                    "h-7 w-7 p-0 rounded-lg transition-all",
+                    hasValue 
+                      ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50" 
+                      : "hover:bg-muted/70"
+                  )}
                 >
-                  -
+                  <span className={cn("text-sm font-bold", hasValue && "text-primary")}>−</span>
                 </Button>
                 
                 <span className={cn(
-                  "text-sm font-semibold min-w-[2ch] text-center",
-                  hasValue ? "text-primary" : "text-muted-foreground"
+                  "text-base font-bold min-w-[2.5ch] text-center transition-all",
+                  hasValue 
+                    ? "bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent scale-110" 
+                    : "text-muted-foreground"
                 )}>
                   {count}
                 </span>
@@ -98,19 +142,33 @@ export function PlatformQuantitySelector({ preferences, onChange }: PlatformQuan
                   size="sm"
                   onClick={() => handleIncrement(platform.id)}
                   disabled={count >= 20}
-                  className="h-6 w-6 p-0"
+                  className={cn(
+                    "h-7 w-7 p-0 rounded-lg transition-all",
+                    hasValue 
+                      ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50" 
+                      : "hover:bg-muted/70"
+                  )}
                 >
-                  +
+                  <span className={cn("text-sm font-bold", hasValue && "text-primary")}>+</span>
                 </Button>
               </div>
-            </div>
+
+              {/* Active State Glow */}
+              {hasValue && (
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/5 to-blue-500/5 pointer-events-none" />
+              )}
+            </motion.div>
           );
         })}
       </div>
       
-      <p className="text-xs text-muted-foreground text-center mt-2">
-        Set quantity to 0 to let AI determine optimal content mix for each platform
-      </p>
+      {/* Footer Hint */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 border border-border/30">
+        <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Set quantity to 0 to let AI determine optimal content mix for each platform
+        </p>
+      </div>
     </div>
   );
 }
