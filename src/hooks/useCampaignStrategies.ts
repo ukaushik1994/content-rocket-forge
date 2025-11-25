@@ -72,11 +72,13 @@ export const useCampaignStrategies = () => {
           .single();
           
         if (solution) {
+          // Apply token optimization - reduces ~15k tokens to ~2-3k tokens
+          const optimizedSolution = optimizeSolutionContext(solution);
           solutionContext = `
 SOLUTION DETAILS:
-${JSON.stringify(solution, null, 2)}
+${JSON.stringify(optimizedSolution, null, 2)}
 
-Use this complete solution data to generate highly relevant, specific campaign strategies.`;
+Use this solution data to generate highly relevant, specific campaign strategies.`;
         }
       }
 
