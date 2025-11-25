@@ -14,11 +14,14 @@ const PLATFORMS: Platform[] = [
   { id: 'blog', name: 'Blog Posts', icon: FileText, defaultCount: 0 },
   { id: 'social-linkedin', name: 'LinkedIn', icon: Share2, defaultCount: 0 },
   { id: 'social-twitter', name: 'Twitter', icon: Share2, defaultCount: 0 },
+  { id: 'social-facebook', name: 'Facebook', icon: Share2, defaultCount: 0 },
+  { id: 'social-instagram', name: 'Instagram', icon: Image, defaultCount: 0 },
   { id: 'email', name: 'Email', icon: Mail, defaultCount: 0 },
   { id: 'script', name: 'Video Script', icon: Video, defaultCount: 0 },
   { id: 'landing-page', name: 'Landing Page', icon: Globe, defaultCount: 0 },
   { id: 'carousel', name: 'Carousel', icon: Layers, defaultCount: 0 },
   { id: 'meme', name: 'Meme', icon: Laugh, defaultCount: 0 },
+  { id: 'google-ads', name: 'Google Ads', icon: Target, defaultCount: 0 },
 ];
 
 interface PlatformQuantitySelectorProps {
