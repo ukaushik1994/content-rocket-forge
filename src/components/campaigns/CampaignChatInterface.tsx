@@ -19,17 +19,18 @@ interface CampaignChatInterfaceProps {
   initialMessage?: string;
   onComplete: (input: CampaignInputType, selectedSummary?: CampaignStrategySummary) => void;
   onCancel: () => void;
+  selectedSolutionId?: string | null;
+  platformPreferences?: Record<string, number>;
 }
 
 export function CampaignChatInterface({ 
   initialMessage, 
   onComplete, 
-  onCancel
+  onCancel,
+  selectedSolutionId = null,
+  platformPreferences = {}
 }: CampaignChatInterfaceProps) {
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus>({ type: 'idle' });
-  const [showSettings, setShowSettings] = useState(false);
-  const [selectedSolutionId, setSelectedSolutionId] = useState<string | null>(null);
-  const [platformPreferences, setPlatformPreferences] = useState<Record<string, number>>({});
 
   const handleStatusUpdate = (
     type: 'serp-analyzing' | 'serp-complete' | 'serp-error' | 'ai-generating' | 'ai-complete' | 'ai-error',
@@ -162,16 +163,6 @@ export function CampaignChatInterface({
         {/* Service Status Indicator */}
         <ServiceStatusBar status={serviceStatus} />
 
-        {/* Campaign Settings Panel */}
-        <CampaignSettingsPanel
-          isOpen={showSettings}
-          onClose={() => setShowSettings(false)}
-          selectedSolutionId={selectedSolutionId}
-          onSolutionChange={setSelectedSolutionId}
-          platformPreferences={platformPreferences}
-          onPlatformPreferencesChange={setPlatformPreferences}
-        />
-
         {/* Messages Area */}
         <div className="min-h-[400px] max-h-[600px] overflow-y-auto space-y-4 pr-2">
           <AnimatePresence>
@@ -225,25 +216,11 @@ export function CampaignChatInterface({
 
         {/* Message Input - Hide when complete or generating */}
         {stage === 'collecting' && !isLoading && (
-          <div className="flex items-end gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setShowSettings(!showSettings)}
-              className={showSettings ? "bg-primary/10" : ""}
-              title="Campaign Settings"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-            
-            <div className="flex-1">
-              <MessageInput
-                onSendMessage={handleSendMessage}
-                isLoading={isLoading}
-                placeholder="Tell me about your campaign idea, audience, goals, and timeline..."
-              />
-            </div>
-          </div>
+          <MessageInput
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            placeholder="Tell me about your campaign idea, audience, goals, and timeline..."
+          />
         )}
 
         {/* Loading State - Only show during generation */}

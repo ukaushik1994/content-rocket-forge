@@ -280,8 +280,11 @@ const Campaigns = () => {
     setCurrentCampaignId(null);
   };
 
-  const handleStartConversation = (message: string) => {
-    // Start a new campaign with the user's idea
+  const handleStartConversation = (message: string, settings: {
+    solutionId: string | null;
+    platformPreferences: Record<string, number>;
+  }) => {
+    // Start a new campaign with the user's idea and settings
     setViewMode('create');
     setShowInput(true);
     setStrategy(null);
@@ -289,7 +292,9 @@ const Campaigns = () => {
       idea: message,
       targetAudience: '',
       goal: undefined,
-      timeline: undefined
+      timeline: undefined,
+      solutionId: settings.solutionId,
+      platformPreferences: settings.platformPreferences
     });
     setCurrentCampaignId(null);
     toast.success('Let\'s build your campaign!');
@@ -441,6 +446,8 @@ const Campaigns = () => {
                     initialMessage={currentInput?.idea}
                     onComplete={handleGenerateStrategies}
                     onCancel={handleBackToList}
+                    selectedSolutionId={currentInput?.solutionId}
+                    platformPreferences={currentInput?.platformPreferences}
                   />
                 ) : null}
 
