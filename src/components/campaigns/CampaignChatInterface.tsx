@@ -23,7 +23,7 @@ interface CampaignChatInterfaceProps {
 export function CampaignChatInterface({ 
   initialMessage, 
   onComplete, 
-  onCancel 
+  onCancel
 }: CampaignChatInterfaceProps) {
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus>({ type: 'idle' });
 
