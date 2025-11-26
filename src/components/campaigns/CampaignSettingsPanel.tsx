@@ -39,7 +39,7 @@ export function CampaignSettingsPanel({
           transition={{ duration: 0.2 }}
           className="mb-3"
         >
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-border/50 bg-background/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/20 backdrop-blur-sm">
             {/* Solution Selector */}
             <div className="flex-shrink-0">
               <Select
@@ -47,7 +47,7 @@ export function CampaignSettingsPanel({
                 onValueChange={(value) => onSolutionChange(value === 'none' ? null : value)}
                 disabled={isLoading}
               >
-                <SelectTrigger className="h-8 w-[180px] text-sm border-border/50 bg-background/60">
+                <SelectTrigger className="h-8 w-[180px] text-sm border-none bg-transparent">
                   <SelectValue placeholder="Select solution" />
                 </SelectTrigger>
                 <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
@@ -71,7 +71,7 @@ export function CampaignSettingsPanel({
             </div>
 
             {/* Divider */}
-            <div className="h-6 w-px bg-border/50" />
+            <div className="h-5 w-px bg-border/30" />
 
             {/* Platform Chips */}
             <div className="flex-1 min-w-0">
@@ -82,14 +82,12 @@ export function CampaignSettingsPanel({
             </div>
 
             {/* Close Button */}
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={onClose}
-              className="h-7 w-7 p-0 flex-shrink-0 hover:bg-muted/50"
+              className="flex-shrink-0 text-muted-foreground/60 hover:text-muted-foreground text-xs px-2 py-1 rounded hover:bg-muted/30 transition-colors"
             >
-              <X className="h-3.5 w-3.5" />
-            </Button>
+              Done
+            </button>
           </div>
         </motion.div>
       )}

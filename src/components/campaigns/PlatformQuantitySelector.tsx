@@ -1,20 +1,21 @@
 import React from 'react';
-import { FileText, Share2, Mail, Video, Globe, Image, Layers, Laugh, Target } from 'lucide-react';
+import { FileText, Mail, Video, Globe, Image, Layers, Laugh, Target } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Platform {
   id: string;
   name: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string }>;
+  label?: string;
   defaultCount: number;
 }
 
 const PLATFORMS: Platform[] = [
   { id: 'blog', name: 'Blog Posts', icon: FileText, defaultCount: 0 },
-  { id: 'social-linkedin', name: 'LinkedIn', icon: Share2, defaultCount: 0 },
-  { id: 'social-twitter', name: 'Twitter', icon: Share2, defaultCount: 0 },
-  { id: 'social-facebook', name: 'Facebook', icon: Share2, defaultCount: 0 },
-  { id: 'social-instagram', name: 'Instagram', icon: Image, defaultCount: 0 },
+  { id: 'social-linkedin', name: 'LinkedIn', label: 'in', defaultCount: 0 },
+  { id: 'social-twitter', name: 'Twitter', label: '𝕏', defaultCount: 0 },
+  { id: 'social-facebook', name: 'Facebook', label: 'f', defaultCount: 0 },
+  { id: 'social-instagram', name: 'Instagram', label: 'ig', defaultCount: 0 },
   { id: 'email', name: 'Email', icon: Mail, defaultCount: 0 },
   { id: 'script', name: 'Video Script', icon: Video, defaultCount: 0 },
   { id: 'landing-page', name: 'Landing Page', icon: Globe, defaultCount: 0 },
@@ -41,7 +42,7 @@ export function PlatformQuantitySelector({ preferences, onChange }: PlatformQuan
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
         {PLATFORMS.map((platform) => {
           const Icon = platform.icon;
           const count = preferences[platform.id] || 0;
@@ -53,15 +54,21 @@ export function PlatformQuantitySelector({ preferences, onChange }: PlatformQuan
                 <button
                   onClick={() => handleChipClick(platform.id)}
                   className={`
-                    flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-md text-xs
+                    flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-xs
                     transition-all duration-200
                     ${isActive 
-                      ? 'bg-primary/10 border border-primary/30 text-primary hover:bg-primary/15' 
-                      : 'bg-muted/30 border border-border/30 text-muted-foreground hover:bg-muted/50'
+                      ? 'bg-primary/15 text-primary shadow-sm shadow-primary/20 hover:bg-primary/20' 
+                      : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/20'
                     }
                   `}
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  {Icon ? (
+                    <Icon className={`${isActive ? 'h-3.5 w-3.5' : 'h-3 w-3'}`} />
+                  ) : platform.label ? (
+                    <span className={`font-medium ${isActive ? 'text-[11px]' : 'text-[10px]'}`}>
+                      {platform.label}
+                    </span>
+                  ) : null}
                   {isActive && (
                     <span className="font-semibold">{count}</span>
                   )}
