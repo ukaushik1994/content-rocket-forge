@@ -2,6 +2,7 @@ import { CampaignStrategy } from '@/types/campaign-types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
 import { Share2, Calendar } from 'lucide-react';
+import { getPlatformConfig } from '@/utils/platformIcons';
 
 interface DistributionStrategyTileProps {
   strategy: CampaignStrategy;
@@ -40,11 +41,19 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3 font-medium">Channels</p>
             <div className="flex gap-2 flex-wrap">
-              {distributionStrategy.channels.map((channel) => (
-                <Badge key={channel} variant="outline" className="font-medium px-3 py-1.5">
-                  {channel}
-                </Badge>
-              ))}
+              {distributionStrategy.channels.map((channel) => {
+                const channelId = channel.toLowerCase().replace(/\s+/g, '-');
+                const config = getPlatformConfig(channelId);
+                const IconComponent = config.icon;
+                
+                return (
+                  <Badge key={channel} variant="outline" className="font-medium px-3 py-1.5 flex items-center gap-2">
+                    {IconComponent && <IconComponent className={`h-3.5 w-3.5 ${config.color}`} />}
+                    {config.label && <span className={`text-xs font-bold ${config.color}`}>{config.label}</span>}
+                    <span>{channel}</span>
+                  </Badge>
+                );
+              })}
             </div>
           </div>
         )}

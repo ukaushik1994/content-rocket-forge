@@ -2,40 +2,14 @@ import { CampaignStrategy } from '@/types/campaign-types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, BookOpen, Mail, MessageSquare, Video, Zap, Sparkles } from 'lucide-react';
+import { FileText, Zap, Sparkles } from 'lucide-react';
 import { useContentGeneration } from '@/contexts/ContentGenerationContext';
-import { cn } from '@/lib/utils';
+import { getPlatformConfig } from '@/utils/platformIcons';
 
 interface ContentPlanTileProps {
   strategy: CampaignStrategy;
   campaignId?: string | null;
 }
-
-const formatIcons: Record<string, any> = {
-  'blog': BookOpen,
-  'email': Mail,
-  'social-twitter': MessageSquare,
-  'social-linkedin': MessageSquare,
-  'social-facebook': MessageSquare,
-  'social-instagram': MessageSquare,
-  'script': Video,
-  'landing-page': FileText,
-  'carousel': FileText,
-  'meme': FileText,
-};
-
-const formatNames: Record<string, string> = {
-  'blog': 'Blog Posts',
-  'email': 'Email Newsletters',
-  'social-twitter': 'Twitter Posts',
-  'social-linkedin': 'LinkedIn Posts',
-  'social-facebook': 'Facebook Posts',
-  'social-instagram': 'Instagram Posts',
-  'script': 'Video Scripts',
-  'landing-page': 'Landing Page',
-  'carousel': 'Carousel Posts',
-  'meme': 'Meme Posts',
-};
 
 export const ContentPlanTile = ({ strategy, campaignId }: ContentPlanTileProps) => {
   const { openPanel } = useContentGeneration();
@@ -69,28 +43,26 @@ export const ContentPlanTile = ({ strategy, campaignId }: ContentPlanTileProps) 
         </div>
         <div className="grid grid-cols-1 gap-3">
           {strategy.contentMix.map((format) => {
-            const Icon = formatIcons[format.formatId] || FileText;
-            const name = formatNames[format.formatId] || format.formatId;
+            const config = getPlatformConfig(format.formatId);
+            const IconComponent = config.icon;
             
             return (
               <div 
                 key={format.formatId} 
-                className="group relative p-4 rounded-xl bg-gradient-to-br from-card/40 via-card/60 to-card/40 border border-white/5 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 hover:scale-[1.02] transition-all duration-300"
+                className="group relative p-3 rounded-lg bg-card/30 border border-white/5 hover:bg-card/50 transition-colors"
               >
-                {/* Gradient overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/0 group-hover:from-purple-500/5 group-hover:to-transparent rounded-xl transition-all duration-300" />
-                
-                <div className="relative flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2.5 rounded-lg bg-purple-500/10 group-hover:ring-2 group-hover:ring-purple-500/30 transition-all duration-300">
-                      <Icon className="h-5 w-5 text-purple-400 group-hover:text-purple-300 transition-colors" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      {IconComponent ? (
+                        <IconComponent className={`h-4 w-4 ${config.color}`} />
+                      ) : config.label ? (
+                        <span className={`text-xs font-bold ${config.color}`}>{config.label}</span>
+                      ) : null}
                     </div>
-                    <div>
-                      <p className="font-bold text-sm leading-relaxed">{name}</p>
-                      <p className="text-xs text-muted-foreground">Ready to generate</p>
-                    </div>
+                    <span className="text-sm font-medium">{config.name}</span>
                   </div>
-                  <Badge variant="outline" className="text-base font-bold px-3 py-1">{format.count}×</Badge>
+                  <Badge variant="secondary" className="font-bold px-3">{format.count}×</Badge>
                 </div>
               </div>
             );
