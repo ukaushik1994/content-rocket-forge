@@ -18,6 +18,8 @@ interface CampaignsHeroProps {
     audience: string;
     timeline: string;
     goal: string;
+    solutionId: string | null;
+    platformPreferences: Record<string, number>;
   }) => void;
 }
 type InputMode = 'conversation' | 'express';
@@ -78,7 +80,11 @@ export const CampaignsHero = React.memo(({
   };
   const handleExpressSubmit = () => {
     if (expressData.idea.trim() && onExpressMode) {
-      onExpressMode(expressData);
+      onExpressMode({
+        ...expressData,
+        solutionId: selectedSolutionId,
+        platformPreferences: platformPreferences
+      });
       setExpressData({
         idea: '',
         audience: '',
@@ -345,8 +351,33 @@ export const CampaignsHero = React.memo(({
         }} transition={{
           delay: 1.1,
           duration: 0.4
-        }} className="mt-6 max-w-3xl mx-auto">
+        }} className="mt-6 max-w-3xl mx-auto space-y-4">
+              {/* Campaign Settings Panel */}
+              <CampaignSettingsPanel
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+                selectedSolutionId={selectedSolutionId}
+                onSolutionChange={setSelectedSolutionId}
+                platformPreferences={platformPreferences}
+                onPlatformPreferencesChange={setPlatformPreferences}
+              />
+
               <div className="bg-background/60 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-xl space-y-4">
+                {/* Settings Toggle */}
+                <div className="flex items-center justify-between pb-3 border-b border-border/50">
+                  <h3 className="text-sm font-medium text-foreground">Express Campaign Setup</h3>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowSettings(!showSettings)}
+                    className={`gap-2 ${showSettings ? 'text-primary' : 'text-muted-foreground'}`}
+                    title="Campaign Settings"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {showSettings ? 'Hide' : 'Show'} Settings
+                  </Button>
+                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Campaign Idea*</label>
                   <Textarea value={expressData.idea} onChange={e => setExpressData({
