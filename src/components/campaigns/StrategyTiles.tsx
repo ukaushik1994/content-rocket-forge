@@ -5,12 +5,11 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CampaignStrategy } from '@/types/campaign-types';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
-import { contentFormats } from '@/components/content-repurposing/formats';
 import { ContentBriefCard } from './ContentBriefCard';
 import { motion } from 'framer-motion';
 import { Edit, RefreshCw, Star, Package, ChevronDown, CheckCircle2, Shield, Users, Target, FileText, Eye, TrendingUp, Zap, Clock, Calendar, CalendarDays } from 'lucide-react';
-import { getFormatByIdOrDefault, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { cn } from '@/lib/utils';
+import { getPlatformConfig } from '@/utils/platformIcons';
 
 interface StrategyTilesProps {
   strategies: CampaignStrategy[];
@@ -42,14 +41,8 @@ export function StrategyTiles({
   };
 
   const getFormatName = (formatId: string) => {
-    const format = contentFormats.find((f) => f.id === formatId);
-    if (!format) {
-      return formatId
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-    }
-    return format.name;
+    const config = getPlatformConfig(formatId);
+    return config.name;
   };
 
   const calculateTotalEffort = (count: number, effortPerPiece: string): string => {
@@ -64,10 +57,10 @@ export function StrategyTiles({
 
   return (
     <div className="space-y-6 w-full">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-xl font-semibold">Choose Your Strategy</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="text-lg font-semibold">Choose Your Strategy</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Select the approach that best fits your goals
           </p>
         </div>
@@ -274,8 +267,8 @@ export function StrategyTiles({
                         {/* Content Type Badges */}
                         <div className="flex flex-wrap gap-2">
                           {strategy.contentMix.map((format, idx) => {
-                            const formatInfo = getFormatByIdOrDefault(format.formatId);
-                            const FormatIcon = getFormatIconComponent(format.formatId);
+                            const config = getPlatformConfig(format.formatId);
+                            const IconComponent = config.icon;
                             
                             return (
                               <Badge 
@@ -283,19 +276,23 @@ export function StrategyTiles({
                                 variant="outline" 
                                 className="gap-1.5 px-3 py-1.5 bg-background/60 border-border/50 hover:border-primary/30 transition-colors"
                               >
-                                <FormatIcon className="h-3.5 w-3.5 text-primary" />
+                                {IconComponent ? (
+                                  <IconComponent className={`h-3.5 w-3.5 ${config.color}`} />
+                                ) : config.label ? (
+                                  <span className={`text-xs font-bold ${config.color}`}>{config.label}</span>
+                                ) : null}
                                 <span className="font-semibold">{format.count}×</span>
-                                <span>{formatInfo.name}</span>
+                                <span>{config.name}</span>
                               </Badge>
                             );
                           })}
                         </div>
 
                         {/* Enhanced Content Type Cards */}
-                        <div className="grid grid-cols-1 gap-4 pt-2">
+                        <div className="grid grid-cols-1 gap-3 pt-2">
                           {strategy.contentMix.map((format, idx) => {
-                            const formatInfo = getFormatByIdOrDefault(format.formatId);
-                            const FormatIcon = getFormatIconComponent(format.formatId);
+                            const config = getPlatformConfig(format.formatId);
+                            const IconComponent = config.icon;
                             
                             return (
                               <GlassCard
@@ -305,13 +302,17 @@ export function StrategyTiles({
                                 {/* Header Section */}
                                 <div className="flex items-start justify-between gap-4">
                                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <div className="p-2.5 rounded-lg bg-primary/10 flex-shrink-0">
-                                      <FormatIcon className="h-5 w-5 text-primary" />
+                                    <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+                                      {IconComponent ? (
+                                        <IconComponent className={`h-5 w-5 ${config.color}`} />
+                                      ) : config.label ? (
+                                        <span className={`text-sm font-bold ${config.color}`}>{config.label}</span>
+                                      ) : null}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-semibold text-base">{formatInfo.name}</span>
-                                        <Badge variant="secondary">{format.count}× pieces</Badge>
+                                        <span className="font-semibold text-sm">{config.name}</span>
+                                        <Badge variant="secondary" className="text-xs">{format.count}× pieces</Badge>
                                       </div>
                                       {format.estimatedEffort && (
                                         <p className="text-xs text-muted-foreground mt-0.5">

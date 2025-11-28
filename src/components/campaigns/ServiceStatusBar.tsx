@@ -89,30 +89,30 @@ export function ServiceStatusBar({ status }: ServiceStatusBarProps) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.2 }}
-        className={`flex items-center gap-3 p-3 rounded-lg border ${config.bgColor} ${config.borderColor} backdrop-blur-sm`}
+        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border ${config.bgColor} ${config.borderColor} backdrop-blur-xl`}
       >
         <motion.div
           animate={config.animate ? { rotate: 360 } : {}}
           transition={config.animate ? { duration: 2, repeat: Infinity, ease: "linear" } : {}}
+          className="flex-shrink-0"
         >
-          <StatusIcon className={`w-5 h-5 ${config.iconColor}`} />
+          <StatusIcon className={`w-4 h-4 ${config.iconColor}`} />
         </motion.div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">
-              {config.label}
-            </span>
-            {config.animate && (
-              <Badge variant="secondary" className="text-xs animate-pulse">
-                Processing...
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <span className="text-sm font-medium text-foreground">
+            {config.label}
+          </span>
+          <p className="text-xs text-muted-foreground/80 mt-0.5 line-clamp-1">
             {'message' in status ? status.message : ''}
           </p>
         </div>
+        
+        {config.animate && (
+          <Badge variant="secondary" className="text-[10px] px-2 py-0.5 animate-pulse">
+            Processing
+          </Badge>
+        )}
       </motion.div>
     </AnimatePresence>
   );

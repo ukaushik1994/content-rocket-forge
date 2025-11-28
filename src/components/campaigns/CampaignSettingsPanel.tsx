@@ -39,7 +39,7 @@ export function CampaignSettingsPanel({
           transition={{ duration: 0.2 }}
           className="mb-3"
         >
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/20 backdrop-blur-sm">
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-background/40 backdrop-blur-xl ring-1 ring-white/5">
             {/* Solution Selector */}
             <div className="flex-shrink-0">
               <Select
@@ -47,7 +47,7 @@ export function CampaignSettingsPanel({
                 onValueChange={(value) => onSolutionChange(value === 'none' ? null : value)}
                 disabled={isLoading}
               >
-                <SelectTrigger className="h-8 w-[180px] text-sm border-none bg-transparent">
+                <SelectTrigger className="h-9 w-[200px] text-sm border-none bg-transparent focus:ring-0">
                   <SelectValue placeholder="Select solution" />
                 </SelectTrigger>
                 <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
@@ -84,7 +84,7 @@ export function CampaignSettingsPanel({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="flex-shrink-0 text-muted-foreground/60 hover:text-muted-foreground text-xs px-2 py-1 rounded hover:bg-muted/30 transition-colors"
+              className="flex-shrink-0 text-muted-foreground/70 hover:text-foreground text-xs px-3 py-1.5 rounded-lg hover:bg-muted/20 transition-colors font-medium"
             >
               Done
             </button>
