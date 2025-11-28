@@ -22,18 +22,13 @@ import {
   Archive,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   TrendingUp,
   Share2,
-  Mail,
-  Video,
-  DollarSign,
-  MessageCircle,
-  Search,
   Sparkles,
   Circle,
   Zap,
 } from 'lucide-react';
+import { getPlatformConfig } from '@/utils/platformIcons';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -113,32 +108,11 @@ const statusConfig = {
   },
 };
 
-const channelIcons: Record<string, any> = {
-  'social': Share2,
-  'social media': Share2,
-  'email': Mail,
-  'email marketing': Mail,
-  'webinars': Video,
-  'video': Video,
-  'blog': FileText,
-  'blog/content': FileText,
-  'content': FileText,
-  'paid ads': DollarSign,
-  'google ads': DollarSign,
-  'events': Calendar,
-  'seo': Search,
-  'seo/organic': Search,
-  'direct outreach': MessageCircle,
-  'linkedin': Share2,
-  'twitter': MessageCircle,
-  'facebook': Share2,
-  'instagram': Share2,
-};
-
 // Helper to get channel icon with fallback
 const getChannelIcon = (channel: string) => {
-  const normalized = channel.toLowerCase().trim();
-  return channelIcons[normalized] || Share2;
+  const normalized = channel.toLowerCase().trim().replace(/\s+/g, '-');
+  const config = getPlatformConfig(normalized);
+  return config.icon || Share2;
 };
 
 const itemVariants = {

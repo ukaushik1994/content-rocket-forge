@@ -304,7 +304,9 @@ const Campaigns = () => {
     idea: string; 
     audience: string; 
     timeline: string; 
-    goal: string 
+    goal: string;
+    solutionId: string | null;
+    platformPreferences: Record<string, number>;
   }) => {
     if (!user) {
       toast.error('Please sign in to generate campaigns');
@@ -316,7 +318,9 @@ const Campaigns = () => {
       targetAudience: data.audience,
       goal: data.goal as any,
       timeline: data.timeline as any,
-      useSerpData: true
+      useSerpData: true,
+      solutionId: data.solutionId,
+      platformPreferences: data.platformPreferences
     };
 
     setCurrentInput(input);
