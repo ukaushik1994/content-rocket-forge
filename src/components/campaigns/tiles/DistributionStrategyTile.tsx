@@ -44,18 +44,18 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
 
   return (
     <GlassCard className="p-5 h-full">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        {/* Header with Icon */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex flex-col gap-3 min-w-0">
+        {/* Row 1: Header with Icon */}
+        <div className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
             <Share2 className="h-4 w-4 text-rose-600" />
           </div>
           <h3 className="font-semibold">Distribution</h3>
         </div>
         
-        {/* Channel Icons - Large & Colorful */}
+        {/* Row 2: Channel Badges */}
         {distributionStrategy.channels && distributionStrategy.channels.length > 0 && (
-          <div className="flex gap-2 flex-1 flex-wrap">
+          <div className="flex flex-wrap gap-2 min-w-0">
             {distributionStrategy.channels.map((channel) => {
               const channelId = channel.toLowerCase().replace(/\s+/g, '-');
               const config = getPlatformConfig(channelId);
@@ -66,23 +66,23 @@ export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileP
                 <div 
                   key={channel} 
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-default",
+                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors cursor-default",
                     colorClass
                   )}
                 >
-                  {IconComponent && <IconComponent className="h-4 w-4" />}
-                  <span className="text-sm font-medium">{channel}</span>
+                  {IconComponent && <IconComponent className="h-3.5 w-3.5 shrink-0" />}
+                  <span className="text-xs font-medium truncate max-w-[100px]">{channel}</span>
                 </div>
               );
             })}
           </div>
         )}
         
-        {/* Posting Cadence - Compact */}
+        {/* Row 3: Posting Cadence */}
         {distributionStrategy.postingCadence && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0">
-            <Calendar className="h-4 w-4" />
-            <span className="font-medium">
+          <div className="flex items-start gap-2 text-sm text-muted-foreground min-w-0">
+            <Calendar className="h-4 w-4 shrink-0 mt-0.5" />
+            <span className="font-medium line-clamp-2">
               {typeof distributionStrategy.postingCadence === 'string' 
                 ? distributionStrategy.postingCadence 
                 : 'Varies'}

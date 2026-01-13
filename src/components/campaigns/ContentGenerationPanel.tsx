@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Sparkles, CheckCircle2, AlertCircle, Loader2, Eye, Copy, RefreshCw, Trash2, Play } from 'lucide-react';
+import { X, FileText, Sparkles, CheckCircle2, AlertCircle, Loader2, Eye, Copy, RefreshCw, Trash2, Play, Clock, Mail, MessageSquare, Video, Layout, Image, Megaphone, PenTool } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useContentGeneration } from '@/contexts/ContentGenerationContext';
 import { useCampaignContentGeneration } from '@/hooks/useCampaignContentGeneration';
@@ -26,6 +26,58 @@ const formatNames: Record<string, string> = {
   'carousel': 'Carousel Post',
   'meme': 'Meme Post',
   'google-ads': 'Google Ads',
+};
+
+const formatIcons: Record<string, React.ElementType> = {
+  'blog': PenTool,
+  'email': Mail,
+  'social-twitter': MessageSquare,
+  'social-linkedin': MessageSquare,
+  'social-facebook': MessageSquare,
+  'social-instagram': Image,
+  'script': Video,
+  'landing-page': Layout,
+  'carousel': Image,
+  'meme': Image,
+  'google-ads': Megaphone,
+};
+
+const getStatusConfig = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return {
+        icon: CheckCircle2,
+        color: 'text-emerald-500',
+        bg: 'bg-emerald-500/10',
+        border: 'border-l-emerald-500',
+        label: 'Completed'
+      };
+    case 'processing':
+      return {
+        icon: Loader2,
+        color: 'text-blue-500',
+        bg: 'bg-blue-500/10',
+        border: 'border-l-blue-500',
+        label: 'Processing',
+        animate: true
+      };
+    case 'failed':
+      return {
+        icon: AlertCircle,
+        color: 'text-red-500',
+        bg: 'bg-red-500/10',
+        border: 'border-l-red-500',
+        label: 'Failed'
+      };
+    default:
+      return {
+        icon: Clock,
+        color: 'text-muted-foreground',
+        bg: 'bg-muted/50',
+        border: 'border-l-muted-foreground/30',
+        label: 'Pending'
+      };
+  }
 };
 
 export const ContentGenerationPanel = () => {
@@ -144,7 +196,6 @@ export const ContentGenerationPanel = () => {
           const [formatId, indexStr] = key.split('-');
           const index = parseInt(indexStr, 10);
           
-          // Validate that index is a valid number
           if (!formatId || isNaN(index)) {
             console.error(`Invalid brief key format: "${key}". Expected format: "formatId-index"`);
             return null;
@@ -156,9 +207,8 @@ export const ContentGenerationPanel = () => {
             index
           };
         })
-        .filter((item): item is NonNullable<typeof item> => item !== null); // Remove invalid items
+        .filter((item): item is NonNullable<typeof item> => item !== null);
 
-      // Validate we have items to generate
       if (items.length === 0) {
         throw new Error('No valid content briefs found. Please regenerate briefs.');
       }
@@ -209,236 +259,328 @@ export const ContentGenerationPanel = () => {
   if (!strategy) return null;
 
   const totalPieces = strategy.contentMix.reduce((sum, item) => sum + item.count, 0);
+  const progressPercent = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40"
             onClick={closePanel}
           />
 
+          {/* Panel */}
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="fixed right-0 top-16 bottom-0 w-full lg:w-2/3 bg-background/95 backdrop-blur-xl border-l border-border/40 shadow-2xl z-50 flex flex-col"
+            initial={{ x: '100%', opacity: 0.8 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0.8 }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            className="fixed right-0 top-16 bottom-0 w-full lg:w-[600px] xl:w-[680px] bg-background border-l border-border/50 shadow-2xl z-50 flex flex-col"
           >
-            <div className="flex items-center justify-between p-6 border-b border-border/40 bg-gradient-to-r from-background/60 to-primary/5">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                  Content Generation
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Generate {totalPieces} pieces of content
-                </p>
-                {stats.total > 0 && (
-                  <div className="flex items-center gap-3 text-sm">
-                    {stats.completed > 0 && (
-                      <div className="flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                        <span className="text-emerald-400">{stats.completed} completed</span>
-                      </div>
-                    )}
-                    {stats.processing > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
-                        <span className="text-blue-400">{stats.processing} processing</span>
-                      </div>
-                    )}
-                    {stats.pending > 0 && (
-                      <span className="text-muted-foreground">{stats.pending} pending</span>
-                    )}
+            {/* Premium Header */}
+            <div className="border-b border-border/50 bg-gradient-to-b from-muted/30 to-transparent">
+              {/* Top Row */}
+              <div className="flex items-center justify-between px-6 pt-5 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-primary" />
                   </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {briefs.size > 0 && stats.total === 0 && (
-                  <Button
-                    onClick={handleGenerateAll}
-                    disabled={loadingBriefs}
-                    className="bg-gradient-to-r from-primary to-blue-500"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Generate All
-                  </Button>
-                )}
+                  <div>
+                    <h2 className="text-lg font-semibold">Content Generation</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {totalPieces} pieces ready to generate
+                    </p>
+                  </div>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={closePanel}
+                  className="h-9 w-9 rounded-lg hover:bg-muted"
                 >
                   <X className="h-5 w-5" />
                 </Button>
               </div>
+
+              {/* Stats Row */}
+              <div className="px-6 pb-4 flex items-center gap-3">
+                {/* Mini Stat Cards */}
+                <div className="flex items-center gap-2 flex-1">
+                  {/* Completed */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="text-sm font-medium text-emerald-600">{stats.completed}</span>
+                  </div>
+                  
+                  {/* Processing */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <Loader2 className={`h-3.5 w-3.5 text-blue-500 ${stats.processing > 0 ? 'animate-spin' : ''}`} />
+                    <span className="text-sm font-medium text-blue-600">{stats.processing}</span>
+                  </div>
+                  
+                  {/* Pending */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted border border-border">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">{stats.pending}</span>
+                  </div>
+                  
+                  {/* Failed */}
+                  {stats.failed > 0 && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                      <span className="text-sm font-medium text-red-600">{stats.failed}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Generate Button */}
+                {briefs.size > 0 && stats.total === 0 && (
+                  <Button
+                    onClick={handleGenerateAll}
+                    disabled={loadingBriefs}
+                    size="sm"
+                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md"
+                  >
+                    <Play className="h-4 w-4 mr-1.5" />
+                    Generate All
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <ScrollArea className="flex-1 p-6">
-              {loadingBriefs ? (
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center space-y-4">
-                    <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
-                    <p className="font-medium">Generating content briefs...</p>
-                  </div>
-                </div>
-              ) : queueItems.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Queue Progress */}
-                  <Card className="p-6 bg-gradient-to-br from-primary/10 to-blue-500/10 border-primary/20">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">Generation Progress</h3>
+            {/* Content Area */}
+            <ScrollArea className="flex-1">
+              <div className="p-5 space-y-4">
+                {/* Loading State */}
+                {loadingBriefs ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-center py-20"
+                  >
+                    <Card className="p-8 bg-gradient-to-br from-primary/5 to-transparent border-primary/10 text-center max-w-sm">
+                      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-2">Preparing Your Content</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Analyzing strategy and generating optimized briefs...
+                      </p>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-primary to-blue-500 rounded-full"
+                          initial={{ width: '0%' }}
+                          animate={{ width: '60%' }}
+                          transition={{ duration: 2, ease: 'easeInOut' }}
+                        />
+                      </div>
+                    </Card>
+                  </motion.div>
+                ) : queueItems.length > 0 ? (
+                  <>
+                    {/* Progress Bar */}
+                    <Card className="p-4 border-border/50 bg-gradient-to-r from-muted/30 to-transparent">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium">Generation Progress</span>
                         <span className="text-sm text-muted-foreground">
-                          {stats.completed} of {stats.total} completed
+                          {stats.completed} / {stats.total}
                         </span>
                       </div>
-                      <Progress value={(stats.completed / stats.total) * 100} className="h-3" />
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="flex gap-4 text-sm">
-                          {stats.pending > 0 && (
-                            <span className="text-muted-foreground">{stats.pending} pending</span>
-                          )}
-                          {stats.processing > 0 && (
-                            <span className="text-blue-400">{stats.processing} processing</span>
-                          )}
-                          {stats.failed > 0 && (
-                            <span className="text-red-400">{stats.failed} failed</span>
-                          )}
-                        </div>
+                      <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary via-blue-500 to-primary rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${progressPercent}%` }}
+                          transition={{ duration: 0.5, ease: 'easeOut' }}
+                        />
+                        {stats.processing > 0 && (
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            animate={{ x: ['-100%', '100%'] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                          />
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-xs text-muted-foreground">
+                          {progressPercent}% complete
+                        </span>
                         {stats.completed > 0 && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={clearCompleted}
+                            className="h-7 text-xs text-muted-foreground hover:text-foreground"
                           >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Clear Completed
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Clear Done
                           </Button>
                         )}
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
 
-                  {/* Queue Items */}
+                    {/* Queue Items */}
+                    <div className="space-y-2">
+                      {queueItems.map((item, index) => {
+                        const formatName = formatNames[item.format_id] || item.format_id;
+                        const FormatIcon = formatIcons[item.format_id] || FileText;
+                        const brief = item.brief as ContentBrief;
+                        const statusConfig = getStatusConfig(item.status);
+                        const StatusIcon = statusConfig.icon;
+                        
+                        return (
+                          <motion.div
+                            key={item.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.03 }}
+                          >
+                            <Card 
+                              className={`p-4 border-l-[3px] ${statusConfig.border} hover:shadow-md transition-all duration-200`}
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Format Icon */}
+                                <div className={`w-9 h-9 rounded-lg ${statusConfig.bg} flex items-center justify-center shrink-0`}>
+                                  <FormatIcon className={`h-4 w-4 ${statusConfig.color}`} />
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2 mb-1">
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                          {formatName}
+                                        </span>
+                                      </div>
+                                      <h4 className="font-medium text-sm truncate">
+                                        {brief?.title || 'Untitled'}
+                                      </h4>
+                                    </div>
+                                    
+                                    {/* Status Badge */}
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`shrink-0 ${statusConfig.bg} border-transparent text-xs`}
+                                    >
+                                      <StatusIcon className={`h-3 w-3 mr-1 ${statusConfig.color} ${statusConfig.animate ? 'animate-spin' : ''}`} />
+                                      <span className={statusConfig.color}>{statusConfig.label}</span>
+                                    </Badge>
+                                  </div>
+
+                                  <p className="text-xs text-muted-foreground line-clamp-1">
+                                    {brief?.description || 'No description'}
+                                  </p>
+
+                                  {/* Error Message */}
+                                  {item.error_message && (
+                                    <div className="mt-2 text-xs text-red-500 bg-red-500/10 rounded px-2 py-1.5 line-clamp-2">
+                                      {item.error_message}
+                                    </div>
+                                  )}
+
+                                  {/* Action Buttons */}
+                                  {(item.status === 'failed' || item.status === 'cancelled') && (
+                                    <div className="flex gap-2 mt-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => retryItem(item.id)}
+                                        className="h-7 text-xs"
+                                      >
+                                        <RefreshCw className="h-3 w-3 mr-1" />
+                                        Retry
+                                      </Button>
+                                    </div>
+                                  )}
+
+                                  {(item.status === 'pending' || item.status === 'processing') && (
+                                    <div className="flex gap-2 mt-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => cancelItem(item.id)}
+                                        className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                                      >
+                                        <X className="h-3 w-3 mr-1" />
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </Card>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  /* Brief Cards */
                   <div className="space-y-3">
-                    {queueItems.map((item) => {
-                      const formatName = formatNames[item.format_id] || item.format_id;
-                      const brief = item.brief as ContentBrief;
+                    {Array.from(briefs.entries()).map(([key, brief], index) => {
+                      const [formatId] = key.split('-');
+                      const formatName = formatNames[formatId] || formatId;
+                      const FormatIcon = formatIcons[formatId] || FileText;
                       
                       return (
-                        <Card 
-                          key={item.id} 
-                          className={`p-4 transition-all ${
-                            item.status === 'completed' ? 'bg-emerald-500/5 border-emerald-500/20' :
-                            item.status === 'failed' ? 'bg-red-500/5 border-red-500/20' :
-                            item.status === 'processing' ? 'bg-blue-500/5 border-blue-500/20' :
-                            'bg-background/60'
-                          }`}
+                        <motion.div
+                          key={key}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
                         >
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-3">
+                          <Card className="p-4 hover:shadow-md hover:border-primary/20 transition-all duration-200 group">
+                            <div className="flex items-start gap-3">
+                              {/* Format Icon */}
+                              <div className="w-10 h-10 rounded-xl bg-primary/10 group-hover:bg-primary/15 flex items-center justify-center shrink-0 transition-colors">
+                                <FormatIcon className="h-5 w-5 text-primary" />
+                              </div>
+
+                              {/* Content */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-semibold truncate">{brief?.title || 'Untitled'}</h3>
-                                  <Badge variant="outline" className="shrink-0">{formatName}</Badge>
+                                  <span className="text-xs font-medium text-primary uppercase tracking-wide">
+                                    {formatName}
+                                  </span>
                                 </div>
-                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                  {brief?.description || 'No description'}
+                                <h4 className="font-semibold text-sm mb-1 line-clamp-1">
+                                  {brief.title}
+                                </h4>
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {brief.description}
                                 </p>
-                              </div>
-                              
-                              <div className="flex items-center gap-2 shrink-0">
-                                {item.status === 'pending' && (
-                                  <Badge variant="outline" className="bg-slate-500/20 text-slate-400">
-                                    Pending
-                                  </Badge>
-                                )}
-                                {item.status === 'processing' && (
-                                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400">
-                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                    Processing
-                                  </Badge>
-                                )}
-                                {item.status === 'completed' && (
-                                  <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400">
-                                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                                    Completed
-                                  </Badge>
-                                )}
-                                {item.status === 'failed' && (
-                                  <Badge variant="outline" className="bg-red-500/20 text-red-400">
-                                    <AlertCircle className="h-3 w-3 mr-1" />
-                                    Failed
-                                  </Badge>
+
+                                {/* Metadata Tags */}
+                                {brief.keywords && brief.keywords.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-2">
+                                    {brief.keywords.slice(0, 3).map((kw, i) => (
+                                      <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                        {kw}
+                                      </span>
+                                    ))}
+                                    {brief.keywords.length > 3 && (
+                                      <span className="text-xs text-muted-foreground">
+                                        +{brief.keywords.length - 3}
+                                      </span>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             </div>
-
-                            {item.error_message && (
-                              <div className="text-xs text-red-400 bg-red-500/10 rounded p-2">
-                                {item.error_message}
-                              </div>
-                            )}
-
-                            {(item.status === 'failed' || item.status === 'cancelled') && (
-                              <div className="flex gap-2 pt-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => retryItem(item.id)}
-                                  className="gap-1"
-                                >
-                                  <RefreshCw className="h-3 w-3" />
-                                  Retry
-                                </Button>
-                              </div>
-                            )}
-
-                            {(item.status === 'pending' || item.status === 'processing') && (
-                              <div className="flex gap-2 pt-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => cancelItem(item.id)}
-                                  className="gap-1 text-muted-foreground hover:text-foreground"
-                                >
-                                  <X className="h-3 w-3" />
-                                  Cancel
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </Card>
+                          </Card>
+                        </motion.div>
                       );
                     })}
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {Array.from(briefs.entries()).map(([key, brief]) => {
-                    const [formatId, indexStr] = key.split('-');
-                    const formatName = formatNames[formatId] || formatId;
-                    
-                    return (
-                      <Card key={key} className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-semibold">{brief.title}</h3>
-                            <Badge>{formatName}</Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{brief.description}</p>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
+                )}
+              </div>
             </ScrollArea>
           </motion.div>
         </>
