@@ -268,61 +268,61 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
           </div>
 
           {/* Key Metrics Grid - Premium styling */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {/* Content Progress */}
-            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 hover:border-purple-500/40 transition-all group/metric">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 hover:border-purple-500/40 transition-all group/metric min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
                   <FileText className="h-4 w-4 text-purple-400" />
                 </div>
                 <span className="text-xs font-medium text-muted-foreground">Content</span>
               </div>
-              <p className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
+              <p className="text-xl font-bold bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
                 {contentCount}/{plannedCount}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">pieces created</p>
+              <p className="text-xs text-muted-foreground mt-0.5">pieces</p>
             </div>
 
             {/* Estimated Reach */}
-            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 transition-all">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 transition-all min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                   <Eye className="h-4 w-4 text-blue-400" />
                 </div>
                 <span className="text-xs font-medium text-muted-foreground">Reach</span>
               </div>
-              <p className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent truncate" title={String(estimatedReach)}>
+              <p className="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent" title={String(estimatedReach)}>
                 {reachValue}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">impressions</p>
             </div>
 
             {/* Timeline */}
-            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 hover:border-green-500/40 transition-all">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 hover:border-green-500/40 transition-all min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
                   <Calendar className="h-4 w-4 text-green-400" />
                 </div>
                 <span className="text-xs font-medium text-muted-foreground">Timeline</span>
               </div>
-              <p className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-400 to-green-300 bg-clip-text text-transparent">
+              <p className="text-xl font-bold bg-gradient-to-r from-green-400 to-green-300 bg-clip-text text-transparent">
                 {daysRemaining}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">days remaining</p>
+              <p className="text-xs text-muted-foreground mt-0.5">days left</p>
             </div>
 
             {/* Goal */}
-            <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
                   <Target className="h-4 w-4 text-amber-400" />
                 </div>
                 <span className="text-xs font-medium text-muted-foreground">Goal</span>
               </div>
-              <p className="text-lg font-bold text-amber-400 truncate" title={goalDisplay}>
-                {goalDisplay}
+              <p className="text-base font-bold text-amber-400 truncate" title={goalDisplay}>
+                {goalDisplay.length > 12 ? goalDisplay.slice(0, 10) + '...' : goalDisplay}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">campaign focus</p>
+              <p className="text-xs text-muted-foreground mt-0.5">focus</p>
             </div>
           </div>
 
