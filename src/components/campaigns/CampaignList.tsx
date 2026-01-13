@@ -55,7 +55,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <GlassCard key={i} className="p-5 animate-pulse">
             <div className="h-4 bg-muted rounded mb-3" />
@@ -91,7 +91,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 min-w-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         <AnimatePresence mode="popLayout">
           {campaigns.map((campaign, index) => (
             <motion.div
