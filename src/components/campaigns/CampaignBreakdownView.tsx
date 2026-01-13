@@ -249,7 +249,7 @@ export const CampaignBreakdownView = ({
 
         {/* Strategy Tab */}
         {activeTab === 'strategy' && (
-          <>
+          <div className="space-y-8">
             {/* Row 1: Campaign Overview - Full Width */}
             <TileErrorBoundary tileName="Campaign Overview">
               <CampaignOverviewTile 
@@ -261,7 +261,7 @@ export const CampaignBreakdownView = ({
             </TileErrorBoundary>
           
             {/* Row 2: Content Plan + Target Audience & Messaging */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <TileErrorBoundary tileName="Content Plan">
                 <ContentPlanTile strategy={strategy} campaignId={campaignId} />
               </TileErrorBoundary>
@@ -280,9 +280,9 @@ export const CampaignBreakdownView = ({
               <DistributionStrategyTile strategy={strategy} />
             </TileErrorBoundary>
             
-            {/* Row 5: Generate Assets CTA - Centered */}
-            <div className="flex flex-col items-center gap-4 py-8">
-              <div className="flex gap-3">
+            {/* Row 5: Generate Assets CTA */}
+            <div className="flex flex-col items-center gap-6 pt-8">
+              <div className="flex gap-4">
                 <Button
                   variant="outline"
                   size="lg"
@@ -290,44 +290,46 @@ export const CampaignBreakdownView = ({
                   className="gap-2"
                 >
                   <Eye className="h-5 w-5" />
-                  👁️ Preview Content Plan
+                  Preview Plan
                 </Button>
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-opacity px-12 py-6 text-lg font-semibold shadow-xl"
                   onClick={onGenerateAssets}
                   disabled={isGenerating}
+                  className="gap-2 px-8"
                 >
-                  <Sparkles className="h-5 w-5 mr-2" />
-                  {isGenerating ? 'Generating Assets...' : 'Generate Campaign Assets'}
+                  <Sparkles className="h-5 w-5" />
+                  {isGenerating ? 'Generating...' : 'Generate Assets'}
                 </Button>
               </div>
               
-              <p className="text-sm text-muted-foreground text-center">
-                Preview the plan or generate {totalContentPieces} content pieces now
+              <p className="text-sm text-muted-foreground">
+                Generate {totalContentPieces} content pieces
               </p>
               
               {/* Navigation Links */}
               {campaignId && (
-                <div className="flex gap-2 mt-4">
+                <div className="flex gap-3 pt-2">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => navigate('/repository?tab=campaigns')}
+                    className="text-muted-foreground hover:text-foreground"
                   >
-                    View Generated Content →
+                    View Content →
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => navigate('/analytics?tab=campaigns')}
+                    className="text-muted-foreground hover:text-foreground"
                   >
-                    View Campaign Analytics →
+                    View Analytics →
                   </Button>
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
         {/* Publishing Tab */}

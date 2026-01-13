@@ -12,37 +12,34 @@ export const TargetAudienceMessagingTile = ({ strategy }: TargetAudienceMessagin
 
   if (!audienceIntelligence) {
     return (
-      <GlassCard className="p-6 bg-background/60 backdrop-blur-xl border border-white/5">
+      <GlassCard className="p-8 h-full">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 rounded-full bg-purple-500/10">
-            <Users className="h-5 w-5 text-purple-400" />
-          </div>
-          <h3 className="text-xl font-bold tracking-tight">Target Audience & Messaging</h3>
+          <Users className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">Audience & Messaging</h3>
         </div>
-        <p className="text-sm text-muted-foreground">Generating audience insights...</p>
+        <p className="text-sm text-muted-foreground">Generating insights...</p>
       </GlassCard>
     );
   }
 
   return (
-    <GlassCard className="p-6 bg-background/60 backdrop-blur-xl border border-white/5">
+    <GlassCard className="p-8 h-full">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 rounded-full bg-purple-500/10">
-          <Users className="h-5 w-5 text-purple-400" />
-        </div>
-        <h3 className="text-xl font-bold tracking-tight">Target Audience & Messaging</h3>
+        <Users className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold">Audience & Messaging</h3>
       </div>
       
       <div className="space-y-6">
-        {/* Primary Messaging Angle */}
+        {/* Primary Messaging Hook */}
         {audienceIntelligence.messagingAngle && (
-          <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border-2 border-purple-500/20">
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="h-4 w-4 text-purple-400" />
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Primary Messaging Hook</p>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Core Message</p>
             </div>
-            <p className="text-base font-semibold text-foreground leading-relaxed">
-              {audienceIntelligence.messagingAngle}
+            <p className="text-sm font-medium leading-relaxed">
+              "{audienceIntelligence.messagingAngle}"
             </p>
           </div>
         )}
@@ -51,12 +48,12 @@ export const TargetAudienceMessagingTile = ({ strategy }: TargetAudienceMessagin
         {audienceIntelligence.personas && audienceIntelligence.personas.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Target className="h-4 w-4 text-purple-400" />
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Target Personas</p>
+              <Target className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Personas</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {audienceIntelligence.personas.map((persona, index) => (
-                <Badge key={index} variant="outline" className="font-medium px-3 py-1.5">
+                <Badge key={index} variant="outline" className="font-normal">
                   {persona}
                 </Badge>
               ))}
@@ -67,10 +64,10 @@ export const TargetAudienceMessagingTile = ({ strategy }: TargetAudienceMessagin
         {/* Industry Segments */}
         {audienceIntelligence.industrySegments && audienceIntelligence.industrySegments.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3 font-medium">Industry Segments</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Industries</p>
             <div className="flex flex-wrap gap-2">
               {audienceIntelligence.industrySegments.map((industry, index) => (
-                <Badge key={index} variant="secondary" className="font-medium px-3 py-1.5">
+                <Badge key={index} variant="secondary" className="font-normal">
                   {industry}
                 </Badge>
               ))}
@@ -80,13 +77,13 @@ export const TargetAudienceMessagingTile = ({ strategy }: TargetAudienceMessagin
         
         {/* Pain Points */}
         {audienceIntelligence.painPoints && audienceIntelligence.painPoints.length > 0 && (
-          <div className="pt-4 border-t border-white/5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3 font-medium">Pain Points Addressed</p>
+          <div className="pt-4 border-t border-border/50">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Pain Points</p>
             <div className="space-y-2">
               {audienceIntelligence.painPoints.map((painPoint, index) => (
                 <div key={index} className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm font-medium leading-relaxed">{painPoint}</p>
+                  <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                  <p className="text-sm leading-relaxed">{painPoint}</p>
                 </div>
               ))}
             </div>
@@ -95,11 +92,11 @@ export const TargetAudienceMessagingTile = ({ strategy }: TargetAudienceMessagin
         
         {/* Purchase Motivations */}
         {audienceIntelligence.purchaseMotivations && audienceIntelligence.purchaseMotivations.length > 0 && (
-          <div className="pt-4 border-t border-white/5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3 font-medium">Purchase Motivations</p>
+          <div className="pt-4 border-t border-border/50">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Motivations</p>
             <div className="flex flex-wrap gap-2">
               {audienceIntelligence.purchaseMotivations.map((motivation, index) => (
-                <Badge key={index} variant="outline" className="bg-purple-500/5 border-purple-500/20 text-purple-300 font-medium px-3 py-1.5">
+                <Badge key={index} variant="outline" className="font-normal text-muted-foreground">
                   {motivation}
                 </Badge>
               ))}
