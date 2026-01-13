@@ -1,73 +1,92 @@
 import { CampaignStrategy } from '@/types/campaign-types';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Badge } from '@/components/ui/badge';
 import { Share2, Calendar } from 'lucide-react';
 import { getPlatformConfig } from '@/utils/platformIcons';
+import { cn } from '@/lib/utils';
 
 interface DistributionStrategyTileProps {
   strategy: CampaignStrategy;
 }
+
+// Platform color map
+const platformColors: Record<string, string> = {
+  'linkedin': 'bg-blue-600/10 text-blue-700 hover:bg-blue-600/20',
+  'twitter': 'bg-sky-500/10 text-sky-600 hover:bg-sky-500/20',
+  'email': 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20',
+  'blog': 'bg-purple-500/10 text-purple-600 hover:bg-purple-500/20',
+  'facebook': 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20',
+  'instagram': 'bg-pink-500/10 text-pink-600 hover:bg-pink-500/20',
+  'youtube': 'bg-red-500/10 text-red-600 hover:bg-red-500/20',
+  'website': 'bg-green-500/10 text-green-600 hover:bg-green-500/20',
+};
+
+const getPlatformColor = (channel: string) => {
+  const key = Object.keys(platformColors).find(k => channel.toLowerCase().includes(k));
+  return platformColors[key || ''] || 'bg-muted text-muted-foreground hover:bg-muted/80';
+};
 
 export const DistributionStrategyTile = ({ strategy }: DistributionStrategyTileProps) => {
   const distributionStrategy = strategy.distributionStrategy;
 
   if (!distributionStrategy) {
     return (
-      <GlassCard className="p-8">
-        <div className="flex items-center gap-3 mb-4">
-          <Share2 className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Distribution Plan</h3>
+      <GlassCard className="p-5 h-full">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+            <Share2 className="h-4 w-4 text-rose-600" />
+          </div>
+          <h3 className="font-semibold">Distribution</h3>
         </div>
-        <p className="text-sm text-muted-foreground">Distribution plan will be generated...</p>
+        <p className="text-sm text-muted-foreground mt-3">Distribution plan will be generated...</p>
       </GlassCard>
     );
   }
 
   return (
-    <GlassCard className="p-8">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Share2 className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold">Distribution Plan</h3>
-      </div>
-      
-      <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-        {/* Channels */}
+    <GlassCard className="p-5 h-full">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        {/* Header with Icon */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+            <Share2 className="h-4 w-4 text-rose-600" />
+          </div>
+          <h3 className="font-semibold">Distribution</h3>
+        </div>
+        
+        {/* Channel Icons - Large & Colorful */}
         {distributionStrategy.channels && distributionStrategy.channels.length > 0 && (
-          <div className="flex-1">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Channels</p>
-            <div className="flex gap-3 flex-wrap">
-              {distributionStrategy.channels.map((channel) => {
-                const channelId = channel.toLowerCase().replace(/\s+/g, '-');
-                const config = getPlatformConfig(channelId);
-                const IconComponent = config.icon;
-                
-                return (
-                  <div 
-                    key={channel} 
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    {IconComponent && <IconComponent className="h-4 w-4 text-muted-foreground" />}
-                    <span className="text-sm font-medium">{channel}</span>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="flex gap-2 flex-1 flex-wrap">
+            {distributionStrategy.channels.map((channel) => {
+              const channelId = channel.toLowerCase().replace(/\s+/g, '-');
+              const config = getPlatformConfig(channelId);
+              const IconComponent = config.icon;
+              const colorClass = getPlatformColor(channel);
+              
+              return (
+                <div 
+                  key={channel} 
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-default",
+                    colorClass
+                  )}
+                >
+                  {IconComponent && <IconComponent className="h-4 w-4" />}
+                  <span className="text-sm font-medium">{channel}</span>
+                </div>
+              );
+            })}
           </div>
         )}
         
-        {/* Posting Cadence */}
+        {/* Posting Cadence - Compact */}
         {distributionStrategy.postingCadence && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted/30 border border-border/50">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <p className="text-xs text-muted-foreground">Cadence</p>
-              <p className="text-sm font-medium">
-                {typeof distributionStrategy.postingCadence === 'string' 
-                  ? distributionStrategy.postingCadence 
-                  : 'Varies by format'}
-              </p>
-            </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0">
+            <Calendar className="h-4 w-4" />
+            <span className="font-medium">
+              {typeof distributionStrategy.postingCadence === 'string' 
+                ? distributionStrategy.postingCadence 
+                : 'Varies'}
+            </span>
           </div>
         )}
       </div>

@@ -22,6 +22,7 @@ import { ContentGenerationPanel } from './ContentGenerationPanel';
 import { ContentPreviewModal } from './ContentPreviewModal';
 import {
   CampaignOverviewTile,
+  CampaignStatCards,
   ContentPlanTile,
   TargetAudienceMessagingTile,
   SeoStrategyTile,
@@ -135,13 +136,12 @@ export const CampaignBreakdownView = ({
           target_audience: campaignInput.targetAudience,
           goal: campaignInput.goal,
           timeline: campaignInput.timeline,
-          status: 'planned', // Update status to planned when strategy is saved
+          status: 'planned',
         });
         
         console.log('📊 [Campaign Status] Updated to "planned" after strategy save');
         toast.success('Campaign saved successfully');
       } else {
-        // Create new campaign atomically
         const generateCampaignName = (idea: string) => {
           const words = idea.split(' ').slice(0, 5).join(' ');
           return words.length > 50 ? words.substring(0, 47) + '...' : words;
@@ -155,7 +155,7 @@ export const CampaignBreakdownView = ({
           campaignInput,
           strategy,
           campaignInput.solutionId,
-          strategy.description // Use strategy description as objective
+          strategy.description
         );
 
         console.log('📊 [Campaign Status] Set to "planned" after atomic creation');
@@ -199,178 +199,175 @@ export const CampaignBreakdownView = ({
         </div>
       ) : (
         <div className="space-y-6 w-full">
-      {/* Header with Status and Save Indicator */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold">Campaign Strategy</h2>
-            <CampaignStatusBadge status={campaignStatus} />
-          </div>
-          <div className="flex items-center gap-4">
-            <SaveIndicator status={saveStatus} lastSaved={lastSaved} />
-            
-            {/* Tab Navigation */}
-            <div className="flex items-center gap-2 border-l pl-4">
-              {campaignStatus !== 'draft' && (
-                <>
-                  <Button variant={activeTab === 'strategy' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('strategy')}>
-                    📋 Strategy
-                  </Button>
-                  <Button variant={activeTab === 'publishing' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('publishing')}>
-                    🚀 Publishing
-                  </Button>
-                </>
-              )}
+          {/* Header with Status and Save Indicator */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold">Campaign Strategy</h2>
+              <CampaignStatusBadge status={campaignStatus} />
             </div>
-            {saveStatus === 'error' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManualSave}
-              disabled={isManualSaving}
-              className="gap-2"
-            >
-              <Save className={cn("h-4 w-4", isManualSaving && "animate-pulse")} />
-              {isManualSaving ? 'Saving...' : 'Save Manually'}
-            </Button>
-          )}
-          {onRegenerate && (
-            <Button
-              variant="outline"
-              onClick={onRegenerate}
-              disabled={isRegenerating}
-              className="gap-2"
-            >
-              <RefreshCw className={cn("h-4 w-4", isRegenerating && "animate-spin")} />
-              {isRegenerating ? 'Regenerating...' : 'Regenerate'}
-            </Button>
-          )}
-        </div>
-      </div>
-
-        {/* Strategy Tab */}
-        {activeTab === 'strategy' && (
-          <div className="space-y-8">
-            {/* Row 1: Campaign Overview - Full Width */}
-            <TileErrorBoundary tileName="Campaign Overview">
-              <CampaignOverviewTile 
-                strategy={strategy} 
-                status={campaignStatus}
-                solution={campaignData?.solution || solution}
-                campaignObjective={campaignData?.objective}
-              />
-            </TileErrorBoundary>
-          
-            {/* Row 2: Content Plan + Target Audience & Messaging */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <TileErrorBoundary tileName="Content Plan">
-                <ContentPlanTile strategy={strategy} campaignId={campaignId} />
-              </TileErrorBoundary>
-              <TileErrorBoundary tileName="Target Audience & Messaging">
-                <TargetAudienceMessagingTile strategy={strategy} />
-              </TileErrorBoundary>
-            </div>
-            
-            {/* Row 3: SEO Strategy - Full Width */}
-            <TileErrorBoundary tileName="SEO Strategy">
-              <SeoStrategyTile strategy={strategy} />
-            </TileErrorBoundary>
-            
-            {/* Row 4: Distribution Strategy - Full Width */}
-            <TileErrorBoundary tileName="Distribution Strategy">
-              <DistributionStrategyTile strategy={strategy} />
-            </TileErrorBoundary>
-            
-            {/* Row 5: Generate Assets CTA */}
-            <div className="flex flex-col items-center gap-6 pt-8">
-              <div className="flex gap-4">
+            <div className="flex items-center gap-4">
+              <SaveIndicator status={saveStatus} lastSaved={lastSaved} />
+              
+              {/* Tab Navigation */}
+              <div className="flex items-center gap-2 border-l pl-4">
+                {campaignStatus !== 'draft' && (
+                  <>
+                    <Button variant={activeTab === 'strategy' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('strategy')}>
+                      📋 Strategy
+                    </Button>
+                    <Button variant={activeTab === 'publishing' ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab('publishing')}>
+                      🚀 Publishing
+                    </Button>
+                  </>
+                )}
+              </div>
+              {saveStatus === 'error' && (
                 <Button
                   variant="outline"
-                  size="lg"
-                  onClick={() => setShowPreviewModal(true)}
+                  size="sm"
+                  onClick={handleManualSave}
+                  disabled={isManualSaving}
                   className="gap-2"
                 >
-                  <Eye className="h-5 w-5" />
-                  Preview Plan
+                  <Save className={cn("h-4 w-4", isManualSaving && "animate-pulse")} />
+                  {isManualSaving ? 'Saving...' : 'Save Manually'}
                 </Button>
+              )}
+              {onRegenerate && (
                 <Button
-                  size="lg"
-                  onClick={onGenerateAssets}
-                  disabled={isGenerating}
-                  className="gap-2 px-8"
+                  variant="outline"
+                  onClick={onRegenerate}
+                  disabled={isRegenerating}
+                  className="gap-2"
                 >
-                  <Sparkles className="h-5 w-5" />
-                  {isGenerating ? 'Generating...' : 'Generate Assets'}
+                  <RefreshCw className={cn("h-4 w-4", isRegenerating && "animate-spin")} />
+                  {isRegenerating ? 'Regenerating...' : 'Regenerate'}
                 </Button>
-              </div>
-              
-              <p className="text-sm text-muted-foreground">
-                Generate {totalContentPieces} content pieces
-              </p>
-              
-              {/* Navigation Links */}
-              {campaignId && (
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/repository?tab=campaigns')}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    View Content →
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/analytics?tab=campaigns')}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    View Analytics →
-                  </Button>
-                </div>
               )}
             </div>
           </div>
-        )}
 
-        {/* Publishing Tab */}
-        {activeTab === 'publishing' && campaignId && (
-          <div className="bg-accent/20 border-2 border-accent rounded-lg p-6">
-            <h3 className="text-xl font-semibold mb-4">Publishing & Distribution</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
-                <PublishingPanel
-                  campaignId={campaignId}
-                  contentItems={contentItems}
-                  onPublishComplete={() => {}}
+          {/* Strategy Tab */}
+          {activeTab === 'strategy' && (
+            <div className="space-y-6">
+              {/* Row 1: Compact Campaign Header */}
+              <TileErrorBoundary tileName="Campaign Overview">
+                <CampaignOverviewTile 
+                  strategy={strategy} 
+                  status={campaignStatus}
+                  solution={campaignData?.solution || solution}
+                  campaignObjective={campaignData?.objective}
                 />
-                <CalendarIntegration
-                  campaignId={campaignId}
-                  contentItems={contentItems}
-                  onScheduleComplete={() => {}}
-                />
+              </TileErrorBoundary>
+              
+              {/* Row 2: Stat Cards */}
+              <TileErrorBoundary tileName="Campaign Stats">
+                <CampaignStatCards strategy={strategy} />
+              </TileErrorBoundary>
+            
+              {/* Row 3: Content Plan + Target Audience (2 columns) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TileErrorBoundary tileName="Content Plan">
+                  <ContentPlanTile strategy={strategy} campaignId={campaignId} />
+                </TileErrorBoundary>
+                <TileErrorBoundary tileName="Target Audience & Messaging">
+                  <TargetAudienceMessagingTile strategy={strategy} />
+                </TileErrorBoundary>
               </div>
-              <PublicationStatusTracker contentItems={contentItems} />
+              
+              {/* Row 4: SEO + Distribution (2 columns on desktop, stacked on mobile) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TileErrorBoundary tileName="SEO Strategy">
+                  <SeoStrategyTile strategy={strategy} />
+                </TileErrorBoundary>
+                <TileErrorBoundary tileName="Distribution Strategy">
+                  <DistributionStrategyTile strategy={strategy} />
+                </TileErrorBoundary>
+              </div>
+              
+              {/* Row 5: Generate Assets CTA */}
+              <div className="flex flex-col items-center gap-4 pt-6 pb-4">
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setShowPreviewModal(true)}
+                    className="gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Preview
+                  </Button>
+                  <Button
+                    size="lg"
+                    onClick={onGenerateAssets}
+                    disabled={isGenerating}
+                    className="gap-2 px-8"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {isGenerating ? 'Generating...' : `Generate ${totalContentPieces} Assets`}
+                  </Button>
+                </div>
+                
+                {/* Navigation Links */}
+                {campaignId && (
+                  <div className="flex gap-4 text-sm">
+                    <button
+                      onClick={() => navigate('/repository?tab=campaigns')}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      View Content →
+                    </button>
+                    <button
+                      onClick={() => navigate('/analytics?tab=campaigns')}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      View Analytics →
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="mt-6 flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/repository?tab=campaigns')}
-              >
-                View Generated Content →
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/analytics?tab=campaigns')}
-              >
-                View Campaign Analytics →
-              </Button>
+          )}
+
+          {/* Publishing Tab */}
+          {activeTab === 'publishing' && campaignId && (
+            <div className="bg-accent/20 border-2 border-accent rounded-lg p-6">
+              <h3 className="text-xl font-semibold mb-4">Publishing & Distribution</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <PublishingPanel
+                    campaignId={campaignId}
+                    contentItems={contentItems}
+                    onPublishComplete={() => {}}
+                  />
+                  <CalendarIntegration
+                    campaignId={campaignId}
+                    contentItems={contentItems}
+                    onScheduleComplete={() => {}}
+                  />
+                </div>
+                <PublicationStatusTracker contentItems={contentItems} />
+              </div>
+              <div className="mt-6 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/repository?tab=campaigns')}
+                >
+                  View Generated Content →
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/analytics?tab=campaigns')}
+                >
+                  View Campaign Analytics →
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-    </div>
-  )}
+          )}
+        </div>
+      )}
 
       {/* Content Preview Modal */}
       <ContentPreviewModal
@@ -380,9 +377,8 @@ export const CampaignBreakdownView = ({
         onConfirm={(selectedFormats) => {
           console.log('Selected formats for generation:', selectedFormats);
           setShowPreviewModal(false);
-          // User can now proceed to generate only selected formats
         }}
       />
-</ContentGenerationProvider>
+    </ContentGenerationProvider>
   );
 };
