@@ -453,6 +453,19 @@
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+}
+
 /* Prose styles for markdown content */
 .prose h1 {
   @apply text-2xl font-bold mb-4 mt-6;

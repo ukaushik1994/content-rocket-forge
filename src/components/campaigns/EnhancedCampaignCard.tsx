@@ -12,6 +12,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   FileText,
   Eye,
   Calendar,
@@ -27,9 +33,11 @@ import {
   Sparkles,
   Circle,
   Zap,
+  ArrowRight,
+  BarChart3,
 } from 'lucide-react';
 import { getPlatformConfig } from '@/utils/platformIcons';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -78,46 +86,55 @@ interface EnhancedCampaignCardProps {
 const statusConfig = {
   draft: {
     icon: Circle,
-    iconColor: 'text-gray-400',
-    color: 'from-gray-500/20 to-gray-500/30 text-gray-300',
+    iconColor: 'text-muted-foreground',
+    color: 'bg-muted/50 text-muted-foreground border-muted-foreground/30',
     label: 'Draft',
+    pulse: false,
   },
   planned: {
     icon: Clock,
     iconColor: 'text-blue-400',
-    color: 'from-blue-500/20 to-blue-500/30 text-blue-300',
+    color: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
     label: 'Planned',
+    pulse: false,
   },
   active: {
     icon: Zap,
-    iconColor: 'text-purple-400',
-    color: 'from-purple-500/20 to-purple-500/30 text-purple-300',
+    iconColor: 'text-primary',
+    color: 'bg-primary/10 text-primary border-primary/30',
     label: 'Active',
+    pulse: true,
   },
   completed: {
     icon: CheckCircle2,
     iconColor: 'text-green-400',
-    color: 'from-green-500/20 to-green-500/30 text-green-300',
+    color: 'bg-green-500/10 text-green-400 border-green-500/30',
     label: 'Completed',
+    pulse: false,
   },
   archived: {
     icon: Archive,
-    iconColor: 'text-gray-400',
-    color: 'from-gray-500/20 to-gray-500/30 text-gray-300',
+    iconColor: 'text-muted-foreground',
+    color: 'bg-muted/50 text-muted-foreground border-muted-foreground/30',
     label: 'Archived',
+    pulse: false,
   },
 };
 
-// Helper to get channel icon with fallback
-const getChannelIcon = (channel: string) => {
+// Helper to get channel config with full styling
+const getChannelConfig = (channel: string) => {
   const normalized = channel.toLowerCase().trim().replace(/\s+/g, '-');
-  const config = getPlatformConfig(normalized);
-  return config.icon || Share2;
+  return getPlatformConfig(normalized);
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  show: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { duration: 0.3, ease: "easeOut" }
+  },
 };
 
 export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
@@ -143,6 +160,10 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
   const nextAction = campaign.nextAction;
   const distributionChannels = campaign.distributionChannels || [];
 
+  // Format date nicely
+  const createdDate = new Date(campaign.created_at);
+  const relativeDate = formatDistanceToNow(createdDate, { addSuffix: true });
+
   return (
     <motion.div
       variants={itemVariants}
@@ -151,67 +172,82 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
       <GlassCard
         className={cn(
           "relative overflow-hidden transition-all duration-300 cursor-pointer",
-          "bg-background/60 backdrop-blur-xl",
-          "border border-border/50 hover:border-border",
-          "shadow-md hover:shadow-xl",
-          "hover:scale-[1.01]"
+          "bg-gradient-to-br from-background/80 via-background/60 to-background/40",
+          "backdrop-blur-xl",
+          "border border-border/50 hover:border-primary/30",
+          "shadow-lg hover:shadow-2xl hover:shadow-primary/5",
+          "hover:scale-[1.02]",
+          "ring-0 hover:ring-1 hover:ring-primary/10"
         )}
         onClick={() => onView(campaign.id)}
       >
-        <div className="p-5 space-y-4">
+        {/* Subtle gradient overlay on hover */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:via-transparent group-hover:to-transparent transition-all duration-500 pointer-events-none" />
+        
+        <div className="relative p-6 space-y-5">
           {/* Header */}
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {/* Solution Badge (if exists) */}
               {campaign.solution && (
-                <div className="flex items-center gap-2 mb-2">
-                  {campaign.solution.logo_url ? (
-                    <img 
-                      src={campaign.solution.logo_url} 
-                      alt={campaign.solution.name}
-                      className="h-5 w-5 rounded object-contain"
-                    />
-                  ) : (
-                    <Sparkles className="h-4 w-4 text-primary" />
-                  )}
-                  <span className="text-xs text-muted-foreground">Promoting {campaign.solution.name}</span>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                    {campaign.solution.logo_url ? (
+                      <img 
+                        src={campaign.solution.logo_url} 
+                        alt={campaign.solution.name}
+                        className="h-4 w-4 rounded object-contain"
+                      />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </div>
+                  <span className="text-xs font-medium text-primary/80">
+                    Promoting {campaign.solution.name}
+                  </span>
                 </div>
               )}
               
               {/* Title */}
-              <h3 className="text-base md:text-lg font-bold mb-1 group-hover:text-primary transition-colors line-clamp-2">
+              <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-primary transition-colors leading-tight">
                 {campaign.selected_strategy?.title || campaign.name}
               </h3>
               
               {/* Objective as subtitle */}
               {campaign.objective && (
-                <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                   {campaign.objective}
                 </p>
               )}
               
               {/* Status and Date */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className={cn(
-                  "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
-                  "bg-gradient-to-r backdrop-blur-sm",
-                  config.color
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
+                  config.color,
+                  config.pulse && "animate-pulse"
                 )}>
-                  <config.icon className={cn("h-3 w-3", config.iconColor)} />
+                  <config.icon className={cn("h-3.5 w-3.5", config.iconColor)} />
                   {config.label}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {format(new Date(campaign.created_at), 'MMM d, yyyy')}
+                <span className="text-xs text-muted-foreground" title={format(createdDate, 'PPP')}>
+                  {relativeDate}
                 </span>
               </div>
             </div>
+            
+            {/* Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="hover:bg-primary/10">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-9 w-9 hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <MoreVertical className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Rename
@@ -223,7 +259,7 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-red-400">
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-destructive focus:text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </DropdownMenuItem>
@@ -231,145 +267,241 @@ export const EnhancedCampaignCard: React.FC<EnhancedCampaignCardProps> = ({
             </DropdownMenu>
           </div>
 
-          {/* Key Metrics Grid - Single row on desktop, stacked on mobile */}
+          {/* Key Metrics Grid - Premium styling */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Content Progress */}
-            <div className="p-2.5 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <FileText className="h-4 w-4 text-purple-400 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground truncate">Content</p>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 hover:border-purple-500/40 transition-all group/metric">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-purple-400" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">Content</span>
               </div>
-              <p className="text-base md:text-lg font-bold">{contentCount}/{plannedCount}</p>
-              <p className="text-xs text-muted-foreground truncate">pieces</p>
+              <p className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
+                {contentCount}/{plannedCount}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">pieces created</p>
             </div>
 
             {/* Estimated Reach */}
-            <div className="p-2.5 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Eye className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground truncate">Reach</p>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 transition-all">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <Eye className="h-4 w-4 text-blue-400" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">Reach</span>
               </div>
-              <p className="text-base md:text-lg font-bold truncate" title={String(estimatedReach)}>
+              <p className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent truncate" title={String(estimatedReach)}>
                 {reachValue}
               </p>
-              <p className="text-xs text-muted-foreground truncate">impressions</p>
+              <p className="text-xs text-muted-foreground mt-0.5">impressions</p>
             </div>
 
             {/* Timeline */}
-            <div className="p-2.5 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Calendar className="h-4 w-4 text-green-400 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground truncate">Timeline</p>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 hover:border-green-500/40 transition-all">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                  <Calendar className="h-4 w-4 text-green-400" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">Timeline</span>
               </div>
-              <p className="text-base md:text-lg font-bold">{daysRemaining}</p>
-              <p className="text-xs text-muted-foreground truncate">days left</p>
+              <p className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-400 to-green-300 bg-clip-text text-transparent">
+                {daysRemaining}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">days remaining</p>
             </div>
 
             {/* Goal */}
-            <div className="p-2.5 rounded-lg bg-card/40 border border-border/50 hover:bg-card/60 transition-all min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Target className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground truncate">Goal</p>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                  <Target className="h-4 w-4 text-amber-400" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">Goal</span>
               </div>
-              <Badge 
-                variant="secondary" 
-                className="text-xs px-2 py-0.5 mt-1 max-w-full truncate" 
-                title={goalDisplay}
-              >
+              <p className="text-lg font-bold text-amber-400 truncate" title={goalDisplay}>
                 {goalDisplay}
-              </Badge>
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">campaign focus</p>
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-2">
+          {/* Progress Bar - Premium with milestones */}
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Progress</span>
-              <span className="text-xs font-bold text-primary">{progressPercentage}%</span>
+              <span className="text-sm font-medium text-foreground">Campaign Progress</span>
+              <span className={cn(
+                "text-sm font-bold",
+                progressPercentage >= 70 ? "text-green-400" : 
+                progressPercentage >= 30 ? "text-amber-400" : "text-muted-foreground"
+              )}>
+                {progressPercentage}%
+              </span>
             </div>
-            <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
+            <div className="relative h-3 bg-muted/30 rounded-full overflow-hidden">
+              {/* Milestone markers */}
+              <div className="absolute inset-0 flex items-center justify-around pointer-events-none z-10">
+                {[25, 50, 75].map((milestone) => (
+                  <div 
+                    key={milestone}
+                    className={cn(
+                      "w-0.5 h-full",
+                      progressPercentage >= milestone ? "bg-white/20" : "bg-white/10"
+                    )}
+                  />
+                ))}
+              </div>
+              
+              {/* Progress fill */}
               <motion.div
                 className={cn(
-                  "h-full rounded-full transition-all duration-700",
-                  progressPercentage < 30 && "bg-red-500",
-                  progressPercentage >= 30 && progressPercentage < 70 && "bg-amber-500",
+                  "h-full rounded-full relative overflow-hidden",
+                  progressPercentage < 30 && "bg-gradient-to-r from-red-500 to-red-400",
+                  progressPercentage >= 30 && progressPercentage < 70 && "bg-gradient-to-r from-amber-500 to-amber-400",
                   progressPercentage >= 70 && "bg-gradient-to-r from-green-500 to-emerald-400"
                 )}
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercentage}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
+                transition={{ duration: 1, ease: "easeOut" }}
+              >
+                {/* Shimmer effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
+                  style={{ 
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 2s infinite linear'
+                  }} 
+                />
+              </motion.div>
             </div>
           </div>
 
-          {/* Distribution Channels */}
+          {/* Distribution Channels - Premium with proper icons */}
           {distributionChannels.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-xs text-muted-foreground">Channels:</p>
-              <div className="flex gap-1.5">
-                {distributionChannels.slice(0, 4).map((channel, idx) => {
-                  const Icon = getChannelIcon(channel);
-                  return (
-                    <div 
-                      key={idx} 
-                      className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
-                      title={channel}
-                    >
-                      <Icon className="h-4 w-4 text-primary" />
-                    </div>
-                  );
-                })}
-                {distributionChannels.length > 4 && (
-                  <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
-                    <span className="text-xs font-medium">+{distributionChannels.length - 4}</span>
-                  </div>
-                )}
-              </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">Distribution Channels</p>
+              <TooltipProvider delayDuration={200}>
+                <div className="flex gap-2 flex-wrap">
+                  {distributionChannels.slice(0, 5).map((channel, idx) => {
+                    const channelConfig = getChannelConfig(channel);
+                    const Icon = channelConfig.icon || Share2;
+                    return (
+                      <Tooltip key={idx}>
+                        <TooltipTrigger asChild>
+                          <motion.div 
+                            className={cn(
+                              "h-10 w-10 rounded-xl flex items-center justify-center cursor-pointer",
+                              "border transition-all duration-200",
+                              channelConfig.bgColor || "bg-primary/10",
+                              "border-border/50 hover:border-primary/50",
+                              "hover:scale-110 hover:shadow-lg"
+                            )}
+                            whileHover={{ y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Icon className={cn("h-5 w-5", channelConfig.color || "text-primary")} />
+                          </motion.div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="font-medium">
+                          {channelConfig.name || channel}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                  {distributionChannels.length > 5 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="h-10 w-10 rounded-xl bg-muted/50 border border-border/50 flex items-center justify-center">
+                          <span className="text-sm font-bold text-muted-foreground">
+                            +{distributionChannels.length - 5}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        {distributionChannels.slice(5).join(', ')}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </TooltipProvider>
             </div>
           )}
 
-          {/* Next Action */}
+          {/* Next Action CTA - Premium styling */}
           {nextAction && (
-            <div className="pt-3 border-t border-border/50">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
-                <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-primary/70">Next:</p>
-                  <p className="text-xs font-medium truncate">{nextAction}</p>
+            <motion.div 
+              className="pt-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className={cn(
+                "relative overflow-hidden rounded-xl",
+                "bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20",
+                "border border-primary/30",
+                "p-4 group/cta cursor-pointer",
+                "hover:from-primary/30 hover:via-primary/20 hover:to-primary/30",
+                "transition-all duration-300"
+              )}>
+                {/* Animated background glow */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-0 group-hover/cta:opacity-100 transition-opacity" />
+                
+                <div className="relative flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+                    <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-primary/70 mb-0.5">Next Step</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{nextAction}</p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-primary shrink-0 group-hover/cta:translate-x-1 transition-transform" />
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* Action Footer - Icon buttons only */}
-          <div className="flex items-center justify-between gap-2 pt-3 border-t border-border/50">
+          {/* Action Footer - Clear labels */}
+          <div className="flex items-center justify-between gap-3 pt-4 border-t border-border/50">
             <Button 
               onClick={(e) => { e.stopPropagation(); onView(campaign.id); }} 
-              variant="ghost" 
+              variant="default" 
               size="sm"
-              className="flex-1 justify-start hover:bg-primary/10"
+              className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary border-0"
             >
               <Eye className="h-4 w-4 mr-2" />
-              View
+              View Campaign
             </Button>
-            <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="h-8 w-8 hover:bg-primary/10"
-                onClick={(e) => { e.stopPropagation(); }}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="h-8 w-8 hover:bg-primary/10"
-                onClick={(e) => { e.stopPropagation(); }}
-              >
-                <TrendingUp className="h-4 w-4" />
-              </Button>
-            </div>
+            
+            <TooltipProvider delayDuration={200}>
+              <div className="flex gap-1.5">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-9 w-9 hover:bg-muted"
+                      onClick={(e) => { e.stopPropagation(); onStartEdit(); }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Edit Campaign</TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-9 w-9 hover:bg-muted"
+                      onClick={(e) => { e.stopPropagation(); }}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Analytics</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
         </div>
       </GlassCard>
