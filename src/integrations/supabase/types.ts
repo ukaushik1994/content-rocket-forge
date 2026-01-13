@@ -6821,19 +6821,6 @@ export type Database = {
             Args: {
               p_description: string
               p_input: Json
-              p_objective?: string
-              p_solution_id?: string
-              p_status: string
-              p_strategy: Json
-              p_title: string
-              p_user_id: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_description: string
-              p_input: Json
               p_status: string
               p_strategy: Json
               p_title: string
@@ -6860,6 +6847,19 @@ export type Database = {
               isOneToOne: true
               isSetofReturn: false
             }
+          }
+        | {
+            Args: {
+              p_description: string
+              p_input: Json
+              p_objective?: string
+              p_solution_id?: string
+              p_status: string
+              p_strategy: Json
+              p_title: string
+              p_user_id: string
+            }
+            Returns: Json
           }
       get_conversation_messages: {
         Args: { conv_id: string; limit_count?: number; offset_count?: number }
