@@ -146,3 +146,6 @@ verify_jwt = true
 [functions.generate-campaign-strategy]
 verify_jwt = true
 
+[functions.secure-api-key]
+verify_jwt = false
+

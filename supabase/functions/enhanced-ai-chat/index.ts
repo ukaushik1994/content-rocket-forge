@@ -1,6 +1,7 @@
 // Force redeploy: 2025-06-05T14:30:00Z - NUCLEAR CACHE CLEAR
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
 import { analyzeQueryIntent } from './query-analyzer.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
@@ -17,6 +18,25 @@ import {
 import { generateChartPerspectives } from './chart-intelligence.ts';
 import { autoFixChartData } from './chart-auto-fix.ts';
 import { aiRequestQueue } from './request-queue.ts';
+
+// Input validation schemas
+const MessageSchema = z.object({
+  role: z.enum(['user', 'assistant', 'system']),
+  content: z.string().max(100000, 'Message content too long')
+});
+
+const ContextSchema = z.object({
+  use_case: z.string().max(100).optional(),
+  conversation_id: z.string().uuid().optional(),
+  include_charts: z.boolean().optional(),
+  include_multi_charts: z.boolean().optional()
+}).passthrough().optional();
+
+const EnhancedAIChatSchema = z.object({
+  messages: z.array(MessageSchema).min(1).max(100),
+  context: ContextSchema,
+  useCampaignStrategyTool: z.boolean().optional()
+});
 
 // PHASE 1: Multi-chart detection - detects when user needs multiple perspectives
 function shouldGenerateMultipleCharts(query: string): boolean {
@@ -713,17 +733,37 @@ serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    const { messages, context, useCampaignStrategyTool } = body;
-    const use_case = context?.use_case; // Extract use_case from context
-    console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
-
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: "Messages array is required" }), {
+    // Parse and validate input
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      console.error('❌ Invalid JSON in request body');
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Validate input against schema
+    const validationResult = EnhancedAIChatSchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      console.error('❌ Input validation failed:', validationResult.error.errors);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input', 
+        details: validationResult.error.errors.map(e => ({
+          field: e.path.join('.'),
+          message: e.message
+        }))
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { messages, context, useCampaignStrategyTool } = validationResult.data;
+    const use_case = context?.use_case; // Extract use_case from context
+    console.log("🚀 Processing enhanced AI chat request for user:", user.id, use_case ? `(use_case: ${use_case})` : '', useCampaignStrategyTool ? '(Campaign Strategy Tool)' : '');
 
     // ✅ NEW: Analyze query intent BEFORE fetching context
     const userQuery = messages[messages.length - 1]?.content || '';

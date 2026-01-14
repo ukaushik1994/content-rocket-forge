@@ -1,10 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const ServiceEnum = z.enum(['serp', 'serpapi', 'serpstack', 'openai', 'anthropic', 'gemini']);
+const EndpointEnum = z.enum(['test', 'analyze', 'search', 'chat', 'complete', 'generate']);
+
+const ApiProxySchema = z.object({
+  service: ServiceEnum,
+  endpoint: z.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/, 'Endpoint must be alphanumeric with underscores or hyphens'),
+  apiKey: z.string().min(10).max(500).optional().nullable(),
+  params: z.record(z.unknown()).optional().nullable()
+});
 
 // Initialize Supabase client for database operations
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -20,7 +32,36 @@ serve(async (req) => {
   }
 
   try {
-    const { service, endpoint, apiKey, params } = await req.json();
+    // Parse and validate input
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      console.error('❌ Invalid JSON in request body');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate input against schema
+    const validationResult = ApiProxySchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      console.error('❌ Input validation failed:', validationResult.error.errors);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid input', 
+          details: validationResult.error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { service, endpoint, apiKey, params } = validationResult.data;
     
     console.log(`📥 Request received: ${service} - ${endpoint}`, {
       hasApiKey: !!apiKey,
@@ -105,8 +146,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Unknown error occurred',
-        details: 'Check API key configuration and service availability',
+        error: 'An unexpected error occurred',
         timestamp: new Date().toISOString()
       }),
       { 
