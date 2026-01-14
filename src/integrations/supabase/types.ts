@@ -6296,6 +6296,30 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_typing_indicators: {
         Row: {
           conversation_id: string
@@ -6894,6 +6918,13 @@ export type Database = {
         }
         Returns: string
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_topic_frequency: {
         Args: { p_topic_name: string; p_user_id: string }
         Returns: undefined
@@ -6903,6 +6934,7 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: { user_id: string }; Returns: boolean }
+      is_user_admin: { Args: { _user_id: string }; Returns: boolean }
       log_optimization_activity: {
         Args: {
           p_content_id: string
@@ -6970,6 +7002,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       approval_workflow_status:
         | "draft"
         | "pending_review"
@@ -7113,6 +7146,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       approval_workflow_status: [
         "draft",
         "pending_review",
