@@ -131,8 +131,34 @@ export const ApiSettings = () => {
               defaultExpanded={isAICategory}
             >
               <div className="space-y-2">
-                {providers.map((provider) => (
+                {/* Providers without subcategory */}
+                {providers.filter(p => !p.subcategory).map((provider) => (
                   <SimpleProviderCard key={provider.serviceKey} provider={provider} />
+                ))}
+                
+                {/* Group providers by subcategory */}
+                {Object.entries(
+                  providers
+                    .filter(p => p.subcategory)
+                    .reduce((acc, p) => {
+                      const sub = p.subcategory!;
+                      if (!acc[sub]) acc[sub] = [];
+                      acc[sub].push(p);
+                      return acc;
+                    }, {} as Record<string, typeof providers>)
+                ).map(([subcategory, subProviders]) => (
+                  <div key={subcategory} className="mt-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-xs font-medium text-muted-foreground">{subcategory}</span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                    <div className="space-y-2">
+                      {subProviders.map((provider) => (
+                        <SimpleProviderCard key={provider.serviceKey} provider={provider} />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </CategorySection>
