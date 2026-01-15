@@ -68,11 +68,42 @@ serve(async (req) => {
 
   try {
     const startTime = Date.now();
-    const { userId, website, competitorId, maxPages = 10, recrawl = false }: CompetitorIntelRequest = await req.json();
 
-    if (!userId || !website) {
-      throw new Error("Missing required fields: userId, website");
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const token = authHeader.replace('Bearer ', '');
+    const body = await req.json();
+    const { website, competitorId, maxPages = 10, recrawl = false } = body;
+    const userIdFromBody = body.userId ?? body.user_id;
+
+    const supabaseAdmin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = user.id;
+    if (userIdFromBody && userIdFromBody !== userId) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!website) {
+      throw new Error("Missing required fields: website");
+    }
+
 
     console.log(`[competitor-intel] Starting analysis for: ${website}`);
     console.log(`[competitor-intel] Competitor ID: ${competitorId || 'N/A'}`);
@@ -138,38 +169,49 @@ serve(async (req) => {
       try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-        
+
         if (!supabaseUrl || !supabaseServiceKey) {
           console.error('[competitor-intel] ⚠️ Missing Supabase credentials - cannot save to database');
           console.error('[competitor-intel] SUPABASE_URL:', supabaseUrl ? 'present' : 'missing');
           console.error('[competitor-intel] SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? 'present' : 'missing');
         } else {
-          console.log('[competitor-intel] 💾 Saving intelligence data to database for competitor:', competitorId);
-          
           const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
-            auth: {
-              autoRefreshToken: false,
-              persistSession: false
-            }
+            auth: { autoRefreshToken: false, persistSession: false }
           });
 
-          const { data, error } = await supabaseClient
+          // ✅ Authorization: ensure competitor record belongs to the authenticated user
+          const { data: competitorRow, error: competitorOwnerError } = await supabaseClient
             .from('company_competitors')
-            .update({
-              intelligence_data: profile,
-              quality_metrics: diagnostics,
-              last_analyzed_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
+            .select('id, user_id')
             .eq('id', competitorId)
-            .select();
+            .single();
 
-          if (error) {
-            console.error('[competitor-intel] ❌ Database save error:', error);
-            console.error('[competitor-intel] Error details:', JSON.stringify(error, null, 2));
+          if (competitorOwnerError || !competitorRow) {
+            console.error('[competitor-intel] ❌ Competitor not found for save:', competitorOwnerError);
+          } else if (competitorRow.user_id !== userId) {
+            console.error('[competitor-intel] ❌ Forbidden competitor save attempt');
           } else {
-            console.log('[competitor-intel] ✅ Successfully saved to database');
-            console.log('[competitor-intel] Updated rows:', data?.length || 0);
+            console.log('[competitor-intel] 💾 Saving intelligence data to database for competitor:', competitorId);
+
+            const { data, error } = await supabaseClient
+              .from('company_competitors')
+              .update({
+                intelligence_data: profile,
+                quality_metrics: diagnostics,
+                last_analyzed_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', competitorId)
+              .eq('user_id', userId)
+              .select();
+
+            if (error) {
+              console.error('[competitor-intel] ❌ Database save error:', error);
+              console.error('[competitor-intel] Error details:', JSON.stringify(error, null, 2));
+            } else {
+              console.log('[competitor-intel] ✅ Successfully saved to database');
+              console.log('[competitor-intel] Updated rows:', data?.length || 0);
+            }
           }
         }
       } catch (dbError: any) {
@@ -179,6 +221,7 @@ serve(async (req) => {
     } else {
       console.log('[competitor-intel] ⚠️ No competitorId provided, skipping database save');
     }
+
 
     return new Response(
       JSON.stringify({
