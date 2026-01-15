@@ -24,7 +24,10 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
-  TestTube
+  TestTube,
+  Image,
+  Sparkles,
+  Monitor
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -35,7 +38,10 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   'message-square': MessageSquare,
   binary: Binary,
   server: Server,
-  search: Search
+  search: Search,
+  image: Image,
+  sparkles: Sparkles,
+  monitor: Monitor
 };
 
 interface ProviderCardProps {
@@ -413,7 +419,7 @@ export const EnhancedProviderManagement: React.FC = () => {
       </div>
 
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
           {categories.map(category => (
             <TabsTrigger key={category} value={category} className="capitalize">
               {category === 'all' ? 'All' : category}
