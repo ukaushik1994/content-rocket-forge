@@ -86,8 +86,23 @@ export const UnifiedProviderCard = ({ provider, isRequired = false }: UnifiedPro
   };
 
   const handleSave = async () => {
-    if (!apiKey.trim()) {
+    const trimmedKey = apiKey.trim();
+    
+    // Basic validation only
+    if (!trimmedKey) {
       toast.error('Please enter a valid API key');
+      return;
+    }
+    
+    if (trimmedKey.length < 8) {
+      toast.error('API key is too short (minimum 8 characters)');
+      setError('API key is too short (minimum 8 characters)');
+      return;
+    }
+    
+    if (/\s/.test(trimmedKey)) {
+      toast.error('API key cannot contain spaces');
+      setError('API key cannot contain spaces');
       return;
     }
 
@@ -95,28 +110,31 @@ export const UnifiedProviderCard = ({ provider, isRequired = false }: UnifiedPro
       setIsSaving(true);
       setError(null);
       
-      const success = await saveApiKey(provider.serviceKey as ApiProvider, apiKey);
+      const success = await saveApiKey(provider.serviceKey as ApiProvider, trimmedKey);
       
       if (success) {
-        setMaskedKey(maskApiKey(apiKey));
+        setMaskedKey(maskApiKey(trimmedKey));
         setIsConfigured(true);
         setIsEnabled(true);
         setStatus('checking');
         toast.success(`${provider.name} API key saved`);
         
         // Test after saving
-        const testSuccess = await testApiKey(provider.serviceKey as ApiProvider, apiKey);
+        const testSuccess = await testApiKey(provider.serviceKey as ApiProvider, trimmedKey);
         setStatus(testSuccess ? 'connected' : 'error');
         
         if (testSuccess) {
           toast.success(`${provider.name} connection verified`);
         } else {
-          setError('API key saved but verification failed');
+          // Key is saved even if test fails - show info not error
+          setError('API key saved but verification failed - you may still be able to use it');
+          toast.info(`${provider.name} saved, but connection test failed`);
         }
       }
     } catch (err: any) {
-      setError(err.message);
-      toast.error(`Failed to save ${provider.name} API key`);
+      console.error(`Failed to save ${provider.name} API key:`, err);
+      setError(err.message || 'Failed to save API key');
+      toast.error(err.message || `Failed to save ${provider.name} API key`);
     } finally {
       setIsSaving(false);
     }

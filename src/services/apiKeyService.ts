@@ -69,22 +69,24 @@ class ApiKeyService {
         return false;
       }
 
-      // Validate API key format using the imported function
-      console.log(`🔍 Validating ${effectiveService} API key format...`);
+      // Validate API key format using the imported function - PERMISSIVE MODE
+      console.log(`🔍 Validating ${effectiveService} API key format (permissive mode)...`);
       
-      // Try to detect the API key type first
+      // Try to detect the API key type - this is now ADVISORY only, not blocking
       const detectedType = detectKeyType(apiKey.trim());
       if (detectedType && detectedType !== effectiveService && detectedType !== 'serp') {
-        console.warn(`⚠️ Detected ${detectedType} key format but expecting ${effectiveService}`);
-        toast.error(`This appears to be a ${detectedType} API key, but you selected ${effectiveService}. Please check your selection.`);
-        return false;
+        console.warn(`⚠️ Advisory: Detected ${detectedType} key format but user selected ${effectiveService}`);
+        // Show as info toast, not error - let user proceed
+        toast.info(`Note: This key looks like a ${detectedType} key. Saving as ${effectiveService} anyway.`, { duration: 4000 });
       }
       
-      if (!validateApiKeyFormat(effectiveService, apiKey.trim())) {
-        toast.error(`Invalid API key format for ${effectiveService}. Please check the format and try again.`);
+      // Use permissive validation - only reject truly invalid keys
+      if (!validateApiKeyFormat(effectiveService, apiKey.trim(), false)) {
+        // Only fail on truly invalid keys (too short, has whitespace, etc.)
+        toast.error(`API key is invalid (too short or contains spaces). Please check and try again.`);
         return false;
       }
-      console.log(`✅ ${effectiveService} API key format validation passed`);
+      console.log(`✅ ${effectiveService} API key format validation passed (permissive)`);
 
       // Encrypt the API key using the new secure encryption
       console.log(`🔐 Encrypting ${effectiveService} API key...`);
