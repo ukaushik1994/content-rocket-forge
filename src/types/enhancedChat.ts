@@ -95,8 +95,23 @@ export interface ChartPerspective {
   comparative: string;
 }
 
+export interface GeneratedImageVisualData {
+  id: string;
+  url: string;
+  prompt: string;
+  provider?: string;
+  model?: string;
+  createdAt?: string;
+  width?: number;
+  height?: number;
+}
+
 export interface VisualData {
-  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis';
+  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis' | 'generated_image' | 'generated_images';
+  
+  // Generated image support
+  generatedImage?: GeneratedImageVisualData;
+  generatedImages?: GeneratedImageVisualData[];
   title?: string; // AI-generated title based on user query
   subtitle?: string; // AI-generated subtitle/description
   description?: string;

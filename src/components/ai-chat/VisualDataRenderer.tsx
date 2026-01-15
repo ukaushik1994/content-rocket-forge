@@ -5,6 +5,7 @@ import { LineChart, BarChart, PieChartComponent } from '@/components/ui/chart';
 import { InteractiveChart } from './InteractiveChart';
 import { ChartErrorBoundary } from './ChartErrorBoundary';
 import { MultiChartAnalysis } from './visualization/MultiChartAnalysis';
+import { GeneratedImageCard } from './GeneratedImageCard';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -24,7 +25,8 @@ import {
   Sparkles,
   BarChart3,
   PieChart,
-  TrendingUp as LineIcon
+  TrendingUp as LineIcon,
+  Image as ImageIcon
 } from 'lucide-react';
 
 // Helper functions for SERP-style static Tailwind classes - matching MultiChartModal
@@ -123,7 +125,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   }
 
   // Validate type is one of the expected values
-  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis'];
+  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis', 'generated_image', 'generated_images'];
   if (!validTypes.includes(data.type)) {
     console.warn(`⚠️ Unknown visual data type: "${data.type}" - attempting graceful degradation`);
     
@@ -743,6 +745,55 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   // Main render logic with comprehensive logging
   console.log('📊 VisualDataRenderer: About to render, data type:', data.type);
 
+  // Render generated image(s)
+  const renderGeneratedImage = () => {
+    if (data.generatedImage) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-2"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <ImageIcon className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Generated Image</span>
+          </div>
+          <GeneratedImageCard image={data.generatedImage} />
+        </motion.div>
+      );
+    }
+    return null;
+  };
+
+  const renderGeneratedImages = () => {
+    if (data.generatedImages && data.generatedImages.length > 0) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <ImageIcon className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">
+              Generated Images ({data.generatedImages.length})
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {data.generatedImages.map((image) => (
+              <GeneratedImageCard 
+                key={image.id} 
+                image={image} 
+                compact 
+              />
+            ))}
+          </div>
+        </motion.div>
+      );
+    }
+    return null;
+  };
+
   switch (data.type) {
     case 'chart':
       console.log('📈 VisualDataRenderer: Rendering chart');
@@ -759,6 +810,12 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     case 'table':
       console.log('📋 VisualDataRenderer: Rendering table');
       return renderTable();
+    case 'generated_image':
+      console.log('🖼️ VisualDataRenderer: Rendering generated image');
+      return renderGeneratedImage();
+    case 'generated_images':
+      console.log('🖼️ VisualDataRenderer: Rendering generated images');
+      return renderGeneratedImages();
     case 'multi_chart_analysis':
       // Multi-chart analysis is handled by EnhancedMessageBubble component
       // to ensure proper modal behavior and callback handling
@@ -773,7 +830,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
         <div className="p-4 border border-warning/30 bg-warning/10 rounded-lg">
           <p className="text-warning font-medium">Unknown visualization type: {data.type}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Expected types: chart, metrics, workflow, summary, table, serp_analysis
+            Expected types: chart, metrics, workflow, summary, table, serp_analysis, generated_image
           </p>
         </div>
       );
