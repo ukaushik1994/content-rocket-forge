@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Button } from '@/components/ui/button';
 import { CustomBadge } from '@/components/ui/custom-badge';
 import { Badge } from '@/components/ui/badge';
-import { Eye, FileText, BookOpen, Mail, Globe, MessageSquare, Edit, MoreHorizontal, BarChart2, Archive, Trash, Image as ImageIcon } from 'lucide-react';
+import { Eye, FileText, BookOpen, Mail, Globe, MessageSquare, Edit, MoreHorizontal, BarChart2, Archive, Trash, Image as ImageIcon, Film } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
@@ -13,6 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { MediaThumbnail } from '@/components/content/MediaThumbnail';
 
 interface RepositoryListItemProps {
   content: ContentItemType;
@@ -64,6 +66,7 @@ export const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
     return Array.isArray(images) ? images : [];
   }, [content]);
   const imageCount = generatedImages.length;
+  const firstImage = generatedImages[0];
 
   const item = {
     hidden: { opacity: 0, x: -20 },
@@ -71,16 +74,40 @@ export const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
   };
 
   return (
-    <motion.div 
-      variants={item}
-      className="glass-panel bg-background/40 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:border-white/20 transition-all duration-300"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          {/* Content Type Icon */}
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-neon-blue/20 flex items-center justify-center">
-            <ContentIcon className="h-5 w-5 text-primary" />
-          </div>
+    <TooltipProvider>
+      <motion.div 
+        variants={item}
+        className="glass-panel bg-background/40 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:border-white/20 transition-all duration-300"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            {/* Image thumbnail or Content Type Icon */}
+            {firstImage ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex-shrink-0">
+                    <MediaThumbnail
+                      src={firstImage.url}
+                      alt="Content image"
+                      size="sm"
+                      showTypeIcon={false}
+                      showHoverPreview={false}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="p-0 overflow-hidden max-w-xs">
+                  <img 
+                    src={firstImage.url} 
+                    alt="Preview"
+                    className="w-full h-auto max-h-48 object-contain"
+                  />
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-neon-blue/20 flex items-center justify-center">
+                <ContentIcon className="h-5 w-5 text-primary" />
+              </div>
+            )}
 
           {/* Content Info */}
           <div className="flex-1 min-w-0">
@@ -103,6 +130,10 @@ export const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
                   <Badge variant="secondary" className="text-xs px-1.5 py-0">
                     <ImageIcon className="h-3 w-3 mr-1" />
                     {imageCount}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs px-1.5 py-0 text-muted-foreground">
+                    <Film className="h-3 w-3 mr-1" />
+                    Soon
                   </Badge>
                 </>
               )}
@@ -186,9 +217,10 @@ export const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenu>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </TooltipProvider>
   );
 };

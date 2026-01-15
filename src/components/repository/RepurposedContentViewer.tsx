@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,12 +12,14 @@ import {
   Trash2, 
   Clock,
   User,
-  Loader2
+  Loader2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { RepurposedContentRecord } from '@/services/repurposedContentService';
 import { contentFormats, getFormatByIdOrDefault } from '@/components/content-repurposing/formats';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { MediaAssetsSection, MediaAsset } from '@/components/content/MediaAssetsSection';
 
 interface RepurposedContentViewerProps {
   open: boolean;
@@ -49,6 +51,19 @@ export const RepurposedContentViewer: React.FC<RepurposedContentViewerProps> = (
   const format = getFormatByIdOrDefault(content.format_code);
   const IconComponent = format.icon;
   const personas = content.metadata?.personas || [];
+  
+  // Get any images associated with repurposed content
+  const generatedImages: MediaAsset[] = useMemo(() => {
+    const images = content.metadata?.generated_images || [];
+    if (!Array.isArray(images)) return [];
+    return images.map((img: any, index: number) => ({
+      id: img.id || `image-${index}`,
+      url: img.url,
+      type: 'image' as const,
+      prompt: img.prompt,
+      alt: img.alt || img.prompt
+    }));
+  }, [content]);
 
   const handleCopy = () => {
     onCopy(content.content);
@@ -151,6 +166,28 @@ export const RepurposedContentViewer: React.FC<RepurposedContentViewerProps> = (
               </CardContent>
             </Card>
           </div>
+
+          {/* Media Assets Section */}
+          {generatedImages.length > 0 && (
+            <Card className="bg-muted/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-primary" />
+                  Associated Media
+                  <Badge variant="secondary" className="text-xs">{generatedImages.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MediaAssetsSection
+                  images={generatedImages}
+                  isCollapsible={false}
+                  showVideoPlaceholder={true}
+                  showEmptyState={false}
+                  compact={true}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Content */}
           <Card className="flex-1 min-h-0">

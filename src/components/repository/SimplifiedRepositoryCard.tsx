@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,13 +10,14 @@ import {
   MessageSquare, 
   Edit, 
   Eye,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Film
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
-import { useEffect, useMemo } from 'react';
+import { VideoComingSoonBadge } from '@/components/content/VideoPlaceholder';
 
 interface SimplifiedRepositoryCardProps {
   content: ContentItemType;
@@ -120,13 +121,29 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-            <Badge 
-              className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm text-xs"
-              variant="secondary"
-            >
-              <ImageIcon className="h-3 w-3 mr-1" />
-              {generatedImages.length}
-            </Badge>
+            <div className="absolute bottom-2 right-2 flex items-center gap-1">
+              <Badge 
+                className="bg-background/80 backdrop-blur-sm text-xs"
+                variant="secondary"
+              >
+                <ImageIcon className="h-3 w-3 mr-1" />
+                {generatedImages.length}
+              </Badge>
+              <Badge 
+                className="bg-background/80 backdrop-blur-sm text-xs text-muted-foreground"
+                variant="outline"
+              >
+                <Film className="h-3 w-3 mr-1" />
+                Soon
+              </Badge>
+            </div>
+          </div>
+        )}
+        
+        {/* Video placeholder badge when no images */}
+        {!hasImages && (
+          <div className="absolute top-2 right-2 z-10">
+            <VideoComingSoonBadge />
           </div>
         )}
         
