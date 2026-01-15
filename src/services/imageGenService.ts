@@ -172,10 +172,10 @@ class ImageGenService {
         return false;
       }
 
-      // Get current content item
+      // Get current content item - use type assertion since column may not be in types yet
       const { data: content, error: fetchError } = await supabase
         .from('content_items')
-        .select('generated_images')
+        .select('*')
         .eq('id', contentId)
         .eq('user_id', user.id)
         .single();
@@ -186,15 +186,15 @@ class ImageGenService {
         return false;
       }
 
-      // Append new image to existing images
-      const existingImages = (content?.generated_images as GeneratedImage[]) || [];
+      // Append new image to existing images (using type assertion for new column)
+      const existingImages = ((content as any)?.generated_images as GeneratedImage[]) || [];
       const updatedImages = [...existingImages, image];
 
       // Update content item
       const { error: updateError } = await supabase
         .from('content_items')
         .update({ 
-          generated_images: updatedImages,
+          generated_images: updatedImages as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', contentId)
@@ -229,10 +229,10 @@ class ImageGenService {
         return false;
       }
 
-      // Get current content item
+      // Get current content item - use type assertion since column may not be in types yet
       const { data: content, error: fetchError } = await supabase
         .from('content_items')
-        .select('generated_images')
+        .select('*')
         .eq('id', contentId)
         .eq('user_id', user.id)
         .single();
@@ -243,15 +243,15 @@ class ImageGenService {
         return false;
       }
 
-      // Filter out the image
-      const existingImages = (content?.generated_images as GeneratedImage[]) || [];
+      // Filter out the image (using type assertion for new column)
+      const existingImages = ((content as any)?.generated_images as GeneratedImage[]) || [];
       const updatedImages = existingImages.filter(img => img.id !== imageId);
 
       // Update content item
       const { error: updateError } = await supabase
         .from('content_items')
         .update({ 
-          generated_images: updatedImages,
+          generated_images: updatedImages as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', contentId)
