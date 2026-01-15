@@ -19,10 +19,13 @@ import {
   Target,
   Eye,
   MousePointerClick,
-  Share2
+  Share2,
+  Image as ImageIcon,
+  Film
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentPreview } from './ContentPreview';
+import { MediaThumbnail } from '@/components/content/MediaThumbnail';
 
 interface ContentItem {
   id: string;
@@ -43,6 +46,10 @@ interface ContentItem {
     shares: number;
     conversions: number;
     last_updated: string | null;
+  };
+  generated_images?: Array<{ id: string; url: string; alt?: string }>;
+  metadata?: {
+    generated_images?: Array<{ id: string; url: string; alt?: string }>;
   };
 }
 
@@ -274,13 +281,41 @@ export const ContentLibrary = ({ campaignId }: ContentLibraryProps) => {
                   onClick={() => setSelectedContent({
                     ...item,
                     keywords: Array.isArray(item.keywords) ? item.keywords.map(k => String(k)) : [],
-                    performance_metrics: item.performance_metrics as any
+                    performance_metrics: item.performance_metrics as any,
+                    generated_images: undefined,
+                    metadata: undefined
                   } as ContentItem)}
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <Badge variant="outline" className="text-xs">
-                      {formatNames[item.content_type] || item.content_type}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {/* Image thumbnail if available */}
+                      {(() => {
+                        const images = (item as any).generated_images || (item as any).metadata?.generated_images || [];
+                        const firstImage = Array.isArray(images) && images.length > 0 ? images[0] : null;
+                        return firstImage ? (
+                          <MediaThumbnail
+                            src={firstImage.url}
+                            alt="Content image"
+                            size="xs"
+                            showTypeIcon={false}
+                            showHoverPreview={true}
+                          />
+                        ) : null;
+                      })()}
+                      <Badge variant="outline" className="text-xs">
+                        {formatNames[item.content_type] || item.content_type}
+                      </Badge>
+                      {(() => {
+                        const images = (item as any).generated_images || (item as any).metadata?.generated_images || [];
+                        const imageCount = Array.isArray(images) ? images.length : 0;
+                        return imageCount > 0 ? (
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <ImageIcon className="h-3 w-3" />
+                            {imageCount}
+                          </Badge>
+                        ) : null;
+                      })()}
+                    </div>
                     <Badge 
                       variant={
                         item.approval_status === 'published' || item.approval_status === 'approved' ? 'default' :

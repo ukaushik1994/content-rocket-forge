@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { TrendingUp, Target, BarChart3, Calendar, Send, CalendarPlus, Eye, FileText, Users, Award, Clock } from 'lucide-react';
+import { TrendingUp, Target, BarChart3, Calendar, Send, CalendarPlus, Eye, FileText, Users, Award, Clock, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { VideoPlaceholder } from '@/components/content/VideoPlaceholder';
 
 interface OpportunityDetailModalProps {
   isOpen: boolean;
@@ -257,6 +258,25 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                   <CalendarPlus className="h-4 w-4" />
                   Schedule to Calendar
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Media Generation Info */}
+            <Card className="bg-muted/5 border-border">
+              <CardHeader>
+                <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5 text-green-400" />
+                  Media Assets
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <p className="text-sm text-green-400 flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Images will be generated with content
+                  </p>
+                </div>
+                <VideoPlaceholder compact />
               </CardContent>
             </Card>
 
