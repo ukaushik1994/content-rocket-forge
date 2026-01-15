@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { FileText, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
+import { AttachedImagesGallery, AttachedImage } from '@/components/content/AttachedImagesGallery';
+import { imageGenOrchestrator } from '@/services/imageGenOrchestrator';
 
 export const ContentWritingStep = () => {
   const {
@@ -58,9 +60,47 @@ export const ContentWritingStep = () => {
   const [includeCaseStudies, setIncludeCaseStudies] = useState(true);
   const [includeFAQs, setIncludeFAQs] = useState(true);
   
+  // Image generation state
+  const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  
   // Extract title from content
   const extractedTitle = extractTitleFromContent(content);
 
+  const handleGenerateMoreImages = async () => {
+    if (!content || content.length < 200) {
+      toast.error('Please generate some content first');
+      return;
+    }
+    
+    setIsGeneratingImages(true);
+    try {
+      const image = await imageGenOrchestrator.generateSingleImage(
+        `Professional illustration for: ${mainKeyword}. ${extractedTitle || ''}`
+      );
+      if (image) {
+        setAttachedImages(prev => [...prev, image]);
+        toast.success('Image generated successfully!');
+      } else {
+        toast.error('No image provider configured. Please set up in Settings.');
+      }
+    } catch (error) {
+      toast.error('Image generation failed');
+    } finally {
+      setIsGeneratingImages(false);
+    }
+  };
+
+  const handleDeleteImage = (image: AttachedImage) => {
+    setAttachedImages(prev => prev.filter(img => img.id !== image.id));
+    toast.success('Image removed');
+  };
+
+  const handleInsertImage = (image: AttachedImage) => {
+    const imageMarkdown = `\n\n![${image.prompt}](${image.url})\n\n`;
+    handleContentChange(content + imageMarkdown);
+    toast.success('Image inserted into content');
+  };
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
       toast.error("Please set a main keyword first");
@@ -190,6 +230,18 @@ export const ContentWritingStep = () => {
                 Auto-saved at {new Date(autoSaveTimestamp).toLocaleTimeString()}
               </div>
             )}
+            
+            {/* Attached Images Gallery */}
+            <div className="mt-4">
+              <AttachedImagesGallery
+                images={attachedImages}
+                onGenerateMore={handleGenerateMoreImages}
+                onInsertIntoContent={handleInsertImage}
+                onDelete={handleDeleteImage}
+                isGenerating={isGeneratingImages}
+                compact
+              />
+            </div>
           </div>
         </div>
       </div>
