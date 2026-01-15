@@ -7,8 +7,15 @@ import ContentPreview from './dialog/ContentPreview';
 import DialogActionButtons from './dialog/DialogActionButtons';
 import FormatButton from './generated-content/FormatButton';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Image as ImageIcon, Film } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Badge } from '@/components/ui/badge';
+import { MediaAssetsSection } from '@/components/content/MediaAssetsSection';
+import { VideoPlaceholder } from '@/components/content/VideoPlaceholder';
+import { GeneratedImageVisualData } from '@/types/enhancedChat';
+
+// Video-eligible format IDs
+const VIDEO_ELIGIBLE_FORMATS = ['video-script', 'tiktok', 'youtube', 'reels', 'shorts'];
 
 interface RepurposedContentDialogProps {
   open: boolean;
@@ -21,6 +28,7 @@ interface RepurposedContentDialogProps {
   isDeleting?: boolean;
   isSaving?: boolean;
   generatedFormats?: string[];
+  generatedImages?: GeneratedImageVisualData[];
 }
 
 const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
@@ -33,7 +41,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   onFormatChange,
   isDeleting = false,
   isSaving = false,
-  generatedFormats = []
+  generatedFormats = [],
+  generatedImages = []
 }) => {
   const isMobile = useIsMobile();
   
@@ -43,6 +52,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   const formatId = content.formatId || '';
   const format = getFormatByIdOrDefault(formatId);
   const formatName = format.name;
+  const isVideoEligible = VIDEO_ELIGIBLE_FORMATS.includes(formatId);
+  const hasMedia = generatedImages.length > 0 || isVideoEligible;
 
   // Get all available formats (no longer limiting to 5)
   const availableFormats = contentFormats;
@@ -76,8 +87,20 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
       <DialogContent className={`${isMobile ? 'max-w-[95vw]' : 'max-w-2xl'} max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-black/95 to-black/90 border border-white/20 shadow-xl shadow-indigo-500/10 p-0 rounded-xl backdrop-blur-lg`}>
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 bg-black/50">
           <div className="flex flex-col">
-            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent`}>
+            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent flex items-center gap-2`}>
               {formatName}
+              {generatedImages.length > 0 && (
+                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 gap-1 text-xs">
+                  <ImageIcon className="h-3 w-3" />
+                  {generatedImages.length}
+                </Badge>
+              )}
+              {isVideoEligible && (
+                <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/30 gap-1 text-xs">
+                  <Film className="h-3 w-3" />
+                  Soon
+                </Badge>
+              )}
             </h2>
             <p className="text-xs sm:text-sm text-white/70 truncate max-w-[200px] sm:max-w-full">{content.title || 'Untitled Content'}</p>
           </div>
@@ -116,7 +139,41 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
         
         <ContentPreview content={content.content} />
         
-        <motion.div 
+        {/* Media Assets Section */}
+        {hasMedia && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 sm:px-6 py-3 border-t border-white/10 bg-black/30"
+          >
+            {generatedImages.length > 0 && (
+              <MediaAssetsSection
+                images={generatedImages.map(img => ({
+                  id: img.id,
+                  url: img.url,
+                  type: 'image' as const,
+                  prompt: img.prompt,
+                  createdAt: img.createdAt
+                }))}
+                title="Media Assets"
+                maxDisplay={4}
+                variant="compact"
+                isCollapsible={false}
+                showVideoPlaceholder={false}
+              />
+            )}
+            
+            {isVideoEligible && (
+              <div className={generatedImages.length > 0 ? 'mt-3' : ''}>
+                <VideoPlaceholder 
+                  variant="inline"
+                />
+              </div>
+            )}
+          </motion.div>
+        )}
+        
+        <motion.div
           initial={{ opacity: 0, y: 10 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ delay: 0.1 }}

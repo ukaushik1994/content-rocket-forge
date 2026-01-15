@@ -30,6 +30,8 @@ interface MediaAssetsSectionProps {
   className?: string;
   compact?: boolean;
   title?: string;
+  maxDisplay?: number;
+  variant?: 'default' | 'compact';
 }
 
 export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
@@ -45,10 +47,16 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
   onGenerateImage,
   className,
   compact = false,
-  title = "Media Assets"
+  title = "Media Assets",
+  maxDisplay,
+  variant = 'default'
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [lightboxImage, setLightboxImage] = useState<MediaAsset | null>(null);
+
+  // Apply maxDisplay limit if specified
+  const displayImages = maxDisplay ? images.slice(0, maxDisplay) : images;
+  const remainingCount = maxDisplay && images.length > maxDisplay ? images.length - maxDisplay : 0;
 
   const totalImages = images.length;
   const totalVideos = videos.length;
@@ -71,9 +79,9 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
   const renderImageGrid = () => (
     <div className={cn(
       "grid gap-3",
-      compact ? "grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+      compact || variant === 'compact' ? "grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
     )}>
-      {images.map((image) => (
+      {displayImages.map((image) => (
         <div 
           key={image.id}
           className="group relative aspect-square rounded-lg overflow-hidden border border-border bg-muted/30 hover:border-primary/50 transition-all"
@@ -133,6 +141,13 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
           </div>
         </div>
       ))}
+      
+      {/* Show remaining count indicator */}
+      {remainingCount > 0 && (
+        <div className="aspect-square rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center">
+          <span className="text-sm text-muted-foreground font-medium">+{remainingCount}</span>
+        </div>
+      )}
     </div>
   );
 
