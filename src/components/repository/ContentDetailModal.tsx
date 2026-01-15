@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,8 @@ import {
   Search,
   FileSearch,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Image as ImageIcon
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -54,6 +55,7 @@ import { repurposedContentService } from '@/services/repurposedContentService';
 import { RepositorySerpDisplay } from './RepositorySerpDisplay';
 import { RepositoryDocumentStructure } from './RepositoryDocumentStructure';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
+import { MediaAssetsSection, MediaAsset } from '@/components/content/MediaAssetsSection';
 
 interface ContentDetailModalProps {
   content: ContentItemType | null;
@@ -91,9 +93,24 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   // Collapsible section states
   const [isContentPreviewOpen, setIsContentPreviewOpen] = useState(true);
   const [isKeywordsOpen, setIsKeywordsOpen] = useState(true);
+  const [isMediaAssetsOpen, setIsMediaAssetsOpen] = useState(true);
   const [isSerpAnalysisOpen, setIsSerpAnalysisOpen] = useState(true);
   const [isDocumentStructureOpen, setIsDocumentStructureOpen] = useState(false);
   const [isRepurposedOpen, setIsRepurposedOpen] = useState(true);
+  
+  // Get generated images from content
+  const generatedImages: MediaAsset[] = useMemo(() => {
+    const images = (content as any)?.generated_images || (content as any)?.metadata?.generated_images || [];
+    if (!Array.isArray(images)) return [];
+    return images.map((img: any, index: number) => ({
+      id: img.id || `image-${index}`,
+      url: img.url,
+      type: 'image' as const,
+      prompt: img.prompt,
+      alt: img.alt || img.prompt,
+      createdAt: img.createdAt || img.created_at
+    }));
+  }, [content]);
   
   // Repurposing states
   const [repurposingModalOpen, setRepurposingModalOpen] = useState(false);
@@ -345,17 +362,24 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    const allOpen = isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isRepurposedOpen;
+                    const allOpen = isContentPreviewOpen && isKeywordsOpen && isMediaAssetsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isRepurposedOpen;
                     setIsContentPreviewOpen(!allOpen);
                     setIsKeywordsOpen(!allOpen);
+                    setIsMediaAssetsOpen(!allOpen);
                     setIsSerpAnalysisOpen(!allOpen);
                     setIsDocumentStructureOpen(!allOpen);
                     setIsRepurposedOpen(!allOpen);
                   }}
                   className="text-xs h-7 px-2"
                 >
-                  {(isContentPreviewOpen && isKeywordsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
+                  {(isContentPreviewOpen && isKeywordsOpen && isMediaAssetsOpen && isSerpAnalysisOpen && isDocumentStructureOpen && isRepurposedOpen) ? 'Collapse All' : 'Expand All'}
                 </Button>
+                {generatedImages.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    <ImageIcon className="h-3 w-3 mr-1" />
+                    {generatedImages.length} Images
+                  </Badge>
+                )}
               </div>
             </div>
             
@@ -441,6 +465,29 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                       </AnimatePresence>
                     </div>
                   )}
+                </CollapsibleSection>
+
+                {/* Media Assets Section */}
+                <CollapsibleSection
+                  isOpen={isMediaAssetsOpen}
+                  onToggle={() => setIsMediaAssetsOpen(!isMediaAssetsOpen)}
+                  title="Media Assets"
+                  icon={ImageIcon}
+                  count={generatedImages.length}
+                >
+                  <MediaAssetsSection
+                    images={generatedImages}
+                    isCollapsible={false}
+                    showVideoPlaceholder={true}
+                    showEmptyState={true}
+                    onDelete={(asset) => {
+                      toast.info('Image deletion coming soon');
+                    }}
+                    onRegenerate={(asset) => {
+                      toast.info('Image regeneration coming soon');
+                    }}
+                    compact={false}
+                  />
                 </CollapsibleSection>
 
                 {/* Repurposed Content Section */}
