@@ -10,6 +10,7 @@ export interface ApiProvider {
   link: string;
   required: boolean;
   category?: string;
+  subcategory?: string;
 }
 
 import { 
@@ -23,7 +24,9 @@ import {
   BarChart3,
   TrendingUp,
   Binary,
-  Server
+  Server,
+  Image,
+  Video
 } from 'lucide-react';
 
 export const API_PROVIDERS: ApiProvider[] = [
@@ -156,5 +159,39 @@ export const API_PROVIDERS: ApiProvider[] = [
     link: 'https://dashboard.stripe.com/apikeys',
     required: false,
     category: 'Payments'
+  },
+  // Image & Video Gen subcategory
+  {
+    id: 'openai_image',
+    name: 'OpenAI GPT-Image',
+    description: 'Generate and edit images using DALL-E and GPT-4 Vision',
+    serviceKey: 'openai_image',
+    icon: Image,
+    link: 'https://platform.openai.com/api-keys',
+    required: false,
+    category: 'AI Services',
+    subcategory: 'Image & Video Gen'
+  },
+  {
+    id: 'gemini_image',
+    name: 'Google Gemini Image',
+    description: 'Multimodal image generation with Gemini',
+    serviceKey: 'gemini_image',
+    icon: Image,
+    link: 'https://aistudio.google.com/app/apikey',
+    required: false,
+    category: 'AI Services',
+    subcategory: 'Image & Video Gen'
+  },
+  {
+    id: 'lmstudio_image',
+    name: 'LM Studio (Image)',
+    description: 'Local image generation models',
+    serviceKey: 'lmstudio_image',
+    icon: Image,
+    link: 'https://lmstudio.ai/',
+    required: false,
+    category: 'AI Services',
+    subcategory: 'Image & Video Gen'
   }
 ];
