@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { sanitizeMarkdownSync } from '@/utils/sanitize';
 
 type FormValues = {
   title: string;
@@ -288,15 +289,7 @@ export const EnhancedContentEditForm: React.FC<EnhancedContentEditFormProps> = (
               <div 
                 dangerouslySetInnerHTML={{ 
                   __html: watchContent
-                    ? watchContent
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                        .replace(/^## (.*?)$/gm, '<h2>$1</h2>')
-                        .replace(/^# (.*?)$/gm, '<h1>$1</h1>')
-                        .replace(/^### (.*?)$/gm, '<h3>$1</h3>')
-                        .replace(/^- (.*?)$/gm, '<li>$1</li>')
-                        .replace(/^[0-9]+\. (.*?)$/gm, '<li>$1</li>')
-                        .replace(/\n\n/g, '<br/><br/>')
+                    ? sanitizeMarkdownSync(watchContent)
                     : '<p>No content to preview</p>' 
                 }}
               />

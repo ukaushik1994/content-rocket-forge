@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { marked } from 'marked';
+import { sanitizeMarkdown, sanitizeHtml } from '@/utils/sanitize';
 
 interface ContentItem {
   id: string;
@@ -59,13 +59,13 @@ export const ContentPreview = ({
 
   const wordCount = content.content.split(/\s+/).filter(w => w.length > 0).length;
 
-  // Render markdown to HTML
+  // Render markdown to HTML with sanitization
   React.useEffect(() => {
-    const renderMarkdown = async () => {
-      const html = await marked(content.content);
+    const renderMarkdownSafe = async () => {
+      const html = await sanitizeMarkdown(content.content);
       setRenderedHtml(html);
     };
-    renderMarkdown();
+    renderMarkdownSafe();
   }, [content.content]);
 
   const handleCopy = () => {
@@ -73,7 +73,7 @@ export const ContentPreview = ({
     toast.success('Content copied to clipboard');
   };
 
-  const handleDownload = (format: 'md' | 'html' | 'txt') => {
+  const handleDownload = async (format: 'md' | 'html' | 'txt') => {
     let fileContent = '';
     let mimeType = '';
     let extension = '';
@@ -85,17 +85,18 @@ export const ContentPreview = ({
         extension = 'md';
         break;
       case 'html':
+        const sanitizedBody = await sanitizeMarkdown(content.content);
         fileContent = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${content.meta_title || content.title}</title>
-  <meta name="description" content="${content.meta_description || ''}">
+  <title>${sanitizeHtml(content.meta_title || content.title)}</title>
+  <meta name="description" content="${sanitizeHtml(content.meta_description || '')}">
 </head>
 <body>
-  <h1>${content.title}</h1>
-  ${marked(content.content)}
+  <h1>${sanitizeHtml(content.title)}</h1>
+  ${sanitizedBody}
 </body>
 </html>`;
         mimeType = 'text/html';
