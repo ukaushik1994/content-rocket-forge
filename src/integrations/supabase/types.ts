@@ -2449,6 +2449,7 @@ export type Database = {
           content: string | null
           content_type: Database["public"]["Enums"]["content_type_enum"] | null
           created_at: string
+          generated_images: Json | null
           glossary_id: string | null
           id: string
           keywords: Json | null
@@ -2473,6 +2474,7 @@ export type Database = {
           content?: string | null
           content_type?: Database["public"]["Enums"]["content_type_enum"] | null
           created_at?: string
+          generated_images?: Json | null
           glossary_id?: string | null
           id?: string
           keywords?: Json | null
@@ -2497,6 +2499,7 @@ export type Database = {
           content?: string | null
           content_type?: Database["public"]["Enums"]["content_type_enum"] | null
           created_at?: string
+          generated_images?: Json | null
           glossary_id?: string | null
           id?: string
           keywords?: Json | null
