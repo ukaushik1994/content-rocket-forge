@@ -26,8 +26,12 @@ import {
   BarChart3,
   PieChart,
   TrendingUp as LineIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Film,
+  Bell
 } from 'lucide-react';
+import { VideoPlaceholder } from '@/components/content/VideoPlaceholder';
+import { Button } from '@/components/ui/button';
 
 // Helper functions for SERP-style static Tailwind classes - matching MultiChartModal
 const getBgColor = (colorTheme: string): string => {
@@ -125,7 +129,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   }
 
   // Validate type is one of the expected values
-  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis', 'generated_image', 'generated_images'];
+  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis', 'generated_image', 'generated_images', 'generated_video', 'generated_videos'];
   if (!validTypes.includes(data.type)) {
     console.warn(`⚠️ Unknown visual data type: "${data.type}" - attempting graceful degradation`);
     
@@ -794,6 +798,84 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     return null;
   };
 
+  // Render generated video(s)
+  const renderGeneratedVideo = () => {
+    const video = data.generatedVideo;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-3"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Film className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Video Generation</span>
+          <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-300">
+            Coming Soon
+          </Badge>
+        </div>
+        
+        <VideoPlaceholder 
+          variant="card"
+          title="AI Video Generation"
+          description={video?.prompt || "Transform your content into engaging videos"}
+          showNotifyButton={true}
+          onNotify={() => console.log('User requested video notification')}
+        />
+        
+        {video?.prompt && (
+          <Card className="p-3 bg-muted/30 border-muted">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium">Prompt:</span> {video.prompt}
+            </p>
+          </Card>
+        )}
+      </motion.div>
+    );
+  };
+
+  const renderGeneratedVideos = () => {
+    const videos = data.generatedVideos || [];
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-3"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Film className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">
+            Video Generation ({videos.length} requested)
+          </span>
+          <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-300">
+            Coming Soon
+          </Badge>
+        </div>
+        
+        <VideoPlaceholder 
+          variant="card"
+          title="AI Video Generation"
+          description="Multiple videos will be available when video generation launches"
+          showNotifyButton={true}
+          onNotify={() => console.log('User requested video notification')}
+        />
+        
+        {videos.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Requested Videos:</p>
+            {videos.map((video, index) => (
+              <Card key={video.id || index} className="p-3 bg-muted/30 border-muted">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium">#{index + 1}:</span> {video.prompt}
+                </p>
+              </Card>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    );
+  };
+
   switch (data.type) {
     case 'chart':
       console.log('📈 VisualDataRenderer: Rendering chart');
@@ -816,6 +898,12 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     case 'generated_images':
       console.log('🖼️ VisualDataRenderer: Rendering generated images');
       return renderGeneratedImages();
+    case 'generated_video':
+      console.log('🎬 VisualDataRenderer: Rendering generated video');
+      return renderGeneratedVideo();
+    case 'generated_videos':
+      console.log('🎬 VisualDataRenderer: Rendering generated videos');
+      return renderGeneratedVideos();
     case 'multi_chart_analysis':
       // Multi-chart analysis is handled by EnhancedMessageBubble component
       // to ensure proper modal behavior and callback handling
@@ -830,7 +918,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
         <div className="p-4 border border-warning/30 bg-warning/10 rounded-lg">
           <p className="text-warning font-medium">Unknown visualization type: {data.type}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Expected types: chart, metrics, workflow, summary, table, serp_analysis, generated_image
+            Expected types: chart, metrics, workflow, summary, table, serp_analysis, generated_image, generated_video
           </p>
         </div>
       );

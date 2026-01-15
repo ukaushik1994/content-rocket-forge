@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bot, RefreshCw, BarChart3, Sparkles, Search, FileText, HelpCircle, Users } from 'lucide-react';
+import { User, Bot, RefreshCw, BarChart3, Sparkles, Search, FileText, HelpCircle, Users, Film } from 'lucide-react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { VisualDataRenderer } from './VisualDataRenderer';
@@ -223,31 +223,46 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
               animate={{ opacity: 1, y: 0 }}
               className="mt-3 mb-3"
             >
-              <div className="p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg border border-primary/20 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/20">
-                      <BarChart3 className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        Visual Analysis Available
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {message.allVisualData?.length || 1} chart(s) • Interactive insights • Actionable recommendations
-                      </p>
+              {(() => {
+                const isVideoContent = message.visualData?.type === 'generated_video' || message.visualData?.type === 'generated_videos';
+                const hasImages = message.visualData?.generatedImages?.length || 0;
+                const hasVideos = message.visualData?.generatedVideos?.length || 0;
+                
+                return (
+                  <div className="p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg border border-primary/20 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/20">
+                          {isVideoContent ? (
+                            <Film className="w-5 h-5 text-primary" />
+                          ) : (
+                            <BarChart3 className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {isVideoContent ? 'Video Content' : 'Visual Analysis Available'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {hasImages > 0 && `${hasImages} image(s)`}
+                            {hasImages > 0 && hasVideos > 0 && ' • '}
+                            {hasVideos > 0 && `${hasVideos} video(s)`}
+                            {!hasImages && !hasVideos && `${message.allVisualData?.length || 1} chart(s) • Interactive insights • Actionable recommendations`}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowMultiChartModal(true)}
+                        className="bg-primary hover:bg-primary/90 gap-2 shadow-lg"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        View Insights
+                      </Button>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => setShowMultiChartModal(true)}
-                    className="bg-primary hover:bg-primary/90 gap-2 shadow-lg"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    View Insights
-                  </Button>
-                </div>
-              </div>
+                );
+              })()}
             </motion.div>
           )}
 

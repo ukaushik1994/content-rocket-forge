@@ -2,6 +2,10 @@
 import React, { memo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getFormatByIdOrDefault } from './formats';
+import { Image as ImageIcon, Film } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { VideoPlaceholder } from '@/components/content/VideoPlaceholder';
+import { GeneratedImageVisualData } from '@/types/enhancedChat';
 
 // Import our components
 import FormatSelector from './generated-content/FormatSelector';
@@ -9,6 +13,9 @@ import ContentViewer from './generated-content/ContentViewer';
 import ActionButtons from './generated-content/ActionButtons';
 import NoContentDisplay from './generated-content/NoContentDisplay';
 import SelectFormatDisplay from './generated-content/SelectFormatDisplay';
+
+// Video-eligible format IDs
+const VIDEO_ELIGIBLE_FORMATS = ['video-script', 'tiktok', 'youtube', 'reels', 'shorts'];
 
 interface GeneratedContentDisplayProps {
   generatedContents: Record<string, string>;
@@ -27,6 +34,7 @@ interface GeneratedContentDisplayProps {
   selectedPersonas?: string[];
   availablePersonas?: any[];
   personasMap?: Record<string, string[]>; // Map of formatId to personas used
+  generatedImages?: GeneratedImageVisualData[];
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = memo(({
@@ -45,7 +53,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   savedContentFormats = [],
   selectedPersonas = [],
   availablePersonas = [],
-  personasMap = {}
+  personasMap = {},
+  generatedImages = []
 }) => {
   // Debug logging to help identify the issue
   console.log('[GeneratedContentDisplay] generatedContents:', generatedContents);
@@ -66,12 +75,26 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
       <CardHeader className="pb-2 flex flex-row items-center justify-between border-b border-white/10">
         <div>
           <CardTitle className="text-lg text-white font-semibold">Generated Content</CardTitle>
-          <CardDescription className="text-white/70">
-            {hasGeneratedContent
-              ? selectedPersonas.length > 0
-                ? `${generatedFormats.length} format(s) generated for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}`
-                : `${generatedFormats.length} format(s) generated`
-              : 'Select formats and generate content'}
+          <CardDescription className="text-white/70 flex items-center gap-2 flex-wrap">
+            <span>
+              {hasGeneratedContent
+                ? selectedPersonas.length > 0
+                  ? `${generatedFormats.length} format(s) generated for ${selectedPersonas.length} persona${selectedPersonas.length !== 1 ? 's' : ''}`
+                  : `${generatedFormats.length} format(s) generated`
+                : 'Select formats and generate content'}
+            </span>
+            {generatedImages.length > 0 && (
+              <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 gap-1">
+                <ImageIcon className="h-3 w-3" />
+                {generatedImages.length} image{generatedImages.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+            {activeFormat && VIDEO_ELIGIBLE_FORMATS.includes(activeFormat) && (
+              <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/30 gap-1">
+                <Film className="h-3 w-3" />
+                Video Soon
+              </Badge>
+            )}
           </CardDescription>
         </div>
 
@@ -98,7 +121,17 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
               selectedPersonas={selectedPersonas}
               availablePersonas={availablePersonas}
             />
-            <ActionButtons 
+            
+            {/* Video Placeholder for eligible formats */}
+            {VIDEO_ELIGIBLE_FORMATS.includes(activeFormat) && (
+              <div className="mt-3 px-1">
+                <VideoPlaceholder 
+                  variant="inline" 
+                />
+              </div>
+            )}
+            
+            <ActionButtons
               onCopy={() => onCopyToClipboard(generatedContents[activeFormat])}
               onDownload={() => {
                 const format = getFormatByIdOrDefault(activeFormat);

@@ -106,12 +106,29 @@ export interface GeneratedImageVisualData {
   height?: number;
 }
 
+export interface GeneratedVideoVisualData {
+  id: string;
+  url?: string; // Will be populated when video generation is available
+  thumbnailUrl?: string;
+  prompt: string;
+  duration?: number;
+  status: 'pending' | 'generating' | 'completed' | 'coming_soon';
+  provider?: string;
+  model?: string;
+  createdAt?: string;
+}
+
 export interface VisualData {
-  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis' | 'generated_image' | 'generated_images';
+  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis' | 'generated_image' | 'generated_images' | 'generated_video' | 'generated_videos';
   
   // Generated image support
   generatedImage?: GeneratedImageVisualData;
   generatedImages?: GeneratedImageVisualData[];
+  
+  // Generated video support
+  generatedVideo?: GeneratedVideoVisualData;
+  generatedVideos?: GeneratedVideoVisualData[];
+  
   title?: string; // AI-generated title based on user query
   subtitle?: string; // AI-generated subtitle/description
   description?: string;
