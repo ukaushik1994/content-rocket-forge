@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
+// Chart Intelligence - generates multi-perspective insights for charts
 
 export interface ChartPerspective {
   descriptive: string;

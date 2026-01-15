@@ -12,7 +12,8 @@ import { ApiSettings } from './api/ApiSettings';
 import { NotificationSettings } from './NotificationSettings';
 import { FormatPromptSettings } from './FormatPromptSettings';
 import { ProfileSettingsTab } from './ProfileSettingsTab';
-import { Settings, Zap, Bell, MessageSquare, User, Globe } from 'lucide-react';
+import { EnhancedAISettings } from './EnhancedAISettings';
+import { Settings, Zap, Bell, MessageSquare, User, Globe, Sparkles } from 'lucide-react';
 import { WebsiteConnectionsSettings } from './websites/WebsiteConnectionsSettings';
 
 export const SettingsPopup = () => {
@@ -30,6 +31,12 @@ export const SettingsPopup = () => {
       label: 'API Keys',
       icon: <Zap className="h-4 w-4" />,
       component: <ApiSettings />
+    },
+    {
+      id: 'aiServices',
+      label: 'AI Services',
+      icon: <Sparkles className="h-4 w-4" />,
+      component: <EnhancedAISettings />
     },
     {
       id: 'websites',
