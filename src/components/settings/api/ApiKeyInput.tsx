@@ -93,27 +93,36 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
     try {
       setIsSaving(true);
       setError(null);
-      console.log(`💾 Saving ${provider.name} API key with enhanced validation`);
+      console.log(`💾 Saving ${provider.name} API key (permissive validation)`);
 
-      // First analyze the key
-      const analysis = analyzeApiKey(apiKey);
-      console.log(`🔍 API key analysis:`, analysis);
-
-      // Check if the key format matches the expected provider
-      if (!analysis.validation[provider.serviceKey as ApiProvider]?.isValid) {
-        const errorMsg = analysis.validation[provider.serviceKey as ApiProvider]?.errorMessage || 'Invalid format';
-        toast.error(`${provider.name} API key format validation failed: ${errorMsg}`);
-        setError(errorMsg);
-        
-        // Show recommendations
-        if (analysis.recommendations.length > 0) {
-          console.warn('💡 Recommendations:', analysis.recommendations);
-          toast.info(`Suggestion: ${analysis.recommendations[0]}`);
-        }
-        
+      // Basic sanity check only - don't block on format analysis
+      const trimmedKey = apiKey.trim();
+      if (trimmedKey.length < 8) {
+        toast.error('API key is too short (minimum 8 characters)');
+        setError('API key is too short');
+        return;
+      }
+      
+      if (/\s/.test(trimmedKey)) {
+        toast.error('API key cannot contain spaces');
+        setError('API key contains spaces');
         return;
       }
 
+      // Analyze for advisory purposes only (logging)
+      const analysis = analyzeApiKey(apiKey);
+      console.log(`🔍 API key analysis (advisory):`, analysis);
+
+      // Log warning if format doesn't match, but DON'T block
+      if (!analysis.validation[provider.serviceKey as ApiProvider]?.isValid) {
+        console.warn(`⚠️ Format advisory: ${analysis.validation[provider.serviceKey as ApiProvider]?.errorMessage || 'Unknown format'}`);
+        // Show as info, not error
+        if (analysis.recommendations.length > 0) {
+          console.info('💡 Recommendations:', analysis.recommendations);
+        }
+      }
+
+      // Proceed with save regardless of format analysis
       const success = await saveApiKey(provider.serviceKey as ApiProvider, apiKey);
       
       if (success) {

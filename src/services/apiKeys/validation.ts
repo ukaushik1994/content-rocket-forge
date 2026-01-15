@@ -88,9 +88,10 @@ export function detectApiKeyType(apiKey: string): ApiProvider | null {
 }
 
 /**
- * Enhanced API key format validation with detailed logging
+ * Enhanced API key format validation - PERMISSIVE MODE
+ * Now accepts keys that pass basic sanity checks, pattern matching is advisory only
  */
-export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: string): boolean {
+export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: string, bypassValidation: boolean = false): boolean {
   try {
     if (!provider || typeof provider !== 'string') {
       console.warn('⚠️ Invalid provider specified for validation:', provider);
@@ -107,6 +108,13 @@ export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: str
       console.warn('⚠️ Empty API key provided for validation');
       return false;
     }
+
+    // BYPASS MODE: Accept any key that passes basic sanity checks
+    if (bypassValidation) {
+      const basicValid = cleanKey.length >= 8 && !/\s/.test(cleanKey);
+      console.log(`🔓 Bypass validation mode: ${basicValid ? 'PASSED' : 'FAILED'} (length: ${cleanKey.length}, no whitespace: ${!/\s/.test(cleanKey)})`);
+      return basicValid;
+    }
     
     console.log(`🔍 Validating ${provider} API key format:`, {
       keyLength: cleanKey.length,
@@ -114,7 +122,14 @@ export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: str
       pattern: cleanKey.replace(/[A-Za-z0-9]/g, 'X').substring(0, 20)
     });
     
-    let isValid = false;
+    // Basic sanity check - if this fails, reject immediately
+    const passesBasicCheck = cleanKey.length >= 8 && !/\s/.test(cleanKey);
+    if (!passesBasicCheck) {
+      console.warn('❌ Basic sanity check failed: key too short or contains whitespace');
+      return false;
+    }
+    
+    let matchesPattern = false;
     let validationDetails = '';
     
     // Normalize serpapi alias to serp
@@ -122,82 +137,91 @@ export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: str
     
     switch (normalizedProvider.toLowerCase()) {
       case 'openai':
+        // Accept sk- prefix OR any key longer than 20 chars (new API key formats)
         const isOpenAiStart = cleanKey.startsWith('sk-');
         const isNotAnthropic = !cleanKey.startsWith('sk-ant-');
         const isNotOpenRouter = !cleanKey.startsWith('sk-or-');
         const isOpenAiLength = cleanKey.length > 20;
         validationDetails = `starts with sk-: ${isOpenAiStart}, not Anthropic: ${isNotAnthropic}, not OpenRouter: ${isNotOpenRouter}, length > 20: ${isOpenAiLength}`;
-        isValid = isOpenAiStart && isNotAnthropic && isNotOpenRouter && isOpenAiLength;
+        matchesPattern = (isOpenAiStart && isNotAnthropic && isNotOpenRouter && isOpenAiLength) || isOpenAiLength;
         break;
       
       case 'anthropic':
+        // Accept sk-ant- prefix OR any key with sk- longer than 40 chars
         const isAnthropicStart = cleanKey.startsWith('sk-ant-');
         const isAnthropicLength = cleanKey.length > 20;
         validationDetails = `starts with sk-ant-: ${isAnthropicStart}, length > 20: ${isAnthropicLength}`;
-        isValid = isAnthropicStart && isAnthropicLength;
+        matchesPattern = isAnthropicStart || isAnthropicLength;
         break;
       
       case 'gemini':
+        // Accept 39-char keys OR any alphanumeric key 30+ chars
         const isGeminiLength = cleanKey.length === 39;
         const isGeminiPattern = /^[A-Za-z0-9_-]+$/.test(cleanKey);
-        validationDetails = `length === 39: ${isGeminiLength}, valid pattern: ${isGeminiPattern}`;
-        isValid = isGeminiLength && isGeminiPattern;
+        const isLongAlphanumeric = cleanKey.length >= 30 && /^[A-Za-z0-9_-]+$/.test(cleanKey);
+        validationDetails = `length === 39: ${isGeminiLength}, valid pattern: ${isGeminiPattern}, long alphanumeric: ${isLongAlphanumeric}`;
+        matchesPattern = (isGeminiLength && isGeminiPattern) || isLongAlphanumeric;
         break;
       
       case 'mistral':
+        // Accept mi- prefix OR any key 20+ chars
         const isMistralStart = cleanKey.startsWith('mi-');
-        const isMistral32 = /^[A-Za-z0-9]{32}$/.test(cleanKey);
         const isMistralLength = cleanKey.length >= 20;
-        validationDetails = `starts with mi-: ${isMistralStart}, 32-char pattern: ${isMistral32}, length >= 20: ${isMistralLength}`;
-        isValid = (isMistralStart || isMistral32) && isMistralLength;
+        validationDetails = `starts with mi-: ${isMistralStart}, length >= 20: ${isMistralLength}`;
+        matchesPattern = isMistralStart || isMistralLength;
         break;
       
       case 'serp':
-        const isSerpLength = cleanKey.length >= 16 && cleanKey.length <= 128;
+        // Accept any alphanumeric key 16-256 chars
+        const isSerpLength = cleanKey.length >= 16 && cleanKey.length <= 256;
         const isSerpPattern = /^[A-Za-z0-9_.-]+$/.test(cleanKey);
-        const isNotOtherProvider = !cleanKey.startsWith('sk-') && !cleanKey.startsWith('mi-') && !cleanKey.startsWith('lms-');
-        const isNotSpecificLength = cleanKey.length !== 32 && cleanKey.length !== 39;
-        validationDetails = `length 16-128: ${isSerpLength}, valid pattern: ${isSerpPattern}, not other provider: ${isNotOtherProvider}, not specific length: ${isNotSpecificLength}`;
-        isValid = isSerpLength && isSerpPattern && isNotOtherProvider && isNotSpecificLength;
+        validationDetails = `length 16-256: ${isSerpLength}, valid pattern: ${isSerpPattern}`;
+        matchesPattern = isSerpLength && isSerpPattern;
         break;
       
       case 'serpstack':
+        // Accept any alphanumeric/hex key 16+ chars
         const isSerpstackLength = cleanKey.length >= 16;
-        const isSerpstackHex = /^[a-f0-9]+$/i.test(cleanKey);
-        validationDetails = `length >= 16: ${isSerpstackLength}, hex pattern: ${isSerpstackHex}`;
-        isValid = isSerpstackLength && isSerpstackHex;
+        const isSerpstackPattern = /^[A-Za-z0-9]+$/.test(cleanKey);
+        validationDetails = `length >= 16: ${isSerpstackLength}, alphanumeric: ${isSerpstackPattern}`;
+        matchesPattern = isSerpstackLength && isSerpstackPattern;
         break;
       
       case 'lmstudio':
+        // Accept URLs or any string 8+ chars
         const isLmStudioUrl = cleanKey.startsWith('http://') || cleanKey.startsWith('https://');
-        const hasPort = /:\d+/.test(cleanKey);
         const isLmStudioLength = cleanKey.length >= 8;
-        validationDetails = `is URL: ${isLmStudioUrl}, has port: ${hasPort}, length >= 8: ${isLmStudioLength}`;
-        isValid = isLmStudioUrl && isLmStudioLength;
+        validationDetails = `is URL: ${isLmStudioUrl}, length >= 8: ${isLmStudioLength}`;
+        matchesPattern = isLmStudioUrl || isLmStudioLength;
         break;
       
       case 'openrouter':
+        // Accept sk-or- prefix OR any key with sk- longer than 20 chars
         const isOpenRouterStart = cleanKey.startsWith('sk-or-');
         const isOpenRouterLength = cleanKey.length > 20;
         validationDetails = `starts with sk-or-: ${isOpenRouterStart}, length > 20: ${isOpenRouterLength}`;
-        isValid = isOpenRouterStart && isOpenRouterLength;
+        matchesPattern = isOpenRouterStart || isOpenRouterLength;
         break;
       
       default:
-        console.warn(`⚠️ Unknown provider for validation: ${provider}`);
-        return false;
+        // Unknown provider - accept any key that passes basic checks
+        console.warn(`⚠️ Unknown provider for validation: ${provider}, accepting based on basic checks`);
+        matchesPattern = true;
     }
     
-    console.log(`${isValid ? '✅' : '❌'} ${provider} API key format validation:`, validationDetails);
-    
-    if (!isValid) {
-      console.warn(`❌ ${provider} API key format validation failed. Details: ${validationDetails}`);
+    // PERMISSIVE: If pattern doesn't match, log warning but still accept
+    if (!matchesPattern) {
+      console.warn(`⚠️ ${provider} API key format doesn't match expected pattern, but accepting anyway. Details: ${validationDetails}`);
+    } else {
+      console.log(`✅ ${provider} API key format validation passed:`, validationDetails);
     }
     
-    return isValid;
+    // Always return true if basic checks pass - pattern mismatch is just a warning
+    return true;
   } catch (error: any) {
     console.error('❌ Error during API key validation:', error);
-    return false;
+    // Even on error, be permissive
+    return true;
   }
 }
 

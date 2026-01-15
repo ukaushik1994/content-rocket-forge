@@ -135,30 +135,47 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
   };
 
   const handleSave = async () => {
-    if (!apiKey.trim()) {
+    const trimmedKey = apiKey.trim();
+    
+    // Basic validation only
+    if (!trimmedKey) {
       toast.error('Please enter a valid API key');
+      return;
+    }
+    
+    if (trimmedKey.length < 8) {
+      toast.error('API key is too short (minimum 8 characters)');
+      return;
+    }
+    
+    if (/\s/.test(trimmedKey)) {
+      toast.error('API key cannot contain spaces');
       return;
     }
 
     try {
       setIsSaving(true);
       
-      const success = await saveApiKey(provider.serviceKey as ApiProvider, apiKey);
+      const success = await saveApiKey(provider.serviceKey as ApiProvider, trimmedKey);
       
       if (success) {
         setStatus('testing');
         toast.success('API key saved');
         
         // Test after saving
-        const testSuccess = await testApiKey(provider.serviceKey as ApiProvider, apiKey);
+        const testSuccess = await testApiKey(provider.serviceKey as ApiProvider, trimmedKey);
         setStatus(testSuccess ? 'connected' : 'error');
         
         if (testSuccess) {
           toast.success('Connection verified');
+        } else {
+          // Even if test fails, key is saved - show warning not error
+          toast.info('API key saved, but connection test failed. You may need to verify the key.');
         }
       }
     } catch (err: any) {
-      toast.error('Failed to save API key');
+      console.error('Failed to save API key:', err);
+      toast.error(err.message || 'Failed to save API key');
       setStatus('error');
     } finally {
       setIsSaving(false);
