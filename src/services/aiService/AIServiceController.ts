@@ -156,6 +156,37 @@ class AIServiceController {
       capabilities: ['search', 'seo'],
       available_models: [],
       is_required: false
+    },
+    // Image/Video Generation Providers
+    openai_image: {
+      name: 'OpenAI GPT-Image',
+      description: 'Generate and edit images using GPT-Image-1 and DALL-E models',
+      icon_name: 'image',
+      category: 'Image/Video Gen',
+      setup_url: 'https://platform.openai.com/api-keys',
+      capabilities: ['image-generation', 'image-editing'],
+      available_models: ['gpt-image-1', 'dall-e-3', 'dall-e-2'],
+      is_required: false
+    },
+    gemini_image: {
+      name: 'Google Gemini Image',
+      description: 'Generate images using Gemini multimodal capabilities',
+      icon_name: 'sparkles',
+      category: 'Image/Video Gen',
+      setup_url: 'https://aistudio.google.com/app/apikey',
+      capabilities: ['image-generation', 'multimodal'],
+      available_models: ['gemini-2.5-flash-image-preview', 'gemini-3-pro-image-preview'],
+      is_required: false
+    },
+    lmstudio_image: {
+      name: 'LM Studio (Image)',
+      description: 'Local image generation models via LM Studio (Stable Diffusion, FLUX)',
+      icon_name: 'monitor',
+      category: 'Image/Video Gen',
+      setup_url: 'https://lmstudio.ai/',
+      capabilities: ['image-generation', 'local', 'offline'],
+      available_models: ['stable-diffusion-local', 'flux-local', 'sdxl-local'],
+      is_required: false
     }
   };
 
@@ -343,8 +374,9 @@ class AIServiceController {
   }
 
   /**
-   * Toggle provider status (Single Active Provider Mode)
-   * When activating a provider, all others are automatically deactivated
+   * Toggle provider status (Independent Category Mode)
+   * When activating a provider, only other providers in the SAME CATEGORY are deactivated
+   * This allows one active AI Service provider AND one active Image/Video Gen provider simultaneously
    */
   async toggleProvider(providerId: string, targetStatus: 'active' | 'inactive'): Promise<void> {
     try {
@@ -353,16 +385,50 @@ class AIServiceController {
         throw new Error('User authentication required');
       }
 
+      // Get the provider being toggled to determine its category
+      const { data: targetProvider, error: fetchError } = await supabase
+        .from('ai_service_providers')
+        .select('provider, category')
+        .eq('id', providerId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (fetchError || !targetProvider) {
+        throw new Error('Provider not found');
+      }
+
+      // Get category from metadata if not in database
+      const providerMetadata = AIServiceController.PROVIDER_METADATA[targetProvider.provider];
+      const providerCategory = targetProvider.category || providerMetadata?.category || 'AI Services';
+
       if (targetStatus === 'active') {
-        // SINGLE ACTIVE PROVIDER MODE: Deactivate all other providers first
-        const { error: deactivateError } = await supabase
+        // Get all providers in the SAME category to deactivate them
+        const { data: sameCategory, error: categoryError } = await supabase
           .from('ai_service_providers')
-          .update({ status: 'inactive', updated_at: new Date().toISOString() })
+          .select('id, provider')
           .eq('user_id', user.id)
           .neq('id', providerId);
 
-        if (deactivateError) {
-          console.error('Failed to deactivate other providers:', deactivateError);
+        if (!categoryError && sameCategory) {
+          // Filter to only deactivate providers in the same category
+          const providersToDeactivate = sameCategory.filter(p => {
+            const meta = AIServiceController.PROVIDER_METADATA[p.provider];
+            const cat = meta?.category || 'AI Services';
+            return cat === providerCategory;
+          });
+
+          if (providersToDeactivate.length > 0) {
+            const idsToDeactivate = providersToDeactivate.map(p => p.id);
+            const { error: deactivateError } = await supabase
+              .from('ai_service_providers')
+              .update({ status: 'inactive', updated_at: new Date().toISOString() })
+              .eq('user_id', user.id)
+              .in('id', idsToDeactivate);
+
+            if (deactivateError) {
+              console.error('Failed to deactivate same-category providers:', deactivateError);
+            }
+          }
         }
       }
 
@@ -384,7 +450,7 @@ class AIServiceController {
       // Clear cache to force fresh data
       this.clearCache();
       
-      console.log(`✅ Provider ${providerId} set to ${targetStatus}, all others deactivated`);
+      console.log(`✅ Provider ${providerId} set to ${targetStatus} (category: ${providerCategory})`);
     } catch (error) {
       console.error('Failed to toggle provider:', error);
       throw error;

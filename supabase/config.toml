@@ -149,3 +149,6 @@ verify_jwt = true
 [functions.secure-api-key]
 verify_jwt = false
 
+[functions.generate-image]
+verify_jwt = false
+
