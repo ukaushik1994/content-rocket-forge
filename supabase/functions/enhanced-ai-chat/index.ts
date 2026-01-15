@@ -1,10 +1,9 @@
-// Force redeploy: 2025-01-15T10:00:00Z - Fixed import map and inlined token counter
+// Force redeploy: 2025-01-15T14:00:00Z - Removed xhr polyfill, using npm: imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { z } from "npm:zod@3.22.4";
 import { extractJSONBlocks, removeExtractedJSON } from './json-parser.ts';
 import { analyzeQueryIntent } from './query-analyzer.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
+import { createClient } from "npm:@supabase/supabase-js@2.39.6";
 import { TOOL_DEFINITIONS, executeToolCall } from './tools.ts';
 import { CAMPAIGN_STRATEGY_TOOL } from './campaign-strategy-tool.ts';
 import { 
