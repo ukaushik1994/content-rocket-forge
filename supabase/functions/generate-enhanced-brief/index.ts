@@ -18,7 +18,34 @@ serve(async (req) => {
   }
 
   try {
-    const { opportunityId, userId, regenerate = false } = await req.json();
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const body = await req.json();
+    const { opportunityId, regenerate = false } = body;
+    const userIdFromBody = body.userId ?? body.user_id;
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    const userId = user.id;
+    if (userIdFromBody && userIdFromBody !== userId) {
+      return new Response(JSON.stringify({ success: false, error: 'Forbidden' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
+    }
 
     if (!opportunityId) {
       throw new Error('Opportunity ID is required');
@@ -26,7 +53,7 @@ serve(async (req) => {
 
     console.log(`📝 Generating enhanced brief for opportunity: ${opportunityId}`);
 
-    // Get opportunity details
+    // Get opportunity details (scoped to authenticated user)
     const { data: opportunity, error: oppError } = await supabase
       .from('content_opportunities')
       .select(`
@@ -34,6 +61,7 @@ serve(async (req) => {
         content_briefs (*)
       `)
       .eq('id', opportunityId)
+      .eq('user_id', userId)
       .single();
 
     if (oppError || !opportunity) {
@@ -52,7 +80,7 @@ serve(async (req) => {
     }
 
     // Get user's AI providers
-    const aiProvider = await getUserAIProvider(userId || opportunity.user_id);
+    const aiProvider = await getUserAIProvider(userId);
 
     // Get SERP data for context
     const serpData = opportunity.serp_data || await getCachedSerpData(opportunity.keyword);

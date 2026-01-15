@@ -17,19 +17,47 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, context, userId } = await req.json();
-    
-    console.log('🚀 Processing AI chat request with', messages.length, 'messages');
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const body = await req.json();
+
+    const { messages, context } = body;
+    const userIdFromBody = body.userId ?? body.user_id;
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: 'Messages array is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
-    // Get user's AI provider configuration
-    const { data: userKeys, error: keysError } = await supabase
-      .from('user_llm_keys')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .order('updated_at', { ascending: false });
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const userId = user.id;
+    if (userIdFromBody && userIdFromBody !== userId) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('🚀 Processing AI chat request with', messages.length, 'messages');
+
 
     if (keysError) {
       console.error('Error fetching user keys:', keysError);

@@ -24,11 +24,38 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, companyName, website, maxPages = 5 }: DiscoverRequest = await req.json();
-
-    if (!userId || !companyName || !website) {
-      throw new Error("Missing required fields: userId, companyName, website");
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const token = authHeader.replace('Bearer ', '');
+    const body: Partial<DiscoverRequest> & Record<string, unknown> = await req.json();
+    const { companyName, website, maxPages = 5 } = body as any;
+    const userIdFromBody = (body as any).userId ?? (body as any).user_id;
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (userIdFromBody && userIdFromBody !== user.id) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!companyName || !website) {
+      throw new Error("Missing required fields: companyName, website");
+    }
+
 
     console.log(`[company-intel] Starting discovery for: ${companyName} (${website})`);
 

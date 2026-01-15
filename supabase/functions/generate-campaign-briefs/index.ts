@@ -45,13 +45,41 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    const { formatId, count, strategy, solutionData, userId }: BriefRequest = await req.json();
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    console.log(`[Brief Generator] Starting generation: ${count} briefs for ${formatId}`);
+    const token = authHeader.replace('Bearer ', '');
+    const body = await req.json();
+    const { formatId, count, strategy, solutionData } = body;
+    const userIdFromBody = body.userId ?? body.user_id;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const userId = user.id;
+    if (userIdFromBody && userIdFromBody !== userId) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`[Brief Generator] Starting generation: ${count} briefs for ${formatId}`);
+
 
     // Generate briefs in batches of 3-5 for efficiency
     const batchSize = Math.min(5, count);

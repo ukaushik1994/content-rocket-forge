@@ -16,12 +16,23 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, model, user_id, temperature = 0.7 } = await req.json();
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    if (!prompt || !user_id) {
+    const token = authHeader.replace('Bearer ', '');
+    const body = await req.json();
+    const { prompt, model, temperature = 0.7 } = body;
+    const userIdFromBody = body.user_id ?? body.userId;
+
+    if (!prompt) {
       return new Response(JSON.stringify({
-        error: "Prompt and user_id are required"
-      }), { 
+        error: "Prompt is required"
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -31,16 +42,32 @@ serve(async (req) => {
     if (typeof prompt !== 'string' || prompt.trim().length === 0) {
       return new Response(JSON.stringify({
         error: "Prompt must be a non-empty string"
-      }), { 
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`🚀 OpenRouter content generation request for user: ${user_id}`);
-    
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const user_id = user.id;
+    if (userIdFromBody && userIdFromBody !== user_id) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`🚀 OpenRouter content generation request for user: ${user_id}`);
 
     // Get user's OpenRouter API key
     const { data: userKey, error: keyError } = await supabase

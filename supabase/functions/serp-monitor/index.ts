@@ -34,7 +34,41 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { action, config_id, user_id } = await req.json();
+    const body = await req.json();
+    const { action, config_id, user_id } = body;
+
+    // schedule_monitoring is intended for server-side scheduling/cron.
+    // All other actions are user-scoped and must be authenticated.
+    let authedUserId: string | null = null;
+
+    if (action !== 'schedule_monitoring') {
+      const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      authedUserId = user.id;
+
+      // Backward-compat: if the client still sends user_id, it must match.
+      if (user_id && user_id !== authedUserId) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     switch (action) {
       case 'run_check': {
@@ -60,6 +94,13 @@ serve(async (req) => {
           );
         }
 
+        if (!authedUserId || config.user_id !== authedUserId) {
+          return new Response(
+            JSON.stringify({ error: 'Forbidden' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         const result = await runMonitoringCheck(supabaseClient, config);
         
         return new Response(
@@ -69,14 +110,14 @@ serve(async (req) => {
       }
 
       case 'run_all_user_checks': {
-        if (!user_id) {
+        if (!authedUserId) {
           return new Response(
-            JSON.stringify({ error: 'user_id is required' }), 
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({ error: 'Unauthorized' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
-        const result = await runAllUserChecks(supabaseClient, user_id);
+        const result = await runAllUserChecks(supabaseClient, authedUserId);
         
         return new Response(
           JSON.stringify({ checks_completed: result }),

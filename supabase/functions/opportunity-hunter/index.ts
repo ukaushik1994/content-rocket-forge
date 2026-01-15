@@ -14,7 +14,34 @@ serve(async (req) => {
   }
 
   try {
-    const { action, userId, strategiesData } = await req.json()
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const body = await req.json();
+    const { action, strategiesData } = body;
+    const userIdFromBody = body.userId ?? body.user_id;
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = user.id;
+    if (userIdFromBody && userIdFromBody !== userId) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     switch (action) {
       case 'scan_opportunities':
@@ -22,10 +49,11 @@ serve(async (req) => {
       case 'get_opportunities':
         return await getOpportunities(userId)
       case 'update_opportunity':
-        return await updateOpportunityStatus(req)
+        return await updateOpportunityStatus(req, userId)
       default:
         throw new Error('Invalid action')
     }
+
   } catch (error) {
     console.error('Error in opportunity-hunter:', error)
     return new Response(
@@ -243,7 +271,7 @@ async function getOpportunities(userId: string) {
   )
 }
 
-async function updateOpportunityStatus(req: Request) {
+async function updateOpportunityStatus(req: Request, userId: string) {
   const { opportunityId, status, notes } = await req.json()
   
   const { data, error } = await supabase
@@ -254,6 +282,7 @@ async function updateOpportunityStatus(req: Request) {
       last_updated: new Date().toISOString() 
     })
     .eq('id', opportunityId)
+    .eq('user_id', userId)
     .select()
     .single()
 
