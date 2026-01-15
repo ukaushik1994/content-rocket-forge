@@ -9,13 +9,14 @@ import {
   Globe, 
   MessageSquare, 
   Edit, 
-  Eye
+  Eye,
+  Image as ImageIcon
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 interface SimplifiedRepositoryCardProps {
   content: ContentItemType;
@@ -75,6 +76,14 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
   const colorGradient = getContentTypeColor(content.content_type);
   const solution = (content as any).metadata?.solution || (content as any).metadata?.selectedSolution;
 
+  // Get generated images from content metadata
+  const generatedImages = useMemo(() => {
+    const images = (content as any).generated_images || (content as any).metadata?.generated_images || [];
+    return Array.isArray(images) ? images : [];
+  }, [content]);
+  const hasImages = generatedImages.length > 0;
+  const firstImageUrl = hasImages ? generatedImages[0]?.url : null;
+
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { 
@@ -101,7 +110,27 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
         hover:shadow-[0_20px_40px_rgba(155,135,245,0.4),0_0_0_1px_rgba(255,255,255,0.1)_inset]
         before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:to-transparent before:opacity-0 
         hover:before:opacity-100 before:transition-opacity before:duration-500 before:pointer-events-none">
-        <CardContent className="p-6 h-full flex flex-col relative z-10">
+        
+        {/* Image preview banner if has generated images */}
+        {hasImages && firstImageUrl && (
+          <div className="relative h-32 overflow-hidden border-b border-border/30">
+            <img 
+              src={firstImageUrl} 
+              alt="Generated content image"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+            <Badge 
+              className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm text-xs"
+              variant="secondary"
+            >
+              <ImageIcon className="h-3 w-3 mr-1" />
+              {generatedImages.length}
+            </Badge>
+          </div>
+        )}
+        
+        <CardContent className={`p-6 h-full flex flex-col relative z-10 ${hasImages ? 'pt-4' : ''}`}>
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">

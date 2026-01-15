@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Button } from '@/components/ui/button';
 import { CustomBadge } from '@/components/ui/custom-badge';
-import { Eye, FileText, BookOpen, Mail, Globe, MessageSquare, Edit, MoreHorizontal, BarChart2, Archive, Trash } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Eye, FileText, BookOpen, Mail, Globe, MessageSquare, Edit, MoreHorizontal, BarChart2, Archive, Trash, Image as ImageIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
@@ -57,6 +58,13 @@ export const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
 
   const ContentIcon = getContentTypeIcon(content.content_type);
 
+  // Get generated images count
+  const generatedImages = useMemo(() => {
+    const images = (content as any).generated_images || (content as any).metadata?.generated_images || [];
+    return Array.isArray(images) ? images : [];
+  }, [content]);
+  const imageCount = generatedImages.length;
+
   const item = {
     hidden: { opacity: 0, x: -20 },
     show: { opacity: 1, x: 0 }
@@ -89,6 +97,15 @@ export const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
               <span>
                 Updated {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
               </span>
+              {imageCount > 0 && (
+                <>
+                  <span>•</span>
+                  <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                    <ImageIcon className="h-3 w-3 mr-1" />
+                    {imageCount}
+                  </Badge>
+                </>
+              )}
               {content.metadata?.solution?.name && (
                 <>
                   <span>•</span>

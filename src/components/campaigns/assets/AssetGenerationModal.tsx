@@ -11,20 +11,24 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Clock, CheckSquare, Filter, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Sparkles, Clock, CheckSquare, Filter, Loader2, Image as ImageIcon, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AssetPreviewCard } from './AssetPreviewCard';
 import { generateAssetListFromStrategy, calculateAssetTotals, groupAssetsByType } from '@/utils/assetGenerator';
 import { generateContentBriefs } from '@/services/contentBriefGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { imageGenOrchestrator } from '@/services/imageGenOrchestrator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AssetGenerationModalProps {
   strategy: CampaignStrategy;
   campaignId: string;
   isOpen: boolean;
   onClose: () => void;
-  onGenerate: (assetIds: string[]) => void;
+  onGenerate: (assetIds: string[], options?: { includeImages: boolean }) => void;
 }
 
 export const AssetGenerationModal = ({
@@ -39,13 +43,26 @@ export const AssetGenerationModal = ({
   const [filterType, setFilterType] = useState<string>('all');
   const [isBriefsLoading, setIsBriefsLoading] = useState(false);
   const [briefProgress, setBriefProgress] = useState({ current: 0, total: 0 });
+  const [includeImages, setIncludeImages] = useState(true);
+  const [imageProviderAvailable, setImageProviderAvailable] = useState(false);
+  const [imageProviderName, setImageProviderName] = useState<string | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
     if (isOpen && strategy) {
       generateAllBriefs();
+      checkImageProvider();
     }
   }, [isOpen, strategy, campaignId]);
+
+  const checkImageProvider = async () => {
+    const available = await imageGenOrchestrator.isAvailable();
+    setImageProviderAvailable(available);
+    if (available) {
+      const name = await imageGenOrchestrator.getProviderName();
+      setImageProviderName(name);
+    }
+  };
 
   const generateAllBriefs = async () => {
     setIsBriefsLoading(true);
@@ -162,7 +179,7 @@ export const AssetGenerationModal = ({
   };
   
   const handleGenerate = () => {
-    onGenerate(Array.from(selectedAssets));
+    onGenerate(Array.from(selectedAssets), { includeImages: includeImages && imageProviderAvailable });
   };
   
   return (
@@ -207,6 +224,48 @@ export const AssetGenerationModal = ({
         
         {!isBriefsLoading && (
           <>
+            {/* Image Generation Toggle */}
+            <div className="px-6 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <ImageIcon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="include-images" className="font-medium">
+                        Generate Images
+                      </Label>
+                      {!imageProviderAvailable && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">Configure an image generation provider in Settings</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {imageProviderAvailable 
+                        ? `Auto-generate images using ${imageProviderName || 'AI'}`
+                        : 'No image provider configured'
+                      }
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="include-images"
+                  checked={includeImages && imageProviderAvailable}
+                  onCheckedChange={setIncludeImages}
+                  disabled={!imageProviderAvailable}
+                />
+              </div>
+            </div>
+
             <div className="px-6 py-4 border-b border-border bg-muted/20">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex gap-2 flex-wrap">
@@ -242,10 +301,15 @@ export const AssetGenerationModal = ({
                 <Sparkles className="h-4 w-4" />
                 <span>{totals.totalCost} credits</span>
               </div>
+              {includeImages && imageProviderAvailable && (
+                <div className="flex items-center gap-2 text-primary">
+                  <ImageIcon className="h-4 w-4" />
+                  <span>+images</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
-        
         <ScrollArea className="flex-1 px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-6">
             {filteredAssets.map(asset => (
