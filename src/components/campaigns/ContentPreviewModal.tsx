@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CampaignStrategy } from '@/types/campaign-types';
 import { Badge } from '@/components/ui/badge';
+import { Image as ImageIcon, Film } from 'lucide-react';
+import { VideoPlaceholder } from '@/components/content/VideoPlaceholder';
 
 interface ContentPreviewModalProps {
   strategy: CampaignStrategy;
@@ -84,6 +86,20 @@ export function ContentPreviewModal({
                       {formatLabels[item.formatId] || item.formatId}
                     </span>
                     <Badge variant="outline">{item.count} pieces</Badge>
+                    {/* Visual formats get image indicator */}
+                    {['carousel', 'social-instagram', 'meme'].includes(item.formatId) && (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <ImageIcon className="h-3 w-3" />
+                        With Images
+                      </Badge>
+                    )}
+                    {/* Video formats get video indicator */}
+                    {['script'].includes(item.formatId) && (
+                      <Badge variant="outline" className="text-xs gap-1 text-muted-foreground">
+                        <Film className="h-3 w-3" />
+                        Video Soon
+                      </Badge>
+                    )}
                   </div>
                   {item.frequency && (
                     <p className="text-xs text-muted-foreground">
@@ -103,6 +119,15 @@ export function ContentPreviewModal({
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Media Generation Notice */}
+          <div className="pt-4 border-t border-border">
+            <VideoPlaceholder 
+              compact 
+              title="Video Generation"
+              description="Video content generation coming soon"
+            />
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-border">

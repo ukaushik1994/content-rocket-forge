@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,12 +16,15 @@ import {
   Calendar,
   User,
   Zap,
-  Loader2
+  Loader2,
+  Image as ImageIcon,
+  Film
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getScoreLabel, getScoreTextSoftClass, getProgressBgClass } from '@/lib/score';
+import { MediaThumbnail } from '@/components/content/MediaThumbnail';
 
 interface ContentApprovalCardProps {
   content: ContentItemType;
@@ -108,6 +111,14 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
     ? new Date(analyzedAt).getTime() < new Date(content.updated_at).getTime()
     : false;
 
+  // Get generated images
+  const generatedImages = useMemo(() => {
+    const images = (content as any).generated_images || (content as any).metadata?.generated_images || [];
+    return Array.isArray(images) ? images : [];
+  }, [content]);
+  const imageCount = generatedImages.length;
+  const firstImage = generatedImages[0];
+
   const aiLabel = typeof aiScore === 'number' ? getScoreLabel(aiScore) : undefined;
   return (
     <motion.div
@@ -175,10 +186,34 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
                 <Badge className={statusInfo.color}>
                   {statusInfo.label}
                 </Badge>
+                {imageCount > 0 && (
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <ImageIcon className="h-3 w-3" />
+                    {imageCount}
+                  </Badge>
+                )}
+                {imageCount === 0 && (
+                  <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
+                    <Film className="h-3 w-3" />
+                    Video Soon
+                  </Badge>
+                )}
               </div>
-              <CardTitle className="text-lg font-semibold text-foreground line-clamp-2 leading-tight">
-                {content.title}
-              </CardTitle>
+              <div className="flex items-start gap-3">
+                {/* Thumbnail preview */}
+                {firstImage && (
+                  <MediaThumbnail
+                    src={firstImage.url}
+                    alt="Content image"
+                    size="sm"
+                    showTypeIcon={false}
+                    showHoverPreview={true}
+                  />
+                )}
+                <CardTitle className="text-lg font-semibold text-foreground line-clamp-2 leading-tight">
+                  {content.title}
+                </CardTitle>
+              </div>
             </div>
           </div>
           

@@ -1,18 +1,23 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Twitter, Facebook, Linkedin, Mail } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Download, Twitter, Facebook, Linkedin, Mail, Image as ImageIcon, Film } from 'lucide-react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { MediaThumbnailGrid } from '@/components/content/MediaThumbnail';
+import { VideoPlaceholder } from '@/components/content/VideoPlaceholder';
 
 interface ContentSummaryCardProps {
   handleDownload: (format: 'pdf' | 'docx' | 'html') => void;
   socialShare: boolean;
+  generatedImages?: Array<{ id: string; url: string; alt?: string }>;
 }
 
 export const ContentSummaryCard: React.FC<ContentSummaryCardProps> = ({ 
   handleDownload, 
-  socialShare 
+  socialShare,
+  generatedImages = []
 }) => {
   const { state } = useContentBuilder();
   const { 
@@ -30,12 +35,37 @@ export const ContentSummaryCard: React.FC<ContentSummaryCardProps> = ({
   // Check if optimizations were applied
   const hasAppliedOptimizations = seoImprovements?.some(improvement => improvement.applied) || false;
   
+  const imageCount = generatedImages.length;
+  
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Content Summary</CardTitle>
+        <CardTitle className="text-sm flex items-center justify-between">
+          Content Summary
+          {imageCount > 0 && (
+            <Badge variant="secondary" className="text-xs gap-1">
+              <ImageIcon className="h-3 w-3" />
+              {imageCount} Images
+            </Badge>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Generated Images Preview */}
+        {imageCount > 0 && (
+          <div className="space-y-2 pb-3 border-b border-border">
+            <p className="text-xs text-muted-foreground">Generated Images</p>
+            <MediaThumbnailGrid 
+              images={generatedImages} 
+              maxDisplay={4} 
+              size="sm"
+            />
+          </div>
+        )}
+
+        {/* Video Placeholder */}
+        <VideoPlaceholder variant="inline" compact />
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Main Keyword</p>
@@ -70,6 +100,11 @@ export const ContentSummaryCard: React.FC<ContentSummaryCardProps> = ({
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Optimized</p>
             <p className="font-medium">{hasAppliedOptimizations ? 'Yes' : 'No'}</p>
+          </div>
+          
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">Media</p>
+            <p className="font-medium">{imageCount > 0 ? `${imageCount} images` : 'None'}</p>
           </div>
         </div>
         

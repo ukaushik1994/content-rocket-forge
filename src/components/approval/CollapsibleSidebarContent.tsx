@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Edit3, Globe, Zap, CheckCircle2, AlertCircle, Clock, Star, History } from 'lucide-react';
+import { ChevronDown, ChevronRight, Edit3, Globe, Zap, CheckCircle2, AlertCircle, Clock, Star, History, Image as ImageIcon } from 'lucide-react';
 import { TitleSidebarTile } from './tiles/TitleSidebarTile';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
 import { ApprovalTimeline } from './ApprovalTimeline';
 import { cn } from '@/lib/utils';
+import { MediaAssetsSection, MediaAsset } from '@/components/content/MediaAssetsSection';
 
 interface CollapsibleSidebarContentProps {
   content: ContentItemType;
@@ -23,6 +24,7 @@ interface CollapsibleSidebarContentProps {
 interface SectionState {
   title: boolean;
   seo: boolean;
+  media: boolean;
   sections: boolean;
   suggestions: boolean;
   timeline: boolean;
@@ -39,12 +41,26 @@ export const CollapsibleSidebarContent = ({
   const [openSections, setOpenSections] = useState<SectionState>({
     title: true,
     seo: false,
+    media: true,
     sections: false,
     suggestions: false,
     timeline: false
   });
 
   const [expandAll, setExpandAll] = useState(false);
+
+  // Get generated images from content
+  const generatedImages: MediaAsset[] = useMemo(() => {
+    const images = (content as any)?.generated_images || (content as any)?.metadata?.generated_images || [];
+    if (!Array.isArray(images)) return [];
+    return images.map((img: any, index: number) => ({
+      id: img.id || `image-${index}`,
+      url: img.url,
+      type: 'image' as const,
+      prompt: img.prompt,
+      alt: img.alt || img.prompt
+    }));
+  }, [content]);
 
   const handleToggleSection = (section: keyof SectionState) => {
     setOpenSections(prev => ({
@@ -59,6 +75,7 @@ export const CollapsibleSidebarContent = ({
     setOpenSections({
       title: newState,
       seo: newState,
+      media: newState,
       sections: newState,
       suggestions: newState,
       timeline: newState
@@ -197,6 +214,44 @@ export const CollapsibleSidebarContent = ({
         </CollapsibleTrigger>
         <CollapsibleContent className="px-3 pb-3">
           <ApprovalMetadata content={content} compact />
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Media Assets Section */}
+      <Collapsible
+        open={openSections.media}
+        onOpenChange={() => handleToggleSection('media')}
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            className="w-full justify-between p-3 h-auto hover:bg-white/5"
+          >
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-green-400" />
+              <span className="text-sm font-medium text-white/90">Media Assets</span>
+              <Badge 
+                variant="secondary" 
+                className="text-xs h-5 px-2 bg-green-500/10 text-green-400 border-green-500/20"
+              >
+                {generatedImages.length}
+              </Badge>
+            </div>
+            {openSections.media ? (
+              <ChevronDown className="h-4 w-4 text-white/40" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-white/40" />
+            )}
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="px-3 pb-3">
+          <MediaAssetsSection
+            images={generatedImages}
+            isCollapsible={false}
+            showVideoPlaceholder={true}
+            showEmptyState={true}
+            compact={true}
+          />
         </CollapsibleContent>
       </Collapsible>
 
