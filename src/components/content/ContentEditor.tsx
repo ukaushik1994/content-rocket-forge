@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
+import { sanitizeMarkdownSync } from '@/utils/sanitize';
 
 interface ContentEditorProps {
   content: string;
@@ -21,25 +21,9 @@ export const ContentEditor: React.FC<ContentEditorProps> = ({
     onContentChange(e.target.value);
   };
 
-  // Simple Markdown to HTML converter
+  // Render markdown with sanitization
   const renderMarkdown = (markdown: string) => {
-    if (!markdown) return '';
-    let html = markdown;
-
-    // Convert headers
-    html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
-    html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-    html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-
-    // Convert bold
-    html = html.replace(/\*\*(.*)\*\*/gm, '<strong>$1</strong>');
-
-    // Convert italic
-    html = html.replace(/\*(.*)\*/gm, '<em>$1</em>');
-
-    // Convert paragraphs
-    html = html.split('\n\n').map(p => `<p>${p}</p>`).join('');
-    return html;
+    return sanitizeMarkdownSync(markdown);
   };
   
   return (

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +6,7 @@ import { Eye, Edit, Trash2, Tag, List, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { RepurposeButton } from '../RepurposeButton';
+import { stripHtml } from '@/utils/sanitize';
 
 interface ContentItemProps {
   item: any;
@@ -110,9 +110,7 @@ export const ContentItem: React.FC<ContentItemProps> = ({
         <CardContent className="pb-2 flex-grow">
           <div className="line-clamp-3 text-sm opacity-85">
             {item.content ? (
-              <div dangerouslySetInnerHTML={{ 
-                __html: item.content?.substring(0, 150) + '...'
-              }} />
+              <span>{stripHtml(item.content)?.substring(0, 150)}...</span>
             ) : (
               <span className="text-muted-foreground italic">No content</span>
             )}
