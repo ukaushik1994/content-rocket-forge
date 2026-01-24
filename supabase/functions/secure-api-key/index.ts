@@ -17,6 +17,12 @@ const EncryptSchema = z.object({
   service: z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/)
 });
 
+const DecryptSchema = z.object({
+  action: z.literal('decrypt'),
+  encryptedKey: z.string().min(1).max(2000),
+  service: z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/)
+});
+
 const DecryptAndCallSchema = z.object({
   action: z.literal('decrypt_and_call'),
   encryptedKey: z.string().min(1).max(2000),
@@ -25,7 +31,7 @@ const DecryptAndCallSchema = z.object({
   params: z.record(z.unknown()).optional()
 });
 
-const RequestSchema = z.union([EncryptSchema, DecryptAndCallSchema]);
+const RequestSchema = z.union([EncryptSchema, DecryptSchema, DecryptAndCallSchema]);
 
 // Initialize Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -182,6 +188,31 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    if (request.action === 'decrypt') {
+      console.log(`🔓 Decrypting API key for service: ${request.service}`);
+      
+      try {
+        const decryptedKey = await decryptApiKey(request.encryptedKey, user.id);
+        
+        console.log('✅ API key decrypted successfully');
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            apiKey: decryptedKey,
+            message: 'API key decrypted server-side'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (decryptError: any) {
+        console.error('❌ Decryption failed:', decryptError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to decrypt API key' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     if (request.action === 'decrypt_and_call') {

@@ -277,43 +277,32 @@ class ApiKeyService {
 
   /**
    * Retrieves API key from the legacy user_llm_keys table
+   * Uses the correct schema: provider, api_key columns
    */
   private static async getLegacyApiKey(userId: string, service: ApiProvider): Promise<string | null> {
     try {
       console.log(`🔍 Checking legacy table for ${service} API key...`);
-      
-      // Map service names to legacy column names
-      const serviceColumnMap: Record<string, string> = {
-        'openai': 'openai_api_key',
-        'anthropic': 'anthropic_api_key',
-        'gemini': 'gemini_api_key',
-        'mistral': 'mistral_api_key',
-        'lmstudio': 'lmstudio_api_key',
-        'openrouter': 'openrouter_api_key'
-      };
-
-      const columnName = serviceColumnMap[service];
-      if (!columnName) {
-        console.log(`ℹ️ No legacy column mapping for ${service}`);
-        return null;
-      }
 
       const { data, error } = await supabase
         .from('user_llm_keys')
-        .select(columnName)
+        .select('api_key')
         .eq('user_id', userId)
-        .single();
+        .eq('provider', service)
+        .eq('is_active', true)
+        .maybeSingle();
 
-      if (error || !data || !data[columnName]) {
+      if (error) {
+        console.warn(`⚠️ Error querying legacy table for ${service}:`, error.message);
+        return null;
+      }
+
+      if (!data?.api_key) {
         console.log(`ℹ️ No ${service} API key found in legacy table`);
         return null;
       }
 
-      const legacyKey = data[columnName];
       console.log(`✅ Found ${service} API key in legacy table`);
-      
-      // The legacy key might be stored directly (not encrypted)
-      return legacyKey;
+      return data.api_key;
     } catch (error: any) {
       console.error(`❌ Error retrieving legacy ${service} API key:`, error);
       return null;

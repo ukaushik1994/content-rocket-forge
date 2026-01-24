@@ -61,21 +61,34 @@ class SecureEncryption {
 
   /**
    * Decrypts an API key server-side
-   * The plaintext key is never returned to the client
-   * Instead, use decryptAndCall for API operations
+   * Uses the secure-api-key edge function for proper decryption
    */
   static async decrypt(encryptedData: string, userId: string): Promise<string> {
-    // For backward compatibility, we still support decrypt
-    // but this should be replaced with server-side operations
-    console.warn('⚠️ Client-side decryption is deprecated. Use server-side API calls instead.');
-    
     try {
-      // For legacy support, attempt to use the old client-side decryption
-      // This will be removed in future versions
-      return await SecureEncryption.legacyDecrypt(encryptedData, userId);
-    } catch (error) {
-      console.error('❌ Decryption failed:', error);
-      throw new Error('Decryption failed - please re-enter your API key');
+      console.log('🔓 Decrypting API key server-side...');
+      
+      const { data, error } = await supabase.functions.invoke('secure-api-key', {
+        body: {
+          action: 'decrypt',
+          encryptedKey: encryptedData,
+          service: 'api_key'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Server-side decryption failed:', error);
+        throw new Error(`Failed to decrypt API key: ${error.message}`);
+      }
+
+      if (!data?.success || !data?.apiKey) {
+        throw new Error('Server-side decryption returned invalid response');
+      }
+
+      console.log('✅ API key decrypted successfully (server-side)');
+      return data.apiKey;
+    } catch (error: any) {
+      console.error('❌ Decryption error:', error);
+      throw new Error(`Failed to decrypt API key: ${error.message}`);
     }
   }
 
