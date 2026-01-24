@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getUserPreference } from '@/services/userPreferencesService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AIServiceStatus {
   isEnabled: boolean;
@@ -11,6 +12,7 @@ interface AIServiceStatus {
 
 /**
  * Custom hook to monitor AI service status
+ * Uses row-existence check (not decryption) for reliable status
  */
 export function useAIServiceStatus() {
   const [status, setStatus] = useState<AIServiceStatus>({
@@ -30,52 +32,44 @@ export function useAIServiceStatus() {
       const isEnabled = getUserPreference('enableAiService') !== false;
       console.log('📋 Service enabled by user preference:', isEnabled);
 
-      // Check if we have any API keys configured using the unified service
-      const { getApiKey } = await import('@/services/apiKeys/crud');
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('ℹ️ No authenticated user');
+        setStatus({
+          isEnabled,
+          hasProviders: false,
+          activeProviders: 0,
+          totalProviders: 6,
+          isLoading: false
+        });
+        return;
+      }
+
+      // Check for configured API keys by existence (no decryption needed)
       const providers = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'] as const;
       
-      let activeProviders = 0;
-      const providerStatus: Array<{name: string, status: string}> = [];
-      
-      console.log('🔍 Checking providers:', providers);
-      
-      for (const provider of providers) {
-        try {
-          console.log(`🔑 Checking API key for ${provider}...`);
-          const key = await getApiKey(provider);
-          console.log(`🔑 ${provider} key result:`, key ? `Found (${key.length} chars)` : 'Not found');
-          
-          if (key && key.trim().length > 0) {
-            activeProviders++;
-            providerStatus.push({ name: provider, status: 'active' });
-            console.log(`✅ ${provider} is ACTIVE`);
-          } else {
-            providerStatus.push({ name: provider, status: 'inactive' });
-            console.log(`❌ ${provider} is INACTIVE (no key)`);
-          }
-        } catch (error) {
-          console.error(`❌ ${provider} ERROR:`, error);
-          providerStatus.push({ name: provider, status: 'error' });
-        }
+      const { data: configuredKeys, error } = await supabase
+        .from('api_keys')
+        .select('service')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .in('service', providers);
+
+      if (error) {
+        console.error('❌ Error checking API keys:', error);
+        setStatus(prev => ({ ...prev, isLoading: false }));
+        return;
       }
 
-      // Double-check with AIServiceController
-      let controllerActiveCount = 0;
-      try {
-        const { default: AIServiceController } = await import('@/services/aiService/AIServiceController');
-        const controllerProviders = await AIServiceController.getActiveProviders();
-        controllerActiveCount = controllerProviders.length;
-        console.log('🎮 AIServiceController found providers:', controllerProviders.map(p => p.provider));
-      } catch (controllerError) {
-        console.error('❌ Error checking AIServiceController:', controllerError);
-      }
-
-      console.log('📊 Final AI Service Status:', {
+      const activeProviders = configuredKeys?.length || 0;
+      const configuredServices = configuredKeys?.map(k => k.service) || [];
+      
+      console.log('📊 AI Service Status:', {
         enabled: isEnabled,
         total: providers.length,
-        activeByHook: activeProviders,
-        activeByController: controllerActiveCount,
-        providers: providerStatus
+        active: activeProviders,
+        configured: configuredServices
       });
 
       setStatus({
