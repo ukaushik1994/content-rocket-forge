@@ -506,7 +506,13 @@ async function testGemini(apiKey: string) {
   console.log('🧪 Testing Gemini API key');
   
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    // Use x-goog-api-key header instead of URL parameter to prevent key leakage in logs
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+      headers: {
+        'x-goog-api-key': apiKey,
+        'Content-Type': 'application/json',
+      }
+    });
 
     if (!response.ok) {
       const errorData = await response.text();
@@ -546,11 +552,13 @@ async function chatGemini(apiKey: string, params: any) {
 
   try {
     const model = params.model || 'gemini-pro';
+    // Use x-goog-api-key header instead of URL parameter to prevent key leakage in logs
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
         headers: {
+          'x-goog-api-key': apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
