@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { EnhancedContentEditor } from './editor/EnhancedContentEditor';
 import { MinimalisticSidebar } from './writing/MinimalisticSidebar';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { AttachedImagesGallery, AttachedImage } from '@/components/content/AttachedImagesGallery';
 import { imageGenOrchestrator } from '@/services/imageGenOrchestrator';
+import { ImageSlot } from '@/components/content/ImagePlaceholder';
 
 export const ContentWritingStep = () => {
   const {
@@ -63,9 +64,21 @@ export const ContentWritingStep = () => {
   // Image generation state
   const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  const [autoGenerateImages, setAutoGenerateImages] = useState(true);
+  const [imageProviderAvailable, setImageProviderAvailable] = useState(false);
+  const [imageSlots, setImageSlots] = useState<ImageSlot[]>([]);
   
   // Extract title from content
   const extractedTitle = extractTitleFromContent(content);
+
+  // Check if image provider is available on mount
+  useEffect(() => {
+    const checkProvider = async () => {
+      const available = await imageGenOrchestrator.isAvailable();
+      setImageProviderAvailable(available);
+    };
+    checkProvider();
+  }, []);
 
   const handleGenerateMoreImages = async () => {
     if (!content || content.length < 200) {
@@ -146,11 +159,65 @@ export const ContentWritingStep = () => {
       if (generatedContent) {
         handleContentChange(generatedContent);
         toast.success(`Content generated successfully using ${primaryProvider}!`);
+        
+        // ========================================
+        // AUTO-GENERATE IMAGES after content is created
+        // ========================================
+        if (autoGenerateImages && imageProviderAvailable && generatedContent.length > 500) {
+          await autoGenerateImagesForContent(generatedContent);
+        }
       }
     } catch (error) {
       toast.error(`Content generation failed with ${aiProvider}. Please try another provider.`);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  /**
+   * Auto-generate images for content after it's created
+   */
+  const autoGenerateImagesForContent = async (generatedContent: string) => {
+    try {
+      const analysis = imageGenOrchestrator.analyzeContent(generatedContent);
+      
+      if (!analysis.shouldGenerate || analysis.suggestedCount === 0) {
+        console.log('[Image Auto-Gen] Content too short or no slots detected');
+        return;
+      }
+
+      toast.info(`Generating ${analysis.suggestedCount} images...`, {
+        id: 'image-gen-progress',
+        duration: 30000
+      });
+
+      setIsGeneratingImages(true);
+      setImageSlots(analysis.slots);
+
+      const result = await imageGenOrchestrator.orchestrateForContent(generatedContent, {
+        maxImages: 3, // Limit to 3 images max
+        onSlotUpdate: (updatedSlot) => {
+          setImageSlots(prev => 
+            prev.map(s => s.id === updatedSlot.id ? updatedSlot : s)
+          );
+        },
+        onComplete: (images) => {
+          setAttachedImages(prev => [...prev, ...images]);
+          toast.success(`Generated ${images.length} images!`, { id: 'image-gen-progress' });
+        },
+        onError: (error) => {
+          toast.error(`Image generation failed: ${error.message}`, { id: 'image-gen-progress' });
+        }
+      });
+
+      if (!result.success && result.errors.length > 0) {
+        console.error('[Image Auto-Gen] Errors:', result.errors);
+      }
+    } catch (error) {
+      console.error('[Image Auto-Gen] Failed:', error);
+      toast.dismiss('image-gen-progress');
+    } finally {
+      setIsGeneratingImages(false);
     }
   };
   
@@ -196,6 +263,11 @@ export const ContentWritingStep = () => {
             aiEstimatedWordCount={aiEstimatedWordCount}
             customWordCount={customWordCount}
             onWordCountChange={handleWordCountChange}
+            autoGenerateImages={autoGenerateImages}
+            onAutoGenerateImagesChange={setAutoGenerateImages}
+            isGeneratingImages={isGeneratingImages}
+            imagesCount={attachedImages.length}
+            imageProviderAvailable={imageProviderAvailable}
             autoSaveTimestamp={autoSaveTimestamp}
             hasUnsavedChanges={hasUnsavedChanges}
             onManualSave={handleManualSave}
