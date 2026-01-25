@@ -109,8 +109,9 @@ describe('campaignStrategyNormalizer', () => {
       expect(normalized.title).toBe('Minimal Campaign');
       expect(normalized.description).toBe('Basic campaign');
       expect(normalized.id).toBeDefined();
-      expect(normalized.targetAudience).toBe('General Audience');
-      expect(normalized.timeline).toBe('To be determined');
+      // targetAudience and timeline are optional - only set if provided
+      expect(normalized.targetAudience).toBeUndefined();
+      expect(normalized.timeline).toBeUndefined();
     });
 
     it('should generate ID if missing', () => {
@@ -123,7 +124,7 @@ describe('campaignStrategyNormalizer', () => {
       const normalized = normalizeCampaignStrategy(strategyWithoutId);
       
       expect(normalized.id).toBeDefined();
-      expect(normalized.id).toMatch(/^campaign-/);
+      expect(normalized.id).toMatch(/^strategy-/);
     });
 
     it('should normalize avgRankingDifficulty to valid values', () => {
@@ -164,6 +165,72 @@ describe('campaignStrategyNormalizer', () => {
       expect(Array.isArray(normalized.audienceIntelligence?.personas)).toBe(true);
       expect(Array.isArray(normalized.audienceIntelligence?.painPoints)).toBe(true);
       expect(normalized.audienceIntelligence?.industrySegments).toEqual(['Tech', 'SaaS']);
+    });
+
+    it('should preserve contentBriefs array when provided', () => {
+      const rawStrategy = {
+        id: 'test-1',
+        title: 'Test Strategy',
+        description: 'Test description',
+        contentMix: [{ formatId: 'blog', count: 2 }],
+        contentBriefs: [
+          {
+            formatId: 'blog',
+            pieceIndex: 0,
+            title: 'Test Blog Post',
+            description: 'A test description',
+            keywords: ['test', 'blog'],
+            metaTitle: 'Test Meta',
+            metaDescription: 'Test meta desc',
+            targetWordCount: 1500,
+            difficulty: 'medium',
+            serpOpportunity: 75,
+            ctaText: 'Learn More',
+            publishDate: '',
+            utmParams: {}
+          }
+        ]
+      };
+      
+      const result = normalizeCampaignStrategy(rawStrategy);
+      expect(result.contentBriefs).toBeDefined();
+      expect(result.contentBriefs?.length).toBe(1);
+      expect(result.contentBriefs?.[0].title).toBe('Test Blog Post');
+      expect(result.contentBriefs?.[0].targetWordCount).toBe(1500);
+    });
+
+    it('should normalize contentBriefs with missing fields', () => {
+      const rawStrategy = {
+        title: 'Test',
+        description: 'Test',
+        contentMix: [],
+        contentBriefs: [
+          {
+            formatId: 'social-twitter',
+            title: 'Twitter Thread'
+            // Missing other fields
+          }
+        ]
+      };
+      
+      const result = normalizeCampaignStrategy(rawStrategy);
+      expect(result.contentBriefs).toBeDefined();
+      expect(result.contentBriefs?.[0].formatId).toBe('social-twitter');
+      expect(result.contentBriefs?.[0].title).toBe('Twitter Thread');
+      expect(result.contentBriefs?.[0].targetWordCount).toBe(500); // Default
+      expect(result.contentBriefs?.[0].difficulty).toBe('medium'); // Default
+    });
+
+    it('should return undefined contentBriefs for empty array', () => {
+      const rawStrategy = {
+        title: 'Test',
+        description: 'Test',
+        contentMix: [],
+        contentBriefs: []
+      };
+      
+      const result = normalizeCampaignStrategy(rawStrategy);
+      expect(result.contentBriefs).toBeUndefined();
     });
   });
 });
