@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { TitleGenerationButton } from './TitleGenerationButton';
 import { WordCountToggle } from './WordCountToggle';
+import { ImageAutoGenToggle } from './ImageAutoGenToggle';
 import { 
   Sparkles, 
   ListTodo, 
@@ -26,6 +27,13 @@ interface ContentGenerationHeaderProps {
   customWordCount: number;
   onWordCountChange: (count: number) => void;
   
+  // Image Auto-Gen Props
+  autoGenerateImages?: boolean;
+  onAutoGenerateImagesChange?: (enabled: boolean) => void;
+  isGeneratingImages?: boolean;
+  imagesCount?: number;
+  imageProviderAvailable?: boolean;
+  
   autoSaveTimestamp?: string | null;
   hasUnsavedChanges?: boolean;
   onManualSave?: () => void;
@@ -42,6 +50,11 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   aiEstimatedWordCount,
   customWordCount,
   onWordCountChange,
+  autoGenerateImages = true,
+  onAutoGenerateImagesChange,
+  isGeneratingImages = false,
+  imagesCount = 0,
+  imageProviderAvailable = true,
   autoSaveTimestamp,
   hasUnsavedChanges
 }) => {
@@ -96,6 +109,17 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
             customValue={customWordCount}
             onCustomValueChange={onWordCountChange}
           />
+          
+          {/* Image Auto-Gen Toggle */}
+          {onAutoGenerateImagesChange && (
+            <ImageAutoGenToggle
+              enabled={autoGenerateImages}
+              onEnabledChange={onAutoGenerateImagesChange}
+              isGenerating={isGeneratingImages}
+              imagesCount={imagesCount}
+              providerAvailable={imageProviderAvailable}
+            />
+          )}
         </div>
         
         <div className="flex items-center gap-4">
