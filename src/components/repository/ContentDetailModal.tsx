@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,8 @@ import { RepositorySerpDisplay } from './RepositorySerpDisplay';
 import { RepositoryDocumentStructure } from './RepositoryDocumentStructure';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { MediaAssetsSection, MediaAsset } from '@/components/content/MediaAssetsSection';
+import { imageGenOrchestrator } from '@/services/imageGenOrchestrator';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContentDetailModalProps {
   content: ContentItemType | null;
@@ -72,6 +74,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const navigate = useNavigate();
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  const [localGeneratedImages, setLocalGeneratedImages] = useState<MediaAsset[]>([]);
   
   // Debug logging to track content data
   useEffect(() => {
@@ -98,11 +102,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const [isDocumentStructureOpen, setIsDocumentStructureOpen] = useState(false);
   const [isRepurposedOpen, setIsRepurposedOpen] = useState(true);
   
-  // Get generated images from content
+  // Get generated images from content (combine DB images with locally generated)
   const generatedImages: MediaAsset[] = useMemo(() => {
-    const images = (content as any)?.generated_images || (content as any)?.metadata?.generated_images || [];
-    if (!Array.isArray(images)) return [];
-    return images.map((img: any, index: number) => ({
+    const dbImages = (content as any)?.generated_images || (content as any)?.metadata?.generated_images || [];
+    const allImages = [...(Array.isArray(dbImages) ? dbImages : []), ...localGeneratedImages];
+    return allImages.map((img: any, index: number) => ({
       id: img.id || `image-${index}`,
       url: img.url,
       type: 'image' as const,
@@ -110,7 +114,65 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       alt: img.alt || img.prompt,
       createdAt: img.createdAt || img.created_at
     }));
-  }, [content]);
+  }, [content, localGeneratedImages]);
+
+  // Reset local images when content changes
+  useEffect(() => {
+    setLocalGeneratedImages([]);
+  }, [content?.id]);
+
+  // Handle image generation for repository content
+  const handleGenerateImages = useCallback(async () => {
+    if (!content?.content || isGeneratingImages) return;
+    
+    setIsGeneratingImages(true);
+    toast.info('Analyzing content and generating images...');
+    
+    try {
+      const result = await imageGenOrchestrator.orchestrateForContent(content.content, {
+        maxImages: 3,
+        onSlotUpdate: (slot) => {
+          console.log('[ContentDetailModal] Slot update:', slot);
+        }
+      });
+      
+      if (result.images.length > 0) {
+        // Add to local state for immediate display
+        const newImages: MediaAsset[] = result.images.map((img, idx) => ({
+          id: `generated-${Date.now()}-${idx}`,
+          url: img.url,
+          type: 'image' as const,
+          prompt: img.prompt,
+          alt: img.prompt,
+          createdAt: new Date().toISOString()
+        }));
+        setLocalGeneratedImages(newImages);
+        
+        // Persist to database
+        const existingImages = (content as any)?.generated_images || [];
+        const allImages = [...(Array.isArray(existingImages) ? existingImages : []), ...result.images];
+        
+        const { error } = await supabase
+          .from('content_items')
+          .update({ generated_images: allImages })
+          .eq('id', content.id);
+        
+        if (error) {
+          console.error('[ContentDetailModal] Failed to save images:', error);
+          toast.error('Images generated but failed to save');
+        } else {
+          toast.success(`Generated ${result.images.length} images`);
+        }
+      } else {
+        toast.info('No suitable image slots found in content');
+      }
+    } catch (error) {
+      console.error('[ContentDetailModal] Image generation error:', error);
+      toast.error('Failed to generate images');
+    } finally {
+      setIsGeneratingImages(false);
+    }
+  }, [content, isGeneratingImages]);
   
   // Repurposing states
   const [repurposingModalOpen, setRepurposingModalOpen] = useState(false);
@@ -475,19 +537,27 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   icon={ImageIcon}
                   count={generatedImages.length}
                 >
-                  <MediaAssetsSection
-                    images={generatedImages}
-                    isCollapsible={false}
-                    showVideoPlaceholder={true}
-                    showEmptyState={true}
-                    onDelete={(asset) => {
-                      toast.info('Image deletion coming soon');
-                    }}
-                    onRegenerate={(asset) => {
-                      toast.info('Image regeneration coming soon');
-                    }}
-                    compact={false}
-                  />
+                  {isGeneratingImages ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+                      <p className="text-sm text-muted-foreground">Generating images...</p>
+                    </div>
+                  ) : (
+                    <MediaAssetsSection
+                      images={generatedImages}
+                      isCollapsible={false}
+                      showVideoPlaceholder={true}
+                      showEmptyState={true}
+                      onDelete={(asset) => {
+                        toast.info('Image deletion coming soon');
+                      }}
+                      onRegenerate={(asset) => {
+                        toast.info('Image regeneration coming soon');
+                      }}
+                      onGenerateImage={handleGenerateImages}
+                      compact={false}
+                    />
+                  )}
                 </CollapsibleSection>
 
                 {/* Repurposed Content Section */}
