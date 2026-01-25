@@ -12,3 +12,5 @@ export {
   VideoPlaceholder, 
   VideoComingSoonBadge 
 } from './VideoPlaceholder';
+
+export { VideoGenerationButton } from './VideoGenerationButton';
