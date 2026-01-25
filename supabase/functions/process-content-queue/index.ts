@@ -141,7 +141,7 @@ async function generateContentWithRetry(supabase: any, item: QueueItem): Promise
     try {
       console.log(`🎯 [Queue Item ${item.id}] Attempt ${attempt + 1}/${MAX_RETRIES + 1}`);
 
-      // Call campaign-content-generator edge function
+      // Call campaign-content-generator edge function (with image generation enabled)
       const { data, error } = await supabase.functions.invoke('campaign-content-generator', {
         body: {
           brief: item.brief,
@@ -150,11 +150,17 @@ async function generateContentWithRetry(supabase: any, item: QueueItem): Promise
           formatId: item.format_id,
           campaignContext: item.campaign_context,
           solutionData: item.solution_data,
-          userId: item.user_id
+          userId: item.user_id,
+          generateImages: true // Enable automatic image generation
         }
       });
 
       if (error) throw error;
+      
+      // Log image generation results
+      if (data?.imagesGenerated > 0) {
+        console.log(`🖼️ [Queue Item ${item.id}] Generated ${data.imagesGenerated} images`);
+      }
       return data;
 
     } catch (error: any) {
