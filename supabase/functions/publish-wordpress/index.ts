@@ -1,9 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.6';
-import { corsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../shared/cors.ts';
 import { marked } from 'https://esm.sh/marked@11.1.1';
+import DOMPurify from 'https://esm.sh/isomorphic-dompurify@2.3.0';
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -49,10 +53,34 @@ serve(async (req) => {
     console.log('Publishing to WordPress:', connection.site_url);
 
     // Convert Markdown to HTML using marked library
-    const htmlContent = marked.parse(contentMd, { 
+    const rawHtml = marked.parse(contentMd, { 
       gfm: true, // GitHub Flavored Markdown
       breaks: true // Convert line breaks to <br>
     }) as string;
+
+    // SECURITY: Sanitize HTML to prevent XSS attacks
+    const htmlContent = DOMPurify.sanitize(rawHtml, {
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'p', 'br', 'hr',
+        'ul', 'ol', 'li',
+        'strong', 'em', 'b', 'i', 'u', 's', 'strike',
+        'a', 'img',
+        'blockquote', 'pre', 'code',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'div', 'span',
+        'figure', 'figcaption',
+      ],
+      ALLOWED_ATTR: [
+        'href', 'src', 'alt', 'title', 'class', 'id',
+        'target', 'rel', 'width', 'height',
+        'colspan', 'rowspan', 'scope',
+      ],
+      ALLOW_DATA_ATTR: false,
+    });
+
+    // Create credentials for WordPress API
+    const credentials = btoa(`${connection.username}:${connection.app_password}`);
 
     // Helper function to resolve taxonomy IDs
     async function resolveTaxonomyIds(taxonomy: 'tags' | 'categories', names: string[]): Promise<number[]> {
@@ -103,11 +131,11 @@ serve(async (req) => {
 
     // Create post payload
     const postPayload: any = {
-      title,
+      title: DOMPurify.sanitize(title), // Sanitize title too
       content: htmlContent,
       status,
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      excerpt: excerpt || ''
+      excerpt: excerpt ? DOMPurify.sanitize(excerpt) : ''
     };
 
     // Add scheduling if future date provided
@@ -134,7 +162,6 @@ serve(async (req) => {
 
     // Publish to WordPress
     const wpUrl = `${connection.site_url}/wp-json/wp/v2/posts`;
-    const credentials = btoa(`${connection.username}:${connection.app_password}`);
     
     const response = await fetch(wpUrl, {
       method: 'POST',
@@ -165,6 +192,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in publish-wordpress:', error);
+    const origin = req.headers.get('origin');
     return new Response(
       JSON.stringify({ 
         ok: false, 
@@ -172,7 +200,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } 
       }
     );
   }

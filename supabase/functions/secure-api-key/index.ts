@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders } from '../shared/cors.ts';
 
 // Server-side encryption key (from environment - never exposed to client)
 const ENCRYPTION_KEY = Deno.env.get('API_KEY_ENCRYPTION_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -120,6 +116,10 @@ async function decryptApiKey(encryptedData: string, userId: string): Promise<str
 
 serve(async (req) => {
   console.log('🔐 Secure API Key Edge Function called');
+  
+  // Get origin for CORS
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -255,6 +255,7 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('💥 Secure API Key error:', error);
+    const corsHeaders = getCorsHeaders(req.headers.get('origin'));
     return new Response(
       JSON.stringify({ 
         success: false, 
