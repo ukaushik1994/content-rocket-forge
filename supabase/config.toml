@@ -157,3 +157,5 @@ verify_jwt = false
 [functions.check-video-status]
 verify_jwt = false
 
+[functions.edit-image]
+verify_jwt = false
