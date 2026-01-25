@@ -75,28 +75,41 @@ class SecureEncryption {
         }
       });
 
-      if (error) {
-        console.error('❌ Server-side decryption failed:', error);
-        throw new Error(`Failed to decrypt API key: ${error.message}`);
-      }
+     // When edge function returns 400, Supabase puts response in error.context
+     if (error) {
+       console.error('❌ Server-side decryption failed:', error);
+       
+       // Check if error contains the requiresReentry flag
+       const errorContext = (error as any).context;
+       if (errorContext?.requiresReentry || 
+           errorContext?.error?.includes('legacy') || 
+           errorContext?.error?.includes('re-entry')) {
+         console.warn('⚠️ Legacy key format detected in error response');
+         const legacyError = new Error('LEGACY_KEY_REQUIRES_REENTRY');
+         (legacyError as any).requiresReentry = true;
+         throw legacyError;
+       }
+       
+       throw new Error(`Failed to decrypt API key: ${error.message}`);
+     }
 
-      // Check for legacy key format that requires re-entry
-      if (data?.requiresReentry) {
-        console.warn('⚠️ Legacy key format detected - requires re-entry');
-        const legacyError = new Error('LEGACY_KEY_REQUIRES_REENTRY');
-        (legacyError as any).requiresReentry = true;
-        throw legacyError;
-      }
+     // Check for legacy key format that requires re-entry (success case)
+     if (data?.requiresReentry) {
+       console.warn('⚠️ Legacy key format detected - requires re-entry');
+       const legacyError = new Error('LEGACY_KEY_REQUIRES_REENTRY');
+       (legacyError as any).requiresReentry = true;
+       throw legacyError;
+     }
 
-      if (!data?.success || !data?.apiKey) {
-        // Check if it's a legacy format error in the response
-        if (data?.error?.includes('legacy') || data?.error?.includes('re-entry')) {
-          const legacyError = new Error('LEGACY_KEY_REQUIRES_REENTRY');
-          (legacyError as any).requiresReentry = true;
-          throw legacyError;
-        }
-        throw new Error('Server-side decryption returned invalid response');
-      }
+     if (!data?.success || !data?.apiKey) {
+       // Check if it's a legacy format error in the response
+       if (data?.error?.includes('legacy') || data?.error?.includes('re-entry')) {
+         const legacyError = new Error('LEGACY_KEY_REQUIRES_REENTRY');
+         (legacyError as any).requiresReentry = true;
+         throw legacyError;
+       }
+       throw new Error('Server-side decryption returned invalid response');
+     }
 
       console.log('✅ API key decrypted successfully (server-side)');
       return data.apiKey;
