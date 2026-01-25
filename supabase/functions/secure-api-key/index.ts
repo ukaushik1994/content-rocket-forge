@@ -231,6 +231,7 @@ serve(async (req) => {
         const isLegacyKey = decryptError?.message === 'LEGACY_KEY_FORMAT' || 
                            decryptError?.message?.includes('Tag length overflows');
         
+       // Return 200 with success:false for legacy keys so client can handle gracefully
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -239,7 +240,10 @@ serve(async (req) => {
               : 'Failed to decrypt API key',
             requiresReentry: isLegacyKey
           }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+         { 
+           status: isLegacyKey ? 200 : 400, 
+           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+         }
         );
       }
     }
