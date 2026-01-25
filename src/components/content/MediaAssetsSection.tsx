@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Video, Download, Trash2, RefreshCw, Maximize2, X, Film, Sparkles, Play } from 'lucide-react';
+import { Image, Video, Download, Trash2, RefreshCw, Maximize2, X, Film, Sparkles, Play, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { VideoPlaceholder } from './VideoPlaceholder';
 import { VideoGenerationButton } from './VideoGenerationButton';
+import { ImageEditingModal } from './ImageEditingModal';
 import type { GeneratedVideo } from '@/services/videoGenService';
+import type { EditedImage } from '@/services/imageEditService';
 
 export interface MediaAsset {
   id: string;
@@ -32,6 +34,7 @@ interface MediaAssetsSectionProps {
   onDownload?: (asset: MediaAsset) => void;
   onGenerateImage?: () => void;
   onVideoGenerated?: (video: GeneratedVideo) => void;
+  onImageEdited?: (image: EditedImage) => void;
   contentId?: string;
   className?: string;
   compact?: boolean;
@@ -52,6 +55,7 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
   onDownload,
   onGenerateImage,
   onVideoGenerated,
+  onImageEdited,
   contentId,
   className,
   compact = false,
@@ -62,6 +66,7 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [lightboxImage, setLightboxImage] = useState<MediaAsset | null>(null);
   const [lightboxVideo, setLightboxVideo] = useState<MediaAsset | null>(null);
+  const [editingImage, setEditingImage] = useState<MediaAsset | null>(null);
 
   // Apply maxDisplay limit if specified
   const displayImages = maxDisplay ? images.slice(0, maxDisplay) : images;
@@ -108,6 +113,7 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
               variant="ghost"
               className="h-8 w-8 text-white hover:bg-white/20"
               onClick={() => setLightboxImage(image)}
+              title="View fullscreen"
             >
               <Maximize2 className="h-4 w-4" />
             </Button>
@@ -115,7 +121,17 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
               size="icon"
               variant="ghost"
               className="h-8 w-8 text-white hover:bg-white/20"
+              onClick={() => setEditingImage(image)}
+              title="Edit image"
+            >
+              <Wand2 className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-white hover:bg-white/20"
               onClick={() => handleDownload(image)}
+              title="Download"
             >
               <Download className="h-4 w-4" />
             </Button>
@@ -125,6 +141,7 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
                 variant="ghost"
                 className="h-8 w-8 text-white hover:bg-white/20"
                 onClick={() => onRegenerate(image)}
+                title="Regenerate"
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
@@ -394,6 +411,20 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Image Editing Modal */}
+      {editingImage && (
+        <ImageEditingModal
+          isOpen={!!editingImage}
+          onClose={() => setEditingImage(null)}
+          sourceImage={editingImage}
+          onImageEdited={(edited) => {
+            onImageEdited?.(edited);
+            setEditingImage(null);
+          }}
+          contentId={contentId}
+        />
+      )}
     </Collapsible>
   );
 };

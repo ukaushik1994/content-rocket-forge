@@ -14,3 +14,5 @@ export {
 } from './VideoPlaceholder';
 
 export { VideoGenerationButton } from './VideoGenerationButton';
+
+export { ImageEditingModal } from './ImageEditingModal';
