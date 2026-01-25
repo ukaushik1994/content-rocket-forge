@@ -186,18 +186,19 @@ class ApiKeyService {
         console.log(`✅ ${normalizedService} API key decrypted successfully`);
         return decryptedKey;
       } catch (decryptError: any) {
-        // If decryption fails, it might be an old format
-        console.warn(`⚠️ ${service} API key decryption failed, attempting migration:`, decryptError.message);
-        try {
-          // Try to migrate the key
-          const migratedKey = await migrateApiKey(data.encrypted_key, user.id);
-          console.log(`✅ ${service} API key migrated successfully`);
-          return migratedKey;
-        } catch (migrationError: any) {
-          console.error(`❌ Failed to migrate ${service} API key:`, migrationError);
-          toast.error(`${service} API key needs to be re-entered due to security upgrade`);
+        // Check if it's a legacy key that requires re-entry
+        if (decryptError.message === 'LEGACY_KEY_REQUIRES_REENTRY' || decryptError.requiresReentry) {
+          console.warn(`⚠️ ${service} API key requires re-entry (legacy format)`);
+          toast.error(`Please re-enter your ${service} API key - security upgrade required`, {
+            duration: 5000,
+            id: `legacy-key-${service}` // Prevent duplicate toasts
+          });
           return null;
         }
+        
+        // For other decryption errors, show a generic message
+        console.error(`❌ ${service} API key decryption failed:`, decryptError.message);
+        return null;
       }
     } catch (error: any) {
       console.error(`❌ Error retrieving ${service} API key:`, error);

@@ -80,13 +80,31 @@ class SecureEncryption {
         throw new Error(`Failed to decrypt API key: ${error.message}`);
       }
 
+      // Check for legacy key format that requires re-entry
+      if (data?.requiresReentry) {
+        console.warn('⚠️ Legacy key format detected - requires re-entry');
+        const legacyError = new Error('LEGACY_KEY_REQUIRES_REENTRY');
+        (legacyError as any).requiresReentry = true;
+        throw legacyError;
+      }
+
       if (!data?.success || !data?.apiKey) {
+        // Check if it's a legacy format error in the response
+        if (data?.error?.includes('legacy') || data?.error?.includes('re-entry')) {
+          const legacyError = new Error('LEGACY_KEY_REQUIRES_REENTRY');
+          (legacyError as any).requiresReentry = true;
+          throw legacyError;
+        }
         throw new Error('Server-side decryption returned invalid response');
       }
 
       console.log('✅ API key decrypted successfully (server-side)');
       return data.apiKey;
     } catch (error: any) {
+      // Re-throw legacy key errors with the flag preserved
+      if (error.message === 'LEGACY_KEY_REQUIRES_REENTRY' || error.requiresReentry) {
+        throw error;
+      }
       console.error('❌ Decryption error:', error);
       throw new Error(`Failed to decrypt API key: ${error.message}`);
     }
