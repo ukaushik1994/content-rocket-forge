@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { OpportunityDetailModal } from './OpportunityDetailModal';
 import { ProposalStatusBadge } from './ProposalStatusBadge';
 import { VideoComingSoonBadge } from '@/components/content/VideoPlaceholder';
+import { SuggestedImagesList } from './SuggestedImagesList';
 
 interface ProposalCardProps {
   proposal: any;
@@ -171,10 +172,14 @@ export const ProposalCard = ({ proposal, index, isSelected, onSelectionChange, o
             />
           )}
           {/* Media indicators */}
-          <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-border bg-muted/10">
-            <ImageIcon className="h-3 w-3" />
-            Will include images
-          </Badge>
+          {proposal.suggested_images && proposal.suggested_images.length > 0 ? (
+            <SuggestedImagesList images={proposal.suggested_images} compact />
+          ) : (
+            <Badge variant="outline" className="text-xs gap-1 text-muted-foreground border-border bg-muted/10">
+              <ImageIcon className="h-3 w-3" />
+              Will include images
+            </Badge>
+          )}
           <VideoComingSoonBadge />
           {showHistoricalBadge && (
             <Badge variant="outline" className="text-xs text-orange-400 bg-orange-500/10 border-orange-400/30">
