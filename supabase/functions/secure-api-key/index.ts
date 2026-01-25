@@ -89,15 +89,33 @@ async function encryptApiKey(plaintext: string, userId: string): Promise<string>
 }
 
 async function decryptApiKey(encryptedData: string, userId: string): Promise<string> {
-  // Decode base64
-  const combined = new Uint8Array(
-    atob(encryptedData).split('').map(c => c.charCodeAt(0))
-  );
+  // Validate the encrypted data format first
+  let combined: Uint8Array;
+  try {
+    combined = new Uint8Array(
+      atob(encryptedData).split('').map(c => c.charCodeAt(0))
+    );
+  } catch (e) {
+    console.error('❌ Invalid base64 encoding in encrypted data');
+    throw new Error('LEGACY_KEY_FORMAT');
+  }
+  
+  // Minimum size: 32 (salt) + 12 (iv) + 16 (min AES-GCM tag) = 60 bytes
+  if (combined.length < 60) {
+    console.error('❌ Encrypted data too short - likely legacy format');
+    throw new Error('LEGACY_KEY_FORMAT');
+  }
   
   // Extract salt, IV, and encrypted data
   const salt = combined.slice(0, 32);
   const iv = combined.slice(32, 44);
   const encrypted = combined.slice(44);
+  
+  // AES-GCM requires at least 16 bytes for the auth tag
+  if (encrypted.length < 16) {
+    console.error('❌ Ciphertext too short for AES-GCM - likely legacy format');
+    throw new Error('LEGACY_KEY_FORMAT');
+  }
   
   // Derive key using server secret + user ID
   const masterPassword = `${ENCRYPTION_KEY}_${userId}`;
@@ -208,8 +226,19 @@ serve(async (req) => {
         );
       } catch (decryptError: any) {
         console.error('❌ Decryption failed:', decryptError);
+        
+        // Check if it's a legacy key format error
+        const isLegacyKey = decryptError?.message === 'LEGACY_KEY_FORMAT' || 
+                           decryptError?.message?.includes('Tag length overflows');
+        
         return new Response(
-          JSON.stringify({ success: false, error: 'Failed to decrypt API key' }),
+          JSON.stringify({ 
+            success: false, 
+            error: isLegacyKey 
+              ? 'API key requires re-entry (legacy encryption format)' 
+              : 'Failed to decrypt API key',
+            requiresReentry: isLegacyKey
+          }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
