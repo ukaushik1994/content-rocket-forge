@@ -412,6 +412,35 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
         </DialogContent>
       </Dialog>
 
+      {/* Video Lightbox */}
+      <Dialog open={!!lightboxVideo} onOpenChange={() => setLightboxVideo(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          {lightboxVideo && (
+            <div className="relative bg-black">
+              <video 
+                src={lightboxVideo.url} 
+                controls
+                autoPlay
+                className="w-full h-auto max-h-[80vh]"
+              />
+              <Button
+                size="icon"
+                variant="ghost"
+                className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 z-10"
+                onClick={() => setLightboxVideo(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              {lightboxVideo.prompt && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-4">
+                  <p className="text-white text-sm">{lightboxVideo.prompt}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Image Editing Modal */}
       {editingImage && (
         <ImageEditingModal
