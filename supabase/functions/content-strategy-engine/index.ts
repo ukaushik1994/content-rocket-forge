@@ -196,6 +196,40 @@ function validateBusinessContext(proposal: any, companyInfo: any, solutions: any
   };
 }
 
+// Generate default image suggestions when AI doesn't provide them
+function generateDefaultImageSuggestions(title: string, contentType: string = 'blog'): Array<{type: string, description: string, purpose: string}> {
+  const suggestions = [
+    {
+      type: 'hero',
+      description: `Professional hero image for "${title}"`,
+      purpose: 'Featured image to capture attention and represent the main topic'
+    }
+  ];
+  
+  // Add content-type specific suggestions
+  if (contentType === 'guide' || contentType === 'article') {
+    suggestions.push({
+      type: 'infographic',
+      description: `Process or data visualization for the key concepts in "${title}"`,
+      purpose: 'Help readers understand complex information visually'
+    });
+  } else if (contentType === 'case_study') {
+    suggestions.push({
+      type: 'screenshot',
+      description: `Product screenshot or results dashboard showing success metrics`,
+      purpose: 'Provide visual proof of results and credibility'
+    });
+  } else {
+    suggestions.push({
+      type: 'illustration',
+      description: `Conceptual illustration supporting the main theme of "${title}"`,
+      purpose: 'Break up text and reinforce key concepts visually'
+    });
+  }
+  
+  return suggestions;
+}
+
 function classifyProposal(
   keywords: any[], 
   serpData: Record<string, any>,
@@ -1138,7 +1172,14 @@ Return ONLY the JSON object with 12 unique, high-quality keywords.`
           messages: [
             {
               role: 'system',
-              content: `You are a content strategist. Generate exactly 6 strategic content proposals based on keyword research and SERP data. Return ONLY a JSON object with this structure: {"proposals": [{"title": "proposal title", "description": "brief description", "keywords": ["keyword1", "keyword2"], "content_type": "blog|article|guide|case_study", "priority": "high|medium|low", "estimated_effort": "1-2 weeks|2-4 weeks|1+ months"}]}${competitorContext.length > 0 ? '\n\nIMPORTANT: When competitor context is provided, generate proposals that emphasize competitive advantages and address competitor weaknesses.' : ''}`
+              content: `You are a content strategist. Generate exactly 6 strategic content proposals based on keyword research and SERP data. Return ONLY a JSON object with this structure: {"proposals": [{"title": "proposal title", "description": "brief description", "keywords": ["keyword1", "keyword2"], "content_type": "blog|article|guide|case_study", "priority": "high|medium|low", "estimated_effort": "1-2 weeks|2-4 weeks|1+ months", "suggested_images": [{"type": "hero|infographic|diagram|screenshot|illustration", "description": "brief description of what the image should show", "purpose": "why this image enhances the content"}]}]}
+
+IMPORTANT: Each proposal MUST include 2-3 suggested_images that would enhance the content. Image types:
+- hero: Main header/featured image for the content
+- infographic: Data visualization or process flow
+- diagram: Technical or conceptual diagram
+- screenshot: Product or interface screenshot
+- illustration: Custom illustration for concepts${competitorContext.length > 0 ? '\n\nIMPORTANT: When competitor context is provided, generate proposals that emphasize competitive advantages and address competitor weaknesses.' : ''}`
             },
             {
               role: 'user',
@@ -1148,7 +1189,7 @@ Company Context: ${JSON.stringify(companyInfo || {})}
 Solutions: ${JSON.stringify((solutions || []).map((s: any) => s.title || s.name).slice(0, 10))}
 Keyword Data: ${JSON.stringify(enriched.slice(0, 8))}${competitorContext.length > 0 ? `\n\nCompetitive Intelligence:\n${competitorContext.map((ctx: any, i: number) => `${i + 1}. "${ctx.solution.name}" vs "${ctx.competitor.name}":\n   Competitor Strengths: ${ctx.competitor.strengths.slice(0, 2).join(', ')}\n   Competitor Weaknesses: ${ctx.competitor.weaknesses.slice(0, 2).join(', ')}\n   Our Advantage: Highlight how our solution addresses competitor weaknesses`).join('\n')}` : ''}
 
-Create exactly 6 strategic content proposals that leverage these keywords and align with the company's solutions.${competitorContext.length > 0 ? ' For each solution-competitor pair, generate proposals that differentiate our positioning and highlight competitive advantages.' : ''} Focus on delivering the most valuable opportunities. Return ONLY the JSON object.`
+Create exactly 6 strategic content proposals that leverage these keywords and align with the company's solutions.${competitorContext.length > 0 ? ' For each solution-competitor pair, generate proposals that differentiate our positioning and highlight competitive advantages.' : ''} Include 2-3 suggested images per proposal. Focus on delivering the most valuable opportunities. Return ONLY the JSON object.`
             }
           ]
         }
@@ -1236,6 +1277,8 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
       business_context: classification.business_context,
       // Add classification reasoning for debugging
       classification_reasoning: generateClassificationReasoning(classification, kws),
+      // Image suggestions from AI
+      suggested_images: p.suggested_images || generateDefaultImageSuggestions(p.title, p.content_type),
       // Note: id will be auto-generated by database as UUID
       generated_at: new Date().toISOString()
     };
@@ -1329,7 +1372,8 @@ Create exactly 6 strategic content proposals that leverage these keywords and al
           proposal_data: {
             ...proposal,
             solution_ids: solutionIds.length > 0 ? solutionIds : null,
-            competitive_context: competitiveAngle
+            competitive_context: competitiveAngle,
+            suggested_images: proposal.suggested_images || []
           },
           serp_data: proposal.serp_data || {}
         })
