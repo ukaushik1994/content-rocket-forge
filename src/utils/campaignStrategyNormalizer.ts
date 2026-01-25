@@ -208,7 +208,7 @@ function normalizeSeoIntelligence(raw: any): CampaignStrategy['seoIntelligence']
 }
 
 /**
- * Normalize ContentBrief
+ * Normalize ContentBrief (basic version for ContentFormatCount.specificTopics)
  */
 function normalizeContentBrief(raw: any): ContentBrief {
   let difficulty: 'easy' | 'medium' | 'hard' = 'medium';
@@ -229,6 +229,59 @@ function normalizeContentBrief(raw: any): ContentBrief {
     difficulty,
     serpOpportunity: ensureNumber(raw.serpOpportunity, 'contentBrief.serpOpportunity', 50),
   };
+}
+
+/**
+ * Normalize full content briefs array for CampaignStrategy.contentBriefs
+ */
+function normalizeContentBriefs(rawBriefs: any): CampaignStrategy['contentBriefs'] {
+  if (!rawBriefs) {
+    console.warn('⚠️ [Normalizer] No contentBriefs found in strategy');
+    return undefined;
+  }
+  
+  if (!Array.isArray(rawBriefs)) {
+    console.warn('⚠️ [Normalizer] contentBriefs is not an array, attempting to extract');
+    // Try to extract if it's an object with array values
+    if (typeof rawBriefs === 'object') {
+      rawBriefs = Object.values(rawBriefs).flat();
+    } else {
+      return undefined;
+    }
+  }
+  
+  if (rawBriefs.length === 0) {
+    console.warn('⚠️ [Normalizer] contentBriefs array is empty');
+    return undefined;
+  }
+  
+  console.log(`✅ [Normalizer] Processing ${rawBriefs.length} content briefs`);
+  
+  return rawBriefs.map((brief: any, index: number) => {
+    let difficulty: 'easy' | 'medium' | 'hard' = 'medium';
+    if (brief.difficulty) {
+      const diff = String(brief.difficulty).toLowerCase();
+      if (diff === 'easy' || diff === 'medium' || diff === 'hard') {
+        difficulty = diff;
+      }
+    }
+    
+    return {
+      formatId: ensureString(brief.formatId, `contentBriefs[${index}].formatId`, 'blog'),
+      pieceIndex: ensureNumber(brief.pieceIndex, `contentBriefs[${index}].pieceIndex`, index),
+      title: ensureString(brief.title, `contentBriefs[${index}].title`, 'Untitled'),
+      description: ensureString(brief.description, `contentBriefs[${index}].description`, ''),
+      keywords: ensureArray(brief.keywords, `contentBriefs[${index}].keywords`),
+      metaTitle: ensureString(brief.metaTitle, `contentBriefs[${index}].metaTitle`, ''),
+      metaDescription: ensureString(brief.metaDescription, `contentBriefs[${index}].metaDescription`, ''),
+      targetWordCount: ensureNumber(brief.targetWordCount, `contentBriefs[${index}].targetWordCount`, 500),
+      difficulty,
+      serpOpportunity: ensureNumber(brief.serpOpportunity, `contentBriefs[${index}].serpOpportunity`, 50),
+      ctaText: ensureString(brief.ctaText, `contentBriefs[${index}].ctaText`, ''),
+      publishDate: ensureString(brief.publishDate, `contentBriefs[${index}].publishDate`, ''),
+      utmParams: brief.utmParams || {}
+    };
+  });
 }
 
 /**
@@ -304,6 +357,8 @@ export function normalizeCampaignStrategy(rawStrategy: any): CampaignStrategy {
     distributionStrategy: normalizeDistributionStrategy(rawStrategy.distributionStrategy),
     assetRequirements: normalizeAssetRequirements(rawStrategy.assetRequirements),
     optionalAddons: rawStrategy.optionalAddons || undefined,
+    // CRITICAL: Include contentBriefs for queue-based content generation
+    contentBriefs: normalizeContentBriefs(rawStrategy.contentBriefs),
   };
   
   // Log summary

@@ -116,6 +116,14 @@ const Campaigns = () => {
             return words.length > 50 ? words.substring(0, 47) + '...' : words;
           };
           
+          // Log briefs before saving for debugging
+          console.log('📊 [Campaigns] Strategy briefs count:', strategies[0].contentBriefs?.length || 0);
+          if (!strategies[0].contentBriefs?.length) {
+            console.error('❌ [Campaigns] No content briefs in strategy - content generation will fail!');
+          } else {
+            console.log('✅ [Campaigns] Content briefs ready:', strategies[0].contentBriefs.map(b => b.title).slice(0, 3));
+          }
+          
           const campaign = await createCampaignAtomic(
             user.id,
             generateCampaignName(input.idea || ''),
@@ -127,7 +135,7 @@ const Campaigns = () => {
           );
           
           setCurrentCampaignId(campaign.id);
-          console.log('✅ Campaign created immediately:', campaign.id);
+          console.log('✅ Campaign created immediately:', campaign.id, 'with', strategies[0].contentBriefs?.length || 0, 'briefs');
           toast.success('Campaign breakdown generated!');
           refetchCampaigns();
         } catch (campaignError) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CampaignInput, CampaignStrategy, CampaignStrategySummary } from '@/types/campaign-types';
+import { CampaignInput, CampaignStrategy, CampaignStrategySummary, ContentFormatCount } from '@/types/campaign-types';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { solutionService } from '@/services/solutionService';
@@ -343,6 +343,15 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
           return null;
         }
         
+        // CRITICAL: Generate contentBriefs from contentMix if missing
+        if (!strategy.contentBriefs || strategy.contentBriefs.length === 0) {
+          console.warn('⚠️ [Campaign Strategies] No contentBriefs from AI, generating from contentMix');
+          strategy.contentBriefs = generateBriefsFromContentMix(strategy.contentMix, strategy);
+          console.log(`✅ [Campaign Strategies] Generated ${strategy.contentBriefs?.length || 0} briefs from contentMix`);
+        } else {
+          console.log(`✅ [Campaign Strategies] Strategy has ${strategy.contentBriefs.length} contentBriefs`);
+        }
+        
         return strategy;
       }).filter(Boolean); // Remove any null entries
 
@@ -370,3 +379,105 @@ IMPORTANT: Ensure every content format has at least 2-3 specific topic briefs wi
 
   return { generateStrategies, isGenerating, error };
 };
+
+/**
+ * Generate content briefs from contentMix when AI doesn't provide them
+ */
+function generateBriefsFromContentMix(
+  contentMix: ContentFormatCount[], 
+  strategy: CampaignStrategy
+): CampaignStrategy['contentBriefs'] {
+  const briefs: CampaignStrategy['contentBriefs'] = [];
+  let globalIndex = 0;
+  
+  for (const format of contentMix) {
+    // Use specificTopics if available (from contentMix)
+    if (format.specificTopics && format.specificTopics.length > 0) {
+      for (let i = 0; i < format.count && i < format.specificTopics.length; i++) {
+        const topic = format.specificTopics[i];
+        briefs.push({
+          formatId: format.formatId,
+          pieceIndex: globalIndex++,
+          title: topic.title,
+          description: topic.description,
+          keywords: topic.keywords,
+          metaTitle: topic.metaTitle || topic.title,
+          metaDescription: topic.metaDescription || topic.description,
+          targetWordCount: topic.targetWordCount,
+          difficulty: topic.difficulty,
+          serpOpportunity: topic.serpOpportunity,
+          ctaText: '',
+          publishDate: '',
+          utmParams: {}
+        });
+      }
+      // Generate remaining pieces if count > specificTopics length
+      for (let i = format.specificTopics.length; i < format.count; i++) {
+        briefs.push(createPlaceholderBrief(format, strategy, globalIndex++, i));
+      }
+    } else {
+      // Generate placeholder briefs for all pieces
+      for (let i = 0; i < format.count; i++) {
+        briefs.push(createPlaceholderBrief(format, strategy, globalIndex++, i));
+      }
+    }
+  }
+  
+  return briefs;
+}
+
+function createPlaceholderBrief(
+  format: ContentFormatCount, 
+  strategy: CampaignStrategy, 
+  globalIndex: number, 
+  pieceIndex: number
+): NonNullable<CampaignStrategy['contentBriefs']>[number] {
+  const formatLabels: Record<string, string> = {
+    'blog': 'Blog Post',
+    'social-twitter': 'Twitter Thread',
+    'social-linkedin': 'LinkedIn Post',
+    'social-facebook': 'Facebook Post',
+    'social-instagram': 'Instagram Post',
+    'email': 'Email',
+    'script': 'Video Script',
+    'meme': 'Meme',
+    'carousel': 'Carousel',
+    'landing-page': 'Landing Page',
+    'google-ads': 'Google Ad'
+  };
+  
+  const label = formatLabels[format.formatId] || format.formatId;
+  
+  return {
+    formatId: format.formatId,
+    pieceIndex: globalIndex,
+    title: `${strategy.title} - ${label} #${pieceIndex + 1}`,
+    description: strategy.description,
+    keywords: strategy.seoIntelligence?.secondaryKeywords?.slice(0, 5) || [],
+    metaTitle: `${strategy.title} | ${label}`,
+    metaDescription: strategy.description.slice(0, 155),
+    targetWordCount: getDefaultWordCount(format.formatId),
+    difficulty: 'medium',
+    serpOpportunity: 50,
+    ctaText: strategy.assetRequirements?.ctaSuggestions?.[0] || 'Learn More',
+    publishDate: '',
+    utmParams: {}
+  };
+}
+
+function getDefaultWordCount(formatId: string): number {
+  const wordCounts: Record<string, number> = {
+    'blog': 1500,
+    'social-twitter': 280,
+    'social-linkedin': 500,
+    'social-facebook': 300,
+    'social-instagram': 200,
+    'email': 400,
+    'script': 800,
+    'meme': 50,
+    'carousel': 300,
+    'landing-page': 800,
+    'google-ads': 90
+  };
+  return wordCounts[formatId] || 500;
+}
