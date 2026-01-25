@@ -187,6 +187,37 @@ class AIServiceController {
       capabilities: ['image-generation', 'local', 'offline'],
       available_models: ['stable-diffusion-local', 'flux-local', 'sdxl-local'],
       is_required: false
+    },
+    // Video Generation Providers
+    runway_video: {
+      name: 'Runway ML',
+      description: 'Generate videos using Gen-3 Alpha, the leading AI video model',
+      icon_name: 'video',
+      category: 'Image/Video Gen',
+      setup_url: 'https://dev.runwayml.com/',
+      capabilities: ['video-generation', 'text-to-video', 'image-to-video'],
+      available_models: ['gen3a_turbo', 'gen3a'],
+      is_required: false
+    },
+    kling_video: {
+      name: 'Kling AI',
+      description: 'Generate high-quality videos with Kling AI',
+      icon_name: 'film',
+      category: 'Image/Video Gen',
+      setup_url: 'https://klingai.com/',
+      capabilities: ['video-generation', 'text-to-video', 'image-to-video'],
+      available_models: ['kling-v1.5', 'kling-v2.0'],
+      is_required: false
+    },
+    replicate_video: {
+      name: 'Replicate',
+      description: 'Run open-source video models like CogVideoX and Stable Video Diffusion',
+      icon_name: 'box',
+      category: 'Image/Video Gen',
+      setup_url: 'https://replicate.com/account/api-tokens',
+      capabilities: ['video-generation', 'text-to-video', 'image-to-video'],
+      available_models: ['cogvideox-5b', 'stable-video-diffusion', 'animatediff'],
+      is_required: false
     }
   };
 

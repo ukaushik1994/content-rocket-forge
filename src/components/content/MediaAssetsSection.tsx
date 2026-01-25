@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Image, Video, Download, Trash2, RefreshCw, Maximize2, X, Film, Sparkles } from 'lucide-react';
+import { Image, Video, Download, Trash2, RefreshCw, Maximize2, X, Film, Sparkles, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { VideoPlaceholder } from './VideoPlaceholder';
+import { VideoGenerationButton } from './VideoGenerationButton';
+import type { GeneratedVideo } from '@/services/videoGenService';
 
 export interface MediaAsset {
   id: string;
@@ -13,6 +15,8 @@ export interface MediaAsset {
   type: 'image' | 'video';
   prompt?: string;
   alt?: string;
+  thumbnailUrl?: string;
+  duration?: number;
   createdAt?: string;
 }
 
@@ -27,6 +31,8 @@ interface MediaAssetsSectionProps {
   onRegenerate?: (asset: MediaAsset) => void;
   onDownload?: (asset: MediaAsset) => void;
   onGenerateImage?: () => void;
+  onVideoGenerated?: (video: GeneratedVideo) => void;
+  contentId?: string;
   className?: string;
   compact?: boolean;
   title?: string;
@@ -45,6 +51,8 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
   onRegenerate,
   onDownload,
   onGenerateImage,
+  onVideoGenerated,
+  contentId,
   className,
   compact = false,
   title = "Media Assets",
@@ -53,6 +61,7 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [lightboxImage, setLightboxImage] = useState<MediaAsset | null>(null);
+  const [lightboxVideo, setLightboxVideo] = useState<MediaAsset | null>(null);
 
   // Apply maxDisplay limit if specified
   const displayImages = maxDisplay ? images.slice(0, maxDisplay) : images;
@@ -151,6 +160,86 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
     </div>
   );
 
+  const renderVideoGrid = () => (
+    <div className={cn(
+      "grid gap-3",
+      compact || variant === 'compact' ? "grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+    )}>
+      {videos.map((video) => (
+        <div 
+          key={video.id}
+          className="group relative aspect-video rounded-lg overflow-hidden border border-border bg-muted/30 hover:border-primary/50 transition-all"
+        >
+          {video.thumbnailUrl ? (
+            <img 
+              src={video.thumbnailUrl} 
+              alt={video.alt || video.prompt || 'Generated video'}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <Video className="h-8 w-8 text-primary/50" />
+            </div>
+          )}
+          
+          {/* Play icon overlay */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="h-12 w-12 rounded-full bg-black/50 flex items-center justify-center">
+              <Play className="h-6 w-6 text-white ml-1" />
+            </div>
+          </div>
+          
+          {/* Overlay with actions on hover */}
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-white hover:bg-white/20"
+              onClick={() => setLightboxVideo(video)}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-white hover:bg-white/20"
+              onClick={() => handleDownload(video)}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            {onDelete && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-white hover:bg-red-500/80"
+                onClick={() => onDelete(video)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          {/* Video type badge */}
+          <div className="absolute top-2 left-2">
+            <Badge variant="secondary" className="bg-black/50 text-white text-xs">
+              <Video className="h-3 w-3 mr-1" />
+              Video
+            </Badge>
+          </div>
+          
+          {/* Duration badge */}
+          {video.duration && (
+            <div className="absolute bottom-2 right-2">
+              <Badge variant="secondary" className="bg-black/50 text-white text-xs">
+                {video.duration}s
+              </Badge>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
   const renderEmptyState = () => (
     <div className="flex flex-col items-center justify-center py-8 text-center">
       <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
@@ -182,22 +271,27 @@ export const MediaAssetsSection: React.FC<MediaAssetsSectionProps> = ({
             {totalVideos} {totalVideos === 1 ? 'Video' : 'Videos'}
           </Badge>
         )}
-        {showVideoPlaceholder && totalVideos === 0 && (
-          <Badge variant="outline" className="gap-1 text-muted-foreground">
-            <Film className="h-3 w-3" />
-            Video Coming Soon
-          </Badge>
-        )}
+        {/* Generate Video Button */}
+        <VideoGenerationButton
+          onVideoGenerated={onVideoGenerated}
+          contentId={contentId}
+          variant="ghost"
+          size="sm"
+          showLabel={!compact}
+        />
       </div>
 
       {/* Images Grid */}
       {totalImages > 0 && renderImageGrid()}
 
+      {/* Videos Grid */}
+      {totalVideos > 0 && renderVideoGrid()}
+
       {/* Empty State */}
       {!hasMedia && showEmptyState && renderEmptyState()}
 
-      {/* Video Placeholder */}
-      {showVideoPlaceholder && (
+      {/* Video Placeholder - only show if no videos and placeholder enabled */}
+      {showVideoPlaceholder && totalVideos === 0 && (
         <VideoPlaceholder 
           compact={compact}
           videoCount={totalVideos}
