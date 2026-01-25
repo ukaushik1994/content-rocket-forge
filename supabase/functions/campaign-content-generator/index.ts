@@ -25,6 +25,17 @@ interface GenerateContentRequest {
   };
   solutionData?: any;
   userId: string;
+  generateImages?: boolean; // Optional flag to skip image generation
+}
+
+interface GeneratedImage {
+  id: string;
+  url: string;
+  prompt: string;
+  provider: string;
+  model: string;
+  slot: string;
+  createdAt: string;
 }
 
 serve(async (req) => {
@@ -40,7 +51,8 @@ serve(async (req) => {
       formatId,
       campaignContext,
       solutionData,
-      userId
+      userId,
+      generateImages = true // Default to generating images
     }: GenerateContentRequest = await req.json();
 
     console.log('[Campaign Content Generator] Starting generation for:', formatId);
@@ -50,12 +62,13 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch user's active AI provider
+    // Fetch user's active AI provider (for text generation)
     const { data: provider, error: providerError } = await supabase
       .from('ai_service_providers')
       .select('*')
       .eq('user_id', userId)
       .eq('status', 'active')
+      .neq('category', 'Image/Video Gen') // Exclude image providers
       .order('priority', { ascending: true })
       .limit(1)
       .single();
@@ -106,7 +119,7 @@ serve(async (req) => {
 
     console.log('[Campaign Content Generator] Content generated, saving to database...');
 
-    // Save to content_items table
+    // Save to content_items table (without images initially)
     const { data: savedContent, error: saveError } = await supabase
       .from('content_items')
       .insert({
@@ -141,11 +154,39 @@ serve(async (req) => {
 
     console.log('[Campaign Content Generator] Content saved successfully:', savedContent.id);
 
+    // ========================================
+    // PHASE 1: Generate images for this content
+    // ========================================
+    let generatedImages: GeneratedImage[] = [];
+    
+    if (generateImages) {
+      try {
+        generatedImages = await generateImagesForContent(
+          supabase,
+          userId,
+          savedContent.id,
+          brief,
+          formatId,
+          generatedContent,
+          supabaseKey
+        );
+        
+        if (generatedImages.length > 0) {
+          console.log(`[Campaign Content Generator] Generated ${generatedImages.length} images`);
+        }
+      } catch (imageError) {
+        // Log but don't fail the entire operation
+        console.error('[Campaign Content Generator] Image generation failed (non-fatal):', imageError);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         content: savedContent,
-        wordCount: generatedContent.split(/\s+/).length
+        wordCount: generatedContent.split(/\s+/).length,
+        imagesGenerated: generatedImages.length,
+        images: generatedImages
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -165,6 +206,224 @@ serve(async (req) => {
     );
   }
 });
+
+/**
+ * Generate images for the content piece
+ */
+async function generateImagesForContent(
+  supabase: any,
+  userId: string,
+  contentId: string,
+  brief: any,
+  formatId: string,
+  content: string,
+  authToken: string
+): Promise<GeneratedImage[]> {
+  console.log('[Image Gen] Checking for image provider...');
+  
+  // Check if user has an image generation provider configured
+  const { data: imageProvider, error: providerError } = await supabase
+    .from('ai_service_providers')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('category', 'Image/Video Gen')
+    .eq('status', 'active')
+    .limit(1)
+    .single();
+
+  if (providerError || !imageProvider) {
+    console.log('[Image Gen] No image provider configured, skipping image generation');
+    return [];
+  }
+
+  console.log('[Image Gen] Using image provider:', imageProvider.provider);
+
+  // Determine how many images to generate based on format
+  const imageSlots = determineImageSlots(formatId, content);
+  
+  if (imageSlots.length === 0) {
+    console.log('[Image Gen] No image slots needed for this format');
+    return [];
+  }
+
+  const generatedImages: GeneratedImage[] = [];
+
+  for (const slot of imageSlots) {
+    try {
+      // Build image prompt based on slot type and content context
+      const imagePrompt = buildImagePrompt(slot, brief, formatId);
+      
+      console.log(`[Image Gen] Generating ${slot.type} image...`);
+      
+      // Call generate-image edge function
+      const { data: imageResult, error: imageError } = await supabase.functions.invoke('generate-image', {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        },
+        body: {
+          provider: imageProvider.provider,
+          prompt: imagePrompt,
+          size: slot.size || '1024x1024',
+          quality: 'standard'
+        }
+      });
+
+      if (imageError) {
+        console.error(`[Image Gen] Failed to generate ${slot.type} image:`, imageError);
+        continue;
+      }
+
+      if (imageResult?.success) {
+        const imageData: GeneratedImage = {
+          id: crypto.randomUUID(),
+          url: imageResult.imageUrl || imageResult.imageBase64,
+          prompt: imagePrompt,
+          provider: imageProvider.provider,
+          model: imageResult.model_used || imageProvider.preferred_model,
+          slot: slot.type,
+          createdAt: new Date().toISOString()
+        };
+        
+        generatedImages.push(imageData);
+        console.log(`[Image Gen] Successfully generated ${slot.type} image`);
+      }
+    } catch (slotError) {
+      console.error(`[Image Gen] Error generating ${slot.type} image:`, slotError);
+      // Continue with next slot
+    }
+  }
+
+  // Update content_items with generated images
+  if (generatedImages.length > 0) {
+    const { error: updateError } = await supabase
+      .from('content_items')
+      .update({
+        generated_images: generatedImages,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', contentId);
+
+    if (updateError) {
+      console.error('[Image Gen] Failed to save images to content:', updateError);
+    } else {
+      console.log(`[Image Gen] Saved ${generatedImages.length} images to content ${contentId}`);
+    }
+  }
+
+  return generatedImages;
+}
+
+/**
+ * Determine what images are needed based on content format
+ */
+function determineImageSlots(formatId: string, content: string): Array<{ type: string; size?: string }> {
+  const contentLength = content.length;
+  
+  switch (formatId) {
+    case 'blog':
+      // Blog: hero image + 1-2 section images for longer content
+      const slots: Array<{ type: string; size?: string }> = [
+        { type: 'hero', size: '1792x1024' } // Wide hero
+      ];
+      if (contentLength > 2000) {
+        slots.push({ type: 'section', size: '1024x1024' });
+      }
+      if (contentLength > 4000) {
+        slots.push({ type: 'section', size: '1024x1024' });
+      }
+      return slots;
+    
+    case 'social-linkedin':
+    case 'social-facebook':
+      return [{ type: 'featured', size: '1200x628' }]; // Social share size
+    
+    case 'social-instagram':
+    case 'carousel':
+      return [{ type: 'square', size: '1024x1024' }];
+    
+    case 'social-twitter':
+      return [{ type: 'twitter', size: '1024x576' }]; // 16:9 ratio
+    
+    case 'landing-page':
+      return [
+        { type: 'hero', size: '1792x1024' },
+        { type: 'feature', size: '1024x1024' }
+      ];
+    
+    case 'email':
+      return [{ type: 'header', size: '1200x400' }];
+    
+    case 'script':
+    case 'video':
+      return [{ type: 'thumbnail', size: '1280x720' }];
+    
+    default:
+      // Default: single featured image for most formats
+      return [{ type: 'featured', size: '1024x1024' }];
+  }
+}
+
+/**
+ * Build optimized image prompt based on slot and content context
+ */
+function buildImagePrompt(
+  slot: { type: string; size?: string },
+  brief: any,
+  formatId: string
+): string {
+  const keywords = brief.keywords?.slice(0, 3).join(', ') || '';
+  const title = brief.title || '';
+  
+  // Base prompt structure
+  let prompt = `Professional, high-quality ${slot.type} image for marketing content.`;
+  
+  // Add context based on slot type
+  switch (slot.type) {
+    case 'hero':
+      prompt = `Striking hero banner image. Topic: ${title}. ${keywords ? `Related to: ${keywords}.` : ''} Professional, modern, visually impactful. Wide composition, suitable for website header.`;
+      break;
+    
+    case 'featured':
+    case 'square':
+      prompt = `Eye-catching featured image for social media. Topic: ${title}. ${keywords ? `Keywords: ${keywords}.` : ''} Vibrant colors, professional quality, optimized for engagement.`;
+      break;
+    
+    case 'section':
+      prompt = `Illustrative image supporting article section. Topic: ${title}. ${keywords ? `Context: ${keywords}.` : ''} Clean, professional, complementary to written content.`;
+      break;
+    
+    case 'thumbnail':
+      prompt = `Compelling video thumbnail image. Topic: ${title}. ${keywords ? `Theme: ${keywords}.` : ''} Bold, attention-grabbing, with clear focal point.`;
+      break;
+    
+    case 'header':
+      prompt = `Professional email header banner. Topic: ${title}. Clean, modern design with subtle branding elements. Business appropriate.`;
+      break;
+    
+    case 'twitter':
+      prompt = `Engaging Twitter/X image. Topic: ${title}. ${keywords ? `Keywords: ${keywords}.` : ''} Eye-catching, shareable, optimized for timeline scrolling.`;
+      break;
+    
+    case 'feature':
+      prompt = `Feature showcase image for landing page. Topic: ${title}. Modern, professional, trust-building imagery suitable for conversion.`;
+      break;
+    
+    default:
+      prompt = `Professional marketing image. Topic: ${title}. ${keywords ? `Keywords: ${keywords}.` : ''} High quality, suitable for ${formatId} content.`;
+  }
+  
+  // Add format-specific styling hints
+  if (formatId.includes('social')) {
+    prompt += ' Style: Bold, social media optimized, high contrast.';
+  } else if (formatId === 'blog' || formatId === 'landing-page') {
+    prompt += ' Style: Professional, clean, corporate aesthetic.';
+  }
+  
+  // Universal quality directives
+  prompt += ' No text overlays. No watermarks. Photorealistic quality.';
+  
+  return prompt;
+}
 
 /**
  * Builds the content generation prompt
