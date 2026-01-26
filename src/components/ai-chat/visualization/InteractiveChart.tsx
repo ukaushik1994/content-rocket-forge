@@ -4,34 +4,79 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell 
 } from 'recharts';
 import { ChartConfiguration } from '@/types/enhancedChat';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw, BarChart3 } from 'lucide-react';
+import { normalizeChartConfig, isValidPieData, convertToPieFormat } from '@/utils/chartDataNormalizer';
+import { Button } from '@/components/ui/button';
 
 interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
   onSendMessage?: (message: string) => void;
   originalQuery?: string;
   skipAutoRecovery?: boolean;
+  title?: string;
+  description?: string;
+  allowTypeSwitch?: boolean;
+  allowDataFilter?: boolean;
+  showIntelligentSuggestions?: boolean;
+  allVisualData?: any[];
+  onDataUpdate?: (data: any) => void;
 }
 
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({ 
   chartConfig, 
   onSendMessage,
   originalQuery,
-  skipAutoRecovery = false
+  skipAutoRecovery = false,
+  title,
+  description,
+  allowTypeSwitch = false,
+  allowDataFilter = false,
+  showIntelligentSuggestions = false,
+  allVisualData,
+  onDataUpdate
 }) => {
-  const { type, data, categories, series, colors, height = 300 } = chartConfig;
+  const [chartType, setChartType] = useState<string | null>(null);
+  
+  // Normalize the chart configuration to handle various AI output formats
+  const normalizedConfig = useMemo(() => {
+    try {
+      const normalized = normalizeChartConfig(chartConfig);
+      if (normalized.wasNormalized) {
+        console.log('📊 Chart data normalized:', normalized.normalizations);
+      }
+      return normalized;
+    } catch (error) {
+      console.error('Failed to normalize chart config:', error);
+      return null;
+    }
+  }, [chartConfig]);
+
+  // Use normalized config or original
+  const effectiveConfig = normalizedConfig || chartConfig;
+  const { type: originalType, data, categories, series, colors, height = 300 } = effectiveConfig;
+  const type = chartType || originalType;
 
   // Validate data before rendering - show loading state instead of error
   if (!data || !Array.isArray(data) || data.length === 0) {
     console.warn('⚠️ InteractiveChart: No valid data provided', { type, dataLength: data?.length });
     
-    // If we have onSendMessage, this will be handled by parent recovery hook
-    // Just show a minimal loading state
     return (
-      <div className="flex items-center justify-center h-full min-h-[300px]">
-        <div className="text-center text-muted-foreground">
-          <div className="w-8 h-8 mx-auto mb-2 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm">Fetching data...</p>
+      <div className="flex items-center justify-center h-full min-h-[300px] border border-dashed border-muted-foreground/30 rounded-lg">
+        <div className="text-center text-muted-foreground p-4">
+          <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm font-medium">No data available</p>
+          <p className="text-xs mt-1 opacity-70">The chart data could not be loaded</p>
+          {onSendMessage && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3"
+              onClick={() => onSendMessage('Please regenerate the chart data')}
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Retry
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -41,7 +86,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     type,
     dataLength: data?.length,
     hasCategories: categories?.length > 0,
-    hasSeries: series?.length > 0
+    hasSeries: series?.length > 0,
+    wasNormalized: normalizedConfig?.wasNormalized
   });
 
   const defaultColors = colors || [
@@ -98,33 +144,51 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
         );
 
       case 'pie':
-        // Validate pie chart data format
-        const nameKey = categories[0] || 'name';
+        // Use normalized data or convert to pie format
+        const nameKey = categories?.[0] || 'name';
         const valueKey = series?.[0]?.dataKey || 'value';
         
-        const isValidPieData = data.every(item => 
-          item.hasOwnProperty(nameKey) && 
-          item.hasOwnProperty(valueKey) &&
-          typeof item[valueKey] === 'number'
-        );
+        // Check if data is valid for pie chart
+        const validForPie = isValidPieData(data);
         
-        if (!isValidPieData) {
-          console.error('❌ Invalid pie chart data format:', { 
-            data, 
-            expectedNameKey: nameKey, 
-            expectedValueKey: valueKey,
-            sample: data[0]
-          });
+        if (!validForPie) {
+          // Auto-convert to pie format
+          const pieData = convertToPieFormat(data);
+          console.log('🔄 Auto-converted data to pie format:', pieData);
+          
+          if (pieData.length === 0 || pieData.every(d => d.value === 0)) {
+            // If conversion failed, show as bar chart instead
+            console.warn('⚠️ Pie chart conversion failed, falling back to bar chart');
+            return (
+              <BarChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                <XAxis dataKey={nameKey} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey={valueKey} fill={defaultColors[0]} name="Value" />
+              </BarChart>
+            );
+          }
+          
           return (
-            <div className="flex items-center justify-center h-full min-h-[300px]">
-              <div className="text-center text-muted-foreground">
-                <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-destructive opacity-50" />
-                <p className="text-sm font-medium">Data format not compatible</p>
-                <p className="text-xs mt-2 max-w-[250px]">
-                  Expected format: <code className="bg-muted px-1 py-0.5 rounded">[{`{ ${nameKey}: 'Category', ${valueKey}: 123 }`}]</code>
-                </p>
-              </div>
-            </div>
+            <PieChart>
+              <Pie 
+                data={pieData} 
+                dataKey="value" 
+                nameKey="name" 
+                cx="50%" 
+                cy="50%" 
+                outerRadius={80} 
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              >
+                {pieData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={defaultColors[index % defaultColors.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value: number) => value.toLocaleString()} />
+              <Legend />
+            </PieChart>
           );
         }
         
@@ -137,13 +201,14 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
               cx="50%" 
               cy="50%" 
               outerRadius={80} 
-              label
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
             >
               {data.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={defaultColors[index % defaultColors.length]} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip formatter={(value: number) => value.toLocaleString()} />
+            <Legend />
           </PieChart>
         );
 

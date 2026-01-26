@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useChatContextBridge } from '@/contexts/ChatContextBridge';
 import { useMessagePagination } from './useMessagePagination';
 import { supabase } from '@/integrations/supabase/client';
+import { parseVisualDataFromContent, mergeVisualData } from '@/utils/visualDataParser';
 
 export interface StreamingChatState {
   messages: EnhancedChatMessage[];
@@ -373,13 +374,32 @@ export const useStreamingChatDB = () => {
 
       case 'ai_response_complete':
         if (currentMessageRef.current && activeConversationId) {
-          const completedMessage = {
+          // Parse visual data from the content if not provided directly
+          const parsedFromContent = parseVisualDataFromContent(data.content || '');
+          
+          // Merge visual data from response and parsed from content
+          const responseVisualData = data.visualData 
+            ? (Array.isArray(data.visualData) ? data.visualData : [data.visualData]) 
+            : undefined;
+          const allVisualData = mergeVisualData(responseVisualData, parsedFromContent.visualData);
+          
+          // Use first visual data item as primary, store all in allVisualData
+          const primaryVisualData = allVisualData?.[0];
+          
+          const completedMessage: EnhancedChatMessage = {
             ...currentMessageRef.current,
-            content: data.content,
+            content: parsedFromContent.content || data.content,
             isStreaming: false,
             actions: data.actions || [],
-            visualData: data.visualData || undefined
+            visualData: primaryVisualData,
+            allVisualData: allVisualData
           };
+
+          console.log('📊 AI response complete with visual data:', {
+            hasVisualData: !!primaryVisualData,
+            visualDataCount: allVisualData?.length,
+            types: allVisualData?.map(v => v.type)
+          });
 
           setState(prev => ({
             ...prev,
