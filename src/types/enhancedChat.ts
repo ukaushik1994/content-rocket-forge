@@ -48,6 +48,20 @@ export interface MetricCard {
   };
   icon?: string;
   color?: 'blue' | 'green' | 'purple' | 'orange';
+  // Enhanced comparison fields - always show period comparisons
+  previousValue?: number;
+  comparisonPeriod?: string; // "vs. last week", "vs. last month"
+  target?: number;
+  targetLabel?: string;
+}
+
+// Data context for sidebar header
+export interface SidebarDataContext {
+  dataSource: 'Content Analytics' | 'Campaign Intelligence' | 'Market Research' | 'AI Analysis';
+  timeframe: string; // "Last 30 days", "This Quarter", etc.
+  totalPoints: number;
+  quality: 'high' | 'medium' | 'low';
+  lastUpdated?: string;
 }
 
 export interface WorkflowStep {

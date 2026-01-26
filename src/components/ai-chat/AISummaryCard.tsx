@@ -7,6 +7,8 @@ interface AISummaryCardProps {
   chartData: any[];
   dataKeys: string[];
   title?: string;
+  timeframe?: string; // "Last 30 days", etc.
+  dataSource?: string; // "Content Analytics", etc.
   onFeedback?: (helpful: boolean) => void;
   className?: string;
 }
@@ -15,6 +17,8 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
   chartData,
   dataKeys,
   title,
+  timeframe = 'Last 30 days',
+  dataSource,
   onFeedback,
   className
 }) => {
@@ -45,13 +49,16 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
     // Generate insight based on variance
     const variance = ((highestValue - lowestValue) / avg) * 100;
     
+    // Add timeframe context to insights
+    const timeContext = timeframe ? ` (${timeframe.toLowerCase()})` : '';
+    
     let insight = '';
     if (variance > 100) {
-      insight = `"${highestName}" significantly outperforms at ${highestValue.toLocaleString()}, while "${lowestName}" at ${lowestValue.toLocaleString()} shows room for improvement. Consider analyzing what's driving this ${Math.round(variance)}% performance gap.`;
+      insight = `"${highestName}" significantly outperforms at ${highestValue.toLocaleString()}${timeContext}, while "${lowestName}" at ${lowestValue.toLocaleString()} shows room for improvement. Consider analyzing what's driving this ${Math.round(variance)}% performance gap.`;
     } else if (variance > 50) {
-      insight = `Performance varies moderately across your data. "${highestName}" leads at ${highestValue.toLocaleString()}, with "${lowestName}" at ${lowestValue.toLocaleString()}. The overall trend suggests balanced distribution.`;
+      insight = `Performance varies moderately across your data${timeContext}. "${highestName}" leads at ${highestValue.toLocaleString()}, with "${lowestName}" at ${lowestValue.toLocaleString()}. The overall trend suggests balanced distribution.`;
     } else {
-      insight = `Your data shows consistent performance across all items, averaging ${Math.round(avg).toLocaleString()}. "${highestName}" edges ahead slightly, indicating a stable and predictable pattern.`;
+      insight = `Your data shows consistent performance across all items${timeContext}, averaging ${Math.round(avg).toLocaleString()}. "${highestName}" edges ahead slightly, indicating a stable and predictable pattern.`;
     }
 
     return insight;

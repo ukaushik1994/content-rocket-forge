@@ -12,7 +12,9 @@ interface PremiumMetricCardProps {
   index?: number;
   comparisonValue?: number;
   comparisonLabel?: string;
-  showComparison?: boolean;
+  comparisonPeriod?: string; // "vs. last week", "vs. last month" - always shown
+  target?: number;
+  targetLabel?: string;
 }
 
 export const PremiumMetricCard: React.FC<PremiumMetricCardProps> = ({
@@ -23,7 +25,9 @@ export const PremiumMetricCard: React.FC<PremiumMetricCardProps> = ({
   tooltip,
   comparisonValue,
   comparisonLabel = 'vs. previous',
-  showComparison = false
+  comparisonPeriod,
+  target,
+  targetLabel = 'Target'
 }) => {
   const numericValue = typeof value === 'number' ? value : parseFloat(value.toString().replace(/[^0-9.-]/g, '')) || 0;
 
@@ -101,11 +105,28 @@ export const PremiumMetricCard: React.FC<PremiumMetricCardProps> = ({
         {label}
       </p>
 
-      {/* Comparison row (optional) */}
-      {showComparison && comparisonValue !== undefined && (
-        <p className="text-[10px] text-muted-foreground/70 mt-2 truncate">
-          {comparisonLabel}: {comparisonValue.toLocaleString()}
+      {/* Comparison row - always shown when data exists */}
+      {comparisonValue !== undefined && (
+        <p className="text-[10px] text-muted-foreground/60 mt-2 truncate">
+          <span className="text-muted-foreground/40">{comparisonPeriod || comparisonLabel}:</span>{' '}
+          <span className="font-medium">{comparisonValue.toLocaleString()}</span>
         </p>
+      )}
+
+      {/* Target indicator */}
+      {target !== undefined && (
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="flex-1 h-1 bg-muted/30 rounded-full overflow-hidden">
+            <div 
+              className={cn(
+                "h-full rounded-full transition-all",
+                numericValue >= target ? "bg-emerald-500" : "bg-amber-500"
+              )}
+              style={{ width: `${Math.min((numericValue / target) * 100, 100)}%` }}
+            />
+          </div>
+          <span className="text-[9px] text-muted-foreground/50">{targetLabel}</span>
+        </div>
       )}
     </div>
   );

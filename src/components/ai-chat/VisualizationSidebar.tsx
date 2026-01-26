@@ -29,7 +29,7 @@ import {
   Zap,
   CheckCircle2,
   Search,
-  GitCompare
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -67,7 +67,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   );
   const [secondaryChartType, setSecondaryChartType] = useState<ChartType>('pie');
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
-  const [showComparison, setShowComparison] = useState(false);
 
   // Smart secondary chart type selection based on primary
   const getComplementaryChartType = useCallback((primary: ChartType): ChartType => {
@@ -179,12 +178,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     }));
   }, [visualData]);
 
-  // Data source info and quality
+  // Data source info, quality, and timeframe
   const dataInfo = useMemo(() => {
     const source = visualData?.dataSource || 'AI Analysis';
     const points = chartData.length;
     const quality = points > 50 ? 'high' : points > 20 ? 'medium' : 'low';
-    return { source, points, quality };
+    const timeframe = visualData?.timeframe || 'Last 30 days';
+    return { source, points, quality, timeframe };
   }, [visualData, chartData]);
 
   // Colors for charts
@@ -705,7 +705,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </Tooltip>
                   </div>
                   
-                  {/* Data badges */}
+                  {/* Data context badges - always visible header info */}
                   <div className="flex items-center gap-2 mt-4 flex-wrap">
                     <Badge variant="outline" className="text-xs">
                       <Database className="w-3 h-3 mr-1" />
@@ -713,9 +713,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </Badge>
                     {dataInfo.points > 0 && (
                       <Badge variant="outline" className="text-xs text-muted-foreground">
-                        {dataInfo.points} data points
+                        {dataInfo.points} pts
                       </Badge>
                     )}
+                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {dataInfo.timeframe}
+                    </Badge>
                     <Badge variant="outline" className={cn("text-xs", qualityConfig.color)}>
                       {qualityConfig.label}
                     </Badge>
@@ -789,13 +793,17 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
                   </motion.div>
 
-                  {/* 2. AI SUMMARY */}
-                  <AISummaryCard
-                    chartData={chartData}
-                    dataKeys={dataKeys}
-                    title={title}
-                    onFeedback={(helpful) => console.log('Feedback:', helpful)}
-                  />
+                  {/* 2. AI SUMMARY - with timeframe context */}
+                  {chartData.length > 0 && (
+                    <AISummaryCard
+                      chartData={chartData}
+                      dataKeys={dataKeys}
+                      title={title}
+                      timeframe={dataInfo.timeframe}
+                      dataSource={dataInfo.source}
+                      onFeedback={(helpful) => console.log('Feedback:', helpful)}
+                    />
+                  )}
 
                   {/* 3. SECONDARY CHART - Different perspective */}
                   {hasSecondaryData && activeView === 'chart' && (
@@ -820,7 +828,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </motion.div>
                   )}
 
-                  {/* 4. KEY METRICS */}
+                  {/* 4. KEY METRICS - Always show comparison */}
                   {metricCards.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -832,25 +840,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
                           Key Metrics
                         </span>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowComparison(!showComparison)}
-                              className={cn(
-                                "h-6 text-[10px] gap-1",
-                                showComparison ? "text-primary bg-primary/10" : "text-muted-foreground/40 hover:text-muted-foreground/60"
-                              )}
-                            >
-                              <GitCompare className="w-3 h-3" />
-                              Compare
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="text-xs">
-                            Show period comparison
-                          </TooltipContent>
-                        </Tooltip>
+                        <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">
+                          {visualData?.timeframe || 'Last 30 days'}
+                        </Badge>
                       </div>
                       <div className="grid grid-cols-2 gap-2.5">
                         {metricCards.slice(0, 4).map((metric: any, idx: number) => (
@@ -861,8 +853,10 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             trend={metric.trend}
                             trendValue={metric.trendValue}
                             index={idx}
-                            showComparison={showComparison}
-                            comparisonValue={metric.previousValue || Math.round(metric.value * 0.85)}
+                            comparisonValue={metric.previousValue || Math.round(Number(metric.value) * 0.85)}
+                            comparisonPeriod={metric.comparisonPeriod || 'vs. last period'}
+                            target={metric.target}
+                            targetLabel={metric.targetLabel}
                           />
                         ))}
                       </div>
