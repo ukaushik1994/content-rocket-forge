@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Bot, RefreshCw, BarChart3, Sparkles, Search, FileText, HelpCircle, Users, Film } from 'lucide-react';
-import { EnhancedChatMessage } from '@/types/enhancedChat';
+import { EnhancedChatMessage, ChartConfiguration } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { VisualDataRenderer } from './VisualDataRenderer';
 import { ModernActionButtons } from './ModernActionButtons';
@@ -26,6 +26,7 @@ interface EnhancedMessageBubbleProps {
   onSendMessage?: (message: string) => void;
   thinkingContent?: string;
   isThinking?: boolean;
+  onExpandVisualization?: (visualData: any, chartConfig: ChartConfiguration) => void; // NEW
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
@@ -36,7 +37,8 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   isRetrying = false,
   onSendMessage,
   thinkingContent,
-  isThinking = false
+  isThinking = false,
+  onExpandVisualization
 }) => {
   const [showMultiChartModal, setShowMultiChartModal] = useState(false);
   const [showTimestamp, setShowTimestamp] = useState(false);
@@ -223,6 +225,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                         data: actionData
                       });
                     }}
+                    onExpandVisualization={onExpandVisualization}
                   />
                 </>
               )}
