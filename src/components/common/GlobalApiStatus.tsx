@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 interface GlobalApiStatusProps {
   className?: string;
-  variant?: 'compact' | 'full' | 'inline';
+  variant?: 'compact' | 'full';
 }
 
 interface ProviderStatus {
@@ -19,56 +19,6 @@ interface ProviderStatus {
 }
 
 export function GlobalApiStatus({ className, variant = 'compact' }: GlobalApiStatusProps) {
-  // Inline variant - ultra minimal for footer placement
-  if (variant === 'inline') {
-    const [providers, setProviders] = useState<ProviderStatus[]>([]);
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-    useEffect(() => {
-      const updateStatus = () => setProviders(getProviderStatuses());
-      const handleOnline = () => setIsOnline(true);
-      const handleOffline = () => setIsOnline(false);
-
-      updateStatus();
-      const interval = setInterval(updateStatus, 1000);
-      window.addEventListener('online', handleOnline);
-      window.addEventListener('offline', handleOffline);
-
-      return () => {
-        clearInterval(interval);
-        window.removeEventListener('online', handleOnline);
-        window.removeEventListener('offline', handleOffline);
-      };
-    }, []);
-
-    const limitedProviders = providers.filter(p => p.isLimited);
-    const hasIssues = !isOnline || limitedProviders.length > 0;
-
-    if (!hasIssues) {
-      return (
-        <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground/40", className)}>
-          <div className="w-1.5 h-1.5 rounded-full bg-success/60" />
-          <span>Connected</span>
-        </div>
-      );
-    }
-
-    if (!isOnline) {
-      return (
-        <div className={cn("flex items-center gap-1.5 text-xs text-destructive/70", className)}>
-          <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-          <span>Offline</span>
-        </div>
-      );
-    }
-
-    return (
-      <div className={cn("flex items-center gap-1.5 text-xs text-warning/70", className)}>
-        <div className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
-        <span>{limitedProviders.length} limited</span>
-      </div>
-    );
-  }
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
