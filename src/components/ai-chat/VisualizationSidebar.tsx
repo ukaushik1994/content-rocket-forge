@@ -216,48 +216,130 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     }
 
     const commonProps = { data: chartData, width: '100%', height: 220 };
+    
+    // Modern premium tooltip styling
     const tooltipStyle = { 
-      backgroundColor: 'hsl(var(--card))', 
-      border: '1px solid hsl(var(--border)/0.5)', 
-      borderRadius: '12px',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-      fontSize: '12px'
+      backgroundColor: 'hsl(var(--popover))', 
+      border: 'none', 
+      borderRadius: '10px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      fontSize: '11px',
+      padding: '8px 12px'
     };
+
+    // Modern color palette with gradients
+    const modernColors = [
+      '#6366f1', // indigo
+      '#8b5cf6', // violet  
+      '#06b6d4', // cyan
+      '#10b981', // emerald
+      '#f59e0b', // amber
+      '#ec4899', // pink
+    ];
 
     switch (chartType) {
       case 'line':
         return (
           <ResponsiveContainer {...commonProps}>
-            <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.15} vertical={false} />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={40} />
-              <RechartsTooltip contentStyle={tooltipStyle} />
+            <AreaChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+              <defs>
+                {modernColors.map((color, idx) => (
+                  <linearGradient key={idx} id={`lineGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <XAxis 
+                dataKey="name" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false}
+                dy={8}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false} 
+                width={32}
+                tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
+              />
+              <RechartsTooltip 
+                contentStyle={tooltipStyle} 
+                cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
+              />
               {dataKeys.map((key, idx) => (
-                <Line key={key} type="monotone" dataKey={key} stroke={colors[idx % colors.length]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                <React.Fragment key={key}>
+                  <Area 
+                    type="natural" 
+                    dataKey={key} 
+                    stroke={modernColors[idx % modernColors.length]} 
+                    strokeWidth={2.5}
+                    fill={`url(#lineGradient${idx})`}
+                    dot={false}
+                    activeDot={{ 
+                      r: 5, 
+                      strokeWidth: 2, 
+                      stroke: 'hsl(var(--background))',
+                      fill: modernColors[idx % modernColors.length]
+                    }}
+                  />
+                </React.Fragment>
               ))}
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         );
       
       case 'area':
         return (
           <ResponsiveContainer {...commonProps}>
-            <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
               <defs>
-                {colors.map((color, idx) => (
-                  <linearGradient key={idx} id={`sidebarArea${idx}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.4} />
-                    <stop offset="95%" stopColor={color} stopOpacity={0.05} />
+                {modernColors.map((color, idx) => (
+                  <linearGradient key={idx} id={`areaGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={0.5} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.05} />
                   </linearGradient>
                 ))}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.15} vertical={false} />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={40} />
-              <RechartsTooltip contentStyle={tooltipStyle} />
+              <XAxis 
+                dataKey="name" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false}
+                dy={8}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false} 
+                width={32}
+                tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
+              />
+              <RechartsTooltip 
+                contentStyle={tooltipStyle}
+                cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
+              />
               {dataKeys.map((key, idx) => (
-                <Area key={key} type="monotone" dataKey={key} stroke={colors[idx % colors.length]} strokeWidth={2} fill={`url(#sidebarArea${idx})`} />
+                <Area 
+                  key={key} 
+                  type="natural" 
+                  dataKey={key} 
+                  stroke={modernColors[idx % modernColors.length]} 
+                  strokeWidth={2}
+                  fill={`url(#areaGradient${idx})`}
+                  dot={false}
+                  activeDot={{ 
+                    r: 4, 
+                    strokeWidth: 2, 
+                    stroke: 'hsl(var(--background))',
+                    fill: modernColors[idx % modernColors.length]
+                  }}
+                />
               ))}
             </AreaChart>
           </ResponsiveContainer>
@@ -266,13 +348,43 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'bar':
         return (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.15} vertical={false} />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={40} />
-              <RechartsTooltip contentStyle={tooltipStyle} />
+            <BarChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }} barCategoryGap="20%">
+              <defs>
+                {modernColors.map((color, idx) => (
+                  <linearGradient key={idx} id={`barGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={1} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.7} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <XAxis 
+                dataKey="name" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false}
+                dy={8}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false} 
+                width={32}
+                tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
+              />
+              <RechartsTooltip 
+                contentStyle={tooltipStyle}
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3, radius: 4 }}
+              />
               {dataKeys.map((key, idx) => (
-                <Bar key={key} dataKey={key} fill={colors[idx % colors.length]} radius={[6, 6, 0, 0]} fillOpacity={0.85} />
+                <Bar 
+                  key={key} 
+                  dataKey={key} 
+                  fill={`url(#barGradient${idx})`}
+                  radius={[8, 8, 0, 0]}
+                  maxBarSize={48}
+                />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -283,20 +395,38 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
         return (
           <ResponsiveContainer {...commonProps}>
             <PieChart>
+              <defs>
+                {modernColors.map((color, idx) => (
+                  <linearGradient key={idx} id={`pieGradient${idx}`} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={1} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.75} />
+                  </linearGradient>
+                ))}
+              </defs>
               <Pie
                 data={pieData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={90}
+                label={({ name, percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''}
+                innerRadius={45}
+                outerRadius={75}
                 dataKey="value"
+                paddingAngle={3}
+                strokeWidth={0}
               >
                 {pieData.map((_, idx) => (
-                  <Cell key={idx} fill={colors[idx % colors.length]} />
+                  <Cell key={idx} fill={`url(#pieGradient${idx})`} />
                 ))}
               </Pie>
               <RechartsTooltip contentStyle={tooltipStyle} />
+              <Legend 
+                verticalAlign="bottom" 
+                height={36}
+                iconType="circle"
+                iconSize={8}
+                formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+              />
             </PieChart>
           </ResponsiveContainer>
         );
@@ -304,12 +434,31 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'radar':
         return (
           <ResponsiveContainer {...commonProps}>
-            <RadarChart data={chartData}>
-              <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-              <PolarRadiusAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+            <RadarChart data={chartData} cx="50%" cy="50%" outerRadius="70%">
+              <defs>
+                {modernColors.map((color, idx) => (
+                  <linearGradient key={idx} id={`radarGradient${idx}`} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.1} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.5} />
+              <PolarAngleAxis 
+                dataKey="name" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10}
+                tickLine={false}
+              />
               {dataKeys.map((key, idx) => (
-                <Radar key={key} dataKey={key} stroke={colors[idx % colors.length]} fill={colors[idx % colors.length]} fillOpacity={0.3} />
+                <Radar 
+                  key={key} 
+                  dataKey={key} 
+                  stroke={modernColors[idx % modernColors.length]} 
+                  strokeWidth={2}
+                  fill={`url(#radarGradient${idx})`}
+                  dot={{ r: 3, fill: modernColors[idx % modernColors.length] }}
+                />
               ))}
               <RechartsTooltip contentStyle={tooltipStyle} />
             </RadarChart>
@@ -319,14 +468,39 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'radial':
         return (
           <ResponsiveContainer {...commonProps}>
-            <RadialBarChart innerRadius="20%" outerRadius="90%" data={chartData} startAngle={180} endAngle={0}>
-              <RadialBar dataKey={dataKeys[0] || 'value'} background cornerRadius={4}>
+            <RadialBarChart 
+              innerRadius="30%" 
+              outerRadius="90%" 
+              data={chartData} 
+              startAngle={180} 
+              endAngle={-180}
+              cx="50%"
+              cy="50%"
+            >
+              <defs>
+                {modernColors.map((color, idx) => (
+                  <linearGradient key={idx} id={`radialGradient${idx}`} x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor={color} stopOpacity={1} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.6} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <RadialBar 
+                dataKey={dataKeys[0] || 'value'} 
+                background={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
+                cornerRadius={8}
+              >
                 {chartData.map((_, idx) => (
-                  <Cell key={idx} fill={colors[idx % colors.length]} />
+                  <Cell key={idx} fill={`url(#radialGradient${idx})`} />
                 ))}
               </RadialBar>
               <RechartsTooltip contentStyle={tooltipStyle} />
-              <Legend />
+              <Legend 
+                verticalAlign="bottom" 
+                iconType="circle"
+                iconSize={8}
+                formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+              />
             </RadialBarChart>
           </ResponsiveContainer>
         );
@@ -334,13 +508,43 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       default:
         return (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.15} vertical={false} />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={40} />
-              <RechartsTooltip contentStyle={tooltipStyle} />
+            <BarChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }} barCategoryGap="20%">
+              <defs>
+                {modernColors.map((color, idx) => (
+                  <linearGradient key={idx} id={`defaultBarGradient${idx}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={1} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.7} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <XAxis 
+                dataKey="name" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false}
+                dy={8}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false} 
+                width={32}
+                tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}
+              />
+              <RechartsTooltip 
+                contentStyle={tooltipStyle}
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3, radius: 4 }}
+              />
               {dataKeys.map((key, idx) => (
-                <Bar key={key} dataKey={key} fill={colors[idx % colors.length]} radius={[6, 6, 0, 0]} fillOpacity={0.85} />
+                <Bar 
+                  key={key} 
+                  dataKey={key} 
+                  fill={`url(#defaultBarGradient${idx})`}
+                  radius={[8, 8, 0, 0]}
+                  maxBarSize={48}
+                />
               ))}
             </BarChart>
           </ResponsiveContainer>
