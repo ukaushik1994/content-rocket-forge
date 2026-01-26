@@ -35,7 +35,10 @@ import {
   FileSearch,
   ChevronDown,
   ChevronRight,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sparkles,
+  History,
+  Wand2
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -58,6 +61,8 @@ import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { MediaAssetsSection, MediaAsset } from '@/components/content/MediaAssetsSection';
 import { imageGenOrchestrator } from '@/services/imageGenOrchestrator';
 import { supabase } from '@/integrations/supabase/client';
+import { ContentEditingToolbar, ContentQualityDashboard, VersionHistoryPanel } from '@/components/content/editing';
+import { useContentEditing } from '@/hooks/useContentEditing';
 
 interface ContentDetailModalProps {
   content: ContentItemType | null;
@@ -76,6 +81,32 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
   const [localGeneratedImages, setLocalGeneratedImages] = useState<MediaAsset[]>([]);
+  const [localContent, setLocalContent] = useState<string>('');
+  const [isAIToolsOpen, setIsAIToolsOpen] = useState(true);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+
+  // Content editing hook
+  const { 
+    isProcessing: isEditingProcessing, 
+    regenerate, 
+    improve, 
+    expand, 
+    compress, 
+    changeTone 
+  } = useContentEditing({
+    contentId: content?.id,
+    onContentUpdate: (newContent) => {
+      setLocalContent(newContent);
+      toast.success('Content updated');
+    }
+  });
+
+  // Sync local content with prop
+  useEffect(() => {
+    if (content?.content) {
+      setLocalContent(content.content);
+    }
+  }, [content?.content]);
   
   // Debug logging to track content data
   useEffect(() => {
@@ -485,7 +516,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                           >
                             <div className="w-full border border-border rounded-lg bg-muted/5 max-h-80 overflow-y-auto">
                               <div className="p-3 sm:p-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                                {content.content || 'No content available'}
+                                {localContent || content.content || 'No content available'}
                               </div>
                             </div>
                             <Button 
@@ -506,13 +537,13 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                             transition={{ duration: 0.2 }}
                           >
                             <div className="text-sm text-muted-foreground leading-relaxed line-clamp-6">
-                              {content.content ? (
-                                content.content.length > 300 
-                                  ? content.content.substring(0, 300) + '...'
-                                  : content.content
+                              {(localContent || content.content) ? (
+                                (localContent || content.content).length > 300 
+                                  ? (localContent || content.content).substring(0, 300) + '...'
+                                  : (localContent || content.content)
                               ) : 'No content available'}
                             </div>
-                            {content.content && content.content.length > 300 && (
+                            {(localContent || content.content) && (localContent || content.content).length > 300 && (
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
@@ -640,6 +671,53 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* AI Editing Tools */}
+                <CollapsibleSection
+                  isOpen={isAIToolsOpen}
+                  onToggle={() => setIsAIToolsOpen(!isAIToolsOpen)}
+                  title="AI Editing Tools"
+                  icon={Wand2}
+                >
+                  <div className="space-y-4">
+                    {/* Quick Actions Toolbar */}
+                    <ContentEditingToolbar
+                      onRegenerate={() => regenerate(localContent || content.content)}
+                      onExpand={() => expand(localContent || content.content)}
+                      onCompress={() => compress(localContent || content.content)}
+                      onImprove={() => improve(localContent || content.content)}
+                      onChangeTone={(tone) => changeTone(localContent || content.content, tone)}
+                      isProcessing={isEditingProcessing}
+                    />
+                    
+                    {/* Quality Dashboard */}
+                    <ContentQualityDashboard
+                      content={localContent || content.content}
+                      title={extractTitleFromContent(content.content) || content.title}
+                      onAutoFix={async (rec) => {
+                        // Auto-fix via AI improvement
+                        await improve(localContent || content.content);
+                      }}
+                    />
+                  </div>
+                </CollapsibleSection>
+
+                {/* Version History */}
+                <CollapsibleSection
+                  isOpen={isVersionHistoryOpen}
+                  onToggle={() => setIsVersionHistoryOpen(!isVersionHistoryOpen)}
+                  title="Version History"
+                  icon={History}
+                >
+                  <VersionHistoryPanel
+                    contentId={content.id}
+                    currentContent={localContent || content.content}
+                    onRestore={(restoredContent) => {
+                      setLocalContent(restoredContent);
+                      toast.success('Version restored');
+                    }}
+                  />
+                </CollapsibleSection>
 
                 {/* Meta Information (SEO) - Always show */}
                 <Card className="bg-muted/5 border-border">
