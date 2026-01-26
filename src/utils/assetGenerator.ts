@@ -1,6 +1,5 @@
 import { CampaignStrategy, ContentBrief } from '@/types/campaign-types';
 import { CampaignAsset } from '@/types/asset-types';
-import { v4 as uuidv4 } from 'uuid';
 
 export const generateAssetListFromStrategy = (
   strategy: CampaignStrategy,
@@ -22,7 +21,7 @@ export const generateAssetListFromStrategy = (
       }
       
       assets.push({
-        id: uuidv4(),
+        id: `${campaignId}-${formatId}-${i}`,
         campaignId,
         type: formatId as any,
         title: topic.title,
@@ -120,7 +119,7 @@ const createFallbackAsset = (
   campaignId: string
 ): CampaignAsset => {
   return {
-    id: uuidv4(),
+    id: `${campaignId}-${formatId}-${index}`,
     campaignId,
     type: formatId as any,
     title: `${formatId.replace(/-/g, ' ')} ${index + 1}`,
