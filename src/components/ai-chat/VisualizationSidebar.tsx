@@ -823,7 +823,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           />
                         }
                       >
-                        {renderChart(secondaryChartType, 260)}
+                        {renderChart(secondaryChartType, 200)}
                       </ChartBlock>
                     </motion.div>
                   )}
