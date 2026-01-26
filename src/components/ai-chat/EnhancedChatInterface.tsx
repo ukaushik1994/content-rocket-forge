@@ -190,7 +190,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       }
     }
   };
-  return <div className={`h-full ${className}`}>
+  return <div className={`h-full flex flex-col ${className}`}>
       {/* Chat History Sidebar */}
       <AnimatePresence>
         {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} />}
@@ -237,185 +237,187 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </Button>
       </motion.div>
 
-      {/* Main Chat Interface - shrinks when visualization sidebar is open */}
-      <div className={`flex transition-all duration-300 ease-out ${showSidebar ? 'ml-80' : 'ml-0'} ${showVisualizationSidebar ? 'lg:mr-[480px] sm:mr-[400px]' : 'mr-0'}`}>
-        <motion.div className="flex-1 flex flex-col h-full pt-20 pb-24" initial="hidden" animate="visible" variants={containerVariants}>
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col min-h-0 relative">
-            {/* Rate Limit Banner */}
-            <RateLimitBanner 
-              className="mx-6 mt-2" 
-              onRetry={() => console.log('Retrying after rate limit clear')}
-            />
-            
-            {/* Messages Area */}
-            <ScrollArea className="flex-1 px-6">
-              <div className="max-w-6xl mx-auto py-6 space-y-8">
-                {/* Welcome State - Premium Minimal */}
-            <AnimatePresence>
-              {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-10">
-                  {/* Welcome Hero - Clean and Minimal */}
-                  <motion.div className="text-center py-12" initial={{
-                  opacity: 0,
-                  y: 20
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  duration: 0.6,
-                  ease: "easeOut"
-                }}>
-                    {/* Minimal Icon with Subtle Ring */}
-                    <motion.div 
-                      className="relative mx-auto w-fit mb-8"
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.1, duration: 0.4 }}
-                    >
-                      <div className="p-4 rounded-2xl bg-card border border-border/50 shadow-sm">
-                        <Brain className="h-10 w-10 text-primary" />
-                      </div>
-                      {/* Subtle pulse ring */}
+      {/* Main Content Area - Chat and Visualization side by side */}
+      <div className={`flex-1 flex transition-all duration-300 ease-out pt-20 pb-24 overflow-hidden ${showSidebar ? 'ml-80' : 'ml-0'}`}>
+        {/* Chat Messages Area - shrinks when visualization sidebar is open */}
+        <motion.div 
+          className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ease-out ${showVisualizationSidebar ? 'lg:mr-[480px] sm:mr-[400px]' : 'mr-0'}`}
+          initial="hidden" 
+          animate="visible" 
+          variants={containerVariants}
+        >
+          {/* Rate Limit Banner */}
+          <RateLimitBanner 
+            className="mx-6 mt-2" 
+            onRetry={() => console.log('Retrying after rate limit clear')}
+          />
+          
+          {/* Messages Area */}
+          <ScrollArea className="flex-1 px-6">
+            <div className="max-w-6xl mx-auto py-6 space-y-8">
+              {/* Welcome State - Premium Minimal */}
+              <AnimatePresence>
+                {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-10">
+                    {/* Welcome Hero - Clean and Minimal */}
+                    <motion.div className="text-center py-12" initial={{
+                    opacity: 0,
+                    y: 20
+                  }} animate={{
+                    opacity: 1,
+                    y: 0
+                  }} transition={{
+                    duration: 0.6,
+                    ease: "easeOut"
+                  }}>
+                      {/* Minimal Icon with Subtle Ring */}
                       <motion.div 
-                        className="absolute inset-0 rounded-2xl border border-primary/20"
-                        animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0, 0.5] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                      />
+                        className="relative mx-auto w-fit mb-8"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.1, duration: 0.4 }}
+                      >
+                        <div className="p-4 rounded-2xl bg-card border border-border/50 shadow-sm">
+                          <Brain className="h-10 w-10 text-primary" />
+                        </div>
+                        {/* Subtle pulse ring */}
+                        <motion.div 
+                          className="absolute inset-0 rounded-2xl border border-primary/20"
+                          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0, 0.5] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                      </motion.div>
+                      
+                      {/* Time-based Greeting */}
+                      <motion.h2 
+                        className="text-2xl md:text-3xl font-semibold text-foreground mb-4" 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.4 }}
+                      >
+                        {(() => {
+                          const hour = new Date().getHours();
+                          if (hour < 12) return 'Good morning';
+                          if (hour < 17) return 'Good afternoon';
+                          return 'Good evening';
+                        })()}
+                      </motion.h2>
+                      
+                      <motion.p 
+                        className="text-muted-foreground max-w-lg mx-auto leading-relaxed text-sm" 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        I'm here to help you optimize your content strategy, analyze performance, 
+                        and discover new opportunities.
+                      </motion.p>
                     </motion.div>
-                    
-                    {/* Time-based Greeting */}
-                    <motion.h2 
-                      className="text-2xl md:text-3xl font-semibold text-foreground mb-4" 
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2, duration: 0.4 }}
-                    >
-                      {(() => {
-                        const hour = new Date().getHours();
-                        if (hour < 12) return 'Good morning';
-                        if (hour < 17) return 'Good afternoon';
-                        return 'Good evening';
-                      })()}
-                    </motion.h2>
-                    
-                    <motion.p 
-                      className="text-muted-foreground max-w-lg mx-auto leading-relaxed text-sm" 
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3, duration: 0.4 }}
-                    >
-                      I'm here to help you optimize your content strategy, analyze performance, 
-                      and discover new opportunities.
-                    </motion.p>
-                  </motion.div>
 
-                  {/* Platform Summary & Quick Actions - More Spacing */}
-                  <motion.div 
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8" 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.4 }}
-                  >
-                    <PlatformSummaryCard onAction={handleLegacyAction} />
-                    <EnhancedQuickActions onAction={handleLegacyAction} />
-                  </motion.div>
-                </motion.div>}
-            </AnimatePresence>
-
-            {/* Messages */}
-            {messages.length > 0 && <div className="space-y-6">
-                {messages.map((message, index) => (
-                  <EnhancedMessageBubble 
-                    key={message.id} 
-                    message={message} 
-                    isLatest={index === messages.length - 1} 
-                    onAction={handleAction} 
-                    onSendMessage={sendMessage}
-                    onExpandVisualization={handleExpandVisualization}
-                  />
-                ))}
-              </div>}
-
-            {/* Typing Indicator - Refined Minimal */}
-            <AnimatePresence>
-              {isTyping && <motion.div 
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-3 max-w-4xl mx-auto"
-              >
-                  {/* Avatar with pulse */}
-                  <div className="flex-shrink-0 relative">
-                    <div className="w-8 h-8 rounded-full bg-card border border-primary/20 flex items-center justify-center shadow-sm">
-                      <Brain className="w-4 h-4 text-primary" />
-                    </div>
+                    {/* Platform Summary & Quick Actions - More Spacing */}
                     <motion.div 
-                      className="absolute inset-0 rounded-full border border-primary/30"
-                      animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0, 0.6] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-8" 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5, duration: 0.4 }}
+                    >
+                      <PlatformSummaryCard onAction={handleLegacyAction} />
+                      <EnhancedQuickActions onAction={handleLegacyAction} />
+                    </motion.div>
+                  </motion.div>}
+              </AnimatePresence>
+
+              {/* Messages */}
+              {messages.length > 0 && <div className="space-y-6">
+                  {messages.map((message, index) => (
+                    <EnhancedMessageBubble 
+                      key={message.id} 
+                      message={message} 
+                      isLatest={index === messages.length - 1} 
+                      onAction={handleAction} 
+                      onSendMessage={sendMessage}
+                      onExpandVisualization={handleExpandVisualization}
                     />
-                  </div>
-                  
-                  {/* Clean message card */}
-                  <Card className="flex items-center gap-3 text-muted-foreground text-sm px-4 py-3 bg-card border-border/50 shadow-sm">
-                    {/* Subtle animated dots */}
-                    <div className="flex gap-1">
+                  ))}
+                </div>}
+
+              {/* Typing Indicator - Refined Minimal */}
+              <AnimatePresence>
+                {isTyping && <motion.div 
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-3 max-w-4xl mx-auto"
+                >
+                    {/* Avatar with pulse */}
+                    <div className="flex-shrink-0 relative">
+                      <div className="w-8 h-8 rounded-full bg-card border border-primary/20 flex items-center justify-center shadow-sm">
+                        <Brain className="w-4 h-4 text-primary" />
+                      </div>
                       <motion.div 
-                        className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
-                      />
-                      <motion.div 
-                        className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
-                      />
-                      <motion.div 
-                        className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                        className="absolute inset-0 rounded-full border border-primary/30"
+                        animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0, 0.6] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                       />
                     </div>
-                    <span className="text-sm">Thinking...</span>
-                  </Card>
-                </motion.div>}
-            </AnimatePresence>
+                    
+                    {/* Clean message card */}
+                    <Card className="flex items-center gap-3 text-muted-foreground text-sm px-4 py-3 bg-card border-border/50 shadow-sm">
+                      {/* Subtle animated dots */}
+                      <div className="flex gap-1">
+                        <motion.div 
+                          className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
+                        />
+                        <motion.div 
+                          className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+                        />
+                        <motion.div 
+                          className="w-1.5 h-1.5 bg-primary/60 rounded-full" 
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                        />
+                      </div>
+                      <span className="text-sm">Thinking...</span>
+                    </Card>
+                  </motion.div>}
+              </AnimatePresence>
 
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-
-        {/* Input Area - Refined, responsive to both sidebars */}
-        <div className={`fixed bottom-0 z-40 border-t border-border/30 bg-background/95 backdrop-blur-xl transition-all duration-300 ease-out ${showSidebar ? 'left-80' : 'left-0'} ${showVisualizationSidebar ? 'lg:right-[480px] sm:right-[400px]' : 'right-0'}`}>
-          <div className="max-w-6xl mx-auto px-6 py-4">
-            {/* Context Indicator */}
-            {showContextIndicator && (
-              <div className="mb-3">
-                <ContextDisplayIndicator
-                  sources={contextSources}
-                  isActive={showContextIndicator}
-                  overallConfidence={88}
-                  variant="compact"
-                />
-              </div>
-            )}
-            
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <ContextAwareMessageInput 
-                  onSendMessage={handleSendMessage} 
-                  isLoading={isLoading} 
-                  placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
-                />
-              </div>
-              <GlobalApiStatus variant="compact" />
+              <div ref={messagesEndRef} />
             </div>
+          </ScrollArea>
+        </motion.div>
+      </div>
+
+      {/* Input Area - ALWAYS full width, only respects left sidebar */}
+      <div className={`fixed bottom-0 left-0 right-0 z-40 border-t border-border/30 bg-background/95 backdrop-blur-xl transition-all duration-300 ease-out ${showSidebar ? 'pl-80' : 'pl-0'}`}>
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          {/* Context Indicator */}
+          {showContextIndicator && (
+            <div className="mb-3">
+              <ContextDisplayIndicator
+                sources={contextSources}
+                isActive={showContextIndicator}
+                overallConfidence={88}
+                variant="compact"
+              />
+            </div>
+          )}
+          
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <ContextAwareMessageInput 
+                onSendMessage={handleSendMessage} 
+                isLoading={isLoading} 
+                placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
+              />
+            </div>
+            <GlobalApiStatus variant="compact" />
           </div>
         </div>
-        </div>
-        </motion.div>
-
       </div>
     </div>;
 };
