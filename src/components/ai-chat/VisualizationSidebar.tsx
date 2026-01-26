@@ -388,7 +388,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               onClick={onClose}
             />
             
-            {/* Sidebar Panel - Premium Glassmorphism */}
+            {/* Sidebar Panel - Clean Minimal Design */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -397,25 +397,19 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               className={cn(
                 "fixed top-0 right-0 h-full z-[75]",
                 "w-full sm:w-[400px] lg:w-[480px]",
-                // Premium glassmorphism
-                "bg-black/60 backdrop-blur-md",
-                "border-l border-white/8",
-                // Inner glow effect
-                "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                "bg-background/95 backdrop-blur-lg",
+                "border-l border-border/50",
                 "flex flex-col"
               )}
             >
-              {/* Top gradient line */}
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              
-              {/* Premium Header with frosted glass */}
-              <div className="flex-shrink-0 bg-gradient-to-b from-white/[0.03] to-transparent">
-                <div className="px-6 py-5 border-b border-white/5">
-                  <div className="flex items-start gap-4">
-                    {/* Icon container with ring glow */}
+              {/* Clean Header */}
+              <div className="flex-shrink-0">
+                <div className="px-6 py-5 border-b border-border/50">
+                  <div className="flex items-start gap-3">
+                    {/* Simple icon container */}
                     <div className="flex-shrink-0">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/25 to-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/20 ring-1 ring-primary/10">
-                        <Activity className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                        <Activity className="w-5 h-5 text-muted-foreground" />
                       </div>
                     </div>
                     
@@ -425,23 +419,23 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         {title || visualData?.title || 'Data Visualization'}
                       </h2>
                       {description && (
-                        <p className="text-sm text-foreground/60 mt-0.5 line-clamp-2">{description}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
                       )}
                     </div>
                     
-                    {/* Close button with focus ring */}
+                    {/* Simple close button */}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={onClose}
-                          className="flex-shrink-0 rounded-full hover:bg-white/5 focus:ring-2 focus:ring-primary/20 text-foreground/60 hover:text-foreground"
+                          className="flex-shrink-0 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="left" className="text-xs bg-popover/95 backdrop-blur-xl border-white/10">
+                      <TooltipContent side="left" className="text-xs">
                         Close (Esc)
                       </TooltipContent>
                     </Tooltip>
@@ -449,23 +443,20 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                   
                   {/* Data badges */}
                   <div className="flex items-center gap-2 mt-4 flex-wrap">
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
+                    <Badge variant="outline" className="text-xs">
                       <Database className="w-3 h-3 mr-1" />
                       {dataInfo.source}
                     </Badge>
                     {dataInfo.points > 0 && (
-                      <Badge variant="outline" className="text-xs bg-white/5 border-white/10 text-foreground/60">
+                      <Badge variant="outline" className="text-xs text-muted-foreground">
                         {dataInfo.points} data points
                       </Badge>
                     )}
-                    <Badge variant="outline" className={cn("text-xs border-transparent", qualityConfig.bgColor, qualityConfig.color)}>
+                    <Badge variant="outline" className={cn("text-xs", qualityConfig.color)}>
                       {qualityConfig.label}
                     </Badge>
                   </div>
                 </div>
-                
-                {/* Holographic gradient line */}
-                <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
               </div>
 
               {/* Scrollable Content */}
@@ -554,72 +545,57 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       )}
                     </div>
 
-                    {/* Premium Chart Container */}
-                    <div className="relative rounded-xl overflow-hidden">
-                      {/* Top gradient line */}
-                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent z-10" />
-                      
-                      <Card className="p-4 bg-white/[0.02] border-white/8 backdrop-blur-sm">
-                        <AnimatePresence mode="wait">
-                          {activeView === 'chart' ? (
-                            <motion.div
-                              key="chart"
-                              initial={{ opacity: 0, scale: 0.98 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.98 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              {renderChart()}
-                            </motion.div>
-                          ) : (
-                            <motion.div
-                              key="table"
-                              initial={{ opacity: 0, scale: 0.98 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.98 }}
-                              transition={{ duration: 0.2 }}
-                              className="max-h-[400px] overflow-auto"
-                            >
-                              <DataTable
-                                data={chartData}
-                                allowEdit={false}
-                                allowFilter={true}
-                                allowSort={true}
-                              />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </Card>
-                      
-                      {/* Bottom gradient line */}
-                      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-                    </div>
+                    {/* Clean Chart Container */}
+                    <Card className="p-4 bg-card/50 border-border/50">
+                      <AnimatePresence mode="wait">
+                        {activeView === 'chart' ? (
+                          <motion.div
+                            key="chart"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {renderChart()}
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="table"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="max-h-[400px] overflow-auto"
+                          >
+                            <DataTable
+                              data={chartData}
+                              allowEdit={false}
+                              allowFilter={true}
+                              allowSort={true}
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Card>
                   </motion.div>
 
                   {/* AI Insights */}
                   {insights.length > 0 && (
                     <Collapsible open={isInsightsExpanded} onOpenChange={setIsInsightsExpanded}>
                       <CollapsibleTrigger asChild>
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 }}
-                          className="flex items-center justify-between cursor-pointer group py-1"
-                        >
+                        <div className="flex items-center justify-between cursor-pointer group py-1">
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-500/10 flex items-center justify-center shadow-lg shadow-amber-500/20 ring-1 ring-amber-500/20">
-                              <Lightbulb className="w-4 h-4 text-amber-500" />
-                            </div>
+                            <Lightbulb className="w-4 h-4 text-muted-foreground" />
                             <h3 className="text-sm font-medium text-foreground">AI Insights</h3>
-                            <Badge variant="outline" className="text-xs bg-white/5 border-white/10 text-foreground/60">{insights.length}</Badge>
+                            <Badge variant="outline" className="text-xs text-muted-foreground">{insights.length}</Badge>
                           </div>
                           <motion.div
                             animate={{ rotate: isInsightsExpanded ? 180 : 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <ChevronDown className="w-4 h-4 text-foreground/40 group-hover:text-foreground/60" />
+                            <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
                           </motion.div>
-                        </motion.div>
+                        </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <motion.div 
@@ -676,51 +652,39 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </Collapsible>
                   )}
 
-                  {/* Deep Dive Prompts - Glass Chips */}
+                  {/* Deep Dive Prompts */}
                   {deepDivePrompts.length > 0 && onSendMessage && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.25 }}
-                    >
-                      <h3 className="text-[11px] font-medium uppercase tracking-widest text-foreground/50 mb-3 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/25 to-primary/10 flex items-center justify-center shadow-lg shadow-primary/10 ring-1 ring-primary/20">
-                          <Sparkles className="w-3.5 h-3.5 text-primary" />
-                        </div>
+                    <div>
+                      <h3 className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-3">
                         Explore Further
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {deepDivePrompts.slice(0, 4).map((prompt: any, idx: number) => {
                           const PromptIcon = prompt.icon;
                           return (
-                            <motion.div
+                            <Button
                               key={idx}
-                              whileHover={{ scale: 1.02, y: -1 }}
-                              whileTap={{ scale: 0.98 }}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                onSendMessage(prompt.text);
+                                onClose();
+                              }}
+                              className="text-xs h-8 gap-1.5 hover:bg-muted text-muted-foreground hover:text-foreground"
                             >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  onSendMessage(prompt.text);
-                                  onClose();
-                                }}
-                                className="text-xs h-8 gap-1.5 bg-white/[0.03] border-white/10 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all text-foreground/60"
-                              >
-                                <PromptIcon className="w-3 h-3" />
-                                {prompt.text}
-                              </Button>
-                            </motion.div>
+                              <PromptIcon className="w-3 h-3" />
+                              {prompt.text}
+                            </Button>
                           );
                         })}
                       </div>
-                    </motion.div>
+                    </div>
                   )}
                 </div>
               </ScrollArea>
 
-              {/* Premium Footer with gradient */}
-              <div className="flex-shrink-0 px-6 py-4 border-t border-white/5 bg-gradient-to-t from-white/[0.02] to-transparent">
+              {/* Footer */}
+              <div className="flex-shrink-0 px-6 py-4 border-t border-border/50">
                 <ExportDropdown
                   data={chartData}
                   onShare={() => navigator.clipboard.writeText(window.location.href)}
