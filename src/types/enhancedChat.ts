@@ -2,7 +2,7 @@
 import { ContextualAction } from '@/services/aiService';
 
 export interface ChartConfiguration {
-  type: 'line' | 'bar' | 'pie' | 'area';
+  type: 'line' | 'bar' | 'pie' | 'area' | 'radar' | 'funnel' | 'scatter' | 'radial' | 'composed';
   data: any[];
   categories: string[];
   title: string; // Individual chart title
