@@ -1,230 +1,112 @@
 
 
-# Comprehensive Sidebar Information Architecture
+# Fix Metric Card Spacing & Widen Sidebar
 
-## Understanding the Vision
+## Issues Identified
 
-You want a **smart, context-aware sidebar** that:
-1. Adapts dynamically based on what data the AI is discussing
-2. Shows all relevant perspectives (Campaign, Content, Market Intelligence)
-3. Always displays time-based comparisons when data permits
-4. Hides sections gracefully when data is missing
-5. Clearly defines what information belongs in each section
+From the screenshot, I can see two problems:
 
----
+1. **Metric Card Text Overlap**: The value "23" is cramped and merging with the label text below it. The card has insufficient internal spacing.
 
-## Complete List of Meaningful Information for Sidebar
-
-Based on the available data context, here is everything the sidebar can display:
-
-### 1. PRIMARY CHART (Always Present)
-| Information | Source | Purpose |
-|-------------|--------|---------|
-| Performance trends over time | Content/Campaign data | Show trajectory |
-| SEO score distribution | `content_items.seo_score` | Content health overview |
-| Campaign progress | `content_generation_queue` | Generation velocity |
-| Keyword volume analysis | `keywords.search_volume` | Market opportunity |
-| Competitor comparison | `competitor_solutions` | Competitive position |
-
-### 2. AI SUMMARY (Always Present)
-| Information | Source | Purpose |
-|-------------|--------|---------|
-| Data narrative | Auto-generated from chart data | Plain-language explanation |
-| Variance analysis | Calculated from dataset | Identify outliers |
-| Trend direction | Computed from time series | Quick trajectory read |
-| Top/Bottom performers | Sorted from data | Highlight extremes |
-
-### 3. SECONDARY CHART (Conditional - Complementary View)
-| Information | Source | Purpose |
-|-------------|--------|---------|
-| Distribution breakdown | Same data, pie/donut view | Proportion analysis |
-| Multi-dimensional scores | Radar chart | Balance assessment |
-| Status composition | Bar chart by status | Workflow bottlenecks |
-
-### 4. KEY METRICS (Up to 4 cards with period comparison)
-| Metric | Data Source | Comparison |
-|--------|-------------|------------|
-| **Total Content** | `content_items` count | vs. last period |
-| **Draft/Published Ratio** | Status breakdown | Trend over time |
-| **SEO Health** | Average SEO score | vs. target (80+) |
-| **Active Campaigns** | `campaigns.status='active'` | vs. last month |
-| **Queue Health** | Pending/Failed counts | vs. yesterday |
-| **Keyword Coverage** | `keywords` count | vs. competitors |
-| **Content Velocity** | Items published/week | vs. prior week |
-| **Engagement Rate** | Clicks/Views ratio | vs. benchmark |
-
-### 5. AI INSIGHTS (Collapsed - Expandable)
-| Insight Type | Icon | Content Pattern |
-|-------------|------|-----------------|
-| **Trend** | TrendingUp | "Performance increased 23% in the last 7 days" |
-| **Warning** | AlertTriangle | "3 queue items have failed - retry recommended" |
-| **Opportunity** | Zap | "5 drafts with SEO 80+ ready for publishing" |
-
-### 6. DATA CONTEXT HEADER (Always Present)
-| Information | Purpose |
-|-------------|---------|
-| Data source label | "Content Analytics" / "Campaign Intelligence" / "Market Research" |
-| Data points count | Quality indicator (e.g., "24 data points") |
-| Data quality badge | "High Quality" / "Limited Data" |
-| Timeframe indicator | "Last 30 days" / "This Quarter" |
-
-### 7. DEEP DIVE PROMPTS (Context-aware follow-ups)
-| Category | Example Prompts |
-|----------|----------------|
-| Performance | "Which content type performs best?" |
-| Comparison | "Compare this to last month" |
-| Detail | "Show me the top 5 performing items" |
-| Action | "What should I prioritize next?" |
+2. **Sidebar Width**: Currently set at `480px` (sm) and `560px` (lg), which may feel constrained for the data-rich layout.
 
 ---
 
-## Section Visibility Logic
+## Solution
 
-The sidebar will use this decision tree to show/hide sections:
+### 1. Increase Metric Card Internal Spacing
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ SIDEBAR SECTION VISIBILITY RULES                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│ IF visualData has chartConfig with data → SHOW Primary Chart    │
-│ IF chartData.length >= 2 → SHOW Secondary Chart                 │
-│ IF summaryInsights.metricCards exists → SHOW Key Metrics        │
-│   ELSE generate from chartData (current behavior)               │
-│ IF insights array exists && length > 0 → SHOW AI Insights       │
-│ IF deepDivePrompts array exists → SHOW Explore Further          │
-│                                                                  │
-│ MISSING DATA BEHAVIOR:                                          │
-│ • No chartData → HIDE chart sections entirely                   │
-│ • No metrics → HIDE metrics section (don't show empty grid)     │
-│ • No insights → HIDE insights collapsible                       │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+**File: `PremiumMetricCard.tsx`**
+
+| Current | New |
+|---------|-----|
+| `p-4` padding | `p-5` padding |
+| `text-xl` for value | `text-2xl` for value |
+| `mb-2` header margin | `mb-3` header margin |
+| `mt-1` label margin | `mt-2` label margin |
+
+This creates more breathing room between:
+- Trend badge and value
+- Value and label
+- Label and comparison text
+
+### 2. Widen the Sidebar
+
+**File: `VisualizationSidebar.tsx`**
+
+| Screen Size | Current Width | New Width |
+|-------------|---------------|-----------|
+| sm (≥640px) | `480px` | `520px` |
+| lg (≥1024px) | `560px` | `600px` |
+
+The 40px increase gives charts and metrics more horizontal space without overwhelming the main chat area.
 
 ---
 
-## Enhanced Data Structure Per Section
+## Technical Changes
 
-### Section 1: Data Context Header (NEW)
-Add context about what data is being shown and its timeframe:
+### `src/components/ai-chat/PremiumMetricCard.tsx`
 
 ```typescript
-// New header info object
-const headerContext = {
-  dataSource: visualData?.dataSource || 'AI Analysis',
-  timeframe: visualData?.timeframe || 'Last 30 Days',
-  totalPoints: chartData.length,
-  lastUpdated: new Date().toISOString()
-};
+// Line 71-78: Update card container
+<div className={cn(
+  "relative p-5 h-full rounded-lg",  // p-4 → p-5
+  // ... rest unchanged
+)}>
+
+// Line 81: Increase header margin
+<div className="flex items-center justify-between mb-3">  // mb-2 → mb-3
+
+// Line 97: Larger value text
+<p className="text-2xl font-semibold ...">  // text-xl → text-2xl
+
+// Line 104: More spacing before label
+<p className="text-xs text-muted-foreground mt-2 truncate">  // mt-1 → mt-2
+
+// Line 110: More spacing before comparison
+{comparisonValue !== undefined && (
+  <p className="text-[10px] text-muted-foreground/60 mt-3 truncate">  // mt-2 → mt-3
 ```
 
-### Section 4: Enhanced Metrics with Always-On Comparison
-Update metric cards to always show period comparison:
+### `src/components/ai-chat/VisualizationSidebar.tsx`
 
 ```typescript
-// Enhanced metric card structure
-{
-  label: "Total Content",
-  value: 156,
-  trend: "up",
-  trendValue: "+12%",
-  previousValue: 139,           // Always show
-  comparisonPeriod: "vs. last week",  // Always show
-  target: 200,                  // Optional benchmark
-  targetLabel: "Monthly Goal"
-}
+// Line 663: Update sidebar width classes
+"w-full sm:w-[520px] lg:w-[600px]",  // was 480px / 560px
 ```
 
 ---
 
-## Implementation Changes
+## Visual Comparison
 
-### File: `VisualizationSidebar.tsx`
-
-**1. Add Header Context Section**
-Display data source, timeframe, and quality prominently at the top.
-
-**2. Enhanced Metric Card Rendering**
-Always pass `showComparison={true}` to all metric cards and add comparison period label.
-
-**3. Section Visibility Guards**
-Each section wrapped in explicit visibility checks that completely hide when data is missing.
-
-**4. Timeframe Indicator**
-Add a timeframe badge showing what period the data represents.
-
-### File: `PremiumMetricCard.tsx`
-
-**1. Always Show Comparison**
-Remove the `showComparison` toggle - always display comparison data.
-
-**2. Add Comparison Period Label**
-Show "vs. last week" / "vs. last month" dynamically.
-
----
-
-## Visual Layout (Final Structure)
-
+**Before:**
 ```text
-┌──────────────────────────────────────────────┐
-│ ▼ VISUALIZATION SIDEBAR                       │
-├──────────────────────────────────────────────┤
-│ TITLE: "Content Performance Analysis"         │
-│ ──────────────────────────────────────────── │
-│ [Content Analytics] • 24 pts • Last 30 Days   │
-│ [High Quality ✓]                              │
-├──────────────────────────────────────────────┤
-│ [Chart ✓] [Table] ─── Type: [Bar ▼]          │
-│ ┌────────────────────────────────────────┐   │
-│ │                                        │   │
-│ │     PRIMARY CHART (260px)              │   │
-│ │     Shows main trend/comparison        │   │
-│ │                                        │   │
-│ └────────────────────────────────────────┘   │
-├──────────────────────────────────────────────┤
-│ ✨ AI SUMMARY                                 │
-│ "Your content shows 23% growth with          │
-│ 'Workforce Planning' leading at 44K..."      │
-├──────────────────────────────────────────────┤
-│ Distribution ─── Type: [Pie ▼]               │
-│ ┌────────────────────────────────────────┐   │
-│ │   SECONDARY CHART (200px)              │   │
-│ │   Complementary perspective            │   │
-│ └────────────────────────────────────────┘   │
-├──────────────────────────────────────────────┤
-│ KEY METRICS                                   │
-│ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ │
-│ │ ▲+12%  │ │ ▼-3%   │ │ ●0%    │ │ ▲+8%   │ │
-│ │ 156    │ │ 72%    │ │ 84     │ │ 12     │ │
-│ │ Content│ │ Publish│ │ SEO    │ │ Active │ │
-│ │vs. 139 │ │vs. 75% │ │vs. 82  │ │vs. 11  │ │
-│ └────────┘ └────────┘ └────────┘ └────────┘ │
-├──────────────────────────────────────────────┤
-│ 💡 AI Insights (3)                    [▼]    │
-│   • Trend: 25% growth trajectory detected    │
-│   • Warning: 3 queue items failed            │
-│   • Opportunity: 5 high-SEO drafts ready     │
-├──────────────────────────────────────────────┤
-│ EXPLORE FURTHER                              │
-│ [Which performs best?] [Compare to last mo]  │
-└──────────────────────────────────────────────┘
+┌────────┐
+│▲+12%   │ ← cramped
+│23      │ ← text overlapping
+│Content │
+│vs.20   │
+└────────┘
+```
+
+**After:**
+```text
+┌──────────┐
+│ ▲+12%    │
+│           │
+│ 23        │ ← clear spacing
+│           │
+│ Content   │
+│ vs. 20    │
+└──────────┘
 ```
 
 ---
 
-## Technical Summary
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `VisualizationSidebar.tsx` | Add header context section, always-on comparison mode, visibility guards |
-| `PremiumMetricCard.tsx` | Always show comparison, add period label prop |
-| `AISummaryCard.tsx` | Add timeframe context to summary generation |
-| `types/enhancedChat.ts` | Add `timeframe`, `previousPeriodData` to metric types |
-
-This architecture ensures the sidebar clearly communicates:
-- **What data** is being shown (source, quality)
-- **What timeframe** it represents
-- **How it compares** to previous periods (always visible)
-- **What actions** to take next (insights + deep dives)
+| `src/components/ai-chat/PremiumMetricCard.tsx` | Increase padding, margins, and value font size |
+| `src/components/ai-chat/VisualizationSidebar.tsx` | Widen sidebar from 480/560px to 520/600px |
 
