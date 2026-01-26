@@ -249,6 +249,9 @@ async function streamResponse(socket: WebSocket, message: string, userId: string
   const words = message.split(' ');
   let currentContent = '';
   
+  // Parse visual data from the AI response
+  const parsedData = parseVisualDataFromResponse(message);
+  
   // Send streaming chunks
   for (let i = 0; i < words.length; i++) {
     currentContent += (i > 0 ? ' ' : '') + words[i];
@@ -264,12 +267,265 @@ async function streamResponse(socket: WebSocket, message: string, userId: string
     await new Promise(resolve => setTimeout(resolve, 50));
   }
   
-  // Send completion message
+  // Send completion message with visual data
   socket.send(JSON.stringify({
     type: 'ai_response_complete',
-    content: message,
+    content: parsedData.cleanContent || message,
+    visualData: parsedData.visualData,
+    actions: parsedData.actions,
     timestamp: Date.now()
   }));
+}
+
+/**
+ * Parse visual data from AI response content
+ * Extracts JSON blocks, charts, metrics, and other visual elements
+ */
+function parseVisualDataFromResponse(content: string): {
+  cleanContent: string;
+  visualData: any[] | null;
+  actions: any[] | null;
+} {
+  const visualDataItems: any[] = [];
+  const actions: any[] = [];
+  let cleanContent = content;
+  
+  // Extract JSON blocks from markdown code blocks
+  const jsonBlockRegex = /```json\s*([\s\S]*?)```/gi;
+  let match;
+  
+  while ((match = jsonBlockRegex.exec(content)) !== null) {
+    try {
+      const jsonStr = match[1].trim();
+      const parsed = JSON.parse(jsonStr);
+      
+      if (parsed && typeof parsed === 'object') {
+        // Check if it's visual data
+        if (isVisualDataObject(parsed)) {
+          const normalized = normalizeToVisualData(parsed);
+          if (normalized) {
+            visualDataItems.push(normalized);
+            // Remove the JSON block from clean content
+            cleanContent = cleanContent.replace(match[0], '');
+          }
+        }
+        
+        // Check if it's an array of visual data
+        if (Array.isArray(parsed)) {
+          for (const item of parsed) {
+            if (isVisualDataObject(item)) {
+              const normalized = normalizeToVisualData(item);
+              if (normalized) {
+                visualDataItems.push(normalized);
+              }
+            }
+          }
+          cleanContent = cleanContent.replace(match[0], '');
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse JSON block:', e);
+    }
+  }
+  
+  // Also check for inline chart/visual indicators
+  const chartPatterns = [
+    /\{[^{}]*"type"\s*:\s*"(chart|metrics|table|multi_chart_analysis)"[^{}]*\}/g,
+  ];
+  
+  for (const pattern of chartPatterns) {
+    let inlineMatch;
+    while ((inlineMatch = pattern.exec(content)) !== null) {
+      try {
+        const parsed = JSON.parse(inlineMatch[0]);
+        if (isVisualDataObject(parsed)) {
+          const normalized = normalizeToVisualData(parsed);
+          if (normalized && !visualDataItems.some(v => JSON.stringify(v) === JSON.stringify(normalized))) {
+            visualDataItems.push(normalized);
+          }
+        }
+      } catch {
+        // Ignore parse errors for inline patterns
+      }
+    }
+  }
+  
+  // Clean up excessive whitespace
+  cleanContent = cleanContent.replace(/\n{3,}/g, '\n\n').trim();
+  
+  return {
+    cleanContent,
+    visualData: visualDataItems.length > 0 ? visualDataItems : null,
+    actions: actions.length > 0 ? actions : null
+  };
+}
+
+/**
+ * Check if an object is a visual data structure
+ */
+function isVisualDataObject(obj: any): boolean {
+  if (!obj || typeof obj !== 'object') return false;
+  
+  const visualTypes = [
+    'chart', 'metrics', 'table', 'workflow', 'summary',
+    'multi_chart_analysis', 'queue_status', 'campaign_dashboard',
+    'generated_image', 'generated_images'
+  ];
+  
+  if (obj.type && visualTypes.includes(obj.type)) return true;
+  if (obj.chartConfig || obj.charts || obj.metrics) return true;
+  if (Array.isArray(obj.data) && obj.data.length > 0 && obj.type) return true;
+  
+  return false;
+}
+
+/**
+ * Normalize various data formats to standard visual data structure
+ */
+function normalizeToVisualData(obj: any): any | null {
+  // Already has proper type
+  if (obj.type && ['chart', 'metrics', 'table', 'multi_chart_analysis'].includes(obj.type)) {
+    return obj;
+  }
+  
+  // Has chartConfig
+  if (obj.chartConfig) {
+    return {
+      type: 'chart',
+      chartConfig: normalizeChartConfig(obj.chartConfig),
+      title: obj.title,
+      description: obj.description
+    };
+  }
+  
+  // Has charts array
+  if (Array.isArray(obj.charts)) {
+    return {
+      type: 'multi_chart_analysis',
+      charts: obj.charts.map(normalizeChartConfig),
+      title: obj.title || 'Analysis',
+      description: obj.description
+    };
+  }
+  
+  // Has metrics array
+  if (Array.isArray(obj.metrics)) {
+    return { type: 'metrics', metrics: obj.metrics };
+  }
+  
+  // Has data array - treat as chart
+  if (Array.isArray(obj.data) && obj.data.length > 0) {
+    return {
+      type: 'chart',
+      chartConfig: normalizeChartConfig({
+        type: obj.type || 'bar',
+        data: obj.data,
+        categories: obj.categories,
+        series: obj.series,
+        title: obj.title
+      })
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Normalize chart configuration to ensure consistent format
+ */
+function normalizeChartConfig(config: any): any {
+  const data = normalizeChartData(config.data || []);
+  const series = config.series || extractSeriesFromData(data);
+  const categories = config.categories || ['name'];
+  
+  return {
+    type: config.type || 'bar',
+    data,
+    categories,
+    series,
+    title: config.title,
+    subtitle: config.subtitle,
+    colors: config.colors,
+    height: config.height || 300
+  };
+}
+
+/**
+ * Normalize chart data - handle various AI output formats
+ */
+function normalizeChartData(rawData: any[]): any[] {
+  if (!Array.isArray(rawData)) return [];
+  
+  return rawData.map(item => {
+    const normalized: any = {};
+    
+    for (const [key, value] of Object.entries(item)) {
+      const lowerKey = key.toLowerCase();
+      
+      // Map common alternative keys
+      if (lowerKey === 'label' || lowerKey === 'category' || lowerKey === 'title') {
+        normalized.name = String(value);
+      } else if (lowerKey === 'count' || lowerKey === 'amount' || lowerKey === 'total') {
+        normalized.value = parseNumericValue(value);
+      } else if (key === 'name') {
+        normalized.name = String(value);
+      } else if (key === 'value') {
+        normalized.value = parseNumericValue(value);
+      } else {
+        // Keep other keys, normalizing numeric values
+        normalized[key] = typeof value === 'number' ? value : 
+                         isNumericString(value) ? parseNumericValue(value) : value;
+      }
+    }
+    
+    // Ensure name exists
+    if (!normalized.name) {
+      normalized.name = 'Unknown';
+    }
+    
+    return normalized;
+  });
+}
+
+/**
+ * Extract series configuration from data
+ */
+function extractSeriesFromData(data: any[]): Array<{ dataKey: string; name: string }> {
+  if (!data || data.length === 0) return [{ dataKey: 'value', name: 'Value' }];
+  
+  const sample = data[0];
+  const numericKeys = Object.keys(sample).filter(
+    k => typeof sample[k] === 'number' && k !== 'name'
+  );
+  
+  if (numericKeys.length === 0) return [{ dataKey: 'value', name: 'Value' }];
+  
+  return numericKeys.map(key => ({
+    dataKey: key,
+    name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+  }));
+}
+
+/**
+ * Parse numeric value from string or number
+ */
+function parseNumericValue(value: any): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[,$%]/g, '').trim();
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
+  }
+  return 0;
+}
+
+/**
+ * Check if a value is a numeric string
+ */
+function isNumericString(value: any): boolean {
+  if (typeof value !== 'string') return false;
+  const cleaned = value.replace(/[,$%]/g, '').trim();
+  return !isNaN(parseFloat(cleaned));
 }
 
 async function handleTypingIndicator(socket: WebSocket, connectionId: string, data: any) {
