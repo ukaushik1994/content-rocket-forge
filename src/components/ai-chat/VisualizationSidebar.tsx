@@ -660,7 +660,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 // Position: below navbar (top-20 = 80px), extends to bottom (behind input bar)
                 "fixed top-20 right-0 bottom-0 z-[35]",
                 // Mobile: full width but same vertical constraints
-                "w-full sm:w-[480px] lg:w-[560px]",
+                "w-full sm:w-[520px] lg:w-[600px]",
                 "bg-background/95 backdrop-blur-lg",
                 "border-l border-border/50",
                 "flex flex-col overflow-hidden"

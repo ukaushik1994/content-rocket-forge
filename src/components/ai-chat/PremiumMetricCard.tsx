@@ -70,7 +70,7 @@ export const PremiumMetricCard: React.FC<PremiumMetricCardProps> = ({
   const cardContent = (
     <div 
       className={cn(
-        "relative p-4 h-full rounded-lg",
+        "relative p-5 h-full rounded-lg",
         "bg-card/50",
         "border border-border/50",
         "border-l-2",
@@ -78,7 +78,7 @@ export const PremiumMetricCard: React.FC<PremiumMetricCardProps> = ({
       )}
     >
       {/* Header row: trend badge */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <div className={cn(
           "flex items-center gap-1 text-xs font-medium",
           trendConfig.textColor
@@ -94,20 +94,20 @@ export const PremiumMetricCard: React.FC<PremiumMetricCardProps> = ({
       </div>
 
       {/* Value */}
-      <p className="text-xl font-semibold text-foreground tabular-nums tracking-tight">
+      <p className="text-2xl font-semibold text-foreground tabular-nums tracking-tight">
         {typeof value === 'string' && value.startsWith('$') ? '$' : ''}
         {formatValue(numericValue)}
         {typeof value === 'string' && value.endsWith('%') ? '%' : ''}
       </p>
 
       {/* Label */}
-      <p className="text-xs text-muted-foreground mt-1 truncate">
+      <p className="text-xs text-muted-foreground mt-2 truncate">
         {label}
       </p>
 
       {/* Comparison row - always shown when data exists */}
       {comparisonValue !== undefined && (
-        <p className="text-[10px] text-muted-foreground/60 mt-2 truncate">
+        <p className="text-[10px] text-muted-foreground/60 mt-3 truncate">
           <span className="text-muted-foreground/40">{comparisonPeriod || comparisonLabel}:</span>{' '}
           <span className="font-medium">{comparisonValue.toLocaleString()}</span>
         </p>
