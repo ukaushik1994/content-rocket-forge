@@ -224,26 +224,6 @@ export const CampaignsHero = React.memo(({
             </div>
           </motion.div>
 
-          {/* Mode Toggle */}
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: 1.0,
-          duration: 0.4
-        }} className="mt-8 flex items-center justify-center gap-2">
-            <Button variant={mode === 'conversation' ? 'default' : 'outline'} size="sm" onClick={() => setMode('conversation')} className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              💬 Conversation Mode
-            </Button>
-            <Button variant={mode === 'express' ? 'default' : 'outline'} size="sm" onClick={() => setMode('express')} className="gap-2">
-              <Zap className="h-4 w-4" />
-              ⚡ Express Mode
-            </Button>
-          </motion.div>
 
           {/* Campaign Idea Input - Conversation Mode */}
           {mode === 'conversation' && <motion.div initial={{
