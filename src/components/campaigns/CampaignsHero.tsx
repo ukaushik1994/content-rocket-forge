@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { CampaignSettingsPanel } from './CampaignSettingsPanel';
+import { useCampaignStats } from '@/hooks/useCampaignStats';
 
 interface CampaignsHeroProps {
   onCreateClick?: () => void;
@@ -32,6 +33,9 @@ export const CampaignsHero = React.memo(({
   const [campaignIdea, setCampaignIdea] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Fetch real campaign stats from database
+  const { activeCampaigns, contentPiecesCreated, completedCampaigns, loading: statsLoading } = useCampaignStats();
 
   // Settings panel state
   const [showSettings, setShowSettings] = useState(false);
@@ -198,7 +202,9 @@ export const CampaignsHero = React.memo(({
                 <div className="p-2 rounded-lg bg-green-500/20">
                   <Target className="h-5 w-5 text-green-500" />
                 </div>
-                <span className="text-2xl font-bold text-foreground">12</span>
+                <span className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '-' : activeCampaigns}
+                </span>
               </div>
               <div className="text-sm text-muted-foreground">Active Campaigns</div>
             </div>
@@ -208,7 +214,9 @@ export const CampaignsHero = React.memo(({
                 <div className="p-2 rounded-lg bg-blue-500/20">
                   <TrendingUp className="h-5 w-5 text-blue-500" />
                 </div>
-                <span className="text-2xl font-bold text-foreground">34</span>
+                <span className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '-' : contentPiecesCreated}
+                </span>
               </div>
               <div className="text-sm text-muted-foreground">Content Pieces Created</div>
             </div>
@@ -218,7 +226,9 @@ export const CampaignsHero = React.memo(({
                 <div className="p-2 rounded-lg bg-purple-500/20">
                   <Sparkles className="h-5 w-5 text-purple-500" />
                 </div>
-                <span className="text-2xl font-bold text-foreground">8</span>
+                <span className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '-' : completedCampaigns}
+                </span>
               </div>
               <div className="text-sm text-muted-foreground">Completed</div>
             </div>
