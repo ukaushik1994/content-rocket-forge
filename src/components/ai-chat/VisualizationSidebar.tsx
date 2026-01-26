@@ -48,6 +48,7 @@ interface VisualizationSidebarProps {
   title?: string;
   description?: string;
   onSendMessage?: (message: string) => void;
+  onInteract?: () => void; // Track user interaction for smart persistence
 }
 
 export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
@@ -57,7 +58,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   chartConfig,
   title,
   description,
-  onSendMessage
+  onSendMessage,
+  onInteract
 }) => {
   const [activeView, setActiveView] = useState<'chart' | 'table'>('chart');
   const [chartType, setChartType] = useState<ChartType>(
@@ -384,22 +386,25 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] md:hidden"
+              className="fixed top-16 bottom-20 left-0 right-0 bg-black/40 backdrop-blur-sm z-[60] sm:hidden"
               onClick={onClose}
             />
             
-            {/* Sidebar Panel - Clean Minimal Design */}
+            {/* Sidebar Panel - Positioned between navbar and input bar */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={() => onInteract?.()} // Track any click as interaction
               className={cn(
-                "fixed top-0 right-0 h-full z-[75]",
+                // Position: below navbar (top-20 = 80px), above input bar (bottom-24 = 96px)
+                "fixed top-20 right-0 bottom-24 z-[65]",
+                // Mobile: full width but same vertical constraints
                 "w-full sm:w-[400px] lg:w-[480px]",
                 "bg-background/95 backdrop-blur-lg",
                 "border-l border-border/50",
-                "flex flex-col"
+                "flex flex-col overflow-hidden"
               )}
             >
               {/* Clean Header */}
