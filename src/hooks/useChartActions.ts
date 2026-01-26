@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ActionableItem } from '@/types/enhancedChat';
 import { useToast } from '@/hooks/use-toast';
 
@@ -9,6 +10,7 @@ interface UseChartActionsProps {
 
 export const useChartActions = ({ onSendMessage, onActionTrigger }: UseChartActionsProps = {}) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleActionClick = useCallback((action: ActionableItem) => {
     console.log('🎯 Action clicked:', action);
@@ -16,9 +18,13 @@ export const useChartActions = ({ onSendMessage, onActionTrigger }: UseChartActi
     // Phase 4: Enhanced action handling with actionType
     switch (action.actionType) {
       case 'navigate':
-        // Navigate to internal page
+        // Navigate to internal page using React Router for internal links
         if (action.targetUrl) {
-          window.location.href = action.targetUrl;
+          if (action.targetUrl.startsWith('http://') || action.targetUrl.startsWith('https://')) {
+            window.open(action.targetUrl, '_blank');
+          } else {
+            navigate(action.targetUrl);
+          }
         }
         toast({
           title: 'Navigating',
@@ -68,7 +74,7 @@ export const useChartActions = ({ onSendMessage, onActionTrigger }: UseChartActi
           onSendMessage(message);
         }
     }
-  }, [onSendMessage, onActionTrigger, toast]);
+  }, [onSendMessage, onActionTrigger, toast, navigate]);
 
   const handleDeepDiveClick = useCallback((prompt: string) => {
     console.log('🔍 Deep dive prompt clicked:', prompt);

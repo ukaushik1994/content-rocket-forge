@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   X, 
   ChevronDown, 
@@ -29,9 +30,12 @@ import {
   Zap,
   CheckCircle2,
   Search,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSidebarTrendData, TimeframeOption } from '@/hooks/useSidebarTrendData';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
@@ -39,6 +43,24 @@ import {
   PolarAngleAxis, PolarRadiusAxis, FunnelChart, Funnel, LabelList,
   ScatterChart, Scatter, RadialBarChart, RadialBar, ComposedChart
 } from 'recharts';
+
+// Helper function to classify insight type based on content keywords
+const classifyInsightType = (content: string): 'trend' | 'warning' | 'opportunity' => {
+  const lower = content.toLowerCase();
+  
+  // Warning indicators
+  if (/failed|error|issue|risk|problem|critical|urgent|alert|warning|down|decrease|declining|dropped/.test(lower)) {
+    return 'warning';
+  }
+  
+  // Opportunity indicators  
+  if (/opportunity|potential|improve|recommend|action|ready|suggest|could|boost|increase|growth|rising|trending up/.test(lower)) {
+    return 'opportunity';
+  }
+  
+  // Default to trend for data observations
+  return 'trend';
+};
 
 interface VisualizationSidebarProps {
   isOpen: boolean;
@@ -67,6 +89,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   );
   const [secondaryChartType, setSecondaryChartType] = useState<ChartType>('pie');
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
+  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('30d');
+  const [isChartLoading, setIsChartLoading] = useState(false);
+  
+  // Get user for trend data fetching
+  const { user } = useAuth();
 
   // Smart secondary chart type selection based on primary
   const getComplementaryChartType = useCallback((primary: ChartType): ChartType => {
@@ -122,49 +149,99 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     return chartData.length >= 2;
   }, [chartData]);
 
-  // Extract metric cards from visualData
+  // Get data source for trend hook
+  const dataSource = useMemo(() => visualData?.dataSource || 'AI Analysis', [visualData]);
+  
+  // Fetch real trend data using smart auto-detect
+  const { trendData, isLoading: isTrendLoading, timeframeLabel } = useSidebarTrendData({
+    userId: user?.id || null,
+    dataSource,
+    timeframe: selectedTimeframe,
+    chartData
+  });
+
+  // Extract metric cards from visualData with REAL trend calculations
   const metricCards = useMemo(() => {
     if (visualData?.summaryInsights?.metricCards) {
-      return visualData.summaryInsights.metricCards;
+      // If AI provided metrics, enrich with real trend data if available
+      return visualData.summaryInsights.metricCards.map((metric: any) => {
+        const key = metric.label?.toLowerCase().replace(/\s+/g, '') || '';
+        const trend = trendData[key];
+        if (trend) {
+          return {
+            ...metric,
+            trend: trend.trend,
+            trendValue: `${trend.changePercent >= 0 ? '+' : ''}${trend.changePercent.toFixed(1)}%`,
+            previousValue: Math.round(trend.previous),
+            comparisonPeriod: timeframeLabel
+          };
+        }
+        return metric;
+      });
     }
-    // Generate metrics from chart data if not provided
+    
+    // Generate metrics from chart data with REAL trend calculations
     if (chartData.length > 0) {
       const firstItem = chartData[0];
       const numericKeys = Object.keys(firstItem).filter(
-        key => typeof firstItem[key] === 'number' && key !== 'dataSource'
+        key => typeof firstItem[key] === 'number' && !['id', 'index', 'dataSource'].includes(key)
       );
       
-      return numericKeys.slice(0, 4).map((key, idx) => {
-        const total = chartData.reduce((sum, item) => sum + (Number(item[key]) || 0), 0);
+      return numericKeys.slice(0, 4).map((key) => {
+        const values = chartData.map(item => Number(item[key]) || 0);
+        const total = values.reduce((sum, val) => sum + val, 0);
         const avg = total / chartData.length;
-        const trends = ['up', 'down', 'neutral'] as const;
-        const trendValues = ['+12.5%', '-3.2%', '0.0%'];
+        
+        // Use trend data from hook if available, otherwise calculate from chart data
+        const trend = trendData[key];
+        
+        if (trend) {
+          return {
+            label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+            value: Math.round(avg),
+            trend: trend.trend,
+            trendValue: `${trend.changePercent >= 0 ? '+' : ''}${trend.changePercent.toFixed(1)}%`,
+            previousValue: Math.round(trend.previous),
+            comparisonPeriod: timeframeLabel
+          };
+        }
+        
+        // Fallback: Calculate from first-half vs second-half of chart data
+        const midpoint = Math.floor(values.length / 2);
+        const firstHalfAvg = midpoint > 0 ? values.slice(0, midpoint).reduce((a, b) => a + b, 0) / midpoint : 0;
+        const secondHalfAvg = midpoint > 0 ? values.slice(midpoint).reduce((a, b) => a + b, 0) / (values.length - midpoint) : avg;
+        
+        const changePercent = firstHalfAvg > 0 
+          ? ((secondHalfAvg - firstHalfAvg) / firstHalfAvg * 100) 
+          : 0;
+        
         return {
           label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
           value: Math.round(avg),
-          trend: trends[idx % 3],
-          trendValue: trendValues[idx % 3]
+          trend: changePercent > 2 ? 'up' : changePercent < -2 ? 'down' : 'neutral',
+          trendValue: `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`,
+          previousValue: Math.round(firstHalfAvg),
+          comparisonPeriod: timeframeLabel
         };
       });
     }
     return [];
-  }, [visualData, chartData]);
+  }, [visualData, chartData, trendData, timeframeLabel]);
 
-  // Extract insights with type classification
+  // Extract insights with AI-DRIVEN type classification (not random)
   const insights = useMemo(() => {
     const rawInsights = visualData?.insights || visualData?.actionableItems?.map((item: any) => ({
       type: 'insight',
       content: item.description || item.title
     })) || [];
 
-    // Add type classification
-    return rawInsights.map((insight: any, idx: number) => {
+    // Use keyword-based classification instead of arbitrary cycling
+    return rawInsights.map((insight: any) => {
       const content = insight.content || insight.description || insight;
-      const types = ['trend', 'warning', 'opportunity'] as const;
       return {
         ...insight,
         content,
-        insightType: insight.insightType || types[idx % 3]
+        insightType: insight.insightType || classifyInsightType(content)
       };
     });
   }, [visualData]);
@@ -178,14 +255,30 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     }));
   }, [visualData]);
 
-  // Data source info, quality, and timeframe
+  // Data source info with COMBINED quality assessment
   const dataInfo = useMemo(() => {
     const source = visualData?.dataSource || 'AI Analysis';
     const points = chartData.length;
-    const quality = points > 50 ? 'high' : points > 20 ? 'medium' : 'low';
-    const timeframe = visualData?.timeframe || 'Last 30 days';
+    const timeframe = selectedTimeframe === '7d' ? 'Last 7 days' : 
+                      selectedTimeframe === '30d' ? 'Last 30 days' : 'Custom';
+    
+    // Combined quality assessment based on completeness + volume + variation
+    const hasRequiredFields = chartData.every(item => 
+      item.name !== undefined && 
+      Object.values(item).some(v => typeof v === 'number')
+    );
+    const hasMinimumPoints = points >= 5;
+    const noNullValues = chartData.every(item => 
+      !Object.values(item).includes(null) && 
+      !Object.values(item).includes(undefined)
+    );
+    const hasVariation = new Set(chartData.map(d => d.name)).size > 1;
+    
+    const qualityScore = [hasRequiredFields, hasMinimumPoints, noNullValues, hasVariation].filter(Boolean).length;
+    const quality = qualityScore >= 4 ? 'high' : qualityScore >= 2 ? 'medium' : 'low';
+    
     return { source, points, quality, timeframe };
-  }, [visualData, chartData]);
+  }, [visualData, chartData, selectedTimeframe]);
 
   // Colors for charts
   const colors = useMemo(() => {
@@ -260,7 +353,20 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     </div>
   );
 
+  // Loading skeleton for chart transitions
+  const ChartLoadingSkeleton = () => (
+    <div className="flex flex-col items-center justify-center h-full gap-3">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      <p className="text-xs text-muted-foreground">Loading chart...</p>
+    </div>
+  );
+
   const renderChart = (type: ChartType = chartType, height: number = 260) => {
+    // Show loading skeleton while trend data is being fetched
+    if (isChartLoading) {
+      return <ChartLoadingSkeleton />;
+    }
+    
     if (!chartData?.length) {
       return (
         <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -563,6 +669,112 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
           </ResponsiveContainer>
         );
 
+      case 'scatter':
+        return (
+          <ResponsiveContainer {...commonProps}>
+            <ScatterChart margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+              <XAxis 
+                dataKey={dataKeys[0] || 'x'} 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                dataKey={dataKeys[1] || 'y'}
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                width={32}
+              />
+              <RechartsTooltip contentStyle={tooltipStyle} />
+              <Scatter 
+                data={chartData} 
+                fill={modernColors[0]}
+              >
+                {chartData.map((_, idx) => (
+                  <Cell key={idx} fill={modernColors[idx % modernColors.length]} />
+                ))}
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        );
+
+      case 'funnel':
+        return (
+          <ResponsiveContainer {...commonProps}>
+            <FunnelChart>
+              <RechartsTooltip contentStyle={tooltipStyle} />
+              <Funnel
+                dataKey="value"
+                data={chartData}
+                isAnimationActive
+              >
+                {chartData.map((_, idx) => (
+                  <Cell key={idx} fill={modernColors[idx % modernColors.length]} />
+                ))}
+                <LabelList 
+                  position="right" 
+                  fill="hsl(var(--foreground))" 
+                  fontSize={10}
+                  dataKey="name"
+                />
+              </Funnel>
+            </FunnelChart>
+          </ResponsiveContainer>
+        );
+
+      case 'composed':
+        return (
+          <ResponsiveContainer {...commonProps}>
+            <ComposedChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+              <defs>
+                <linearGradient id="composedBarGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={modernColors[0]} stopOpacity={1} />
+                  <stop offset="100%" stopColor={modernColors[0]} stopOpacity={0.7} />
+                </linearGradient>
+              </defs>
+              <XAxis 
+                dataKey="name" 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))" 
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                width={32}
+              />
+              <RechartsTooltip contentStyle={tooltipStyle} />
+              {/* First data key as bars */}
+              {dataKeys.slice(0, 1).map((key) => (
+                <Bar 
+                  key={key} 
+                  dataKey={key} 
+                  fill="url(#composedBarGradient)"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={40}
+                />
+              ))}
+              {/* Second data key as line overlay */}
+              {dataKeys.slice(1, 2).map((key, idx) => (
+                <Line 
+                  key={key} 
+                  type="monotone" 
+                  dataKey={key} 
+                  stroke={modernColors[idx + 1]} 
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              ))}
+            </ComposedChart>
+          </ResponsiveContainer>
+        );
+
       default:
         return (
           <ResponsiveContainer {...commonProps}>
@@ -706,7 +918,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </Tooltip>
                   </div>
                   
-                  {/* Data context badges - always visible header info */}
+                  {/* Data context badges with timeframe selector */}
                   <div className="flex items-center gap-2 mt-4 flex-wrap">
                     <Badge variant="outline" className="text-xs">
                       <Database className="w-3 h-3 mr-1" />
@@ -717,13 +929,30 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         {dataInfo.points} pts
                       </Badge>
                     )}
-                    <Badge variant="outline" className="text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {dataInfo.timeframe}
-                    </Badge>
+                    
+                    {/* User-selectable timeframe dropdown */}
+                    <Select 
+                      value={selectedTimeframe} 
+                      onValueChange={(val) => setSelectedTimeframe(val as TimeframeOption)}
+                    >
+                      <SelectTrigger className="h-6 text-xs border-border/50 bg-transparent w-auto gap-1 px-2">
+                        <Clock className="w-3 h-3" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border z-50">
+                        <SelectItem value="7d" className="text-xs">Last 7 days</SelectItem>
+                        <SelectItem value="30d" className="text-xs">Last 30 days</SelectItem>
+                        <SelectItem value="custom" className="text-xs">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
                     <Badge variant="outline" className={cn("text-xs", qualityConfig.color)}>
                       {qualityConfig.label}
                     </Badge>
+                    
+                    {isTrendLoading && (
+                      <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -829,7 +1058,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </motion.div>
                   )}
 
-                  {/* 4. KEY METRICS - Always show comparison */}
+                  {/* 4. KEY METRICS - Real trends with proper comparison */}
                   {metricCards.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -842,7 +1071,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           Key Metrics
                         </span>
                         <Badge variant="outline" className="text-[9px] text-muted-foreground/50 h-5">
-                          {visualData?.timeframe || 'Last 30 days'}
+                          {dataInfo.timeframe}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 gap-2.5">
@@ -854,8 +1083,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             trend={metric.trend}
                             trendValue={metric.trendValue}
                             index={idx}
-                            comparisonValue={metric.previousValue || Math.round(Number(metric.value) * 0.85)}
-                            comparisonPeriod={metric.comparisonPeriod || 'vs. last period'}
+                            comparisonValue={metric.previousValue}
+                            comparisonPeriod={metric.comparisonPeriod || timeframeLabel}
                             target={metric.target}
                             targetLabel={metric.targetLabel}
                           />
