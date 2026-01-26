@@ -16,7 +16,8 @@ import {
   Zap,
   ExternalLink,
   ArrowUpRight,
-  BarChart3
+  BarChart3,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -67,25 +68,58 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
 }) => {
   const { campaign, queueStatus, contentInventory, performance, timelineHealth } = data;
 
-  const getHealthColor = (status: string) => {
-    switch (status) {
-      case 'on_track': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'at_risk': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      case 'overdue': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-muted/20 text-muted-foreground border-muted/30';
-    }
+  const getHealthStyles = (status: string) => {
+    const styles: Record<string, { badge: string; icon: typeof CheckCircle2 }> = {
+      on_track: { badge: 'bg-green-500/10 text-green-400 border-green-500/30', icon: CheckCircle2 },
+      at_risk: { badge: 'bg-amber-500/10 text-amber-400 border-amber-500/30', icon: AlertTriangle },
+      overdue: { badge: 'bg-red-500/10 text-red-400 border-red-500/30', icon: Clock },
+      unknown: { badge: 'bg-muted/20 text-muted-foreground border-border', icon: Target },
+    };
+    return styles[status] || styles.unknown;
   };
 
-  const getHealthIcon = (status: string) => {
-    switch (status) {
-      case 'on_track': return CheckCircle2;
-      case 'at_risk': return AlertTriangle;
-      case 'overdue': return Clock;
-      default: return Target;
-    }
-  };
+  const healthStyle = getHealthStyles(timelineHealth?.status || 'unknown');
+  const HealthIcon = healthStyle.icon;
 
-  const HealthIcon = getHealthIcon(timelineHealth?.status || 'unknown');
+  const metrics = [
+    { 
+      label: 'Content', 
+      value: contentInventory?.total || 0, 
+      subValue: `${contentInventory?.byStatus?.published || 0} published`,
+      icon: FileText, 
+      color: 'blue' 
+    },
+    { 
+      label: 'Views', 
+      value: performance?.totalViews || 0, 
+      subValue: `${performance?.engagementRate || 0}% engagement`,
+      icon: Eye, 
+      color: 'green',
+      showTrend: true
+    },
+    { 
+      label: 'Clicks', 
+      value: performance?.totalClicks || 0, 
+      icon: MousePointerClick, 
+      color: 'purple' 
+    },
+    { 
+      label: 'Conversions', 
+      value: performance?.totalConversions || 0, 
+      icon: TrendingUp, 
+      color: 'amber' 
+    },
+  ];
+
+  const getMetricStyles = (color: string) => {
+    const styles: Record<string, string> = {
+      blue: 'from-blue-500/20 to-blue-500/5 border-blue-500/20 text-blue-400',
+      green: 'from-green-500/20 to-green-500/5 border-green-500/20 text-green-400',
+      purple: 'from-purple-500/20 to-purple-500/5 border-purple-500/20 text-purple-400',
+      amber: 'from-amber-500/20 to-amber-500/5 border-amber-500/20 text-amber-400',
+    };
+    return styles[color] || styles.blue;
+  };
 
   return (
     <motion.div
@@ -94,11 +128,12 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
       transition={{ duration: 0.4 }}
       className="space-y-4"
     >
-      {/* Campaign Header */}
-      <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-violet-500/5" />
+      {/* Campaign Header Card */}
+      <Card className="relative overflow-hidden bg-card/80 backdrop-blur-md border border-border/50 p-6">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-violet-500/5 pointer-events-none" />
         
         <div className="relative">
+          {/* Header Row */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10 border border-primary/20">
@@ -107,8 +142,9 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
               <div>
                 <h3 className="font-semibold text-foreground text-lg">{campaign.name}</h3>
                 {campaign.solution_name && (
-                  <p className="text-sm text-muted-foreground">
-                    Solution: {campaign.solution_name}
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    {campaign.solution_name}
                   </p>
                 )}
               </div>
@@ -117,44 +153,45 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
             <div className="flex items-center gap-2">
               <Badge 
                 variant="outline"
-                className={getHealthColor(timelineHealth?.status || 'unknown')}
+                className={cn("font-medium", healthStyle.badge)}
               >
                 <HealthIcon className="w-3 h-3 mr-1" />
-                {timelineHealth?.status?.replace('_', ' ') || 'Unknown'}
+                {(timelineHealth?.status || 'unknown').replace('_', ' ')}
               </Badge>
-              <Badge variant="secondary" className="capitalize">
+              <Badge variant="secondary" className="capitalize font-medium">
                 {campaign.status}
               </Badge>
             </div>
           </div>
 
+          {/* Objective */}
           {campaign.objective && (
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
               {campaign.objective}
             </p>
           )}
 
-          {/* Timeline Health Progress */}
+          {/* Timeline Progress */}
           {timelineHealth && (
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Campaign Progress</span>
-                <span className="font-medium text-primary">{timelineHealth.completionPercentage}%</span>
+                <span className="font-semibold text-primary">{timelineHealth.completionPercentage}%</span>
               </div>
               <Progress value={timelineHealth.completionPercentage} className="h-2" />
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex items-center gap-2">
             {onViewCampaign && (
               <Button 
                 size="sm" 
                 variant="outline"
                 onClick={onViewCampaign}
-                className="text-xs"
+                className="text-xs h-8"
               >
-                <ExternalLink className="w-3 h-3 mr-1" />
+                <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                 View Campaign
               </Button>
             )}
@@ -162,10 +199,10 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
               <Button 
                 size="sm" 
                 onClick={onGenerateContent}
-                className="text-xs bg-primary/90 hover:bg-primary"
+                className="text-xs h-8 bg-primary hover:bg-primary/90"
               >
-                <Zap className="w-3 h-3 mr-1" />
-                Generate Content
+                <Zap className="w-3.5 h-3.5 mr-1.5" />
+                Generate Content ({queueStatus.pending})
               </Button>
             )}
           </div>
@@ -174,108 +211,68 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* Content Count */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="p-4 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/20"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <FileText className="w-4 h-4 text-blue-400" />
-            <span className="text-xs text-muted-foreground">Content</span>
-          </div>
-          <p className="text-2xl font-bold text-blue-400">{contentInventory?.total || 0}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {contentInventory?.byStatus?.published || 0} published
-          </p>
-        </motion.div>
-
-        {/* Views */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="p-4 rounded-lg bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/20"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <Eye className="w-4 h-4 text-green-400" />
-            <span className="text-xs text-muted-foreground">Views</span>
-          </div>
-          <p className="text-2xl font-bold text-green-400">
-            {performance?.totalViews?.toLocaleString() || 0}
-          </p>
-          <div className="flex items-center gap-1 text-xs text-green-400 mt-1">
-            <ArrowUpRight className="w-3 h-3" />
-            <span>{performance?.engagementRate || 0}% engagement</span>
-          </div>
-        </motion.div>
-
-        {/* Clicks */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-          className="p-4 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <MousePointerClick className="w-4 h-4 text-purple-400" />
-            <span className="text-xs text-muted-foreground">Clicks</span>
-          </div>
-          <p className="text-2xl font-bold text-purple-400">
-            {performance?.totalClicks?.toLocaleString() || 0}
-          </p>
-        </motion.div>
-
-        {/* Conversions */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-          className="p-4 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/20"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-amber-400" />
-            <span className="text-xs text-muted-foreground">Conversions</span>
-          </div>
-          <p className="text-2xl font-bold text-amber-400">
-            {performance?.totalConversions?.toLocaleString() || 0}
-          </p>
-        </motion.div>
+        {metrics.map((metric, index) => (
+          <motion.div
+            key={metric.label}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.08 }}
+            className={cn(
+              "p-4 rounded-xl bg-gradient-to-br border backdrop-blur-sm",
+              getMetricStyles(metric.color)
+            )}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <metric.icon className="w-4 h-4" />
+              <span className="text-xs opacity-70">{metric.label}</span>
+            </div>
+            <p className="text-2xl font-bold">{metric.value.toLocaleString()}</p>
+            {metric.subValue && (
+              <div className="flex items-center gap-1 text-xs opacity-70 mt-1">
+                {metric.showTrend && <ArrowUpRight className="w-3 h-3" />}
+                <span>{metric.subValue}</span>
+              </div>
+            )}
+          </motion.div>
+        ))}
       </div>
 
-      {/* Queue Status Summary */}
+      {/* Queue Status Mini */}
       {queueStatus && queueStatus.total > 0 && (
-        <Card className="p-4 bg-gradient-to-br from-violet-500/5 to-purple-500/5 border border-violet-500/20">
+        <Card className="p-4 bg-card/60 backdrop-blur-sm border border-border/50">
           <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-4 h-4 text-violet-400" />
-            <h4 className="text-sm font-medium text-violet-400">Generation Queue</h4>
+            <Zap className="w-4 h-4 text-primary" />
+            <h4 className="text-sm font-medium">Generation Queue</h4>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {queueStatus.completed}/{queueStatus.total} complete
+            </span>
           </div>
           
           <div className="grid grid-cols-4 gap-2">
-            <div className="text-center p-2 rounded bg-amber-500/10">
-              <p className="text-lg font-bold text-amber-400">{queueStatus.pending}</p>
-              <p className="text-xs text-muted-foreground">Pending</p>
-            </div>
-            <div className="text-center p-2 rounded bg-blue-500/10">
-              <p className="text-lg font-bold text-blue-400">{queueStatus.processing}</p>
-              <p className="text-xs text-muted-foreground">Processing</p>
-            </div>
-            <div className="text-center p-2 rounded bg-green-500/10">
-              <p className="text-lg font-bold text-green-400">{queueStatus.completed}</p>
-              <p className="text-xs text-muted-foreground">Completed</p>
-            </div>
-            <div className="text-center p-2 rounded bg-red-500/10">
-              <p className="text-lg font-bold text-red-400">{queueStatus.failed}</p>
-              <p className="text-xs text-muted-foreground">Failed</p>
-            </div>
+            {[
+              { label: 'Pending', value: queueStatus.pending, color: 'amber' },
+              { label: 'Processing', value: queueStatus.processing, color: 'blue' },
+              { label: 'Completed', value: queueStatus.completed, color: 'green' },
+              { label: 'Failed', value: queueStatus.failed, color: 'red' },
+            ].map((item) => (
+              <div 
+                key={item.label}
+                className={cn(
+                  "text-center p-2 rounded-lg",
+                  `bg-${item.color}-500/10`
+                )}
+              >
+                <p className={cn("text-lg font-bold", `text-${item.color}-400`)}>{item.value}</p>
+                <p className="text-xs text-muted-foreground">{item.label}</p>
+              </div>
+            ))}
           </div>
         </Card>
       )}
 
-      {/* Content Format Distribution */}
+      {/* Content Format Tags */}
       {contentInventory && Object.keys(contentInventory.byFormat || {}).length > 0 && (
-        <Card className="p-4 bg-muted/5 border border-white/10">
+        <Card className="p-4 bg-card/60 backdrop-blur-sm border border-border/50">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4 text-muted-foreground" />
             <h4 className="text-sm font-medium">Content by Format</h4>
@@ -295,19 +292,21 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
         </Card>
       )}
 
-      {/* Blockers */}
+      {/* Blockers Alert */}
       {timelineHealth?.blockers && timelineHealth.blockers.length > 0 && (
-        <Card className="p-4 bg-amber-500/5 border border-amber-500/20">
+        <Card className="p-4 bg-amber-500/5 border-amber-500/20 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <h4 className="text-sm font-medium text-amber-400">Blockers</h4>
+            <h4 className="text-sm font-medium text-amber-400">
+              Blockers ({timelineHealth.blockers.length})
+            </h4>
           </div>
           
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {timelineHealth.blockers.map((blocker, index) => (
               <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
-                <span className="text-amber-400">•</span>
-                {blocker}
+                <span className="text-amber-400 mt-0.5">•</span>
+                <span>{blocker}</span>
               </li>
             ))}
           </ul>
