@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Mic, Paperclip } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
 
 interface Solution {
@@ -137,28 +137,17 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 
       <form onSubmit={handleSubmit} className="relative">
         <motion.div 
-          className={`relative flex items-end gap-2 p-3 bg-background/95 border rounded-2xl transition-all duration-200 ${
+          className={`relative flex items-center gap-3 p-4 bg-card/50 border rounded-xl transition-all duration-200 ${
             isFocused 
-              ? 'border-primary/40 ring-1 ring-primary/20' 
-              : 'border-border/40 hover:border-border/60'
+              ? 'border-border/60 ring-1 ring-border/30 bg-card/80' 
+              : 'border-border/30 hover:border-border/40'
           }`}
           animate={{ 
             boxShadow: isFocused 
-              ? '0 4px 20px -4px hsl(var(--primary) / 0.1)' 
-              : '0 2px 10px -2px hsl(var(--foreground) / 0.05)'
+              ? '0 2px 12px -4px hsl(var(--foreground) / 0.08)' 
+              : '0 1px 4px -2px hsl(var(--foreground) / 0.04)'
           }}
         >
-          {/* Attachment Button - Hidden on mobile */}
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="hidden sm:flex text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
-            disabled={isLoading}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-
           {/* Message Input */}
           <Textarea
             ref={textareaRef}
@@ -169,22 +158,11 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
             disabled={isLoading}
-            className="flex-1 min-h-[24px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-sm"
+            className="flex-1 min-h-[24px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/50 focus:ring-0 focus:outline-none p-0 text-sm"
             rows={1}
           />
 
-          {/* Voice Input Button - Hidden on mobile */}
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="hidden sm:flex text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
-            disabled={isLoading}
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
-
-          {/* Send Button */}
+          {/* Send Button - Clean */}
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -193,7 +171,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
               type="submit"
               size="sm"
               disabled={!message.trim() || isLoading}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 p-2 h-9 w-9 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 w-10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
             >
               {isLoading ? (
                 <motion.div
@@ -207,25 +185,6 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             </Button>
           </motion.div>
         </motion.div>
-
-        {/* Helper Text - Cleaner */}
-        <div className="flex items-center justify-between mt-2 px-1">
-          <span className="text-xs text-muted-foreground/50">
-            Enter to send · Shift+Enter for new line
-          </span>
-          <AnimatePresence>
-            {message.length > 100 && (
-              <motion.span 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-xs text-muted-foreground/50"
-              >
-                {message.length} characters
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </div>
       </form>
     </motion.div>
   );

@@ -392,12 +392,12 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </motion.div>
       </div>
 
-      {/* Input Area - ALWAYS full width, only respects left sidebar */}
-      <div className={`fixed bottom-0 left-0 right-0 z-40 border-t border-border/30 bg-background/95 backdrop-blur-xl transition-all duration-300 ease-out ${showSidebar ? 'pl-80' : 'pl-0'}`}>
-        <div className="max-w-6xl mx-auto px-6 py-4">
+      {/* Input Area - Premium Minimal */}
+      <div className={`fixed bottom-0 left-0 right-0 z-40 border-t border-border/20 bg-background/80 backdrop-blur-xl transition-all duration-300 ease-out ${showSidebar ? 'pl-80' : 'pl-0'}`}>
+        <div className="max-w-4xl mx-auto px-6 py-5">
           {/* Context Indicator */}
           {showContextIndicator && (
-            <div className="mb-3">
+            <div className="mb-4">
               <ContextDisplayIndicator
                 sources={contextSources}
                 isActive={showContextIndicator}
@@ -407,15 +407,19 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             </div>
           )}
           
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <ContextAwareMessageInput 
-                onSendMessage={handleSendMessage} 
-                isLoading={isLoading} 
-                placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
-              />
-            </div>
-            <GlobalApiStatus variant="compact" />
+          {/* Main Input */}
+          <ContextAwareMessageInput 
+            onSendMessage={handleSendMessage} 
+            isLoading={isLoading} 
+            placeholder={messages.length === 0 ? "Ask me anything..." : "Continue the conversation..."} 
+          />
+          
+          {/* Footer Row - Helper + Status */}
+          <div className="flex items-center justify-between mt-3 px-1">
+            <span className="text-xs text-muted-foreground/40">
+              ⌘ Enter to send
+            </span>
+            <GlobalApiStatus variant="inline" />
           </div>
         </div>
       </div>
