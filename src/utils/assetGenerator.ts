@@ -33,8 +33,8 @@ export const generateAssetListFromStrategy = (
         targetWordCount: topic.targetWordCount,
         difficulty: topic.difficulty,
         serpOpportunity: topic.serpOpportunity,
-        estimatedTime: getEstimatedTime(formatId),
-        estimatedCost: getEstimatedCost(formatId),
+        estimatedTime: getEstimatedTime(formatId, topic),
+        estimatedCost: getEstimatedCost(formatId, topic),
         status: 'pending',
         contentBrief: topic,
         createdAt: new Date(),
@@ -45,36 +45,73 @@ export const generateAssetListFromStrategy = (
   return assets;
 };
 
-const getEstimatedTime = (formatId: string): number => {
-  const timeMap: Record<string, number> = {
-    'blog': 10,
-    'landing-page': 12,
-    'script': 8,
-    'email': 5,
-    'carousel': 6,
-    'social-linkedin': 3,
-    'social-facebook': 3,
-    'social-twitter': 2,
-    'social-instagram': 3,
-    'meme': 2,
-  };
-  return timeMap[formatId] || 5;
+// Base time estimates (in minutes)
+const baseTimeMap: Record<string, number> = {
+  'blog': 8,
+  'landing-page': 10,
+  'script': 6,
+  'email': 4,
+  'carousel': 5,
+  'social-linkedin': 2,
+  'social-facebook': 2,
+  'social-twitter': 1,
+  'social-instagram': 2,
+  'meme': 1,
 };
 
-const getEstimatedCost = (formatId: string): number => {
-  const costMap: Record<string, number> = {
-    'blog': 3,
-    'landing-page': 4,
-    'script': 3,
-    'email': 2,
-    'carousel': 2,
-    'social-linkedin': 1,
-    'social-facebook': 1,
-    'social-twitter': 1,
-    'social-instagram': 1,
-    'meme': 1,
-  };
-  return costMap[formatId] || 2;
+// Base cost estimates (in credits)
+const baseCostMap: Record<string, number> = {
+  'blog': 2,
+  'landing-page': 3,
+  'script': 2,
+  'email': 1,
+  'carousel': 2,
+  'social-linkedin': 1,
+  'social-facebook': 1,
+  'social-twitter': 1,
+  'social-instagram': 1,
+  'meme': 1,
+};
+
+const getEstimatedTime = (formatId: string, brief?: ContentBrief): number => {
+  let time = baseTimeMap[formatId] || 4;
+  
+  if (brief) {
+    // Add time for longer content
+    if (brief.targetWordCount) {
+      if (brief.targetWordCount > 1500) time += 3;
+      else if (brief.targetWordCount > 800) time += 1;
+    }
+    
+    // Add time for keyword optimization
+    if (brief.keywords && brief.keywords.length > 3) time += 1;
+    
+    // Add time for SEO crafting
+    if (brief.metaTitle || brief.metaDescription) time += 1;
+  }
+  
+  return time;
+};
+
+const getEstimatedCost = (formatId: string, brief?: ContentBrief): number => {
+  let cost = baseCostMap[formatId] || 1;
+  
+  if (brief) {
+    // Increase cost for longer content
+    if (brief.targetWordCount) {
+      const additionalCost = Math.floor(brief.targetWordCount / 800);
+      cost += additionalCost;
+    }
+    
+    // Increase cost for high SEO opportunity
+    if (brief.serpOpportunity && brief.serpOpportunity > 70) cost += 1;
+    
+    // Difficulty multiplier
+    if (brief.difficulty === 'hard') cost = Math.ceil(cost * 1.3);
+    else if (brief.difficulty === 'medium') cost = Math.ceil(cost * 1.1);
+  }
+  
+  return cost;
 };
 
 const createFallbackAsset = (
