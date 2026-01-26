@@ -65,8 +65,32 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const [chartType, setChartType] = useState<ChartType>(
     (chartConfig?.type as ChartType) || 'bar'
   );
+  const [secondaryChartType, setSecondaryChartType] = useState<ChartType>('pie');
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+
+  // Smart secondary chart type selection based on primary
+  const getComplementaryChartType = useCallback((primary: ChartType): ChartType => {
+    switch (primary) {
+      case 'bar':
+      case 'line':
+      case 'area':
+        return 'pie';
+      case 'pie':
+        return 'bar';
+      case 'radar':
+        return 'bar';
+      case 'radial':
+        return 'pie';
+      default:
+        return 'pie';
+    }
+  }, []);
+
+  // Update secondary chart type when primary changes
+  useEffect(() => {
+    setSecondaryChartType(getComplementaryChartType(chartType));
+  }, [chartType, getComplementaryChartType]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -92,6 +116,12 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     if (!chartConfig?.data) return [];
     return chartConfig.data;
   }, [chartConfig]);
+
+  // Determine if we should show secondary chart
+  const hasSecondaryData = useMemo(() => {
+    // Show secondary if we have enough data points for meaningful comparison
+    return chartData.length >= 2;
+  }, [chartData]);
 
   // Extract metric cards from visualData
   const metricCards = useMemo(() => {
@@ -203,10 +233,37 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     }));
   };
 
-  const renderChart = () => {
+  // ChartBlock component for consistent chart rendering
+  const ChartBlock: React.FC<{
+    title?: string;
+    children: React.ReactNode;
+    compact?: boolean;
+    controls?: React.ReactNode;
+  }> = ({ title, children, compact = false, controls }) => (
+    <div className={cn(
+      "rounded-xl bg-card/30 border border-border/30",
+      compact ? "p-4" : "p-5"
+    )}>
+      {(title || controls) && (
+        <div className="flex items-center justify-between mb-3">
+          {title && (
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {title}
+            </span>
+          )}
+          {controls}
+        </div>
+      )}
+      <div className={compact ? "h-[160px]" : "h-[220px]"}>
+        {children}
+      </div>
+    </div>
+  );
+
+  const renderChart = (type: ChartType = chartType, height: number = 220) => {
     if (!chartData?.length) {
       return (
-        <div className="flex items-center justify-center h-[220px] text-muted-foreground">
+        <div className="flex items-center justify-center h-full text-muted-foreground">
           <div className="text-center">
             <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No data available</p>
@@ -215,7 +272,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       );
     }
 
-    const commonProps = { data: chartData, width: '100%', height: 220 };
+    const commonProps = { data: chartData, width: '100%', height };
     
     // Modern premium tooltip styling
     const tooltipStyle = { 
@@ -237,7 +294,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       '#ec4899', // pink
     ];
 
-    switch (chartType) {
+    switch (type) {
       case 'line':
         return (
           <ResponsiveContainer {...commonProps}>
@@ -732,7 +789,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
                   </motion.div>
 
-                  {/* 2. AI SUMMARY - Moved below chart */}
+                  {/* 2. AI SUMMARY */}
                   <AISummaryCard
                     chartData={chartData}
                     dataKeys={dataKeys}
@@ -740,12 +797,35 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     onFeedback={(helpful) => console.log('Feedback:', helpful)}
                   />
 
-                  {/* 3. KEY METRICS - Moved below summary */}
+                  {/* 3. SECONDARY CHART - Different perspective */}
+                  {hasSecondaryData && activeView === 'chart' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                    >
+                      <ChartBlock
+                        title={secondaryChartType === 'pie' ? 'Distribution' : 'Comparison'}
+                        compact
+                        controls={
+                          <PremiumChartTypeSelect 
+                            value={secondaryChartType} 
+                            onChange={setSecondaryChartType}
+                            className="flex-shrink-0"
+                          />
+                        }
+                      >
+                        {renderChart(secondaryChartType, 160)}
+                      </ChartBlock>
+                    </motion.div>
+                  )}
+
+                  {/* 4. KEY METRICS */}
                   {metricCards.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
+                      transition={{ delay: 0.2 }}
                       className="space-y-3"
                     >
                       <div className="flex items-center justify-between">
@@ -789,7 +869,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </motion.div>
                   )}
 
-                  {/* AI Insights */}
+                  {/* 5. AI INSIGHTS (collapsed) */}
                   {insights.length > 0 && (
                     <Collapsible open={isInsightsExpanded} onOpenChange={setIsInsightsExpanded}>
                       <CollapsibleTrigger asChild>
