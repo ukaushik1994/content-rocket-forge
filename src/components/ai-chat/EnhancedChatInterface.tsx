@@ -16,6 +16,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
+import { RateLimitBanner } from '@/components/common/RateLimitBanner';
+import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
 import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 interface EnhancedChatInterfaceProps {
@@ -148,10 +150,16 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         <motion.div className="flex-1 flex flex-col h-full pt-20 pb-24" initial="hidden" animate="visible" variants={containerVariants}>
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-h-0 relative">
-        {/* Messages Area */}
-        <ScrollArea className="flex-1 px-6">
-          <div className="max-w-6xl mx-auto py-6 space-y-8">
-            {/* Welcome State */}
+            {/* Rate Limit Banner */}
+            <RateLimitBanner 
+              className="mx-6 mt-2" 
+              onRetry={() => console.log('Retrying after rate limit clear')}
+            />
+            
+            {/* Messages Area */}
+            <ScrollArea className="flex-1 px-6">
+              <div className="max-w-6xl mx-auto py-6 space-y-8">
+                {/* Welcome State */}
             <AnimatePresence>
               {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
                   {/* Welcome Hero */}
@@ -283,11 +291,16 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               </div>
             )}
             
-            <ContextAwareMessageInput 
-              onSendMessage={handleSendMessage} 
-              isLoading={isLoading} 
-              placeholder={messages.length === 0 ? "Ask me about your solutions like GLConnect, SQL Connect, People Analytics..." : "Continue the conversation..."} 
-            />
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <ContextAwareMessageInput 
+                  onSendMessage={handleSendMessage} 
+                  isLoading={isLoading} 
+                  placeholder={messages.length === 0 ? "Ask me about your solutions like GLConnect, SQL Connect, People Analytics..." : "Continue the conversation..."} 
+                />
+              </div>
+              <GlobalApiStatus variant="compact" />
+            </div>
           </div>
         </div>
         </div>

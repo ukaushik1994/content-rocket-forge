@@ -1,6 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -27,7 +27,18 @@ export class StrategyDialogErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[StrategyDialog] CRITICAL ERROR:', error, errorInfo);
-    toast.error('An unexpected error occurred - your work has been saved');
+    
+    // Check if error is retryable based on message
+    const isRetryable = !error.message.toLowerCase().includes('auth') && 
+                       !error.message.toLowerCase().includes('permission');
+    
+    toast.error(
+      isRetryable 
+        ? 'A temporary error occurred - your work has been saved' 
+        : 'An unexpected error occurred - your work has been saved'
+    );
+    
+    this.setState({ errorInfo });
   }
 
   handleReset = () => {
