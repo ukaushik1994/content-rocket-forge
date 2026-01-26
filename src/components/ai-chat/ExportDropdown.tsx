@@ -105,120 +105,128 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className={cn("flex items-center gap-2", className)}>
-        {/* Export dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 bg-background/50 hover:bg-background"
+      <div className={cn("flex flex-col gap-3", className)}>
+        {/* Action buttons row */}
+        <div className="flex items-center gap-2">
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15 text-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export
+                <ChevronDown className="w-3 h-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="start" 
+              className="w-48 bg-popover/95 backdrop-blur-xl border-white/10"
             >
-              <Download className="w-4 h-4" />
-              Export
-              <ChevronDown className="w-3 h-3 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            align="start" 
-            className="w-48 bg-popover/95 backdrop-blur-xl"
-          >
-            <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer">
-              <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-500" />
-              <div className="flex flex-col">
-                <span>CSV</span>
-                <span className="text-xs text-muted-foreground">Spreadsheet format</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportJSON} className="cursor-pointer">
-              <FileJson className="w-4 h-4 mr-2 text-amber-500" />
-              <div className="flex flex-col">
-                <span>JSON</span>
-                <span className="text-xs text-muted-foreground">Data format</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={onExportPNG} 
-              disabled={!onExportPNG}
-              className="cursor-pointer"
-            >
-              <Image className="w-4 h-4 mr-2 text-blue-500" />
-              <div className="flex flex-col">
-                <span>PNG Image</span>
-                <span className="text-xs text-muted-foreground">Chart snapshot</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={onExportPDF} 
-              disabled={!onExportPDF}
-              className="cursor-pointer"
-            >
-              <FileText className="w-4 h-4 mr-2 text-red-500" />
-              <div className="flex flex-col">
-                <span>PDF Report</span>
-                <span className="text-xs text-muted-foreground">Printable document</span>
-              </div>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer">
+                <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-500" />
+                <div className="flex flex-col">
+                  <span className="text-sm">CSV</span>
+                  <span className="text-[10px] text-muted-foreground">Spreadsheet format</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportJSON} className="cursor-pointer">
+                <FileJson className="w-4 h-4 mr-2 text-amber-500" />
+                <div className="flex flex-col">
+                  <span className="text-sm">JSON</span>
+                  <span className="text-[10px] text-muted-foreground">Data format</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-white/5" />
+              <DropdownMenuItem 
+                onClick={onExportPNG} 
+                disabled={!onExportPNG}
+                className="cursor-pointer"
+              >
+                <Image className="w-4 h-4 mr-2 text-blue-500" />
+                <div className="flex flex-col">
+                  <span className="text-sm">PNG Image</span>
+                  <span className="text-[10px] text-muted-foreground">Chart snapshot</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={onExportPDF} 
+                disabled={!onExportPDF}
+                className="cursor-pointer"
+              >
+                <FileText className="w-4 h-4 mr-2 text-red-500" />
+                <div className="flex flex-col">
+                  <span className="text-sm">PDF Report</span>
+                  <span className="text-[10px] text-muted-foreground">Printable document</span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* Copy button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleCopy}
-              className="h-9 w-9 bg-background/50 hover:bg-background"
-            >
-              {copied ? (
-                <Check className="w-4 h-4 text-emerald-500" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
-            {copied ? 'Copied!' : 'Copy data (⌘C)'}
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Share button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleShare}
-              className="h-9 w-9 bg-background/50 hover:bg-background"
-            >
-              <Share2 className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
-            Share link
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Fullscreen button */}
-        {onFullscreen && (
+          {/* Copy button */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={onFullscreen}
-                className="h-9 w-9 bg-background/50 hover:bg-background"
+                onClick={handleCopy}
+                className="h-8 w-8 bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15"
               >
-                <Maximize2 className="w-4 h-4" />
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs">
-              Fullscreen (F)
+            <TooltipContent side="top" className="text-xs">
+              {copied ? 'Copied!' : 'Copy data (⌘C)'}
             </TooltipContent>
           </Tooltip>
-        )}
+
+          {/* Share button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleShare}
+                className="h-8 w-8 bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              Share link
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Fullscreen button */}
+          {onFullscreen && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onFullscreen}
+                  className="h-8 w-8 bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                Fullscreen (F)
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+
+        {/* Keyboard hints */}
+        <p className="text-[10px] text-foreground/30 text-center">
+          Esc to close • Tab to switch view
+        </p>
       </div>
     </TooltipProvider>
   );
