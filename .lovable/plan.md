@@ -1,253 +1,227 @@
 
 
-# AI Chat Visualization Enhancement: Phase 2 Implementation Plan
+# Phase 3: Improve AI Context & Intelligence
 
 ## Executive Summary
 
-After thorough exploration, I've confirmed the **existing infrastructure** and identified the minimal changes needed to extend AI Chat visualizations. The approach is **conservative** - we use existing patterns, APIs, tools, and context awareness mechanisms.
+Building on the completed Phase 1 (Fix & Stabilize) and Phase 2 (New Chart Types), this phase enhances the AI's intelligence and context awareness. We will **extend existing mechanisms** rather than rebuild - using the current tool-based architecture, query analyzer, and context fetching patterns.
 
 ---
 
-## Current State: What Already Exists
+## Current State Analysis
 
-### Visualization Components
-| Component | Status | Location |
-|-----------|--------|----------|
-| `InteractiveChart.tsx` | Working | `src/components/ai-chat/visualization/` |
-| `VisualDataRenderer.tsx` | Working | `src/components/ai-chat/` |
-| `MultiChartAnalysis.tsx` | Working | `src/components/ai-chat/visualization/` |
-| `ChartTypeSwitcher.tsx` | Working (4 types) | `src/components/ai-chat/` |
-| Data Normalizer | Working | `src/utils/chartDataNormalizer.ts` |
+### What Already Exists (We Will Extend)
 
-### Supported Chart Types (Current)
-- Line, Bar, Pie, Area (defined in `src/types/enhancedChat.ts:5`)
+| Component | Location | Current Capability |
+|-----------|----------|-------------------|
+| Query Analyzer | `query-analyzer.ts` | Detects 5 categories (content, keywords, solutions, proposals, seo) |
+| Data Context | `index.ts:1038-1130` | Fetches counts only, tools fetch detailed data |
+| Tool Definitions | `tools.ts` | 8 core tools + 5 campaign intelligence tools |
+| Intent Detection | `index.ts:473-497` | Multi-chart trigger detection |
+| System Prompts | `index.ts:30-421` | BASE_PROMPT, CHART_MODULE, MULTI_CHART_MODULE |
 
-### Available Recharts Components (Already Installed)
-From `recharts@2.12.7` (confirmed in `node_modules/recharts/es6/index.js`):
-- `RadarChart`, `Radar`, `PolarGrid`, `PolarAngleAxis`, `PolarRadiusAxis`
-- `FunnelChart`, `Funnel`, `Trapezoid`
-- `ScatterChart`, `Scatter`
-- `RadialBarChart`, `RadialBar`
-- `ComposedChart` (mixed charts)
-- `Treemap`
+### What's Missing (Phase 3 Additions)
 
-### AI Context & Tools (Unchanged)
-- `enhanced-ai-chat/index.ts` - System prompts with chart instructions
-- `enhanced-ai-chat/tools.ts` - Data fetching tools (get_proposals, get_content_items, etc.)
-- Campaign intelligence tools remain intact
-- Real-time queue status subscriptions work
+1. **Campaign context** not included in base data context
+2. **Recent analytics trends** not summarized for AI
+3. **User preferences** not tracked or considered
+4. **Proactive insights** not generated based on available data
+5. **Query category detection** missing campaigns, competitors, analytics
 
 ---
 
-## Implementation Strategy: Minimal Changes
+## Implementation Plan
 
-### Principle: Extend, Don't Rebuild
+### 3.1 Enhance Query Intent Detection
 
-We will:
-1. **Add new chart types** to `InteractiveChart.tsx` using existing Recharts imports
-2. **Extend TypeScript type** in `enhancedChat.ts` to include new types
-3. **Update `ChartTypeSwitcher.tsx`** to show new options
-4. **Update AI prompts** in `enhanced-ai-chat/index.ts` to teach AI about new types
-5. **Keep all existing functionality** - no breaking changes
+**File:** `supabase/functions/enhanced-ai-chat/query-analyzer.ts`
+
+**Changes:** Add detection for campaigns, competitors, analytics queries
+
+```text
+Current categories: content, keywords, solutions, proposals, seo
+New categories: +campaigns, +competitors, +analytics, +performance
+```
+
+**Technical Implementation:**
+- Add `needsCampaigns` pattern: `/campaign|generation|queue|progress|active campaign/i`
+- Add `needsCompetitors` pattern: `/competitor|competition|rival|market|swot/i`
+- Add `needsAnalytics` pattern: `/analytics|metrics|views|clicks|conversion|traffic/i`
+- Add `needsPerformance` pattern: `/performing|performance|how.*(doing|going)/i`
+- Update categories array to include new detections
 
 ---
 
-## Phase 2.1: Add New Chart Types to InteractiveChart
+### 3.2 Expand Real Data Context
 
-### File: `src/components/ai-chat/visualization/InteractiveChart.tsx`
+**File:** `supabase/functions/enhanced-ai-chat/index.ts`
 
-**Changes:**
-1. Add imports for new Recharts components:
-   - `RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis`
-   - `FunnelChart, Funnel`
-   - `ScatterChart, Scatter, ZAxis`
-   - `RadialBarChart, RadialBar`
+**Function:** `fetchRealDataContext()` (lines 1038-1130)
 
-2. Extend the `renderChart()` switch statement with new cases:
-   - `case 'radar':` - Multi-dimensional comparison (e.g., content quality scores)
-   - `case 'funnel':` - Conversion/workflow progression
-   - `case 'scatter':` - Relationship analysis (e.g., difficulty vs volume)
-   - `case 'radial':` - Progress indicators (e.g., campaign completion)
-   - `case 'composed':` - Mixed charts (bar + line overlay)
+**Changes:** Add campaign and analytics summary counts
 
-3. Use existing color scheme from `defaultColors` array
-4. Apply existing data normalization from `normalizeChartConfig()`
+**Current Context:**
+```
+- Content Items: X total
+- AI Strategy Proposals: X total
+- Keywords: X researched
+- Solutions/Products: X defined
+- Competitors: X tracked
+- Competitor Solutions: X products analyzed
+```
 
-**Technical Pattern (follows existing code structure):**
+**Enhanced Context (additions):**
+```
+- Active Campaigns: X running
+- Queue Items: X pending, Y completed, Z failed
+- Recent Performance: X% engagement rate (last 7 days)
+- Content by Status: X draft, Y published, Z archived
+```
+
+**Technical Implementation:**
+- Add count queries for:
+  - `campaigns` table (filter by status='active')
+  - `content_generation_queue` table (group by status)
+  - `campaign_analytics` table (sum last 7 days)
+- Include these in the context string
+
+---
+
+### 3.3 Add Smart Context Suggestions
+
+**File:** `supabase/functions/enhanced-ai-chat/index.ts`
+
+**Changes:** Generate proactive insights based on data state
+
+**New Helper Function:** `generateProactiveInsights(counts)`
+
+This function analyzes the user's data counts and generates contextual suggestions:
+
+```text
+Examples:
+- If draft content > 5: "You have X draft articles ready for review"
+- If failed queue items > 0: "X content items failed generation"
+- If active campaigns = 0: "No active campaigns - consider starting one"
+- If keywords = 0: "Add keywords to unlock SEO insights"
+```
+
+**Integration Point:** Add to system prompt as "PROACTIVE INSIGHTS" section
+
+---
+
+### 3.4 Enhance Tool Usage Prompts
+
+**File:** `supabase/functions/enhanced-ai-chat/index.ts`
+
+**Changes:** Update TOOL_USAGE_MODULE with campaign-specific examples
+
+**Current Examples:**
+```
+- "Show my best content" → get_content_items
+- "Available proposals?" → get_proposals
+- "Keyword performance" → get_keywords
+```
+
+**New Examples:**
+```
+- "How is my campaign doing?" → get_campaign_intelligence with campaign_name
+- "What's the queue status?" → get_queue_status with campaign_id
+- "Show campaign content" → get_campaign_content with campaign_id
+- "Start generating content" → trigger_content_generation
+- "Retry failed items" → retry_failed_content
+```
+
+---
+
+### 3.5 Add Recent Activity Context
+
+**File:** `supabase/functions/enhanced-ai-chat/index.ts`
+
+**Changes:** Fetch and include recent activity summary
+
+**New Data Fetched:**
+- Last 5 content items created (titles only)
+- Last campaign status change
+- Queue processing status (if any active)
+
+**Implementation:**
 ```typescript
-case 'radar':
-  return (
-    <RadarChart data={data} cx="50%" cy="50%" outerRadius="80%">
-      <PolarGrid stroke="hsl(var(--border))" />
-      <PolarAngleAxis dataKey={categories[0] || 'name'} />
-      <PolarRadiusAxis />
-      <Tooltip />
-      <Legend />
-      {series?.map((s, i) => (
-        <Radar
-          key={s.dataKey}
-          dataKey={s.dataKey}
-          stroke={defaultColors[i % defaultColors.length]}
-          fill={defaultColors[i % defaultColors.length]}
-          fillOpacity={0.3}
-          name={s.name}
-        />
-      ))}
-    </RadarChart>
-  );
+// Add to fetchRealDataContext
+const { data: recentContent } = await supabase
+  .from('content_items')
+  .select('title, created_at')
+  .eq('user_id', userId)
+  .order('created_at', { ascending: false })
+  .limit(5);
+
+// Add to context string
+## Recent Activity:
+- Last content: "[title]" (created [date])
+- Active queue: [X] items processing
 ```
 
 ---
 
-## Phase 2.2: Update TypeScript Types
+## Files to Modify
 
-### File: `src/types/enhancedChat.ts`
-
-**Change Line 5:**
-```typescript
-// Before
-type: 'line' | 'bar' | 'pie' | 'area';
-
-// After
-type: 'line' | 'bar' | 'pie' | 'area' | 'radar' | 'funnel' | 'scatter' | 'radial' | 'composed';
-```
-
-This extends the type union without breaking existing charts.
-
----
-
-## Phase 2.3: Update Chart Type Switcher
-
-### File: `src/components/ai-chat/ChartTypeSwitcher.tsx`
-
-**Add new type options to the `types` array (lines 12-17):**
-```typescript
-const types = [
-  { value: 'bar', icon: BarChart3, label: 'Bar' },
-  { value: 'line', icon: LineChart, label: 'Line' },
-  { value: 'area', icon: TrendingUp, label: 'Area' },
-  { value: 'pie', icon: PieChart, label: 'Pie' },
-  { value: 'radar', icon: Target, label: 'Radar' },
-  { value: 'funnel', icon: Filter, label: 'Funnel' },
-  { value: 'scatter', icon: Hexagon, label: 'Scatter' },
-] as const;
-```
-
-Import new Lucide icons: `Target`, `Filter`, `Hexagon`
-
----
-
-## Phase 2.4: Update AI System Prompts
-
-### File: `supabase/functions/enhanced-ai-chat/index.ts`
-
-**Extend the CHART_MODULE section (around line 159) to include new chart types:**
-
-Add to the "Chart Type Selection" section:
-```
-**New Chart Types:**
-• Radar Chart: Multi-dimensional comparison (e.g., compare content quality across 5 metrics)
-• Funnel Chart: Conversion/workflow stages (e.g., content creation pipeline: Draft → Review → Published)
-• Scatter Chart: Relationship analysis with two numeric axes (e.g., keyword difficulty vs volume)
-• Radial Bar: Progress/completion (e.g., campaign progress circles)
-```
-
-Add format examples:
-```json
-{
-  "visualData": {
-    "type": "chart",
-    "chartConfig": {
-      "type": "radar",
-      "data": [
-        { "name": "Content A", "seo": 85, "readability": 92, "engagement": 78, "structure": 88 }
-      ],
-      "categories": ["name"],
-      "series": [
-        { "dataKey": "seo", "name": "SEO Score" },
-        { "dataKey": "readability", "name": "Readability" },
-        { "dataKey": "engagement", "name": "Engagement" },
-        { "dataKey": "structure", "name": "Structure" }
-      ]
-    }
-  }
-}
-```
-
----
-
-## Phase 2.5: Extend Data Normalization
-
-### File: `src/utils/chartDataNormalizer.ts`
-
-**Add radar/funnel-specific normalization rules:**
-
-For radar charts, ensure data has multiple numeric dimensions:
-```typescript
-// Add to KEY_MAPPINGS
-const KEY_MAPPINGS = {
-  // ... existing mappings
-  score: 'value',
-  metric: 'value',
-  stage: 'name',
-  step: 'name',
-};
-
-// Add radar data validation
-function validateRadarData(data: any[]): boolean {
-  if (data.length === 0) return false;
-  const firstItem = data[0];
-  const numericKeys = Object.keys(firstItem).filter(
-    k => typeof firstItem[k] === 'number'
-  );
-  return numericKeys.length >= 3; // Radar needs at least 3 dimensions
-}
-```
-
----
-
-## Files to Modify (Summary)
-
-| File | Change Type | Complexity |
-|------|-------------|------------|
-| `src/components/ai-chat/visualization/InteractiveChart.tsx` | Add new chart type cases | Medium |
-| `src/types/enhancedChat.ts` | Extend type union (1 line) | Low |
-| `src/components/ai-chat/ChartTypeSwitcher.tsx` | Add new options | Low |
-| `supabase/functions/enhanced-ai-chat/index.ts` | Extend AI prompts | Low |
-| `src/utils/chartDataNormalizer.ts` | Add validation helpers | Low |
+| File | Changes | Complexity |
+|------|---------|------------|
+| `query-analyzer.ts` | Add 4 new category detections | Low |
+| `index.ts` (fetchRealDataContext) | Add campaign/queue counts | Medium |
+| `index.ts` (TOOL_USAGE_MODULE) | Add campaign tool examples | Low |
+| `index.ts` (new function) | Add generateProactiveInsights() | Medium |
 
 ---
 
 ## What Stays Unchanged
 
-- All existing APIs and edge functions
-- Tool definitions and tool execution logic
-- Campaign intelligence features
-- Real-time subscriptions
-- Context awareness mechanisms
-- Data fetching patterns
-- Chart error recovery and fallback logic
-- Existing metric cards, tables, workflow visualizations
+- All existing tool definitions and execution logic
+- Chart generation and validation
+- SERP analysis integration
+- Multi-chart generation logic
+- Campaign intelligence tool implementations
+- Real-time queue subscriptions (frontend)
+- All existing prompt modules (extended, not replaced)
+
+---
+
+## Expected Outcomes
+
+After Phase 3:
+
+1. **AI understands campaign context** - Knows about active campaigns without explicit tool calls
+2. **Smarter tool selection** - Uses get_campaign_intelligence when user mentions "campaign"
+3. **Proactive suggestions** - AI notices and mentions important data states (e.g., failed items)
+4. **Better query routing** - Competitors, analytics, and performance queries get correct tools
+5. **Recent activity awareness** - AI knows what user worked on recently
 
 ---
 
 ## Testing Strategy
 
-After implementation, test with these AI prompts:
-1. "Show me a radar chart comparing my content quality scores"
-2. "Create a funnel showing my content creation pipeline"
-3. "Plot keyword difficulty vs volume as a scatter chart"
-4. "Show my campaign progress as a radial chart"
+Test prompts after implementation:
 
-The AI should now generate appropriate chart types based on user intent.
+1. "How is my campaign doing?" → Should use get_campaign_intelligence
+2. "What competitors do I have?" → Should use get_competitors
+3. "Show me analytics" → Should reference campaign_analytics data
+4. "What's failing in my queue?" → Should use get_queue_status
+5. General "Hi, what's new?" → Should include proactive insights about data state
 
 ---
 
-## Success Criteria
+## Technical Notes
 
-1. New chart types render correctly in AI Chat
-2. Users can switch between all chart types using ChartTypeSwitcher
-3. Data normalization handles various AI output formats
-4. No breaking changes to existing visualizations
-5. AI correctly selects chart types based on query context
+### Token Budget Considerations
+
+Current base context: ~500 tokens
+Enhanced context additions: ~200-300 tokens (counts only)
+Proactive insights: ~100-150 tokens
+
+**Total addition:** ~400 tokens - well within safe limits
+
+### Performance Impact
+
+- Additional 4 count queries: ~50ms total
+- Recent activity fetch (5 items): ~20ms
+- No impact on existing response generation
 
