@@ -254,13 +254,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
           {controls}
         </div>
       )}
-      <div className={compact ? "h-[160px]" : "h-[220px]"}>
+      <div className={compact ? "h-[200px]" : "h-[260px]"}>
         {children}
       </div>
     </div>
   );
 
-  const renderChart = (type: ChartType = chartType, height: number = 220) => {
+  const renderChart = (type: ChartType = chartType, height: number = 260) => {
     if (!chartData?.length) {
       return (
         <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -815,7 +815,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           />
                         }
                       >
-                        {renderChart(secondaryChartType, 160)}
+                        {renderChart(secondaryChartType, 200)}
                       </ChartBlock>
                     </motion.div>
                   )}
