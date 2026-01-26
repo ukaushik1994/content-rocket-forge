@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SmartSuggestions } from './SmartSuggestions';
 
 interface CampaignDashboardData {
   campaign: {
@@ -59,12 +60,14 @@ interface CampaignDashboardProps {
   data: CampaignDashboardData;
   onViewCampaign?: () => void;
   onGenerateContent?: () => void;
+  onSuggestionClick?: (suggestion: string) => void;
 }
 
 export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
   data,
   onViewCampaign,
-  onGenerateContent
+  onGenerateContent,
+  onSuggestionClick
 }) => {
   const { campaign, queueStatus, contentInventory, performance, timelineHealth } = data;
 
@@ -80,6 +83,51 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
 
   const healthStyle = getHealthStyles(timelineHealth?.status || 'unknown');
   const HealthIcon = healthStyle.icon;
+
+  // Generate contextual suggestions based on campaign state
+  const smartSuggestions = useMemo(() => {
+    const suggestions: string[] = [];
+    const name = campaign.name;
+    
+    // Performance-based suggestions
+    if (performance && performance.totalViews > 0) {
+      if (performance.engagementRate < 2) {
+        suggestions.push(`How can I improve engagement for ${name}?`);
+      }
+      if (performance.totalConversions === 0) {
+        suggestions.push(`Why aren't we getting conversions?`);
+      }
+      suggestions.push(`Show detailed analytics for ${name}`);
+    }
+    
+    // Timeline-based suggestions
+    if (timelineHealth?.status === 'at_risk') {
+      suggestions.push(`What's putting ${name} at risk?`);
+    } else if (timelineHealth?.status === 'overdue') {
+      suggestions.push(`How do I get ${name} back on track?`);
+    }
+    
+    // Content-based suggestions
+    if (contentInventory && contentInventory.total > 0) {
+      const draft = contentInventory.byStatus?.draft || 0;
+      if (draft > 0) {
+        suggestions.push(`Review ${draft} draft content pieces`);
+      }
+    }
+    
+    // Queue-based suggestions
+    if (queueStatus && queueStatus.pending > 0) {
+      suggestions.push(`Generate ${queueStatus.pending} pending content items`);
+    }
+    
+    // Fallback suggestions
+    if (suggestions.length === 0) {
+      suggestions.push('Compare this campaign to others');
+      suggestions.push('Show content performance breakdown');
+    }
+    
+    return suggestions.slice(0, 3);
+  }, [campaign, performance, timelineHealth, contentInventory, queueStatus]);
 
   const metrics = [
     { 
@@ -312,6 +360,13 @@ export const CampaignDashboard: React.FC<CampaignDashboardProps> = ({
           </ul>
         </Card>
       )}
+
+      {/* Smart Suggestions */}
+      <SmartSuggestions
+        suggestions={smartSuggestions}
+        onSuggestionClick={onSuggestionClick}
+        title="Continue exploring"
+      />
     </motion.div>
   );
 };

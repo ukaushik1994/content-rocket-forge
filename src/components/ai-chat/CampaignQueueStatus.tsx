@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SmartSuggestions } from './SmartSuggestions';
 
 interface QueueStatusData {
   campaignId: string;
@@ -41,11 +42,13 @@ interface QueueStatusData {
 interface CampaignQueueStatusProps {
   data: QueueStatusData;
   onRetryFailed?: () => void;
+  onSuggestionClick?: (suggestion: string) => void;
 }
 
 export const CampaignQueueStatus: React.FC<CampaignQueueStatusProps> = ({
   data,
-  onRetryFailed
+  onRetryFailed,
+  onSuggestionClick
 }) => {
   const completionPercentage = data.total > 0 
     ? Math.round((data.completed / data.total) * 100) 
@@ -71,6 +74,29 @@ export const CampaignQueueStatus: React.FC<CampaignQueueStatusProps> = ({
   const isComplete = data.completed === data.total && data.total > 0;
   const hasFailures = data.failed > 0;
   const isProcessing = data.processing > 0;
+
+  // Generate contextual suggestions based on queue state
+  const smartSuggestions = useMemo(() => {
+    const suggestions: string[] = [];
+    
+    if (isComplete) {
+      suggestions.push(`Show me the generated content for ${data.campaignName}`);
+      suggestions.push(`What's the performance of ${data.campaignName}?`);
+      suggestions.push('Create another campaign');
+    } else if (hasFailures) {
+      suggestions.push(`Why did ${data.failed} items fail?`);
+      suggestions.push(`Retry failed content for ${data.campaignName}`);
+      suggestions.push('Show me common generation errors');
+    } else if (isProcessing) {
+      suggestions.push(`What content is being generated?`);
+      suggestions.push(`Pause generation for ${data.campaignName}`);
+    } else if (data.pending > 0) {
+      suggestions.push(`Start generating content for ${data.campaignName}`);
+      suggestions.push('How long will generation take?');
+    }
+    
+    return suggestions.slice(0, 3);
+  }, [data, isComplete, hasFailures, isProcessing]);
 
   return (
     <motion.div
@@ -258,6 +284,13 @@ export const CampaignQueueStatus: React.FC<CampaignQueueStatusProps> = ({
           </div>
         </Card>
       )}
+
+      {/* Smart Suggestions */}
+      <SmartSuggestions
+        suggestions={smartSuggestions}
+        onSuggestionClick={onSuggestionClick}
+        title="What would you like to do next?"
+      />
     </motion.div>
   );
 };

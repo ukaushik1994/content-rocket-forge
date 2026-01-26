@@ -928,6 +928,10 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, on
                 campaignName: data.queueStatusData?.campaignName
               });
             }}
+            onSuggestionClick={(suggestion) => {
+              console.log('💡 Queue status suggestion clicked:', suggestion);
+              onAction?.('send_message', { message: suggestion });
+            }}
           />
         );
       }
@@ -950,6 +954,10 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, on
                 campaignId: data.campaignDashboardData?.campaign?.id,
                 campaignName: data.campaignDashboardData?.campaign?.name
               });
+            }}
+            onSuggestionClick={(suggestion) => {
+              console.log('💡 Dashboard suggestion clicked:', suggestion);
+              onAction?.('send_message', { message: suggestion });
             }}
           />
         );
