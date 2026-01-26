@@ -206,7 +206,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const renderChart = () => {
     if (!chartData?.length) {
       return (
-        <div className="flex items-center justify-center h-64 text-muted-foreground">
+        <div className="flex items-center justify-center h-[220px] text-muted-foreground">
           <div className="text-center">
             <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No data available</p>
@@ -215,7 +215,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       );
     }
 
-    const commonProps = { data: chartData, width: '100%', height: 320 };
+    const commonProps = { data: chartData, width: '100%', height: 220 };
     const tooltipStyle = { 
       backgroundColor: 'hsl(var(--card))', 
       border: '1px solid hsl(var(--border)/0.5)', 
