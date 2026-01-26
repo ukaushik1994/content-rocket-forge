@@ -7,14 +7,15 @@ import { CampaignBreakdownView } from '@/components/campaigns/CampaignBreakdownV
 import { StrategyEditModal } from '@/components/campaigns/StrategyEditModal';
 import { CampaignList } from '@/components/campaigns/CampaignList';
 import { AssetGenerationModal } from '@/components/campaigns/assets/AssetGenerationModal';
-import { AssetGenerationQueue } from '@/components/campaigns/assets/AssetGenerationQueue';
+import { ContentGenerationPanel } from '@/components/campaigns/ContentGenerationPanel';
+import { ContentGenerationProvider, useContentGeneration } from '@/contexts/ContentGenerationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignStrategies } from '@/hooks/useCampaignStrategies';
 import { useCampaigns } from '@/hooks/useCampaigns';
+import { useCampaignContentGeneration } from '@/hooks/useCampaignContentGeneration';
 import { CampaignStrategy, CampaignInput as CampaignInputType, CampaignStrategySummary } from '@/types/campaign-types';
-import { CampaignAsset } from '@/types/asset-types';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,14 +23,16 @@ import { solutionService } from '@/services/solutionService';
 import { campaignService, SavedCampaign } from '@/services/campaignService';
 import { createCampaignAtomic } from '@/services/campaignTransactions';
 import { campaignCleanupService } from '@/services/campaignCleanupService';
-import { generateAssetListFromStrategy } from '@/utils/assetGenerator';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus } from 'lucide-react';
 
-const Campaigns = () => {
+// Inner component that uses the context
+const CampaignsInner = () => {
   const { user } = useAuth();
   const { generateStrategies, isGenerating } = useCampaignStrategies();
   const { campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns, deleteCampaign, updateCampaignName, updateCampaignStatus } = useCampaigns();
+  const { generateAllContent } = useCampaignContentGeneration();
+  const { openPanel } = useContentGeneration();
   
   const [viewMode, setViewMode] = useState<'list' | 'create' | 'view'>('list');
   const [showInput, setShowInput] = useState(false);
@@ -40,7 +43,6 @@ const Campaigns = () => {
   const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
-  const [generatingAssets, setGeneratingAssets] = useState<string[]>([]);
   const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/campaigns` : '/campaigns';
 
   // Clean up duplicate campaigns on mount
@@ -225,38 +227,83 @@ const Campaigns = () => {
   };
 
   const handleStartGeneration = async (assetIds: string[]) => {
-    if (!currentCampaignId) return;
+    if (!currentCampaignId || !strategy || !user) return;
     
     try {
-      await campaignService.updateCampaignStatus(currentCampaignId, 'active');
-      setGeneratingAssets(assetIds);
+      // 1. Get content briefs from strategy
+      const allBriefs = strategy.contentBriefs || [];
+      
+      // 2. Build queue items from selected asset IDs
+      const items = assetIds.map((assetId, index) => {
+        // Parse assetId format: "campaignId-formatId-index"
+        const parts = assetId.split('-');
+        const briefIndex = parseInt(parts[parts.length - 1], 10);
+        const formatId = parts.slice(1, -1).join('-');
+        
+        // Find matching brief
+        const brief = allBriefs.find((b, i) => 
+          ((b as any).formatId === formatId || (b as any).format === formatId) && i === briefIndex
+        ) || allBriefs[briefIndex];
+        
+        return {
+          brief: brief || { 
+            title: `Content ${index + 1}`, 
+            description: strategy.description || '', 
+            keywords: [],
+            metaTitle: `Content ${index + 1}`,
+            metaDescription: strategy.description || '',
+            targetWordCount: 1000,
+            difficulty: 'medium' as const,
+            serpOpportunity: 50
+          },
+          formatId: formatId || 'blog',
+          index: isNaN(briefIndex) ? index : briefIndex
+        };
+      }).filter(item => item.brief);
+
+      // 3. Get solution data if available
+      let solutionData = null;
+      if (currentInput?.solutionId) {
+        const { data } = await supabase
+          .from('solutions')
+          .select('*')
+          .eq('id', currentInput.solutionId)
+          .maybeSingle();
+        solutionData = data;
+      }
+
+      // 4. Build campaign context
+      const campaignContext = {
+        title: strategy.title,
+        description: strategy.description,
+        targetAudience: strategy.targetAudience,
+        goal: strategy.expectedEngagement
+      };
+
+      // 5. Call the queue-based generation system
+      await generateAllContent(
+        items,
+        currentCampaignId,
+        currentInput?.solutionId || null,
+        campaignContext,
+        solutionData,
+        user.id
+      );
+      
+      // 6. Update UI - close modal and open progress panel
       setIsAssetModalOpen(false);
-      toast.success(`Starting generation of ${assetIds.length} assets...`);
+      
+      // Open the ContentGenerationPanel for real-time progress
+      if (strategy && currentCampaignId) {
+        openPanel(strategy, currentCampaignId);
+      }
+      
+      toast.success(`Queued ${assetIds.length} assets for generation`);
+      refetchCampaigns();
+      
     } catch (error) {
       console.error('Error starting generation:', error);
-      toast.error('Failed to start asset generation');
-    }
-  };
-
-  const handleGenerationComplete = async (results: { 
-    completed: CampaignAsset[]; 
-    failed: CampaignAsset[] 
-  }) => {
-    if (!currentCampaignId) return;
-    
-    try {
-      await campaignService.updateCampaignStatus(currentCampaignId, 'completed');
-      setGeneratingAssets([]);
-      
-      const message = results.failed.length > 0
-        ? `Generated ${results.completed.length} assets. ${results.failed.length} failed.`
-        : `Successfully generated all ${results.completed.length} assets!`;
-      
-      toast.success(message);
-      refetchCampaigns();
-    } catch (error) {
-      console.error('Error completing generation:', error);
-      toast.error('Failed to update campaign status');
+      toast.error('Failed to start content generation');
     }
   };
 
@@ -550,16 +597,18 @@ const Campaigns = () => {
         />
       )}
 
-      {/* Asset Generation Queue */}
-      {generatingAssets.length > 0 && strategy && currentCampaignId && (
-        <AssetGenerationQueue
-          assets={generateAssetListFromStrategy(strategy, currentCampaignId)
-            .filter(a => generatingAssets.includes(a.id))}
-          onComplete={handleGenerationComplete}
-          onCancel={() => setGeneratingAssets([])}
-        />
-      )}
+      {/* Content Generation Panel (real-time progress) */}
+      <ContentGenerationPanel />
     </div>
+  );
+};
+
+// Main component with ContentGenerationProvider wrapper
+const Campaigns = () => {
+  return (
+    <ContentGenerationProvider>
+      <CampaignsInner />
+    </ContentGenerationProvider>
   );
 };
 
