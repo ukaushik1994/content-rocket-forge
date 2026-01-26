@@ -386,7 +386,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed top-16 bottom-20 left-0 right-0 bg-black/40 backdrop-blur-sm z-[60] sm:hidden"
+              className="fixed top-16 bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm z-[30] sm:hidden"
               onClick={onClose}
             />
             
@@ -398,8 +398,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               onClick={() => onInteract?.()} // Track any click as interaction
               className={cn(
-                // Position: below navbar (top-20 = 80px), above input bar (bottom-24 = 96px)
-                "fixed top-20 right-0 bottom-24 z-[65]",
+                // Position: below navbar (top-20 = 80px), extends to bottom (behind input bar)
+                "fixed top-20 right-0 bottom-0 z-[35]",
                 // Mobile: full width but same vertical constraints
                 "w-full sm:w-[400px] lg:w-[480px]",
                 "bg-background/95 backdrop-blur-lg",
@@ -464,9 +464,9 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 </div>
               </div>
 
-              {/* Scrollable Content */}
+              {/* Scrollable Content - pb-24 for input bar clearance */}
               <ScrollArea className="flex-1">
-                <div className="p-6 space-y-8">
+                <div className="p-6 pb-28 space-y-8">
                   {/* AI Summary Section */}
                   <AISummaryCard
                     chartData={chartData}
