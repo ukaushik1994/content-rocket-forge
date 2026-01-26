@@ -1,171 +1,230 @@
 
 
-# Multi-Perspective Visualization Sidebar
+# Comprehensive Sidebar Information Architecture
 
-## Understanding Your Request
+## Understanding the Vision
 
-You want the visualization sidebar to show the same data from **multiple perspectives** - not just one chart, but potentially two charts that reveal different aspects of the information. The flow you described:
-
-1. Chart 1 (primary view)
-2. Summary (AI narrative)
-3. Chart 2 (different perspective)
-4. Key Metrics
-
-This creates a richer analytical experience where users can see trends, distributions, and comparisons without switching views.
+You want a **smart, context-aware sidebar** that:
+1. Adapts dynamically based on what data the AI is discussing
+2. Shows all relevant perspectives (Campaign, Content, Market Intelligence)
+3. Always displays time-based comparisons when data permits
+4. Hides sections gracefully when data is missing
+5. Clearly defines what information belongs in each section
 
 ---
 
-## Visual Layout (New Structure)
+## Complete List of Meaningful Information for Sidebar
+
+Based on the available data context, here is everything the sidebar can display:
+
+### 1. PRIMARY CHART (Always Present)
+| Information | Source | Purpose |
+|-------------|--------|---------|
+| Performance trends over time | Content/Campaign data | Show trajectory |
+| SEO score distribution | `content_items.seo_score` | Content health overview |
+| Campaign progress | `content_generation_queue` | Generation velocity |
+| Keyword volume analysis | `keywords.search_volume` | Market opportunity |
+| Competitor comparison | `competitor_solutions` | Competitive position |
+
+### 2. AI SUMMARY (Always Present)
+| Information | Source | Purpose |
+|-------------|--------|---------|
+| Data narrative | Auto-generated from chart data | Plain-language explanation |
+| Variance analysis | Calculated from dataset | Identify outliers |
+| Trend direction | Computed from time series | Quick trajectory read |
+| Top/Bottom performers | Sorted from data | Highlight extremes |
+
+### 3. SECONDARY CHART (Conditional - Complementary View)
+| Information | Source | Purpose |
+|-------------|--------|---------|
+| Distribution breakdown | Same data, pie/donut view | Proportion analysis |
+| Multi-dimensional scores | Radar chart | Balance assessment |
+| Status composition | Bar chart by status | Workflow bottlenecks |
+
+### 4. KEY METRICS (Up to 4 cards with period comparison)
+| Metric | Data Source | Comparison |
+|--------|-------------|------------|
+| **Total Content** | `content_items` count | vs. last period |
+| **Draft/Published Ratio** | Status breakdown | Trend over time |
+| **SEO Health** | Average SEO score | vs. target (80+) |
+| **Active Campaigns** | `campaigns.status='active'` | vs. last month |
+| **Queue Health** | Pending/Failed counts | vs. yesterday |
+| **Keyword Coverage** | `keywords` count | vs. competitors |
+| **Content Velocity** | Items published/week | vs. prior week |
+| **Engagement Rate** | Clicks/Views ratio | vs. benchmark |
+
+### 5. AI INSIGHTS (Collapsed - Expandable)
+| Insight Type | Icon | Content Pattern |
+|-------------|------|-----------------|
+| **Trend** | TrendingUp | "Performance increased 23% in the last 7 days" |
+| **Warning** | AlertTriangle | "3 queue items have failed - retry recommended" |
+| **Opportunity** | Zap | "5 drafts with SEO 80+ ready for publishing" |
+
+### 6. DATA CONTEXT HEADER (Always Present)
+| Information | Purpose |
+|-------------|---------|
+| Data source label | "Content Analytics" / "Campaign Intelligence" / "Market Research" |
+| Data points count | Quality indicator (e.g., "24 data points") |
+| Data quality badge | "High Quality" / "Limited Data" |
+| Timeframe indicator | "Last 30 days" / "This Quarter" |
+
+### 7. DEEP DIVE PROMPTS (Context-aware follow-ups)
+| Category | Example Prompts |
+|----------|----------------|
+| Performance | "Which content type performs best?" |
+| Comparison | "Compare this to last month" |
+| Detail | "Show me the top 5 performing items" |
+| Action | "What should I prioritize next?" |
+
+---
+
+## Section Visibility Logic
+
+The sidebar will use this decision tree to show/hide sections:
 
 ```text
-┌─────────────────────────────────┐
-│ Header                          │
-├─────────────────────────────────┤
-│ [Chart] [Table] ─ Type: ▼       │
-│ ┌─────────────────────────────┐ │
-│ │  CHART 1: Primary View      │ │
-│ │  (e.g., Trend over time)    │ │
-│ └─────────────────────────────┘ │
-├─────────────────────────────────┤
-│ ✨ AI Summary                   │
-│ "Revenue grew 23% with..."      │
-├─────────────────────────────────┤
-│ ┌─────────────────────────────┐ │
-│ │  CHART 2: Alternate View    │ │
-│ │  (e.g., Distribution/Pie)   │ │
-│ └─────────────────────────────┘ │
-├─────────────────────────────────┤
-│ KEY METRICS                     │
-│ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ │
-│ │ 23K │ │ +12%│ │ 4.2K│ │ 89% │ │
-│ └─────┘ └─────┘ └─────┘ └─────┘ │
-├─────────────────────────────────┤
-│ 💡 AI Insights (collapsed)      │
-└─────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ SIDEBAR SECTION VISIBILITY RULES                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│ IF visualData has chartConfig with data → SHOW Primary Chart    │
+│ IF chartData.length >= 2 → SHOW Secondary Chart                 │
+│ IF summaryInsights.metricCards exists → SHOW Key Metrics        │
+│   ELSE generate from chartData (current behavior)               │
+│ IF insights array exists && length > 0 → SHOW AI Insights       │
+│ IF deepDivePrompts array exists → SHOW Explore Further          │
+│                                                                  │
+│ MISSING DATA BEHAVIOR:                                          │
+│ • No chartData → HIDE chart sections entirely                   │
+│ • No metrics → HIDE metrics section (don't show empty grid)     │
+│ • No insights → HIDE insights collapsible                       │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## How It Works
+## Enhanced Data Structure Per Section
 
-### Smart Chart Selection
-When the AI generates data, the system will:
-1. Use `visualData.charts[]` array if the AI provides multiple chart configurations
-2. Auto-generate a secondary perspective if only one chart is provided:
-   - If primary is **bar/line** → secondary shows **pie** (distribution)
-   - If primary is **pie** → secondary shows **bar** (comparison)
-   - If primary is **area** → secondary shows **radar** (multi-dimensional)
+### Section 1: Data Context Header (NEW)
+Add context about what data is being shown and its timeframe:
 
-### Conditional Display
-- Shows **two charts** only when multiple perspectives add value
-- Single chart mode still available when data doesn't warrant dual views
-- Each chart can have its own title/subtitle explaining what it represents
+```typescript
+// New header info object
+const headerContext = {
+  dataSource: visualData?.dataSource || 'AI Analysis',
+  timeframe: visualData?.timeframe || 'Last 30 Days',
+  totalPoints: chartData.length,
+  lastUpdated: new Date().toISOString()
+};
+```
+
+### Section 4: Enhanced Metrics with Always-On Comparison
+Update metric cards to always show period comparison:
+
+```typescript
+// Enhanced metric card structure
+{
+  label: "Total Content",
+  value: 156,
+  trend: "up",
+  trendValue: "+12%",
+  previousValue: 139,           // Always show
+  comparisonPeriod: "vs. last week",  // Always show
+  target: 200,                  // Optional benchmark
+  targetLabel: "Monthly Goal"
+}
+```
 
 ---
 
-## Implementation Details
+## Implementation Changes
 
 ### File: `VisualizationSidebar.tsx`
 
-**1. Add Secondary Chart State**
-```typescript
-const [secondaryChartType, setSecondaryChartType] = useState<ChartType>('pie');
-```
+**1. Add Header Context Section**
+Display data source, timeframe, and quality prominently at the top.
 
-**2. Smart Secondary Chart Selection**
-```typescript
-const secondaryChartConfig = useMemo(() => {
-  // Use AI-provided secondary chart if available
-  if (visualData?.charts && visualData.charts.length > 1) {
-    return visualData.charts[1];
-  }
-  // Auto-generate complementary view
-  const complementaryType = chartType === 'bar' ? 'pie' : 
-                            chartType === 'line' ? 'pie' : 
-                            chartType === 'pie' ? 'bar' : 'radar';
-  return { ...chartConfig, type: complementaryType };
-}, [visualData, chartConfig, chartType]);
-```
+**2. Enhanced Metric Card Rendering**
+Always pass `showComparison={true}` to all metric cards and add comparison period label.
 
-**3. New Content Order**
-```typescript
-<ScrollArea className="flex-1">
-  <div className="p-6 pb-28 space-y-6">
-    {/* 1. PRIMARY CHART */}
-    <ChartBlock 
-      title="Overview"
-      chart={renderChart(chartType)} 
-      controls={<SegmentedControl />}
-    />
+**3. Section Visibility Guards**
+Each section wrapped in explicit visibility checks that completely hide when data is missing.
 
-    {/* 2. AI SUMMARY */}
-    <AISummaryCard ... />
+**4. Timeframe Indicator**
+Add a timeframe badge showing what period the data represents.
 
-    {/* 3. SECONDARY CHART (Conditional) */}
-    {hasSecondaryData && (
-      <ChartBlock 
-        title="Distribution"
-        chart={renderChart(secondaryChartType)}
-        compact={true}
-      />
-    )}
+### File: `PremiumMetricCard.tsx`
 
-    {/* 4. KEY METRICS */}
-    <MetricsGrid ... />
+**1. Always Show Comparison**
+Remove the `showComparison` toggle - always display comparison data.
 
-    {/* 5. INSIGHTS (collapsed) */}
-    <InsightsCollapsible ... />
-  </div>
-</ScrollArea>
-```
+**2. Add Comparison Period Label**
+Show "vs. last week" / "vs. last month" dynamically.
 
-**4. Compact Chart Block Component**
-For the secondary chart, use a more compact presentation:
-```typescript
-const ChartBlock = ({ title, subtitle, chart, compact }) => (
-  <div className={cn(
-    "rounded-xl bg-card/30 border border-border/30",
-    compact ? "p-4" : "p-5"
-  )}>
-    {title && (
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-muted-foreground">{title}</span>
-        {/* Type selector for this chart */}
-      </div>
-    )}
-    <div className={compact ? "h-[160px]" : "h-[220px]"}>
-      {chart}
-    </div>
-  </div>
-);
+---
+
+## Visual Layout (Final Structure)
+
+```text
+┌──────────────────────────────────────────────┐
+│ ▼ VISUALIZATION SIDEBAR                       │
+├──────────────────────────────────────────────┤
+│ TITLE: "Content Performance Analysis"         │
+│ ──────────────────────────────────────────── │
+│ [Content Analytics] • 24 pts • Last 30 Days   │
+│ [High Quality ✓]                              │
+├──────────────────────────────────────────────┤
+│ [Chart ✓] [Table] ─── Type: [Bar ▼]          │
+│ ┌────────────────────────────────────────┐   │
+│ │                                        │   │
+│ │     PRIMARY CHART (260px)              │   │
+│ │     Shows main trend/comparison        │   │
+│ │                                        │   │
+│ └────────────────────────────────────────┘   │
+├──────────────────────────────────────────────┤
+│ ✨ AI SUMMARY                                 │
+│ "Your content shows 23% growth with          │
+│ 'Workforce Planning' leading at 44K..."      │
+├──────────────────────────────────────────────┤
+│ Distribution ─── Type: [Pie ▼]               │
+│ ┌────────────────────────────────────────┐   │
+│ │   SECONDARY CHART (200px)              │   │
+│ │   Complementary perspective            │   │
+│ └────────────────────────────────────────┘   │
+├──────────────────────────────────────────────┤
+│ KEY METRICS                                   │
+│ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ │
+│ │ ▲+12%  │ │ ▼-3%   │ │ ●0%    │ │ ▲+8%   │ │
+│ │ 156    │ │ 72%    │ │ 84     │ │ 12     │ │
+│ │ Content│ │ Publish│ │ SEO    │ │ Active │ │
+│ │vs. 139 │ │vs. 75% │ │vs. 82  │ │vs. 11  │ │
+│ └────────┘ └────────┘ └────────┘ └────────┘ │
+├──────────────────────────────────────────────┤
+│ 💡 AI Insights (3)                    [▼]    │
+│   • Trend: 25% growth trajectory detected    │
+│   • Warning: 3 queue items failed            │
+│   • Opportunity: 5 high-SEO drafts ready     │
+├──────────────────────────────────────────────┤
+│ EXPLORE FURTHER                              │
+│ [Which performs best?] [Compare to last mo]  │
+└──────────────────────────────────────────────┘
 ```
 
 ---
 
-## Chart Heights
-
-| Chart | Height | Purpose |
-|-------|--------|---------|
-| Primary | 220px | Main visualization with full detail |
-| Secondary | 160px | Complementary view, more compact |
-
----
-
-## Files to Modify
+## Technical Summary
 
 | File | Changes |
 |------|---------|
-| `VisualizationSidebar.tsx` | Add secondary chart logic, reorder content sections, create ChartBlock component |
+| `VisualizationSidebar.tsx` | Add header context section, always-on comparison mode, visibility guards |
+| `PremiumMetricCard.tsx` | Always show comparison, add period label prop |
+| `AISummaryCard.tsx` | Add timeframe context to summary generation |
+| `types/enhancedChat.ts` | Add `timeframe`, `previousPeriodData` to metric types |
 
----
-
-## Technical Flow
-
-The system prioritizes AI-provided chart configurations:
-
-1. **AI provides `charts[]` array** → Use first as primary, second as secondary
-2. **AI provides single `chartConfig`** → Use as primary, auto-generate complementary secondary
-3. **Minimal data** → Show only primary chart (skip secondary)
-
-This ensures maximum flexibility while maintaining a clean, multi-perspective view that shows your data from different angles.
+This architecture ensures the sidebar clearly communicates:
+- **What data** is being shown (source, quality)
+- **What timeframe** it represents
+- **How it compares** to previous periods (always visible)
+- **What actions** to take next (insights + deep dives)
 
