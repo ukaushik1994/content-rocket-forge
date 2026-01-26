@@ -420,17 +420,19 @@ MANDATORY RESPONSE STRUCTURE:
    - State missing data clearly
    - Explain what's needed for complete insights`;
 
-// Tool usage module with dynamic counts - ~400 tokens
+// Tool usage module with dynamic counts - ~600 tokens
 const TOOL_USAGE_MODULE = `
 🔧 TOOL-BASED ARCHITECTURE (CRITICAL):
 
 You have access to specialized tools to fetch data on-demand. Use them smartly:
 
 **Available Data Summary:**
-• Content Items: {contentCount} pieces
+• Content Items: {contentCount} pieces ({draftCount} drafts, {publishedCount} published)
 • AI Proposals: {proposalCount} strategies  
 • Keywords: {keywordCount} tracked
 • Solutions: {solutionCount} offerings
+• Active Campaigns: {activeCampaignCount} running
+• Queue Status: {pendingQueueCount} pending, {completedQueueCount} completed, {failedQueueCount} failed
 
 **When to Use Tools:**
 1. User asks for specific data subsets (e.g., "top 5", "only published")
@@ -442,8 +444,15 @@ You have access to specialized tools to fetch data on-demand. Use them smartly:
 - "Show my best content" → get_content_items with min_seo_score=80, limit=5
 - "Available proposals?" → get_proposals with status="available", limit=10  
 - "Keyword performance" → get_keywords with limit=20
+- "How is my campaign doing?" → get_campaign_intelligence with campaign_name
+- "What's the queue status?" → get_queue_status with campaign_id
+- "Show campaign content" → get_campaign_content with campaign_id
+- "Start generating content" → trigger_content_generation
+- "Retry failed items" → retry_failed_content
 
 **Important:** Always check the counts above first. If a count is 0, inform the user no data exists rather than calling the tool.
+
+{proactiveInsights}
 `;
 
 // =============================================================================
@@ -1034,70 +1043,158 @@ function parseResponseWithFallback(content: string): { message: string; actions?
   }
 }
 
-// Enhanced real data fetching function with Smart Context Loading (Option B)
+// Phase 3: Generate proactive insights based on data state
+function generateProactiveInsights(counts: Record<string, number>): string {
+  const insights: string[] = [];
+  
+  // Content insights
+  if (counts.draftCount > 5) {
+    insights.push(`📝 You have ${counts.draftCount} draft articles ready for review`);
+  }
+  if (counts.contentCount === 0) {
+    insights.push(`💡 No content yet - consider creating your first piece or starting a campaign`);
+  }
+  
+  // Queue insights  
+  if (counts.failedQueueCount > 0) {
+    insights.push(`⚠️ ${counts.failedQueueCount} content items failed generation - consider retrying`);
+  }
+  if (counts.pendingQueueCount > 0) {
+    insights.push(`⏳ ${counts.pendingQueueCount} items pending in generation queue`);
+  }
+  if (counts.processingQueueCount > 0) {
+    insights.push(`🔄 ${counts.processingQueueCount} items currently being generated`);
+  }
+  
+  // Campaign insights
+  if (counts.activeCampaignCount === 0 && counts.contentCount > 0) {
+    insights.push(`🚀 No active campaigns - consider starting one to boost content production`);
+  }
+  if (counts.activeCampaignCount > 0) {
+    insights.push(`📊 ${counts.activeCampaignCount} active campaign(s) running`);
+  }
+  
+  // Keyword insights
+  if (counts.keywordCount === 0) {
+    insights.push(`🔍 Add keywords to unlock SEO insights and content recommendations`);
+  }
+  
+  // Proposal insights
+  if (counts.proposalCount > 0 && counts.contentCount === 0) {
+    insights.push(`💡 You have ${counts.proposalCount} strategy proposals - consider converting some to content`);
+  }
+  
+  if (insights.length === 0) {
+    return '';
+  }
+  
+  return `
+**🎯 PROACTIVE INSIGHTS:**
+${insights.map(i => `• ${i}`).join('\n')}
+`;
+}
+
+// Enhanced real data fetching function with Smart Context Loading (Phase 3 Enhanced)
 async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, userQuery: string = '') {
   try {
-    // TOOL-BASED APPROACH: Fetch ONLY basic counts
-    console.log('📊 Fetching basic data counts only (tools will fetch detailed data on demand)...');
+    // TOOL-BASED APPROACH: Fetch counts + new Phase 3 context data
+    console.log('📊 Fetching data counts with Phase 3 enhancements...');
     
-    const { count: contentCount } = await supabase
-      .from('content_items')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
+    // Parallel fetch all counts for efficiency
+    const [
+      contentResult,
+      proposalResult,
+      keywordResult,
+      solutionResult,
+      competitorResult,
+      competitorSolutionResult,
+      // Phase 3 additions
+      campaignResult,
+      queueResult,
+      draftContentResult,
+      publishedContentResult,
+      recentContentResult
+    ] = await Promise.all([
+      supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('ai_strategy_proposals').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('keywords').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('solutions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('company_competitors').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('competitor_solutions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      // Phase 3: Campaign counts
+      supabase.from('campaigns').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'active'),
+      // Phase 3: Queue status counts
+      supabase.from('content_generation_queue').select('status').eq('user_id', userId),
+      // Phase 3: Content by status
+      supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'draft'),
+      supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'published'),
+      // Phase 3: Recent activity
+      supabase.from('content_items').select('title, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5)
+    ]);
 
-    const { count: proposalCount } = await supabase
-      .from('ai_strategy_proposals')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
+    const contentCount = contentResult.count || 0;
+    const proposalCount = proposalResult.count || 0;
+    const keywordCount = keywordResult.count || 0;
+    const solutionCount = solutionResult.count || 0;
+    const competitorCount = competitorResult.count || 0;
+    const competitorSolutionCount = competitorSolutionResult.count || 0;
+    const activeCampaignCount = campaignResult.count || 0;
+    const draftCount = draftContentResult.count || 0;
+    const publishedCount = publishedContentResult.count || 0;
+    
+    // Calculate queue status counts
+    const queueItems = queueResult.data || [];
+    const pendingQueueCount = queueItems.filter(i => i.status === 'pending').length;
+    const processingQueueCount = queueItems.filter(i => i.status === 'processing').length;
+    const completedQueueCount = queueItems.filter(i => i.status === 'completed').length;
+    const failedQueueCount = queueItems.filter(i => i.status === 'failed').length;
+    
+    // Recent content for activity context
+    const recentContent = recentContentResult.data || [];
+    const recentActivitySection = recentContent.length > 0
+      ? `\n## Recent Activity:\n${recentContent.map(c => `• "${c.title}" (${new Date(c.created_at).toLocaleDateString()})`).join('\n')}`
+      : '';
 
-    const { count: keywordCount } = await supabase
-      .from('keywords')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    const { count: solutionCount } = await supabase
-      .from('solutions')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    const { count: competitorCount } = await supabase
-      .from('company_competitors')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    const { count: competitorSolutionCount } = await supabase
-      .from('competitor_solutions')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    // Build minimal context string with basic stats
+    // Build minimal context string with enhanced stats
     const contextString = `
 ## Available Data Summary (${new Date().toISOString()}):
-- **Content Items**: ${contentCount || 0} total
-- **AI Strategy Proposals**: ${proposalCount || 0} total
-- **Keywords**: ${keywordCount || 0} researched
-- **Solutions/Products**: ${solutionCount || 0} defined
-- **Competitors**: ${competitorCount || 0} tracked
-- **Competitor Solutions**: ${competitorSolutionCount || 0} products analyzed
+- **Content Items**: ${contentCount} total (${draftCount} drafts, ${publishedCount} published)
+- **AI Strategy Proposals**: ${proposalCount} total
+- **Keywords**: ${keywordCount} researched
+- **Solutions/Products**: ${solutionCount} defined
+- **Competitors**: ${competitorCount} tracked
+- **Competitor Solutions**: ${competitorSolutionCount} products analyzed
+- **Active Campaigns**: ${activeCampaignCount} running
+- **Queue Status**: ${pendingQueueCount} pending, ${processingQueueCount} processing, ${completedQueueCount} completed, ${failedQueueCount} failed
+${recentActivitySection}
 
 ## How to Access Detailed Data:
 
-You have access to 8 powerful tools to fetch exactly the data you need:
+You have access to 13 powerful tools to fetch exactly the data you need:
 
+**Core Tools:**
 1. **get_content_items** - Fetch content with filters (status, SEO score, type)
 2. **get_keywords** - Fetch keyword data (volume, difficulty)
 3. **get_proposals** - Fetch AI proposals (status, priority, impressions)
 4. **get_solutions** - Fetch solutions/products
 5. **get_seo_scores** - Fetch SEO performance metrics
 6. **get_serp_analysis** - Fetch fresh SERP analysis data
-7. **get_competitors** - Fetch competitor profiles, SWOT, intelligence (NEW)
-8. **get_competitor_solutions** - Fetch competitor products, features, pricing (NEW)
+7. **get_competitors** - Fetch competitor profiles, SWOT, intelligence
+8. **get_competitor_solutions** - Fetch competitor products, features, pricing
+
+**Campaign Intelligence Tools:**
+9. **get_campaign_intelligence** - Fetch campaign performance overview
+10. **get_queue_status** - Fetch content generation queue status
+11. **get_campaign_content** - Fetch content items for a specific campaign
+12. **trigger_content_generation** - Start content generation process
+13. **retry_failed_content** - Retry failed queue items
 
 **CRITICAL INSTRUCTIONS:**
 - When user asks about specific data, USE TOOLS to fetch it
 - Start with small limits (5-10 items) unless user asks for "all"
 - Only fetch what you actually need to answer the question
 - Use filters to get precise data (e.g., status="published", min_seo_score=70)
+- For campaign queries, use campaign intelligence tools
 
 **Examples:**
 - User: "Show my best content" → Call get_content_items with min_seo_score=80, limit=5
@@ -1105,27 +1202,43 @@ You have access to 8 powerful tools to fetch exactly the data you need:
 - User: "Analyze keyword performance" → Call get_keywords with limit=20
 - User: "Who are my competitors?" → Call get_competitors with limit=10, include_intelligence=true
 - User: "What products does [competitor] offer?" → Call get_competitor_solutions with competitor_name="...", limit=10
-- User: "Show competitor SWOT analysis" → Call get_competitors with include_intelligence=true
-- User: "Compare competitor pricing" → Call get_competitor_solutions with include_pricing=true
+- User: "How is my campaign doing?" → Call get_campaign_intelligence with campaign_name
+- User: "What's failing in my queue?" → Call get_queue_status
+- User: "Retry failed items" → Call retry_failed_content
 
 **Remember:** The counts above show total data available. Use tools to dive deeper when needed.
 `;
 
+    // Build counts object with all Phase 3 additions
+    const counts = {
+      contentCount,
+      proposalCount,
+      keywordCount,
+      solutionCount,
+      competitorCount,
+      competitorSolutionCount,
+      activeCampaignCount,
+      draftCount,
+      publishedCount,
+      pendingQueueCount,
+      processingQueueCount,
+      completedQueueCount,
+      failedQueueCount
+    };
+
     // Store counts for TOOL_USAGE_MODULE replacement
     return {
       contextString,
-      counts: {
-        contentCount: contentCount || 0,
-        proposalCount: proposalCount || 0,
-        keywordCount: keywordCount || 0,
-        solutionCount: solutionCount || 0,
-        competitorCount: competitorCount || 0,
-        competitorSolutionCount: competitorSolutionCount || 0
-      }
+      counts,
+      proactiveInsights: generateProactiveInsights(counts)
     };
   } catch (error) {
     console.error('❌ Error fetching context:', error);
-    return `## Error Loading Context\nUnable to fetch data: ${error.message}`;
+    return { 
+      contextString: `## Error Loading Context\nUnable to fetch data: ${error.message}`,
+      counts: {},
+      proactiveInsights: ''
+    };
   }
 }
 
@@ -1455,8 +1568,11 @@ serve(async (req) => {
     }
 
     // Build enhanced system prompt with context
-    // Fetch real data from database using tiered context
-    const { contextString: realDataContext, counts } = await fetchRealDataContext(user.id, queryIntent, userQuery);
+    // Fetch real data from database using tiered context (Phase 3 enhanced)
+    const contextResult = await fetchRealDataContext(user.id, queryIntent, userQuery);
+    const realDataContext = contextResult.contextString || contextResult;
+    const counts = contextResult.counts || {};
+    const proactiveInsights = contextResult.proactiveInsights || '';
     
     // Prompt modules are now inlined at the top of this file to avoid cross-folder import issues
 
@@ -1486,14 +1602,19 @@ serve(async (req) => {
       console.warn('⚠️ High token usage (25k-40k) - using BASE + TOOL_USAGE + CHART_MODULE only');
       systemPrompt = BASE_PROMPT;
       
-      // Replace count placeholders in TOOL_USAGE_MODULE
+      // Replace count placeholders in TOOL_USAGE_MODULE (Phase 3 enhanced)
       const toolUsageWithCounts = TOOL_USAGE_MODULE
-        .replace('{contentCount}', counts.contentCount.toString())
-        .replace('{proposalCount}', counts.proposalCount.toString())
-        .replace('{keywordCount}', counts.keywordCount.toString())
-        .replace('{solutionCount}', counts.solutionCount.toString());
-      
-      systemPrompt += '\n\n' + toolUsageWithCounts; // Critical for tool-based architecture
+        .replace('{contentCount}', (counts.contentCount || 0).toString())
+        .replace('{draftCount}', (counts.draftCount || 0).toString())
+        .replace('{publishedCount}', (counts.publishedCount || 0).toString())
+        .replace('{proposalCount}', (counts.proposalCount || 0).toString())
+        .replace('{keywordCount}', (counts.keywordCount || 0).toString())
+        .replace('{solutionCount}', (counts.solutionCount || 0).toString())
+        .replace('{activeCampaignCount}', (counts.activeCampaignCount || 0).toString())
+        .replace('{pendingQueueCount}', (counts.pendingQueueCount || 0).toString())
+        .replace('{completedQueueCount}', (counts.completedQueueCount || 0).toString())
+        .replace('{failedQueueCount}', (counts.failedQueueCount || 0).toString())
+        .replace('{proactiveInsights}', proactiveInsights);
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       systemPrompt += '\n\n' + CHART_MODULE;
       
@@ -1509,14 +1630,19 @@ serve(async (req) => {
       // START WITH TOOL USAGE MODULE (most critical for tool-based architecture)
       systemPrompt = BASE_PROMPT;
       
-      // Replace count placeholders in TOOL_USAGE_MODULE
+      // Replace count placeholders in TOOL_USAGE_MODULE (Phase 3 enhanced)
       const toolUsageWithCounts = TOOL_USAGE_MODULE
-        .replace('{contentCount}', counts.contentCount.toString())
-        .replace('{proposalCount}', counts.proposalCount.toString())
-        .replace('{keywordCount}', counts.keywordCount.toString())
-        .replace('{solutionCount}', counts.solutionCount.toString());
-      
-      systemPrompt += '\n\n' + toolUsageWithCounts;
+        .replace('{contentCount}', (counts.contentCount || 0).toString())
+        .replace('{draftCount}', (counts.draftCount || 0).toString())
+        .replace('{publishedCount}', (counts.publishedCount || 0).toString())
+        .replace('{proposalCount}', (counts.proposalCount || 0).toString())
+        .replace('{keywordCount}', (counts.keywordCount || 0).toString())
+        .replace('{solutionCount}', (counts.solutionCount || 0).toString())
+        .replace('{activeCampaignCount}', (counts.activeCampaignCount || 0).toString())
+        .replace('{pendingQueueCount}', (counts.pendingQueueCount || 0).toString())
+        .replace('{completedQueueCount}', (counts.completedQueueCount || 0).toString())
+        .replace('{failedQueueCount}', (counts.failedQueueCount || 0).toString())
+        .replace('{proactiveInsights}', proactiveInsights);
       systemPrompt += '\n\n' + RESPONSE_STRUCTURE;
       
       // PHASE 3: Check if multi-chart mode should be activated
