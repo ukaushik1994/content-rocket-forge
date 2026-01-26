@@ -9,12 +9,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataTable } from './DataTable';
-import { MultiChartModal } from './MultiChartModal';
-
 import { cn } from '@/lib/utils';
-import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2, Table as TableIcon, CheckCircle2 } from 'lucide-react';
+import { BarChart3, LineChart as LineIcon, PieChart as PieIcon, TrendingUp, Download, Filter, Maximize2, CheckCircle2 } from 'lucide-react';
+
 interface InteractiveChartProps {
   chartConfig: ChartConfiguration;
   title?: string;
@@ -25,10 +22,11 @@ interface InteractiveChartProps {
   onDataUpdate?: (data: any[]) => void;
   onExport?: () => void;
   allVisualData?: any[];
-  onSendMessage?: (message: string) => void; // NEW: For deep dive prompts
-  onActionTrigger?: (action: string) => void; // NEW: For actionable items
-  originalQuery?: string; // NEW: For recovery context
-  skipAutoRecovery?: boolean; // NEW: Disable auto-recovery when parent handles it
+  onSendMessage?: (message: string) => void;
+  onActionTrigger?: (action: string) => void;
+  originalQuery?: string;
+  skipAutoRecovery?: boolean;
+  onExpand?: (visualData: any, chartConfig: ChartConfiguration) => void; // NEW: For sidebar expand
 }
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   chartConfig,
@@ -43,7 +41,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   onSendMessage,
   onActionTrigger,
   originalQuery,
-  skipAutoRecovery = false
+  skipAutoRecovery = false,
+  onExpand
 }) => {
   // Enhanced chart intelligence
   const {
@@ -101,8 +100,6 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const [currentType, setCurrentType] = useState(chartConfig.type);
   const [filteredData, setFilteredData] = useState(chartConfig.data);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showModal, setShowModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
   const chartTypes = [{
     value: 'line',
     label: 'Line Chart',
@@ -436,25 +433,9 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-6 group-hover:shadow-neon transition-all duration-300">
         {/* Header with controls */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div>
-              {title && <h3 className="text-lg font-semibold text-foreground">{title}</h3>}
-              {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
-            </div>
-            
-            {/* View Mode Toggle */}
-            <Tabs value={viewMode} onValueChange={value => setViewMode(value as 'chart' | 'table')}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="chart" className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  Chart
-                </TabsTrigger>
-                <TabsTrigger value="table" className="flex items-center gap-2">
-                  <TableIcon className="w-4 h-4" />
-                  Table
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div>
+            {title && <h3 className="text-lg font-semibold text-foreground">{title}</h3>}
+            {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
           </div>
           
           <div className="flex items-center gap-2">
@@ -500,12 +481,24 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 </SelectContent>
               </Select>}
             
-            
-            
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                // Use new sidebar expand callback if available, otherwise fallback
+                if (onExpand) {
+                  const visualData = {
+                    type: 'chart' as const,
+                    chartConfig: { ...chartConfig, type: currentType, data: filteredData },
+                    title: title || chartConfig.title,
+                    insights: allVisualData.flatMap(vd => vd.insights || []),
+                    actionableItems: allVisualData.flatMap(vd => vd.actionableItems || []),
+                    deepDivePrompts: allVisualData.flatMap(vd => vd.deepDivePrompts || []),
+                    dataSource: 'AI Analysis'
+                  };
+                  onExpand(visualData, { ...chartConfig, type: currentType, data: filteredData });
+                }
+              }}
               title={filteredData.length === 0 ? "Expand and fetch data" : "Expand visualization"}
             >
               <Maximize2 className="w-4 h-4" />
@@ -513,8 +506,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           </div>
         </div>
 
-        {/* Content area - Chart or Table */}
-        <motion.div key={viewMode} initial={{
+        {/* Chart content only - AI decides visualization type */}
+        <motion.div initial={{
         opacity: 0,
         scale: 0.95
       }} animate={{
@@ -523,12 +516,9 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       }} transition={{
         duration: 0.3
       }} className="min-h-[300px]">
-          {viewMode === 'chart' ? <div className="space-y-4">
-              {renderChart()}
-              
-            </div> : <DataTable data={filteredData} allowEdit={false} allowFilter={true} allowSort={true} onExport={format => {
-          console.log(`Exporting data as ${format}`);
-        }} />}
+          <div className="space-y-4">
+            {renderChart()}
+          </div>
         </motion.div>
 
         {/* Chart statistics */}
@@ -547,26 +537,5 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
         </div>
       </Card>
     </motion.div>
-
-    <MultiChartModal
-      isOpen={showModal}
-      onClose={() => setShowModal(false)}
-      allVisualData={allVisualData}
-      currentChartConfig={{ 
-        ...chartConfig, 
-        type: currentType, 
-        data: filteredData,
-        perspectives: (chartConfig as any).perspectives // Phase 5: Pass chart perspectives
-      }}
-      title={title}
-      description={description}
-      actionableItems={allVisualData.flatMap(vd => vd.actionableItems || [])}
-      deepDivePrompts={allVisualData.flatMap(vd => vd.deepDivePrompts || [])}
-      insights={allVisualData.flatMap(vd => vd.insights || [])}
-      onDeepDiveClick={handleDeepDiveClick}
-      onActionClick={handleActionClick}
-      onSendMessage={onSendMessage} // NEW: Pass for data recovery
-      originalQuery={originalQuery} // NEW: Pass for recovery context
-    />
   </>;
 };

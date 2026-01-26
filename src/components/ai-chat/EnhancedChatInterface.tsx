@@ -5,6 +5,7 @@ import { ContextAwareMessageInput } from './ContextAwareMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
 import { ChatHistorySidebar } from './ChatHistorySidebar';
+import { VisualizationSidebar } from './VisualizationSidebar';
 import { SolutionIntelligenceCard } from './SolutionIntelligenceCard';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { SolutionContextCard } from './SolutionContextCard';
@@ -20,9 +21,12 @@ import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
 import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ChartConfiguration } from '@/types/enhancedChat';
+
 interface EnhancedChatInterfaceProps {
   className?: string;
 }
+
 export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   className = ""
 }) => {
@@ -53,6 +57,26 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // NEW: Visualization sidebar state
+  const [showVisualizationSidebar, setShowVisualizationSidebar] = useState(false);
+  const [visualizationData, setVisualizationData] = useState<{
+    visualData: any;
+    chartConfig: ChartConfiguration | null;
+    title?: string;
+    description?: string;
+  } | null>(null);
+
+  // Handle expand visualization from charts
+  const handleExpandVisualization = (visualData: any, chartConfig: ChartConfiguration) => {
+    setVisualizationData({
+      visualData,
+      chartConfig,
+      title: visualData?.title || chartConfig?.title,
+      description: visualData?.description
+    });
+    setShowVisualizationSidebar(true);
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -115,6 +139,17 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       <AnimatePresence>
         {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} />}
       </AnimatePresence>
+
+      {/* Visualization Sidebar (Right) */}
+      <VisualizationSidebar
+        isOpen={showVisualizationSidebar}
+        onClose={() => setShowVisualizationSidebar(false)}
+        visualData={visualizationData?.visualData}
+        chartConfig={visualizationData?.chartConfig || null}
+        title={visualizationData?.title}
+        description={visualizationData?.description}
+        onSendMessage={sendMessage}
+      />
 
       {/* Floating Sidebar Toggle - Refined */}
       <motion.div
@@ -232,7 +267,16 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
             {/* Messages */}
             {messages.length > 0 && <div className="space-y-6">
-                {messages.map((message, index) => <EnhancedMessageBubble key={message.id} message={message} isLatest={index === messages.length - 1} onAction={handleAction} onSendMessage={sendMessage} />)}
+                {messages.map((message, index) => (
+                  <EnhancedMessageBubble 
+                    key={message.id} 
+                    message={message} 
+                    isLatest={index === messages.length - 1} 
+                    onAction={handleAction} 
+                    onSendMessage={sendMessage}
+                    onExpandVisualization={handleExpandVisualization}
+                  />
+                ))}
               </div>}
 
             {/* Typing Indicator - Refined Minimal */}

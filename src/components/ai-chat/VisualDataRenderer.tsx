@@ -86,9 +86,10 @@ const getIconColor = (colorTheme: string): string => {
 interface VisualDataRendererProps {
   data: VisualData;
   onAction?: (action: string, data?: any) => void;
+  onExpandVisualization?: (visualData: any, chartConfig: any) => void; // NEW: For sidebar expand
 }
 
-export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, onAction }) => {
+export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, onAction, onExpandVisualization }) => {
   console.log('📊 VisualDataRenderer: Received data:', {
     hasData: !!data,
     dataType: typeof data,
@@ -256,6 +257,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, on
             allowDataFilter={true}
             showIntelligentSuggestions={true}
             allVisualData={[data]}
+            onExpand={onExpandVisualization}
             onDataUpdate={(newData) => {
               console.log('📈 Enhanced chart data updated:', newData);
               // Handle real-time data updates with intelligence
