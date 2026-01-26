@@ -1,374 +1,313 @@
 
 
-# AI Chat Premium UI Revamp Plan
+# Phase 7: Chart Visualization System Overhaul
 
-## Current State Summary
+## Executive Summary
 
-### Completed Phases (1-5)
-| Phase | Description | Status |
-|-------|-------------|--------|
-| Phase 1 | Fix and Stabilize | Complete |
-| Phase 2 | New Chart Types | Complete |
-| Phase 3 | AI Context and Intelligence | Complete |
-| Phase 4 | Error Resilience | Complete |
-| Phase 5 | UI/UX Polish (Common Components) | Complete |
+This plan addresses three critical issues in the AI Chat visualization system:
+1. **In-chat chart display**: Remove Chart/Table toggle, let AI decide the visualization type
+2. **Expanded Visualization**: Convert from modal to a premium right sidebar panel
+3. **Table tab issues**: Fix table rendering and remove mock data
 
 ---
 
-## Incomplete Items (Minor - Do Not Block Revamp)
+## Current State Analysis
 
-| Item | Location | Notes |
-|------|----------|-------|
-| Voice input button | `ContextAwareMessageInput.tsx:162-171` | UI placeholder only |
-| Attachment button | `ContextAwareMessageInput.tsx:140-148` | UI placeholder only |
-| SmartSuggestionsPanel | `StreamingChatInterface.tsx:239-243` | Commented out, simplified approach used |
+### Issue 1: Chart/Table Toggle in Chat Messages
 
-These are non-blocking and can be addressed in a future phase if needed.
+**Current Location**: `src/components/ai-chat/InteractiveChart.tsx` (lines 446-457)
 
----
+**Problem**:
+- Users see a Chart/Table toggle on every visualization
+- The AI should intelligently decide the best visualization type
+- Unnecessary cognitive load for users
 
-## Phase 6: Premium AI Chat UI Revamp
-
-### Design Philosophy
-- **Apple-like Minimal**: Clean whites, maximum whitespace, barely-there borders
-- **Refined Motion**: Thoughtful animations that add meaning
-- **Keep Theme**: Background effects (orbs, particles) remain as part of brand identity
-- **Full Scope**: Chat interface, sidebar, responsive design, all interactions
-
----
-
-## 6.1 AI Chat Page Container
-
-**File**: `src/pages/AIChat.tsx`
-
-**Changes**:
-- Reduce background effect intensity (keep orbs, reduce particle count from 20 to 8)
-- Slow down orb animation (15s to 20s duration for subtlety)
-- Reduce opacity of effects (from 0.6/0.7 to 0.4/0.5 max)
-
-**Design Elements**:
+**Current Code**:
 ```text
-BEFORE                          AFTER
-20 particles                    8 particles (refined)
-opacity 0.3-0.7                 opacity 0.2-0.4
-10s/15s animation               18s/22s animation (slower, calmer)
+Tabs → TabsList → TabsTrigger (Chart) + TabsTrigger (Table)
+viewMode state controls which to show
 ```
 
+### Issue 2: Expanded Visualization Modal
+
+**Current Location**: `src/components/ai-chat/MultiChartModal.tsx` (1684 lines)
+
+**Problems**:
+1. Opens as a large modal overlay (blocks entire screen)
+2. Contains mock/hardcoded data in multiple places:
+   - `KeyMetricsPanel` (lines 217-244): Fallback metrics are hardcoded
+   - Data validation section (lines 1331-1358): "95% confidence" is hardcoded
+   - Data transparency panel (lines 1368-1396): All values are static
+3. Not premium - current design is functional but cluttered
+4. No table view in expanded state (charts only via carousel)
+
+### Issue 3: Table Tab Functionality
+
+**Current Location**: `src/components/ai-chat/InteractiveChart.tsx` (line 529)
+
+**Problem**: 
+- Table uses `DataTable` component which works correctly
+- Issue is that `filteredData` may be empty or incorrectly structured
+- When data keys don't match expected format, table shows empty
+
 ---
 
-## 6.2 Chat History Sidebar
+## Implementation Plan
 
-**File**: `src/components/ai-chat/ChatHistorySidebar.tsx`
+### 7.1 Remove Chart/Table Toggle from In-Chat Visualization
+
+**File**: `src/components/ai-chat/InteractiveChart.tsx`
 
 **Changes**:
-- Clean up header styling (remove gradient from button, use subtle primary)
-- Refine search input (cleaner focus ring, lighter background)
-- Simplify filter/sort buttons (text only, no background on default)
-- Conversation cards: reduce visual weight (lighter borders, subtle hover)
-- Footer: cleaner layout, remove Synced badge visual noise
+1. Remove `viewMode` state and `Tabs` component (lines 446-457)
+2. Keep only chart rendering, remove table fallback
+3. AI response will determine visualization type (chart type is already AI-decided)
+4. Keep chart type switcher for power users (the icon dropdown) but make it subtle
 
-**Design Elements**:
+**Result**:
 ```text
-Sidebar width:       w-80 (320px) - keep as is
-Background:          bg-background/90 (increase opacity for cleaner look)
-Border:              border-border/30 (softer)
-Cards:               bg-transparent → bg-muted/30 on hover
-Active card:         Subtle left border accent instead of gradient background
-Typography:          text-foreground for titles, text-muted-foreground for meta
+BEFORE: [Chart Tab | Table Tab] + Chart Type Dropdown + Expand Button
+AFTER:  Chart Only + Subtle Type Dropdown + Expand Button
 ```
 
-**Interaction Refinements**:
-- Hover: Card background transition (0.2s)
-- Active state: 2px left border in primary color instead of gradient fill
-- Menu button: Always visible but muted, not opacity-0 → 1
+### 7.2 Create Premium Visualization Sidebar Panel
 
----
+**New File**: `src/components/ai-chat/VisualizationSidebar.tsx`
 
-## 6.3 Welcome Experience
+This replaces the `MultiChartModal` with a sliding sidebar panel on the right side of the AI Chat.
+
+**Design Specifications**:
+```text
+Width:           w-[480px] (mobile: full-width)
+Position:        Fixed right, full height below navbar
+Animation:       Slide in from right (0.3s)
+Background:      bg-background/95 backdrop-blur-xl
+Border:          Left border with subtle glow
+```
+
+**Layout Structure**:
+```text
++----------------------------------+
+| Header (Title + Close)           |
+| [Data Quality Badge]             |
++----------------------------------+
+| Metric Cards (dynamic from AI)   |
+| Grid: 2 cols, real data          |
++----------------------------------+
+| Primary Chart                    |
+| [Full width, actual data]        |
+| Chart Type Switcher (subtle)     |
++----------------------------------+
+| Table View (collapsible)         |
+| [Real data, sortable]            |
++----------------------------------+
+| AI Insights (if any)             |
++----------------------------------+
+| Quick Actions                    |
++----------------------------------+
+| Footer: Export | Share           |
++----------------------------------+
+```
+
+**Key Features**:
+1. Uses actual chart data from the AI response (no mock data)
+2. Dynamic metric cards from `visualData.summaryInsights.metricCards`
+3. Real table data from `chartConfig.data`
+4. Collapsible sections to reduce clutter
+5. Premium minimal styling matching Phase 6
+
+### 7.3 Fix Table Rendering
+
+**Files**: 
+- `src/components/ai-chat/DataTable.tsx` (works correctly)
+- `src/components/ai-chat/VisualizationSidebar.tsx` (new)
+
+**Changes**:
+1. Ensure data normalization before passing to table
+2. Add intelligent column detection (hide internal IDs)
+3. Format numeric values correctly
+4. Add loading state when data is being fetched
+
+### 7.4 Remove Mock Data
+
+**Locations to fix**:
+
+| Location | Current | Fix |
+|----------|---------|-----|
+| `MultiChartModal.tsx:217-244` | Hardcoded fallback metrics | Use only AI-provided metrics, show empty state if none |
+| `MultiChartModal.tsx:1343` | "95% confidence" | Calculate from actual data quality or remove |
+| `MultiChartModal.tsx:1375-1390` | Static "Data Source" info | Pass from visualData or hide section |
+| New `VisualizationSidebar.tsx` | N/A | Only use data passed from AI response |
+
+### 7.5 Wire Sidebar to AI Chat
 
 **File**: `src/components/ai-chat/EnhancedChatInterface.tsx`
 
 **Changes**:
-- Replace Brain icon box with minimal icon (no heavy border/background)
-- Simplify heading (clean white text, no gradient)
-- Add time-based greeting ("Good morning", "Good afternoon", "Good evening")
-- Increase section spacing (gap-6 to gap-10)
-- Platform cards: Cleaner styling, reduce gradient intensity
+1. Add state for sidebar visibility and selected visualization data
+2. Pass `onExpandVisualization` callback to message bubbles
+3. Render `VisualizationSidebar` conditionally
 
-**Design Elements**:
-```text
-BEFORE                          AFTER
-[Brain in bordered box]         [Brain icon with subtle ring glow]
-Gradient heading                Clean text-foreground heading
-Generic greeting                Time-aware: "Good morning, ready to help"
-gap-6                           gap-10 (more breathing room)
-```
-
-**Time Greeting Logic**:
-```text
-Before 12:00  → "Good morning"
-12:00-17:00   → "Good afternoon"  
-After 17:00   → "Good evening"
-```
-
----
-
-## 6.4 Message Bubbles
-
-**File**: `src/components/ai-chat/EnhancedMessageBubble.tsx`
+**File**: `src/components/ai-chat/InteractiveChart.tsx`
 
 **Changes**:
-- AI messages: Clean card with minimal border, no gradient background
-- User messages: Subtle primary tint (bg-primary/10 instead of heavy gradient)
-- Avatar: Simple icon with subtle ring (1px border primary/20)
-- Timestamps: Fade in after 0.5s delay, text-xs text-muted-foreground
-- Reduce padding (px-6 py-4 instead of px-8 py-4)
+1. Replace `setShowModal(true)` with `onExpand?.(visualData)`
+2. Pass visualization data up to parent
 
-**Design Elements**:
+### 7.6 Update AI Chat Page Layout
+
+**File**: `src/pages/AIChat.tsx`
+
+**Changes**:
+1. Add layout support for right sidebar
+2. Chat area shrinks when sidebar is open
+
+**Layout**:
 ```text
-AI Bubble:
-  - Background: bg-card
-  - Border: border border-border/50
-  - Shadow: shadow-sm (no colored tint)
-  - Avatar ring: 1px border-primary/30
-
-User Bubble:
-  - Background: bg-primary/10
-  - Border: border border-primary/20
-  - Text: text-foreground
-
-Timestamps:
-  - text-xs text-muted-foreground
-  - Animate: fade-in with 0.5s delay after message render
++------------------------------------------+
+| Navbar                                    |
++------------------------------------------+
+| [History] |     Chat Area     | [Viz     |
+| Sidebar   |                   | Sidebar] |
+|           |                   | (480px)  |
++------------------------------------------+
 ```
 
 ---
 
-## 6.5 Typing Indicator
+## Files to Modify
 
-**File**: `src/components/ai-chat/EnhancedChatInterface.tsx` (lines 229-273)
+| File | Priority | Changes |
+|------|----------|---------|
+| `src/components/ai-chat/InteractiveChart.tsx` | High | Remove Chart/Table tabs, add onExpand callback |
+| `src/components/ai-chat/VisualizationSidebar.tsx` | High | **NEW FILE** - Premium sidebar component |
+| `src/components/ai-chat/EnhancedChatInterface.tsx` | High | Add sidebar state and rendering |
+| `src/pages/AIChat.tsx` | Medium | Update layout for sidebar |
+| `src/components/ai-chat/MultiChartModal.tsx` | Low | Can be deprecated or kept as fallback |
 
-**Changes**:
-- Replace bouncing colored dots with subtle pulse animation
-- Context-aware status text ("Thinking...", "Analyzing data...", "Searching...")
-- Cleaner card styling (same as message bubbles)
-- Add subtle progress bar for operations lasting > 3 seconds
+---
 
-**Design Elements**:
+## Technical Implementation Details
+
+### VisualizationSidebar Component Structure
+
 ```text
-BEFORE                          AFTER
-[Colored bouncing dots]         [Single pulsing ring around avatar]
-"AI is analyzing your data..."  Dynamic: "Thinking...", "Searching...", "Generating..."
-Heavy card styling              Match message bubble styling
+Props:
+  - isOpen: boolean
+  - onClose: () => void
+  - visualData: VisualData | null
+  - chartConfig: ChartConfiguration | null
+  - title?: string
+  - description?: string
+  - onSendMessage?: (message: string) => void
+
+State:
+  - activeView: 'chart' | 'table'
+  - chartType: string (for type switching)
+  - isInsightsExpanded: boolean
+```
+
+### Data Flow
+
+```text
+AI Response → visualData attached to message
+     ↓
+EnhancedMessageBubble renders InteractiveChart
+     ↓
+User clicks Expand button
+     ↓
+InteractiveChart calls onExpand(visualData, chartConfig)
+     ↓
+EnhancedChatInterface sets sidebar state
+     ↓
+VisualizationSidebar renders with real data
+```
+
+### Responsive Design
+
+```text
+Desktop (>1280px):
+  - Sidebar: w-[480px] fixed right
+  - Chat area: flex-1 with right margin
+
+Tablet (768px-1280px):
+  - Sidebar: w-[400px] fixed right
+  - Chat area: adjusts
+
+Mobile (<768px):
+  - Sidebar: Full-width overlay
+  - Swipe to close
 ```
 
 ---
 
-## 6.6 Input Bar
+## Design Specifications (Premium Minimal)
 
-**File**: `src/components/ai-chat/ContextAwareMessageInput.tsx`
-
-**Changes**:
-- Cleaner container (reduce backdrop blur, simpler border)
-- Refined focus state (ring-1 ring-primary/40, no heavy glow)
-- Send button: Clean primary color, no gradient
-- Placeholder buttons (mic, attach): Reduce opacity, cleaner hover
-- Character count: Only show when approaching limit (>100 chars)
-
-**Design Elements**:
+### Color Palette
 ```text
-Container:
-  - bg-background/90 (cleaner than 80)
-  - border-border/40 (softer)
-
-Input Field:
-  - bg-transparent
-  - Focus: ring-1 ring-primary/30 ring-offset-0
-
-Send Button:
-  - bg-primary (solid, no gradient)
-  - hover:bg-primary/90
-  - Smooth scale on hover (1.02)
-
-Placeholder Buttons:
-  - text-muted-foreground
-  - hover:text-foreground
+Background:        bg-background/95
+Border:            border-border/30
+Active elements:   border-primary/20
+Text primary:      text-foreground
+Text secondary:    text-muted-foreground
 ```
 
----
-
-## 6.7 Quick Actions Grid
-
-**File**: `src/components/ai-chat/EnhancedQuickActions.tsx`
-
-**Changes**:
-- Reduce gradient intensity on cards
-- Clean icon styling (primary color, no background shapes)
-- Increase spacing between items
-- Simplify hover states (border color change only, subtle scale 1.01)
-
-**Design Elements**:
+### Typography
 ```text
-Cards:
-  - bg-card
-  - border border-border/50
-  - Hover: border-primary/30
-  - No gradient backgrounds on icons
-
-Suggestions Grid:
-  - gap-3 (increase from gap-2)
-  - Each suggestion: clean badge styling with subtle hover
+Sidebar title:     text-lg font-semibold
+Section headers:   text-sm font-medium text-muted-foreground
+Values:            text-xl font-bold
 ```
 
----
-
-## 6.8 Platform Summary Card
-
-**File**: `src/components/ai-chat/PlatformSummaryCard.tsx`
-
-**Changes**:
-- Metric cards: Clean white background, subtle icon tint
-- Remove heavy gradient CTA, use simple primary button
-- Stagger entrance animation (0.1s per card)
-
-**Design Elements**:
+### Spacing
 ```text
-Metric Cards:
-  - bg-card
-  - border border-border/50
-  - Icon: text-primary (clean, no background)
-  - Value: text-2xl font-bold text-foreground
-  - Label: text-sm text-muted-foreground
-
-CTA Button:
-  - Button variant="default" (simple primary)
-  - No gradient
+Sidebar padding:   p-6
+Section gaps:      space-y-6
+Card padding:      p-4
 ```
 
----
-
-## 6.9 Visual Data Renderer (Charts)
-
-**File**: `src/components/ai-chat/VisualDataRenderer.tsx`
-
-**Changes**:
-- Add subtle entrance animation (fade + slide up, 0.3s)
-- Cleaner chart container styling
-- Refined tooltip styling
-- Action buttons: Clean button styling, no heavy gradients
-
----
-
-## 6.10 Loading States & Skeletons
-
-**Files**: 
-- `src/components/common/SkeletonLoader.tsx`
-- `src/components/common/LoadingOverlay.tsx`
-
-**Changes**:
-- Refine shimmer gradient (more subtle color transition)
-- Slower animation (2.5s instead of 1.5s for less distraction)
-- Skeleton shapes better match final content dimensions
-
----
-
-## 6.11 Responsive Design
-
-**Files**: Multiple (all chat components)
-
-**Changes**:
-
-**Mobile (< 768px)**:
-- Sidebar: Full-width drawer from left (100% width on mobile)
-- Input bar: Simplified (hide attachment/mic buttons)
-- Message bubbles: Full width with reduced padding (px-4)
-- Quick actions: Single column grid
-- Welcome: Stacked layout, smaller heading
-
-**Tablet (768px - 1024px)**:
-- Sidebar: Fixed width (280px instead of 320px)
-- Two-column layout for cards
-- Input bar: Full featured
-
-**Desktop (> 1024px)**:
-- Current layout (sidebar 320px, main content fills remaining)
-- Full feature set
-
-**Touch Interactions**:
-- Increase tap targets to minimum 44px
-- Swipe to close sidebar on mobile
-- Pull-to-refresh pattern consideration
-
----
-
-## Implementation Order
-
-| Step | Component | Effort | Files |
-|------|-----------|--------|-------|
-| 1 | Page container (reduce effects) | Low | AIChat.tsx |
-| 2 | Input bar refinement | Low | ContextAwareMessageInput.tsx |
-| 3 | Message bubbles | Medium | EnhancedMessageBubble.tsx |
-| 4 | Typing indicator | Low | EnhancedChatInterface.tsx |
-| 5 | Welcome experience | Medium | EnhancedChatInterface.tsx |
-| 6 | Sidebar refinement | Medium | ChatHistorySidebar.tsx |
-| 7 | Quick actions and cards | Low | EnhancedQuickActions.tsx, PlatformSummaryCard.tsx |
-| 8 | Responsive design | Medium | All chat components |
-| 9 | Loading states | Low | SkeletonLoader.tsx, LoadingOverlay.tsx |
-
----
-
-## Color Palette (Minimal Approach)
-
+### Animation
 ```text
-Primary Actions:     hsl(var(--primary)) solid
-Backgrounds:         bg-card, bg-background
-Borders:             border-border/30 to border-border/50
-Text Primary:        text-foreground
-Text Secondary:      text-muted-foreground
-Hover States:        Opacity changes, not color changes
-Focus States:        ring-1 ring-primary/30
+Sidebar entrance:  translateX(100%) → translateX(0), 0.3s ease-out
+Section fade:      opacity 0 → 1, 0.2s stagger
+Charts:            Scale 0.98 → 1, 0.3s
 ```
-
----
-
-## Animation Timing
-
-```text
-Page entrance:       0.6s ease-out
-Element entrance:    0.3s ease-out
-Hover transitions:   0.2s ease
-Stagger delay:       0.1s per item
-Scale on hover:      1.01 max (very subtle)
-Fade delays:         0.5s for secondary elements
-```
-
----
-
-## Files to Modify (Summary)
-
-| File | Priority | Type of Changes |
-|------|----------|-----------------|
-| `src/pages/AIChat.tsx` | High | Background effects reduction |
-| `src/components/ai-chat/EnhancedChatInterface.tsx` | High | Welcome, typing indicator, layout |
-| `src/components/ai-chat/EnhancedMessageBubble.tsx` | High | Message styling |
-| `src/components/ai-chat/ContextAwareMessageInput.tsx` | High | Input bar refinement |
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | Medium | Sidebar cleanup |
-| `src/components/ai-chat/EnhancedQuickActions.tsx` | Medium | Card styling |
-| `src/components/ai-chat/PlatformSummaryCard.tsx` | Medium | Metric styling |
-| `src/components/ai-chat/VisualDataRenderer.tsx` | Low | Chart containers |
-| `src/components/common/SkeletonLoader.tsx` | Low | Animation timing |
 
 ---
 
 ## Expected Outcomes
 
-After Phase 6:
+After Phase 7:
 
-1. **Clean First Impression**: Minimal, professional welcome experience
-2. **Reduced Visual Noise**: Fewer competing elements, clearer hierarchy
-3. **Theme Preserved**: Background effects remain as brand identity
-4. **Premium Feel**: Quality in details without flashiness
-5. **Better Readability**: More whitespace, cleaner typography
-6. **Responsive Excellence**: Works beautifully on all screen sizes
-7. **Consistent System**: Unified animation and color language
+1. **Cleaner Chat Experience**: No confusing Chart/Table toggle; AI decides visualization type
+2. **Premium Sidebar**: Sliding panel replaces clunky modal, feels modern and integrated
+3. **Real Data Only**: All mock/hardcoded data removed, showing actual AI-generated insights
+4. **Working Table View**: Table tab works correctly within the sidebar
+5. **Responsive**: Works beautifully on all screen sizes
+6. **Performance**: Sidebar loads instantly with data already available
+
+---
+
+## Implementation Order
+
+| Step | Task | Effort |
+|------|------|--------|
+| 1 | Create `VisualizationSidebar.tsx` with basic structure | High |
+| 2 | Remove Chart/Table tabs from `InteractiveChart.tsx` | Low |
+| 3 | Add expand callback to `InteractiveChart.tsx` | Low |
+| 4 | Wire sidebar state in `EnhancedChatInterface.tsx` | Medium |
+| 5 | Update `AIChat.tsx` layout for sidebar | Low |
+| 6 | Add table view to sidebar | Medium |
+| 7 | Style and polish for premium feel | Medium |
+| 8 | Add responsive design | Medium |
+| 9 | Test and fix edge cases | Low |
+
+---
+
+## Migration Notes
+
+- `MultiChartModal.tsx` will be kept initially as fallback
+- Can be deprecated after sidebar is stable
+- No database changes required
+- No API changes required
 
