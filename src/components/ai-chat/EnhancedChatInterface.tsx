@@ -58,7 +58,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // NEW: Visualization sidebar state
+  // Visualization sidebar state
   const [showVisualizationSidebar, setShowVisualizationSidebar] = useState(false);
   const [visualizationData, setVisualizationData] = useState<{
     visualData: any;
@@ -66,8 +66,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     title?: string;
     description?: string;
   } | null>(null);
+  
+  // Smart persistence: track if user has interacted with sidebar
+  const [sidebarInteracted, setSidebarInteracted] = useState(false);
 
-  // Handle expand visualization from charts
+  // Handle manual expand visualization (kept for backwards compatibility)
   const handleExpandVisualization = (visualData: any, chartConfig: ChartConfiguration) => {
     setVisualizationData({
       visualData,
@@ -76,6 +79,49 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       description: visualData?.description
     });
     setShowVisualizationSidebar(true);
+    setSidebarInteracted(true); // Manual expand counts as interaction
+  };
+
+  // AUTO-OPEN sidebar when AI response contains visual data
+  useEffect(() => {
+    if (messages.length === 0) return;
+    
+    const latestMessage = messages[messages.length - 1];
+    
+    // Check if latest message is from AI and has visual data (excluding SERP which renders inline)
+    if (latestMessage?.role === 'assistant' && latestMessage?.visualData) {
+      const visualType = latestMessage.visualData?.type;
+      
+      // SERP analysis renders inline, so don't auto-open sidebar for it
+      if (visualType === 'serp_analysis') return;
+      
+      // Extract chart config from visualData
+      const chartConfig = latestMessage.visualData?.chartConfig || null;
+      
+      setVisualizationData({
+        visualData: latestMessage.visualData,
+        chartConfig,
+        title: latestMessage.visualData?.title || 'Data Visualization',
+        description: latestMessage.visualData?.description
+      });
+      setShowVisualizationSidebar(true);
+    } else if (latestMessage?.role === 'assistant' && !latestMessage?.visualData) {
+      // Text-only response - close sidebar if user hasn't interacted with it
+      if (!sidebarInteracted) {
+        setShowVisualizationSidebar(false);
+      }
+    }
+  }, [messages, sidebarInteracted]);
+
+  // Track user interaction with sidebar (for smart persistence)
+  const handleSidebarInteraction = () => {
+    setSidebarInteracted(true);
+  };
+
+  // Close sidebar and reset interaction flag
+  const handleCloseSidebar = () => {
+    setShowVisualizationSidebar(false);
+    setSidebarInteracted(false);
   };
 
   // Auto-scroll to bottom when new messages arrive
@@ -140,15 +186,16 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} />}
       </AnimatePresence>
 
-      {/* Visualization Sidebar (Right) - now properly integrated */}
+      {/* Visualization Sidebar (Right) - positioned within chat area */}
       <VisualizationSidebar
         isOpen={showVisualizationSidebar}
-        onClose={() => setShowVisualizationSidebar(false)}
+        onClose={handleCloseSidebar}
         visualData={visualizationData?.visualData}
         chartConfig={visualizationData?.chartConfig || null}
         title={visualizationData?.title}
         description={visualizationData?.description}
         onSendMessage={sendMessage}
+        onInteract={handleSidebarInteraction}
       />
 
       {/* Floating Sidebar Toggle - Refined */}

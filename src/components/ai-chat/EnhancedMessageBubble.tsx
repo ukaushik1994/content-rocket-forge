@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bot, RefreshCw, BarChart3, Sparkles, Search, FileText, HelpCircle, Users, Film } from 'lucide-react';
+import { Bot, User, RefreshCw, Search, FileText, HelpCircle, Users } from 'lucide-react';
 import { EnhancedChatMessage, ChartConfiguration } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
-import { VisualDataRenderer } from './VisualDataRenderer';
 import { ModernActionButtons } from './ModernActionButtons';
 import { InlineProgress } from './InlineProgress';
 import { SerpVisualData } from './SerpVisualData';
 import { MessageStatus } from './MessageStatus';
 import { ErrorMessageBubble } from './ErrorMessageBubble';
 import { FormattedResponseRenderer } from './FormattedResponseRenderer';
-import { MultiChartModal } from './MultiChartModal';
-import { MultiChartAnalysis } from './visualization/MultiChartAnalysis';
 import { Button } from '@/components/ui/button';
 import { ThinkingIndicator } from './ThinkingIndicator';
 
@@ -40,12 +36,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   isThinking = false,
   onExpandVisualization
 }) => {
-  const [showMultiChartModal, setShowMultiChartModal] = useState(false);
   const [showTimestamp, setShowTimestamp] = useState(false);
-  // Auto-show multi-chart analysis when present
-  const [showMultiChart, setShowMultiChart] = useState(
-    message.visualData?.type === 'multi_chart_analysis'
-  );
 
   // Delayed timestamp reveal
   React.useEffect(() => {
@@ -174,114 +165,29 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             </div>
           </Card>
 
-          {/* Visual Data Rendering */}
-          {message.visualData && (
+          {/* REMOVED: Inline visual data rendering - now handled by sidebar */}
+          {/* SERP Data still renders inline as it's different from chart visualizations */}
+          {message.visualData?.type === 'serp_analysis' && message.visualData.serpData && (
             <motion.div 
               className="mt-3"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.3 }}
             >
-              {message.visualData.type === 'multi_chart_analysis' ? (
-                showMultiChart && (
-                <MultiChartAnalysis
-                    visualData={message.visualData}
-                    onClose={() => setShowMultiChart(false)}
-                    onDeepDive={(question) => {
-                      setShowMultiChart(false);
-                      onSendMessage?.(question);
-                    }}
-                    onSendMessage={onSendMessage}
-                  />
-                )
-              ) : (
-                <>
-                  {message.visualData.type === 'serp_analysis' && message.visualData.serpData && (
-                    <SerpVisualData 
-                      serpData={message.visualData.serpData} 
-                      onActionClick={(action, data) => {
-                        onAction?.({
-                          id: `serp-action-${Date.now()}`,
-                          type: 'button',
-                          label: action,
-                          action: 'send_message',
-                          data: { 
-                            message: getActionPrompt(action, data)
-                          }
-                        });
-                      }}
-                    />
-                  )}
-                  <VisualDataRenderer 
-                    data={message.visualData} 
-                    onAction={(actionType, actionData) => {
-                      console.log('📊 VisualDataRenderer action:', actionType, actionData);
-                      // Convert to ContextualAction format for parent handler
-                      onAction?.({
-                        id: `visual-action-${Date.now()}`,
-                        type: 'button',
-                        label: actionType,
-                        action: actionType,
-                        data: actionData
-                      });
-                    }}
-                    onExpandVisualization={onExpandVisualization}
-                  />
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {/* Show visual analysis card for ANY visual data */}
-          {message.type === 'assistant' && (
-            message.visualData || (message.allVisualData && message.allVisualData.length > 0)
-          ) && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-3 mb-3"
-            >
-              {(() => {
-                const isVideoContent = message.visualData?.type === 'generated_video' || message.visualData?.type === 'generated_videos';
-                const hasImages = message.visualData?.generatedImages?.length || 0;
-                const hasVideos = message.visualData?.generatedVideos?.length || 0;
-                
-                return (
-                  <div className="p-4 bg-card rounded-xl border border-border/50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          {isVideoContent ? (
-                            <Film className="w-4 h-4 text-primary" />
-                          ) : (
-                            <BarChart3 className="w-4 h-4 text-primary" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {isVideoContent ? 'Video Content' : 'Visual Analysis'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {hasImages > 0 && `${hasImages} image(s)`}
-                            {hasImages > 0 && hasVideos > 0 && ' • '}
-                            {hasVideos > 0 && `${hasVideos} video(s)`}
-                            {!hasImages && !hasVideos && `${message.allVisualData?.length || 1} chart(s) • Interactive insights`}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => setShowMultiChartModal(true)}
-                        className="bg-primary hover:bg-primary/90 gap-2"
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        View
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })()}
+              <SerpVisualData 
+                serpData={message.visualData.serpData} 
+                onActionClick={(action, data) => {
+                  onAction?.({
+                    id: `serp-action-${Date.now()}`,
+                    type: 'button',
+                    label: action,
+                    action: 'send_message',
+                    data: { 
+                      message: getActionPrompt(action, data)
+                    }
+                  });
+                }}
+              />
             </motion.div>
           )}
 
@@ -428,17 +334,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         </motion.div>
       )}
 
-      {/* Multi-Chart Modal */}
-      {(message.visualData || (message.allVisualData && message.allVisualData.length > 0)) && (
-        <MultiChartModal
-          isOpen={showMultiChartModal}
-          onClose={() => setShowMultiChartModal(false)}
-          visualData={message.visualData}
-          allVisualData={message.allVisualData}
-          currentChartConfig={message.visualData?.chartConfig}
-          onSendMessage={onSendMessage}
-        />
-      )}
+      {/* Visualizations now render in sidebar, not in modal */}
     </motion.div>
   );
 };
