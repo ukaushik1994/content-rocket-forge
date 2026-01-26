@@ -208,7 +208,20 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                       }}
                     />
                   )}
-                  <VisualDataRenderer data={message.visualData} />
+                  <VisualDataRenderer 
+                    data={message.visualData} 
+                    onAction={(actionType, actionData) => {
+                      console.log('📊 VisualDataRenderer action:', actionType, actionData);
+                      // Convert to ContextualAction format for parent handler
+                      onAction?.({
+                        id: `visual-action-${Date.now()}`,
+                        type: 'button',
+                        label: actionType,
+                        action: actionType,
+                        data: actionData
+                      });
+                    }}
+                  />
                 </>
               )}
             </div>

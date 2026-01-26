@@ -85,9 +85,10 @@ const getIconColor = (colorTheme: string): string => {
 
 interface VisualDataRendererProps {
   data: VisualData;
+  onAction?: (action: string, data?: any) => void;
 }
 
-export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) => {
+export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, onAction }) => {
   console.log('📊 VisualDataRenderer: Received data:', {
     hasData: !!data,
     dataType: typeof data,
@@ -921,8 +922,11 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
           <CampaignQueueStatus
             data={data.queueStatusData}
             onRetryFailed={() => {
-              console.log('Retry failed items for campaign:', data.queueStatusData?.campaignId);
-              // Retry action would be handled by parent component via context
+              console.log('🔄 Retry failed items for campaign:', data.queueStatusData?.campaignId);
+              onAction?.('retry_failed_content', { 
+                campaignId: data.queueStatusData?.campaignId,
+                campaignName: data.queueStatusData?.campaignName
+              });
             }}
           />
         );
@@ -935,10 +939,17 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
           <CampaignDashboard
             data={data.campaignDashboardData}
             onViewCampaign={() => {
-              console.log('View campaign:', data.campaignDashboardData?.campaign?.id);
+              console.log('🔍 View campaign:', data.campaignDashboardData?.campaign?.id);
+              onAction?.('navigate', { 
+                url: `/campaigns/${data.campaignDashboardData?.campaign?.id}` 
+              });
             }}
             onGenerateContent={() => {
-              console.log('Generate content for campaign:', data.campaignDashboardData?.campaign?.id);
+              console.log('⚡ Generate content for campaign:', data.campaignDashboardData?.campaign?.id);
+              onAction?.('trigger_content_generation', { 
+                campaignId: data.campaignDashboardData?.campaign?.id,
+                campaignName: data.campaignDashboardData?.campaign?.name
+              });
             }}
           />
         );

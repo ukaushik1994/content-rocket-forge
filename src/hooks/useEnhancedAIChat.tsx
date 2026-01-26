@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
+import { useNavigate } from 'react-router-dom';
 
 export const useEnhancedAIChat = () => {
   const [messages, setMessages] = useState<EnhancedChatMessage[]>([]);
@@ -10,6 +11,7 @@ export const useEnhancedAIChat = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingContent, setThinkingContent] = useState('');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const sendMessage = useCallback(async (content: string) => {
     try {
@@ -71,8 +73,50 @@ export const useEnhancedAIChat = () => {
     }
   }, [messages, toast]);
 
-  const handleAction = useCallback((actionType: string, actionData: any) => {
+  // Handle campaign-specific actions
+  const handleCampaignAction = useCallback(async (actionType: string, actionData: any) => {
+    console.log('🎯 Campaign action triggered:', actionType, actionData);
+    
+    switch (actionType) {
+      case 'retry_failed_content':
+        if (actionData?.campaignId) {
+          toast({
+            title: 'Retrying Failed Content',
+            description: `Retrying failed items for ${actionData.campaignName || 'campaign'}...`,
+          });
+          
+          // Send message to AI to trigger retry
+          await sendMessage(`Retry failed content generation items for campaign ${actionData.campaignId}`);
+        }
+        break;
+        
+      case 'trigger_content_generation':
+        if (actionData?.campaignId) {
+          toast({
+            title: 'Starting Generation',
+            description: `Generating content for ${actionData.campaignName || 'campaign'}...`,
+          });
+          
+          // Send message to AI to trigger generation
+          await sendMessage(`Start content generation for campaign ${actionData.campaignId}`);
+        }
+        break;
+        
+      default:
+        return false; // Not handled
+    }
+    
+    return true; // Handled
+  }, [sendMessage, toast]);
+
+  const handleAction = useCallback(async (actionType: string, actionData: any) => {
     console.log('Action triggered:', actionType, actionData);
+    
+    // Handle campaign-specific actions first
+    if (['retry_failed_content', 'trigger_content_generation'].includes(actionType)) {
+      await handleCampaignAction(actionType, actionData);
+      return;
+    }
     
     // Handle different action types
     switch (actionType) {
@@ -83,13 +127,18 @@ export const useEnhancedAIChat = () => {
         break;
       case 'navigate':
         if (actionData?.url) {
-          window.location.href = actionData.url;
+          // Use React Router for internal navigation
+          if (actionData.url.startsWith('/')) {
+            navigate(actionData.url);
+          } else {
+            window.location.href = actionData.url;
+          }
         }
         break;
       default:
         console.warn('Unknown action type:', actionType);
     }
-  }, [sendMessage]);
+  }, [sendMessage, navigate, handleCampaignAction]);
 
   return {
     messages,
