@@ -114,17 +114,14 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15 text-xs"
+                className="gap-1.5 text-xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export
                 <ChevronDown className="w-3 h-3 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="start" 
-              className="w-48 bg-popover/95 backdrop-blur-xl border-white/10"
-            >
+            <DropdownMenuContent align="start" className="w-48">
               <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer">
                 <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-500" />
                 <div className="flex flex-col">
@@ -139,7 +136,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
                   <span className="text-[10px] text-muted-foreground">Data format</span>
                 </div>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-white/5" />
+              <DropdownMenuSeparator />
               <DropdownMenuItem 
                 onClick={onExportPNG} 
                 disabled={!onExportPNG}
@@ -172,7 +169,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
                 variant="outline"
                 size="icon"
                 onClick={handleCopy}
-                className="h-8 w-8 bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15"
+                className="h-8 w-8"
               >
                 {copied ? (
                   <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -193,7 +190,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
                 variant="outline"
                 size="icon"
                 onClick={handleShare}
-                className="h-8 w-8 bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15"
+                className="h-8 w-8"
               >
                 <Share2 className="w-3.5 h-3.5" />
               </Button>
@@ -211,7 +208,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
                   variant="outline"
                   size="icon"
                   onClick={onFullscreen}
-                  className="h-8 w-8 bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/15"
+                  className="h-8 w-8"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
                 </Button>
@@ -224,7 +221,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
         </div>
 
         {/* Keyboard hints */}
-        <p className="text-[10px] text-foreground/30 text-center">
+        <p className="text-[10px] text-muted-foreground text-center">
           Esc to close • Tab to switch view
         </p>
       </div>
