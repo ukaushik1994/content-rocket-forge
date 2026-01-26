@@ -241,7 +241,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       <div className={`flex-1 flex transition-all duration-300 ease-out pt-20 pb-24 overflow-hidden ${showSidebar ? 'ml-80' : 'ml-0'}`}>
         {/* Chat Messages Area - shrinks when visualization sidebar is open */}
         <motion.div 
-          className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ease-out ${showVisualizationSidebar ? 'lg:mr-[480px] sm:mr-[400px]' : 'mr-0'}`}
+          className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ease-out ${showVisualizationSidebar ? 'lg:mr-[560px] sm:mr-[480px]' : 'mr-0'}`}
           initial="hidden" 
           animate="visible" 
           variants={containerVariants}
