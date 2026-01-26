@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Sparkles, CheckCircle2, AlertCircle, Loader2, Eye, Copy, RefreshCw, Trash2, Play, Clock, Mail, MessageSquare, Video, Layout, Image, Megaphone, PenTool } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useContentGeneration } from '@/contexts/ContentGenerationContext';
 import { useCampaignContentGeneration } from '@/hooks/useCampaignContentGeneration';
 import { useContentQueue } from '@/hooks/useContentQueue';
@@ -81,6 +82,7 @@ const getStatusConfig = (status: string) => {
 };
 
 export const ContentGenerationPanel = () => {
+  const navigate = useNavigate();
   const { isOpen, closePanel, strategy, campaignId } = useContentGeneration();
   const { generateContent, generateAllContent, generatedItems } = useCampaignContentGeneration();
   const { queueItems, stats, loading: queueLoading, startProcessing, retryItem, cancelItem, clearCompleted } = useContentQueue(campaignId || null);
@@ -571,6 +573,20 @@ export const ContentGenerationPanel = () => {
                                   )}
 
                                   {/* Action Buttons */}
+                                  {item.status === 'completed' && item.content_id && (
+                                    <div className="flex gap-2 mt-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => navigate(`/repository?content=${item.content_id}`)}
+                                        className="h-7 text-xs"
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        View Content
+                                      </Button>
+                                    </div>
+                                  )}
+
                                   {(item.status === 'failed' || item.status === 'cancelled') && (
                                     <div className="flex gap-2 mt-2">
                                       <Button
