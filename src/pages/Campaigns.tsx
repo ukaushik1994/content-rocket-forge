@@ -233,17 +233,39 @@ const CampaignsInner = () => {
       // 1. Get content briefs from strategy
       const allBriefs = strategy.contentBriefs || [];
       
+      console.log(`🎯 [Generation] Starting with ${assetIds.length} assets`);
+      console.log(`📋 [Generation] Available briefs: ${allBriefs.length}`);
+      
       // 2. Build queue items from selected asset IDs
       const items = assetIds.map((assetId, index) => {
         // Parse assetId format: "campaignId-formatId-index"
         const parts = assetId.split('-');
+        
+        // Validate format - need at least campaignId-formatId-index
+        if (parts.length < 3) {
+          console.warn(`⚠️ Invalid asset ID format: ${assetId}`);
+          return null;
+        }
+        
         const briefIndex = parseInt(parts[parts.length - 1], 10);
         const formatId = parts.slice(1, -1).join('-');
         
-        // Find matching brief
+        // Validate parsed values
+        if (isNaN(briefIndex)) {
+          console.warn(`⚠️ Invalid brief index in asset ID: ${assetId}`);
+          return null;
+        }
+        
+        console.log(`🔍 [Generation] Asset ${index}: format=${formatId}, briefIndex=${briefIndex}`);
+        
+        // Find matching brief from strategy.contentBriefs
         const brief = allBriefs.find((b, i) => 
           ((b as any).formatId === formatId || (b as any).format === formatId) && i === briefIndex
         ) || allBriefs[briefIndex];
+        
+        if (!brief) {
+          console.warn(`⚠️ No brief found for asset: ${assetId}, using fallback`);
+        }
         
         return {
           brief: brief || { 
@@ -257,9 +279,17 @@ const CampaignsInner = () => {
             serpOpportunity: 50
           },
           formatId: formatId || 'blog',
-          index: isNaN(briefIndex) ? index : briefIndex
+          index: briefIndex
         };
-      }).filter(item => item.brief);
+      }).filter(Boolean) as { brief: any; formatId: string; index: number }[];
+      
+      if (items.length === 0) {
+        console.error('❌ No valid items to queue');
+        toast.error('Failed to process assets - invalid format');
+        return;
+      }
+      
+      console.log(`✅ [Generation] Queuing ${items.length} valid items`);
 
       // 3. Get solution data if available
       let solutionData = null;
