@@ -29,3 +29,8 @@ export interface AssetGenerationProgress {
   currentAsset: CampaignAsset | null;
   isGenerating: boolean;
 }
+
+export interface AssetGenerationOptions {
+  includeImages: boolean;
+  variationsPerFormat?: Record<string, number>;
+}
