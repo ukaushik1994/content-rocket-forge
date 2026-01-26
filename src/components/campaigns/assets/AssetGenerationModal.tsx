@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Clock, CheckSquare, Filter, Loader2, Image as ImageIcon, Info } from 'lucide-react';
+import { Sparkles, Clock, CheckSquare, Filter, Loader2, Image as ImageIcon, Info, Layers, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AssetPreviewCard } from './AssetPreviewCard';
 import { generateAssetListFromStrategy, calculateAssetTotals, groupAssetsByType } from '@/utils/assetGenerator';
@@ -22,6 +22,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { imageGenOrchestrator } from '@/services/imageGenOrchestrator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { getFormatByIdOrDefault } from '@/components/content-repurposing/formats';
 
 interface AssetGenerationModalProps {
   strategy: CampaignStrategy;
@@ -184,74 +186,122 @@ export const AssetGenerationModal = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
-          <DialogTitle className="text-2xl">
-            {isBriefsLoading ? 'Generating Content Briefs...' : 'Campaign Assets Overview'}
-          </DialogTitle>
-          <DialogDescription>
-            {isBriefsLoading 
-              ? `Creating detailed briefs for ${briefProgress.total} pieces...`
-              : 'Review and select which assets to generate. Estimates shown are for AI processing time and credits.'
-            }
-          </DialogDescription>
+      <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0 overflow-hidden bg-gradient-to-b from-background via-background to-background/95">
+        {/* Premium Header */}
+        <DialogHeader className="px-6 pt-6 pb-5 border-b border-border/50 bg-gradient-to-r from-primary/5 via-purple-500/5 to-transparent relative">
+          <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+          <div className="flex items-start gap-4 relative">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/20 shadow-lg shadow-primary/10">
+              <Layers className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <DialogTitle className="text-2xl font-bold tracking-tight">
+                {isBriefsLoading ? (
+                  <span className="flex items-center gap-2">
+                    Generating Content Briefs
+                    <span className="inline-flex gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
+                    </span>
+                  </span>
+                ) : (
+                  <>Campaign Assets <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">Overview</span></>
+                )}
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-muted-foreground/80">
+                {isBriefsLoading 
+                  ? `Creating detailed briefs for ${briefProgress.total} pieces...`
+                  : 'Review and select assets to generate. Estimates shown for AI processing.'
+                }
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
+        {/* Premium Loading State */}
         {isBriefsLoading && (
-          <div className="px-6 py-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <div className="px-6 py-8 space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                <div className="relative p-3 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/30">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              </div>
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold">
                     Generating briefs... {briefProgress.current} of {briefProgress.total}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm font-bold text-primary tabular-nums">
                     {Math.round((briefProgress.current / briefProgress.total) * 100)}%
                   </span>
                 </div>
-                <Progress 
-                  value={(briefProgress.current / briefProgress.total) * 100} 
-                  className="h-2"
-                />
+                <div className="relative h-3 rounded-full bg-muted/50 overflow-hidden">
+                  <div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${(briefProgress.current / briefProgress.total) * 100}%` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                </div>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
               Creating unique titles, keywords, and SEO metadata for each piece...
-            </p>
+            </div>
           </div>
         )}
         
         {!isBriefsLoading && (
           <>
-            {/* Image Generation Toggle */}
-            <div className="px-6 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <ImageIcon className="h-4 w-4 text-primary" />
+            {/* Premium Image Generation Toggle */}
+            <div className="px-6 py-4 border-b border-border/50">
+              <div className={cn(
+                "flex items-center justify-between p-4 rounded-xl transition-all duration-300",
+                imageProviderAvailable && includeImages 
+                  ? "bg-gradient-to-r from-green-500/10 via-emerald-500/5 to-transparent border border-green-500/20 shadow-sm shadow-green-500/5"
+                  : "bg-muted/30 border border-border/50"
+              )}>
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "p-2.5 rounded-xl transition-all duration-300",
+                    imageProviderAvailable && includeImages 
+                      ? "bg-green-500/20 shadow-lg shadow-green-500/10" 
+                      : "bg-muted/50"
+                  )}>
+                    <ImageIcon className={cn(
+                      "h-5 w-5 transition-colors",
+                      imageProviderAvailable && includeImages ? "text-green-500" : "text-muted-foreground"
+                    )} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="include-images" className="font-medium">
-                        Generate Images
+                      <Label htmlFor="include-images" className="font-semibold">
+                        Auto-Generate Images
                       </Label>
+                      {imageProviderAvailable && (
+                        <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-500/20 text-green-600 dark:text-green-400">
+                          {imageProviderName || 'AI'}
+                        </span>
+                      )}
                       {!imageProviderAvailable && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                              <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p className="text-xs">Configure an image generation provider in Settings</p>
+                              <p className="text-xs">Configure an image provider in Settings → AI Providers</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {imageProviderAvailable 
-                        ? `Auto-generate images using ${imageProviderName || 'AI'}`
+                        ? 'Hero images, thumbnails & visuals for each piece'
                         : 'No image provider configured'
                       }
                     </p>
@@ -262,54 +312,75 @@ export const AssetGenerationModal = ({
                   checked={includeImages && imageProviderAvailable}
                   onCheckedChange={setIncludeImages}
                   disabled={!imageProviderAvailable}
+                  className="data-[state=checked]:bg-green-500"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-b border-border bg-muted/20">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex gap-2 flex-wrap">
-              <Button 
-                variant={filterType === 'all' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => setFilterType('all')}
-              >
-                All ({assets.length})
-              </Button>
-              {Object.entries(groupedAssets).map(([type, typeAssets]) => (
-                <Button 
-                  key={type}
-                  variant={filterType === type ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setFilterType(type)}
-                >
-                  {type.replace('social-', '').replace('-', ' ')} ({typeAssets.length})
-                </Button>
-              ))}
-            </div>
-            
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <CheckSquare className="h-4 w-4 text-primary" />
-                <span className="font-semibold">{selectedAssets.size} selected</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>~{totals.totalTime} min</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Sparkles className="h-4 w-4" />
-                <span>{totals.totalCost} credits</span>
-              </div>
-              {includeImages && imageProviderAvailable && (
-                <div className="flex items-center gap-2 text-primary">
-                  <ImageIcon className="h-4 w-4" />
-                  <span>+images</span>
+            {/* Premium Filter Tabs & Stats */}
+            <div className="px-6 py-4 border-b border-border/50 bg-gradient-to-b from-muted/20 to-transparent">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                {/* Filter Pills */}
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setFilterType('all')}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                      filterType === 'all'
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                        : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    All <span className="ml-1.5 opacity-70">{assets.length}</span>
+                  </button>
+                  {Object.entries(groupedAssets).map(([type, typeAssets]) => {
+                    const format = getFormatByIdOrDefault(type);
+                    const Icon = format.icon;
+                    return (
+                      <button
+                        key={type}
+                        onClick={() => setFilterType(type)}
+                        className={cn(
+                          "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2",
+                          filterType === type
+                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                            : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {type.replace('social-', '').replace('-', ' ')}
+                        <span className="opacity-70">{typeAssets.length}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+                
+                {/* Premium Stats Cards */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                    <CheckSquare className="h-4 w-4 text-primary" />
+                    <span className="font-bold text-sm tabular-nums">{selectedAssets.size}</span>
+                    <span className="text-xs text-muted-foreground">selected</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <Clock className="h-4 w-4 text-amber-500" />
+                    <span className="font-bold text-sm tabular-nums text-amber-600 dark:text-amber-400">~{totals.totalTime}</span>
+                    <span className="text-xs text-muted-foreground">min</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                    <Sparkles className="h-4 w-4 text-purple-500" />
+                    <span className="font-bold text-sm tabular-nums text-purple-600 dark:text-purple-400">{totals.totalCost}</span>
+                    <span className="text-xs text-muted-foreground">credits</span>
+                  </div>
+                  {includeImages && imageProviderAvailable && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 animate-pulse">
+                      <ImageIcon className="h-4 w-4 text-green-500" />
+                      <span className="text-xs font-medium text-green-600 dark:text-green-400">+images</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
         <ScrollArea className="flex-1 px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-6">
             {filteredAssets.map(asset => (
@@ -330,33 +401,41 @@ export const AssetGenerationModal = ({
           )}
         </ScrollArea>
         
-        <DialogFooter className="px-6 py-4 border-t border-border flex-row items-center justify-between">
+        {/* Premium Footer */}
+        <DialogFooter className="px-6 py-4 border-t border-border/50 bg-gradient-to-t from-muted/20 to-transparent flex-row items-center justify-between">
           <div className="flex gap-2">
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm"
               onClick={handleSelectAll}
+              className="text-muted-foreground hover:text-foreground"
             >
+              <CheckSquare className="h-4 w-4 mr-2" />
               Select All
             </Button>
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm"
               onClick={handleDeselectAll}
+              className="text-muted-foreground hover:text-foreground"
             >
               Deselect All
             </Button>
           </div>
           
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} className="border-border/50">
               Cancel
             </Button>
             <Button 
               onClick={handleGenerate}
               disabled={selectedAssets.size === 0}
+              className={cn(
+                "relative overflow-hidden transition-all duration-300",
+                selectedAssets.size > 0 && "bg-gradient-to-r from-primary via-purple-500 to-primary bg-[length:200%_100%] animate-gradient-x shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
+              )}
             >
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Zap className="h-4 w-4 mr-2" />
               Generate {selectedAssets.size} Asset{selectedAssets.size !== 1 ? 's' : ''}
             </Button>
           </div>
