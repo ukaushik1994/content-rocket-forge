@@ -479,7 +479,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               <RechartsTooltip contentStyle={tooltipStyle} />
               <Legend 
                 verticalAlign="bottom" 
-                height={36}
+                height={48}
+                wrapperStyle={{ paddingTop: '12px' }}
                 iconType="circle"
                 iconSize={8}
                 formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
