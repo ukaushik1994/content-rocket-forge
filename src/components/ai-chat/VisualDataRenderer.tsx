@@ -914,6 +914,36 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
     case 'serp_analysis':
       console.log('🔍 VisualDataRenderer: SERP analysis handled by SerpVisualData component');
       return null; // Handled by SerpVisualData component
+    case 'queue_status':
+      console.log('📦 VisualDataRenderer: Rendering queue status');
+      if (data.queueStatusData) {
+        return (
+          <CampaignQueueStatus
+            data={data.queueStatusData}
+            onRetryFailed={() => {
+              console.log('Retry failed items for campaign:', data.queueStatusData?.campaignId);
+              // Retry action would be handled by parent component via context
+            }}
+          />
+        );
+      }
+      return null;
+    case 'campaign_dashboard':
+      console.log('📊 VisualDataRenderer: Rendering campaign dashboard');
+      if (data.campaignDashboardData) {
+        return (
+          <CampaignDashboard
+            data={data.campaignDashboardData}
+            onViewCampaign={() => {
+              console.log('View campaign:', data.campaignDashboardData?.campaign?.id);
+            }}
+            onGenerateContent={() => {
+              console.log('Generate content for campaign:', data.campaignDashboardData?.campaign?.id);
+            }}
+          />
+        );
+      }
+      return null;
     default:
       console.warn('⚠️ VisualDataRenderer: Unknown data type:', data.type);
       return (
