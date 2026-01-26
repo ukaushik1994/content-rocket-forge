@@ -83,30 +83,40 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   // AUTO-OPEN sidebar when AI response contains visual data
+  // Scans entire conversation for the most recent visualization (for loaded conversations)
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (messages.length === 0) {
+      // No messages - close sidebar if user hasn't interacted
+      if (!sidebarInteracted) {
+        setShowVisualizationSidebar(false);
+      }
+      return;
+    }
     
-    const latestMessage = messages[messages.length - 1];
+    // Find the most recent assistant message with visual data
+    // (excluding SERP analysis which renders inline)
+    const messagesWithVisualData = messages.filter(msg => 
+      msg.role === 'assistant' && 
+      msg.visualData && 
+      msg.visualData.type !== 'serp_analysis'
+    );
     
-    // Check if latest message is from AI and has visual data (excluding SERP which renders inline)
-    if (latestMessage?.role === 'assistant' && latestMessage?.visualData) {
-      const visualType = latestMessage.visualData?.type;
-      
-      // SERP analysis renders inline, so don't auto-open sidebar for it
-      if (visualType === 'serp_analysis') return;
-      
-      // Extract chart config from visualData
-      const chartConfig = latestMessage.visualData?.chartConfig || null;
+    const latestVisualization = messagesWithVisualData[messagesWithVisualData.length - 1];
+    
+    if (latestVisualization?.visualData) {
+      // Has visual data - open sidebar with the most recent visualization
+      const chartConfig = latestVisualization.visualData?.chartConfig || null;
       
       setVisualizationData({
-        visualData: latestMessage.visualData,
+        visualData: latestVisualization.visualData,
         chartConfig,
-        title: latestMessage.visualData?.title || 'Data Visualization',
-        description: latestMessage.visualData?.description
+        title: latestVisualization.visualData?.title || 'Data Visualization',
+        description: latestVisualization.visualData?.description
       });
       setShowVisualizationSidebar(true);
-    } else if (latestMessage?.role === 'assistant' && !latestMessage?.visualData) {
-      // Text-only response - close sidebar if user hasn't interacted with it
+    } else {
+      // No visualization data in entire conversation
+      // Close sidebar if user hasn't interacted with it
       if (!sidebarInteracted) {
         setShowVisualizationSidebar(false);
       }
