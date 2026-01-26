@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Bot, RefreshCw, BarChart3, Sparkles, Search, FileText, HelpCircle, Users, Film } from 'lucide-react';
@@ -39,10 +39,17 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   isThinking = false
 }) => {
   const [showMultiChartModal, setShowMultiChartModal] = useState(false);
+  const [showTimestamp, setShowTimestamp] = useState(false);
   // Auto-show multi-chart analysis when present
   const [showMultiChart, setShowMultiChart] = useState(
     message.visualData?.type === 'multi_chart_analysis'
   );
+
+  // Delayed timestamp reveal
+  React.useEffect(() => {
+    const timer = setTimeout(() => setShowTimestamp(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
   
   // Check if this is an error message
   if (message.messageStatus === 'error' && onRetry) {
@@ -69,7 +76,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         
       case 'analyze-competitors':
         return `Analyze the top competitors for "${data.keyword}" and provide actionable insights:
-        - Competitor analysis for: ${data.competitors?.map(c => c.title).join(', ')}
+        - Competitor analysis for: ${data.competitors?.map((c: any) => c.title).join(', ')}
         - Search volume context: ${data.searchVolume?.toLocaleString()} monthly searches
         - Competition level: ${data.difficulty}% difficulty
         - Provide content gaps, backlink opportunities, and competitive advantages to pursue`;
@@ -88,16 +95,13 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   };
 
   const bubbleVariants = {
-    hidden: { opacity: 0, y: 10, scale: 0.98 },
+    hidden: { opacity: 0, y: 8 },
     visible: { 
       opacity: 1, 
       y: 0,
-      scale: 1,
       transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 25,
-        mass: 0.5
+        duration: 0.3,
+        ease: "easeOut"
       }
     }
   };
@@ -105,15 +109,17 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   return (
     <motion.div
       variants={bubbleVariants}
+      initial="hidden"
+      animate="visible"
       className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       {/* Avatar (only for AI messages) */}
       {!isUser && (
         <motion.div 
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 border border-primary/30 flex-shrink-0"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.1, type: "spring", stiffness: 300 }}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-card border border-primary/20 flex-shrink-0 shadow-sm"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.2 }}
         >
           <Bot className="h-4 w-4 text-primary" />
         </motion.div>
@@ -142,15 +148,15 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             />
           )}
 
-          {/* Message Content */}
-          <Card className={`shadow-sm border backdrop-blur-sm ${
+          {/* Message Content - Premium Minimal Styling */}
+          <Card className={`shadow-sm ${
             isUser 
-              ? 'bg-primary text-primary-foreground border-primary/20 ml-4' 
-              : 'bg-background/80 border-border/50 mr-4'
+              ? 'bg-primary/10 text-foreground border border-primary/20 ml-4' 
+              : 'bg-card border border-border/50 mr-4'
           }`}>
-            <div className="px-8 py-4">
+            <div className="px-6 py-4">
               <div className={`text-sm leading-relaxed ${
-                isUser ? 'text-primary-foreground' : 'text-foreground'
+                isUser ? 'text-foreground' : 'text-foreground'
               }`}>
                 {isUser ? (
                   <div className="whitespace-pre-wrap break-words">
@@ -164,20 +170,16 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 )}
               </div>
             </div>
-
-            {/* Message Tail */}
-            <div className={`absolute top-4 ${
-              isUser ? '-left-1' : '-right-1'
-            } w-2 h-2 transform rotate-45 ${
-              isUser 
-                ? 'bg-primary border-r border-b border-primary/20' 
-                : 'bg-background/80 border-l border-t border-border/50'
-            }`} />
           </Card>
 
           {/* Visual Data Rendering */}
           {message.visualData && (
-            <div className="mt-3">
+            <motion.div 
+              className="mt-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+            >
               {message.visualData.type === 'multi_chart_analysis' ? (
                 showMultiChart && (
                 <MultiChartAnalysis
@@ -224,7 +226,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   />
                 </>
               )}
-            </div>
+            </motion.div>
           )}
 
           {/* Show visual analysis card for ANY visual data */}
@@ -234,6 +236,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
               className="mt-3 mb-3"
             >
               {(() => {
@@ -242,35 +245,35 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 const hasVideos = message.visualData?.generatedVideos?.length || 0;
                 
                 return (
-                  <div className="p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg border border-primary/20 backdrop-blur-sm">
+                  <div className="p-4 bg-card rounded-xl border border-border/50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/20">
+                        <div className="p-2 rounded-lg bg-primary/10">
                           {isVideoContent ? (
-                            <Film className="w-5 h-5 text-primary" />
+                            <Film className="w-4 h-4 text-primary" />
                           ) : (
-                            <BarChart3 className="w-5 h-5 text-primary" />
+                            <BarChart3 className="w-4 h-4 text-primary" />
                           )}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-foreground">
-                            {isVideoContent ? 'Video Content' : 'Visual Analysis Available'}
+                            {isVideoContent ? 'Video Content' : 'Visual Analysis'}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {hasImages > 0 && `${hasImages} image(s)`}
                             {hasImages > 0 && hasVideos > 0 && ' • '}
                             {hasVideos > 0 && `${hasVideos} video(s)`}
-                            {!hasImages && !hasVideos && `${message.allVisualData?.length || 1} chart(s) • Interactive insights • Actionable recommendations`}
+                            {!hasImages && !hasVideos && `${message.allVisualData?.length || 1} chart(s) • Interactive insights`}
                           </p>
                         </div>
                       </div>
                       <Button
                         size="sm"
                         onClick={() => setShowMultiChartModal(true)}
-                        className="bg-primary hover:bg-primary/90 gap-2 shadow-lg"
+                        className="bg-primary hover:bg-primary/90 gap-2"
                       >
-                        <Sparkles className="w-4 h-4" />
-                        View Insights
+                        <Sparkles className="w-3 h-3" />
+                        View
                       </Button>
                     </div>
                   </div>
@@ -292,30 +295,31 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
               className="mt-4 space-y-3"
             >
               <div className="flex items-center gap-2 mb-3">
-                <Search className="w-5 h-5 text-primary" />
-                <h4 className="text-sm font-semibold">SERP Analysis Results</h4>
+                <Search className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-medium">SERP Analysis</h4>
               </div>
               
-              {/* Keyword Metrics Cards */}
+              {/* Keyword Metrics Cards - Cleaner */}
               <div className="grid grid-cols-3 gap-3">
-                <Card className="p-3 bg-gradient-to-br from-primary/10 to-transparent">
-                  <div className="text-xs text-muted-foreground">Avg Search Volume</div>
-                  <div className="text-2xl font-bold">
+                <Card className="p-3 bg-card border-border/50">
+                  <div className="text-xs text-muted-foreground">Avg Volume</div>
+                  <div className="text-xl font-bold text-foreground">
                     {(message.serpData as any).structured.aggregateMetrics.avgSearchVolume.toLocaleString()}
                   </div>
                 </Card>
-                <Card className="p-3 bg-gradient-to-br from-warning/10 to-transparent">
-                  <div className="text-xs text-muted-foreground">Avg Difficulty</div>
-                  <div className="text-2xl font-bold">
+                <Card className="p-3 bg-card border-border/50">
+                  <div className="text-xs text-muted-foreground">Difficulty</div>
+                  <div className="text-xl font-bold text-foreground">
                     {(message.serpData as any).structured.aggregateMetrics.avgKeywordDifficulty}%
                   </div>
                 </Card>
-                <Card className="p-3 bg-gradient-to-br from-success/10 to-transparent">
+                <Card className="p-3 bg-card border-border/50">
                   <div className="text-xs text-muted-foreground">Competition</div>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xl font-bold text-foreground">
                     {(message.serpData as any).structured.aggregateMetrics.avgCompetitionScore}%
                   </div>
                 </Card>
@@ -327,18 +331,20 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   <Button
                     size="sm"
                     variant="outline"
+                    className="border-border/50 hover:border-primary/30"
                     onClick={() => {
                       onSendMessage?.(`Show me content gaps for ${(message.serpData as any).keywords.join(', ')}`);
                     }}
                   >
                     <FileText className="w-3 h-3 mr-1" />
-                    {(message.serpData as any).structured.aggregateMetrics.totalContentGaps} Content Gaps
+                    {(message.serpData as any).structured.aggregateMetrics.totalContentGaps} Gaps
                   </Button>
                 )}
                 {(message.serpData as any).structured.aggregateMetrics.totalQuestions > 0 && (
                   <Button
                     size="sm"
                     variant="outline"
+                    className="border-border/50 hover:border-primary/30"
                     onClick={() => {
                       onSendMessage?.(`What are people asking about ${(message.serpData as any).keywords.join(', ')}?`);
                     }}
@@ -350,12 +356,13 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                 <Button
                   size="sm"
                   variant="outline"
+                  className="border-border/50 hover:border-primary/30"
                   onClick={() => {
                     onSendMessage?.(`Who's ranking for ${(message.serpData as any).keywords.join(', ')}?`);
                   }}
                 >
                   <Users className="w-3 h-3 mr-1" />
-                  Top Competitors
+                  Competitors
                 </Button>
               </div>
             </motion.div>
@@ -385,19 +392,23 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
             />
           )}
 
-          {/* Timestamp for assistant messages only */}
+          {/* Timestamp for assistant messages - Delayed fade in */}
           {!isUser && (
-            <motion.div 
-              className="mt-1 px-1 text-xs text-muted-foreground text-left"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              {message.timestamp.toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}
-            </motion.div>
+            <AnimatePresence>
+              {showTimestamp && (
+                <motion.div 
+                  className="mt-1.5 px-1 text-xs text-muted-foreground/60 text-left"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {message.timestamp.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
         </div>
       </div>
@@ -405,12 +416,12 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       {/* Avatar (only for user messages) */}
       {isUser && (
         <motion.div 
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/20 border border-secondary/30 flex-shrink-0"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.1, type: "spring", stiffness: 300 }}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/10 border border-secondary/20 flex-shrink-0"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.2 }}
         >
-          <User className="h-4 w-4 text-secondary" />
+          <User className="h-4 w-4 text-secondary-foreground" />
         </motion.div>
       )}
 
@@ -422,19 +433,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           visualData={message.visualData}
           allVisualData={message.allVisualData}
           currentChartConfig={message.visualData?.chartConfig}
-          title={message.visualData?.title || 'Insights Hub'}
-          description={message.visualData?.description}
-          actionableItems={message.visualData?.actionableItems}
-          deepDivePrompts={message.visualData?.deepDivePrompts}
-          insights={(message as any).insights || []}
-          context={(message as any).context || {}}
-          onDeepDiveClick={(prompt) => {
-            setShowMultiChartModal(false);
-            onSendMessage?.(prompt);
-          }}
-          onActionClick={(action) => {
-            onAction?.(action);
-          }}
+          onSendMessage={onSendMessage}
         />
       )}
     </motion.div>
