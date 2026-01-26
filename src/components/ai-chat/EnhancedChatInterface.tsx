@@ -140,7 +140,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} />}
       </AnimatePresence>
 
-      {/* Visualization Sidebar (Right) */}
+      {/* Visualization Sidebar (Right) - now properly integrated */}
       <VisualizationSidebar
         isOpen={showVisualizationSidebar}
         onClose={() => setShowVisualizationSidebar(false)}
@@ -180,8 +180,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </Button>
       </motion.div>
 
-      {/* Main Chat Interface */}
-      <div className={`flex transition-all duration-300 ${showSidebar ? 'ml-80' : 'ml-0'}`}>
+      {/* Main Chat Interface - shrinks when visualization sidebar is open */}
+      <div className={`flex transition-all duration-300 ease-out ${showSidebar ? 'ml-80' : 'ml-0'} ${showVisualizationSidebar ? 'lg:mr-[480px] sm:mr-[400px]' : 'mr-0'}`}>
         <motion.div className="flex-1 flex flex-col h-full pt-20 pb-24" initial="hidden" animate="visible" variants={containerVariants}>
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-h-0 relative">
@@ -329,8 +329,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           </div>
         </ScrollArea>
 
-        {/* Input Area - Refined */}
-        <div className={`fixed bottom-0 right-0 z-40 border-t border-border/30 bg-background/95 backdrop-blur-xl transition-all duration-300 ${showSidebar ? 'left-80' : 'left-0'}`}>
+        {/* Input Area - Refined, responsive to both sidebars */}
+        <div className={`fixed bottom-0 z-40 border-t border-border/30 bg-background/95 backdrop-blur-xl transition-all duration-300 ease-out ${showSidebar ? 'left-80' : 'left-0'} ${showVisualizationSidebar ? 'lg:right-[480px] sm:right-[400px]' : 'right-0'}`}>
           <div className="max-w-6xl mx-auto px-6 py-4">
             {/* Context Indicator */}
             {showContextIndicator && (

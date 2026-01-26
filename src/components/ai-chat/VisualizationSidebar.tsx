@@ -6,6 +6,7 @@ import { SegmentedControl } from './SegmentedControl';
 import { PremiumChartTypeSelect, ChartType } from './PremiumChartTypeSelect';
 import { PremiumMetricCard } from './PremiumMetricCard';
 import { ExportDropdown } from './ExportDropdown';
+import { AISummaryCard } from './AISummaryCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,7 +28,8 @@ import {
   TrendingUp as TrendIcon,
   Zap,
   CheckCircle2,
-  Search
+  Search,
+  GitCompare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -62,6 +64,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     (chartConfig?.type as ChartType) || 'bar'
   );
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(true);
+  const [showComparison, setShowComparison] = useState(false);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -381,11 +384,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-background/60 backdrop-blur-sm z-[70] md:hidden"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] md:hidden"
               onClick={onClose}
             />
             
-            {/* Sidebar Panel */}
+            {/* Sidebar Panel - Premium Glassmorphism */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -393,47 +396,52 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className={cn(
                 "fixed top-0 right-0 h-full z-[75]",
-                "w-full sm:w-[400px] md:w-[420px] lg:w-[480px]",
-                "bg-background/95 backdrop-blur-xl",
-                "border-l border-border/40",
-                "shadow-2xl shadow-background/50",
+                "w-full sm:w-[400px] lg:w-[480px]",
+                // Premium glassmorphism
+                "bg-black/60 backdrop-blur-md",
+                "border-l border-white/8",
+                // Inner glow effect
+                "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                 "flex flex-col"
               )}
             >
-              {/* Premium Header */}
-              <div className="flex-shrink-0 bg-gradient-to-b from-muted/30 to-transparent">
-                <div className="px-6 py-5 border-b border-border/30">
+              {/* Top gradient line */}
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              
+              {/* Premium Header with frosted glass */}
+              <div className="flex-shrink-0 bg-gradient-to-b from-white/[0.03] to-transparent">
+                <div className="px-6 py-5 border-b border-white/5">
                   <div className="flex items-start gap-4">
-                    {/* Icon container with gradient */}
+                    {/* Icon container with ring glow */}
                     <div className="flex-shrink-0">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/25 to-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/20 ring-1 ring-primary/10">
                         <Activity className="w-5 h-5 text-primary" />
                       </div>
                     </div>
                     
                     {/* Title and description */}
                     <div className="flex-1 min-w-0 pr-2">
-                      <h2 className="text-lg font-semibold text-foreground truncate">
+                      <h2 className="text-base font-medium text-foreground truncate">
                         {title || visualData?.title || 'Data Visualization'}
                       </h2>
                       {description && (
-                        <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
+                        <p className="text-sm text-foreground/60 mt-0.5 line-clamp-2">{description}</p>
                       )}
                     </div>
                     
-                    {/* Close button */}
+                    {/* Close button with focus ring */}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={onClose}
-                          className="flex-shrink-0 rounded-full hover:bg-muted focus:ring-2 focus:ring-primary/20"
+                          className="flex-shrink-0 rounded-full hover:bg-white/5 focus:ring-2 focus:ring-primary/20 text-foreground/60 hover:text-foreground"
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="left" className="text-xs">
+                      <TooltipContent side="left" className="text-xs bg-popover/95 backdrop-blur-xl border-white/10">
                         Close (Esc)
                       </TooltipContent>
                     </Tooltip>
@@ -446,28 +454,60 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       {dataInfo.source}
                     </Badge>
                     {dataInfo.points > 0 && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs bg-white/5 border-white/10 text-foreground/60">
                         {dataInfo.points} data points
                       </Badge>
                     )}
-                    <Badge variant="outline" className={cn("text-xs", qualityConfig.bgColor, qualityConfig.color, "border-transparent")}>
+                    <Badge variant="outline" className={cn("text-xs border-transparent", qualityConfig.bgColor, qualityConfig.color)}>
                       {qualityConfig.label}
                     </Badge>
                   </div>
                 </div>
+                
+                {/* Holographic gradient line */}
+                <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
               </div>
 
               {/* Scrollable Content */}
               <ScrollArea className="flex-1">
-                <div className="p-6 space-y-6">
-                  {/* Metric Cards */}
+                <div className="p-6 space-y-8">
+                  {/* AI Summary Section */}
+                  <AISummaryCard
+                    chartData={chartData}
+                    dataKeys={dataKeys}
+                    title={title}
+                    onFeedback={(helpful) => console.log('Feedback:', helpful)}
+                  />
+
+                  {/* Metric Cards with comparison toggle */}
                   {metricCards.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
                     >
-                      <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">Key Metrics</h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-[11px] font-medium uppercase tracking-widest text-foreground/50">Key Metrics</h3>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowComparison(!showComparison)}
+                              className={cn(
+                                "h-7 text-xs gap-1.5",
+                                showComparison ? "text-primary bg-primary/10" : "text-foreground/40 hover:text-foreground/60"
+                              )}
+                            >
+                              <GitCompare className="w-3 h-3" />
+                              Compare
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="text-xs">
+                            Show period comparison
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         {metricCards.slice(0, 4).map((metric: any, idx: number) => (
                           <PremiumMetricCard
@@ -477,6 +517,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                             trend={metric.trend}
                             trendValue={metric.trendValue}
                             index={idx}
+                            showComparison={showComparison}
+                            comparisonValue={metric.previousValue || Math.round(metric.value * 0.85)}
                           />
                         ))}
                       </div>
@@ -499,6 +541,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         value={activeView}
                         onChange={(v) => setActiveView(v as 'chart' | 'table')}
                         className="flex-shrink-0"
+                        size="sm"
                       />
                       
                       {/* Chart Type Dropdown */}
@@ -511,37 +554,46 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       )}
                     </div>
 
-                    <Card className="p-4 bg-card/50 border-border/50 overflow-hidden">
-                      <AnimatePresence mode="wait">
-                        {activeView === 'chart' ? (
-                          <motion.div
-                            key="chart"
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            {renderChart()}
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="table"
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            transition={{ duration: 0.2 }}
-                            className="max-h-[400px] overflow-auto"
-                          >
-                            <DataTable
-                              data={chartData}
-                              allowEdit={false}
-                              allowFilter={true}
-                              allowSort={true}
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </Card>
+                    {/* Premium Chart Container */}
+                    <div className="relative rounded-xl overflow-hidden">
+                      {/* Top gradient line */}
+                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent z-10" />
+                      
+                      <Card className="p-4 bg-white/[0.02] border-white/8 backdrop-blur-sm">
+                        <AnimatePresence mode="wait">
+                          {activeView === 'chart' ? (
+                            <motion.div
+                              key="chart"
+                              initial={{ opacity: 0, scale: 0.98 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.98 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              {renderChart()}
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="table"
+                              initial={{ opacity: 0, scale: 0.98 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.98 }}
+                              transition={{ duration: 0.2 }}
+                              className="max-h-[400px] overflow-auto"
+                            >
+                              <DataTable
+                                data={chartData}
+                                allowEdit={false}
+                                allowFilter={true}
+                                allowSort={true}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </Card>
+                      
+                      {/* Bottom gradient line */}
+                      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                    </div>
                   </motion.div>
 
                   {/* AI Insights */}
@@ -555,17 +607,17 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           className="flex items-center justify-between cursor-pointer group py-1"
                         >
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-warning/20 flex items-center justify-center shadow-lg shadow-warning/20">
-                              <Lightbulb className="w-4 h-4 text-warning" />
+                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-500/10 flex items-center justify-center shadow-lg shadow-amber-500/20 ring-1 ring-amber-500/20">
+                              <Lightbulb className="w-4 h-4 text-amber-500" />
                             </div>
                             <h3 className="text-sm font-medium text-foreground">AI Insights</h3>
-                            <Badge variant="outline" className="text-xs bg-muted">{insights.length}</Badge>
+                            <Badge variant="outline" className="text-xs bg-white/5 border-white/10 text-foreground/60">{insights.length}</Badge>
                           </div>
                           <motion.div
                             animate={{ rotate: isInsightsExpanded ? 180 : 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                            <ChevronDown className="w-4 h-4 text-foreground/40 group-hover:text-foreground/60" />
                           </motion.div>
                         </motion.div>
                       </CollapsibleTrigger>
@@ -583,9 +635,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                               <Card 
                                 key={idx} 
                                 className={cn(
-                                  "p-3 border transition-colors hover:bg-accent/5",
-                                  config.bgColor,
-                                  config.borderColor
+                                  "p-3 border transition-colors hover:bg-white/[0.02]",
+                                  "bg-white/[0.02] backdrop-blur-sm",
+                                  "border-white/8",
+                                  "border-l-2",
+                                  config.borderColor.replace('border-', 'border-l-')
                                 )}
                               >
                                 <div className="flex items-start gap-3">
@@ -598,7 +652,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                         {config.label}
                                       </Badge>
                                     </div>
-                                    <p className="text-sm text-foreground">
+                                    <p className="text-sm text-foreground/80">
                                       {insight.content}
                                     </p>
                                     {onSendMessage && (
@@ -606,7 +660,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => onSendMessage(`Tell me more about: ${insight.content}`)}
-                                        className="mt-2 h-7 text-xs text-muted-foreground hover:text-foreground"
+                                        className="mt-2 h-7 text-xs text-foreground/40 hover:text-foreground/70 hover:bg-white/5"
                                       >
                                         <MessageSquare className="w-3 h-3 mr-1" />
                                         Ask AI about this
@@ -622,15 +676,15 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </Collapsible>
                   )}
 
-                  {/* Deep Dive Prompts */}
+                  {/* Deep Dive Prompts - Glass Chips */}
                   {deepDivePrompts.length > 0 && onSendMessage && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.25 }}
                     >
-                      <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
+                      <h3 className="text-[11px] font-medium uppercase tracking-widest text-foreground/50 mb-3 flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/25 to-primary/10 flex items-center justify-center shadow-lg shadow-primary/10 ring-1 ring-primary/20">
                           <Sparkles className="w-3.5 h-3.5 text-primary" />
                         </div>
                         Explore Further
@@ -641,7 +695,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           return (
                             <motion.div
                               key={idx}
-                              whileHover={{ scale: 1.02 }}
+                              whileHover={{ scale: 1.02, y: -1 }}
                               whileTap={{ scale: 0.98 }}
                             >
                               <Button
@@ -651,7 +705,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                                   onSendMessage(prompt.text);
                                   onClose();
                                 }}
-                                className="text-xs h-8 gap-1.5 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all"
+                                className="text-xs h-8 gap-1.5 bg-white/[0.03] border-white/10 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all text-foreground/60"
                               >
                                 <PromptIcon className="w-3 h-3" />
                                 {prompt.text}
@@ -665,8 +719,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 </div>
               </ScrollArea>
 
-              {/* Premium Footer */}
-              <div className="flex-shrink-0 px-6 py-4 border-t border-border/30 bg-gradient-to-t from-muted/20 to-transparent">
+              {/* Premium Footer with gradient */}
+              <div className="flex-shrink-0 px-6 py-4 border-t border-white/5 bg-gradient-to-t from-white/[0.02] to-transparent">
                 <ExportDropdown
                   data={chartData}
                   onShare={() => navigator.clipboard.writeText(window.location.href)}
