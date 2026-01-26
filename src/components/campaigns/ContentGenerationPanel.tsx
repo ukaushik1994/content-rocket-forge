@@ -100,17 +100,102 @@ export const ContentGenerationPanel = () => {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, closePanel]);
 
+  // Use existing briefs from strategy first, fallback to generating new ones
   useEffect(() => {
     if (isOpen && strategy && briefs.size === 0) {
-      generateAllBriefs();
+      loadOrGenerateBriefs();
     }
   }, [isOpen, strategy]);
 
-  const generateAllBriefs = async () => {
+  const loadOrGenerateBriefs = async () => {
     if (!strategy) return;
 
     setLoadingBriefs(true);
     
+    try {
+      const newBriefs = new Map<string, ContentBrief>();
+      
+      // PRIORITY 1: Use contentBriefs from strategy if available
+      if (strategy.contentBriefs && strategy.contentBriefs.length > 0) {
+        console.log(`📋 [Generation Panel] Using ${strategy.contentBriefs.length} existing contentBriefs from strategy`);
+        
+        strategy.contentBriefs.forEach((brief, index) => {
+          // Use pieceIndex if available, otherwise use loop index
+          const pieceIndex = (brief as any).pieceIndex ?? index;
+          const key = `${brief.formatId || (brief as any).formatId || 'unknown'}-${pieceIndex}`;
+          console.log(`📝 Loading existing brief key: "${key}" - ${brief.title}`);
+          newBriefs.set(key, {
+            title: brief.title,
+            description: brief.description,
+            keywords: brief.keywords || [],
+            metaTitle: brief.metaTitle || brief.title,
+            metaDescription: brief.metaDescription || brief.description,
+            targetWordCount: brief.targetWordCount || 1000,
+            difficulty: brief.difficulty || 'medium',
+            serpOpportunity: brief.serpOpportunity || 50
+          });
+        });
+        
+        setBriefs(newBriefs);
+        toast({
+          title: "Briefs Loaded",
+          description: `${newBriefs.size} content briefs ready from campaign strategy`,
+        });
+        setLoadingBriefs(false);
+        return;
+      }
+      
+      // PRIORITY 2: Extract from contentMix.specificTopics
+      let briefsFromMix = 0;
+      for (const formatItem of strategy.contentMix) {
+        if (formatItem.specificTopics && formatItem.specificTopics.length > 0) {
+          formatItem.specificTopics.forEach((topic, index) => {
+            const key = `${formatItem.formatId}-${index}`;
+            console.log(`📝 Extracting brief from specificTopics: "${key}" - ${topic.title}`);
+            newBriefs.set(key, {
+              title: topic.title,
+              description: topic.description,
+              keywords: topic.keywords || [],
+              metaTitle: topic.metaTitle || topic.title,
+              metaDescription: topic.metaDescription || topic.description,
+              targetWordCount: topic.targetWordCount || 1000,
+              difficulty: topic.difficulty || 'medium',
+              serpOpportunity: topic.serpOpportunity || 50
+            });
+            briefsFromMix++;
+          });
+        }
+      }
+      
+      if (briefsFromMix > 0) {
+        console.log(`📋 [Generation Panel] Extracted ${briefsFromMix} briefs from contentMix.specificTopics`);
+        setBriefs(newBriefs);
+        toast({
+          title: "Briefs Ready",
+          description: `${newBriefs.size} content briefs extracted from strategy`,
+        });
+        setLoadingBriefs(false);
+        return;
+      }
+      
+      // PRIORITY 3: Generate new briefs using AI (fallback only)
+      console.log(`⚠️ [Generation Panel] No existing briefs found, generating new ones...`);
+      await generateFreshBriefs();
+      
+    } catch (error: any) {
+      console.error('Brief loading failed:', error);
+      toast({
+        title: "Brief Loading Failed",
+        description: error.message || "Could not load content briefs",
+        variant: "destructive"
+      });
+      setLoadingBriefs(false);
+    }
+  };
+
+  const generateFreshBriefs = async () => {
+    if (!strategy) return;
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -142,7 +227,7 @@ export const ContentGenerationPanel = () => {
 
         generatedBriefs.forEach((brief, index) => {
           const key = `${formatItem.formatId}-${index}`;
-          console.log(`📝 Generated brief key: "${key}"`);
+          console.log(`📝 Generated fresh brief key: "${key}"`);
           newBriefs.set(key, brief);
           totalGenerated++;
         });
@@ -151,8 +236,8 @@ export const ContentGenerationPanel = () => {
       setBriefs(newBriefs);
       
       toast({
-        title: "Briefs Ready",
-        description: `${totalGenerated} detailed content briefs generated`,
+        title: "Briefs Generated",
+        description: `${totalGenerated} detailed content briefs created`,
       });
     } catch (error: any) {
       console.error('Brief generation failed:', error);
