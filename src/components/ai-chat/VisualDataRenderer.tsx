@@ -6,7 +6,7 @@ import { InteractiveChart } from './InteractiveChart';
 import { ChartErrorBoundary } from './ChartErrorBoundary';
 import { MultiChartAnalysis } from './visualization/MultiChartAnalysis';
 import { GeneratedImageCard } from './GeneratedImageCard';
-import { CampaignQueueStatus } from './CampaignQueueStatus';
+import { RealtimeQueueStatusWrapper } from './RealtimeQueueStatusWrapper';
 import { CampaignDashboard } from './CampaignDashboard';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -916,11 +916,11 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data, on
       console.log('🔍 VisualDataRenderer: SERP analysis handled by SerpVisualData component');
       return null; // Handled by SerpVisualData component
     case 'queue_status':
-      console.log('📦 VisualDataRenderer: Rendering queue status');
+      console.log('📦 VisualDataRenderer: Rendering queue status with real-time updates');
       if (data.queueStatusData) {
         return (
-          <CampaignQueueStatus
-            data={data.queueStatusData}
+          <RealtimeQueueStatusWrapper
+            initialData={data.queueStatusData}
             onRetryFailed={() => {
               console.log('🔄 Retry failed items for campaign:', data.queueStatusData?.campaignId);
               onAction?.('retry_failed_content', { 
