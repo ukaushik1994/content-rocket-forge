@@ -6,7 +6,11 @@ import { testApiKey as testKey } from './apiKeys/testing';
 import { toast } from 'sonner';
 
 // Updated type to include all API providers
-export type ApiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter' | 'serp' | 'serpapi' | 'serpstack';
+export type ApiProvider = 
+  | 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter' 
+  | 'serp' | 'serpapi' | 'serpstack'
+  | 'openai_image' | 'gemini_image' | 'lmstudio_image'
+  | 'runway_video' | 'kling_video' | 'replicate_video';
 
 // Legacy type alias for backward compatibility
 export type ApiService = ApiProvider;

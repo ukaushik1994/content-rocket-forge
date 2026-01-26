@@ -193,5 +193,39 @@ export const API_PROVIDERS: ApiProvider[] = [
     required: false,
     category: 'AI Services',
     subcategory: 'Image & Video Gen'
+  },
+  // Video Generation
+  {
+    id: 'runway_video',
+    name: 'Runway ML',
+    description: 'AI-powered video generation and editing',
+    serviceKey: 'runway_video',
+    icon: Video,
+    link: 'https://runwayml.com/api/',
+    required: false,
+    category: 'AI Services',
+    subcategory: 'Image & Video Gen'
+  },
+  {
+    id: 'kling_video',
+    name: 'Kling AI',
+    description: 'Advanced video generation with Kling models',
+    serviceKey: 'kling_video',
+    icon: Video,
+    link: 'https://klingai.com/',
+    required: false,
+    category: 'AI Services',
+    subcategory: 'Image & Video Gen'
+  },
+  {
+    id: 'replicate_video',
+    name: 'Replicate',
+    description: 'Run open-source video models via API',
+    serviceKey: 'replicate_video',
+    icon: Video,
+    link: 'https://replicate.com/account/api-tokens',
+    required: false,
+    category: 'AI Services',
+    subcategory: 'Image & Video Gen'
   }
 ];
