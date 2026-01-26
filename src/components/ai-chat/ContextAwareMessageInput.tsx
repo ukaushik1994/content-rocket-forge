@@ -26,6 +26,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
 }) => {
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -120,7 +121,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       ref={containerRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
       className="relative"
     >
       {/* Solution Suggestions */}
@@ -135,13 +136,24 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-end gap-3 p-4 bg-background/60 border border-border/50 rounded-2xl backdrop-blur-xl hover:border-border/70 transition-colors">
-          {/* Attachment Button */}
+        <motion.div 
+          className={`relative flex items-end gap-2 p-3 bg-background/95 border rounded-2xl transition-all duration-200 ${
+            isFocused 
+              ? 'border-primary/40 ring-1 ring-primary/20' 
+              : 'border-border/40 hover:border-border/60'
+          }`}
+          animate={{ 
+            boxShadow: isFocused 
+              ? '0 4px 20px -4px hsl(var(--primary) / 0.1)' 
+              : '0 2px 10px -2px hsl(var(--foreground) / 0.05)'
+          }}
+        >
+          {/* Attachment Button - Hidden on mobile */}
           <Button
             type="button"
             size="sm"
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground hover:bg-background/60 p-2"
+            className="hidden sm:flex text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
             disabled={isLoading}
           >
             <Paperclip className="h-4 w-4" />
@@ -153,50 +165,66 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
             disabled={isLoading}
-            className="flex-1 min-h-[20px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground focus:ring-0 focus:outline-none p-0"
+            className="flex-1 min-h-[24px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-sm"
             rows={1}
           />
 
-          {/* Voice Input Button */}
+          {/* Voice Input Button - Hidden on mobile */}
           <Button
             type="button"
             size="sm"
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground hover:bg-background/60 p-2"
+            className="hidden sm:flex text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
             disabled={isLoading}
           >
             <Mic className="h-4 w-4" />
           </Button>
 
           {/* Send Button */}
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!message.trim() || isLoading}
-            className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-primary-foreground border-0 p-2 min-w-[40px] disabled:opacity-50 disabled:cursor-not-allowed"
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            {isLoading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-4 h-4 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full"
-              />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!message.trim() || isLoading}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 p-2 h-9 w-9 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              {isLoading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-4 h-4 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full"
+                />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </motion.div>
+        </motion.div>
 
-        {/* Helper Text */}
-        <div className="flex items-center justify-between mt-2 px-2">
-          <span className="text-xs text-muted-foreground">
-            Press Enter to send, Shift+Enter for new line
+        {/* Helper Text - Cleaner */}
+        <div className="flex items-center justify-between mt-2 px-1">
+          <span className="text-xs text-muted-foreground/50">
+            Enter to send · Shift+Enter for new line
           </span>
-          <span className="text-xs text-muted-foreground">
-            {message.length > 0 && `${message.length} characters`}
-          </span>
+          <AnimatePresence>
+            {message.length > 100 && (
+              <motion.span 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-xs text-muted-foreground/50"
+              >
+                {message.length} characters
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
       </form>
     </motion.div>

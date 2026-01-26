@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, FileText, CheckCircle, Clock, Target, Zap, ArrowRight } from 'lucide-react';
+import { TrendingUp, FileText, CheckCircle, Clock, Target, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
 interface PlatformSummaryCardProps {
   onAction: (action: string, data?: any) => void;
 }
+
 export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
   onAction
 }) => {
@@ -20,30 +21,34 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     solutions: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+
   useEffect(() => {
     if (user) {
       fetchSummaryData();
     }
   }, [user]);
+
   const fetchSummaryData = async () => {
     if (!user) return;
     try {
-      // Fetch content items
-      const {
-        data: contentItems
-      } = await supabase.from('content_items').select('id, status, seo_score').eq('user_id', user.id);
+      const { data: contentItems } = await supabase
+        .from('content_items')
+        .select('id, status, seo_score')
+        .eq('user_id', user.id);
 
-      // Fetch solutions
-      const {
-        data: solutions
-      } = await supabase.from('solutions').select('id').eq('user_id', user.id);
+      const { data: solutions } = await supabase
+        .from('solutions')
+        .select('id')
+        .eq('user_id', user.id);
+
       const totalContent = contentItems?.length || 0;
       const published = contentItems?.filter(item => item.status === 'published').length || 0;
       const inReview = contentItems?.filter(item => item.status === 'review').length || 0;
-      const avgSeoScore = totalContent > 0 ? Math.round(contentItems.reduce((acc, item) => acc + (item.seo_score || 0), 0) / totalContent) : 0;
+      const avgSeoScore = totalContent > 0 
+        ? Math.round(contentItems.reduce((acc, item) => acc + (item.seo_score || 0), 0) / totalContent) 
+        : 0;
+
       setSummary({
         totalContent,
         published,
@@ -57,74 +62,74 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
       setIsLoading(false);
     }
   };
-  const metrics = [{
-    label: 'Content Pieces',
-    value: summary.totalContent,
-    icon: FileText,
-    color: 'text-info',
-    bgColor: 'bg-info/20'
-  }, {
-    label: 'Published',
-    value: summary.published,
-    icon: CheckCircle,
-    color: 'text-success',
-    bgColor: 'bg-success/20'
-  }, {
-    label: 'In Review',
-    value: summary.inReview,
-    icon: Clock,
-    color: 'text-warning',
-    bgColor: 'bg-warning/20'
-  }, {
-    label: 'Avg SEO Score',
-    value: `${summary.avgSeoScore}%`,
-    icon: TrendingUp,
-    color: 'text-primary',
-    bgColor: 'bg-primary/20'
-  }];
+
+  const metrics = [
+    {
+      label: 'Content',
+      value: summary.totalContent,
+      icon: FileText,
+    },
+    {
+      label: 'Published',
+      value: summary.published,
+      icon: CheckCircle,
+    },
+    {
+      label: 'In Review',
+      value: summary.inReview,
+      icon: Clock,
+    },
+    {
+      label: 'SEO Score',
+      value: `${summary.avgSeoScore}%`,
+      icon: TrendingUp,
+    }
+  ];
+
   if (isLoading) {
-    return <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+    return (
+      <Card className="bg-card border-border/50">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-border/50 rounded w-1/3"></div>
+            <div className="h-4 bg-muted rounded w-1/3"></div>
             <div className="grid grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-background/60 rounded"></div>)}
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-16 bg-muted rounded"></div>
+              ))}
             </div>
           </div>
         </CardContent>
-      </Card>;
+      </Card>
+    );
   }
-  return <motion.div initial={{
-    opacity: 0,
-    y: 20
-  }} animate={{
-    opacity: 1,
-    y: 0
-  }} transition={{
-    duration: 0.6,
-    delay: 0.1
-  }}>
-      <Card className="bg-background/60 backdrop-blur-xl border-border/50">
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="bg-card border-border/50">
         <CardContent className="p-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+          <div className="space-y-5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-medium text-foreground">
                 Platform Overview
               </h3>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {metrics.map((metric, index) => (
                 <motion.div 
                   key={metric.label}
-                  className={`p-4 rounded-xl bg-gradient-to-br ${metric.bgColor} border border-border/50`}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 * index }}
+                  className="p-4 rounded-xl bg-muted/30 border border-border/30"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index, duration: 0.2 }}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <metric.icon className={`h-4 w-4 ${metric.color}`} />
+                    <metric.icon className="h-4 w-4 text-primary" />
                   </div>
                   <div className="text-2xl font-bold text-foreground">{metric.value}</div>
                   <div className="text-xs text-muted-foreground">{metric.label}</div>
@@ -133,19 +138,19 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
             </div>
 
             <motion.div 
-              className="flex items-center justify-between p-4 bg-gradient-to-br from-primary/5 to-blue-500/5 rounded-xl border border-primary/20"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/30"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
             >
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Ready to optimize?</span>
+                <span className="text-sm text-foreground">Ready to optimize?</span>
               </div>
               <Button
                 size="sm"
                 onClick={() => onAction('workflow:get-started')}
-                className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-primary-foreground"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <ArrowRight className="h-4 w-4 mr-1" />
                 Get Started
@@ -154,5 +159,6 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
           </div>
         </CardContent>
       </Card>
-    </motion.div>;
+    </motion.div>
+  );
 };

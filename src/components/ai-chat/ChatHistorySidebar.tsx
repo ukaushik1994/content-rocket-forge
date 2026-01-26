@@ -92,7 +92,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
 
   const handleLoadMore = async () => {
     setIsLoadingMore(true);
-    await new Promise(resolve => setTimeout(resolve, 300)); // Smooth loading animation
+    await new Promise(resolve => setTimeout(resolve, 300));
     setDisplayLimit(prev => prev + 10);
     setIsLoadingMore(false);
   };
@@ -107,7 +107,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     visible: { 
       x: 0, 
       opacity: 1,
-      transition: { type: "spring", damping: 20, stiffness: 300 }
+      transition: { type: "spring", damping: 25, stiffness: 300 }
     },
     exit: { 
       x: -320, 
@@ -117,64 +117,64 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
+    hidden: { opacity: 0, x: -10 },
     visible: (i: number) => ({
       opacity: 1,
       x: 0,
       transition: {
-        delay: i * 0.05,
-        duration: 0.3
+        delay: i * 0.03,
+        duration: 0.2
       }
     })
   };
 
   return (
     <motion.div 
-      className={`fixed left-0 top-16 bottom-0 w-80 bg-background/80 backdrop-blur-xl border-r border-border/50 flex flex-col z-40 ${className}`}
+      className={`fixed left-0 top-16 bottom-0 w-80 bg-background/95 backdrop-blur-xl border-r border-border/30 flex flex-col z-40 ${className}`}
       variants={sidebarVariants}
       initial="hidden"
       animate="visible"
       exit="hidden"
     >
-      {/* Header */}
-      <div className="p-4 border-b border-white/10">
+      {/* Header - Cleaner */}
+      <div className="p-4 border-b border-border/30">
         <div className="flex items-center gap-2 mb-4">
-          <History className="h-5 w-5 text-white/70" />
-          <h2 className="text-lg font-semibold text-white">Chat History</h2>
+          <History className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-medium text-foreground">History</h2>
         </div>
 
-        {/* New Chat Button */}
+        {/* New Chat Button - Simplified */}
         <Button
           onClick={onCreateConversation}
-          className="w-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 hover:from-purple-500/30 hover:to-blue-500/30 border border-white/20 text-white"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <Plus className="h-4 w-4 mr-2" />
           New Chat
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="p-4 border-b border-white/10">
+      {/* Search - Refined */}
+      <div className="p-4 border-b border-border/30">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
           <Input
-            placeholder="Search conversations..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-purple-500/50"
+            className="pl-9 bg-muted/30 border-border/30 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/40 focus:ring-1 focus:ring-primary/20 h-9 text-sm"
           />
         </div>
         
-        {/* Filters and Sort */}
+        {/* Filters and Sort - Minimal */}
         <div className="flex gap-2 mt-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10 text-xs">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-7 text-xs px-2">
                 <Filter className="h-3 w-3 mr-1" />
                 {filterBy === 'all' ? 'All' : filterBy === 'pinned' ? 'Pinned' : 'Archived'}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-background/90 backdrop-blur-sm border-white/20">
+            <DropdownMenuContent className="bg-background border-border/50">
               <DropdownMenuItem onClick={() => setFilterBy('all')}>All Chats</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setFilterBy('pinned')}>Pinned</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setFilterBy('archived')}>Archived</DropdownMenuItem>
@@ -183,12 +183,12 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10 text-xs">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground h-7 text-xs px-2">
                 <SortAsc className="h-3 w-3 mr-1" />
                 {sortBy === 'recent' ? 'Recent' : sortBy === 'title' ? 'Title' : 'Pinned'}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-background/90 backdrop-blur-sm border-white/20">
+            <DropdownMenuContent className="bg-background border-border/50">
               <DropdownMenuItem onClick={() => setSortBy('recent')}>Recent</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setSortBy('title')}>Title</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setSortBy('pinned')}>Pinned First</DropdownMenuItem>
@@ -212,33 +212,30 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                     initial="hidden"
                     animate="visible"
                     exit="hidden"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                   >
-                    <Card 
-                      className={`mb-2 p-3 cursor-pointer transition-all duration-200 group border-white/10 hover:border-purple-500/30 ${
+                    <div 
+                      className={`mb-1.5 p-3 cursor-pointer transition-all duration-200 rounded-lg group ${
                         activeConversation === conversation.id 
-                          ? 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-purple-500/50' 
-                          : 'bg-white/5 hover:bg-white/10'
+                          ? 'bg-muted border-l-2 border-l-primary' 
+                          : 'hover:bg-muted/50 border-l-2 border-l-transparent'
                       }`}
                       onClick={() => onSelectConversation(conversation.id)}
                     >
                       <div className="flex items-start justify-between">
                          <div className="flex-1 min-w-0">
                            <div className="flex items-center gap-2 mb-1">
-                             {conversation.pinned && <Pin className="h-3 w-3 text-warning fill-warning" />}
-                             <MessageSquare className="h-4 w-4 text-white/60 flex-shrink-0" />
-                             <h3 className="text-sm font-medium text-white truncate">
+                             {conversation.pinned && <Pin className="h-3 w-3 text-primary" />}
+                             <MessageSquare className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                             <h3 className="text-sm font-medium text-foreground truncate">
                                {conversation.title}
                              </h3>
                            </div>
                            <div className="flex items-center justify-between">
-                             <p className="text-xs text-white/50">
+                             <p className="text-xs text-muted-foreground">
                                {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
                              </p>
                              {conversation.tags && conversation.tags.length > 0 && (
-                               <Badge variant="secondary" className="bg-white/10 text-white/70 text-xs h-5">
-                                 <Tag className="h-2 w-2 mr-1" />
+                               <Badge variant="secondary" className="bg-muted text-muted-foreground text-xs h-5 px-1.5">
                                  {conversation.tags[0]}
                                </Badge>
                              )}
@@ -250,20 +247,19 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 text-white/60 hover:text-white hover:bg-white/20"
+                              className="opacity-50 group-hover:opacity-100 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <MoreVertical className="h-3 w-3" />
+                              <MoreVertical className="h-3.5 w-3.5" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-background/90 backdrop-blur-sm border-white/20">
+                          <DropdownMenuContent align="end" className="bg-background border-border/50">
                             {onPinConversation && (
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   onPinConversation?.(conversation.id);
                                 }}
-                                className="text-white/70 hover:text-white focus:text-white"
                               >
                                 <Pin className="h-4 w-4 mr-2" />
                                 {conversation.pinned ? 'Unpin' : 'Pin'}
@@ -275,7 +271,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                   e.stopPropagation();
                                   onArchiveConversation(conversation.id);
                                 }}
-                                className="text-white/70 hover:text-white focus:text-white"
                               >
                                  <Archive className="h-4 w-4 mr-2" />
                                  {conversation.archived ? 'Unarchive' : 'Archive'}
@@ -286,7 +281,7 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                                 e.stopPropagation();
                                 onDeleteConversation(conversation.id);
                               }}
-                              className="text-red-400 focus:text-red-300 focus:bg-red-500/20"
+                              className="text-destructive focus:text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
@@ -294,32 +289,33 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </Card>
+                    </div>
                   </motion.div>
                   ))}
                   
                   {/* Load More Button */}
                   {hasMoreConversations && (
                     <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-4 px-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-3 px-2"
                     >
                       <Button
                         onClick={handleLoadMore}
                         disabled={isLoadingMore}
                         variant="ghost"
-                        className="w-full text-white/60 hover:text-white hover:bg-white/10 border border-white/20 hover:border-white/30"
+                        size="sm"
+                        className="w-full text-muted-foreground hover:text-foreground h-8 text-xs"
                       >
                         {isLoadingMore ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
                             Loading...
                           </>
                         ) : (
                           <>
-                            <ChevronDown className="h-4 w-4 mr-2" />
-                            Load More ({filteredConversations.length - displayLimit} remaining)
+                            <ChevronDown className="h-3 w-3 mr-2" />
+                            Load More ({filteredConversations.length - displayLimit})
                           </>
                         )}
                       </Button>
@@ -332,9 +328,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                   animate={{ opacity: 1 }}
                   className="text-center py-8"
                 >
-                  <Search className="h-12 w-12 text-white/30 mx-auto mb-3" />
-                  <p className="text-white/60 text-sm">No conversations found</p>
-                  <p className="text-white/40 text-xs mt-1">Try a different search term</p>
+                  <Search className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">No conversations found</p>
+                  <p className="text-muted-foreground/60 text-xs mt-1">Try a different search</p>
                 </motion.div>
               )
             ) : (
@@ -343,40 +339,35 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                 animate={{ opacity: 1 }}
                 className="text-center py-8"
               >
-                <MessageSquare className="h-12 w-12 text-white/30 mx-auto mb-3" />
-                <p className="text-white/60 text-sm">No conversations yet</p>
-                <p className="text-white/40 text-xs mt-1">Start a new chat to begin</p>
+                <MessageSquare className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">No conversations yet</p>
+                <p className="text-muted-foreground/60 text-xs mt-1">Start a new chat</p>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </ScrollArea>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-white/10">
-        <div className="flex items-center justify-between text-xs text-white/50 mb-3">
+      {/* Footer - Minimal */}
+      <div className="p-4 border-t border-border/30">
+        <div className="flex items-center justify-between text-xs text-muted-foreground/60 mb-3">
           <span>
             {filteredConversations.length > 0 
-              ? `${Math.min(displayLimit, filteredConversations.length)} of ${filteredConversations.length} shown`
-              : `${conversations.length} conversations`
+              ? `${Math.min(displayLimit, filteredConversations.length)} of ${filteredConversations.length}`
+              : `${conversations.length} total`
             }
           </span>
-          <Badge variant="secondary" className="bg-success/20 text-success border-success/30">
-            <div className="w-2 h-2 bg-success rounded-full mr-1" />
-            Synced
-          </Badge>
         </div>
         <Button
           onClick={() => {
-            // Dispatch custom event to trigger settings popup
             window.dispatchEvent(new CustomEvent('openSettings', { detail: { tab: 'api' } }));
           }}
           variant="ghost"
           size="sm"
-          className="w-full text-white/60 hover:text-white hover:bg-white/10 text-xs"
+          className="w-full text-muted-foreground hover:text-foreground h-8 text-xs"
         >
           <Settings className="h-3 w-3 mr-2" />
-          AI Settings
+          Settings
         </Button>
       </div>
     </motion.div>

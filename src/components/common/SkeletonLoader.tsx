@@ -12,7 +12,7 @@ const shimmerVariants = {
   animate: { 
     backgroundPosition: '200% 0',
     transition: { 
-      duration: 1.5, 
+      duration: 2.5, 
       repeat: Infinity, 
       ease: 'linear' 
     } 
@@ -26,7 +26,7 @@ const BaseSkeleton = ({ className }: { className?: string }) => (
     animate="animate"
     className={cn(
       "rounded-md",
-      "bg-gradient-to-r from-muted via-muted/50 to-muted",
+      "bg-gradient-to-r from-muted via-muted/60 to-muted",
       "bg-[length:200%_100%]",
       className
     )}

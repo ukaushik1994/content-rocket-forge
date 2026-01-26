@@ -23,47 +23,48 @@ const AIChat = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      {/* Interactive Background Effects */}
+      {/* Refined Background Effects - Calmer, more premium */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
-          className="absolute top-32 right-32 w-80 h-80 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-full blur-3xl"
+          className="absolute top-32 right-32 w-80 h-80 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-full blur-3xl"
           animate={{ 
-            scale: [1, 1.3, 1],
-            opacity: [0.3, 0.6, 0.3],
-            x: [0, -30, 0],
-            y: [0, 20, 0]
+            scale: [1, 1.15, 1],
+            opacity: [0.2, 0.35, 0.2],
+            x: [0, -20, 0],
+            y: [0, 15, 0]
           }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div 
-          className="absolute bottom-32 left-32 w-96 h-96 bg-gradient-to-r from-purple-500/15 to-pink-500/15 rounded-full blur-3xl"
+          className="absolute bottom-32 left-32 w-96 h-96 bg-gradient-to-r from-purple-500/8 to-pink-500/8 rounded-full blur-3xl"
           animate={{ 
-            scale: [1.2, 1, 1.2],
-            opacity: [0.4, 0.7, 0.4],
-            x: [0, 40, 0],
-            y: [0, -25, 0]
+            scale: [1.1, 1, 1.1],
+            opacity: [0.25, 0.4, 0.25],
+            x: [0, 25, 0],
+            y: [0, -15, 0]
           }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
         />
         
-        {/* Floating particles */}
-        {Array.from({ length: 20 }, (_, i) => (
+        {/* Refined floating particles - fewer, subtler */}
+        {Array.from({ length: 8 }, (_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 bg-primary/40 rounded-full"
+            className="absolute w-1 h-1 bg-primary/25 rounded-full"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: `${(i * 12) + 10}%`,
+              top: `${(i * 11) + 5}%`,
             }}
             animate={{
-              opacity: [0, 1, 0],
+              opacity: [0, 0.6, 0],
               scale: [0, 1, 0],
-              y: [0, -100],
+              y: [0, -80],
             }}
             transition={{
-              duration: Math.random() * 4 + 2,
+              duration: 6 + (i * 0.5),
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: i * 0.8,
+              ease: "easeOut"
             }}
           />
         ))}
