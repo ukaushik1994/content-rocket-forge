@@ -65,7 +65,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
   const [chartType, setChartType] = useState<ChartType>(
     (chartConfig?.type as ChartType) || 'bar'
   );
-  const [isInsightsExpanded, setIsInsightsExpanded] = useState(true);
+  const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
 
   // Keyboard shortcuts
@@ -215,26 +215,26 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       );
     }
 
-    const commonProps = { data: chartData, width: '100%', height: 280 };
+    const commonProps = { data: chartData, width: '100%', height: 320 };
     const tooltipStyle = { 
       backgroundColor: 'hsl(var(--card))', 
-      border: '1px solid hsl(var(--border))', 
-      borderRadius: '8px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+      border: '1px solid hsl(var(--border)/0.5)', 
+      borderRadius: '12px',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+      fontSize: '12px'
     };
 
     switch (chartType) {
       case 'line':
         return (
           <ResponsiveContainer {...commonProps}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+            <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.15} vertical={false} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={40} />
               <RechartsTooltip contentStyle={tooltipStyle} />
-              <Legend />
               {dataKeys.map((key, idx) => (
-                <Line key={key} type="monotone" dataKey={key} stroke={colors[idx % colors.length]} strokeWidth={2} dot={{ r: 3 }} />
+                <Line key={key} type="monotone" dataKey={key} stroke={colors[idx % colors.length]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
               ))}
             </LineChart>
           </ResponsiveContainer>
@@ -243,22 +243,21 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'area':
         return (
           <ResponsiveContainer {...commonProps}>
-            <AreaChart data={chartData}>
+            <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
               <defs>
                 {colors.map((color, idx) => (
                   <linearGradient key={idx} id={`sidebarArea${idx}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.6} />
-                    <stop offset="95%" stopColor={color} stopOpacity={0.1} />
+                    <stop offset="5%" stopColor={color} stopOpacity={0.4} />
+                    <stop offset="95%" stopColor={color} stopOpacity={0.05} />
                   </linearGradient>
                 ))}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.15} vertical={false} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={40} />
               <RechartsTooltip contentStyle={tooltipStyle} />
-              <Legend />
               {dataKeys.map((key, idx) => (
-                <Area key={key} type="monotone" dataKey={key} stroke={colors[idx % colors.length]} fill={`url(#sidebarArea${idx})`} />
+                <Area key={key} type="monotone" dataKey={key} stroke={colors[idx % colors.length]} strokeWidth={2} fill={`url(#sidebarArea${idx})`} />
               ))}
             </AreaChart>
           </ResponsiveContainer>
@@ -267,14 +266,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       case 'bar':
         return (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+            <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.15} vertical={false} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={40} />
               <RechartsTooltip contentStyle={tooltipStyle} />
-              <Legend />
               {dataKeys.map((key, idx) => (
-                <Bar key={key} dataKey={key} fill={colors[idx % colors.length]} radius={[4, 4, 0, 0]} />
+                <Bar key={key} dataKey={key} fill={colors[idx % colors.length]} radius={[6, 6, 0, 0]} fillOpacity={0.85} />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -336,13 +334,13 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       default:
         return (
           <ResponsiveContainer {...commonProps}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+            <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.15} vertical={false} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={40} />
               <RechartsTooltip contentStyle={tooltipStyle} />
               {dataKeys.map((key, idx) => (
-                <Bar key={key} dataKey={key} fill={colors[idx % colors.length]} radius={[4, 4, 0, 0]} />
+                <Bar key={key} dataKey={key} fill={colors[idx % colors.length]} radius={[6, 6, 0, 0]} fillOpacity={0.85} />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -466,69 +464,15 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
               {/* Scrollable Content - pb-24 for input bar clearance */}
               <ScrollArea className="flex-1">
-                <div className="p-6 pb-28 space-y-8">
-                  {/* AI Summary Section */}
-                  <AISummaryCard
-                    chartData={chartData}
-                    dataKeys={dataKeys}
-                    title={title}
-                    onFeedback={(helpful) => console.log('Feedback:', helpful)}
-                  />
-
-                  {/* Metric Cards with comparison toggle */}
-                  {metricCards.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-[11px] font-medium uppercase tracking-widest text-foreground/50">Key Metrics</h3>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowComparison(!showComparison)}
-                              className={cn(
-                                "h-7 text-xs gap-1.5",
-                                showComparison ? "text-primary bg-primary/10" : "text-foreground/40 hover:text-foreground/60"
-                              )}
-                            >
-                              <GitCompare className="w-3 h-3" />
-                              Compare
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="text-xs">
-                            Show period comparison
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {metricCards.slice(0, 4).map((metric: any, idx: number) => (
-                          <PremiumMetricCard
-                            key={idx}
-                            label={metric.label}
-                            value={metric.value}
-                            trend={metric.trend}
-                            trendValue={metric.trendValue}
-                            index={idx}
-                            showComparison={showComparison}
-                            comparisonValue={metric.previousValue || Math.round(metric.value * 0.85)}
-                          />
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Chart Section */}
+                <div className="p-6 pb-28 space-y-6">
+                  {/* 1. CHART/TABLE SECTION - Visuals First */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
+                    transition={{ delay: 0.05 }}
                   >
-                    <div className="flex items-center justify-between mb-4 gap-3">
-                      {/* Segmented Control for Chart/Table */}
+                    <div className="flex items-center justify-between mb-4">
+                      {/* Left: View toggle */}
                       <SegmentedControl
                         options={[
                           { value: 'chart', label: 'Chart', icon: BarChart3, tooltip: 'View as chart (Tab)' },
@@ -540,7 +484,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                         size="sm"
                       />
                       
-                      {/* Chart Type Dropdown */}
+                      {/* Right: Type selector (only when chart view) */}
                       {activeView === 'chart' && (
                         <PremiumChartTypeSelect 
                           value={chartType} 
@@ -550,8 +494,8 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       )}
                     </div>
 
-                    {/* Clean Chart Container */}
-                    <Card className="p-4 bg-card/50 border-border/50">
+                    {/* Premium Minimal Chart Container */}
+                    <div className="rounded-xl bg-card/30 border border-border/30 p-5">
                       <AnimatePresence mode="wait">
                         {activeView === 'chart' ? (
                           <motion.div
@@ -581,8 +525,65 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </Card>
+                    </div>
                   </motion.div>
+
+                  {/* 2. AI SUMMARY - Moved below chart */}
+                  <AISummaryCard
+                    chartData={chartData}
+                    dataKeys={dataKeys}
+                    title={title}
+                    onFeedback={(helpful) => console.log('Feedback:', helpful)}
+                  />
+
+                  {/* 3. KEY METRICS - Moved below summary */}
+                  {metricCards.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
+                          Key Metrics
+                        </span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowComparison(!showComparison)}
+                              className={cn(
+                                "h-6 text-[10px] gap-1",
+                                showComparison ? "text-primary bg-primary/10" : "text-muted-foreground/40 hover:text-muted-foreground/60"
+                              )}
+                            >
+                              <GitCompare className="w-3 h-3" />
+                              Compare
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="text-xs">
+                            Show period comparison
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {metricCards.slice(0, 4).map((metric: any, idx: number) => (
+                          <PremiumMetricCard
+                            key={idx}
+                            label={metric.label}
+                            value={metric.value}
+                            trend={metric.trend}
+                            trendValue={metric.trendValue}
+                            index={idx}
+                            showComparison={showComparison}
+                            comparisonValue={metric.previousValue || Math.round(metric.value * 0.85)}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
 
                   {/* AI Insights */}
                   {insights.length > 0 && (

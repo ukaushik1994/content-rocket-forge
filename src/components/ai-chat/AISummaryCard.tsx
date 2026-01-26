@@ -63,42 +63,38 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
     <div
       className={cn(
         "rounded-lg p-4",
-        "bg-card/50 border border-border/50",
+        "bg-muted/30 border border-border/30",
         className
       )}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-4 h-4 text-muted-foreground" />
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          AI Summary
-        </span>
+      <div className="flex items-start gap-3">
+        <Sparkles className="w-4 h-4 text-primary/60 flex-shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="text-sm leading-relaxed text-foreground/70">
+            {summary}
+          </p>
+        </div>
       </div>
 
-      {/* Summary text */}
-      <p className="text-sm leading-relaxed text-foreground/80 italic">
-        "{summary}"
-      </p>
-
-      {/* Feedback buttons */}
+      {/* Subtle feedback row */}
       {onFeedback && (
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/50">
+        <div className="flex items-center gap-1 mt-3 ml-7">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onFeedback(true)}
-            className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-emerald-500"
+            className="h-6 text-[10px] px-2 text-muted-foreground/50 hover:text-emerald-500"
           >
-            <ThumbsUp className="w-3 h-3" />
+            <ThumbsUp className="w-2.5 h-2.5 mr-1" />
             Helpful
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onFeedback(false)}
-            className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-red-500"
+            className="h-6 text-[10px] px-2 text-muted-foreground/50 hover:text-red-500"
           >
-            <ThumbsDown className="w-3 h-3" />
+            <ThumbsDown className="w-2.5 h-2.5 mr-1" />
             Not useful
           </Button>
         </div>
