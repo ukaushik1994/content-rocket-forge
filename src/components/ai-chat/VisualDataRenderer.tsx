@@ -6,6 +6,8 @@ import { InteractiveChart } from './InteractiveChart';
 import { ChartErrorBoundary } from './ChartErrorBoundary';
 import { MultiChartAnalysis } from './visualization/MultiChartAnalysis';
 import { GeneratedImageCard } from './GeneratedImageCard';
+import { CampaignQueueStatus } from './CampaignQueueStatus';
+import { CampaignDashboard } from './CampaignDashboard';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -129,7 +131,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ data }) 
   }
 
   // Validate type is one of the expected values
-  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis', 'generated_image', 'generated_images', 'generated_video', 'generated_videos'];
+  const validTypes = ['chart', 'metrics', 'table', 'workflow', 'summary', 'serp_analysis', 'multi_chart_analysis', 'generated_image', 'generated_images', 'generated_video', 'generated_videos', 'queue_status', 'campaign_dashboard'];
   if (!validTypes.includes(data.type)) {
     console.warn(`⚠️ Unknown visual data type: "${data.type}" - attempting graceful degradation`);
     

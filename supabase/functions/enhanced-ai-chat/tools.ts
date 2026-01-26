@@ -1,11 +1,17 @@
 /**
  * Tool Functions for AI Function Calling
- * Provides 6 individual tools that AI can call on-demand for data
+ * Provides data fetching and campaign intelligence tools for AI
  */
+
+import { 
+  CAMPAIGN_INTELLIGENCE_TOOL_DEFINITIONS, 
+  executeCampaignIntelligenceTool 
+} from './campaign-intelligence-tool.ts';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-export const TOOL_DEFINITIONS = [
+// Core data tools
+const CORE_TOOL_DEFINITIONS = [
   {
     type: "function",
     function: {
@@ -230,6 +236,24 @@ export const TOOL_DEFINITIONS = [
   }
 ];
 
+// Campaign intelligence tools (imported from dedicated module)
+const CAMPAIGN_TOOLS = CAMPAIGN_INTELLIGENCE_TOOL_DEFINITIONS;
+
+// Export combined tool definitions
+export const TOOL_DEFINITIONS = [
+  ...CORE_TOOL_DEFINITIONS,
+  ...CAMPAIGN_TOOLS
+];
+
+// List of campaign tool names for routing
+const CAMPAIGN_TOOL_NAMES = [
+  'get_campaign_intelligence',
+  'get_queue_status',
+  'get_campaign_content',
+  'trigger_content_generation',
+  'retry_failed_content'
+];
+
 /**
  * Execute a tool call with caching support
  */
@@ -269,11 +293,18 @@ export async function executeToolCall(
   try {
     result = await Promise.race([
       (async () => {
+        // Route campaign tools to dedicated handler
+        if (CAMPAIGN_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to campaign intelligence handler`);
+          const campaignResult = await executeCampaignIntelligenceTool(toolName, toolArgs, supabase, userId);
+          return { data: campaignResult, error: null };
+        }
+        
         switch (toolName) {
           case 'get_content_items':
             let query = supabase
               .from('content_items')
-              .select('id, title, status, created_at, seo_score, content_type, metadata')
+              .select('id, title, status, created_at, seo_score, content_type, metadata, campaign_id')
               .eq('user_id', userId);
             
             if (toolArgs.status) query = query.eq('status', toolArgs.status);

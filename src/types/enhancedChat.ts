@@ -119,7 +119,7 @@ export interface GeneratedVideoVisualData {
 }
 
 export interface VisualData {
-  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis' | 'generated_image' | 'generated_images' | 'generated_video' | 'generated_videos';
+  type: 'chart' | 'metrics' | 'workflow' | 'summary' | 'serp_analysis' | 'table' | 'multi_chart_analysis' | 'generated_image' | 'generated_images' | 'generated_video' | 'generated_videos' | 'queue_status' | 'campaign_dashboard';
   
   // Generated image support
   generatedImage?: GeneratedImageVisualData;
@@ -164,6 +164,62 @@ export interface VisualData {
       value: string;
       status: 'good' | 'warning' | 'needs-attention';
     }>;
+  };
+  
+  // Campaign-specific visualization data
+  queueStatusData?: {
+    campaignId: string;
+    campaignName: string;
+    total: number;
+    pending: number;
+    processing: number;
+    completed: number;
+    failed: number;
+    failedItems?: Array<{
+      id: string;
+      asset_type: string;
+      error_message: string;
+      retry_count: number;
+    }>;
+    estimatedCompletionMinutes: number | null;
+    processingDetails?: Array<{
+      id: string;
+      asset_type: string;
+    }>;
+  };
+  
+  campaignDashboardData?: {
+    campaign: {
+      id: string;
+      name: string;
+      status: string;
+      objective: string | null;
+      timeline: string | null;
+      solution_name: string | null;
+    };
+    queueStatus?: {
+      total: number;
+      pending: number;
+      processing: number;
+      completed: number;
+      failed: number;
+    };
+    contentInventory?: {
+      total: number;
+      byStatus: Record<string, number>;
+      byFormat: Record<string, number>;
+    };
+    performance?: {
+      totalViews: number;
+      totalClicks: number;
+      totalConversions: number;
+      engagementRate: number;
+    };
+    timelineHealth?: {
+      status: 'on_track' | 'at_risk' | 'overdue' | 'unknown';
+      completionPercentage: number;
+      blockers: string[];
+    };
   };
   
   // Validation metadata
