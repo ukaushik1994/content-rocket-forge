@@ -159,6 +159,52 @@ For ALL other queries → Generate CHART (default):
 • Bar Chart: Comparing values across categories (2+ items)
 • Line Chart: Trends over time (requires time series data)
 • Pie Chart: Proportions/distribution (shows percentages)
+• Area Chart: Trends with volume emphasis (stacked data over time)
+• Radar Chart: Multi-dimensional comparison (e.g., content quality across 5+ metrics like SEO, readability, engagement)
+• Funnel Chart: Conversion/workflow stages (e.g., content pipeline: Draft → Review → Published)
+• Scatter Chart: Relationship analysis with two numeric axes (e.g., keyword difficulty vs search volume)
+• Radial Bar Chart: Progress/completion indicators (e.g., campaign progress circles)
+• Composed Chart: Mixed bar + line overlay for comparing different metric types
+
+**Radar Chart Example:**
+\`\`\`json
+{
+  "visualData": {
+    "type": "chart",
+    "chartConfig": {
+      "type": "radar",
+      "data": [
+        { "name": "Content A", "seo": 85, "readability": 92, "engagement": 78, "structure": 88 }
+      ],
+      "categories": ["name"],
+      "series": [
+        { "dataKey": "seo", "name": "SEO Score" },
+        { "dataKey": "readability", "name": "Readability" },
+        { "dataKey": "engagement", "name": "Engagement" }
+      ]
+    }
+  }
+}
+\`\`\`
+
+**Funnel Chart Example:**
+\`\`\`json
+{
+  "visualData": {
+    "type": "chart",
+    "chartConfig": {
+      "type": "funnel",
+      "data": [
+        { "name": "Draft", "value": 100 },
+        { "name": "Review", "value": 75 },
+        { "name": "Published", "value": 50 }
+      ],
+      "categories": ["name"],
+      "series": [{ "dataKey": "value", "name": "Count" }]
+    }
+  }
+}
+\`\`\`
 
 **Data Accuracy Requirements (applies to BOTH tables and charts):**
 1. Every value MUST come from REAL DATA CONTEXT

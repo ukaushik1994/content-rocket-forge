@@ -1,7 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, AreaChart, Area, 
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  FunnelChart, Funnel, LabelList,
+  ScatterChart, Scatter, ZAxis,
+  RadialBarChart, RadialBar,
+  ComposedChart
 } from 'recharts';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { AlertTriangle, RefreshCw, BarChart3 } from 'lucide-react';
@@ -234,8 +239,148 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           </AreaChart>
         );
 
+      case 'radar':
+        return (
+          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+            <PolarGrid stroke="hsl(var(--border))" />
+            <PolarAngleAxis dataKey={categories[0] || 'name'} tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} />
+            <PolarRadiusAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+            <Tooltip />
+            <Legend />
+            {series?.map((s, i) => (
+              <Radar
+                key={s.dataKey}
+                dataKey={s.dataKey}
+                stroke={defaultColors[i % defaultColors.length]}
+                fill={defaultColors[i % defaultColors.length]}
+                fillOpacity={0.3}
+                name={s.name}
+              />
+            ))}
+          </RadarChart>
+        );
+
+      case 'funnel':
+        const funnelData = data.map((item, index) => ({
+          ...item,
+          fill: defaultColors[index % defaultColors.length]
+        }));
+        return (
+          <FunnelChart>
+            <Tooltip />
+            <Funnel
+              dataKey={series?.[0]?.dataKey || 'value'}
+              data={funnelData}
+              isAnimationActive
+            >
+              <LabelList position="right" fill="hsl(var(--foreground))" stroke="none" dataKey={categories[0] || 'name'} />
+            </Funnel>
+          </FunnelChart>
+        );
+
+      case 'scatter':
+        const xKey = series?.[0]?.dataKey || 'x';
+        const yKey = series?.[1]?.dataKey || 'y';
+        const zKey = series?.[2]?.dataKey;
+        return (
+          <ScatterChart>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis type="number" dataKey={xKey} name={series?.[0]?.name || 'X'} />
+            <YAxis type="number" dataKey={yKey} name={series?.[1]?.name || 'Y'} />
+            {zKey && <ZAxis type="number" dataKey={zKey} range={[60, 400]} name={series?.[2]?.name || 'Size'} />}
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+            <Legend />
+            <Scatter 
+              name={effectiveConfig.title || 'Data Points'} 
+              data={data} 
+              fill={defaultColors[0]}
+            />
+          </ScatterChart>
+        );
+
+      case 'radial':
+        const radialData = data.map((item, index) => ({
+          ...item,
+          fill: defaultColors[index % defaultColors.length]
+        }));
+        return (
+          <RadialBarChart 
+            cx="50%" 
+            cy="50%" 
+            innerRadius="10%" 
+            outerRadius="80%" 
+            barSize={20} 
+            data={radialData}
+          >
+            <RadialBar
+              background
+              dataKey={series?.[0]?.dataKey || 'value'}
+              cornerRadius={10}
+            />
+            <Legend 
+              iconSize={10} 
+              layout="vertical" 
+              verticalAlign="middle" 
+              align="right"
+            />
+            <Tooltip />
+          </RadialBarChart>
+        );
+
+      case 'composed':
+        return (
+          <ComposedChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis dataKey={categories[0] || 'name'} />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            {series?.map((s, i) => {
+              // Alternate between bar and line for composed charts
+              if (i % 2 === 0) {
+                return (
+                  <Bar 
+                    key={s.dataKey} 
+                    dataKey={s.dataKey} 
+                    fill={defaultColors[i % defaultColors.length]} 
+                    name={s.name} 
+                  />
+                );
+              } else {
+                return (
+                  <Line 
+                    key={s.dataKey} 
+                    type="monotone" 
+                    dataKey={s.dataKey} 
+                    stroke={defaultColors[i % defaultColors.length]} 
+                    name={s.name}
+                    strokeWidth={2}
+                  />
+                );
+              }
+            })}
+          </ComposedChart>
+        );
+
       default:
-        return <div>Unsupported chart type</div>;
+        console.warn(`⚠️ Unsupported chart type: ${type}, falling back to bar chart`);
+        return (
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis dataKey={categories[0] || 'name'} />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            {series?.map((s, i) => (
+              <Bar 
+                key={s.dataKey} 
+                dataKey={s.dataKey} 
+                fill={defaultColors[i % defaultColors.length]} 
+                name={s.name} 
+              />
+            ))}
+          </BarChart>
+        );
     }
   };
 

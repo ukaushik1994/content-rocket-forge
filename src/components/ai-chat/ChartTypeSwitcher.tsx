@@ -1,11 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { BarChart3, LineChart, PieChart, TrendingUp } from 'lucide-react';
+import { BarChart3, LineChart, PieChart, TrendingUp, Target, Filter, Hexagon, Circle, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChartTypeSwitcherProps {
-  value: 'line' | 'bar' | 'area' | 'pie';
-  onChange: (type: 'line' | 'bar' | 'area' | 'pie') => void;
+  value: 'line' | 'bar' | 'area' | 'pie' | 'radar' | 'funnel' | 'scatter' | 'radial' | 'composed';
+  onChange: (type: 'line' | 'bar' | 'area' | 'pie' | 'radar' | 'funnel' | 'scatter' | 'radial' | 'composed') => void;
 }
 
 export const ChartTypeSwitcher: React.FC<ChartTypeSwitcherProps> = ({ value, onChange }) => {
@@ -13,7 +13,12 @@ export const ChartTypeSwitcher: React.FC<ChartTypeSwitcherProps> = ({ value, onC
     { value: 'bar', icon: BarChart3, label: 'Bar' },
     { value: 'line', icon: LineChart, label: 'Line' },
     { value: 'area', icon: TrendingUp, label: 'Area' },
-    { value: 'pie', icon: PieChart, label: 'Pie' }
+    { value: 'pie', icon: PieChart, label: 'Pie' },
+    { value: 'radar', icon: Target, label: 'Radar' },
+    { value: 'funnel', icon: Filter, label: 'Funnel' },
+    { value: 'scatter', icon: Hexagon, label: 'Scatter' },
+    { value: 'radial', icon: Circle, label: 'Radial' },
+    { value: 'composed', icon: Layers, label: 'Mixed' }
   ] as const;
 
   return (

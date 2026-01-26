@@ -34,6 +34,13 @@ const KEY_MAPPINGS: Record<string, string> = {
   score: 'value',
   percent: 'value',
   percentage: 'value',
+  // New mappings for radar/funnel/scatter charts
+  stage: 'name',
+  step: 'name',
+  metric: 'value',
+  x: 'x',
+  y: 'y',
+  size: 'z',
 };
 
 /**
@@ -100,6 +107,48 @@ function normalizeValue(value: any, key: string): string | number {
 }
 
 /**
+ * Validate if data is compatible with radar chart format
+ * Radar charts need at least 3 numeric dimensions per data point
+ */
+export function isValidRadarData(data: any[]): boolean {
+  if (!data || data.length === 0) return false;
+  
+  const sample = data[0];
+  const numericKeys = Object.keys(sample).filter(
+    k => typeof sample[k] === 'number' && k.toLowerCase() !== 'name'
+  );
+  return numericKeys.length >= 3;
+}
+
+/**
+ * Validate if data is compatible with funnel chart format
+ * Funnel charts need name and value fields with decreasing values (typically)
+ */
+export function isValidFunnelData(data: any[]): boolean {
+  if (!data || data.length < 2) return false;
+  
+  return data.every(item => {
+    const hasName = 'name' in item || 'stage' in item || 'step' in item;
+    const hasValue = typeof item.value === 'number' || typeof item.count === 'number';
+    return hasName && hasValue;
+  });
+}
+
+/**
+ * Validate if data is compatible with scatter chart format
+ * Scatter charts need at least x and y numeric values
+ */
+export function isValidScatterData(data: any[]): boolean {
+  if (!data || data.length === 0) return false;
+  
+  const sample = data[0];
+  const numericKeys = Object.keys(sample).filter(
+    k => typeof sample[k] === 'number'
+  );
+  return numericKeys.length >= 2;
+}
+
+/**
  * Detect the best chart type based on data structure
  */
 export function detectOptimalChartType(data: any[], requestedType?: string): string {
@@ -110,9 +159,36 @@ export function detectOptimalChartType(data: any[], requestedType?: string): str
     k => typeof sample[k] === 'number' && k !== 'name'
   );
 
+  // Honor explicit chart type requests if data is compatible
+  if (requestedType) {
+    switch (requestedType) {
+      case 'radar':
+        if (isValidRadarData(data)) return 'radar';
+        break;
+      case 'funnel':
+        if (isValidFunnelData(data)) return 'funnel';
+        break;
+      case 'scatter':
+        if (isValidScatterData(data)) return 'scatter';
+        break;
+      case 'radial':
+      case 'composed':
+      case 'pie':
+      case 'line':
+      case 'area':
+      case 'bar':
+        return requestedType;
+    }
+  }
+
   // If only one numeric field and few data points, pie chart works well
   if (numericKeys.length === 1 && data.length <= 8) {
     return requestedType === 'pie' ? 'pie' : requestedType || 'bar';
+  }
+
+  // Multiple numeric fields (3+) suggest radar chart for multi-dimensional comparison
+  if (numericKeys.length >= 3 && data.length <= 10) {
+    return 'radar';
   }
 
   // Multiple numeric fields suggest line or bar chart
