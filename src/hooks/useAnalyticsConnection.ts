@@ -31,9 +31,9 @@ export const useAnalyticsConnection = () => {
     try {
       setStatus(prev => ({ ...prev, loading: true, error: null }));
 
-      // Check for API keys
+      // Check for API keys (use metadata view for security - no encrypted_key exposed)
       const { data: apiKeys, error: apiError } = await supabase
-        .from('api_keys')
+        .from('api_keys_metadata')
         .select('service')
         .eq('user_id', user.id)
         .eq('is_active', true)

@@ -6870,7 +6870,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      api_keys_metadata: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          service: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          service?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          service?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       clean_expired_serp_cache: { Args: never; Returns: undefined }

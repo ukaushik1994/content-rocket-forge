@@ -39,9 +39,9 @@ export const ContentAnalyticsTab = () => {
       try {
         setIsLoading(true);
 
-        // Check if user has Search Console API key
+        // Check if user has Search Console API key (use metadata view for security)
         const { data: apiKeys } = await supabase
-          .from('api_keys')
+          .from('api_keys_metadata')
           .select('service')
           .eq('user_id', user.id)
           .eq('is_active', true)

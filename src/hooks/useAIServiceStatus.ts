@@ -49,8 +49,9 @@ export function useAIServiceStatus() {
       // Check for configured API keys by existence (no decryption needed)
       const providers = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'] as const;
       
+      // Use the secure metadata view (no encrypted_key exposed)
       const { data: configuredKeys, error } = await supabase
-        .from('api_keys')
+        .from('api_keys_metadata')
         .select('service')
         .eq('user_id', user.id)
         .eq('is_active', true)

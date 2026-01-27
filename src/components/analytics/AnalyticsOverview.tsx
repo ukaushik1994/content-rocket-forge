@@ -61,9 +61,9 @@ export const AnalyticsOverview = () => {
       try {
         setIsLoading(true);
 
-        // Check if user has configured Google Analytics and Search Console API keys
+        // Check if user has configured Google Analytics and Search Console API keys (use metadata view for security)
         const { data: apiKeys } = await supabase
-          .from('api_keys')
+          .from('api_keys_metadata')
           .select('service')
           .eq('user_id', user.id)
           .eq('is_active', true)
