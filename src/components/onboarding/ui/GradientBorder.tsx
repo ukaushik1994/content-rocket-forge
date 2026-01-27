@@ -44,8 +44,8 @@ export const GradientBorder: React.FC<GradientBorderProps> = ({
         }}
       />
       
-      {/* Inner content container */}
-      <div className="relative rounded-3xl bg-slate-950/95 backdrop-blur-sm">
+      {/* Inner content container - glassmorphic */}
+      <div className="relative rounded-3xl bg-slate-900/60 backdrop-blur-2xl border border-white/[0.08]">
         {children}
       </div>
     </div>
