@@ -112,8 +112,8 @@ const App = () => (
                 <ChatContextBridgeProvider>
               <Toaster />
               <Sonner />
-              <SettingsPopup />
               <BrowserRouter>
+                <SettingsPopup />
                 <Routes>
                   <Route path="/landing" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
