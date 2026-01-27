@@ -1,219 +1,184 @@
 
-# Phase 4-6 Implementation: Integration Completions, Stub Functions & UX Improvements
+# AI Chat UX Fixes - 5 Issue Remediation Plan
 
 ## Overview
 
-This phase addresses the remaining 15 issues from the AI Chat remediation plan:
-- **Phase 4:** Integration Completions (D1-D5) 
-- **Phase 5:** Stub Functions (E5-E6)
-- **Phase 6:** UX Improvements (F1-F4)
+This plan addresses **5 UX issues** (excluding the prolonged thinking indicator which is being ignored per your request):
+
+| # | Issue | Root Cause | Impact |
+|---|-------|------------|--------|
+| 1 | No auto-scroll to latest response | `scrollIntoView` fails inside Radix ScrollArea | High |
+| 2 | Empty Data Visualization panel | `chartConfig.data` missing/empty from AI response | High |
+| 3 | Rating controls not responsive | Console.log only, no visual state change | Medium |
+| 4 | Panels reopen after closing | Auto-open logic overrides user close intent | High |
+| 5 | Slowness for short prompts | Visual-First Mandate forces heavy processing for greetings | High |
 
 ---
 
-## Phase 4: Integration Completions
+## Issue 1: Auto-Scroll Not Working
 
-### D1: Keyword Variation Detection
-**File:** `src/services/contentComplianceService.ts` (lines 205-209)
-
-**Current State:**
+### Problem
+The current code uses:
 ```typescript
-keywordVariations: {
-  variationPercentage: 0, // TODO: Implement variation detection
-  target: 30,
-  compliant: true
+messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+```
+
+However, Radix `ScrollArea` creates a **virtual viewport** container. The `scrollIntoView` method tries to scroll the window, not the actual scrollable viewport inside the component.
+
+### Solution
+Target the Radix viewport directly and scroll it programmatically:
+
+**File:** `src/components/ai-chat/EnhancedChatInterface.tsx`
+
+**Changes:**
+1. Create a callback function `scrollToBottom` that queries for `[data-radix-scroll-area-viewport]`
+2. Use `viewport.scrollTo({ top: scrollHeight, behavior: 'smooth' })`
+3. Wrap in `requestAnimationFrame` to ensure DOM updates complete first
+4. Call this function in the `useEffect` that watches `messages` and `isTyping`
+
+---
+
+## Issue 2: Empty Data Visualization Panel
+
+### Problem
+Chart data comes from `chartConfig.data`:
+```typescript
+const chartData = useMemo(() => {
+  if (!chartConfig?.data) return [];
+  return chartConfig.data;
+}, [chartConfig]);
+```
+
+When the AI provides textual metrics but `chartConfig.data` is empty/missing, the chart shows "No data available" despite the conversation having useful information.
+
+### Solution
+Implement a **data fallback chain** with multiple data sources:
+
+**File:** `src/components/ai-chat/VisualizationSidebar.tsx`
+
+**Changes:**
+1. Expand `chartData` memo to check multiple sources:
+   - `chartConfig?.data` (primary)
+   - `visualData?.data` (fallback 1)
+   - `visualData?.tableData` (fallback 2)
+   - Generate from `metricCards` if available (fallback 3)
+2. Show actionable empty state: "The AI didn't provide chart data. Try asking: 'Show me a chart of...'"
+3. Log warnings when falling back (for debugging)
+
+---
+
+## Issue 3: Rating Controls Not Responsive
+
+### Problem
+Current implementation only logs to console:
+```typescript
+onFeedback={(helpful) => console.log('Feedback:', helpful)}
+```
+
+No visual confirmation, no state change, no persistence.
+
+### Solution
+Implement full feedback flow with visual confirmation:
+
+**File 1:** `src/components/ai-chat/AISummaryCard.tsx`
+
+**Changes:**
+1. Add internal state: `feedbackSubmitted: boolean | null` (null = not submitted, true = helpful, false = not useful)
+2. After click: Update state, show "Thanks!" with checkmark
+3. Disable both buttons after submission
+4. Add subtle pulse animation on click
+
+**File 2:** `src/components/ai-chat/VisualizationSidebar.tsx`
+
+**Changes:**
+1. Replace console.log with real handler that:
+   - Shows toast confirmation
+   - Persists to `ai_message_reactions` table (existing)
+   - Updates local state
+
+---
+
+## Issue 4: Panels Reopen After Closing
+
+### Problem
+The auto-open `useEffect` runs on every `messages` change:
+```typescript
+useEffect(() => {
+  // ...scans all messages for visualData
+  if (latestVisualization?.visualData) {
+    setShowVisualizationSidebar(true); // Forces open!
+  }
+}, [messages, sidebarInteracted]);
+```
+
+The `sidebarInteracted` flag is only set when user **opens** the sidebar, not when they **close** it. So the next message triggers auto-open again.
+
+### Solution
+Track explicit close intent separately:
+
+**File:** `src/components/ai-chat/EnhancedChatInterface.tsx`
+
+**Changes:**
+1. Add new state: `userClosedSidebar` (boolean)
+2. Set `true` when user clicks X to close
+3. Set `false` when:
+   - User manually re-opens sidebar
+   - User starts a NEW conversation
+   - User explicitly requests visualization ("show me a chart...")
+4. Update auto-open logic to respect this flag:
+   ```typescript
+   if (userClosedSidebar) return; // Don't auto-open
+   ```
+
+---
+
+## Issue 5: Slowness for Short Prompts
+
+### Problem
+The "Visual-First Mandate" in the AI prompt forces dashboard generation for ALL queries including simple greetings. The query analyzer also defaults ALL queries to fetch context:
+
+```typescript
+if (categories.length === 0) {
+  categories.push('content', 'solutions', 'proposals'); // Always fetch data
 }
 ```
 
-**Implementation:**
-- Build a stemming-based variation detector
-- Identify keyword synonyms and plurals in content
-- Calculate percentage of content using variations vs exact matches
+### Solution
+Implement **conversational fast-path** detection:
 
-**Technical Approach:**
-```text
-┌─────────────────────────────────────────┐
-│        Keyword Variation Detector       │
-├─────────────────────────────────────────┤
-│  1. Normalize main keyword              │
-│  2. Generate variations:                │
-│     - Plural/singular forms             │
-│     - Common synonyms                   │
-│     - Word order variants               │
-│  3. Count occurrences in content        │
-│  4. Calculate variation ratio           │
-└─────────────────────────────────────────┘
-```
+**File 1:** `supabase/functions/enhanced-ai-chat/query-analyzer.ts`
 
----
+**Changes:**
+1. Add `'conversational'` as a new scope type
+2. Add explicit detection for simple queries:
+   - Greetings: "hello", "hi", "hey", "test"
+   - Acknowledgments: "thanks", "ok", "got it"
+   - Single words without action verbs
+3. For conversational scope:
+   - Skip data fetching (`categories = []`)
+   - Set `requiresVisualData = false`
+   - Use minimal token budget
 
-### D2: Feature-Pain Mapping Detection
-**File:** `src/services/contentComplianceService.ts` (line 406)
+**File 2:** `supabase/functions/enhanced-ai-chat/index.ts`
 
-**Current State:**
-```typescript
-featurePainMapping: { triads: 0, target: 3, compliant: true }, // TODO: Implement
-```
-
-**Implementation:**
-- Build pattern matcher for feature-benefit-pain associations
-- Detect triads like: "Problem → Feature → Solution"
-- Count meaningful feature-to-pain mappings
-
----
-
-### D3: Quick Notification Actions - Missing Handlers
-**File:** `src/components/notifications/QuickNotificationActions.tsx` (lines 105-108)
-
-**Current State:**
-```typescript
-default:
-  console.log('Action not implemented:', action.action);
-  toast.info(`${action.label} action triggered`);
-```
-
-**Implementation:**
-Add handlers for missing action types:
-- `archive` - Archive notification/content
-- `edit` - Navigate to editor
-- `view` - Open content viewer
-- `retry` - Retry failed operation
-
----
-
-### D4: Smart Suggestions Artificial Delay
-**File:** `src/hooks/useSmartSuggestions.ts` (lines 119-127)
-
-**Current State:**
-```typescript
-const timer = setTimeout(() => {
-  setSuggestions(generateSuggestions);
-  setIsGenerating(false);
-}, 500); // Artificial delay
-```
-
-**Implementation:**
-- Remove 500ms delay since suggestions are generated locally
-- Use requestAnimationFrame or reduce to 50ms for UX polish
-
----
-
-### D5: Scheduled Opportunity Scan Mock SERP Fallback
-**File:** `supabase/functions/scheduled-opportunity-scan/index.ts` (lines 580-608)
-
-**Current State:**
-The `generateMockSerpData()` function provides fake SERP data when API fails.
-
-**Implementation:**
-- Remove mock fallback entirely
-- Return graceful error when SERP API unavailable
-- Skip keyword and log for retry on next scan cycle
-
----
-
-## Phase 5: Stub Functions
-
-### E5: Mobile Actions Sheet Handlers
-**File:** `src/components/ai-chat/MobileActionsSheet.tsx`
-
-**Current State:**
-```typescript
-{ icon: Image, label: 'Image', onClick: onImage },
-{ icon: FileText, label: 'Document', onClick: onDocument },
-```
-Props passed but parent doesn't provide handlers.
-
-**Implementation:**
-Wire up in `ContextAwareMessageInput.tsx`:
-- `onImage` - Open image picker, upload to Supabase Storage
-- `onDocument` - Open document picker, use existing FileUploadHandler
-
----
-
-### E6: Typing Indicator Broadcast
-**Files:** 
-- `src/components/ai-chat/ContextAwareMessageInput.tsx`
-- `src/components/ai-chat/RealTimeCollaboration.tsx`
-
-**Current State:**
-`broadcastTyping()` exists but is never called from the input component.
-
-**Implementation:**
-- Pass `broadcastTyping` from RealTimeCollaboration to MessageInput
-- Call `broadcastTyping(true)` on input change (debounced)
-- Call `broadcastTyping(false)` on blur or after 3 seconds idle
-
----
-
-## Phase 6: UX Improvements
-
-### F1: Message Search Within Conversation
-**Files:**
-- `src/components/ai-chat/MessageSearchBar.tsx` (exists but needs integration)
-- `src/components/ai-chat/EnhancedChatInterface.tsx`
-
-**Implementation:**
-- Add search bar above message list
-- Filter messages by content match
-- Highlight matching text in results
-
----
-
-### F2: Message Editing
-**New File:** `src/components/ai-chat/MessageActions.tsx`
-
-**Implementation:**
-- Allow users to edit their own messages within 5-minute window
-- Store edit history in message metadata
-- Show "edited" indicator on modified messages
-
----
-
-### F3: Message Delete
-**File:** `src/components/ai-chat/MessageActions.tsx`
-
-**Implementation:**
-- Add delete option in message context menu
-- Soft delete with confirmation dialog
-- Update UI immediately with optimistic removal
-
----
-
-### F4: Typing Indicator Broadcast (Full Implementation)
-**Files:**
-- `src/components/ai-chat/ContextAwareMessageInput.tsx`
-- `src/hooks/useRealtimePresence.ts`
-
-**Implementation:**
-- Create debounced typing broadcaster
-- Integrate with existing `setTyping()` from useRealtimePresence
-- Show typing indicators in message list footer
+**Changes:**
+1. Add fast-path early return for conversational queries
+2. Use lightweight response without context fetching
+3. Skip chart generation for conversational queries
 
 ---
 
 ## Implementation Order
 
-| Step | Issue | File(s) | Effort |
-|------|-------|---------|--------|
-| 1 | D4 | useSmartSuggestions.ts | 10 min |
-| 2 | D3 | QuickNotificationActions.tsx | 30 min |
-| 3 | D1 | contentComplianceService.ts | 45 min |
-| 4 | D2 | contentComplianceService.ts | 45 min |
-| 5 | D5 | scheduled-opportunity-scan/index.ts | 30 min |
-| 6 | E5 | ContextAwareMessageInput.tsx | 30 min |
-| 7 | E6/F4 | ContextAwareMessageInput.tsx + hooks | 45 min |
-| 8 | F1 | EnhancedChatInterface.tsx | 1 hour |
-| 9 | F2-F3 | MessageActions.tsx (new) | 1.5 hours |
+| Step | Issue | Files | Effort |
+|------|-------|-------|--------|
+| 1 | Auto-scroll fix | EnhancedChatInterface.tsx | 20 min |
+| 2 | Panel close persistence | EnhancedChatInterface.tsx | 20 min |
+| 3 | Fast-path for short prompts | query-analyzer.ts, enhanced-ai-chat/index.ts | 45 min |
+| 4 | Rating controls feedback | AISummaryCard.tsx, VisualizationSidebar.tsx | 30 min |
+| 5 | Visualization data fallback | VisualizationSidebar.tsx | 30 min |
 
-**Total Estimated: ~6 hours**
-
----
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/components/ai-chat/MessageActions.tsx` | Edit/delete message functionality |
-| `src/components/ai-chat/MessageEditDialog.tsx` | Modal for editing messages |
+**Total: ~2.5 hours**
 
 ---
 
@@ -221,19 +186,17 @@ Wire up in `ContextAwareMessageInput.tsx`:
 
 | File | Changes |
 |------|---------|
-| `src/services/contentComplianceService.ts` | Keyword variations + feature-pain mapping |
-| `src/components/notifications/QuickNotificationActions.tsx` | Complete action handlers |
-| `src/hooks/useSmartSuggestions.ts` | Remove artificial delay |
-| `supabase/functions/scheduled-opportunity-scan/index.ts` | Remove mock SERP fallback |
-| `src/components/ai-chat/ContextAwareMessageInput.tsx` | Typing broadcast + image/doc handlers |
-| `src/components/ai-chat/EnhancedChatInterface.tsx` | Message search integration |
-| `src/components/ai-chat/EnhancedMessageBubble.tsx` | Add edit/delete actions |
+| `src/components/ai-chat/EnhancedChatInterface.tsx` | Auto-scroll fix, sidebar close tracking |
+| `src/components/ai-chat/VisualizationSidebar.tsx` | Data fallback chain, feedback handler |
+| `src/components/ai-chat/AISummaryCard.tsx` | Visual feedback state |
+| `supabase/functions/enhanced-ai-chat/query-analyzer.ts` | Conversational scope detection |
+| `supabase/functions/enhanced-ai-chat/index.ts` | Fast-path response |
 
 ---
 
 ## Edge Functions to Deploy
 
-- `scheduled-opportunity-scan` - After removing mock SERP fallback
+- `enhanced-ai-chat` - After query analyzer and prompt updates
 
 ---
 
@@ -241,13 +204,10 @@ Wire up in `ContextAwareMessageInput.tsx`:
 
 After implementation, verify:
 
-- [ ] Keyword variations calculated (not always 0%)
-- [ ] Feature-pain triads detected in content
-- [ ] All notification actions execute properly
-- [ ] Smart suggestions appear without noticeable delay
-- [ ] Scheduled scan gracefully handles missing SERP data
-- [ ] Mobile image/document upload works
-- [ ] Typing indicators broadcast to collaborators
-- [ ] Message search finds and highlights matches
-- [ ] Users can edit their recent messages
-- [ ] Users can delete their messages with confirmation
+- [ ] Sending a message auto-scrolls to the new AI response
+- [ ] Empty charts show actionable fallback message with prompt suggestion
+- [ ] Rating buttons show visual confirmation and disable after click
+- [ ] Closing visualization sidebar stays closed after new messages
+- [ ] "Test" and "Hello" get fast responses without dashboard generation
+- [ ] Complex queries still receive full visual treatment
+- [ ] Starting a new conversation resets sidebar close preference
