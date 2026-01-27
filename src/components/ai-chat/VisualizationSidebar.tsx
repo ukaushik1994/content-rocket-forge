@@ -1252,13 +1252,6 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                 </div>
               </ScrollArea>
 
-              {/* Footer */}
-              <div className="flex-shrink-0 px-6 py-4 border-t border-border/50">
-                <ExportDropdown
-                  data={chartData}
-                  onShare={() => navigator.clipboard.writeText(window.location.href)}
-                />
-              </div>
             </motion.div>
           </>
         </TooltipProvider>
