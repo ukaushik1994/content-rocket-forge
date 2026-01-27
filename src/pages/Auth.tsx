@@ -7,13 +7,16 @@ import { ArrowLeft } from 'lucide-react';
 import { AnimatedBackground } from '@/components/auth/AnimatedBackground';
 import { RocketLogo } from '@/components/auth/RocketLogo';
 import { EnhancedAuthForm } from '@/components/auth/EnhancedAuthForm';
+
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const {
     signIn,
-    signUp
+    signUp,
+    signInWithGoogle
   } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -59,6 +62,16 @@ const Auth = () => {
       handleSignUp();
     }
   };
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    if (error) {
+      toast.error(error.message);
+      setIsGoogleLoading(false);
+    }
+    // Note: Page will redirect to Google, no need to reset loading on success
+  };
+
   const toggleMode = () => {
     const newMode = isSignIn ? 'signup' : 'signin';
     navigate(`/auth?mode=${newMode}`);
@@ -66,6 +79,7 @@ const Auth = () => {
     setEmail('');
     setPassword('');
   };
+
   return <div className="min-h-screen relative flex items-center justify-center p-4">
       <AnimatedBackground />
       
@@ -89,7 +103,7 @@ const Auth = () => {
       }}>
           <RocketLogo />
           
-          <EnhancedAuthForm isSignIn={isSignIn} email={email} password={password} isLoading={isLoading} onEmailChange={setEmail} onPasswordChange={setPassword} onSubmit={handleSubmit} onToggleMode={toggleMode} />
+          <EnhancedAuthForm isSignIn={isSignIn} email={email} password={password} isLoading={isLoading} isGoogleLoading={isGoogleLoading} onEmailChange={setEmail} onPasswordChange={setPassword} onSubmit={handleSubmit} onToggleMode={toggleMode} onGoogleSignIn={handleGoogleSignIn} />
         </motion.div>
 
         {/* Bottom decoration */}
