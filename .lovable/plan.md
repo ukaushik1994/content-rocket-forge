@@ -1,94 +1,112 @@
 
-# Fix Onboarding Carousel Issues
+# Fix Modal Height Consistency
 
-## Problems Identified
+## Problem Analysis
 
-### 1. Content Suite Illustration Overflow
-The current illustration has:
-- 3 panels × 160px (w-40) = 480px
-- 2 arrows × 32px (w-8) = 64px  
-- Gap of 24px (gap-6) = ~48px total
-- Total: ~592px in a container that may be smaller
+The onboarding modal changes height as users navigate between steps because:
 
-**Fix**: Scale down the panels and reduce spacing to fit properly within the illustration container.
+1. **Illustrations have varying heights**: Each illustration (Welcome, Analytics, AI Chat, etc.) has different amounts of content - some are compact, others are tall
+2. **Content side varies too**: Different step descriptions and benefits take different vertical space
+3. **No fixed container height**: The current layout uses `min-h-[380px]` which allows content to push the modal taller
+4. **Buttons shift position**: Footer controls move up/down as the content area expands/contracts
 
-### 2. Moving Background Animations (Remove)
-The `ParticleField` component has:
-- Animated gradient orbs (moving, scaling)
-- Floating particles (y movement, fading)
-- Star particles (pulsing)
+## The Solution
 
-**Fix**: Remove the `ParticleField` from the carousel entirely.
-
-### 3. Modal Needs More Glassmorphism
-Current state has `bg-slate-950/95` which is nearly opaque.
-
-**Fix**: Enhance glassmorphism with:
-- Stronger backdrop-blur
-- More translucent backgrounds (bg-slate-900/60 or similar)
-- Subtle border glow
-- Keep the gradient border but make inner content more glass-like
-
----
-
-## Implementation Plan
-
-### File 1: `ContentSuiteIllustration.tsx`
-**Changes**:
-- Reduce panel width from `w-40` to `w-32` (128px each)
-- Reduce panel height from `h-56` to `h-48`
-- Reduce gap from `gap-6` to `gap-4`
-- Make arrows smaller `w-6 h-6` instead of `w-8 h-8`
-- Add `scale-90` wrapper or similar to ensure fit
-- Ensure no overflow clipping
-
-### File 2: `OnboardingCarousel.tsx`
-**Changes**:
-- Remove `<ParticleField count={30} className="z-[1]" />` line entirely
-- Update content area background to be more glassmorphic
-
-### File 3: `GradientBorder.tsx`
-**Changes**:
-- Update inner container from `bg-slate-950/95` to `bg-slate-900/70 backdrop-blur-2xl`
-- Add subtle inner border for glass effect
-- Keep gradient border animation but reduce opacity slightly
-
-### File 4: `OnboardingStep.tsx`
-**Changes**:
-- Update illustration container background to be more translucent
-- Enhance glass effect on the illustration frame
-
----
-
-## Visual Result
+Create a **fixed-height modal** with proper internal layout:
 
 ```
-Before:
-┌─────────────────────────────────────┐
-│ Nearly opaque dark modal            │
-│ Floating particles in background    │
-│ Panels clipped/overflowing          │
-└─────────────────────────────────────┘
-
-After:
-┌─────────────────────────────────────┐
-│ Semi-translucent glass modal        │
-│ Static subtle background            │
-│ Properly sized panels that fit      │
-└─────────────────────────────────────┘
+┌────────────────────────────────────────────┐
+│  Header (fixed height ~70px)               │
+├────────────────────────────────────────────┤
+│                                            │
+│  Content Area (FIXED HEIGHT)               │
+│  ┌──────────────┬──────────────────────┐   │
+│  │ Illustration │ Text Content         │   │
+│  │ (centered    │ (scrollable if       │   │
+│  │  in fixed    │  content overflows)  │   │
+│  │  container)  │                      │   │
+│  └──────────────┴──────────────────────┘   │
+│                                            │
+├────────────────────────────────────────────┤
+│  Footer Controls (fixed height ~90px)      │
+│  [Progress] [Prev] [Dots] [Next] [Skip]    │
+└────────────────────────────────────────────┘
 ```
 
-## Glassmorphism Specifications
+## Technical Changes
+
+### File 1: `OnboardingCarousel.tsx`
+
+**Changes:**
+- Set explicit fixed height on main container: `h-[680px]` (desktop) / responsive for mobile
+- Use flexbox with `flex-col` to create fixed header/footer with flexible middle
+- Remove `max-h-[calc(90vh-180px)]` from content area, replace with `flex-1 overflow-hidden`
+- Content area becomes a flex container that fills remaining space
+
+### File 2: `OnboardingStep.tsx`
+
+**Changes:**
+- Change illustration container from `min-h-[380px]` to `h-full` to fill available space
+- Add `overflow-hidden` to illustration container to prevent overflow
+- Make the right content column scrollable with `overflow-y-auto` if content exceeds space
+- Illustrations will be centered within their fixed-height container
+
+### Files 3-10: All Illustration Components
+
+**Changes:**
+- Add `max-h-full` to prevent illustrations from exceeding their container
+- Wrap content in a container with `scale-[0.9]` or similar to ensure fit
+- Use `overflow-hidden` on root container to clip any overflow
+- Keep animations but constrain them within boundaries
+
+**Illustrations to update:**
+- `WelcomeIllustration.tsx`
+- `ContentSuiteIllustration.tsx`
+- `ResearchIllustration.tsx`
+- `StrategyIllustration.tsx`
+- `CampaignIllustration.tsx`
+- `AnalyticsIllustration.tsx`
+- `AIChatIllustration.tsx`
+- `IntegrationsIllustration.tsx`
+
+## Layout Specifications
 
 ```css
-/* Container */
-background: rgba(15, 23, 42, 0.7)  /* slate-900 at 70% */
-backdrop-filter: blur(24px)
-border: 1px solid rgba(255, 255, 255, 0.08)
+/* Modal container */
+height: 680px (fixed)
+max-height: 90vh (safety for small screens)
 
-/* Inner areas */
-background: rgba(15, 23, 42, 0.5)
-backdrop-filter: blur(12px)
+/* Header */
+height: ~72px (flex-shrink-0)
+
+/* Footer */
+height: ~96px (flex-shrink-0)
+
+/* Content area */
+height: remaining space (~512px)
+display: flex
+overflow: hidden
+
+/* Illustration side */
+width: 50%
+height: 100%
+display: flex
+align-items: center
+justify-content: center
+overflow: hidden
+
+/* Text content side */
+width: 50%
+height: 100%
+overflow-y: auto (if needed)
+padding: appropriate
 ```
 
-This creates a premium frosted glass effect while maintaining readability.
+## Expected Result
+
+After these changes:
+- Modal will maintain **exactly the same height** on all 8 steps
+- Navigation buttons (Previous, Next, Skip) will **never shift position**
+- Illustrations will be **centered and scaled** to fit within their fixed container
+- Text content that's too long will scroll **within its column only**
+- Smooth user experience with predictable, stable layout
