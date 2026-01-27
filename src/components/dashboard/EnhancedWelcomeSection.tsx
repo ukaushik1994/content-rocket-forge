@@ -228,8 +228,6 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                         {currentModule.secondaryCta}
                       </Button>
                     )}
-                    
-                    <GrandTourTrigger variant="hero" size="lg" className="px-6 py-3 rounded-lg font-semibold" />
                   </motion.div>
                 </AnimatePresence>
               </div>
