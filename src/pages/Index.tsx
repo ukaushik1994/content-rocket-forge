@@ -3,40 +3,34 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import { EnhancedWelcomeSection } from '@/components/dashboard/EnhancedWelcomeSection';
 import { QuickActions } from '@/components/dashboard/QuickActions';
-import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
-import { GrandTourProvider, useGrandTour } from '@/contexts/GrandTourContext';
-import { GrandAppTour } from '@/components/tour/GrandAppTour';
-import { GrandTourTrigger } from '@/components/tour/GrandTourTrigger';
-import { useAuth } from '@/contexts/AuthContext';
+import { OnboardingProvider, useOnboarding } from '@/components/onboarding/OnboardingContext';
+import { OnboardingCarousel } from '@/components/onboarding/OnboardingCarousel';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
 import { DashboardFooter } from '@/components/layout/DashboardFooter';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 
-// Inner component that uses the GrandTour context
+// Inner component that uses the Onboarding context
 const DashboardContent = ({ isLoaded }: { isLoaded: boolean }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { startTour, hasCompletedTour } = useGrandTour();
+  const { startOnboarding, hasCompletedOnboarding } = useOnboarding();
 
   // Auto-trigger tour for new users
   useEffect(() => {
     const isWelcomeFlow = searchParams.get('welcome') === 'true';
     
-    if (isWelcomeFlow && !hasCompletedTour) {
+    if (isWelcomeFlow) {
       // Clear the query param
       searchParams.delete('welcome');
       setSearchParams(searchParams, { replace: true });
       
-      // Set flag to prevent re-triggering
-      localStorage.setItem('has-seen-onboarding', 'true');
-      
-      // Small delay to let dashboard render, then start tour
+      // Small delay to let dashboard render, then start onboarding
       setTimeout(() => {
-        startTour();
-      }, 800);
+        startOnboarding();
+      }, 500);
     }
-  }, [searchParams, hasCompletedTour, startTour, setSearchParams]);
+  }, [searchParams, startOnboarding, setSearchParams]);
 
   // Enhanced animation variants
   const containerVariants = {
@@ -161,8 +155,8 @@ const DashboardContent = ({ isLoaded }: { isLoaded: boolean }) => {
         </Container>
       </main>
       
-      {/* Grand Tour Components */}
-      <GrandAppTour />
+      {/* Onboarding Carousel */}
+      <OnboardingCarousel />
       
       {/* Dashboard Footer */}
       <DashboardFooter />
@@ -180,9 +174,9 @@ const Index = () => {
 
   return (
     <ContentStrategyProvider>
-      <GrandTourProvider>
+      <OnboardingProvider>
         <DashboardContent isLoaded={isLoaded} />
-      </GrandTourProvider>
+      </OnboardingProvider>
     </ContentStrategyProvider>
   );
 };

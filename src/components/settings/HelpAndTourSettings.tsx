@@ -1,36 +1,23 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
 import { 
   Compass, 
   PlayCircle, 
-  Trophy, 
   BookOpen, 
   Keyboard, 
   HelpCircle,
   CheckCircle,
   Sparkles,
-  ExternalLink
 } from 'lucide-react';
-
-// Default achievements for when GrandTourProvider is not available
-const defaultAchievements = [
-  { id: 'explorer', name: 'Content Explorer', icon: '🚀', unlocked: false },
-  { id: 'strategist', name: 'Content Strategist', icon: '🎯', unlocked: false },
-  { id: 'researcher', name: 'SEO Researcher', icon: '🔍', unlocked: false },
-  { id: 'analyst', name: 'Performance Analyst', icon: '📊', unlocked: false },
-  { id: 'ai-master', name: 'AI Master', icon: '🤖', unlocked: false },
-];
 
 export const HelpAndTourSettings = () => {
   const navigate = useNavigate();
   const { closeSettings } = useSettings();
 
-  // Get achievements from localStorage since GrandTourProvider may not be available here
-  const savedAchievements = localStorage.getItem('tour-achievements');
-  const achievements = savedAchievements ? JSON.parse(savedAchievements) : defaultAchievements;
-  const hasCompletedTour = localStorage.getItem('grand-tour-completed') === 'true';
+  // Check if tour has been completed
+  const hasCompletedTour = localStorage.getItem('creAiter-onboarding-completed') === 'true';
 
   const handleStartTour = () => {
     closeSettings();
@@ -39,8 +26,6 @@ export const HelpAndTourSettings = () => {
       navigate('/dashboard?welcome=true');
     }, 300);
   };
-
-  const unlockedCount = achievements.filter((a: any) => a.unlocked).length;
 
   const quickLinks = [
     {
@@ -85,7 +70,7 @@ export const HelpAndTourSettings = () => {
           <div className="flex-1">
             <h3 className="font-semibold text-lg">Interactive App Tour</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Experience a complete walkthrough of all 14 modules and features. 
+              Experience a visual walkthrough of all 8 major sections with animated demonstrations. 
               Perfect for learning what CreAiter can do for you.
             </p>
             <div className="flex items-center gap-3 mt-4">
@@ -102,39 +87,6 @@ export const HelpAndTourSettings = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Achievements Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-yellow-500" />
-            Tour Achievements
-          </h3>
-          <span className="text-sm text-muted-foreground">
-            {unlockedCount} / {achievements.length} unlocked
-          </span>
-        </div>
-        <div className="grid grid-cols-5 gap-3">
-          {achievements.map((achievement: any) => (
-            <div
-              key={achievement.id}
-              className={`p-3 rounded-lg text-center transition-all ${
-                achievement.unlocked
-                  ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border border-yellow-500/30'
-                  : 'bg-muted/50 border border-border opacity-50'
-              }`}
-            >
-              <div className="text-2xl mb-1">{achievement.icon}</div>
-              <div className="text-xs font-medium truncate">
-                {achievement.name}
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Complete the tour to unlock achievements and track your progress
-        </p>
       </div>
 
       {/* Quick Links Section */}
