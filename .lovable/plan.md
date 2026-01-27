@@ -1,112 +1,102 @@
 
-# Fix Modal Height Consistency
 
-## Problem Analysis
+# Fix Onboarding Modal Content Clipping
 
-The onboarding modal changes height as users navigate between steps because:
+## Problem Summary
 
-1. **Illustrations have varying heights**: Each illustration (Welcome, Analytics, AI Chat, etc.) has different amounts of content - some are compact, others are tall
-2. **Content side varies too**: Different step descriptions and benefits take different vertical space
-3. **No fixed container height**: The current layout uses `min-h-[380px]` which allows content to push the modal taller
-4. **Buttons shift position**: Footer controls move up/down as the content area expands/contracts
+The fixed-height modal (`h-[680px]`) combined with `overflow-hidden` is causing the CTA button and bottom content to be cropped. The content needs to adapt to the available space using flexible distribution.
 
-## The Solution
+## Solution Strategy
 
-Create a **fixed-height modal** with proper internal layout:
+Instead of fighting the fixed height, we'll:
+1. **Remove the icon badge** at the top of the right column (saves ~70px vertical space)
+2. **Use `justify-between` flex layout** on the content column so elements distribute evenly
+3. **Group content logically** - Top group (subtitle, title, description, benefits) and bottom group (Pro Tip + CTA)
+4. **Add auto-growing spacer** between the main content and footer elements
+5. **Ensure `max-h-[90vh]`** takes priority and content adapts
+
+## Layout Structure (After Fix)
 
 ```
-┌────────────────────────────────────────────┐
-│  Header (fixed height ~70px)               │
-├────────────────────────────────────────────┤
-│                                            │
-│  Content Area (FIXED HEIGHT)               │
-│  ┌──────────────┬──────────────────────┐   │
-│  │ Illustration │ Text Content         │   │
-│  │ (centered    │ (scrollable if       │   │
-│  │  in fixed    │  content overflows)  │   │
-│  │  container)  │                      │   │
-│  └──────────────┴──────────────────────┘   │
-│                                            │
-├────────────────────────────────────────────┤
-│  Footer Controls (fixed height ~90px)      │
-│  [Progress] [Prev] [Dots] [Next] [Skip]    │
-└────────────────────────────────────────────┘
+Right Content Column (flex flex-col justify-between h-full)
+┌─────────────────────────────────────┐
+│  Subtitle (uppercase label)         │  ← Top Group
+│  Title (main heading)               │
+│  Description (paragraph)            │
+│  Benefits (2x2 grid)                │
+├─────────────────────────────────────┤
+│          [flexible space]           │  ← Grows to fill gap
+├─────────────────────────────────────┤
+│  Pro Tip box                        │  ← Bottom Group
+│  CTA Button                         │
+└─────────────────────────────────────┘
 ```
 
 ## Technical Changes
 
-### File 1: `OnboardingCarousel.tsx`
+### File 1: `OnboardingStep.tsx`
 
-**Changes:**
-- Set explicit fixed height on main container: `h-[680px]` (desktop) / responsive for mobile
-- Use flexbox with `flex-col` to create fixed header/footer with flexible middle
-- Remove `max-h-[calc(90vh-180px)]` from content area, replace with `flex-1 overflow-hidden`
-- Content area becomes a flex container that fills remaining space
+**Remove Icon Badge Section:**
+- Delete lines 92-118 (the `motion.div` containing the icon badge with glow)
+- This saves significant vertical space
 
-### File 2: `OnboardingStep.tsx`
+**Restructure Content Layout:**
+- Change `space-y-5` to `flex flex-col h-full`
+- Wrap subtitle, title, description, and benefits in a `<div>` (top content group)
+- Wrap Pro Tip and CTA button in a `<div className="mt-auto">` (pushes to bottom)
+- Add `space-y-4` within each group for consistent internal spacing
 
-**Changes:**
-- Change illustration container from `min-h-[380px]` to `h-full` to fill available space
-- Add `overflow-hidden` to illustration container to prevent overflow
-- Make the right content column scrollable with `overflow-y-auto` if content exceeds space
-- Illustrations will be centered within their fixed-height container
-
-### Files 3-10: All Illustration Components
-
-**Changes:**
-- Add `max-h-full` to prevent illustrations from exceeding their container
-- Wrap content in a container with `scale-[0.9]` or similar to ensure fit
-- Use `overflow-hidden` on root container to clip any overflow
-- Keep animations but constrain them within boundaries
-
-**Illustrations to update:**
-- `WelcomeIllustration.tsx`
-- `ContentSuiteIllustration.tsx`
-- `ResearchIllustration.tsx`
-- `StrategyIllustration.tsx`
-- `CampaignIllustration.tsx`
-- `AnalyticsIllustration.tsx`
-- `AIChatIllustration.tsx`
-- `IntegrationsIllustration.tsx`
-
-## Layout Specifications
-
-```css
-/* Modal container */
-height: 680px (fixed)
-max-height: 90vh (safety for small screens)
-
-/* Header */
-height: ~72px (flex-shrink-0)
-
-/* Footer */
-height: ~96px (flex-shrink-0)
-
-/* Content area */
-height: remaining space (~512px)
-display: flex
-overflow: hidden
-
-/* Illustration side */
-width: 50%
-height: 100%
-display: flex
-align-items: center
-justify-content: center
-overflow: hidden
-
-/* Text content side */
-width: 50%
-height: 100%
-overflow-y: auto (if needed)
-padding: appropriate
+**Updated structure:**
+```jsx
+<motion.div className="flex flex-col h-full py-2">
+  {/* Top content group */}
+  <div className="space-y-4">
+    {/* Subtitle */}
+    {/* Title */}
+    {/* Description */}
+    {/* Benefits grid */}
+  </div>
+  
+  {/* Bottom content group - pushed to bottom */}
+  <div className="mt-auto space-y-4 pt-4">
+    {/* Pro Tip */}
+    {/* CTA Button */}
+  </div>
+</motion.div>
 ```
+
+### File 2: `OnboardingCarousel.tsx`
+
+**Adjust Content Area:**
+- Keep `flex-1 overflow-hidden` on content wrapper
+- Remove `overflow-y-auto` from content column (not needed if layout is proper)
+- Ensure the content wrapper passes `h-full` down properly
 
 ## Expected Result
 
 After these changes:
-- Modal will maintain **exactly the same height** on all 8 steps
-- Navigation buttons (Previous, Next, Skip) will **never shift position**
-- Illustrations will be **centered and scaled** to fit within their fixed container
-- Text content that's too long will scroll **within its column only**
-- Smooth user experience with predictable, stable layout
+- Modal maintains consistent fixed height
+- **No content clipping** - everything fits within the container
+- Pro Tip and CTA button are **always visible at the bottom**
+- Extra space is distributed **between the main content and footer elements**
+- Navigation buttons remain **stable in position**
+- Cleaner look without the redundant icon at the top (icon is already in the footer/header)
+
+## Visual Before/After
+
+```
+BEFORE (clipped):                 AFTER (properly distributed):
+┌─────────────────────┐           ┌─────────────────────┐
+│ [Icon Badge]        │           │ CONTENT SUITE       │
+│ CONTENT SUITE       │           │ Content Creation... │
+│ Content Creation... │           │ Build content...    │
+│ Build content...    │           │ ✓ Feature  ✓ Feat   │
+│ ✓ Feature  ✓ Feat   │           │ ✓ Feature  ✓ Feat   │
+│ ✓ Feature  ✓ Feat   │           │                     │
+│ 💡 Pro Tip          │           │ [grows to fill]     │
+│ Hover to pause...   │           │                     │
+│ ▬▬▬ CROPPED ▬▬▬     │           │ 💡 Pro Tip          │
+└─────────────────────┘           │ [Try Content Build] │
+                                  └─────────────────────┘
+```
+
