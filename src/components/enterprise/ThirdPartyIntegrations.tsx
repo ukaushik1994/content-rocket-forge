@@ -22,6 +22,8 @@ import {
   Trash2
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Integration {
   id: string;
@@ -106,6 +108,7 @@ const AVAILABLE_INTEGRATIONS: Integration[] = [
 ];
 
 export const ThirdPartyIntegrations: React.FC = () => {
+  const { user } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>(AVAILABLE_INTEGRATIONS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -217,7 +220,35 @@ export const ThirdPartyIntegrations: React.FC = () => {
     }
 
     try {
-      const response = await fetch(webhookUrl, {
+      // Fetch most recent content item for realistic webhook test
+      let testData: any = {
+        note: 'No content available - create content first for realistic tests',
+        content_type: 'test',
+        title: 'Webhook Test',
+        word_count: 0,
+        seo_score: 0
+      };
+      
+      if (user?.id) {
+        const { data: recentContent } = await supabase
+          .from('content_items')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (recentContent) {
+          testData = {
+            content_type: recentContent.content_type || 'blog_post',
+            title: recentContent.title,
+            word_count: recentContent.content?.split(/\s+/).length || 0,
+            seo_score: recentContent.seo_score || 0
+          };
+        }
+      }
+      
+      await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -227,12 +258,7 @@ export const ThirdPartyIntegrations: React.FC = () => {
           timestamp: new Date().toISOString(),
           triggered_from: window.location.origin,
           event_type: 'ai_content_generated',
-          data: {
-            content_type: 'blog_post',
-            title: 'Sample AI Generated Content',
-            word_count: 1200,
-            seo_score: 85
-          }
+          data: testData
         }),
       });
 

@@ -169,29 +169,56 @@ export const SeoRecommendations: React.FC<SeoRecommendationsProps> = ({ content 
 // Helper functions for SEO analysis
 
 function calculateSeoScore(content: ContentItemType): number {
-  // Dummy calculation, would be more sophisticated in a real app
-  let score = 50;
+  let score = 0;
   
-  // Add points for having content
-  if (content.content && content.content.length > 0) {
+  const wordCount = getWordCount(content.content);
+  const hasContent = content.content && content.content.length > 0;
+  const hasKeywords = content.keywords && content.keywords.length > 0;
+  const hasTitle = content.title && content.title.length > 0;
+  const hasMetaDescription = content.meta_description && content.meta_description.length > 0;
+  
+  // Content presence and length (max 30 points)
+  if (hasContent) {
     score += 10;
-    
-    // Add points for longer content
-    const wordCount = getWordCount(content.content);
     if (wordCount > 300) score += 5;
     if (wordCount > 600) score += 5;
     if (wordCount > 1000) score += 5;
+    if (wordCount > 1500) score += 5;
   }
   
-  // Add points for having keywords
-  if (content.keywords && content.keywords.length > 0) {
+  // Title optimization (max 20 points)
+  if (hasTitle) {
+    score += 10;
+    const titleLength = content.title.length;
+    if (titleLength >= 30 && titleLength <= 60) score += 10;
+    else if (titleLength > 0 && titleLength < 30) score += 5;
+  }
+  
+  // Meta description (max 15 points)
+  if (hasMetaDescription) {
+    score += 8;
+    const descLength = content.meta_description?.length || 0;
+    if (descLength >= 120 && descLength <= 160) score += 7;
+    else if (descLength > 0) score += 3;
+  }
+  
+  // Keywords (max 20 points)
+  if (hasKeywords) {
     score += 10;
     if (content.keywords.length >= 3) score += 5;
+    if (content.keywords.length >= 5) score += 5;
   }
   
-  // Add points for having a title
-  if (content.title && content.title.length > 0) {
-    score += 10;
+  // Keyword density in content (max 15 points)
+  if (hasContent && hasKeywords) {
+    const primaryKeyword = content.keywords[0]?.toLowerCase() || '';
+    const contentLower = content.content.toLowerCase();
+    const keywordCount = (contentLower.match(new RegExp(primaryKeyword, 'gi')) || []).length;
+    const density = (keywordCount / wordCount) * 100;
+    
+    if (density >= 0.5 && density <= 2.5) score += 15; // Ideal density
+    else if (density > 0 && density < 0.5) score += 8; // Too low
+    else if (density > 2.5) score += 5; // Over-optimized
   }
   
   return Math.min(score, 100);

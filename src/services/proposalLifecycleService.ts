@@ -292,9 +292,25 @@ class ProposalLifecycleService {
   // Log lifecycle update
   private async logLifecycleUpdate(update: ProposalStatusUpdate): Promise<void> {
     try {
-      // For now, just log to console until types are updated
-      console.log('📝 Lifecycle update logged:', update);
-      // TODO: Implement database logging when types are available
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      await supabase
+        .from('proposal_lifecycle_logs' as any)
+        .insert({
+          proposal_id: update.proposalId,
+          from_status: update.pipelineStage || null,
+          to_status: update.status,
+          changed_by: user?.id || null,
+          reason: update.notes || null,
+          metadata: {
+            progress: update.progress,
+            calendarStatus: update.calendarStatus,
+            pipelineStage: update.pipelineStage,
+            updatedBy: update.updatedBy
+          }
+        });
+      
+      console.log('📝 Lifecycle update logged to database:', update);
     } catch (error) {
       console.error('Error logging lifecycle update:', error);
       // Don't throw - logging is supplementary

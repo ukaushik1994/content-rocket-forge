@@ -1113,13 +1113,60 @@ Focus on actionable SEO improvements and keyword opportunities.
   const data = aiProxyResult.data;
   const aiResponse = data?.choices?.[0]?.message?.content;
   
-  // Mock keyword data for chart visualization
+  // Query actual keyword data from user's SERP tracking history
+  const { data: keywordHistory } = await supabaseClient
+    .from('serp_tracking_history')
+    .select('keyword, search_volume, keyword_difficulty, competition_score')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  // Aggregate keyword data by type
+  const keywords = keywordHistory || [];
+  const primaryKws = keywords.filter(k => (k.keyword_difficulty || 0) > 40);
+  const longTailKws = keywords.filter(k => (k.keyword?.split(' ').length || 0) >= 4);
+  const brandKws = keywords.filter(k => (k.competition_score || 0) < 30);
+  const competitorKws = keywords.filter(k => (k.keyword_difficulty || 0) > 60);
+
+  const avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+
   const keywordData = [
-    { name: 'Primary Keywords', difficulty: 45, volume: 1200, opportunity: 85 },
-    { name: 'Long-tail Keywords', difficulty: 25, volume: 800, opportunity: 92 },
-    { name: 'Brand Keywords', difficulty: 15, volume: 400, opportunity: 95 },
-    { name: 'Competitor Keywords', difficulty: 65, volume: 2000, opportunity: 70 }
+    { 
+      name: 'Primary Keywords', 
+      count: primaryKws.length,
+      difficulty: Math.round(avg(primaryKws.map(k => k.keyword_difficulty || 0))),
+      volume: Math.round(avg(primaryKws.map(k => k.search_volume || 0))),
+      opportunity: Math.round(100 - avg(primaryKws.map(k => k.keyword_difficulty || 0)))
+    },
+    { 
+      name: 'Long-tail Keywords', 
+      count: longTailKws.length,
+      difficulty: Math.round(avg(longTailKws.map(k => k.keyword_difficulty || 0))),
+      volume: Math.round(avg(longTailKws.map(k => k.search_volume || 0))),
+      opportunity: Math.round(100 - avg(longTailKws.map(k => k.keyword_difficulty || 0)))
+    },
+    { 
+      name: 'Brand Keywords', 
+      count: brandKws.length,
+      difficulty: Math.round(avg(brandKws.map(k => k.keyword_difficulty || 0))),
+      volume: Math.round(avg(brandKws.map(k => k.search_volume || 0))),
+      opportunity: Math.round(100 - avg(brandKws.map(k => k.competition_score || 0)))
+    },
+    { 
+      name: 'Competitor Keywords', 
+      count: competitorKws.length,
+      difficulty: Math.round(avg(competitorKws.map(k => k.keyword_difficulty || 0))),
+      volume: Math.round(avg(competitorKws.map(k => k.search_volume || 0))),
+      opportunity: Math.round(100 - avg(competitorKws.map(k => k.keyword_difficulty || 0)))
+    }
   ];
+
+  // Chart data from actual keyword counts
+  const chartData = keywordData.length > 0 ? [
+    { name: 'High Volume', value: keywords.filter(k => (k.search_volume || 0) > 1000).length, category: 'Keywords' },
+    { name: 'Medium Volume', value: keywords.filter(k => (k.search_volume || 0) >= 100 && (k.search_volume || 0) <= 1000).length, category: 'Keywords' },
+    { name: 'Long-tail', value: longTailKws.length, category: 'Keywords' }
+  ] : [];
   
   return {
     workflowType: 'seo-keyword-researcher',
@@ -1128,11 +1175,7 @@ Focus on actionable SEO improvements and keyword opportunities.
       type: 'chart',
       chartConfig: {
         type: 'bar',
-        data: [
-          { name: 'High Volume', value: Math.floor(Math.random() * 20) + 10, category: 'Keywords' },
-          { name: 'Medium Volume', value: Math.floor(Math.random() * 30) + 20, category: 'Keywords' },
-          { name: 'Long-tail', value: Math.floor(Math.random() * 50) + 40, category: 'Keywords' }
-        ],
+        data: chartData,
         categories: ['Keywords'],
         colors: ['hsl(var(--primary))'],
         height: 250
@@ -1144,8 +1187,10 @@ Focus on actionable SEO improvements and keyword opportunities.
       { label: 'Research Competitors', action: 'research-competitors', type: 'secondary' },
       { label: 'Export Keywords', action: 'export-keywords', type: 'outline' }
     ],
-    confidence: 0.88,
-    reasoning: 'SEO analysis based on business solutions and current content performance',
-    sources: ['User Solutions', 'SEO Best Practices', 'Keyword Research Tools']
+    confidence: keywords.length > 0 ? 0.88 : 0.5,
+    reasoning: keywords.length > 0 
+      ? `SEO analysis based on ${keywords.length} tracked keywords and content performance`
+      : 'SEO analysis based on AI recommendations (no keyword history available)',
+    sources: ['User Keyword History', 'SEO Best Practices', 'SERP Analysis']
   };
 }

@@ -218,7 +218,7 @@ export class SerpPerformanceMonitoring {
   /**
    * Optimize services based on performance data
    */
-  private static optimizeServices(): void {
+  private static async optimizeServices(): Promise<void> {
     // Switch to better performing provider
     const providers = Array.from(this.apiProviders.values());
     if (providers.length > 1) {
@@ -227,9 +227,26 @@ export class SerpPerformanceMonitoring {
         current.averageLatency < best.averageLatency ? current : best
       );
       
-      // TODO: Implement provider switching logic
+      // Implement provider switching - update user preferences in database
       if (bestProvider.successRate > 95) {
-        console.log(`🔄 Optimized to use provider: ${bestProvider.provider}`);
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase
+              .from('user_preferences' as any)
+              .upsert({
+                user_id: user.id,
+                preference_key: 'preferred_serp_provider',
+                preference_value: bestProvider.provider,
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'user_id,preference_key'
+              });
+          }
+          console.log(`🔄 Switched to provider: ${bestProvider.provider} (${bestProvider.successRate.toFixed(1)}% success rate)`);
+        } catch (error) {
+          console.error('Failed to update provider preference:', error);
+        }
       }
     }
     

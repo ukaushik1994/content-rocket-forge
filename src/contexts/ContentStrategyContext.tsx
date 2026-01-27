@@ -110,15 +110,22 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       setTimeout(async () => {
         try {
           setLoadingCalendar(true);
-          const [calendarData, pipelineData, insightsData] = await Promise.all([
+          const [calendarData, pipelineData, insightsData, contentData] = await Promise.all([
             contentStrategyService.getCalendarItems(),
             contentStrategyService.getPipelineItems(),
-            contentStrategyService.getInsights()
+            contentStrategyService.getInsights(),
+            supabase
+              .from('content_items')
+              .select('id, title, status, updated_at')
+              .eq('user_id', user.id)
+              .in('status', ['draft', 'approved', 'published'])
+              .order('updated_at', { ascending: false })
+              .limit(50)
           ]);
 
           setCalendarItems(calendarData);
           setPipelineItems(pipelineData);
-          setContentItems([]); // TODO: Load from content service when available
+          setContentItems(contentData.data || []);
           setInsights(insightsData);
         } catch (error: any) {
           console.error('Error loading secondary data:', error);

@@ -209,23 +209,53 @@ export const SecurityCompliancePanel: React.FC = () => {
   };
 
   const exportUserData = async () => {
-    // Simulate GDPR data export
-    const userData = {
-      user: user?.email,
-      exportDate: new Date().toISOString(),
-      data: {
-        profile: { email: user?.email, created: '2024-01-01' },
-        content: ['Sample content item 1', 'Sample content item 2'],
-        analytics: { totalViews: 1500, totalEngagement: 250 }
-      }
-    };
+    if (!user?.id) {
+      alert('Please log in to export your data');
+      return;
+    }
+    
+    try {
+      // Fetch actual user data from database
+      const [contentResult, analyticsResult, profileResult] = await Promise.all([
+        supabase.from('content_items').select('*').eq('user_id', user.id).limit(100),
+        supabase.from('content_analytics').select('*').limit(50),
+        supabase.from('profiles').select('*').eq('id', user.id).single()
+      ]);
+      
+      // Calculate aggregate analytics
+      const analytics = analyticsResult.data || [];
+      const totalViews = analytics.reduce((sum, a) => sum + ((a.analytics_data as any)?.views || 0), 0);
+      const totalEngagement = analytics.reduce((sum, a) => sum + ((a.analytics_data as any)?.engagement || 0), 0);
+      
+      const userData = {
+        user: user?.email,
+        exportDate: new Date().toISOString(),
+        gdprCompliant: true,
+        data: {
+          profile: profileResult.data || { email: user?.email, created_at: user?.created_at },
+          content: contentResult.data || [],
+          contentCount: contentResult.data?.length || 0,
+          analytics: { 
+            totalViews, 
+            totalEngagement,
+            recordCount: analytics.length
+          }
+        }
+      };
 
-    const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `user-data-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
+      const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `user-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export user data:', error);
+      alert('Failed to export data. Please try again.');
+    }
   };
 
   return (

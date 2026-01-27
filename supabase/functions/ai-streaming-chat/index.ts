@@ -246,25 +246,28 @@ Provide clear, helpful responses that directly address the user's questions and 
 }
 
 async function streamResponse(socket: WebSocket, message: string, userId: string) {
-  const words = message.split(' ');
-  let currentContent = '';
-  
   // Parse visual data from the AI response
   const parsedData = parseVisualDataFromResponse(message);
   
-  // Send streaming chunks
-  for (let i = 0; i < words.length; i++) {
-    currentContent += (i > 0 ? ' ' : '') + words[i];
+  // Stream content in natural chunks (sentences or paragraphs) instead of words
+  const chunks = message.split(/(?<=[.!?\n])\s+/);
+  let currentContent = '';
+  
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    currentContent += (i > 0 ? ' ' : '') + chunk;
     
     socket.send(JSON.stringify({
       type: 'ai_response_delta',
-      delta: words[i] + (i < words.length - 1 ? ' ' : ''),
+      delta: chunk + (i < chunks.length - 1 ? ' ' : ''),
       fullContent: currentContent,
       timestamp: Date.now()
     }));
     
-    // Small delay to simulate streaming
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // Natural delay based on chunk length (faster for short chunks)
+    // This simulates real streaming without artificial delays
+    const delay = Math.min(10, Math.max(2, chunk.length / 50));
+    await new Promise(resolve => setTimeout(resolve, delay));
   }
   
   // Send completion message with visual data

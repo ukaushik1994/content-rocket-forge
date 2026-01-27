@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 import { API_PROVIDERS, ApiProvider } from './api/types';
 import { ApiKeyInput } from './api/ApiKeyInput';
@@ -127,28 +129,29 @@ const InteractiveProviderCard = ({
 const StatusOverview = ({ 
   providers, 
   selectedProviders,
+  providerStatuses,
   onRefresh,
   onQuickSetup 
 }: {
   providers: ApiProvider[];
   selectedProviders: string[];
+  providerStatuses: Record<string, 'connected' | 'warning' | 'error' | 'unknown'>;
   onRefresh: () => void;
   onQuickSetup: () => void;
 }) => {
   const visibleProviders = providers.filter(p => p.required || selectedProviders.includes(p.id));
   
-  // Mock status calculation - in real app this would come from actual API testing
+  // Calculate status counts from real provider statuses
   const statusCounts = visibleProviders.reduce((acc, provider) => {
-    const random = Math.random();
-    const status = provider.required 
-      ? (random > 0.3 ? 'connected' : random > 0.1 ? 'warning' : 'error')
-      : (random > 0.5 ? 'connected' : random > 0.2 ? 'warning' : 'error');
-    acc[status] = (acc[status] || 0) + 1;
+    const status = providerStatuses[provider.id] || 'unknown';
+    if (status === 'connected') acc.connected++;
+    else if (status === 'warning') acc.warning++;
+    else acc.error++;
     return acc;
   }, { connected: 0, warning: 0, error: 0 });
 
   const totalCount = visibleProviders.length;
-  const healthScore = Math.round((statusCounts.connected / totalCount) * 100) || 0;
+  const healthScore = totalCount > 0 ? Math.round((statusCounts.connected / totalCount) * 100) : 0;
 
   return (
     <Card className="border-0 bg-gradient-to-r from-primary/10 via-background/50 to-secondary/10 backdrop-blur-sm">
@@ -198,6 +201,7 @@ const StatusOverview = ({
 };
 
 export function APISettings() {
+  const { user } = useAuth();
   const [selectedProviders, setSelectedProviders] = useState<string[]>(
     API_PROVIDERS.filter(p => p.required).map(p => p.id)
   );
@@ -209,8 +213,48 @@ export function APISettings() {
   const [defaultAiProvider, setDefaultAiProvider] = useState<'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio' | undefined>(
     undefined
   );
+  const [providerStatuses, setProviderStatuses] = useState<Record<string, 'connected' | 'warning' | 'error' | 'unknown'>>({});
   
-  // Load preferences
+  // Load provider statuses from database
+  const loadProviderStatuses = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data: providers, error } = await supabase
+        .from('ai_service_providers')
+        .select('provider, status, last_verified, api_key')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      const statuses: Record<string, 'connected' | 'warning' | 'error' | 'unknown'> = {};
+      
+      API_PROVIDERS.forEach(p => {
+        const dbProvider = providers?.find(dp => dp.provider === p.id);
+        if (!dbProvider || !dbProvider.api_key) {
+          statuses[p.id] = 'unknown';
+        } else if (dbProvider.status !== 'active') {
+          statuses[p.id] = 'warning';
+        } else {
+          // Check if last validated was within 24 hours
+          const lastVerified = dbProvider.last_verified ? new Date(dbProvider.last_verified) : null;
+          const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          
+          if (!lastVerified || lastVerified < dayAgo) {
+            statuses[p.id] = 'warning';
+          } else {
+            statuses[p.id] = 'connected';
+          }
+        }
+      });
+      
+      setProviderStatuses(statuses);
+    } catch (error) {
+      console.error('Failed to load provider statuses:', error);
+    }
+  };
+  
+  // Load preferences and statuses
   useEffect(() => {
     const savedProvider = getUserPreference('defaultAiProvider');
     if (savedProvider) {
@@ -218,7 +262,9 @@ export function APISettings() {
     } else {
       setDefaultAiProvider('openrouter');
     }
-  }, []);
+    
+    loadProviderStatuses();
+  }, [user?.id]);
 
   const handleProviderToggle = (providerId: string) => {
     setSelectedProviders(prev => 
@@ -238,8 +284,10 @@ export function APISettings() {
     }
   };
 
-  const handleRefreshAll = () => {
+  const handleRefreshAll = async () => {
     toast.info('Refreshing all API connections...');
+    await loadProviderStatuses();
+    toast.success('API statuses refreshed');
   };
 
   const handleQuickSetup = () => {
@@ -295,6 +343,7 @@ export function APISettings() {
       <StatusOverview
         providers={API_PROVIDERS}
         selectedProviders={selectedProviders}
+        providerStatuses={providerStatuses}
         onRefresh={handleRefreshAll}
         onQuickSetup={handleQuickSetup}
       />
@@ -404,10 +453,9 @@ export function APISettings() {
                     isEnabled={selectedProviders.includes(provider.id)}
                     onToggle={() => handleProviderToggle(provider.id)}
                     onConfigure={() => {
-                      // This would open a configuration modal or expand inline
                       console.log('Configure', provider.id);
                     }}
-                    status={Math.random() > 0.5 ? 'connected' : Math.random() > 0.3 ? 'warning' : 'error'}
+                    status={providerStatuses[provider.id] || 'unknown'}
                   />
                 ))}
               </AnimatePresence>
