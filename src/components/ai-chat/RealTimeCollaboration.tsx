@@ -150,17 +150,18 @@ export const RealTimeCollaboration: React.FC<RealTimeCollaborationProps> = ({
 
   const shareConversation = async () => {
     try {
+      // Fixed: Use /ai-chat route instead of deprecated /ai-streaming-chat
+      const shareUrl = `${window.location.origin}/ai-chat?join=${conversationId}`;
+      
       if (navigator.share) {
         await navigator.share({
           title: 'Join AI Chat Conversation',
           text: 'Join this collaborative AI chat session',
-          url: `${window.location.origin}/ai-streaming-chat?join=${conversationId}`
+          url: shareUrl
         });
       } else {
-        await navigator.clipboard.writeText(
-          `${window.location.origin}/ai-streaming-chat?join=${conversationId}`
-        );
-        // Show toast
+        await navigator.clipboard.writeText(shareUrl);
+        // Show toast for clipboard success
       }
     } catch (error) {
       console.error('Error sharing:', error);

@@ -165,7 +165,7 @@ export class EnhancedFileAnalysisService {
       // Call enhanced AI chat for analysis
       const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
-          message: `Analyze this ${fileType} content with ${analysisType} analysis:\n\n${text.substring(0, 4000)}`,
+          message: `Analyze this ${fileType} content with ${analysisType} analysis. Return a JSON response with: insights (array of 3 strings), sentimentScore (-1 to 1), keyTopics (array of strings), entities (array of {text, type, confidence}), optimizationSuggestions (array of {type, suggestion, priority}).\n\nContent:\n${text.substring(0, 4000)}`,
           type: 'file_analysis',
           analysisType,
           metadata: {
@@ -178,7 +178,7 @@ export class EnhancedFileAnalysisService {
       if (error) throw error;
       
       // Parse AI response for structured data
-      return this.parseAIAnalysisResponse(data.content, analysisType);
+      return this.parseAIAnalysisResponse(data.response || data.content || '', text, analysisType);
       
     } catch (error) {
       console.error('AI analysis error:', error);
@@ -187,56 +187,144 @@ export class EnhancedFileAnalysisService {
     }
   }
   
-  private parseAIAnalysisResponse(aiResponse: string, analysisType: string) {
-    // In a real implementation, this would parse structured AI response
-    // For now, create mock structured data
-    
-    const wordCount = aiResponse.split(' ').length;
-    const sentimentScore = Math.random() * 2 - 1; // -1 to 1
-    
-    const insights = [
-      'Content demonstrates clear structure and organization',
-      'Key themes identified throughout the document',
-      'Professional tone maintained consistently'
-    ];
-    
-    const keyTopics = ['strategy', 'analysis', 'recommendations'];
-    
-    const entities = [
-      { text: 'Important Entity', type: 'ORGANIZATION', confidence: 0.95 },
-      { text: 'Key Concept', type: 'CONCEPT', confidence: 0.87 }
-    ];
-    
-    const optimizationSuggestions = [
-      {
-        type: 'readability',
-        suggestion: 'Consider breaking up longer paragraphs for better readability',
-        priority: 'medium' as const
-      },
-      {
-        type: 'seo',
-        suggestion: 'Add more descriptive headings and subheadings',
-        priority: 'high' as const
+  private parseAIAnalysisResponse(aiResponse: string, originalText: string, analysisType: string) {
+    // Try to extract JSON from AI response
+    try {
+      // Look for JSON in the response
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          insights: parsed.insights || this.generateInsightsFromText(originalText),
+          sentimentScore: typeof parsed.sentimentScore === 'number' ? parsed.sentimentScore : this.estimateSentiment(originalText),
+          keyTopics: parsed.keyTopics || this.extractTopics(originalText),
+          entities: parsed.entities || [],
+          optimizationSuggestions: parsed.optimizationSuggestions || this.generateSuggestions(originalText),
+          competitiveAnalysis: analysisType === 'competitive' ? (parsed.competitiveAnalysis || {
+            strengths: ['Content structure identified'],
+            weaknesses: ['Further analysis recommended'],
+            opportunities: ['Optimization potential exists']
+          }) : undefined
+        };
       }
-    ];
-    
-    let competitiveAnalysis;
-    if (analysisType === 'competitive') {
-      competitiveAnalysis = {
-        strengths: ['Clear messaging', 'Good structure'],
-        weaknesses: ['Limited data support', 'Could use more examples'],
-        opportunities: ['Add case studies', 'Include more visuals']
-      };
+    } catch (parseError) {
+      console.warn('Could not parse AI response as JSON, using text analysis');
     }
     
+    // Fallback to text-based analysis
     return {
-      insights,
-      sentimentScore,
-      keyTopics,
-      entities,
-      optimizationSuggestions,
-      competitiveAnalysis
+      insights: this.generateInsightsFromText(originalText),
+      sentimentScore: this.estimateSentiment(originalText),
+      keyTopics: this.extractTopics(originalText),
+      entities: [],
+      optimizationSuggestions: this.generateSuggestions(originalText),
+      competitiveAnalysis: analysisType === 'competitive' ? {
+        strengths: ['Content available for analysis'],
+        weaknesses: ['Manual review recommended'],
+        opportunities: ['AI-enhanced analysis available']
+      } : undefined
     };
+  }
+  
+  private generateInsightsFromText(text: string): string[] {
+    const insights: string[] = [];
+    const wordCount = text.split(/\s+/).length;
+    const sentenceCount = text.split(/[.!?]+/).length;
+    const avgSentenceLength = wordCount / sentenceCount;
+    
+    if (wordCount > 1000) {
+      insights.push('Comprehensive document with substantial content depth');
+    } else if (wordCount > 500) {
+      insights.push('Well-developed content with good coverage');
+    } else {
+      insights.push('Concise content suitable for quick consumption');
+    }
+    
+    if (avgSentenceLength < 15) {
+      insights.push('Clear, readable sentence structure maintained throughout');
+    } else if (avgSentenceLength < 25) {
+      insights.push('Moderate sentence complexity appropriate for professional content');
+    } else {
+      insights.push('Complex sentence structures may benefit from simplification');
+    }
+    
+    // Check for structure indicators
+    if (text.includes('#') || text.includes('##')) {
+      insights.push('Well-organized with clear heading hierarchy');
+    } else if (text.includes('\n\n')) {
+      insights.push('Content organized into distinct sections');
+    }
+    
+    return insights.slice(0, 3);
+  }
+  
+  private estimateSentiment(text: string): number {
+    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'positive', 'success', 'benefit', 'advantage', 'improve', 'best'];
+    const negativeWords = ['bad', 'poor', 'negative', 'fail', 'problem', 'issue', 'difficult', 'worst', 'error', 'wrong'];
+    
+    const lowerText = text.toLowerCase();
+    let score = 0;
+    
+    positiveWords.forEach(word => {
+      const matches = (lowerText.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
+      score += matches * 0.1;
+    });
+    
+    negativeWords.forEach(word => {
+      const matches = (lowerText.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
+      score -= matches * 0.1;
+    });
+    
+    return Math.max(-1, Math.min(1, score));
+  }
+  
+  private extractTopics(text: string): string[] {
+    // Simple keyword extraction based on frequency
+    const words = text.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
+    const stopWords = new Set(['that', 'this', 'with', 'from', 'have', 'been', 'were', 'they', 'their', 'what', 'when', 'where', 'which', 'there', 'would', 'could', 'should']);
+    
+    const wordCounts: Record<string, number> = {};
+    words.forEach(word => {
+      if (!stopWords.has(word)) {
+        wordCounts[word] = (wordCounts[word] || 0) + 1;
+      }
+    });
+    
+    return Object.entries(wordCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([word]) => word);
+  }
+  
+  private generateSuggestions(text: string): Array<{type: string; suggestion: string; priority: 'low' | 'medium' | 'high'}> {
+    const suggestions: Array<{type: string; suggestion: string; priority: 'low' | 'medium' | 'high'}> = [];
+    const wordCount = text.split(/\s+/).length;
+    
+    if (wordCount < 300) {
+      suggestions.push({
+        type: 'content_depth',
+        suggestion: 'Consider expanding content for better SEO coverage',
+        priority: 'high'
+      });
+    }
+    
+    if (!text.includes('#') && wordCount > 500) {
+      suggestions.push({
+        type: 'structure',
+        suggestion: 'Add headings and subheadings to improve readability',
+        priority: 'medium'
+      });
+    }
+    
+    if (text.split(/[.!?]+/).some(s => s.split(/\s+/).length > 30)) {
+      suggestions.push({
+        type: 'readability',
+        suggestion: 'Break up longer sentences for better comprehension',
+        priority: 'medium'
+      });
+    }
+    
+    return suggestions;
   }
   
   private getFallbackAnalysis(text: string, analysisType: string) {

@@ -309,8 +309,28 @@ export const SelectedProposalsSidebar = ({
             </Button>
             <Button
               onClick={() => {
-                // TODO: Add export functionality
-                console.log('Exporting selected proposals:', selectedProposals);
+                // Export proposals as JSON file
+                const exportData = selectedProposals.map(p => ({
+                  title: p.title,
+                  description: p.description,
+                  primary_keyword: p.primary_keyword,
+                  content_type: p.content_type,
+                  priority_tag: p.priority_tag,
+                  status: p.status,
+                  related_keywords: p.related_keywords,
+                  content_suggestions: p.content_suggestions,
+                  estimated_impressions: p.estimated_impressions
+                }));
+                
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `selected-proposals-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
               }}
               variant="outline"
               size="sm"

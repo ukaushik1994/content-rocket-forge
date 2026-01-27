@@ -1,13 +1,37 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import { EnhancedChatInterface } from '@/components/ai-chat/EnhancedChatInterface';
 import { EnhancedChatIntegration } from '@/components/ai-chat/EnhancedChatIntegration';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const AIChat = () => {
   const [showIntegration, setShowIntegration] = useState(false);
+  const { openSettings } = useSettings();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
+  // Handle join parameter for collaboration
+  useEffect(() => {
+    const joinId = searchParams.get('join');
+    if (joinId) {
+      console.log('Joining conversation:', joinId);
+      // The chat interface will handle loading the conversation
+    }
+  }, [searchParams]);
+  
+  // Listen for settings event from sidebar
+  useEffect(() => {
+    const handleOpenSettings = (event: CustomEvent) => {
+      const tab = event.detail?.tab || 'api';
+      openSettings(tab);
+    };
+    
+    window.addEventListener('openSettings', handleOpenSettings as EventListener);
+    return () => window.removeEventListener('openSettings', handleOpenSettings as EventListener);
+  }, [openSettings]);
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 

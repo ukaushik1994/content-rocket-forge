@@ -75,7 +75,8 @@ export const EnhancedOpportunityCard: React.FC<EnhancedOpportunityCardProps> = (
   };
 
   const getOpportunityScore = () => {
-    return opportunity.opportunity_score || Math.floor(Math.random() * 100) + 1;
+    // Return actual score or null for "not calculated" state - NO random fallback
+    return opportunity.opportunity_score || null;
   };
 
   const handleCreateContent = async () => {
@@ -154,10 +155,21 @@ export const EnhancedOpportunityCard: React.FC<EnhancedOpportunityCardProps> = (
           </div>
           
           <div className="text-right">
-            <div className="text-2xl font-bold text-primary">
-              {getOpportunityScore()}
-            </div>
-            <div className="text-xs text-muted-foreground">Opportunity Score</div>
+            {getOpportunityScore() !== null ? (
+              <>
+                <div className="text-2xl font-bold text-primary">
+                  {getOpportunityScore()}
+                </div>
+                <div className="text-xs text-muted-foreground">Opportunity Score</div>
+              </>
+            ) : (
+              <>
+                <div className="text-sm font-medium text-muted-foreground">
+                  Not calculated
+                </div>
+                <div className="text-xs text-muted-foreground">Score pending</div>
+              </>
+            )}
           </div>
         </div>
       </CardHeader>

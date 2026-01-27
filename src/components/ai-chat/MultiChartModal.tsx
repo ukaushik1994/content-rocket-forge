@@ -209,39 +209,43 @@ const AnimatedMetricCard: React.FC<{
 
 // Key Metrics Panel Component
 const KeyMetricsPanel: React.FC<{ visualData?: VisualData; context?: any }> = ({ visualData, context }) => {
-  // Use AI-provided metricCards
+  // Use AI-provided metricCards only - no hardcoded fallbacks
   const aiMetrics = visualData?.summaryInsights?.metricCards || [];
   
-  // Fallback to hardcoded only if AI didn't provide any
+  // Only show metrics panel if AI provided real data
+  // No hardcoded fallback values - hide section when no data available
   const analytics = context?.analytics || {};
-  const fallbackMetrics = aiMetrics.length === 0 ? [
+  const hasRealData = aiMetrics.length > 0 || (analytics.totalContent && analytics.totalContent > 0);
+  
+  const fallbackMetrics = hasRealData && aiMetrics.length === 0 ? [
     {
       id: 'total-content',
       title: 'Total Content',
       value: analytics.totalContent || 0,
       icon: 'TableIcon',
-      change: { value: 12, type: 'increase' as const, period: 'vs last month' }
+      // Only show change if we have real historical data
+      ...(analytics.contentChange ? { change: analytics.contentChange } : {})
     },
-    {
+    ...(analytics.avgSeoScore ? [{
       id: 'avg-seo',
       title: 'Avg SEO Score',
-      value: analytics.avgSeoScore || 0,
+      value: analytics.avgSeoScore,
       icon: 'TrendingUp'
-    },
-    {
+    }] : []),
+    ...(analytics.lowPerformers ? [{
       id: 'needs-attention',
       title: 'Needs Attention',
-      value: analytics.lowPerformers || 0,
+      value: analytics.lowPerformers,
       icon: 'AlertTriangle',
       color: 'warning' as const
-    },
-    {
+    }] : []),
+    ...(analytics.topContent?.title ? [{
       id: 'top-performer',
       title: 'Top Performer',
-      value: analytics.topContent?.title || 'N/A',
+      value: analytics.topContent.title,
       icon: 'Target'
-    }
-  ] : [];
+    }] : [])
+  ].filter(m => m.value !== 0 && m.value !== 'N/A') : [];
   
   const metrics = aiMetrics.length > 0 ? aiMetrics : fallbackMetrics;
   
