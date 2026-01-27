@@ -25,30 +25,48 @@ export const PerformanceAnalysisCard: React.FC<PerformanceAnalysisCardProps> = (
   metrics = [],
   recommendations = []
 }) => {
-  // Mock Core Web Vitals data
-  const defaultMetrics: PerformanceMetric[] = [
-    {
-      name: 'Largest Contentful Paint',
-      value: 2.1,
-      unit: 's',
-      score: 85,
-      threshold: { good: 2.5, needs_improvement: 4.0 }
-    },
-    {
-      name: 'First Input Delay',
-      value: 45,
-      unit: 'ms',
-      score: 92,
-      threshold: { good: 100, needs_improvement: 300 }
-    },
-    {
-      name: 'Cumulative Layout Shift',
-      value: 0.08,
-      unit: '',
-      score: 78,
-      threshold: { good: 0.1, needs_improvement: 0.25 }
-    }
-  ];
+  // Calculate estimated performance metrics from content analysis
+  // These are estimates since we can't measure real Core Web Vitals without a live page
+  const calculateEstimatedMetrics = (): PerformanceMetric[] => {
+    // Base estimates - adjust based on score
+    const scoreMultiplier = score / 100;
+    
+    // LCP estimate: lower is better, good is under 2.5s
+    const lcpValue = 1.5 + (1 - scoreMultiplier) * 2;
+    const lcpScore = lcpValue < 2.5 ? 90 : lcpValue < 4.0 ? 60 : 30;
+    
+    // FID estimate: lower is better, good is under 100ms
+    const fidValue = 30 + (1 - scoreMultiplier) * 150;
+    const fidScore = fidValue < 100 ? 90 : fidValue < 300 ? 60 : 30;
+    
+    // CLS estimate: lower is better, good is under 0.1
+    const clsValue = 0.03 + (1 - scoreMultiplier) * 0.15;
+    const clsScore = clsValue < 0.1 ? 90 : clsValue < 0.25 ? 60 : 30;
+    
+    return [
+      {
+        name: 'Largest Contentful Paint (Est.)',
+        value: Math.round(lcpValue * 10) / 10,
+        unit: 's',
+        score: Math.round(lcpScore),
+        threshold: { good: 2.5, needs_improvement: 4.0 }
+      },
+      {
+        name: 'First Input Delay (Est.)',
+        value: Math.round(fidValue),
+        unit: 'ms',
+        score: Math.round(fidScore),
+        threshold: { good: 100, needs_improvement: 300 }
+      },
+      {
+        name: 'Cumulative Layout Shift (Est.)',
+        value: Math.round(clsValue * 100) / 100,
+        unit: '',
+        score: Math.round(clsScore),
+        threshold: { good: 0.1, needs_improvement: 0.25 }
+      }
+    ];
+  };
 
   const defaultRecommendations = [
     'Optimize images by using modern formats (WebP, AVIF)',
@@ -58,7 +76,7 @@ export const PerformanceAnalysisCard: React.FC<PerformanceAnalysisCardProps> = (
     'Reduce server response times'
   ];
 
-  const allMetrics = metrics.length > 0 ? metrics : defaultMetrics;
+  const allMetrics = metrics.length > 0 ? metrics : calculateEstimatedMetrics();
   const allRecommendations = recommendations.length > 0 ? recommendations : defaultRecommendations;
 
   const getMetricStatus = (metric: PerformanceMetric) => {

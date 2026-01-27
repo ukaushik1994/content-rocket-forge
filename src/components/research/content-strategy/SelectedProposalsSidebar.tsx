@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ export const SelectedProposalsSidebar = ({
   isOpen,
   onToggle
 }: SelectedProposalsSidebarProps) => {
+  const navigate = useNavigate();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const selectedProposals = proposals.filter((_, index) => selected[index]);
@@ -262,7 +264,10 @@ export const SelectedProposalsSidebar = ({
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // TODO: Add view details functionality
+                                    // Navigate to proposal detail or content strategy page with proposal context
+                                    const proposalId = proposal.id || proposal.primary_keyword;
+                                    sessionStorage.setItem('selectedProposalId', proposalId);
+                                    navigate(`/content-strategy?proposal=${encodeURIComponent(proposalId)}`);
                                   }}
                                   className="border-white/20 text-white/80 hover:bg-white/10 text-xs"
                                 >

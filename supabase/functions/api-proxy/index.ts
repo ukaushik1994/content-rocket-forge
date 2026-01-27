@@ -2087,12 +2087,32 @@ async function analyzeWithOpenAI(apiKey: string, params: any) {
 
     const analysis = data.choices[0].message.content;
     
+    // Calculate quality score based on response characteristics
+    const calculateQualityScore = (response: string): number => {
+      let score = 0.5; // Base score
+      
+      // Length quality
+      if (response.length > 500) score += 0.1;
+      if (response.length > 1000) score += 0.1;
+      
+      // Structure quality (has sections, lists)
+      if (response.includes('##') || response.includes('**')) score += 0.1;
+      if (response.includes('- ') || response.includes('1. ')) score += 0.1;
+      
+      // No error indicators
+      if (!response.toLowerCase().includes('error') && 
+          !response.toLowerCase().includes('unable') &&
+          !response.toLowerCase().includes('cannot')) score += 0.1;
+      
+      return Math.min(1.0, score);
+    };
+    
     return new Response(
       JSON.stringify({ 
         success: true,
         data: {
           analysis,
-          score: 0.7 // Mock score for now
+          score: calculateQualityScore(analysis)
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
