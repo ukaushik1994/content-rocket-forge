@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: AuthError | null }>;
   signUp: (email: string, password: string, redirectTo?: string) => Promise<{ user: User | null; error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updateProfile: (updates: { display_name?: string; avatar_url?: string; first_name?: string; last_name?: string }) => Promise<{ error: Error | null }>;
@@ -135,6 +136,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: getAuthRedirectUrl('/auth/callback'),
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+      
+      if (error) {
+        console.error('Google sign in error:', error);
+        toast.error(error.message);
+      }
+      
+      return { error };
+    } catch (error: any) {
+      console.error('Google sign in exception:', error);
+      toast.error('An unexpected error occurred');
+      return { error };
+    }
+  };
+
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -211,6 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     resetPassword,
     updateProfile
