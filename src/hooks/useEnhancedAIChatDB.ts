@@ -671,6 +671,7 @@ export const useEnhancedAIChatDB = () => {
   // Share conversation (generate shareable link)
   const shareConversation = useCallback(async (conversationId: string) => {
     try {
+      // Fixed: Use /shared-conversation route which now exists
       const shareUrl = `${window.location.origin}/shared-conversation/${conversationId}`;
       
       if (navigator.share) {

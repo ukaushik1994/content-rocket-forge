@@ -35,6 +35,7 @@ import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
 import { AIStreamingChatPage } from "./pages/AIStreamingChatPage";
 import WixCallback from "./pages/WixCallback";
+import SharedConversation from "./pages/SharedConversation";
 import { EnterpriseHubPage } from "./pages/EnterpriseHubPage";
 import NotificationDemo from "./pages/NotificationDemo";
 import NotFound from "./pages/NotFound";
@@ -137,6 +138,7 @@ const App = () => (
                    <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
                    <Route path="/ai-streaming-chat" element={<ProtectedRoute><AIStreamingChatPage /></ProtectedRoute>} />
                    <Route path="/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
+                   <Route path="/shared-conversation/:conversationId" element={<SharedConversation />} />
                    
                    {/* Enterprise Hub route */}
                    <Route path="/enterprise" element={<ProtectedRoute><EnterpriseHubPage /></ProtectedRoute>} />

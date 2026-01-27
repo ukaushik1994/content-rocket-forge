@@ -1,10 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Mic, Paperclip } from 'lucide-react';
+import { Send, Paperclip } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
 import { MobileActionsSheet } from './MobileActionsSheet';
+import { FileUploadHandler } from './FileUploadHandler';
+import { VoiceInputHandler } from './VoiceInputHandler';
 
 interface Solution {
   id: string;
@@ -28,8 +30,32 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Handle voice transcript
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    setMessage(prev => (prev + ' ' + transcript).trim());
+    textareaRef.current?.focus();
+  }, []);
+
+  // Handle file analysis result
+  const handleFileAnalyzed = useCallback((analysis: {
+    fileName: string;
+    fileType: string;
+    summary: string;
+    insights: string[];
+  }) => {
+    const fileMessage = `I've uploaded a file: **${analysis.fileName}**\n\nPlease analyze this content:\n${analysis.summary}\n\nKey insights:\n${analysis.insights.map(i => `- ${i}`).join('\n')}`;
+    onSendMessage(fileMessage);
+    setShowFileUpload(false);
+  }, [onSendMessage]);
+
+  // Handle attachment button click
+  const handleAttachmentClick = useCallback(() => {
+    setShowFileUpload(true);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,10 +175,17 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
               : '0 2px 10px -2px hsl(var(--foreground) / 0.05)'
           }}
         >
+          {/* File Upload Handler */}
+          <FileUploadHandler
+            isVisible={showFileUpload}
+            onFileAnalyzed={handleFileAnalyzed}
+            onCancel={() => setShowFileUpload(false)}
+          />
+
           {/* Mobile Actions Sheet - Shows on mobile only */}
           <MobileActionsSheet
-            onAttachment={() => console.log('Attachment clicked')}
-            onVoice={() => console.log('Voice clicked')}
+            onAttachment={handleAttachmentClick}
+            onVoice={() => {}} // Handled by VoiceInputHandler
             disabled={isLoading}
           />
 
@@ -161,6 +194,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
             type="button"
             size="sm"
             variant="ghost"
+            onClick={handleAttachmentClick}
             className="hidden sm:flex text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
             disabled={isLoading}
           >
@@ -182,15 +216,12 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
           />
 
           {/* Voice Input Button - Hidden on mobile */}
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="hidden sm:flex text-muted-foreground/60 hover:text-muted-foreground hover:bg-transparent p-2 h-8 w-8"
-            disabled={isLoading}
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
+          <div className="hidden sm:flex">
+            <VoiceInputHandler
+              onTranscript={handleVoiceTranscript}
+              disabled={isLoading}
+            />
+          </div>
 
           {/* Send Button */}
           <motion.div
