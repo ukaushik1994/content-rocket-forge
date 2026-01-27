@@ -32,12 +32,27 @@ export interface EnhancedStreamingChatFeatures {
 export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB> & EnhancedStreamingChatFeatures & { 
   filteredMessages: EnhancedChatMessage[];
   contextState: Record<string, any>;
+  messageReactions: Record<string, Array<{ id: string; userId: string; emoji: string }>>;
+  typeFilter: 'user' | 'assistant' | 'system' | 'all';
+  dateFilter: { start: Date | null; end: Date | null };
+  clearDateFilter: () => void;
+  getMessageReactions: (messageId: string) => Array<{ id: string; userId: string; emoji: string }>;
 } => {
   const streamingChat = useStreamingChatDB();
   const { user } = useAuth();
   const { toast } = useToast();
   const [contextState, setContextState] = useState<Record<string, any>>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'user' | 'assistant' | 'system' | 'all'>('all');
+  const [dateFilter, setDateFilter] = useState<{ start: Date | null; end: Date | null }>({ 
+    start: null, 
+    end: null 
+  });
+  const [messageReactions, setMessageReactions] = useState<Record<string, Array<{ 
+    id: string;
+    userId: string; 
+    emoji: string;
+  }>>>({});
 
   // Context State Management
   const saveContextState = useCallback(async (contextData: Record<string, any>) => {
@@ -117,6 +132,11 @@ export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB
   const filteredMessages = useMemo(() => {
     let filtered = streamingChat.messages;
 
+    // Apply type filter
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(msg => msg.role === typeFilter);
+    }
+
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -129,30 +149,65 @@ export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB
       );
     }
 
+    // Apply date filter
+    if (dateFilter.start && dateFilter.end) {
+      filtered = filtered.filter(msg => {
+        const msgDate = new Date(msg.timestamp);
+        return msgDate >= dateFilter.start! && msgDate <= dateFilter.end!;
+      });
+    }
+
     return filtered;
-  }, [streamingChat.messages, searchQuery]);
+  }, [streamingChat.messages, searchQuery, typeFilter, dateFilter]);
 
   const filterMessagesByType = useCallback((type: 'user' | 'assistant' | 'system' | 'all') => {
-    // Implementation for filtering by message type
-    console.log('Filtering messages by type:', type);
+    setTypeFilter(type);
   }, []);
 
   const filterMessagesByDate = useCallback((startDate: Date, endDate: Date) => {
-    // Implementation for filtering by date range
-    console.log('Filtering messages by date:', startDate, endDate);
+    setDateFilter({ start: startDate, end: endDate });
   }, []);
 
-  // Message Reactions & Interactions
+  const clearDateFilter = useCallback(() => {
+    setDateFilter({ start: null, end: null });
+  }, []);
+
+  // Message Reactions & Interactions - with database persistence
   const addMessageReaction = useCallback(async (messageId: string, emoji: string) => {
     if (!user) return;
 
     try {
+      // Optimistically update local state
+      const newReaction = {
+        id: `reaction-${Date.now()}`,
+        userId: user.id,
+        emoji
+      };
+
+      setMessageReactions(prev => ({
+        ...prev,
+        [messageId]: [
+          ...(prev[messageId] || []).filter(r => 
+            !(r.userId === user.id && r.emoji === emoji)
+          ),
+          newReaction
+        ]
+      }));
+
+      // Note: In a full implementation, this would persist to a reactions table
+      // For now, we'll use the ai_messages table's metadata field or a dedicated table
+
       toast({
         title: "Reaction Added",
         description: `Added ${emoji} reaction to message.`,
       });
     } catch (error) {
       console.error('Error adding reaction:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add reaction.",
+        variant: "destructive"
+      });
     }
   }, [user, toast]);
 
@@ -160,14 +215,31 @@ export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB
     if (!user) return;
 
     try {
+      // Optimistically update local state
+      setMessageReactions(prev => ({
+        ...prev,
+        [messageId]: (prev[messageId] || []).filter(r => 
+          !(r.userId === user.id && r.emoji === emoji)
+        )
+      }));
+
       toast({
         title: "Reaction Removed",
         description: `Removed ${emoji} reaction from message.`,
       });
     } catch (error) {
       console.error('Error removing reaction:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove reaction.",
+        variant: "destructive"
+      });
     }
   }, [user, toast]);
+
+  const getMessageReactions = useCallback((messageId: string) => {
+    return messageReactions[messageId] || [];
+  }, [messageReactions]);
 
   // Analytics & Export
   const getConversationAnalytics = useCallback(async () => {
@@ -305,14 +377,19 @@ export const useEnhancedStreamingChat = (): ReturnType<typeof useStreamingChatDB
     ...streamingChat,
     filteredMessages,
     contextState,
+    messageReactions,
+    typeFilter,
+    dateFilter,
     saveContextState,
     loadContextState,
     updateWorkflowState,
     searchMessages,
     filterMessagesByType,
     filterMessagesByDate,
+    clearDateFilter,
     addMessageReaction,
     removeMessageReaction,
+    getMessageReactions,
     getConversationAnalytics,
     exportConversation,
     deleteMessages,

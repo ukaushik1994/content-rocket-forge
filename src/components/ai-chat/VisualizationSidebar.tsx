@@ -34,6 +34,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebarTrendData, TimeframeOption } from '@/hooks/useSidebarTrendData';
 import {
@@ -848,17 +849,19 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
 
   const qualityConfig = getQualityConfig(dataInfo.quality);
 
+  const { isMobile, isTablet } = useResponsiveBreakpoint();
+
   return (
     <AnimatePresence>
       {isOpen && (
         <TooltipProvider delayDuration={300}>
           <>
-            {/* Backdrop for mobile */}
+            {/* Backdrop for mobile & tablet - overlays content */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed top-16 bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm z-[30] sm:hidden"
+              className="fixed top-16 bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm z-[45] lg:hidden"
               onClick={onClose}
             />
             
@@ -871,10 +874,10 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
               onClick={() => onInteract?.()} // Track any click as interaction
               className={cn(
                 // Position: below navbar (top-20 = 80px), extends to bottom (behind input bar)
-                "fixed top-20 right-0 bottom-0 z-[35]",
-                // Mobile: full width but same vertical constraints
-                "w-full sm:w-[520px] lg:w-[600px]",
-                "bg-background/95 backdrop-blur-lg",
+                "fixed top-20 right-0 bottom-0 z-[50]",
+                // Responsive widths: full on mobile, 400px on tablet, 520-600px on desktop
+                "w-full sm:w-[400px] lg:w-[520px] xl:w-[600px]",
+                "bg-background/98 backdrop-blur-xl",
                 "border-l border-border/50",
                 "flex flex-col overflow-hidden"
               )}

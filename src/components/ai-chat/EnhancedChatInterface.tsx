@@ -13,6 +13,7 @@ import { SolutionRecommendations } from './SolutionRecommendations';
 import { SolutionWorkflowTemplates } from './SolutionWorkflowTemplates';
 import { ContextDisplayIndicator } from './ContextDisplayIndicator';
 import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
+import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
 import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChartConfiguration } from '@/types/enhancedChat';
+import { cn } from '@/lib/utils';
 
 interface EnhancedChatInterfaceProps {
   className?: string;
@@ -190,7 +192,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       }
     }
   };
-  return <div className={`h-full flex flex-col ${className}`}>
+  const { isMobile, isTablet, isDesktop } = useResponsiveBreakpoint();
+
+  return <div className={cn("h-full flex flex-col", className)}>
       {/* Chat History Sidebar */}
       <AnimatePresence>
         {showSidebar && <ChatHistorySidebar conversations={conversations} activeConversation={activeConversation} onSelectConversation={selectConversation} onCreateConversation={() => createConversation()} onDeleteConversation={deleteConversation} onToggleSidebar={() => setShowSidebar(false)} onPinConversation={togglePinConversation} onArchiveConversation={toggleArchiveConversation} />}
@@ -238,10 +242,18 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       </motion.div>
 
       {/* Main Content Area - Chat and Visualization side by side */}
-      <div className={`flex-1 flex transition-all duration-300 ease-out pt-20 pb-24 overflow-hidden ${showSidebar ? 'ml-80' : 'ml-0'}`}>
+      <div className={cn(
+        "flex-1 flex transition-all duration-300 ease-out pt-20 pb-24 overflow-hidden",
+        // Left sidebar margin - desktop only (sidebars overlay on mobile/tablet)
+        showSidebar && isDesktop && "lg:ml-80"
+      )}>
         {/* Chat Messages Area - shrinks when visualization sidebar is open */}
         <motion.div 
-          className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ease-out ${showVisualizationSidebar ? 'lg:mr-[600px] sm:mr-[520px]' : 'mr-0'}`}
+          className={cn(
+            "flex-1 flex flex-col min-h-0 transition-all duration-300 ease-out",
+            // Right margin for visualization - only on xl screens (overlays on smaller)
+            showVisualizationSidebar && "xl:mr-[600px]"
+          )}
           initial="hidden" 
           animate="visible" 
           variants={containerVariants}
@@ -392,8 +404,14 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </motion.div>
       </div>
 
-      {/* Input Area - ALWAYS full width, only respects left sidebar */}
-      <div className={`fixed bottom-0 left-0 right-0 z-40 border-t border-border/30 bg-background/95 backdrop-blur-xl transition-all duration-300 ease-out ${showSidebar ? 'pl-80' : 'pl-0'}`}>
+      {/* Input Area - ALWAYS full width, respects left sidebar only on desktop */}
+      <div className={cn(
+        "fixed bottom-0 left-0 right-0 z-40",
+        "border-t border-border/30 bg-background/95 backdrop-blur-xl",
+        "transition-all duration-300 ease-out",
+        // Left padding only on desktop when sidebar is open (sidebars overlay on mobile/tablet)
+        showSidebar && isDesktop && "lg:pl-80"
+      )}>
         <div className="max-w-6xl mx-auto px-6 py-4">
           {/* Context Indicator */}
           {showContextIndicator && (
