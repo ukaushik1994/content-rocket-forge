@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import CheckEmail from "./pages/CheckEmail";
+import AuthCallback from "./pages/AuthCallback";
 import Repository from "./pages/Repository";
 import { RepositoryBackfill } from "./pages/RepositoryBackfill";
 import ContentBuilderPage from "./pages/ContentBuilder";
@@ -117,6 +118,7 @@ const App = () => (
                   <Route path="/landing" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/auth/check-email" element={<CheckEmail />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/wix-callback" element={<WixCallback />} />
                   
                   {/* Landing is now the main entry point */}

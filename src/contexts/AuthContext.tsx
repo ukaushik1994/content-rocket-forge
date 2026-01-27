@@ -87,13 +87,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Use production URL for auth redirects to ensure email links work correctly
+  const getAuthRedirectUrl = (path: string) => {
+    const productionUrl = 'https://creaiter.lovable.app';
+    return `${productionUrl}${path}`;
+  };
+
   const signUp = async (email: string, password: string, redirectTo?: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          emailRedirectTo: redirectTo || `${window.location.origin}/auth/callback`
+          emailRedirectTo: redirectTo || getAuthRedirectUrl('/auth/callback')
         }
       });
       
@@ -132,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+        redirectTo: getAuthRedirectUrl('/auth/reset-password')
       });
       
       if (error) {
