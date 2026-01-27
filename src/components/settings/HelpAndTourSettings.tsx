@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useGrandTour } from '@/contexts/GrandTourContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { 
   Compass, 
@@ -11,23 +10,37 @@ import {
   Keyboard, 
   HelpCircle,
   CheckCircle,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
+
+// Default achievements for when GrandTourProvider is not available
+const defaultAchievements = [
+  { id: 'explorer', name: 'Content Explorer', icon: '🚀', unlocked: false },
+  { id: 'strategist', name: 'Content Strategist', icon: '🎯', unlocked: false },
+  { id: 'researcher', name: 'SEO Researcher', icon: '🔍', unlocked: false },
+  { id: 'analyst', name: 'Performance Analyst', icon: '📊', unlocked: false },
+  { id: 'ai-master', name: 'AI Master', icon: '🤖', unlocked: false },
+];
 
 export const HelpAndTourSettings = () => {
   const navigate = useNavigate();
-  const { startTour, hasCompletedTour, achievements } = useGrandTour();
   const { closeSettings } = useSettings();
+
+  // Get achievements from localStorage since GrandTourProvider may not be available here
+  const savedAchievements = localStorage.getItem('tour-achievements');
+  const achievements = savedAchievements ? JSON.parse(savedAchievements) : defaultAchievements;
+  const hasCompletedTour = localStorage.getItem('grand-tour-completed') === 'true';
 
   const handleStartTour = () => {
     closeSettings();
-    // Small delay to let settings close, then start tour
+    // Navigate to dashboard and trigger the tour
     setTimeout(() => {
-      startTour();
+      navigate('/dashboard?welcome=true');
     }, 300);
   };
 
-  const unlockedCount = achievements.filter(a => a.unlocked).length;
+  const unlockedCount = achievements.filter((a: any) => a.unlocked).length;
 
   const quickLinks = [
     {
@@ -103,7 +116,7 @@ export const HelpAndTourSettings = () => {
           </span>
         </div>
         <div className="grid grid-cols-5 gap-3">
-          {achievements.map((achievement) => (
+          {achievements.map((achievement: any) => (
             <div
               key={achievement.id}
               className={`p-3 rounded-lg text-center transition-all ${
