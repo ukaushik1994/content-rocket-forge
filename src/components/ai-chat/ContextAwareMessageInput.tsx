@@ -20,12 +20,14 @@ interface ContextAwareMessageInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   placeholder?: string;
+  onTypingChange?: (isTyping: boolean) => void;
 }
 
 export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> = ({
   onSendMessage,
   isLoading,
-  placeholder = "Type your message..."
+  placeholder = "Type your message...",
+  onTypingChange
 }) => {
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -33,6 +35,7 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
   const [showFileUpload, setShowFileUpload] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle voice transcript
   const handleVoiceTranscript = useCallback((transcript: string) => {
@@ -57,12 +60,47 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
     setShowFileUpload(true);
   }, []);
 
+  // Handle typing broadcast with debounce
+  const handleTypingBroadcast = useCallback((isTyping: boolean) => {
+    if (onTypingChange) {
+      onTypingChange(isTyping);
+    }
+  }, [onTypingChange]);
+
+  // Track message changes and broadcast typing status
+  const handleMessageChange = useCallback((newMessage: string) => {
+    setMessage(newMessage);
+    
+    // Broadcast typing = true
+    handleTypingBroadcast(true);
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Set timeout to broadcast typing = false after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      handleTypingBroadcast(false);
+    }, 3000);
+  }, [handleTypingBroadcast]);
+
+  // Clear typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
       onSendMessage(message.trim());
       setMessage('');
       setShowSuggestions(false);
+      handleTypingBroadcast(false); // Stop typing indicator on send
     }
   };
 
@@ -185,7 +223,9 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
           {/* Mobile Actions Sheet - Shows on mobile only */}
           <MobileActionsSheet
             onAttachment={handleAttachmentClick}
-            onVoice={() => {}} // Handled by VoiceInputHandler
+            onVoice={() => {}} // Handled by VoiceInputHandler on desktop
+            onImage={handleAttachmentClick} // Use same file handler - accepts images
+            onDocument={handleAttachmentClick} // Use same file handler - accepts documents
             disabled={isLoading}
           />
 
@@ -205,10 +245,13 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
           <Textarea
             ref={textareaRef}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => handleMessageChange(e.target.value)}
             onKeyPress={handleKeyPress}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onBlur={() => {
+              setIsFocused(false);
+              handleTypingBroadcast(false); // Stop typing on blur
+            }}
             placeholder={placeholder}
             disabled={isLoading}
             className="flex-1 min-h-[24px] max-h-[120px] resize-none bg-transparent border-0 text-foreground placeholder-muted-foreground/60 focus:ring-0 focus:outline-none p-0 text-sm"

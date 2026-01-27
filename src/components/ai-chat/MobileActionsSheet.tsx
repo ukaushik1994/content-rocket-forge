@@ -12,6 +12,8 @@ interface MobileActionsSheetProps {
   disabled?: boolean;
 }
 
+// Image file input ref - allows reuse of attachment handler for images
+
 export const MobileActionsSheet: React.FC<MobileActionsSheetProps> = ({
   onAttachment,
   onVoice,

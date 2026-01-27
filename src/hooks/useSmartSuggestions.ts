@@ -117,13 +117,15 @@ export const useSmartSuggestions = (messages: EnhancedChatMessage[]) => {
   }, [messages]);
 
   useEffect(() => {
+    // Synchronous update - no artificial delay needed since suggestions are generated locally
     setIsGenerating(true);
-    const timer = setTimeout(() => {
+    // Use requestAnimationFrame for minimal delay (just for smooth UI transition)
+    const frame = requestAnimationFrame(() => {
       setSuggestions(generateSuggestions);
       setIsGenerating(false);
-    }, 500); // Slight delay to simulate processing
+    });
 
-    return () => clearTimeout(timer);
+    return () => cancelAnimationFrame(frame);
   }, [generateSuggestions]);
 
   return { suggestions, isGenerating };

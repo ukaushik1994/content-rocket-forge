@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Filter, Download, BarChart3 } from 'lucide-react';
+import { Search, X, Download, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,8 +8,7 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator 
+  DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +19,9 @@ interface MessageSearchBarProps {
   onShowAnalytics: () => void;
   messageCount: number;
   filteredCount?: number;
+  onNavigateMatch?: (direction: 'prev' | 'next') => void;
+  currentMatch?: number;
+  totalMatches?: number;
   className?: string;
 }
 
@@ -30,6 +32,9 @@ export const MessageSearchBar: React.FC<MessageSearchBarProps> = ({
   onShowAnalytics,
   messageCount,
   filteredCount,
+  onNavigateMatch,
+  currentMatch = 0,
+  totalMatches = 0,
   className
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -42,6 +47,16 @@ export const MessageSearchBar: React.FC<MessageSearchBarProps> = ({
   const handleSearchFocus = useCallback(() => {
     setIsExpanded(true);
   }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && onNavigateMatch) {
+      e.preventDefault();
+      onNavigateMatch(e.shiftKey ? 'prev' : 'next');
+    }
+    if (e.key === 'Escape') {
+      handleClearSearch();
+    }
+  }, [onNavigateMatch, handleClearSearch]);
 
   const isFiltered = searchQuery.length > 0;
 
@@ -66,6 +81,7 @@ export const MessageSearchBar: React.FC<MessageSearchBarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             onFocus={handleSearchFocus}
+            onKeyDown={handleKeyDown}
             className="pl-10 pr-10 bg-background/50 border-border/50"
           />
           <AnimatePresence>
@@ -82,6 +98,31 @@ export const MessageSearchBar: React.FC<MessageSearchBarProps> = ({
             )}
           </AnimatePresence>
         </div>
+
+        {/* Match Navigation */}
+        {searchQuery && onNavigateMatch && totalMatches > 0 && (
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="text-xs whitespace-nowrap">
+              {totalMatches > 0 ? `${currentMatch}/${totalMatches}` : 'No matches'}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => onNavigateMatch('prev')}
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => onNavigateMatch('next')}
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1">
@@ -151,4 +192,73 @@ export const MessageSearchBar: React.FC<MessageSearchBarProps> = ({
       </AnimatePresence>
     </motion.div>
   );
+};
+
+/**
+ * Hook to manage message search state with match navigation
+ */
+export const useMessageSearch = (messages: Array<{ id: string; content: string }>) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [matchingMessageIds, setMatchingMessageIds] = useState<string[]>([]);
+
+  // Find matching messages
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setMatchingMessageIds([]);
+      setCurrentMatchIndex(0);
+      return;
+    }
+
+    const termLower = searchTerm.toLowerCase();
+    const matches = messages
+      .filter(msg => msg.content.toLowerCase().includes(termLower))
+      .map(msg => msg.id);
+    
+    setMatchingMessageIds(matches);
+    setCurrentMatchIndex(matches.length > 0 ? 1 : 0);
+  }, [searchTerm, messages]);
+
+  const navigateMatch = useCallback((direction: 'prev' | 'next') => {
+    if (matchingMessageIds.length === 0) return;
+
+    if (direction === 'next') {
+      setCurrentMatchIndex(prev => 
+        prev >= matchingMessageIds.length ? 1 : prev + 1
+      );
+    } else {
+      setCurrentMatchIndex(prev => 
+        prev <= 1 ? matchingMessageIds.length : prev - 1
+      );
+    }
+  }, [matchingMessageIds.length]);
+
+  const scrollToCurrentMatch = useCallback(() => {
+    if (matchingMessageIds.length === 0 || currentMatchIndex === 0) return;
+    
+    const messageId = matchingMessageIds[currentMatchIndex - 1];
+    const element = document.getElementById(`message-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add highlight effect
+      element.classList.add('search-highlight');
+      setTimeout(() => element.classList.remove('search-highlight'), 2000);
+    }
+  }, [matchingMessageIds, currentMatchIndex]);
+
+  // Scroll to match when it changes
+  useEffect(() => {
+    scrollToCurrentMatch();
+  }, [currentMatchIndex, scrollToCurrentMatch]);
+
+  return {
+    searchTerm,
+    setSearchTerm,
+    matchingMessageIds,
+    currentMatchIndex,
+    totalMatches: matchingMessageIds.length,
+    navigateMatch,
+    isMatch: (messageId: string) => matchingMessageIds.includes(messageId),
+    highlightTerm: searchTerm
+  };
 };

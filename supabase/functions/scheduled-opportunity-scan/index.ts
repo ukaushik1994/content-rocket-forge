@@ -365,8 +365,8 @@ async function getCachedSerpData(keyword: string) {
 
 async function fetchSerpData(keyword: string) {
   if (!serpApiKey) {
-    console.log('⚠️ SERP API key not configured, using mock data');
-    return generateMockSerpData(keyword);
+    console.log('⚠️ SERP API key not configured - skipping keyword, will retry on next scan');
+    return null; // Return null instead of mock data - caller should skip this keyword
   }
 
   try {
@@ -382,7 +382,9 @@ async function fetchSerpData(keyword: string) {
     return data;
   } catch (error) {
     console.error('SERP API error:', error);
-    return generateMockSerpData(keyword);
+    // Return null instead of mock data - graceful degradation without fake data
+    console.log('⚠️ SERP API failed - skipping keyword, will retry on next scan');
+    return null;
   }
 }
 
@@ -577,32 +579,6 @@ function extractPotentialLinks(serpData: any): any[] {
   }));
 }
 
-function generateMockSerpData(keyword: string) {
-  return {
-    search_information: {
-      total_results: Math.floor(Math.random() * 1000000) + 100000
-    },
-    organic_results: [
-      {
-        title: `Ultimate Guide to ${keyword}`,
-        link: 'https://example.com/guide',
-        snippet: `Complete guide covering everything about ${keyword}...`
-      },
-      {
-        title: `${keyword} Best Practices`,
-        link: 'https://example.com/practices',
-        snippet: `Learn the best practices for ${keyword}...`
-      }
-    ],
-    people_also_ask: [
-      { question: `What is ${keyword}?` },
-      { question: `How to implement ${keyword}?` },
-      { question: `Why is ${keyword} important?` }
-    ],
-    related_searches: [
-      { query: `${keyword} tutorial` },
-      { query: `${keyword} examples` },
-      { query: `${keyword} best practices` }
-    ]
-  };
-}
+// REMOVED: generateMockSerpData function
+// Mock data generation has been removed to ensure data integrity.
+// When SERP API is unavailable, keywords are skipped and retried on next scan cycle.
