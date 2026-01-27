@@ -206,22 +206,34 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setUserClosedSidebar(false); // User manually reopened, reset close intent
   };
 
-  // Issue #1 Fix: Scroll to bottom using Radix ScrollArea viewport
+  // Issue #1 Fix: Enhanced scroll using double-RAF to ensure DOM is fully rendered
   const scrollToBottom = React.useCallback(() => {
+    // Double requestAnimationFrame ensures DOM updates are complete
     requestAnimationFrame(() => {
-      const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        viewport.scrollTo({
-          top: viewport.scrollHeight,
-          behavior: 'smooth'
-        });
-      }
+      requestAnimationFrame(() => {
+        const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTo({
+            top: viewport.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      });
     });
   }, []);
 
-  // Auto-scroll to bottom when new messages arrive (Issue #1 fix)
+  // Auto-scroll to bottom when new messages arrive (Issue #1 enhanced fix)
+  // Uses a small delay to ensure content rendering is complete
   useEffect(() => {
+    // Immediate scroll attempt
     scrollToBottom();
+    
+    // Delayed scroll to catch late-rendering content (charts, markdown, etc.)
+    const timeoutId = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [messages, isTyping, scrollToBottom]);
 
 
