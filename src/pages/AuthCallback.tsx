@@ -18,8 +18,6 @@ const AuthCallback: React.FC = () => {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const queryParams = new URLSearchParams(window.location.search);
         
-        const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
         const errorParam = hashParams.get('error') || queryParams.get('error');
         const errorDescription = hashParams.get('error_description') || queryParams.get('error_description');
 
@@ -30,7 +28,36 @@ const AuthCallback: React.FC = () => {
           return;
         }
 
-        // If we have tokens, set the session
+        // Check for PKCE flow (token_hash verification) - used by email confirmation
+        const tokenHash = queryParams.get('token_hash');
+        const type = queryParams.get('type');
+
+        if (tokenHash && (type === 'email' || type === 'signup')) {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'email'
+          });
+
+          if (error) {
+            setStatus('error');
+            setErrorMessage(error.message);
+            return;
+          }
+
+          if (data.session) {
+            setStatus('success');
+            // Email verification = new signup, always trigger onboarding
+            setTimeout(() => {
+              navigate('/dashboard?welcome=true', { replace: true });
+            }, 1500);
+            return;
+          }
+        }
+
+        // Check for implicit flow (access_token in URL)
+        const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
+
         if (accessToken && refreshToken) {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -45,10 +72,8 @@ const AuthCallback: React.FC = () => {
 
           if (data.session) {
             setStatus('success');
-            // Check if user is new (no tour completed flag)
-            const isNewUser = !localStorage.getItem('grand-tour-completed') && 
-                              !localStorage.getItem('has-seen-onboarding');
-            // Brief delay to show success state
+            // For OAuth/magic link, check localStorage for existing users
+            const isNewUser = !localStorage.getItem('creAiter-onboarding-completed');
             setTimeout(() => {
               navigate(isNewUser ? '/dashboard?welcome=true' : '/dashboard', { replace: true });
             }, 1500);
@@ -60,8 +85,7 @@ const AuthCallback: React.FC = () => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'SIGNED_IN' && session) {
             setStatus('success');
-            const isNewUser = !localStorage.getItem('grand-tour-completed') && 
-                              !localStorage.getItem('has-seen-onboarding');
+            const isNewUser = !localStorage.getItem('creAiter-onboarding-completed');
             setTimeout(() => {
               navigate(isNewUser ? '/dashboard?welcome=true' : '/dashboard', { replace: true });
             }, 1500);
