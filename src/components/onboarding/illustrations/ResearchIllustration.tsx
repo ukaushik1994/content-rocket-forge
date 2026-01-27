@@ -17,75 +17,66 @@ export const ResearchIllustration = () => {
   ];
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
+    <div className="relative w-full h-full max-h-full flex items-center justify-center overflow-hidden">
       {/* Large search icon backdrop */}
       <motion.div
         className="absolute"
         initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 0.1 }}
+        animate={{ scale: 1, opacity: 0.08 }}
         transition={{ duration: 1 }}
       >
-        <Search className="w-48 h-48 text-neon-purple" />
+        <Search className="w-36 h-36 text-neon-purple" />
       </motion.div>
 
-      <div className="relative grid grid-cols-2 gap-5 w-full max-w-lg px-4 z-10">
+      <div className="relative grid grid-cols-2 gap-3 w-full max-w-md px-2 z-10 scale-[0.9]">
         {/* SERP Results Panel */}
         <motion.div
-          className="rounded-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 border border-white/10 p-5 overflow-hidden"
-          initial={{ opacity: 0, y: 30 }}
+          className="rounded-xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 border border-white/10 p-3 overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
         >
           <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-neon-purple/10 to-transparent rounded-2xl"
+            className="absolute inset-0 bg-gradient-to-br from-neon-purple/10 to-transparent rounded-xl"
             animate={{ opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 3, repeat: Infinity }}
           />
           
-          <div className="flex items-center gap-3 mb-4 relative z-10">
+          <div className="flex items-center gap-2 mb-3 relative z-10">
             <motion.div
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center"
-              animate={{ boxShadow: ['0 0 20px rgba(155,135,245,0.4)', '0 0 35px rgba(155,135,245,0.6)', '0 0 20px rgba(155,135,245,0.4)'] }}
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center"
+              animate={{ boxShadow: ['0 0 15px rgba(155,135,245,0.4)', '0 0 25px rgba(155,135,245,0.6)', '0 0 15px rgba(155,135,245,0.4)'] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <Search className="w-5 h-5 text-white" />
+              <Search className="w-4 h-4 text-white" />
             </motion.div>
-            <span className="text-sm font-semibold text-white">SERP Analysis</span>
+            <span className="text-xs font-semibold text-white">SERP Analysis</span>
           </div>
 
-          <div className="space-y-2.5 relative z-10">
+          <div className="space-y-1.5 relative z-10">
             {serpResults.map((result, index) => (
               <motion.div
                 key={result.rank}
-                className={`flex items-center gap-3 p-2.5 rounded-xl ${
+                className={`flex items-center gap-2 p-2 rounded-lg ${
                   result.isYou 
                     ? 'bg-gradient-to-r from-neon-purple/20 to-neon-blue/10 border border-neon-purple/40' 
                     : 'bg-slate-700/40 border border-transparent'
                 }`}
-                initial={{ opacity: 0, x: -25 }}
+                initial={{ opacity: 0, x: -15 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + index * 0.12 }}
-                whileHover={{ scale: 1.02, borderColor: 'rgba(155,135,245,0.3)' }}
+                transition={{ delay: 0.4 + index * 0.1 }}
               >
-                <motion.span 
-                  className={`text-sm font-bold ${result.isYou ? 'text-neon-purple' : 'text-white/50'}`}
-                  animate={result.isYou ? { scale: [1, 1.1, 1] } : {}}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
+                <span className={`text-xs font-bold ${result.isYou ? 'text-neon-purple' : 'text-white/50'}`}>
                   #{result.rank}
-                </motion.span>
+                </span>
                 <div className="flex-1 min-w-0">
-                  <div className={`text-xs truncate ${result.isYou ? 'text-white font-medium' : 'text-white/70'}`}>
+                  <div className={`text-[10px] truncate ${result.isYou ? 'text-white font-medium' : 'text-white/70'}`}>
                     {result.domain}
                   </div>
                 </div>
-                <motion.div
-                  className="text-xs font-semibold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full"
-                  animate={{ opacity: [0.7, 1, 0.7] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
-                >
+                <div className="text-[10px] font-semibold text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-full">
                   {result.score}
-                </motion.div>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -93,116 +84,94 @@ export const ResearchIllustration = () => {
 
         {/* Keywords Panel */}
         <motion.div
-          className="rounded-2xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 border border-white/10 p-5 overflow-hidden"
-          initial={{ opacity: 0, y: 30 }}
+          className="rounded-xl bg-gradient-to-br from-slate-800/90 to-slate-900/90 border border-white/10 p-3 overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
           <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-2xl"
+            className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-xl"
             animate={{ opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 3, repeat: Infinity, delay: 1 }}
           />
           
-          <div className="flex items-center gap-3 mb-4 relative z-10">
+          <div className="flex items-center gap-2 mb-3 relative z-10">
             <motion.div
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center"
-              animate={{ boxShadow: ['0 0 20px rgba(30,174,219,0.4)', '0 0 35px rgba(30,174,219,0.6)', '0 0 20px rgba(30,174,219,0.4)'] }}
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center"
+              animate={{ boxShadow: ['0 0 15px rgba(30,174,219,0.4)', '0 0 25px rgba(30,174,219,0.6)', '0 0 15px rgba(30,174,219,0.4)'] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <TrendingUp className="w-5 h-5 text-white" />
+              <TrendingUp className="w-4 h-4 text-white" />
             </motion.div>
-            <span className="text-sm font-semibold text-white">Keywords</span>
+            <span className="text-xs font-semibold text-white">Keywords</span>
           </div>
 
-          <div className="space-y-2.5 relative z-10">
+          <div className="space-y-1.5 relative z-10">
             {keywords.map((kw, index) => (
               <motion.div
                 key={kw.term}
-                className="p-3 rounded-xl bg-slate-700/40 border border-transparent hover:border-cyan-500/30 transition-colors"
+                className="p-2 rounded-lg bg-slate-700/40"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.7 + index * 0.12 }}
-                whileHover={{ scale: 1.02 }}
+                transition={{ delay: 0.6 + index * 0.1 }}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/90 font-medium">{kw.term}</span>
-                  <div className="flex items-center gap-1.5">
-                    <TrendingUp className="w-3 h-3 text-green-400" />
-                    <motion.span
-                      className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 font-semibold"
-                      animate={{ y: [0, -2, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
-                    >
+                  <span className="text-[10px] text-white/90 font-medium">{kw.term}</span>
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="w-2.5 h-2.5 text-green-400" />
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 font-semibold">
                       {kw.volume}
-                    </motion.span>
+                    </span>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          {/* PAA Question with lightbulb transform */}
+          {/* PAA Question */}
           <motion.div
-            className="mt-4 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30"
+            className="mt-2 p-2 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.3 }}
+            transition={{ delay: 1 }}
           >
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center"
-                animate={{ rotate: [0, 10, 0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              >
-                <HelpCircle className="w-4 h-4 text-amber-400" />
-              </motion.div>
-              <div className="flex-1">
-                <span className="text-[10px] text-amber-300/80 leading-tight">
-                  "How to optimize content for SEO?"
-                </span>
-              </div>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 1.8, type: 'spring' }}
-              >
-                <Lightbulb className="w-4 h-4 text-amber-400" />
-              </motion.div>
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[9px] text-amber-300/80 flex-1">
+                "How to optimize content?"
+              </span>
+              <Lightbulb className="w-3 h-3 text-amber-400" />
             </div>
           </motion.div>
         </motion.div>
 
         {/* Content Gap Detector - Full Width */}
         <motion.div
-          className="col-span-2 rounded-2xl bg-gradient-to-r from-red-500/10 via-orange-500/10 to-amber-500/10 border border-orange-500/30 p-4"
-          initial={{ opacity: 0, y: 20 }}
+          className="col-span-2 rounded-xl bg-gradient-to-r from-red-500/10 via-orange-500/10 to-amber-500/10 border border-orange-500/30 p-3"
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.5 }}
+          transition={{ delay: 1.2 }}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <motion.div
-              className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/30 to-red-500/20 flex items-center justify-center"
-              animate={{ 
-                scale: [1, 1.1, 1],
-                boxShadow: ['0 0 20px rgba(249,115,22,0.3)', '0 0 35px rgba(249,115,22,0.5)', '0 0 20px rgba(249,115,22,0.3)']
-              }}
+              className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500/30 to-red-500/20 flex items-center justify-center"
+              animate={{ scale: [1, 1.08, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <Target className="w-6 h-6 text-orange-400" />
+              <Target className="w-4 h-4 text-orange-400" />
             </motion.div>
             <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">Content Gap Found</span>
-                <Zap className="w-4 h-4 text-amber-400" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-white">Content Gap Found</span>
+                <Zap className="w-3 h-3 text-amber-400" />
               </div>
-              <div className="text-xs text-white/60 mt-0.5">
+              <div className="text-[10px] text-white/60">
                 3 high-value topics your competitors rank for
               </div>
             </div>
             <motion.div
-              className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent"
-              animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
+              className="text-lg font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent"
+              animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
             >
               +3

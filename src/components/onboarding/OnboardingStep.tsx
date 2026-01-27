@@ -27,10 +27,10 @@ export const OnboardingStep = ({
   gradient = 'from-neon-purple to-neon-blue',
 }: OnboardingStepProps) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 p-8 lg:p-12">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 p-6 lg:p-10 h-full">
       {/* Left: Premium Animated Illustration */}
       <motion.div
-        className="relative flex items-center justify-center min-h-[380px] lg:min-h-[440px] rounded-3xl overflow-hidden"
+        className="relative flex items-center justify-center h-full min-h-[320px] lg:min-h-0 rounded-3xl overflow-hidden"
         initial={{ opacity: 0, x: -40 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.7, ease: 'easeOut' }}
@@ -70,9 +70,11 @@ export const OnboardingStep = ({
         />
         <div className="absolute inset-[1px] rounded-3xl bg-slate-950/90" />
         
-        {/* Illustration container */}
-        <div className="relative z-10 w-full h-full flex items-center justify-center p-6">
-          {illustration}
+        {/* Illustration container - constrained */}
+        <div className="relative z-10 w-full h-full flex items-center justify-center p-4 overflow-hidden">
+          <div className="w-full h-full max-h-full flex items-center justify-center scale-[0.85]">
+            {illustration}
+          </div>
         </div>
         
         {/* Corner accents */}
@@ -82,14 +84,14 @@ export const OnboardingStep = ({
 
       {/* Right: Premium Content */}
       <motion.div
-        className="flex flex-col justify-center space-y-7"
+        className="flex flex-col justify-center space-y-5 overflow-y-auto max-h-full"
         initial={{ opacity: 0, x: 40 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
       >
         {/* Premium icon badge */}
         <motion.div
-          className="relative w-16 h-16"
+          className="relative w-14 h-14"
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3, type: 'spring' }}
@@ -130,7 +132,7 @@ export const OnboardingStep = ({
 
         {/* Title with gradient option */}
         <motion.h2
-          className="text-3xl lg:text-4xl font-bold text-white leading-tight"
+          className="text-2xl lg:text-3xl font-bold text-white leading-tight"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
@@ -140,7 +142,7 @@ export const OnboardingStep = ({
 
         {/* Description */}
         <motion.p
-          className="text-muted-foreground text-lg leading-relaxed"
+          className="text-muted-foreground text-base leading-relaxed"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
@@ -150,7 +152,7 @@ export const OnboardingStep = ({
 
         {/* Benefits with animated checkmarks */}
         <motion.div
-          className="grid grid-cols-2 gap-4"
+          className="grid grid-cols-2 gap-3"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.7 }}
@@ -158,18 +160,18 @@ export const OnboardingStep = ({
           {benefits.map((benefit, index) => (
             <motion.div
               key={benefit}
-              className="flex items-center gap-3"
+              className="flex items-center gap-2.5"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.8 + index * 0.1 }}
             >
               <motion.div
-                className="relative w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center flex-shrink-0"
+                className="relative w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center flex-shrink-0"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.9 + index * 0.1, type: 'spring', stiffness: 500 }}
               >
-                <Check className="w-3.5 h-3.5 text-white" />
+                <Check className="w-3 h-3 text-white" />
                 {/* Celebration burst */}
                 <motion.div
                   className="absolute inset-0 rounded-full bg-green-400"
@@ -185,14 +187,14 @@ export const OnboardingStep = ({
 
         {/* Tip callout */}
         <motion.div
-          className="relative p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20"
+          className="relative p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 1.2 }}
         >
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-              <Lightbulb className="w-4 h-4 text-amber-400" />
+          <div className="flex items-start gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-amber-300">Pro Tip</p>
@@ -207,7 +209,7 @@ export const OnboardingStep = ({
         {actionLabel && onAction && (
           <motion.button
             onClick={onAction}
-            className="relative mt-2 w-fit group"
+            className="relative mt-1 w-fit group"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 1.3 }}
@@ -216,7 +218,7 @@ export const OnboardingStep = ({
           >
             {/* Button container */}
             <div className={cn(
-              "relative px-8 py-4 rounded-xl bg-gradient-to-r text-white font-semibold flex items-center gap-3 overflow-hidden",
+              "relative px-6 py-3 rounded-xl bg-gradient-to-r text-white font-semibold flex items-center gap-2.5 overflow-hidden",
               gradient
             )}>
               {/* Shimmer effect */}
@@ -226,8 +228,8 @@ export const OnboardingStep = ({
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
               />
               
-              <span className="relative z-10">{actionLabel}</span>
-              <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+              <span className="relative z-10 text-sm">{actionLabel}</span>
+              <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
             </div>
             
             {/* Glow effect */}

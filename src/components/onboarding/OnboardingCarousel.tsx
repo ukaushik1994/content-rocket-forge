@@ -201,7 +201,7 @@ export const OnboardingCarousel = () => {
         {/* Main container with gradient border */}
         <GradientBorder className="relative z-10 w-full max-w-6xl">
           <motion.div
-            className="relative max-h-[90vh] overflow-hidden rounded-3xl"
+            className="relative h-[680px] max-h-[90vh] overflow-hidden rounded-3xl flex flex-col"
             initial={{ scale: 0.9, opacity: 0, y: 30 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 30 }}
@@ -210,7 +210,7 @@ export const OnboardingCarousel = () => {
             onMouseLeave={() => setIsPaused(false)}
           >
             {/* Premium header */}
-            <div className="relative flex items-center justify-between px-8 py-5 border-b border-white/5 bg-slate-900/50 backdrop-blur-sm">
+            <div className="relative flex-shrink-0 flex items-center justify-between px-8 py-5 border-b border-white/5 bg-slate-900/50 backdrop-blur-sm">
               {/* Logo and step counter */}
               <div className="flex items-center gap-4">
                 <motion.div
@@ -282,10 +282,11 @@ export const OnboardingCarousel = () => {
             </div>
 
             {/* Content area with step transition */}
-            <div className="overflow-y-auto max-h-[calc(90vh-180px)] bg-slate-950/80">
+            <div className="flex-1 overflow-hidden bg-slate-950/80">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentStep}
+                  className="h-full"
                   initial={{ opacity: 0, x: 60 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -60 }}
@@ -300,7 +301,7 @@ export const OnboardingCarousel = () => {
             </div>
 
             {/* Premium footer controls */}
-            <div className="px-8 py-5 border-t border-white/5 bg-slate-900/50 backdrop-blur-sm">
+            <div className="flex-shrink-0 px-8 py-5 border-t border-white/5 bg-slate-900/50 backdrop-blur-sm">
               {/* Segmented progress bar */}
               <div className="flex gap-1 mb-5">
                 {stepConfigs.map((config, index) => (

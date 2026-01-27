@@ -13,9 +13,9 @@ export const WelcomeIllustration = () => {
   ];
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      {/* Galaxy background particles */}
-      {Array.from({ length: 30 }).map((_, i) => (
+    <div className="relative w-full h-full max-h-full flex items-center justify-center overflow-hidden">
+      {/* Galaxy background particles - reduced count */}
+      {Array.from({ length: 20 }).map((_, i) => (
         <motion.div
           key={`star-${i}`}
           className="absolute w-0.5 h-0.5 rounded-full bg-white"
@@ -42,18 +42,18 @@ export const WelcomeIllustration = () => {
         animate={{ scale: 1, opacity: 1, rotateY: 0 }}
         transition={{ duration: 1, type: 'spring', damping: 12 }}
       >
-        {/* Pulse rings - 6 rings for depth */}
-        {[1, 2, 3, 4, 5, 6].map((ring) => (
+        {/* Pulse rings - reduced to 4 */}
+        {[1, 2, 3, 4].map((ring) => (
           <motion.div
             key={ring}
             className="absolute rounded-full"
             style={{
-              width: 100 + ring * 50,
-              height: 100 + ring * 50,
-              left: -(ring * 25),
-              top: -(ring * 25),
-              border: `1px solid rgba(155, 135, 245, ${0.4 - ring * 0.05})`,
-              boxShadow: ring <= 3 ? `0 0 ${ring * 10}px rgba(155, 135, 245, ${0.2 - ring * 0.03})` : 'none',
+              width: 80 + ring * 40,
+              height: 80 + ring * 40,
+              left: -(ring * 20),
+              top: -(ring * 20),
+              border: `1px solid rgba(155, 135, 245, ${0.4 - ring * 0.08})`,
+              boxShadow: ring <= 2 ? `0 0 ${ring * 8}px rgba(155, 135, 245, ${0.15 - ring * 0.03})` : 'none',
             }}
             animate={{
               scale: [1, 1.05 + ring * 0.02, 1],
@@ -68,14 +68,14 @@ export const WelcomeIllustration = () => {
           />
         ))}
 
-        {/* Central logo - larger with 3D effect */}
+        {/* Central logo - scaled down */}
         <motion.div
-          className="relative w-28 h-28 rounded-3xl bg-gradient-to-br from-neon-purple via-neon-blue to-pink-500 flex items-center justify-center"
+          className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-neon-purple via-neon-blue to-pink-500 flex items-center justify-center"
           animate={{
             boxShadow: [
-              '0 0 40px rgba(155, 135, 245, 0.4), 0 0 80px rgba(155, 135, 245, 0.2)',
-              '0 0 60px rgba(155, 135, 245, 0.6), 0 0 120px rgba(155, 135, 245, 0.3)',
-              '0 0 40px rgba(155, 135, 245, 0.4), 0 0 80px rgba(155, 135, 245, 0.2)',
+              '0 0 30px rgba(155, 135, 245, 0.4), 0 0 60px rgba(155, 135, 245, 0.2)',
+              '0 0 50px rgba(155, 135, 245, 0.6), 0 0 100px rgba(155, 135, 245, 0.3)',
+              '0 0 30px rgba(155, 135, 245, 0.4), 0 0 60px rgba(155, 135, 245, 0.2)',
             ],
             rotateY: [0, 5, 0, -5, 0],
           }}
@@ -86,12 +86,12 @@ export const WelcomeIllustration = () => {
           style={{ perspective: 1000 }}
         >
           {/* Inner shine */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/30 via-transparent to-transparent" />
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/30 via-transparent to-transparent" />
           
-          <Sparkles className="w-12 h-12 text-white drop-shadow-lg" />
+          <Sparkles className="w-10 h-10 text-white drop-shadow-lg" />
           
-          {/* Floating sparkles around logo */}
-          {[...Array(4)].map((_, i) => (
+          {/* Floating sparkles around logo - reduced */}
+          {[...Array(3)].map((_, i) => (
             <motion.div
               key={i}
               className="absolute"
@@ -100,7 +100,7 @@ export const WelcomeIllustration = () => {
                 left: `${20 + Math.floor(i / 2) * 60}%`,
               }}
               animate={{
-                y: [0, -10, 0],
+                y: [0, -8, 0],
                 opacity: [0.5, 1, 0.5],
                 scale: [0.8, 1.2, 0.8],
               }}
@@ -110,16 +110,16 @@ export const WelcomeIllustration = () => {
                 repeat: Infinity,
               }}
             >
-              <Sparkles className="w-3 h-3 text-white/60" />
+              <Sparkles className="w-2.5 h-2.5 text-white/60" />
             </motion.div>
           ))}
         </motion.div>
       </motion.div>
 
-      {/* Orbiting icons - larger with trails */}
+      {/* Orbiting icons - smaller radius */}
       {orbitingIcons.map(({ Icon, color, delay }, index) => {
         const angle = (index * 60) * (Math.PI / 180);
-        const radius = 160;
+        const radius = 120;
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
 
@@ -131,8 +131,8 @@ export const WelcomeIllustration = () => {
             animate={{ 
               opacity: 1, 
               scale: 1,
-              x: [x, x + 15, x],
-              y: [y, y - 10, y],
+              x: [x, x + 10, x],
+              y: [y, y - 8, y],
             }}
             transition={{
               opacity: { duration: 0.6, delay: delay },
@@ -142,26 +142,26 @@ export const WelcomeIllustration = () => {
             }}
             style={{ x, y }}
           >
-            {/* Icon container with glow */}
+            {/* Icon container with glow - smaller */}
             <motion.div
-              className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center`}
+              className={`relative w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}
               animate={{
                 boxShadow: [
-                  `0 0 20px rgba(155, 135, 245, 0.3)`,
-                  `0 0 35px rgba(155, 135, 245, 0.5)`,
-                  `0 0 20px rgba(155, 135, 245, 0.3)`,
+                  `0 0 15px rgba(155, 135, 245, 0.3)`,
+                  `0 0 25px rgba(155, 135, 245, 0.5)`,
+                  `0 0 15px rgba(155, 135, 245, 0.3)`,
                 ],
               }}
               transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
             >
-              <Icon className="w-7 h-7 text-white drop-shadow-md" />
+              <Icon className="w-5 h-5 text-white drop-shadow-md" />
             </motion.div>
 
-            {/* Connection particle trail */}
-            {[...Array(3)].map((_, i) => (
+            {/* Connection particle trail - reduced */}
+            {[...Array(2)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute w-2 h-2 rounded-full bg-neon-purple/60"
+                className="absolute w-1.5 h-1.5 rounded-full bg-neon-purple/60"
                 animate={{
                   x: [0, -x * (0.2 + i * 0.2)],
                   y: [0, -y * (0.2 + i * 0.2)],
@@ -189,8 +189,8 @@ export const WelcomeIllustration = () => {
         </defs>
         {orbitingIcons.map((_, index) => {
           const angle = (index * 60) * (Math.PI / 180);
-          const x = Math.cos(angle) * 160;
-          const y = Math.sin(angle) * 160;
+          const x = Math.cos(angle) * 120;
+          const y = Math.sin(angle) * 120;
           return (
             <motion.line
               key={index}
@@ -209,11 +209,11 @@ export const WelcomeIllustration = () => {
         })}
       </svg>
 
-      {/* Ambient particles */}
-      {[...Array(12)].map((_, i) => (
+      {/* Ambient particles - reduced */}
+      {[...Array(6)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue"
+          className="absolute w-1.5 h-1.5 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue"
           style={{
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
@@ -222,8 +222,8 @@ export const WelcomeIllustration = () => {
           animate={{
             opacity: [0, 0.8, 0],
             scale: [0, 1.5, 0],
-            x: [(Math.random() - 0.5) * 100],
-            y: [(Math.random() - 0.5) * 100],
+            x: [(Math.random() - 0.5) * 50],
+            y: [(Math.random() - 0.5) * 50],
           }}
           transition={{
             duration: 3 + Math.random() * 2,
