@@ -12,6 +12,7 @@ import { SolutionContextCard } from './SolutionContextCard';
 import { SolutionRecommendations } from './SolutionRecommendations';
 import { SolutionWorkflowTemplates } from './SolutionWorkflowTemplates';
 import { ContextDisplayIndicator } from './ContextDisplayIndicator';
+import { MessageSearchBar } from './MessageSearchBar';
 import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
 import { RateLimitBanner } from '@/components/common/RateLimitBanner';
 import { GlobalApiStatus } from '@/components/common/GlobalApiStatus';
-import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2 } from 'lucide-react';
+import { Brain, TrendingUp, Menu, History, MoreVertical, Share2, Download, Trash2, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChartConfiguration } from '@/types/enhancedChat';
 import { cn } from '@/lib/utils';
@@ -52,8 +53,55 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     exportConversation,
     shareConversation,
     searchConversations,
-    clearSearch
+    clearSearch,
+    editMessage,
+    deleteMessage
   } = useEnhancedAIChatDB();
+
+  // Message search state
+  const [messageSearchQuery, setMessageSearchQuery] = useState('');
+  const [messageSearchResults, setMessageSearchResults] = useState<string[]>([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [showMessageSearch, setShowMessageSearch] = useState(false);
+
+  // Filter messages based on search
+  const filteredMessages = React.useMemo(() => {
+    if (!messageSearchQuery.trim()) return messages;
+    
+    const query = messageSearchQuery.toLowerCase();
+    const matchingMessages = messages.filter(msg => 
+      msg.content.toLowerCase().includes(query)
+    );
+    
+    // Update search results for navigation
+    setMessageSearchResults(matchingMessages.map(m => m.id));
+    
+    return messages; // Return all messages, but we track matches separately
+  }, [messages, messageSearchQuery]);
+
+  // Handle search navigation
+  const handleNavigateMatch = (direction: 'prev' | 'next') => {
+    if (messageSearchResults.length === 0) return;
+    
+    if (direction === 'next') {
+      setCurrentMatchIndex(prev => 
+        prev >= messageSearchResults.length - 1 ? 0 : prev + 1
+      );
+    } else {
+      setCurrentMatchIndex(prev => 
+        prev <= 0 ? messageSearchResults.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Scroll to current match
+  useEffect(() => {
+    if (messageSearchResults.length > 0 && currentMatchIndex < messageSearchResults.length) {
+      const matchId = messageSearchResults[currentMatchIndex];
+      const element = document.getElementById(`message-${matchId}`);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [currentMatchIndex, messageSearchResults]);
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [contextSources, setContextSources] = useState<any[]>([]);
@@ -263,6 +311,46 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             className="mx-6 mt-2" 
             onRetry={() => console.log('Retrying after rate limit clear')}
           />
+
+          {/* Message Search Bar (toggleable) */}
+          {messages.length > 0 && (
+            <div className="mx-6 mt-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowMessageSearch(!showMessageSearch)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Search className="h-4 w-4 mr-1" />
+                  Search
+                </Button>
+              </div>
+              
+              <AnimatePresence>
+                {showMessageSearch && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-2"
+                  >
+                    <MessageSearchBar
+                      searchQuery={messageSearchQuery}
+                      onSearchChange={setMessageSearchQuery}
+                      onExportConversation={exportConversation}
+                      onShowAnalytics={() => {}}
+                      messageCount={messages.length}
+                      filteredCount={messageSearchResults.length}
+                      onNavigateMatch={handleNavigateMatch}
+                      currentMatch={currentMatchIndex + 1}
+                      totalMatches={messageSearchResults.length}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
           
           {/* Messages Area */}
           <ScrollArea className="flex-1 px-6">
@@ -340,16 +428,32 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
               {/* Messages */}
               {messages.length > 0 && <div className="space-y-6">
-                  {messages.map((message, index) => (
-                    <EnhancedMessageBubble 
-                      key={message.id} 
-                      message={message} 
-                      isLatest={index === messages.length - 1} 
-                      onAction={handleAction} 
-                      onSendMessage={sendMessage}
-                      onExpandVisualization={handleExpandVisualization}
-                    />
-                  ))}
+                  {messages.map((message, index) => {
+                    const isMatch = messageSearchQuery && message.content.toLowerCase().includes(messageSearchQuery.toLowerCase());
+                    const isCurrentMatch = messageSearchResults[currentMatchIndex] === message.id;
+                    
+                    return (
+                      <div 
+                        key={message.id} 
+                        id={`message-${message.id}`}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMatch && "search-highlight",
+                          isCurrentMatch && "ring-2 ring-primary/50 rounded-lg"
+                        )}
+                      >
+                        <EnhancedMessageBubble 
+                          message={message} 
+                          isLatest={index === messages.length - 1} 
+                          onAction={handleAction} 
+                          onSendMessage={sendMessage}
+                          onExpandVisualization={handleExpandVisualization}
+                          onEditMessage={editMessage}
+                          onDeleteMessage={deleteMessage}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>}
 
               {/* Typing Indicator - Refined Minimal */}

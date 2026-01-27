@@ -709,6 +709,69 @@ export const useEnhancedAIChatDB = () => {
     await loadConversations();
   }, [loadConversations]);
 
+  // Edit message (within 5-minute window)
+  const editMessage = useCallback(async (messageId: string, newContent: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('ai_messages')
+        .update({ content: newContent })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, content: newContent } : msg
+      ));
+
+      toast({
+        title: "Message Updated",
+        description: "Your message has been edited."
+      });
+    } catch (error) {
+      console.error('Error editing message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to edit message.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [user, toast]);
+
+  // Delete message (soft delete - marks as deleted)
+  const deleteMessage = useCallback(async (messageId: string) => {
+    if (!user) return;
+    
+    try {
+      // Hard delete from database
+      const { error } = await supabase
+        .from('ai_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+
+      toast({
+        title: "Message Deleted",
+        description: "Your message has been removed."
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [user, toast]);
+
   // Load conversations on user change
   useEffect(() => {
     if (user) {
@@ -751,6 +814,8 @@ export const useEnhancedAIChatDB = () => {
     exportConversation,
     shareConversation,
     searchConversations,
-    clearSearch
+    clearSearch,
+    editMessage,
+    deleteMessage
   };
 };
