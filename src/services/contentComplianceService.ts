@@ -202,11 +202,7 @@ const analyzeKeywordCompliance = (
       inConclusion,
       compliant: inH1 && inIntro
     },
-    keywordVariations: {
-      variationPercentage: 0, // TODO: Implement variation detection
-      target: 30,
-      compliant: true
-    },
+    keywordVariations: calculateKeywordVariations(contentLower, mainKeyword, mainKeywordCount),
     secondaryKeywordsCoverage: {
       covered: coveredSecondary,
       total: secondaryKeywords.length,
@@ -403,7 +399,7 @@ const analyzeSolutionCompliance = (
       target: { min: targetMin, max: targetMax },
       compliant: mentionCompliant
     },
-    featurePainMapping: { triads: 0, target: 3, compliant: true }, // TODO: Implement
+    featurePainMapping: calculateFeaturePainMapping(content, solution),
     naturalness: { forcedMentions: 0, totalMentions: mentions, percentage: 0, target: 40, compliant: true },
     ctaPresence: { present: ctaPresent, inFinalSection: ctaPresent, compliant: ctaPresent },
     score: solutionScore,
@@ -581,11 +577,201 @@ const countSyllables = (word: string): number => {
   const vowelCount = vowels ? vowels.length : 0;
   
   // Adjust for silent e
-  if (word.endsWith('e')) {
+  if (word.endsWith('e') && vowelCount > 1) {
     return Math.max(1, vowelCount - 1);
   }
   
   return Math.max(1, vowelCount);
+};
+
+/**
+ * Calculate keyword variation percentage
+ * Detects plurals, stems, and common variations of the main keyword
+ */
+const calculateKeywordVariations = (
+  contentLower: string,
+  mainKeyword: string,
+  exactMatchCount: number
+): { variationPercentage: number; target: number; compliant: boolean } => {
+  // Generate variations of the keyword
+  const variations = generateKeywordVariations(mainKeyword);
+  
+  let variationCount = 0;
+  for (const variation of variations) {
+    if (variation !== mainKeyword) {
+      const variationRegex = new RegExp(`\\b${variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      const matches = contentLower.match(variationRegex);
+      if (matches) {
+        variationCount += matches.length;
+      }
+    }
+  }
+  
+  const totalMentions = exactMatchCount + variationCount;
+  const variationPercentage = totalMentions > 0 ? (variationCount / totalMentions) * 100 : 0;
+  const target = 30; // 30% of mentions should be variations
+  
+  return {
+    variationPercentage: Math.round(variationPercentage * 10) / 10,
+    target,
+    compliant: variationPercentage >= target * 0.85 // 15% flexibility
+  };
+};
+
+/**
+ * Generate common variations of a keyword (plurals, stems, word order)
+ */
+const generateKeywordVariations = (keyword: string): string[] => {
+  const words = keyword.toLowerCase().split(/\s+/);
+  const variations = new Set<string>();
+  
+  // Add original
+  variations.add(keyword.toLowerCase());
+  
+  // Generate singular/plural forms for each word
+  words.forEach((word, index) => {
+    const pluralized = pluralize(word);
+    const singularized = singularize(word);
+    
+    // Create variations with pluralized/singularized words
+    if (pluralized !== word) {
+      const newWords = [...words];
+      newWords[index] = pluralized;
+      variations.add(newWords.join(' '));
+    }
+    if (singularized !== word) {
+      const newWords = [...words];
+      newWords[index] = singularized;
+      variations.add(newWords.join(' '));
+    }
+  });
+  
+  // Add word order variants for multi-word keywords
+  if (words.length === 2) {
+    variations.add(`${words[1]} ${words[0]}`);
+  }
+  
+  // Add common prefix/suffix variations
+  const commonSuffixes = ['ing', 'ed', 's', 'es', 'er', 'est'];
+  const mainWord = words[words.length - 1];
+  commonSuffixes.forEach(suffix => {
+    if (mainWord.endsWith(suffix)) {
+      const stem = mainWord.slice(0, -suffix.length);
+      if (stem.length > 2) {
+        const newWords = [...words];
+        newWords[newWords.length - 1] = stem;
+        variations.add(newWords.join(' '));
+      }
+    } else {
+      // Try adding suffix
+      const newWords = [...words];
+      newWords[newWords.length - 1] = mainWord + suffix;
+      variations.add(newWords.join(' '));
+    }
+  });
+  
+  return Array.from(variations);
+};
+
+/**
+ * Simple pluralization
+ */
+const pluralize = (word: string): string => {
+  if (word.endsWith('s') || word.endsWith('x') || word.endsWith('z') || 
+      word.endsWith('ch') || word.endsWith('sh')) {
+    return word + 'es';
+  }
+  if (word.endsWith('y') && !/[aeiou]y$/.test(word)) {
+    return word.slice(0, -1) + 'ies';
+  }
+  return word + 's';
+};
+
+/**
+ * Simple singularization
+ */
+const singularize = (word: string): string => {
+  if (word.endsWith('ies') && word.length > 4) {
+    return word.slice(0, -3) + 'y';
+  }
+  if (word.endsWith('es') && (word.endsWith('sses') || word.endsWith('xes') || 
+      word.endsWith('zes') || word.endsWith('ches') || word.endsWith('shes'))) {
+    return word.slice(0, -2);
+  }
+  if (word.endsWith('s') && !word.endsWith('ss') && word.length > 2) {
+    return word.slice(0, -1);
+  }
+  return word;
+};
+
+/**
+ * Calculate feature-pain-benefit triads in content
+ * Identifies patterns where content connects a pain point to a feature to a benefit
+ */
+const calculateFeaturePainMapping = (
+  content: string,
+  solution: { name: string; features?: string[]; benefits?: string[]; painPoints?: string[] }
+): { triads: number; target: number; compliant: boolean } => {
+  const contentLower = content.toLowerCase();
+  
+  // Define pain point indicators
+  const painIndicators = [
+    'struggle', 'problem', 'challenge', 'difficult', 'frustrat', 'pain', 'issue',
+    'waste time', 'inefficient', 'costly', 'expensive', 'manual', 'tedious',
+    'confus', 'overwhelm', 'stress', 'complic', 'slow', 'error', 'mistake'
+  ];
+  
+  // Define solution/benefit indicators
+  const solutionIndicators = [
+    'solve', 'solution', 'help', 'enable', 'allow', 'make it easy', 'simplif',
+    'automat', 'streamline', 'save time', 'save money', 'reduc', 'improv',
+    'faster', 'better', 'efficient', 'effective', solution.name.toLowerCase()
+  ];
+  
+  // Add solution features if available
+  const features = (solution.features || []).map(f => f.toLowerCase().substring(0, 20));
+  
+  // Count triads by finding sentences that contain both pain and solution indicators
+  const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  let triadCount = 0;
+  
+  sentences.forEach(sentence => {
+    const sentenceLower = sentence.toLowerCase();
+    
+    const hasPain = painIndicators.some(pain => sentenceLower.includes(pain));
+    const hasSolution = solutionIndicators.some(sol => sentenceLower.includes(sol)) ||
+                        features.some(f => sentenceLower.includes(f));
+    
+    // A triad is when a sentence (or adjacent sentences) connect pain to solution
+    if (hasPain && hasSolution) {
+      triadCount++;
+    }
+  });
+  
+  // Also check for paragraph-level triads (pain in one sentence, solution in next)
+  for (let i = 0; i < sentences.length - 1; i++) {
+    const currentLower = sentences[i].toLowerCase();
+    const nextLower = sentences[i + 1].toLowerCase();
+    
+    const currentHasPain = painIndicators.some(pain => currentLower.includes(pain));
+    const nextHasSolution = solutionIndicators.some(sol => nextLower.includes(sol)) ||
+                           features.some(f => nextLower.includes(f));
+    
+    if (currentHasPain && nextHasSolution) {
+      triadCount++;
+    }
+  }
+  
+  // Deduplicate overlapping detections
+  triadCount = Math.ceil(triadCount / 1.5);
+  
+  const target = 3; // Target 3 feature-pain mappings per article
+  
+  return {
+    triads: triadCount,
+    target,
+    compliant: triadCount >= target
+  };
 };
 
 // Empty result creators for skipped categories

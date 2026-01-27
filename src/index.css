@@ -529,3 +529,24 @@
 .prose pre {
   @apply bg-secondary/20 p-3 rounded-lg overflow-auto font-mono text-sm mb-4;
 }
+
+/* Message search highlight effect */
+.search-highlight {
+  animation: highlight-pulse 2s ease-out;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.4);
+    background-color: hsl(var(--primary) / 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    background-color: transparent;
+  }
+}
+
+/* Text highlight for search matches within messages */
+.search-match-text {
+  @apply bg-primary/30 rounded px-0.5;
+}
