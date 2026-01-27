@@ -206,18 +206,107 @@ export const useSaveStep = (skipNavigation: boolean = false) => {
     }
   };
   
-  const handleDownload = (format: 'pdf' | 'docx' | 'html') => {
-    toast.success(`Content exported as ${format.toUpperCase()}`);
-    
-    // Mock download functionality
-    setTimeout(() => {
+  const handleDownload = async (format: 'pdf' | 'docx' | 'html') => {
+    try {
+      let blob: Blob;
+      const sanitizedTitle = title.replace(/[<>:"/\\|?*]/g, '');
+      const fileName = `${sanitizedTitle.replace(/\s+/g, '-').toLowerCase()}.${format}`;
+      
+      switch (format) {
+        case 'html':
+          const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${sanitizedTitle}</title>
+  ${metaDescription ? `<meta name="description" content="${metaDescription.replace(/"/g, '&quot;')}">` : ''}
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #1a1a1a; }
+    h1 { color: #111; font-size: 2rem; margin-bottom: 0.5em; } 
+    h2 { color: #333; font-size: 1.5rem; margin-top: 2em; }
+    h3 { color: #444; font-size: 1.25rem; }
+    p { margin: 1em 0; } 
+    img { max-width: 100%; height: auto; }
+    ul, ol { padding-left: 1.5em; }
+    blockquote { border-left: 3px solid #ddd; padding-left: 1em; margin: 1em 0; color: #666; }
+  </style>
+</head>
+<body>
+  <article>
+    <h1>${sanitizedTitle}</h1>
+    ${content}
+  </article>
+</body>
+</html>`;
+          blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+          break;
+          
+        case 'docx':
+          // Generate a simple HTML that Word can open
+          const docxContent = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+  <meta charset="UTF-8">
+  <title>${sanitizedTitle}</title>
+  <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+</head>
+<body style="font-family: Calibri, sans-serif; font-size: 11pt;">
+  <h1 style="font-size: 24pt;">${sanitizedTitle}</h1>
+  ${content}
+</body>
+</html>`;
+          blob = new Blob([docxContent], { type: 'application/vnd.ms-word;charset=utf-8' });
+          break;
+          
+        case 'pdf':
+          // For PDF, we create a printable HTML and let browser handle conversion
+          const pdfWindow = window.open('', '_blank');
+          if (pdfWindow) {
+            pdfWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>${sanitizedTitle}</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 700px; margin: 0 auto; padding: 40px 20px; line-height: 1.8; }
+    h1 { font-size: 28px; margin-bottom: 20px; }
+    h2 { font-size: 22px; margin-top: 30px; }
+    p { margin: 15px 0; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <h1>${sanitizedTitle}</h1>
+  ${content}
+  <script>window.print(); setTimeout(() => window.close(), 500);</script>
+</body>
+</html>`);
+            pdfWindow.document.close();
+            toast.success('PDF print dialog opened');
+            return;
+          } else {
+            throw new Error('Pop-up blocked. Please allow pop-ups to export PDF.');
+          }
+          
+        default:
+          throw new Error(`Unsupported format: ${format}`);
+      }
+      
+      // Download the file
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = '#';
-      link.download = `${title.replace(/\s+/g, '-').toLowerCase()}.${format}`;
+      link.href = url;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    }, 1000);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Content exported as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error(error instanceof Error ? error.message : `Failed to export as ${format.toUpperCase()}`);
+    }
   };
   
   return {

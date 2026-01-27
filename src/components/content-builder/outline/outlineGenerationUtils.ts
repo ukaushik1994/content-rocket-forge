@@ -34,9 +34,8 @@ export async function generateOutlineFromSelections(
     topRank: selectedItems.filter(item => item.type === 'topRank')
   };
 
-  // Simulate API delay (in a real implementation, this would call an API)
-  await new Promise(resolve => setTimeout(resolve, 3000));
-  
+  // Local processing - no artificial delay needed
+  // The grouping and section creation is fast enough to be synchronous
   return createOutlineSections(mainKeyword, itemsByType);
 }
 

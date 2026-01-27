@@ -238,7 +238,7 @@ export function SerpAnalysisContainer({
       title: 'Top Stories',
       icon: Newspaper,
       description: 'Recent news and trending content',
-      count: 3, // Mock count for demo
+      count: (serpData as any)?.topStories?.length || (serpData as any)?.top_stories?.length || 0,
       variant: 'blue' as const,
       component: (expanded: boolean) => (
         <SerpTopStoriesSection

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StreamingChatInterface } from './StreamingChatInterface';
 import { ConversationAnalyticsModal } from './ConversationAnalyticsModal';
@@ -15,6 +15,17 @@ interface EnhancedStreamingInterfaceProps {
   onClearConversation?: () => void;
   onToggleSidebar?: () => void;
   isSidebarOpen?: boolean;
+}
+
+interface ConversationAnalytics {
+  totalMessages: number;
+  userMessages: number;
+  assistantMessages: number;
+  averageMessageLength: number;
+  conversationDuration: number;
+  actionsTriggered: number;
+  hasVisualData: boolean;
+  hasWorkflowData: boolean;
 }
 
 export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProps> = ({
@@ -70,21 +81,66 @@ export const EnhancedStreamingInterface: React.FC<EnhancedStreamingInterfaceProp
     });
   };
 
-  const getAnalytics = async () => {
+  // Fetch REAL analytics from database
+  const getAnalytics = useCallback(async (): Promise<ConversationAnalytics | null> => {
     if (!activeConversationId) return null;
     
-    // Mock analytics data - in real implementation, this would fetch from API
-    return {
-      totalMessages: 25,
-      userMessages: 12,
-      assistantMessages: 13,
-      averageMessageLength: 150,
-      conversationDuration: 1800000, // 30 minutes
-      actionsTriggered: 8,
-      hasVisualData: true,
-      hasWorkflowData: false
-    };
-  };
+    try {
+      const { data: messages, error } = await supabase
+        .from('ai_messages')
+        .select('type, content, created_at, message_status, visual_data, workflow_context')
+        .eq('conversation_id', activeConversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching conversation analytics:', error);
+        return null;
+      }
+
+      if (!messages || messages.length === 0) {
+        return {
+          totalMessages: 0,
+          userMessages: 0,
+          assistantMessages: 0,
+          averageMessageLength: 0,
+          conversationDuration: 0,
+          actionsTriggered: 0,
+          hasVisualData: false,
+          hasWorkflowData: false
+        };
+      }
+
+      const userMessages = messages.filter(m => m.type === 'user');
+      const assistantMessages = messages.filter(m => m.type === 'assistant');
+      
+      const firstMsg = new Date(messages[0].created_at);
+      const lastMsg = new Date(messages[messages.length - 1].created_at);
+      
+      const totalContentLength = messages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
+      
+      const actionsTriggered = messages.filter(m => 
+        m.message_status === 'action_triggered' || 
+        m.message_status === 'action_completed'
+      ).length;
+
+      const hasVisualData = messages.some(m => m.visual_data !== null);
+      const hasWorkflowData = messages.some(m => m.workflow_context !== null);
+
+      return {
+        totalMessages: messages.length,
+        userMessages: userMessages.length,
+        assistantMessages: assistantMessages.length,
+        averageMessageLength: Math.round(totalContentLength / messages.length),
+        conversationDuration: lastMsg.getTime() - firstMsg.getTime(),
+        actionsTriggered,
+        hasVisualData,
+        hasWorkflowData
+      };
+    } catch (error) {
+      console.error('Error calculating conversation analytics:', error);
+      return null;
+    }
+  }, [activeConversationId]);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-background to-muted/20">

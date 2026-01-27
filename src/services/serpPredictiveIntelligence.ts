@@ -86,6 +86,17 @@ export interface MultiKeywordAnalysis {
 }
 
 /**
+ * Helper function to calculate standard deviation
+ */
+function calculateStandardDeviation(values: number[]): number {
+  if (values.length === 0) return 0;
+  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+  const squaredDiffs = values.map(v => Math.pow(v - mean, 2));
+  const avgSquaredDiff = squaredDiffs.reduce((sum, v) => sum + v, 0) / values.length;
+  return Math.sqrt(avgSquaredDiff);
+}
+
+/**
  * Advanced predictive analysis for SERP data
  */
 export class SerpPredictiveIntelligence {
@@ -225,19 +236,58 @@ export class SerpPredictiveIntelligence {
 
   // Private helper methods
   private static calculateTrendForecast(keyword: string, historicalData: any[]): TrendForecast {
-    // Simplified trend calculation - in production, use more sophisticated time series analysis
+    // Calculate trend from actual historical data
     const currentVolume = historicalData[0]?.payload?.searchVolume || 0;
-    const trend = historicalData.length > 1 ? 
-      (currentVolume > (historicalData[1]?.payload?.searchVolume || 0) ? 'rising' : 'declining') : 'stable';
+    
+    let trend: 'rising' | 'stable' | 'declining' = 'stable';
+    let confidence = 50;
+    let seasonalityScore = 50;
+    let competitiveIntensity = 50;
+    
+    if (historicalData.length >= 2) {
+      const volumes = historicalData
+        .map(d => d.payload?.searchVolume || 0)
+        .filter(v => v > 0);
+      
+      if (volumes.length >= 2) {
+        const recentAvg = volumes.slice(0, Math.min(3, volumes.length))
+          .reduce((a, b) => a + b, 0) / Math.min(3, volumes.length);
+        const olderAvg = volumes.slice(-Math.min(3, volumes.length))
+          .reduce((a, b) => a + b, 0) / Math.min(3, volumes.length);
+        
+        const changePercent = olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
+        
+        if (changePercent > 10) trend = 'rising';
+        else if (changePercent < -10) trend = 'declining';
+        else trend = 'stable';
+        
+        // Confidence based on data consistency
+        const stdDev = calculateStandardDeviation(volumes);
+        const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+        const variability = avgVolume > 0 ? (stdDev / avgVolume) : 0;
+        confidence = Math.max(40, Math.min(95, 80 - (variability * 100)));
+        
+        // Seasonality from volume variance
+        seasonalityScore = Math.min(100, variability * 200);
+      }
+    }
+    
+    // Competitive intensity from historical competition scores
+    const competitionScores = historicalData
+      .map(d => d.payload?.competitionScore || 0)
+      .filter(c => c > 0);
+    if (competitionScores.length > 0) {
+      competitiveIntensity = competitionScores.reduce((a, b) => a + b, 0) / competitionScores.length;
+    }
     
     return {
       keyword,
       currentVolume,
       predictedVolume: Math.round(currentVolume * (trend === 'rising' ? 1.15 : trend === 'declining' ? 0.85 : 1)),
-      trendDirection: trend as 'rising' | 'stable' | 'declining',
-      confidence: Math.random() * 40 + 60, // 60-100% confidence
-      seasonalityScore: Math.random() * 100,
-      competitiveIntensity: Math.random() * 100,
+      trendDirection: trend,
+      confidence: Math.round(confidence),
+      seasonalityScore: Math.round(seasonalityScore),
+      competitiveIntensity: Math.round(competitiveIntensity),
       opportunityWindow: {
         start: new Date().toISOString(),
         end: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
@@ -247,8 +297,18 @@ export class SerpPredictiveIntelligence {
   }
 
   private static estimateAverageWordCount(organicResults: any[]): number {
-    // Estimate based on snippet length and content analysis
-    return organicResults.length > 0 ? 1500 + Math.random() * 1000 : 1000;
+    // Estimate based on snippet length - assume snippet is ~1% of content
+    if (organicResults.length === 0) return 1500;
+    
+    const snippetLengths = organicResults
+      .map(r => (r.snippet || '').length)
+      .filter(l => l > 0);
+    
+    if (snippetLengths.length === 0) return 1500;
+    
+    const avgSnippetLength = snippetLengths.reduce((a, b) => a + b, 0) / snippetLengths.length;
+    // Rough estimate: snippet is about 1% of full article
+    return Math.max(1000, Math.round(avgSnippetLength * 10));
   }
 
   private static identifyContentGaps(serpData: EnhancedSerpResult): string[] {
@@ -290,20 +350,57 @@ export class SerpPredictiveIntelligence {
     current: EnhancedSerpResult, 
     previous: EnhancedSerpResult
   ): CompetitiveMovement | null {
-    // Simplified comparison - in production, track actual position changes
-    const domains = current.serp_blocks?.organic?.map(result => new URL(result.link).hostname) || [];
+    const currentOrganic = current.serp_blocks?.organic || [];
+    const previousOrganic = previous.serp_blocks?.organic || [];
     
-    if (domains.length > 0) {
+    if (currentOrganic.length === 0) return null;
+    
+    // Build position maps
+    const currentPositions = new Map<string, number>();
+    const previousPositions = new Map<string, number>();
+    
+    currentOrganic.forEach((result, index) => {
+      try {
+        const domain = new URL(result.link).hostname;
+        currentPositions.set(domain, index + 1);
+      } catch (e) { /* invalid URL */ }
+    });
+    
+    previousOrganic.forEach((result, index) => {
+      try {
+        const domain = new URL(result.link).hostname;
+        previousPositions.set(domain, index + 1);
+      } catch (e) { /* invalid URL */ }
+    });
+    
+    // Find biggest mover
+    let biggestChange = { domain: '', change: 0, prev: 0, curr: 0 };
+    
+    for (const [domain, currPos] of currentPositions) {
+      const prevPos = previousPositions.get(domain);
+      if (prevPos) {
+        const change = prevPos - currPos; // Positive = moved up
+        if (Math.abs(change) > Math.abs(biggestChange.change)) {
+          biggestChange = { domain, change, prev: prevPos, curr: currPos };
+        }
+      }
+    }
+    
+    if (biggestChange.domain && Math.abs(biggestChange.change) > 0) {
+      const direction = biggestChange.change > 0 ? 'up' : 'down';
+      const impact = Math.abs(biggestChange.change) > 5 ? 'high' : 
+                    Math.abs(biggestChange.change) > 2 ? 'medium' : 'low';
+      
       return {
         keyword,
-        domain: domains[0],
+        domain: biggestChange.domain,
         change: {
-          previousPosition: Math.floor(Math.random() * 10) + 1,
-          currentPosition: Math.floor(Math.random() * 10) + 1,
-          direction: Math.random() > 0.5 ? 'up' : 'down'
+          previousPosition: biggestChange.prev,
+          currentPosition: biggestChange.curr,
+          direction
         },
-        impact: 'medium',
-        analysis: 'Position change detected in recent SERP analysis',
+        impact,
+        analysis: `${biggestChange.domain} moved ${direction} by ${Math.abs(biggestChange.change)} positions`,
         timestamp: new Date().toISOString()
       };
     }
@@ -320,11 +417,34 @@ export class SerpPredictiveIntelligence {
   }
 
   private static calculateTrendMomentum(serpData: EnhancedSerpResult): number {
-    return Math.random() * 100; // Placeholder - use actual trend data
+    // Use historical rankings if available
+    const historicalRankings = (serpData as any).historicalRankings || [];
+    if (historicalRankings.length < 2) return 50; // Neutral if insufficient data
+    
+    const recentAvg = historicalRankings.slice(0, 3).reduce((a: number, b: number) => a + b, 0) / 
+                      Math.min(3, historicalRankings.length);
+    const olderAvg = historicalRankings.slice(-3).reduce((a: number, b: number) => a + b, 0) / 
+                     Math.min(3, historicalRankings.length);
+    
+    if (olderAvg === 0) return 50;
+    
+    // Higher score = improving rankings (lower position numbers)
+    const improvement = ((olderAvg - recentAvg) / olderAvg) * 100;
+    return Math.max(0, Math.min(100, 50 + improvement));
   }
 
   private static calculateSeasonalityScore(serpData: EnhancedSerpResult): number {
-    return Math.random() * 100; // Placeholder - use seasonal data
+    // Use search volume trends if available
+    const volumeTrend = (serpData as any).volumeTrend || [];
+    if (volumeTrend.length < 6) return 50; // Neutral if insufficient data
+    
+    const stdDev = calculateStandardDeviation(volumeTrend);
+    const avgVolume = volumeTrend.reduce((a: number, b: number) => a + b, 0) / volumeTrend.length;
+    
+    if (avgVolume === 0) return 50;
+    
+    // High variance = high seasonality
+    return Math.min(100, (stdDev / avgVolume) * 150);
   }
 
   private static generateRecommendation(score: number, factors: any): string {
@@ -382,7 +502,10 @@ export class SerpPredictiveIntelligence {
         .slice(0, 2)
         .map(r => r.keyword),
       contentStrategy: `Create comprehensive content covering ${primary.keyword} with supporting topics`,
-      estimatedImpact: Math.floor(Math.random() * 50) + 50
+      estimatedImpact: Math.round(
+        (100 - (primary.keywordDifficulty || 50)) * 0.5 + 
+        (primary.searchVolume || 0) / 100
+      )
     }));
   }
 

@@ -2,9 +2,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, AlertCircle, XCircle, RefreshCw, Settings } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, RefreshCw, Settings, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ApiProvider } from './types';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 
 interface ApiStatusDashboardProps {
   providers: ApiProvider[];
@@ -13,49 +16,110 @@ interface ApiStatusDashboardProps {
   onQuickSetup: () => void;
 }
 
+type ProviderStatus = 'connected' | 'warning' | 'error' | 'unknown' | 'loading';
+
 export const ApiStatusDashboard = ({ 
   providers, 
   selectedProviders, 
   onRefreshAll, 
   onQuickSetup 
 }: ApiStatusDashboardProps) => {
+  const { user } = useAuth();
+  const [providerStatuses, setProviderStatuses] = useState<Record<string, ProviderStatus>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
   const visibleProviders = providers.filter(p => p.required || selectedProviders.includes(p.id));
-  
-  // Simulate status - in real implementation, this would come from actual API key testing
-  const getProviderStatus = (provider: ApiProvider) => {
-    const random = Math.random();
-    if (provider.required) {
-      return random > 0.3 ? 'connected' : random > 0.1 ? 'warning' : 'error';
-    }
-    return random > 0.5 ? 'connected' : random > 0.2 ? 'warning' : 'error';
-  };
 
+  // Fetch real provider status from database
+  const getProviderStatus = useCallback(async (providerId: string): Promise<ProviderStatus> => {
+    if (!user?.id) return 'unknown';
+
+    try {
+      const { data, error } = await supabase
+        .from('ai_service_providers')
+        .select('status, api_key, last_verified')
+        .eq('provider', providerId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error(`Error checking provider ${providerId}:`, error);
+        return 'unknown';
+      }
+
+      if (!data) return 'error'; // No configuration found
+      if (!data.api_key) return 'error'; // No API key
+      if (data.status === 'active') return 'connected';
+      if (data.status === 'error') return 'error';
+      
+      // Check if last verification is stale (> 1 hour)
+      if (data.last_verified) {
+        const lastVerified = new Date(data.last_verified);
+        const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        if (lastVerified < hourAgo) {
+          return 'warning'; // Needs re-validation
+        }
+      }
+      
+      return data.status === 'active' ? 'connected' : 'warning';
+    } catch (error) {
+      console.error(`Error checking provider ${providerId}:`, error);
+      return 'unknown';
+    }
+  }, [user?.id]);
+
+  // Check all provider statuses on mount
+  useEffect(() => {
+    const checkAllStatuses = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      
+      // Initialize all as loading
+      const initialStatuses: Record<string, ProviderStatus> = {};
+      visibleProviders.forEach(p => {
+        initialStatuses[p.id] = 'loading';
+      });
+      setProviderStatuses(initialStatuses);
+
+      // Check each provider in parallel
+      const statusPromises = visibleProviders.map(async (provider) => {
+        const status = await getProviderStatus(provider.id);
+        return { id: provider.id, status };
+      });
+
+      const results = await Promise.all(statusPromises);
+      
+      const newStatuses: Record<string, ProviderStatus> = {};
+      results.forEach(({ id, status }) => {
+        newStatuses[id] = status;
+      });
+      
+      setProviderStatuses(newStatuses);
+      setIsLoading(false);
+    };
+
+    checkAllStatuses();
+  }, [user?.id, visibleProviders.length, getProviderStatus]);
+
+  // Calculate status counts from real data
   const statusCounts = visibleProviders.reduce((acc, provider) => {
-    const status = getProviderStatus(provider);
-    acc[status] = (acc[status] || 0) + 1;
+    const status = providerStatuses[provider.id] || 'unknown';
+    if (status === 'connected') acc.connected++;
+    else if (status === 'warning' || status === 'loading') acc.warning++;
+    else acc.error++;
     return acc;
-  }, {} as Record<string, number>);
+  }, { connected: 0, warning: 0, error: 0 });
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'connected':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <XCircle className="h-4 w-4 text-red-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'connected':
-        return 'text-green-500 bg-green-500/10 border-green-500/20';
-      case 'warning':
-        return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-      default:
-        return 'text-red-500 bg-red-500/10 border-red-500/20';
-    }
+  const handleRefresh = () => {
+    // Re-check all statuses
+    setIsLoading(true);
+    onRefreshAll();
+    // Trigger re-fetch by resetting statuses
+    setProviderStatuses({});
   };
 
   return (
@@ -71,7 +135,9 @@ export const ApiStatusDashboard = ({
               <CheckCircle2 className="h-5 w-5 text-green-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-green-500">{statusCounts.connected || 0}</p>
+              <p className="text-2xl font-bold text-green-500">
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : statusCounts.connected}
+              </p>
               <p className="text-sm text-muted-foreground">Connected</p>
             </div>
           </div>
@@ -85,7 +151,9 @@ export const ApiStatusDashboard = ({
               <AlertCircle className="h-5 w-5 text-yellow-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-yellow-500">{statusCounts.warning || 0}</p>
+              <p className="text-2xl font-bold text-yellow-500">
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : statusCounts.warning}
+              </p>
               <p className="text-sm text-muted-foreground">Needs Attention</p>
             </div>
           </div>
@@ -99,8 +167,10 @@ export const ApiStatusDashboard = ({
               <XCircle className="h-5 w-5 text-red-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-red-500">{statusCounts.error || 0}</p>
-              <p className="text-sm text-muted-foreground">Not Working</p>
+              <p className="text-2xl font-bold text-red-500">
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : statusCounts.error}
+              </p>
+              <p className="text-sm text-muted-foreground">Not Configured</p>
             </div>
           </div>
         </CardContent>
@@ -119,12 +189,13 @@ export const ApiStatusDashboard = ({
               Quick Setup
             </Button>
             <Button 
-              onClick={onRefreshAll}
+              onClick={handleRefresh}
               variant="ghost" 
               size="sm" 
               className="w-full text-muted-foreground hover:text-foreground"
+              disabled={isLoading}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh All
             </Button>
           </div>
