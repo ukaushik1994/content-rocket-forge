@@ -1,255 +1,290 @@
 
 
-# Onboarding Walkthrough Implementation Plan
+# Complete Onboarding Overhaul: Visual Demonstration Carousel
 
 ## Overview
 
-Your application already has a comprehensive **Grand App Tour** with 13+ detailed steps covering every feature. However, it's not being shown automatically to new users, and there's no way to revisit it from Settings. This plan will wire everything together for a seamless onboarding experience.
+This plan transforms the text-heavy Grand Tour into a **premium visual demonstration system** matching the exact quality of your landing page's `FeaturesCarousel.tsx`. Each step will show users what features look like through animated illustrations, not just tell them.
 
 ---
 
-## Current State Analysis
+## Carousel Step Structure (8 Steps)
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Grand Tour Content | Complete | 13+ steps covering all modules |
-| Tour Modal UI | Complete | Beautiful, animated, with achievements |
-| Auto-trigger for new users | Missing | Need to detect first login |
-| Settings access | Missing | No "Help & Tour" tab in Settings |
-| New user detection | Missing | No localStorage or DB flag |
+Based on your grouping requirements, here's the updated carousel structure:
 
----
-
-## What Will Be Implemented
-
-### 1. Auto-Trigger Tour for New Users
-
-After signup/first login, automatically show the Grand Tour.
-
-**Detection Logic:**
-- Check if `localStorage` has `'grand-tour-completed'` key
-- Check if `localStorage` has `'has-seen-onboarding'` key (new flag)
-- If neither exists AND user just authenticated, trigger the tour
-
-**File Changes:**
-- `src/pages/Index.tsx` - Add useEffect to detect new users and auto-start tour
-
-### 2. Add "Help & Tour" Tab to Settings
-
-Users can revisit the walkthrough anytime from Settings.
-
-**Design:**
-```
-+------------------------------------------+
-|  Settings                           [X]  |
-+------------------------------------------+
-|  Profile          |                      |
-|  API Keys         |   HELP & TOUR        |
-|  Websites         |                      |
-|  Notifications    |   [Icon] App Tour    |
-|  Prompts          |   Experience the     |
-|  Help & Tour  <-- |   complete walkthrough|
-|                   |   of all features.   |
-|                   |                      |
-|                   |   [Start Tour]       |
-|                   |                      |
-|                   |   Achievements: 3/5  |
-|                   |   [Trophy icons]     |
-|                   |                      |
-|                   |   ─────────────────  |
-|                   |                      |
-|                   |   Quick Links:       |
-|                   |   - Documentation    |
-|                   |   - Keyboard Shortcuts|
-|                   |   - Contact Support  |
-+------------------------------------------+
-```
-
-**File Changes:**
-- `src/components/settings/HelpAndTourSettings.tsx` - New component
-- `src/components/settings/SettingsPopup.tsx` - Add new tab
-- `src/contexts/SettingsContext.tsx` - Add 'helpTour' to valid tabs
-
-### 3. Enhanced New User Flow
-
-After successful auth callback, pass a query parameter to dashboard indicating new user status.
-
-**Flow:**
-```
-User Signs Up
-      |
-      v
-Email Verification
-      |
-      v
-AuthCallback.tsx
-      |
-      v
-Navigate to /dashboard?newUser=true  <-- Add this
-      |
-      v
-Index.tsx detects newUser param
-      |
-      v
-Auto-triggers startTour()
-      |
-      v
-Sets localStorage flags
-```
-
-**File Changes:**
-- `src/pages/AuthCallback.tsx` - Add newUser detection and query param
-- `src/pages/Index.tsx` - Read query param and trigger tour
+| Step | Section | Features Covered | Illustration Type |
+|------|---------|------------------|-------------------|
+| 1 | Welcome | Platform overview, what makes CreAiter unique | Welcome animation with logo + orbiting icons |
+| 2 | Content Creation Suite | Builder + Repository + Approvals | 3-panel animated flow |
+| 3 | Research & Keywords | Research Hub + Keyword Intelligence + SERP | Enhanced SearchResultsIllustration |
+| 4 | Content Strategy | Goals, Proposals, Calendar, Topic Clusters | Strategy dashboard mockup |
+| 5 | Campaigns | Campaign builder, strategy selection, queue | Campaign command center |
+| 6 | Analytics | Performance metrics, GA4, Search Console, ROI | Multi-chart analytics dashboard |
+| 7 | AI Chat | Conversational AI with charts, tables, insights | Chat interface with visualizations |
+| 8 | Integrations | WordPress, Wix, Slack, GA4, GSC, AI Providers | Connected nodes ecosystem |
 
 ---
 
-## Technical Implementation Details
+## Step-by-Step Visual Stories
 
-### File 1: `src/pages/AuthCallback.tsx`
+### Step 1: Welcome to CreAiter
+**Visual Story**: Animated logo with orbiting feature icons representing all modules
 
-Modify the success navigation to detect if this is a new user's first login:
+**Illustration Elements**:
+- Central CreAiter logo with pulse rings
+- 6 orbiting icons: Brain (AI), Search (Research), FileText (Content), BarChart (Analytics), Rocket (Campaigns), MessageSquare (Chat)
+- Particle effects connecting them
 
-```typescript
-// In the success handling:
-if (data.session) {
-  setStatus('success');
-  
-  // Check if user is new (no tour completed flag)
-  const isNewUser = !localStorage.getItem('grand-tour-completed') && 
-                    !localStorage.getItem('has-seen-onboarding');
-  
-  setTimeout(() => {
-    navigate(isNewUser ? '/dashboard?welcome=true' : '/dashboard', { replace: true });
-  }, 1500);
-}
-```
-
-### File 2: `src/pages/Index.tsx`
-
-Add auto-trigger logic:
-
-```typescript
-import { useSearchParams } from 'react-router-dom';
-import { useGrandTour } from '@/contexts/GrandTourContext';
-
-// Inside component:
-const [searchParams, setSearchParams] = useSearchParams();
-const { startTour, hasCompletedTour } = useGrandTour();
-
-useEffect(() => {
-  const isWelcomeFlow = searchParams.get('welcome') === 'true';
-  
-  if (isWelcomeFlow && !hasCompletedTour) {
-    // Clear the query param
-    searchParams.delete('welcome');
-    setSearchParams(searchParams, { replace: true });
-    
-    // Set flag to prevent re-triggering
-    localStorage.setItem('has-seen-onboarding', 'true');
-    
-    // Small delay to let dashboard render, then start tour
-    setTimeout(() => {
-      startTour();
-    }, 500);
-  }
-}, [searchParams, hasCompletedTour, startTour]);
-```
-
-### File 3: `src/components/settings/HelpAndTourSettings.tsx` (NEW)
-
-Create a new component for the Help & Tour settings tab:
-
-**Features:**
-- "Start Tour" button that triggers the Grand Tour
-- Achievement progress display (X/5 unlocked)
-- Trophy icons for each achievement
-- Quick links section (Documentation, Shortcuts, Support)
-- Visual indication if tour was completed
-
-### File 4: `src/components/settings/SettingsPopup.tsx`
-
-Add the new tab to the tabs array:
-
-```typescript
-{
-  id: 'helpTour',
-  label: 'Help & Tour',
-  icon: <Compass className="h-4 w-4" />,
-  component: <HelpAndTourSettings />
-}
-```
-
-### File 5: `src/contexts/SettingsContext.tsx`
-
-Update valid tab list to include 'helpTour'.
+**Content Summary**:
+- "The self-learning content engine that gets smarter with every post"
+- Platform differentiator: learns from YOUR results
 
 ---
 
-## Tour Content Already Covered
+### Step 2: Content Creation Suite (Builder + Repository + Approvals)
+**Visual Story**: A seamless flow showing content moving through stages
 
-The existing Grand Tour covers these modules in detail:
+**Illustration Elements**:
+- LEFT PANEL: Content Builder with 5-step progress indicator animating
+- CENTER: Document flowing into Repository with version badges (v1, v2, v3)
+- RIGHT PANEL: Approval workflow with checkmarks appearing
+- Connecting arrows showing the flow
 
-| Step | Module | What It Explains |
-|------|--------|------------------|
-| 1 | Welcome | Platform overview, 10+ modules, AI-powered |
-| 2 | Dashboard | Command center, analytics, quick access |
-| 3 | Quick Actions | One-click access to features |
-| 4 | Content Builder | 6-step AI content creation process |
-| 5 | Drafts & Library | Version control, collaboration, auto-save |
-| 6 | Approval Workflows | Team reviews, quality scoring |
-| 7 | Content Repurposing | Multi-format transformation |
-| 8 | Content Strategy | Goal tracking, competitor analysis, calendar |
-| 9 | Keyword Research | SERP data, clustering, competition |
-| 10 | Answer The People | Question discovery, intent analysis |
-| 11 | Topic Clusters | Content pillars, semantic architecture |
-| 12 | Solutions Management | Product/service integration, brand guidelines |
-| 13 | Analytics | SEO metrics, engagement, conversions, ROI |
-| 14 | AI Conversational Mode | Natural language commands, automation |
+**Content Summary**:
+- **Builder**: 5-step AI-powered creation (Keywords, Outline, SERP, Write, Optimize)
+- **Repository**: Version control, media assets, performance tracking
+- **Approvals**: Team review workflows, quality scoring
 
-This is comprehensive and covers everything a new user needs to know.
+---
+
+### Step 3: Research & Keywords
+**Visual Story**: SERP data powering intelligent keyword discovery
+
+**Illustration Elements**:
+- Reuse `SearchResultsIllustration` patterns
+- Add keyword clusters forming
+- People Also Ask questions transforming to content ideas
+- Content gap detector highlighting opportunities
+
+**Content Summary**:
+- **Research Hub**: Unified SERP + People Questions interface
+- **Keyword Intelligence**: Competition analysis, search volume, clustering
+- **Topic Clusters**: Semantic content architecture
+
+---
+
+### Step 4: Content Strategy
+**Visual Story**: Strategic planning dashboard with goals and calendar
+
+**Illustration Elements**:
+- Goal tracker with progress bars animating
+- Editorial calendar with content blocks appearing
+- AI proposals sliding in with recommendations
+- Performance predictions graph
+
+**Content Summary**:
+- Set content goals and track progress
+- AI-generated content proposals based on your data
+- Editorial calendar for planning
+- Topic clusters for SEO architecture
+
+---
+
+### Step 5: Campaign Management
+**Visual Story**: Campaign command center with real-time queue
+
+**Illustration Elements**:
+- Campaign card with strategy summary
+- Content generation queue with items processing (pending -> generating -> complete)
+- Progress bars animating
+- Asset preview cards appearing
+
+**Content Summary**:
+- AI generates complete campaign strategies
+- Batch content generation for entire campaigns
+- Real-time queue tracking
+- Solution/product branding integration
+
+---
+
+### Step 6: Analytics & Performance
+**Visual Story**: Multi-perspective analytics dashboard
+
+**Illustration Elements**:
+- Reuse `StrategyDashboardIllustration` patterns
+- Add 4 metric cards with numbers counting up
+- Line chart + bar chart side by side
+- ROI calculation bubble appearing
+
+**Content Summary**:
+- Google Analytics integration (traffic, sessions, bounce rate)
+- Search Console data (impressions, clicks, positions)
+- Content-level performance tracking
+- Campaign ROI calculations
+
+---
+
+### Step 7: AI Strategy Coach (AI Chat)
+**Visual Story**: Conversational interface generating visual insights
+
+**Illustration Elements**:
+- Chat message bubbles appearing with typing animation
+- Chart materializing FROM a message bubble (key visual!)
+- Metric cards with trend arrows
+- Action buttons ("View Campaign", "Retry Failed")
+
+**Content Summary**:
+- Natural language content commands
+- Interactive charts and tables in responses
+- Campaign intelligence and queue status
+- Smart suggestions based on context
+
+---
+
+### Step 8: Integrations Ecosystem
+**Visual Story**: Connected platform showing all integrations
+
+**Illustration Elements**:
+- Central CreAiter node
+- Radiating connection lines to:
+  - WordPress logo/icon
+  - Wix logo/icon
+  - Google Analytics
+  - Search Console
+  - Slack
+  - AI providers (OpenAI, Anthropic, Gemini icons)
+- Data flowing animations between nodes
+
+**Content Summary**:
+- **Publishing**: WordPress, Wix (OAuth)
+- **Analytics**: GA4, Search Console
+- **Notifications**: Slack, Webhooks
+- **AI Providers**: OpenRouter, Anthropic, Gemini, Mistral, OpenAI
+- **SERP**: SerpAPI, Serpstack, DataForSEO
+
+---
+
+## Technical Implementation
+
+### New Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/onboarding/OnboardingCarousel.tsx` | Master carousel component |
+| `src/components/onboarding/OnboardingStep.tsx` | Two-column step layout |
+| `src/components/onboarding/OnboardingContext.tsx` | Simplified state management |
+| `src/components/onboarding/illustrations/WelcomeIllustration.tsx` | Step 1 visual |
+| `src/components/onboarding/illustrations/ContentSuiteIllustration.tsx` | Step 2: Builder+Repo+Approvals |
+| `src/components/onboarding/illustrations/ResearchIllustration.tsx` | Step 3: Keywords+SERP |
+| `src/components/onboarding/illustrations/StrategyIllustration.tsx` | Step 4 visual |
+| `src/components/onboarding/illustrations/CampaignIllustration.tsx` | Step 5 visual |
+| `src/components/onboarding/illustrations/AnalyticsIllustration.tsx` | Step 6 visual |
+| `src/components/onboarding/illustrations/AIChatIllustration.tsx` | Step 7: Chat with charts |
+| `src/components/onboarding/illustrations/IntegrationsIllustration.tsx` | Step 8 visual |
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/pages/Index.tsx` | Replace GrandTourContext with OnboardingContext |
+| `src/pages/AuthCallback.tsx` | Keep `?welcome=true` flow |
+| `src/components/settings/HelpAndTourSettings.tsx` | Trigger new onboarding |
+
+### Files to Remove/Deprecate
+
+| File | Action |
+|------|--------|
+| `src/contexts/GrandTourContext.tsx` | Replace with OnboardingContext |
+| `src/components/tour/GrandAppTour.tsx` | Replace with OnboardingCarousel |
+| Related tour components | Remove or archive |
+
+---
+
+## Animation Patterns (Matching FeaturesCarousel)
+
+All illustrations will use these proven framer-motion patterns:
+
+```text
+Entry Animations:
+- initial={{ opacity: 0, y: 20 }}
+- animate={{ opacity: 1, y: 0 }}
+- transition={{ duration: 0.6, delay: index * 0.2 }}
+
+Looping Animations:
+- animate={{ y: [0, -8, 0] }}
+- transition={{ duration: 2, repeat: Infinity }}
+
+Pulse Effects:
+- animate={{ scale: [1, 1.1, 1], opacity: [0.6, 1, 0.6] }}
+- transition={{ duration: 3, repeat: Infinity }}
+
+Progress Bar Auto-Advance:
+- initial={{ width: "0%" }}
+- animate={{ width: "100%" }}
+- transition={{ duration: 8, ease: "linear" }}
+```
+
+---
+
+## Two-Column Layout Structure
+
+Each step follows this exact structure from FeaturesCarousel:
+
+```text
++---------------------------------------------------------------+
+|  [Step X of 8]                                        [X]     |
++---------------------------------------------------------------+
+|                                                               |
+|  +---------------------------+  +---------------------------+ |
+|  |                           |  |  [Gradient Icon Badge]    | |
+|  |   ANIMATED ILLUSTRATION   |  |                           | |
+|  |                           |  |  Feature Title            | |
+|  |   - Visual mockups        |  |  Short description        | |
+|  |   - Animated elements     |  |                           | |
+|  |   - Data flowing          |  |  Expanded explanation     | |
+|  |   - Interactive cues      |  |  paragraph...             | |
+|  |                           |  |                           | |
+|  |   (350-400px height)      |  |  [Benefit] [Benefit]      | |
+|  |                           |  |  [Benefit] [Benefit]      | |
+|  |                           |  |                           | |
+|  |                           |  |  [Try This Feature ->]    | |
+|  +---------------------------+  +---------------------------+ |
+|                                                               |
++---------------------------------------------------------------+
+|  [<] [Progress Dots] [>]     [Skip]  [Previous]  [Next ->]   |
+|  [======== Auto-advance progress bar =========]               |
++---------------------------------------------------------------+
+```
 
 ---
 
 ## User Experience Flow
 
-### New User Experience:
-1. User signs up with email/Google
-2. Verifies email (if applicable)
-3. Redirected to Dashboard with `?welcome=true`
-4. Grand Tour modal appears automatically
-5. User can navigate through all 14 steps or skip
-6. Achievements unlock as they progress
-7. Tour marked as complete in localStorage
+### New User (Post-Signup):
+1. Complete signup/verification
+2. AuthCallback redirects to `/dashboard?welcome=true`
+3. Dashboard detects param, triggers OnboardingCarousel
+4. User experiences 8 visual steps (can skip anytime)
+5. Completion saved to localStorage
+6. Can revisit from Settings > Help & Tour
 
-### Returning User (Revisit Tour):
-1. Click Settings icon
+### Returning User (Settings Access):
+1. Open Settings
 2. Navigate to "Help & Tour" tab
-3. Click "Start Tour" button
-4. Tour begins from step 1
-5. Can also view achievements earned
-
----
-
-## Files Summary
-
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/pages/AuthCallback.tsx` | Modify | Detect new users, add query param |
-| `src/pages/Index.tsx` | Modify | Read query param, auto-trigger tour |
-| `src/components/settings/HelpAndTourSettings.tsx` | Create | New settings tab for tour access |
-| `src/components/settings/SettingsPopup.tsx` | Modify | Add Help & Tour tab |
-| `src/contexts/SettingsContext.tsx` | Modify | Add 'helpTour' to valid tabs |
+3. Click "Restart Walkthrough"
+4. Carousel opens from step 1
 
 ---
 
 ## Summary
 
-This implementation leverages your existing comprehensive Grand Tour system by:
+This overhaul creates a **visual-first onboarding experience** that:
 
-1. **Auto-triggering** for new users after signup
-2. **Adding Settings access** so users can revisit anytime
-3. **Preserving completion state** across sessions
-4. **Showing achievements** to gamify the learning experience
+1. **Shows** users each feature through animated illustrations matching landing page quality
+2. **Groups** related features logically (Builder+Repo+Approvals, Keywords+Research, etc.)
+3. **Covers** all major sections including the new AI Chat charts, Campaign queues, and Integrations
+4. **Maintains** the auto-advance carousel UX with 8-second intervals
+5. **Preserves** skip/navigation controls for user flexibility
 
-No content changes needed - the existing 14-step tour already covers every feature in rich detail with beautiful animations and visual explanations.
+The 8 illustrations will be custom-built using the same framer-motion patterns found in `SearchResultsIllustration.tsx`, `StrategyDashboardIllustration.tsx`, and `ContentHubIllustration.tsx` - ensuring visual consistency between marketing and product experiences.
 
