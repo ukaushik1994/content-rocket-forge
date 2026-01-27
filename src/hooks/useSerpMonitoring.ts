@@ -178,9 +178,9 @@ export function useSerpMonitoring() {
           return;
         }
 
-        // Check if API keys are configured
+        // Check if API keys are configured (use metadata view for security)
         const { data: apiKeys, error: apiError } = await supabase
-          .from('api_keys')
+          .from('api_keys_metadata')
           .select('service, is_active')
           .in('service', ['serp', 'serpstack'])
           .eq('is_active', true);

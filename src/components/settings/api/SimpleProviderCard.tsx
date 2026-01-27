@@ -109,9 +109,10 @@ export const SimpleProviderCard = ({ provider }: SimpleProviderCardProps) => {
           if (providerData) {
             setIsEnabled(providerData.status === 'active');
           } else {
-            // Fall back to api_keys table (for non-AI services like SERP)
+            // Fall back to api_keys_metadata view (for non-AI services like SERP)
+            // Using metadata view for security - no encrypted_key exposed
             const { data: apiKeyData } = await supabase
-              .from('api_keys')
+              .from('api_keys_metadata')
               .select('is_active')
               .eq('user_id', user.id)
               .eq('service', provider.serviceKey)

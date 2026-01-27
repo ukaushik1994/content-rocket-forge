@@ -89,9 +89,9 @@ export async function syncApiKeysToProviders(): Promise<boolean> {
 
     console.log('🔄 Syncing API keys to ai_service_providers...');
 
-    // Get API keys from api_keys
+    // Get API key metadata (encrypted_key not accessible from client for security)
     const { data: apiKeys, error: keysError } = await supabase
-      .from('api_keys')
+      .from('api_keys_metadata')
       .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true);
@@ -196,7 +196,7 @@ export async function autoSyncApiKeys(): Promise<void> {
 
     const [providersResult, keysResult] = await Promise.all([
       supabase.from('ai_service_providers').select('id').eq('user_id', user.id).limit(1),
-      supabase.from('api_keys').select('id').eq('user_id', user.id).eq('is_active', true).limit(1)
+      supabase.from('api_keys_metadata').select('id').eq('user_id', user.id).eq('is_active', true).limit(1)
     ]);
 
     const hasProviders = (providersResult.data || []).length > 0;

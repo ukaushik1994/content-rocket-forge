@@ -260,8 +260,9 @@ class ApiKeyService {
         return [];
       }
 
+      // Use metadata view for security (no encrypted_key exposed)
       const { data, error } = await supabase
-        .from('api_keys')
+        .from('api_keys_metadata')
         .select('service')
         .eq('user_id', user.id)
         .eq('is_active', true);
@@ -349,10 +350,10 @@ class ApiKeyService {
         return false;
       }
 
-      // Fetch the API key FIRST to validate before updating
+      // Check if API key exists (use metadata view for security - no encrypted_key exposed)
       const { data: apiKeyData } = await supabase
-        .from('api_keys')
-        .select('encrypted_key')
+        .from('api_keys_metadata')
+        .select('id')
         .eq('user_id', user.id)
         .eq('service', service)
         .maybeSingle();
@@ -413,11 +414,14 @@ class ApiKeyService {
           };
           
           // Sync DECRYPTED api_key field when activating (edge functions need plain text)
+          // Use getApiKey which goes through the secure edge function
           if (isActive && apiKeyData) {
             try {
-              const decryptedKey = await decryptApiKey(apiKeyData.encrypted_key, user.id);
-              updateData.api_key = decryptedKey;
-              console.log(`🔓 Decrypted ${service} API key for ai_service_providers sync`);
+              const decryptedKey = await ApiKeyService.getApiKey(service);
+              if (decryptedKey) {
+                updateData.api_key = decryptedKey;
+                console.log(`🔓 Decrypted ${service} API key for ai_service_providers sync`);
+              }
             } catch (decryptError) {
               console.error(`❌ Failed to decrypt ${service} key for sync:`, decryptError);
               // Don't update api_key if decryption fails
@@ -437,10 +441,13 @@ class ApiKeyService {
           }
         } else if (isActive && apiKeyData) {
           // Insert new provider record only if activating
-          // Decrypt the key before storing (edge functions need plain text)
-          let plainTextKey = '';
+          // Decrypt the key using secure edge function before storing
+          let plainTextKey: string | null = null;
           try {
-            plainTextKey = await decryptApiKey(apiKeyData.encrypted_key, user.id);
+            plainTextKey = await ApiKeyService.getApiKey(service);
+            if (!plainTextKey) {
+              throw new Error('Failed to retrieve decrypted key');
+            }
             console.log(`🔓 Decrypted ${service} API key for ai_service_providers insert`);
           } catch (decryptError) {
             console.error(`❌ Failed to decrypt ${service} key for insert:`, decryptError);

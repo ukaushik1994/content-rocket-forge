@@ -69,9 +69,9 @@ export function ApiKeyDebugModal({ isOpen, onClose }: ApiKeyDebugModalProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get API keys from different tables
+      // Get API keys metadata (encrypted_key column is no longer accessible for security)
       const [apiKeysResult, providersResult] = await Promise.all([
-        supabase.from('api_keys').select('*').eq('user_id', user.id),
+        supabase.from('api_keys_metadata').select('*').eq('user_id', user.id),
         supabase.from('ai_service_providers').select('*').eq('user_id', user.id)
       ]);
 
@@ -196,7 +196,7 @@ export function ApiKeyDebugModal({ isOpen, onClose }: ApiKeyDebugModalProps) {
                         <div key={i} className="flex gap-2">
                           <Badge variant="secondary">{key.service}</Badge>
                           <span>Active: {key.is_active ? '✅' : '❌'}</span>
-                          <span>Key Length: {key.encrypted_key?.length}</span>
+                          <span>Configured: ✅</span>
                         </div>
                       ))}
                     </div>
