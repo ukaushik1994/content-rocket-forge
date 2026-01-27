@@ -1,138 +1,255 @@
 
 
-# Update Page Thumbnail / Open Graph Image
+# Onboarding Walkthrough Implementation Plan
 
-## Current Problem
+## Overview
 
-The page thumbnail shown when sharing your site (on Social Media, Slack, Discord, etc.) is using a **default Lovable placeholder image** that doesn't represent your brand. This dark, generic preview doesn't showcase what CreAiter actually does.
-
-**Current configuration in `index.html`:**
-```html
-<meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-<meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-<meta name="twitter:site" content="@lovable_dev" />  <!-- Wrong Twitter handle! -->
-```
+Your application already has a comprehensive **Grand App Tour** with 13+ detailed steps covering every feature. However, it's not being shown automatically to new users, and there's no way to revisit it from Settings. This plan will wire everything together for a seamless onboarding experience.
 
 ---
 
-## Solution Overview
+## Current State Analysis
 
-| Step | Action | Description |
-|------|--------|-------------|
-| 1 | Create OG Image | Generate a branded 1200×630 image for CreAiter |
-| 2 | Host the Image | Add to `public/` folder so it's served at a static URL |
-| 3 | Update Meta Tags | Point `og:image` and `twitter:image` to the new image |
-| 4 | Fix Twitter Handle | Update from `@lovable_dev` to your actual handle |
-| 5 | Add to Landing.tsx | Ensure Helmet includes the OG image for the homepage |
-
----
-
-## Recommended OG Image Design
-
-A professional Open Graph image should be **1200×630 pixels** and include:
-
-- **CreAiter logo/brand name** prominently displayed
-- **Tagline**: "The Self-Learning Content Engine" or similar
-- **Visual elements**: Abstract AI/content imagery, gradient background matching your brand colors (purple/blue)
-- **Clean, high contrast** - readable even as a small thumbnail
-
-**Design concept:**
-```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│     ╔═══════════════════════════════════════════════╗       │
-│     ║                                               ║       │
-│     ║            🚀 CreAiter                        ║       │
-│     ║                                               ║       │
-│     ║    The Self-Learning Content Engine           ║       │
-│     ║    That Gets Smarter With Every Post          ║       │
-│     ║                                               ║       │
-│     ║    [AI • Content • Strategy • Growth]         ║       │
-│     ║                                               ║       │
-│     ╚═══════════════════════════════════════════════╝       │
-│                                                             │
-│           (Gradient background: purple → blue)              │
-└─────────────────────────────────────────────────────────────┘
-```
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Grand Tour Content | Complete | 13+ steps covering all modules |
+| Tour Modal UI | Complete | Beautiful, animated, with achievements |
+| Auto-trigger for new users | Missing | Need to detect first login |
+| Settings access | Missing | No "Help & Tour" tab in Settings |
+| New user detection | Missing | No localStorage or DB flag |
 
 ---
 
-## Technical Implementation
+## What Will Be Implemented
 
-### Files to Modify
+### 1. Auto-Trigger Tour for New Users
 
-| File | Changes |
-|------|---------|
-| `public/og-image.png` | **Create** - Add the branded OG image |
-| `index.html` | **Modify** - Update meta tags to point to new image |
-| `src/pages/Landing.tsx` | **Modify** - Add explicit og:image in Helmet |
+After signup/first login, automatically show the Grand Tour.
 
-### 1. Update index.html
+**Detection Logic:**
+- Check if `localStorage` has `'grand-tour-completed'` key
+- Check if `localStorage` has `'has-seen-onboarding'` key (new flag)
+- If neither exists AND user just authenticated, trigger the tour
 
-Replace lines 24-31 with:
+**File Changes:**
+- `src/pages/Index.tsx` - Add useEffect to detect new users and auto-start tour
 
-```html
-<meta property="og:title" content="CreAiter - AI-Powered Content Creation Platform" />
-<meta property="og:description" content="The self-learning content engine that gets smarter with every post. AI-powered content creation with team collaboration and enterprise-grade features." />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://creaiter.lovable.app" />
-<meta property="og:image" content="https://creaiter.lovable.app/og-image.png" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="CreAiter - AI Content Creation Platform" />
+### 2. Add "Help & Tour" Tab to Settings
 
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site" content="@creaiter" />
-<meta name="twitter:title" content="CreAiter - AI-Powered Content Creation" />
-<meta name="twitter:description" content="The self-learning content engine that gets smarter with every post." />
-<meta name="twitter:image" content="https://creaiter.lovable.app/og-image.png" />
+Users can revisit the walkthrough anytime from Settings.
+
+**Design:**
+```
++------------------------------------------+
+|  Settings                           [X]  |
++------------------------------------------+
+|  Profile          |                      |
+|  API Keys         |   HELP & TOUR        |
+|  Websites         |                      |
+|  Notifications    |   [Icon] App Tour    |
+|  Prompts          |   Experience the     |
+|  Help & Tour  <-- |   complete walkthrough|
+|                   |   of all features.   |
+|                   |                      |
+|                   |   [Start Tour]       |
+|                   |                      |
+|                   |   Achievements: 3/5  |
+|                   |   [Trophy icons]     |
+|                   |                      |
+|                   |   ─────────────────  |
+|                   |                      |
+|                   |   Quick Links:       |
+|                   |   - Documentation    |
+|                   |   - Keyboard Shortcuts|
+|                   |   - Contact Support  |
++------------------------------------------+
 ```
 
-### 2. Update Landing.tsx Helmet
+**File Changes:**
+- `src/components/settings/HelpAndTourSettings.tsx` - New component
+- `src/components/settings/SettingsPopup.tsx` - Add new tab
+- `src/contexts/SettingsContext.tsx` - Add 'helpTour' to valid tabs
 
-Add explicit OG image tags in the Helmet section:
+### 3. Enhanced New User Flow
 
-```tsx
-<Helmet>
-  <title>CreAiter - The Self-Learning Content Engine That Gets Smarter With Every Post</title>
-  <meta name="description" content="..." />
-  <meta name="keywords" content="..." />
-  <meta property="og:title" content="CreAiter - AI-Powered Content Creation Platform" />
-  <meta property="og:description" content="..." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://creaiter.lovable.app/og-image.png" />
-  <meta name="twitter:image" content="https://creaiter.lovable.app/og-image.png" />
-  <link rel="canonical" href="https://creaiter.com" />
-</Helmet>
+After successful auth callback, pass a query parameter to dashboard indicating new user status.
+
+**Flow:**
 ```
+User Signs Up
+      |
+      v
+Email Verification
+      |
+      v
+AuthCallback.tsx
+      |
+      v
+Navigate to /dashboard?newUser=true  <-- Add this
+      |
+      v
+Index.tsx detects newUser param
+      |
+      v
+Auto-triggers startTour()
+      |
+      v
+Sets localStorage flags
+```
+
+**File Changes:**
+- `src/pages/AuthCallback.tsx` - Add newUser detection and query param
+- `src/pages/Index.tsx` - Read query param and trigger tour
 
 ---
 
-## Image Generation Options
+## Technical Implementation Details
 
-### Option A: Use AI to Generate
-I can generate a professional OG image using the AI image generation tool, then save it to your `public/` folder.
+### File 1: `src/pages/AuthCallback.tsx`
 
-### Option B: You Provide an Image
-If you have a specific design or brand asset you'd like to use, you can upload it and I'll integrate it.
+Modify the success navigation to detect if this is a new user's first login:
 
-### Option C: Create a Simple Branded Image
-Generate a clean gradient image with your logo/text using code (SVG-based).
+```typescript
+// In the success handling:
+if (data.session) {
+  setStatus('success');
+  
+  // Check if user is new (no tour completed flag)
+  const isNewUser = !localStorage.getItem('grand-tour-completed') && 
+                    !localStorage.getItem('has-seen-onboarding');
+  
+  setTimeout(() => {
+    navigate(isNewUser ? '/dashboard?welcome=true' : '/dashboard', { replace: true });
+  }, 1500);
+}
+```
+
+### File 2: `src/pages/Index.tsx`
+
+Add auto-trigger logic:
+
+```typescript
+import { useSearchParams } from 'react-router-dom';
+import { useGrandTour } from '@/contexts/GrandTourContext';
+
+// Inside component:
+const [searchParams, setSearchParams] = useSearchParams();
+const { startTour, hasCompletedTour } = useGrandTour();
+
+useEffect(() => {
+  const isWelcomeFlow = searchParams.get('welcome') === 'true';
+  
+  if (isWelcomeFlow && !hasCompletedTour) {
+    // Clear the query param
+    searchParams.delete('welcome');
+    setSearchParams(searchParams, { replace: true });
+    
+    // Set flag to prevent re-triggering
+    localStorage.setItem('has-seen-onboarding', 'true');
+    
+    // Small delay to let dashboard render, then start tour
+    setTimeout(() => {
+      startTour();
+    }, 500);
+  }
+}, [searchParams, hasCompletedTour, startTour]);
+```
+
+### File 3: `src/components/settings/HelpAndTourSettings.tsx` (NEW)
+
+Create a new component for the Help & Tour settings tab:
+
+**Features:**
+- "Start Tour" button that triggers the Grand Tour
+- Achievement progress display (X/5 unlocked)
+- Trophy icons for each achievement
+- Quick links section (Documentation, Shortcuts, Support)
+- Visual indication if tour was completed
+
+### File 4: `src/components/settings/SettingsPopup.tsx`
+
+Add the new tab to the tabs array:
+
+```typescript
+{
+  id: 'helpTour',
+  label: 'Help & Tour',
+  icon: <Compass className="h-4 w-4" />,
+  component: <HelpAndTourSettings />
+}
+```
+
+### File 5: `src/contexts/SettingsContext.tsx`
+
+Update valid tab list to include 'helpTour'.
 
 ---
 
-## After Implementation
+## Tour Content Already Covered
 
-1. **Publish the app** - The new image must be accessible at the production URL
-2. **Clear social media caches** - Use these tools to force refresh:
-   - Twitter: https://cards-dev.twitter.com/validator
-   - Facebook: https://developers.facebook.com/tools/debug/
-   - LinkedIn: https://www.linkedin.com/post-inspector/
-3. **Verify** - Share a link and confirm the new thumbnail appears
+The existing Grand Tour covers these modules in detail:
+
+| Step | Module | What It Explains |
+|------|--------|------------------|
+| 1 | Welcome | Platform overview, 10+ modules, AI-powered |
+| 2 | Dashboard | Command center, analytics, quick access |
+| 3 | Quick Actions | One-click access to features |
+| 4 | Content Builder | 6-step AI content creation process |
+| 5 | Drafts & Library | Version control, collaboration, auto-save |
+| 6 | Approval Workflows | Team reviews, quality scoring |
+| 7 | Content Repurposing | Multi-format transformation |
+| 8 | Content Strategy | Goal tracking, competitor analysis, calendar |
+| 9 | Keyword Research | SERP data, clustering, competition |
+| 10 | Answer The People | Question discovery, intent analysis |
+| 11 | Topic Clusters | Content pillars, semantic architecture |
+| 12 | Solutions Management | Product/service integration, brand guidelines |
+| 13 | Analytics | SEO metrics, engagement, conversions, ROI |
+| 14 | AI Conversational Mode | Natural language commands, automation |
+
+This is comprehensive and covers everything a new user needs to know.
+
+---
+
+## User Experience Flow
+
+### New User Experience:
+1. User signs up with email/Google
+2. Verifies email (if applicable)
+3. Redirected to Dashboard with `?welcome=true`
+4. Grand Tour modal appears automatically
+5. User can navigate through all 14 steps or skip
+6. Achievements unlock as they progress
+7. Tour marked as complete in localStorage
+
+### Returning User (Revisit Tour):
+1. Click Settings icon
+2. Navigate to "Help & Tour" tab
+3. Click "Start Tour" button
+4. Tour begins from step 1
+5. Can also view achievements earned
+
+---
+
+## Files Summary
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/pages/AuthCallback.tsx` | Modify | Detect new users, add query param |
+| `src/pages/Index.tsx` | Modify | Read query param, auto-trigger tour |
+| `src/components/settings/HelpAndTourSettings.tsx` | Create | New settings tab for tour access |
+| `src/components/settings/SettingsPopup.tsx` | Modify | Add Help & Tour tab |
+| `src/contexts/SettingsContext.tsx` | Modify | Add 'helpTour' to valid tabs |
 
 ---
 
 ## Summary
 
-The current thumbnail uses a default Lovable placeholder. By creating a branded 1200×630 OG image and updating the meta tags in `index.html` and `Landing.tsx`, your social shares will display a professional, on-brand preview that represents CreAiter properly.
+This implementation leverages your existing comprehensive Grand Tour system by:
+
+1. **Auto-triggering** for new users after signup
+2. **Adding Settings access** so users can revisit anytime
+3. **Preserving completion state** across sessions
+4. **Showing achievements** to gamify the learning experience
+
+No content changes needed - the existing 14-step tour already covers every feature in rich detail with beautiful animations and visual explanations.
 
