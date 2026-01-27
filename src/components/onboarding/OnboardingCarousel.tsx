@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useOnboarding } from './OnboardingContext';
 import { OnboardingStep } from './OnboardingStep';
-import { ParticleField } from './ui/ParticleField';
+
 import { GradientBorder } from './ui/GradientBorder';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -197,8 +197,6 @@ export const OnboardingCarousel = () => {
           onClick={skipOnboarding}
         />
 
-        {/* Particle field background */}
-        <ParticleField count={30} className="z-[1]" />
 
         {/* Main container with gradient border */}
         <GradientBorder className="relative z-10 w-full max-w-6xl">
