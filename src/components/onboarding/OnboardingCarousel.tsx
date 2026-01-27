@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useOnboarding } from './OnboardingContext';
 import { OnboardingStep } from './OnboardingStep';
+import { BusinessSetupForm } from './BusinessSetupForm';
 
 import { GradientBorder } from './ui/GradientBorder';
 import { cn } from '@/lib/utils';
@@ -133,7 +134,8 @@ export const OnboardingCarousel = () => {
     prevStep, 
     goToStep, 
     skipOnboarding,
-    endOnboarding 
+    endOnboarding,
+    showBusinessSetup
   } = useOnboarding();
   
   const navigate = useNavigate();
@@ -143,9 +145,9 @@ export const OnboardingCarousel = () => {
   const stepConfigs = getStepConfigs();
   const currentConfig = stepConfigs[currentStep];
 
-  // Auto-advance progress
+  // Auto-advance progress (only during tour, not during business setup)
   useEffect(() => {
-    if (!isActive || isPaused) {
+    if (!isActive || isPaused || showBusinessSetup) {
       setProgress(0);
       return;
     }
@@ -163,7 +165,7 @@ export const OnboardingCarousel = () => {
     }, 50);
 
     return () => clearInterval(interval);
-  }, [isActive, currentStep, isPaused, nextStep]);
+  }, [isActive, currentStep, isPaused, nextStep, showBusinessSetup]);
 
   // Reset progress on step change
   useEffect(() => {
@@ -284,153 +286,168 @@ export const OnboardingCarousel = () => {
             {/* Content area with step transition */}
             <div className="flex-1 overflow-hidden bg-slate-950/80">
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStep}
-                  className="h-full"
-                  initial={{ opacity: 0, x: 60 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -60 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                >
-                  <OnboardingStep
-                    {...currentConfig}
-                    onAction={currentConfig.route ? handleAction : undefined}
-                  />
-                </motion.div>
+                {showBusinessSetup ? (
+                  <motion.div
+                    key="business-setup"
+                    className="h-full"
+                    initial={{ opacity: 0, x: 60 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -60 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  >
+                    <BusinessSetupForm />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={currentStep}
+                    className="h-full"
+                    initial={{ opacity: 0, x: 60 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -60 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  >
+                    <OnboardingStep
+                      {...currentConfig}
+                      onAction={currentConfig.route ? handleAction : undefined}
+                    />
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
 
-            {/* Premium footer controls */}
-            <div className="flex-shrink-0 px-8 py-5 border-t border-white/5 bg-slate-900/50 backdrop-blur-sm">
-              {/* Segmented progress bar */}
-              <div className="flex gap-1 mb-5">
-                {stepConfigs.map((config, index) => (
-                  <motion.div
-                    key={index}
-                    className={cn(
-                      "flex-1 h-1 rounded-full overflow-hidden transition-all duration-300",
-                      index <= currentStep ? "bg-slate-700" : "bg-slate-800"
-                    )}
-                  >
-                    {index < currentStep && (
-                      <div className={cn("h-full w-full bg-gradient-to-r", config.gradient)} />
-                    )}
-                    {index === currentStep && (
-                      <motion.div
-                        className={cn("h-full bg-gradient-to-r", config.gradient)}
-                        style={{ width: `${progress}%` }}
-                      />
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between">
-                {/* Navigation arrows and dots */}
-                <div className="flex items-center gap-3">
-                  <motion.button
-                    onClick={prevStep}
-                    disabled={currentStep === 0}
-                    className={cn(
-                      "p-2.5 rounded-xl border transition-all duration-300",
-                      currentStep === 0 
-                        ? "opacity-30 cursor-not-allowed border-transparent" 
-                        : "hover:bg-white/5 border-white/10 hover:border-white/20"
-                    )}
-                    whileHover={currentStep > 0 ? { scale: 1.05 } : {}}
-                    whileTap={currentStep > 0 ? { scale: 0.95 } : {}}
-                  >
-                    <ChevronLeft className="w-5 h-5 text-white/70" />
-                  </motion.button>
-
-                  {/* Step dots */}
-                  <div className="hidden sm:flex items-center gap-2">
-                    {stepConfigs.map((_, index) => (
-                      <motion.button
-                        key={index}
-                        onClick={() => goToStep(index)}
-                        className="relative"
-                        whileHover={{ scale: 1.2 }}
-                      >
-                        <div
-                          className={cn(
-                            "w-2.5 h-2.5 rounded-full transition-all duration-300",
-                            index === currentStep
-                              ? "bg-gradient-to-r from-neon-purple to-neon-blue scale-125"
-                              : index < currentStep
-                              ? "bg-neon-purple/60"
-                              : "bg-white/20"
-                          )}
+            {/* Premium footer controls - hide when showing business setup */}
+            {!showBusinessSetup && (
+              <div className="flex-shrink-0 px-8 py-5 border-t border-white/5 bg-slate-900/50 backdrop-blur-sm">
+                {/* Segmented progress bar */}
+                <div className="flex gap-1 mb-5">
+                  {stepConfigs.map((config, index) => (
+                    <motion.div
+                      key={index}
+                      className={cn(
+                        "flex-1 h-1 rounded-full overflow-hidden transition-all duration-300",
+                        index <= currentStep ? "bg-slate-700" : "bg-slate-800"
+                      )}
+                    >
+                      {index < currentStep && (
+                        <div className={cn("h-full w-full bg-gradient-to-r", config.gradient)} />
+                      )}
+                      {index === currentStep && (
+                        <motion.div
+                          className={cn("h-full bg-gradient-to-r", config.gradient)}
+                          style={{ width: `${progress}%` }}
                         />
-                        {index === currentStep && (
-                          <motion.div
-                            className="absolute inset-0 rounded-full bg-neon-purple/50"
-                            animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                          />
-                        )}
-                      </motion.button>
-                    ))}
-                  </div>
-
-                  <motion.button
-                    onClick={nextStep}
-                    className="p-2.5 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <ChevronRight className="w-5 h-5 text-white/70" />
-                  </motion.button>
+                      )}
+                    </motion.div>
+                  ))}
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-4">
-                  <motion.button
-                    onClick={skipOnboarding}
-                    className="px-5 py-2.5 text-sm text-white/50 hover:text-white/80 transition-colors"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    Skip Tour
-                  </motion.button>
-
-                  {currentStep > 0 && (
+                <div className="flex items-center justify-between">
+                  {/* Navigation arrows and dots */}
+                  <div className="flex items-center gap-3">
                     <motion.button
                       onClick={prevStep}
-                      className="hidden sm:block px-5 py-2.5 text-sm text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-xl transition-all"
+                      disabled={currentStep === 0}
+                      className={cn(
+                        "p-2.5 rounded-xl border transition-all duration-300",
+                        currentStep === 0 
+                          ? "opacity-30 cursor-not-allowed border-transparent" 
+                          : "hover:bg-white/5 border-white/10 hover:border-white/20"
+                      )}
+                      whileHover={currentStep > 0 ? { scale: 1.05 } : {}}
+                      whileTap={currentStep > 0 ? { scale: 0.95 } : {}}
+                    >
+                      <ChevronLeft className="w-5 h-5 text-white/70" />
+                    </motion.button>
+
+                    {/* Step dots */}
+                    <div className="hidden sm:flex items-center gap-2">
+                      {stepConfigs.map((_, index) => (
+                        <motion.button
+                          key={index}
+                          onClick={() => goToStep(index)}
+                          className="relative"
+                          whileHover={{ scale: 1.2 }}
+                        >
+                          <div
+                            className={cn(
+                              "w-2.5 h-2.5 rounded-full transition-all duration-300",
+                              index === currentStep
+                                ? "bg-gradient-to-r from-neon-purple to-neon-blue scale-125"
+                                : index < currentStep
+                                ? "bg-neon-purple/60"
+                                : "bg-white/20"
+                            )}
+                          />
+                          {index === currentStep && (
+                            <motion.div
+                              className="absolute inset-0 rounded-full bg-neon-purple/50"
+                              animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                          )}
+                        </motion.button>
+                      ))}
+                    </div>
+
+                    <motion.button
+                      onClick={nextStep}
+                      className="p-2.5 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <ChevronRight className="w-5 h-5 text-white/70" />
+                    </motion.button>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-4">
+                    <motion.button
+                      onClick={skipOnboarding}
+                      className="px-5 py-2.5 text-sm text-white/50 hover:text-white/80 transition-colors"
                       whileHover={{ scale: 1.02 }}
                     >
-                      Previous
+                      Skip Tour
                     </motion.button>
-                  )}
 
-                  {/* Premium next button with shimmer */}
-                  <motion.button
-                    onClick={nextStep}
-                    className="relative px-7 py-3 rounded-xl text-white text-sm font-semibold overflow-hidden group"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    {/* Gradient background */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-purple via-neon-blue to-neon-purple bg-[length:200%_100%] animate-gradient-shift" />
-                    
-                    {/* Shimmer effect */}
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
-                      animate={{ translateX: ['100%', '-100%'] }}
-                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                    />
-                    
-                    {/* Glow */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-purple to-neon-blue opacity-0 group-hover:opacity-50 blur-xl transition-opacity" />
-                    
-                    <span className="relative z-10 flex items-center gap-2">
-                      {currentStep === totalSteps - 1 ? 'Get Started' : 'Next'}
-                      <ChevronRight className="w-4 h-4" />
-                    </span>
-                  </motion.button>
+                    {currentStep > 0 && (
+                      <motion.button
+                        onClick={prevStep}
+                        className="hidden sm:block px-5 py-2.5 text-sm text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-xl transition-all"
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        Previous
+                      </motion.button>
+                    )}
+
+                    {/* Premium next button with shimmer */}
+                    <motion.button
+                      onClick={nextStep}
+                      className="relative px-7 py-3 rounded-xl text-white text-sm font-semibold overflow-hidden group"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      {/* Gradient background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-neon-purple via-neon-blue to-neon-purple bg-[length:200%_100%] animate-gradient-shift" />
+                      
+                      {/* Shimmer effect */}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
+                        animate={{ translateX: ['100%', '-100%'] }}
+                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                      />
+                      
+                      {/* Glow */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-neon-purple to-neon-blue opacity-0 group-hover:opacity-50 blur-xl transition-opacity" />
+                      
+                      <span className="relative z-10 flex items-center gap-2">
+                        {currentStep === totalSteps - 1 ? 'Get Started' : 'Next'}
+                        <ChevronRight className="w-4 h-4" />
+                      </span>
+                    </motion.button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </motion.div>
         </GradientBorder>
       </motion.div>
