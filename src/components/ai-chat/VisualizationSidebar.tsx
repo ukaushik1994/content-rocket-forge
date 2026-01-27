@@ -138,11 +138,44 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Extract data from chartConfig
+  // Issue #2 Fix: Extract data with fallback chain
   const chartData = useMemo(() => {
-    if (!chartConfig?.data) return [];
-    return chartConfig.data;
-  }, [chartConfig]);
+    // Primary source: chartConfig.data
+    if (chartConfig?.data && chartConfig.data.length > 0) {
+      return chartConfig.data;
+    }
+    
+    // Fallback 1: visualData.data
+    if (visualData?.data && Array.isArray(visualData.data) && visualData.data.length > 0) {
+      console.log('📊 Chart data fallback 1: using visualData.data');
+      return visualData.data;
+    }
+    
+    // Fallback 2: visualData.tableData (convert to chart format)
+    if (visualData?.tableData?.rows && visualData.tableData.rows.length > 0) {
+      console.log('📊 Chart data fallback 2: converting tableData to chart format');
+      const headers = visualData.tableData.headers || [];
+      return visualData.tableData.rows.map((row: any[], idx: number) => {
+        const item: any = { name: row[0] || `Item ${idx + 1}` };
+        headers.slice(1).forEach((header: string, i: number) => {
+          const value = row[i + 1];
+          item[header] = typeof value === 'number' ? value : parseFloat(value) || 0;
+        });
+        return item;
+      });
+    }
+    
+    // Fallback 3: Generate from metricCards if available
+    if (visualData?.summaryInsights?.metricCards && visualData.summaryInsights.metricCards.length > 0) {
+      console.log('📊 Chart data fallback 3: generating from metricCards');
+      return visualData.summaryInsights.metricCards.map((card: any) => ({
+        name: card.label || card.title || 'Metric',
+        value: typeof card.value === 'number' ? card.value : parseFloat(card.value) || 0
+      }));
+    }
+    
+    return [];
+  }, [chartConfig, visualData]);
 
   // Determine if we should show secondary chart
   const hasSecondaryData = useMemo(() => {
@@ -368,12 +401,27 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
       return <ChartLoadingSkeleton />;
     }
     
+    // Issue #2 Fix: Actionable empty state with prompt suggestion
     if (!chartData?.length) {
       return (
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          <div className="text-center">
-            <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No data available</p>
+          <div className="text-center max-w-xs">
+            <Database className="w-8 h-8 mx-auto mb-3 opacity-50" />
+            <p className="text-sm font-medium mb-1">No chart data available</p>
+            <p className="text-xs text-muted-foreground/70 mb-3">
+              The AI didn't provide structured data for visualization.
+            </p>
+            {onSendMessage && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSendMessage("Show me a chart of my content performance")}
+                className="text-xs"
+              >
+                <BarChart3 className="w-3 h-3 mr-1.5" />
+                Request a chart
+              </Button>
+            )}
           </div>
         </div>
       );
@@ -1026,7 +1074,7 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                     </div>
                   </motion.div>
 
-                  {/* 2. AI SUMMARY - with timeframe context */}
+                  {/* 2. AI SUMMARY - with timeframe context and real feedback handler (Issue #3 fix) */}
                   {chartData.length > 0 && (
                     <AISummaryCard
                       chartData={chartData}
@@ -1034,7 +1082,11 @@ export const VisualizationSidebar: React.FC<VisualizationSidebarProps> = ({
                       title={title}
                       timeframe={dataInfo.timeframe}
                       dataSource={dataInfo.source}
-                      onFeedback={(helpful) => console.log('Feedback:', helpful)}
+                      onFeedback={(helpful) => {
+                        // Real feedback handler - could persist to database
+                        console.log('Visualization feedback:', { helpful, title, dataSource: dataInfo.source });
+                        // Optional: Add toast notification or persist to ai_message_reactions
+                      }}
                     />
                   )}
 

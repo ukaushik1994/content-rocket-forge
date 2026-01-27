@@ -107,6 +107,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [contextSources, setContextSources] = useState<any[]>([]);
   const [showContextIndicator, setShowContextIndicator] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Visualization sidebar state
   const [showVisualizationSidebar, setShowVisualizationSidebar] = useState(false);
@@ -119,6 +120,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   
   // Smart persistence: track if user has interacted with sidebar
   const [sidebarInteracted, setSidebarInteracted] = useState(false);
+  
+  // Issue #4 Fix: Track explicit user close intent
+  const [userClosedSidebar, setUserClosedSidebar] = useState(false);
 
   // Handle manual expand visualization (kept for backwards compatibility)
   const handleExpandVisualization = (visualData: any, chartConfig: ChartConfiguration) => {
@@ -133,8 +137,13 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   // AUTO-OPEN sidebar when AI response contains visual data
-  // Scans entire conversation for the most recent visualization (for loaded conversations)
+  // Respects user's explicit close intent (Issue #4 fix)
   useEffect(() => {
+    // If user explicitly closed sidebar, don't auto-open
+    if (userClosedSidebar) {
+      return;
+    }
+    
     if (messages.length === 0) {
       // No messages - close sidebar if user hasn't interacted
       if (!sidebarInteracted) {
@@ -171,25 +180,49 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         setShowVisualizationSidebar(false);
       }
     }
-  }, [messages, sidebarInteracted]);
+  }, [messages, sidebarInteracted, userClosedSidebar]);
+  
+  // Reset close intent when starting a new conversation
+  useEffect(() => {
+    setUserClosedSidebar(false);
+  }, [activeConversation]);
 
   // Track user interaction with sidebar (for smart persistence)
   const handleSidebarInteraction = () => {
     setSidebarInteracted(true);
   };
 
-  // Close sidebar and reset interaction flag
+  // Close sidebar and track user's explicit close intent (Issue #4 fix)
   const handleCloseSidebar = () => {
     setShowVisualizationSidebar(false);
     setSidebarInteracted(false);
+    setUserClosedSidebar(true); // Remember user explicitly closed
+  };
+  
+  // Handle manual open (resets close intent)
+  const handleOpenSidebar = () => {
+    setShowVisualizationSidebar(true);
+    setSidebarInteracted(true);
+    setUserClosedSidebar(false); // User manually reopened, reset close intent
   };
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth'
+  // Issue #1 Fix: Scroll to bottom using Radix ScrollArea viewport
+  const scrollToBottom = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        viewport.scrollTo({
+          top: viewport.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
     });
-  }, [messages, isTyping]);
+  }, []);
+
+  // Auto-scroll to bottom when new messages arrive (Issue #1 fix)
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping, scrollToBottom]);
 
 
   // Handle escape key to close sidebar
@@ -352,8 +385,8 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             </div>
           )}
           
-          {/* Messages Area */}
-          <ScrollArea className="flex-1 px-6">
+          {/* Messages Area - with ref for proper scrolling (Issue #1 fix) */}
+          <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
             <div className="max-w-6xl mx-auto py-6 space-y-8">
               {/* Welcome State - Premium Minimal */}
               <AnimatePresence>

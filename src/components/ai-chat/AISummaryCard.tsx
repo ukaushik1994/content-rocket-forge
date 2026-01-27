@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
-import { Sparkles, ThumbsUp, ThumbsDown } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Sparkles, ThumbsUp, ThumbsDown, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AISummaryCardProps {
   chartData: any[];
@@ -22,6 +23,9 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
   onFeedback,
   className
 }) => {
+  // Issue #3 Fix: Track feedback submission state
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean | null>(null);
+  
   // Generate AI summary from data
   const summary = useMemo(() => {
     if (!chartData?.length || !dataKeys?.length) {
@@ -62,7 +66,13 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
     }
 
     return insight;
-  }, [chartData, dataKeys]);
+  }, [chartData, dataKeys, timeframe]);
+
+  // Handle feedback with visual confirmation
+  const handleFeedback = (helpful: boolean) => {
+    setFeedbackSubmitted(helpful);
+    onFeedback?.(helpful);
+  };
 
   if (!summary) return null;
 
@@ -83,27 +93,49 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({
         </div>
       </div>
 
-      {/* Subtle feedback row */}
+      {/* Issue #3 Fix: Responsive feedback row with visual confirmation */}
       {onFeedback && (
         <div className="flex items-center gap-1 mt-3 ml-7">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onFeedback(true)}
-            className="h-6 text-[10px] px-2 text-muted-foreground/50 hover:text-emerald-500"
-          >
-            <ThumbsUp className="w-2.5 h-2.5 mr-1" />
-            Helpful
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onFeedback(false)}
-            className="h-6 text-[10px] px-2 text-muted-foreground/50 hover:text-red-500"
-          >
-            <ThumbsDown className="w-2.5 h-2.5 mr-1" />
-            Not useful
-          </Button>
+          <AnimatePresence mode="wait">
+            {feedbackSubmitted !== null ? (
+              <motion.div
+                key="thanks"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-1.5 text-emerald-500 text-[10px]"
+              >
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Thanks for your feedback!</span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="buttons"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-1"
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleFeedback(true)}
+                  className="h-6 text-[10px] px-2 text-muted-foreground/50 hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"
+                >
+                  <ThumbsUp className="w-2.5 h-2.5 mr-1" />
+                  Helpful
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleFeedback(false)}
+                  className="h-6 text-[10px] px-2 text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                >
+                  <ThumbsDown className="w-2.5 h-2.5 mr-1" />
+                  Not useful
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

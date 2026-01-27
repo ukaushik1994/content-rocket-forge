@@ -459,6 +459,82 @@ You have access to specialized tools to fetch data on-demand. Use them smartly:
 // END PROMPT MODULES
 // =============================================================================
 
+// ⚡ ISSUE #5 FIX: Fast-path conversational responses (no AI call needed)
+function generateConversationalResponse(query: string): string {
+  const q = query.toLowerCase().trim();
+  const hour = new Date().getHours();
+  const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  
+  // Greetings
+  if (/^(hi|hello|hey|greetings)[\s!.?]*$/i.test(q)) {
+    return `${timeGreeting}! 👋 I'm your AI content strategy assistant. I can help you with:
+
+• **Content Analysis** - Review and optimize your articles
+• **Keyword Research** - Discover high-performing keywords
+• **Campaign Management** - Track and manage your campaigns
+• **Performance Insights** - Visualize your data with charts
+
+What would you like to explore today?`;
+  }
+  
+  if (/^good\s*(morning|afternoon|evening|day)[\s!.?]*$/i.test(q)) {
+    return `${timeGreeting} to you too! 👋 How can I help you with your content strategy today?`;
+  }
+  
+  // Acknowledgments
+  if (/^(thanks|thank\s*you|thx|ty)[\s!.?]*$/i.test(q)) {
+    return `You're welcome! 😊 Let me know if you need anything else.`;
+  }
+  
+  if (/^(ok|okay|got\s*it|understood|sure|great|perfect|awesome|cool)[\s!.?]*$/i.test(q)) {
+    return `Great! Feel free to ask if you have any questions or need help with anything.`;
+  }
+  
+  // Test messages
+  if (/^test(ing)?[\s!.?]*$/i.test(q)) {
+    return `✅ Test successful! I'm working properly. You can ask me about your content, keywords, campaigns, or request data visualizations.`;
+  }
+  
+  // Help/capabilities
+  if (/^(who are you|what are you|what can you do|help|capabilities)[\s!?.]*$/i.test(q)) {
+    return `I'm your AI-powered content strategy assistant! Here's what I can help you with:
+
+## 📊 Data & Analytics
+- Analyze your content performance
+- Track keyword rankings and opportunities
+- Monitor campaign progress and queue status
+
+## 📝 Content Strategy
+- Generate content proposals and briefs
+- Compare with competitors
+- Optimize SEO scores
+
+## 📈 Visualizations
+- Create charts and dashboards
+- Generate performance reports
+- Show trend analysis
+
+Try asking something like "Show me my content performance" or "What keywords are trending?"`;
+  }
+  
+  // Farewells
+  if (/^(bye|goodbye|see you|later|cya)[\s!.?]*$/i.test(q)) {
+    return `Goodbye! 👋 Come back anytime you need help with your content strategy.`;
+  }
+  
+  // Yes/No
+  if (/^(yes|yeah|yep)[\s!.?]*$/i.test(q)) {
+    return `Great! What would you like me to help you with?`;
+  }
+  
+  if (/^(no|nope|nah)[\s!.?]*$/i.test(q)) {
+    return `No problem! Let me know if you need anything else.`;
+  }
+  
+  // Default fallback for other short queries
+  return `I'm here to help! You can ask me about your content, keywords, campaigns, or competitors. What would you like to know?`;
+}
+
 // Input validation schemas
 const MessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -1317,8 +1393,31 @@ serve(async (req) => {
       scope: queryIntent.scope,
       categories: queryIntent.categories,
       estimatedTokens: queryIntent.estimatedTokens,
-      confidence: queryIntent.confidence
+      confidence: queryIntent.confidence,
+      isConversational: queryIntent.isConversational
     });
+    
+    // ⚡ ISSUE #5 FIX: Fast-path for conversational queries (greetings, thanks, test, etc.)
+    if (queryIntent.isConversational) {
+      console.log('⚡ FAST-PATH: Conversational query detected - skipping heavy processing');
+      
+      // Simple conversational response without data fetching or chart generation
+      const conversationalResponse = generateConversationalResponse(userQuery);
+      
+      return new Response(JSON.stringify({
+        success: true,
+        choices: [{
+          message: {
+            role: 'assistant',
+            content: conversationalResponse
+          }
+        }],
+        fastPath: true,
+        queryType: 'conversational'
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
     // Get active providers using same logic as Content Builder (AIServiceController)
     // 1. Check user_llm_keys for OpenRouter
