@@ -565,6 +565,12 @@ async function executeEnhancedAIWorkflowWithRichContext(body: WorkflowExecutionR
       case 'seo-keyword-researcher':
         workflowResult = await executeSEOKeywordWorkflow(query, mergedContext, user);
         break;
+      case 'content-creation-assistant':
+        workflowResult = await executeContentCreationWorkflow(query, mergedContext, user, supabase);
+        break;
+      case 'solution-integration-analyzer':
+        workflowResult = await executeSolutionIntegrationAnalysisWorkflow(query, mergedContext, user, supabase);
+        break;
       default:
         throw new Error(`Unknown workflow type: ${workflowType}`);
     }
@@ -1192,5 +1198,257 @@ Focus on actionable SEO improvements and keyword opportunities.
       ? `SEO analysis based on ${keywords.length} tracked keywords and content performance`
       : 'SEO analysis based on AI recommendations (no keyword history available)',
     sources: ['User Keyword History', 'SEO Best Practices', 'SERP Analysis']
+  };
+}
+
+// NEW: Content Creation Assistant Workflow
+async function executeContentCreationWorkflow(query: string, context: any, user: any, supabase: any): Promise<any> {
+  console.log('📝 Executing Content Creation Assistant workflow');
+  
+  // Get user's active AI provider
+  const { data: provider, error: providerError } = await supabase
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (providerError || !provider) {
+    throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
+  }
+
+  const solutionsContext = context.solutions?.map((s: any) => 
+    `- ${s.name}: ${s.description}`
+  ).join('\n') || 'No solutions available';
+
+  const brandContext = context.brandGuidelines 
+    ? `Brand Voice: ${context.brandGuidelines.brand_personality || 'Professional'}\nPrimary Color: ${context.brandGuidelines.primary_color || 'Not set'}`
+    : 'No brand guidelines available';
+
+  const prompt = `
+You are a content creation specialist. Create a detailed content brief based on the user's request.
+
+## User Request: "${query}"
+
+## Business Solutions:
+${solutionsContext}
+
+## Brand Guidelines:
+${brandContext}
+
+## Content Analytics:
+- Total Content: ${context.analytics?.totalContent || 0}
+- Published: ${context.analytics?.published || 0}
+- Average SEO Score: ${context.analytics?.avgSeoScore || 0}/100
+
+Please provide:
+1. **Content Brief Summary** (what content to create and why)
+2. **Recommended Title** (SEO-optimized)
+3. **Target Keywords** (3-5 primary keywords)
+4. **Content Structure** (outline with H2/H3 headings)
+5. **Key Points to Cover** (5-7 bullet points)
+6. **Call-to-Action Suggestions** (2-3 CTAs)
+7. **Estimated Word Count** (based on topic complexity)
+
+Focus on creating content that showcases their business solutions effectively.
+`;
+
+  const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+    body: {
+      service: provider.provider,
+      endpoint: 'chat',
+      apiKey: provider.api_key,
+      params: {
+        model: provider.preferred_model,
+        messages: [
+          { role: "system", content: "You are a content creation expert. Provide detailed, actionable content briefs." },
+          { role: "user", content: prompt }
+        ],
+      }
+    }
+  });
+
+  if (aiProxyError || !aiProxyResult?.success) {
+    throw new Error(aiProxyError?.message || aiProxyResult?.error || 'AI request failed');
+  }
+  
+  const aiResponse = aiProxyResult.data?.choices?.[0]?.message?.content;
+
+  // Create workflow step visualization
+  const workflowSteps = [
+    { name: 'Brief Created', status: 'completed', description: 'Content brief generated' },
+    { name: 'Review Brief', status: 'active', description: 'Review and customize the brief' },
+    { name: 'Create Draft', status: 'pending', description: 'Write the content draft' },
+    { name: 'Optimize', status: 'pending', description: 'SEO optimization and editing' },
+    { name: 'Publish', status: 'pending', description: 'Final review and publish' }
+  ];
+
+  // Chart data for content type recommendations
+  const contentTypeData = [
+    { name: 'Blog Post', value: 35, category: 'Recommended' },
+    { name: 'Guide/Tutorial', value: 30, category: 'Recommended' },
+    { name: 'Case Study', value: 20, category: 'Recommended' },
+    { name: 'Landing Page', value: 15, category: 'Recommended' }
+  ];
+  
+  return {
+    workflowType: 'content-creation-assistant',
+    summary: aiResponse,
+    visualData: {
+      type: 'workflow',
+      workflowStep: {
+        currentStep: 1,
+        totalSteps: 5,
+        steps: workflowSteps
+      },
+      chartConfig: {
+        type: 'pie',
+        data: contentTypeData,
+        title: 'Recommended Content Types',
+        colors: ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'],
+        height: 220
+      }
+    },
+    actions: [
+      { label: 'Create Blog Post', action: 'create-content', type: 'primary', data: { contentType: 'blog' } },
+      { label: 'Create Landing Page', action: 'create-content', type: 'secondary', data: { contentType: 'landing' } },
+      { label: 'Save Brief', action: 'save-content-brief', type: 'outline' }
+    ],
+    confidence: 0.87,
+    reasoning: 'Content brief generated based on user solutions and brand guidelines',
+    sources: ['User Solutions', 'Brand Guidelines', 'Content Best Practices']
+  };
+}
+
+// NEW: Solution Integration Analysis Workflow
+async function executeSolutionIntegrationAnalysisWorkflow(query: string, context: any, user: any, supabase: any): Promise<any> {
+  console.log('🔗 Executing Solution Integration Analysis workflow');
+  
+  // Get user's active AI provider
+  const { data: provider, error: providerError } = await supabase
+    .from('ai_service_providers')
+    .select('provider, api_key, preferred_model, status')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('priority', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (providerError || !provider) {
+    throw new Error("No active AI provider configured. Please configure your AI service in Settings.");
+  }
+
+  // Fetch content-solution mappings
+  const { data: contentItems } = await supabase
+    .from('content_items')
+    .select('id, title, status, solution_id, metadata, seo_score')
+    .eq('user_id', user.id)
+    .limit(50);
+
+  const solutions = context.solutions || [];
+  const content = contentItems || [];
+
+  // Calculate integration metrics
+  const solutionsWithContent = solutions.filter((s: any) => 
+    content.some((c: any) => c.solution_id === s.id || c.metadata?.solution_id === s.id)
+  );
+  
+  const integrationScore = solutions.length > 0 
+    ? Math.round((solutionsWithContent.length / solutions.length) * 100)
+    : 0;
+
+  const contentCoverage = `${solutionsWithContent.length}/${solutions.length}`;
+
+  const prompt = `
+You are a content-solution integration analyst. Analyze how well the user's content promotes their business solutions.
+
+## User Query: "${query}"
+
+## Solutions (${solutions.length} total):
+${solutions.map((s: any) => `- ${s.name}: ${s.description}`).join('\n') || 'No solutions defined'}
+
+## Content Items (${content.length} total):
+${content.slice(0, 10).map((c: any) => `- "${c.title}" (Status: ${c.status}, SEO: ${c.seo_score || 'N/A'})`).join('\n') || 'No content items'}
+
+## Current Integration:
+- Solutions with content: ${solutionsWithContent.length}
+- Integration score: ${integrationScore}%
+
+Please provide:
+1. **Integration Analysis Summary** (current state assessment)
+2. **Gap Analysis** (which solutions lack content coverage)
+3. **Content Recommendations** (specific content to create for uncovered solutions)
+4. **Integration Improvement Plan** (3-5 actionable steps)
+5. **Priority Ranking** (which gaps to address first and why)
+`;
+
+  const { data: aiProxyResult, error: aiProxyError } = await supabase.functions.invoke('ai-proxy', {
+    body: {
+      service: provider.provider,
+      endpoint: 'chat',
+      apiKey: provider.api_key,
+      params: {
+        model: provider.preferred_model,
+        messages: [
+          { role: "system", content: "You are a content-solution integration expert. Analyze and recommend improvements." },
+          { role: "user", content: prompt }
+        ],
+      }
+    }
+  });
+
+  if (aiProxyError || !aiProxyResult?.success) {
+    throw new Error(aiProxyError?.message || aiProxyResult?.error || 'AI request failed');
+  }
+  
+  const aiResponse = aiProxyResult.data?.choices?.[0]?.message?.content;
+
+  // Create metrics for visualization
+  const metrics = [
+    { label: 'Integration Score', value: `${integrationScore}%`, trend: integrationScore >= 70 ? 'up' : 'down' },
+    { label: 'Solutions Covered', value: contentCoverage, trend: 'neutral' },
+    { label: 'Total Solutions', value: solutions.length.toString(), trend: 'neutral' },
+    { label: 'Content Items', value: content.length.toString(), trend: 'neutral' }
+  ];
+
+  // Chart data for solution coverage
+  const coverageData = solutions.map((s: any) => ({
+    name: s.name?.substring(0, 15) + (s.name?.length > 15 ? '...' : ''),
+    value: content.filter((c: any) => c.solution_id === s.id || c.metadata?.solution_id === s.id).length,
+    category: 'Content Count'
+  }));
+  
+  return {
+    workflowType: 'solution-integration-analyzer',
+    summary: aiResponse,
+    visualData: {
+      type: 'metrics',
+      metrics,
+      chartConfig: {
+        type: 'bar',
+        data: coverageData.length > 0 ? coverageData : [{ name: 'No Data', value: 0, category: 'Content' }],
+        title: 'Content per Solution',
+        categories: ['Content Count'],
+        colors: ['hsl(var(--primary))'],
+        height: 250
+      }
+    },
+    integrationScore,
+    contentCoverage,
+    uncoveredSolutions: solutions.filter((s: any) => 
+      !content.some((c: any) => c.solution_id === s.id || c.metadata?.solution_id === s.id)
+    ),
+    actions: [
+      { label: 'Create Content for Gaps', action: 'create-content-for-gaps', type: 'primary' },
+      { label: 'Improve Integration', action: 'improve-solution-integration', type: 'secondary' },
+      { label: 'Export Report', action: 'export-integration-report', type: 'outline' }
+    ],
+    confidence: solutions.length > 0 ? 0.85 : 0.4,
+    reasoning: solutions.length > 0 
+      ? `Integration analysis based on ${solutions.length} solutions and ${content.length} content items`
+      : 'Limited analysis - no solutions defined yet',
+    sources: ['User Solutions', 'Content Repository', 'Integration Analysis']
   };
 }

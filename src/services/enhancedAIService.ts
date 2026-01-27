@@ -529,7 +529,8 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
     return 'Info';
   }
 
-  // NEW: Automatic Workflow Detection
+  // NEW: Automatic Workflow Detection with Priority-based Pattern Matching
+  // IMPORTANT: Order matters! More specific patterns are checked FIRST to avoid mis-routing
   private async detectWorkflowOpportunity(message: string, context: any): Promise<{
     shouldUseWorkflow: boolean;
     workflowType?: string;
@@ -538,8 +539,54 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
   }> {
     const lowerMessage = message.toLowerCase();
     
-    // Content Strategy Patterns
+    // PRIORITY 1: Performance Analysis (check FIRST - avoids "content" triggering content-strategy)
+    // Exclusion logic: if "performance" or "analytics" is present, don't match content-strategy
     if (this.matchesPattern(lowerMessage, [
+      'performance analysis', 'analyze performance', 'performance of my content',
+      'content performance', 'show me analytics', 'analytics report', 'analytics dashboard',
+      'how is my content performing', 'performance metrics', 'solution performance',
+      'how are my solutions performing', 'interactive charts', 'performance with charts'
+    ])) {
+      return {
+        shouldUseWorkflow: true,
+        workflowType: 'solution-performance-analyzer',
+        confidence: 0.92,
+        reasoning: 'User wants comprehensive performance analysis with metrics and charts'
+      };
+    }
+    
+    // PRIORITY 2: Solution Integration Analysis (NEW workflow type)
+    if (this.matchesPattern(lowerMessage, [
+      'solution integration', 'integrate solution', 'solution visibility',
+      'content integrates', 'integration analysis', 'solution coverage',
+      'how well my current content integrates', 'solution alignment'
+    ])) {
+      return {
+        shouldUseWorkflow: true,
+        workflowType: 'solution-integration-analyzer',
+        confidence: 0.88,
+        reasoning: 'User wants to analyze how content integrates with business solutions'
+      };
+    }
+    
+    // PRIORITY 3: Content Creation Assistant (NEW workflow type)
+    if (this.matchesPattern(lowerMessage, [
+      'create content', 'write content', 'generate content', 'help me create',
+      'create a high-performing', 'content creation', 'write a blog', 'write an article',
+      'create blog post', 'generate blog'
+    ])) {
+      return {
+        shouldUseWorkflow: true,
+        workflowType: 'content-creation-assistant',
+        confidence: 0.87,
+        reasoning: 'User wants assistance creating specific content pieces'
+      };
+    }
+    
+    // PRIORITY 4: Content Strategy (general planning - only if not caught by performance/creation)
+    // Skip if message contains performance-related terms
+    const hasPerformanceTerms = this.matchesPattern(lowerMessage, ['performance', 'analytics', 'performing', 'metrics']);
+    if (!hasPerformanceTerms && this.matchesPattern(lowerMessage, [
       'content strategy', 'content plan', 'editorial calendar', 'content creation plan',
       'what content should', 'content ideas', 'content planning', 'strategy for content'
     ])) {
@@ -551,21 +598,7 @@ Once configured, you'll be able to chat with AI assistants, analyze content, per
       };
     }
     
-    // Performance Analysis Patterns
-    if (this.matchesPattern(lowerMessage, [
-      'how is my', 'performance of', 'analyze performance', 'show me analytics',
-      'how are my solutions', 'solution performance', 'content performance',
-      'metrics', 'dashboard', 'analytics report'
-    ])) {
-      return {
-        shouldUseWorkflow: true,
-        workflowType: 'solution-performance-analyzer',
-        confidence: 0.85,
-        reasoning: 'User wants comprehensive performance analysis and metrics'
-      };
-    }
-    
-    // SEO & Keyword Research Patterns
+    // PRIORITY 5: SEO & Keyword Research
     if (this.matchesPattern(lowerMessage, [
       'keyword research', 'seo analysis', 'keyword opportunities', 'search optimization',
       'ranking', 'keywords for', 'seo strategy', 'optimize for search'
