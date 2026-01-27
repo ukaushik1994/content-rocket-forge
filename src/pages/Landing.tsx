@@ -22,8 +22,14 @@ const Landing = () => {
         <meta name="description" content="Not just AI content creation. CreAiter learns from YOUR results, adapts to YOUR audience, and creates content that gets exponentially better over time. Be among the first creators with personalized AI engines." />
         <meta name="keywords" content="AI content creation, SERP data, keyword research, content strategy, self-learning AI, business content" />
         <meta property="og:title" content="CreAiter - AI-Powered Content Creation Platform" />
-        <meta property="og:description" content="Scale your content creation with AI-powered tools, real-time SERP integration, and intelligent keyword research." />
+        <meta property="og:description" content="The self-learning content engine that gets smarter with every post. AI-powered content creation with team collaboration and enterprise-grade features." />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://creaiter.lovable.app" />
+        <meta property="og:image" content="https://creaiter.lovable.app/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://creaiter.lovable.app/og-image.png" />
         <link rel="canonical" href="https://creaiter.com" />
       </Helmet>
 
