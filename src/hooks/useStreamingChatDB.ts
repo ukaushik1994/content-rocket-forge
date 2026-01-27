@@ -264,6 +264,42 @@ export const useStreamingChatDB = () => {
     }
   }, []);
 
+  // Dynamic WebSocket URL from environment
+  const getWebSocketUrl = (): string => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqiundzzcepmuykcnfbc.supabase.co';
+    const wsUrl = supabaseUrl
+      .replace('https://', 'wss://')
+      .replace('.supabase.co', '.functions.supabase.co');
+    return `${wsUrl}/functions/v1/ai-streaming-chat`;
+  };
+
+  // Reconnection with exponential backoff
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
+  const baseDelay = 1000;
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const attemptReconnect = useCallback(() => {
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      setState(prev => ({ ...prev, connectionStatus: 'error' }));
+      toast({
+        title: "Connection Failed",
+        description: "Unable to reconnect. Please refresh the page.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const delay = baseDelay * Math.pow(2, reconnectAttemptsRef.current);
+    reconnectAttemptsRef.current++;
+    
+    setState(prev => ({ ...prev, connectionStatus: 'reconnecting' as any }));
+    
+    reconnectTimeoutRef.current = setTimeout(() => {
+      connect();
+    }, delay);
+  }, [toast]);
+
   const connect = useCallback(() => {
     if (!user) {
       toast({
@@ -277,11 +313,12 @@ export const useStreamingChatDB = () => {
     setState(prev => ({ ...prev, connectionStatus: 'connecting' }));
 
     try {
-      const wsUrl = 'wss://iqiundzzcepmuykcnfbc.functions.supabase.co/functions/v1/ai-streaming-chat';
+      const wsUrl = getWebSocketUrl();
       websocketRef.current = new WebSocket(wsUrl);
 
       websocketRef.current.onopen = () => {
         console.log('🔗 Connected to streaming chat WebSocket');
+        reconnectAttemptsRef.current = 0; // Reset on successful connection
         setState(prev => ({ 
           ...prev, 
           isConnected: true, 
@@ -315,6 +352,9 @@ export const useStreamingChatDB = () => {
           connectionStatus: 'disconnected',
           isAIThinking: false
         }));
+        
+        // Attempt reconnection
+        attemptReconnect();
       };
 
       websocketRef.current.onerror = (error) => {
@@ -331,9 +371,15 @@ export const useStreamingChatDB = () => {
       console.error('Failed to connect:', error);
       setState(prev => ({ ...prev, connectionStatus: 'error' }));
     }
-  }, [user, toast, activeConversationId]);
+  }, [user, toast, activeConversationId, attemptReconnect]);
 
   const disconnect = useCallback(() => {
+    // Clear any pending reconnection
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
     if (websocketRef.current) {
       websocketRef.current.close();
       websocketRef.current = null;

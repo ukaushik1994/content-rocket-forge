@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AIConversation } from '@/hooks/useEnhancedAIChatDB';
 import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { useResponsiveBreakpoint } from '@/hooks/useResponsiveBreakpoint';
 
 interface ChatHistorySidebarProps {
   conversations: AIConversation[];
@@ -128,14 +130,57 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
     })
   };
 
+  const { isMobile } = useResponsiveBreakpoint();
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  // Swipe to close on mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    
+    // Swipe left to close (threshold: 50px)
+    if (diff > 50) {
+      onToggleSidebar();
+    }
+    setTouchStartX(null);
+  };
+
   return (
-    <motion.div 
-      className={`fixed left-0 top-16 bottom-0 w-80 bg-background/95 backdrop-blur-xl border-r border-border/30 flex flex-col z-40 ${className}`}
-      variants={sidebarVariants}
-      initial="hidden"
-      animate="visible"
-      exit="hidden"
-    >
+    <>
+      {/* Mobile Backdrop */}
+      {isMobile && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onToggleSidebar}
+        />
+      )}
+      
+      <motion.div 
+        ref={sidebarRef}
+        className={cn(
+          "fixed left-0 top-16 bottom-0 z-50",
+          // Responsive width: full on mobile, 280px on tablet, 320px on desktop
+          "w-full sm:w-72 lg:w-80",
+          "bg-background/98 sm:bg-background/95 backdrop-blur-xl",
+          "border-r border-border/30 flex flex-col",
+          className
+        )}
+        variants={sidebarVariants}
+        initial="hidden"
+        animate="visible"
+        exit="hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
       {/* Header - Cleaner */}
       <div className="p-4 border-b border-border/30">
         <div className="flex items-center gap-2 mb-4">
@@ -357,6 +402,16 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
               : `${conversations.length} total`
             }
           </span>
+          {/* Mobile close button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleSidebar}
+            className="lg:hidden h-6 px-2 text-xs text-muted-foreground"
+          >
+            <X className="h-3 w-3 mr-1" />
+            Close
+          </Button>
         </div>
         <Button
           onClick={() => {
@@ -371,5 +426,6 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
         </Button>
       </div>
     </motion.div>
+    </>
   );
 };

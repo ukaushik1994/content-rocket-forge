@@ -118,8 +118,11 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         </motion.div>
       )}
 
-      {/* Message Content */}
-      <div className={`${isUser ? 'max-w-[50%]' : 'w-full max-w-4xl'}`}>
+      {/* Message Content - Responsive widths */}
+      <div className={isUser 
+        ? 'max-w-[85%] sm:max-w-[75%] lg:max-w-[60%]' 
+        : 'w-full max-w-4xl'
+      }>
         <div className="relative">
           {/* Thinking Indicator - shown while AI is processing */}
           {!isUser && isThinking && thinkingContent && (

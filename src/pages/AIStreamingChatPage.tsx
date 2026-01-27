@@ -1,89 +1,29 @@
-import React, { useState } from 'react';
-import { EnhancedStreamingInterface } from '@/components/ai-chat/EnhancedStreamingInterface';
-import { ChatHistorySidebar } from '@/components/ai-chat/ChatHistorySidebar';
-import { ChatErrorBoundary } from '@/components/ai-chat/ChatErrorBoundary';
-import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
-import { useChatContextBridge } from '@/contexts/ChatContextBridge';
-import { motion } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+/**
+ * AIStreamingChatPage - Deprecated
+ * 
+ * This page has been consolidated into the main AIChat page.
+ * All streaming functionality is now available in /ai-chat.
+ * 
+ * This component redirects to the unified chat experience.
+ */
 export const AIStreamingChatPage: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
-  // Enhanced AI Chat DB for conversation management
-  const {
-    conversations,
-    activeConversation,
-    createConversation,
-    deleteConversation,
-    selectConversation,
-    togglePinConversation,
-    toggleArchiveConversation
-  } = useEnhancedAIChatDB();
+  const navigate = useNavigate();
 
-  // Chat context for streaming integration  
-  const {
-    activeConversationId,
-    updateActiveConversation
-  } = useChatContextBridge();
-
-  const handleToggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const handleClearConversation = () => {
-    console.log('Clearing conversation');
-  };
-
-  const handleCreateConversation = async () => {
-    const newConversationId = await createConversation("New Streaming Chat");
-    if (newConversationId) {
-      updateActiveConversation(newConversationId);
-    }
-  };
-
-  const handleSelectConversation = (conversationId: string) => {
-    selectConversation(conversationId);
-    updateActiveConversation(conversationId);
-  };
-
-  const handleDeleteConversation = async (conversationId: string) => {
-    await deleteConversation(conversationId);
-    if (activeConversationId === conversationId) {
-      updateActiveConversation(null);
-    }
-  };
+  useEffect(() => {
+    // Redirect to the unified AI Chat page
+    console.log('📌 AIStreamingChatPage is deprecated. Redirecting to /ai-chat...');
+    navigate('/ai-chat', { replace: true });
+  }, [navigate]);
 
   return (
-    <ChatErrorBoundary>
-      <div className="h-screen flex bg-gradient-to-br from-background to-muted/20 pt-16">
-        {/* Chat History Sidebar */}
-        {isSidebarOpen && (
-          <ChatErrorBoundary>
-            <ChatHistorySidebar
-              conversations={conversations}
-              activeConversation={activeConversationId}
-              onSelectConversation={handleSelectConversation}
-              onCreateConversation={handleCreateConversation}
-              onDeleteConversation={handleDeleteConversation}
-              onToggleSidebar={handleToggleSidebar}
-              onPinConversation={togglePinConversation}
-              onArchiveConversation={toggleArchiveConversation}
-              className="relative z-40"
-            />
-          </ChatErrorBoundary>
-        )}
-
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <ChatErrorBoundary>
-            <EnhancedStreamingInterface
-              onClearConversation={handleClearConversation}
-              onToggleSidebar={handleToggleSidebar}
-              isSidebarOpen={isSidebarOpen}
-            />
-          </ChatErrorBoundary>
-        </div>
+    <div className="h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-4" />
+        <p className="text-muted-foreground">Redirecting to AI Chat...</p>
       </div>
-    </ChatErrorBoundary>
+    </div>
   );
 };

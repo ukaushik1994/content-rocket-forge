@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Mic, Paperclip } from 'lucide-react';
 import { SolutionSuggestions } from './SolutionSuggestions';
+import { MobileActionsSheet } from './MobileActionsSheet';
 
 interface Solution {
   id: string;
@@ -148,7 +149,14 @@ export const ContextAwareMessageInput: React.FC<ContextAwareMessageInputProps> =
               : '0 2px 10px -2px hsl(var(--foreground) / 0.05)'
           }}
         >
-          {/* Attachment Button - Hidden on mobile */}
+          {/* Mobile Actions Sheet - Shows on mobile only */}
+          <MobileActionsSheet
+            onAttachment={() => console.log('Attachment clicked')}
+            onVoice={() => console.log('Voice clicked')}
+            disabled={isLoading}
+          />
+
+          {/* Attachment Button - Hidden on mobile, shown on sm+ */}
           <Button
             type="button"
             size="sm"
