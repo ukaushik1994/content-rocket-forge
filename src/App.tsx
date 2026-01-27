@@ -119,6 +119,7 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/auth/check-email" element={<CheckEmail />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/auth/confirm" element={<AuthCallback />} />
                   <Route path="/wix-callback" element={<WixCallback />} />
                   
                   {/* Landing is now the main entry point */}
