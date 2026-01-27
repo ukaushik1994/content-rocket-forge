@@ -1,762 +1,996 @@
 
-# Complete AI Chat System Remediation Plan
+# Complete Mock Data Elimination Plan
 
 ## Executive Summary
 
-After thorough codebase analysis, I've identified **24 issues** across **5 categories** affecting the AI Chat system. This plan provides detailed, phase-by-phase fixes for all issues, organized by priority.
+After a thorough audit of the codebase, I identified **32 instances** of mock data, placeholder content, simulated behavior, and fake outputs across **7 categories**. This plan details how to replace every mock value with real, dynamic data to ensure users receive complete, production-ready outputs.
 
 ---
 
-## System Architecture Overview
+## Issue Categories & Counts
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        CURRENT AI CHAT ARCHITECTURE                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────┐     ┌─────────────────────┐     ┌──────────────────┐  │
-│  │ AIChat.tsx       │     │ AIStreamingChatPage │     │ (Redundant)      │  │
-│  │ + EnhancedChat   │     │ + EnhancedStreaming │     │                  │  │
-│  │   Interface      │     │   Interface         │     │                  │  │
-│  └────────┬─────────┘     └──────────┬──────────┘     └──────────────────┘  │
-│           │                          │                                       │
-│           ▼                          ▼                                       │
-│  ┌──────────────────┐     ┌─────────────────────┐                           │
-│  │ useEnhancedAI    │     │ useStreamingChatDB  │    ← NOT SYNCED          │
-│  │ ChatDB           │     │ + useEnhancedStream │                           │
-│  └────────┬─────────┘     └──────────┬──────────┘                           │
-│           │                          │                                       │
-│           ▼                          ▼                                       │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                     Supabase Edge Functions                          │   │
-│  │  ┌─────────────────┐  ┌──────────────────┐  ┌────────────────────┐   │   │
-│  │  │ enhanced-ai-chat│  │ai-streaming-chat │  │     ai-proxy       │   │   │
-│  │  │ (HTTP)          │  │ (WebSocket)      │  │ (Provider Router)  │   │   │
-│  │  └─────────────────┘  └──────────────────┘  └────────────────────┘   │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+| Category | Count | Priority |
+|----------|-------|----------|
+| **A. Analytics & Metrics (Random Values)** | 8 | Critical |
+| **B. Technical Review Scores (Hardcoded)** | 6 | High |
+| **C. API Status (Random Simulation)** | 3 | High |
+| **D. Export & Download (Non-functional)** | 3 | High |
+| **E. Edge Function Mock Data** | 4 | Medium |
+| **F. Simulated Delays (No Backend)** | 4 | Medium |
+| **G. Stub Functions (TODOs)** | 4 | Low |
+
+**Total: 32 Issues**
 
 ---
 
-## Complete Issue Summary
+## Phase 1: Analytics & Metrics - Replace Random Values (Critical)
 
-| Category | Issues | Priority |
-|----------|--------|----------|
-| **A. Responsive Design** | 6 issues | Critical |
-| **B. Redundant Implementations** | 4 issues | High |
-| **C. Backend/Integration Gaps** | 5 issues | High |
-| **D. Incomplete Features** | 5 issues | Medium |
-| **E. State Management** | 4 issues | Medium |
-
----
-
-## Phase 1: Fix Responsive Design (Critical)
-
-### Issue A1: VisualizationSidebar Blocks Chat on Mobile
+### Issue A1: Social Analytics Service Returns Random Numbers
 
 **Current Problem:**
 ```typescript
-// VisualizationSidebar.tsx:872-880
-"fixed top-20 right-0 bottom-0 z-[35]",
-"w-full sm:w-[520px] lg:w-[600px]"  // 520px min-width breaks tablets
+// src/services/analytics/socialAnalyticsService.ts:17-21
+return {
+  platform: 'linkedin',
+  views: Math.floor(Math.random() * 5000) + 1000,  // RANDOM
+  engagement: Math.floor(Math.random() * 500) + 100,
+  shares: Math.floor(Math.random() * 100) + 10,
+  clicks: Math.floor(Math.random() * 300) + 50,
+  conversions: Math.floor(Math.random() * 50) + 5
+};
 ```
 
-**Solution:** Implement slide-over overlay pattern for mobile/tablet
-
-**File:** `src/components/ai-chat/VisualizationSidebar.tsx`
-
-Changes:
-- Add mobile breakpoint detection using window.innerWidth or Tailwind's responsive hooks
-- On mobile (< 640px): Full-screen overlay with backdrop blur
-- On tablet (640px-1024px): Slide-over panel that overlays chat (not pushes)
-- On desktop (> 1024px): Keep current side-by-side layout
-- Add swipe-to-close gesture support for mobile
-- Add close button always visible on mobile
-
-**New responsive classes:**
-```typescript
-className={cn(
-  "fixed top-16 bottom-0 z-[50]",
-  // Mobile: full screen overlay
-  "inset-x-0 sm:inset-x-auto",
-  // Tablet: overlay from right, narrower
-  "sm:right-0 sm:w-[400px]",
-  // Desktop: wider, same behavior
-  "lg:w-[520px] xl:w-[600px]",
-  "bg-background/98 backdrop-blur-xl"
-)}
-```
-
----
-
-### Issue A2: ChatHistorySidebar Fixed Width Blocks Mobile
-
-**Current Problem:**
-```typescript
-// ChatHistorySidebar.tsx:133
-className={`fixed left-0 top-16 bottom-0 w-80 ...`}  // 320px always
-```
-
-**Solution:** Make sidebar responsive with slide-over on mobile
-
-**File:** `src/components/ai-chat/ChatHistorySidebar.tsx`
-
-Changes:
-- Mobile (< 640px): Full-width overlay with backdrop, swipe gesture to close
-- Tablet (640px-1024px): 280px width overlay
-- Desktop (> 1024px): Keep current 320px push layout
-- Add touch event handlers for swipe-to-close
-
-**New responsive approach:**
-```typescript
-className={cn(
-  "fixed left-0 top-16 bottom-0 z-50",
-  // Mobile: full width overlay
-  "w-full sm:w-72 lg:w-80",
-  // Add backdrop on mobile
-  "bg-background/98 sm:bg-background/95"
-)}
-
-// Add backdrop component for mobile
-{isMobile && <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />}
-```
-
----
-
-### Issue A3: Chat Content Area Margins Break on Mobile
-
-**Current Problem:**
-```typescript
-// EnhancedChatInterface.tsx:241
-className={`... ${showSidebar ? 'ml-80' : 'ml-0'}`}
-
-// EnhancedChatInterface.tsx:244
-className={`... ${showVisualizationSidebar ? 'lg:mr-[600px] sm:mr-[520px]' : 'mr-0'}`}
-```
-
-On a 375px mobile screen, `sm:mr-[520px]` pushes chat completely off-screen.
-
-**Solution:** Remove margins on mobile, sidebars overlay instead
-
-**File:** `src/components/ai-chat/EnhancedChatInterface.tsx`
-
-Changes:
-```typescript
-// Main content area - no margins on mobile
-className={cn(
-  "flex-1 flex transition-all duration-300 pt-20 pb-24 overflow-hidden",
-  // Left sidebar margin - desktop only
-  showSidebar && "lg:ml-80",
-  // No margins for visualization sidebar on mobile/tablet - it overlays
-)}
-
-// Chat area - only shrink on large desktop
-className={cn(
-  "flex-1 flex flex-col min-h-0 transition-all duration-300",
-  showVisualizationSidebar && "xl:mr-[600px]"  // Only on xl screens
-)}
-```
-
----
-
-### Issue A4: Message Bubbles Too Narrow on Mobile
-
-**Current Problem:**
-```typescript
-// EnhancedMessageBubble.tsx:122
-className={`${isUser ? 'max-w-[50%]' : 'w-full max-w-4xl'}`}
-```
-
-User messages at 50% width are unreadable on mobile (187.5px on 375px screen).
-
-**Solution:** Responsive max-widths
-
-**File:** `src/components/ai-chat/EnhancedMessageBubble.tsx`
-
-Changes:
-```typescript
-className={cn(
-  isUser 
-    ? "max-w-[85%] sm:max-w-[75%] lg:max-w-[60%]"  // 85% on mobile
-    : "w-full max-w-4xl"
-)}
-```
-
----
-
-### Issue A5: Input Area Margin Conflicts
-
-**Current Problem:**
-```typescript
-// EnhancedChatInterface.tsx:396
-className={`fixed bottom-0 left-0 right-0 z-40 ... ${showSidebar ? 'pl-80' : 'pl-0'}`}
-```
-
-**Solution:** Responsive padding
-
-**File:** `src/components/ai-chat/EnhancedChatInterface.tsx`
-
-Changes:
-```typescript
-className={cn(
-  "fixed bottom-0 left-0 right-0 z-40",
-  "border-t border-border/30 bg-background/95 backdrop-blur-xl",
-  // Left padding only on desktop when sidebar is open
-  showSidebar && "lg:pl-80"
-)}
-```
-
----
-
-### Issue A6: Hidden Mobile Features
-
-**Current Problem:**
-```typescript
-// ContextAwareMessageInput.tsx:156, 181
-className="hidden sm:flex ..."  // Attachment and voice hidden on mobile
-```
-
-**Solution:** Create mobile-optimized input with collapsible actions
-
-**File:** `src/components/ai-chat/ContextAwareMessageInput.tsx`
-
-Changes:
-- Show a single "+" button on mobile that expands to show attachments, voice, etc.
-- Use a bottom sheet pattern for mobile action menu
-- Keep current layout on desktop
-
----
-
-## Phase 2: Consolidate Redundant Implementations (High Priority)
-
-### Issue B1: Two Chat Pages with Different Features
-
-**Current State:**
-| Feature | AIChat.tsx | AIStreamingChatPage.tsx |
-|---------|------------|-------------------------|
-| Interface | EnhancedChatInterface | EnhancedStreamingInterface |
-| Database Hook | useEnhancedAIChatDB | useEnhancedAIChatDB + useChatContextBridge |
-| Visualization | VisualizationSidebar (integrated) | Not integrated |
-| WebSocket | No | Yes (via StreamingChatInterface) |
-
-**Solution:** Merge into single unified chat page
-
-**Files to modify:**
-- `src/pages/AIChat.tsx` - Keep as primary, add streaming support
-- `src/pages/AIStreamingChatPage.tsx` - Deprecate, redirect to AIChat
+**Solution:**
+1. Integrate with actual LinkedIn/Twitter APIs via user OAuth tokens
+2. Store analytics data in `content_analytics` table with platform-specific columns
+3. Fallback: Return null with explanation if no API connected
 
 **Implementation:**
-1. Add streaming capability to EnhancedChatInterface
-2. Create feature flag for streaming vs HTTP mode
-3. Update routing to redirect AIStreamingChatPage to AIChat
-4. Remove duplicate page after migration
+- Create edge function `fetch-social-analytics` that calls platform APIs
+- Store results in `content_analytics.social_metrics` JSONB column
+- Update service to fetch from database or call API if stale (>1 hour)
 
 ---
 
-### Issue B2: Three Chat Database Hooks
-
-**Current Hooks:**
-1. `useEnhancedAIChatDB` - Full-featured, used by EnhancedChatInterface
-2. `useStreamingChatDB` - WebSocket-focused, used by StreamingChatInterface
-3. `useEnhancedStreamingChat` - Wrapper combining streaming + features
-
-**Solution:** Create single unified hook
-
-**File:** `src/hooks/useUnifiedChatDB.ts` (new file)
-
-This hook will:
-- Combine all features from all three hooks
-- Support both HTTP and WebSocket modes
-- Provide consistent API regardless of transport
-- Handle mode switching transparently
-
-**Migration Plan:**
-1. Create useUnifiedChatDB with all features
-2. Update EnhancedChatInterface to use it
-3. Update StreamingChatInterface to use it
-4. Deprecate old hooks with console warnings
-5. Remove old hooks after 2 weeks
-
----
-
-### Issue B3: Two Chat Interfaces
-
-**EnhancedChatInterface vs StreamingChatInterface**
-
-| Feature | Enhanced | Streaming |
-|---------|----------|-----------|
-| Visualization Sidebar | Yes | No |
-| Connection Status | No | Yes |
-| Collaboration | No | Yes |
-| Smart Suggestions | No | Commented Out |
-
-**Solution:** Merge into EnhancedChatInterface
-
-**File:** `src/components/ai-chat/EnhancedChatInterface.tsx`
-
-Add from StreamingChatInterface:
-- Connection status indicator
-- Collaboration features (PresenceIndicator, MultiUserTypingIndicator)
-- Reconnection logic
-- Context scope indicator
-
----
-
-## Phase 3: Fix Backend/Integration Gaps (High Priority)
-
-### Issue C1: Hardcoded WebSocket URL
+### Issue A2: Conversation Analytics Returns Hardcoded Values
 
 **Current Problem:**
 ```typescript
-// useStreamingChatDB.ts:280
-const wsUrl = 'wss://iqiundzzcepmuykcnfbc.functions.supabase.co/functions/v1/ai-streaming-chat';
-```
-
-**Solution:** Dynamic URL from environment
-
-**File:** `src/hooks/useStreamingChatDB.ts`
-
-```typescript
-const getWebSocketUrl = () => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) {
-    throw new Error('VITE_SUPABASE_URL not configured');
-  }
-  // Convert https:// to wss://
-  const wsUrl = supabaseUrl
-    .replace('https://', 'wss://')
-    .replace('.supabase.co', '.functions.supabase.co');
-  return `${wsUrl}/functions/v1/ai-streaming-chat`;
+// src/components/ai-chat/EnhancedStreamingInterface.tsx:76-86
+return {
+  totalMessages: 25,        // HARDCODED
+  userMessages: 12,
+  assistantMessages: 13,
+  averageMessageLength: 150,
+  conversationDuration: 1800000,
+  actionsTriggered: 8,
 };
 ```
 
----
-
-### Issue C2: Simulated Streaming (Not Real)
-
-**Current Problem:**
-```typescript
-// ai-streaming-chat/index.ts:256-267
-for (let i = 0; i < words.length; i++) {
-  // Small delay to simulate streaming
-  await new Promise(resolve => setTimeout(resolve, 50));  // FAKE STREAMING
-}
-```
-
-The edge function gets the full AI response then splits it into words with 50ms delays.
-
-**Solution:** Implement true streaming from AI provider
-
-**File:** `supabase/functions/ai-streaming-chat/index.ts`
-
-Changes:
-1. Request streaming from AI provider (stream: true actually used)
-2. Forward SSE/streaming chunks directly to WebSocket
-3. Handle partial JSON for visual data
-4. Implement proper backpressure handling
-
-**Note:** This requires changes to ai-proxy to support streaming passthrough, or direct provider calls in the streaming function.
-
----
-
-### Issue C3: No Reconnection Logic in WebSocket
-
-**Current Problem:**
-```typescript
-// useStreamingChatDB.ts:310-317
-websocketRef.current.onclose = () => {
-  setState(prev => ({ 
-    ...prev, 
-    isConnected: false, 
-    connectionStatus: 'disconnected'
-  }));
-  // NO AUTO-RECONNECT
-};
-```
-
-**Solution:** Add exponential backoff reconnection
-
-**File:** `src/hooks/useStreamingChatDB.ts`
+**Solution:**
+Query real data from `ai_messages` table:
 
 ```typescript
-const reconnectAttempts = useRef(0);
-const maxReconnectAttempts = 5;
-const baseDelay = 1000;
-
-const attemptReconnect = useCallback(() => {
-  if (reconnectAttempts.current >= maxReconnectAttempts) {
-    setState(prev => ({ ...prev, connectionStatus: 'error' }));
-    toast({
-      title: "Connection Failed",
-      description: "Unable to reconnect. Please refresh the page.",
-      variant: "destructive"
-    });
-    return;
-  }
-
-  const delay = baseDelay * Math.pow(2, reconnectAttempts.current);
-  reconnectAttempts.current++;
-  
-  setState(prev => ({ ...prev, connectionStatus: 'reconnecting' }));
-  
-  setTimeout(() => {
-    connect();
-  }, delay);
-}, [connect, toast]);
-
-// In onclose handler:
-websocketRef.current.onclose = () => {
-  // ... existing cleanup
-  attemptReconnect();
-};
-
-// Reset attempts on successful connection
-websocketRef.current.onopen = () => {
-  reconnectAttempts.current = 0;
-  // ... existing logic
-};
-```
-
----
-
-### Issue C4: Active Conversation Not Synced
-
-**Current Problem:**
-- `useEnhancedAIChatDB` has its own `activeConversation`
-- `useChatContextBridge` has `activeConversationId`
-- `useStreamingChatDB` uses `activeConversationId` from context
-- These can get out of sync
-
-**Solution:** Single source of truth in context
-
-**File:** `src/contexts/ChatContextBridge.tsx`
-
-Make ChatContextBridge the single source of truth:
-```typescript
-// All hooks should read from context
-// All writes should go through context
-// Remove local activeConversation state from hooks
-```
-
----
-
-### Issue C5: Message Status Not Persisted
-
-**Current Problem:**
-```typescript
-// useStreamingChatDB.ts:89-96
-setState(prev => ({
-  ...prev,
-  messageStatuses: {
-    ...prev.messageStatuses,
-    [message.id]: status as any  // LOCAL STATE ONLY
-  }
-}));
-```
-
-**Solution:** Persist to database
-
-**File:** `src/hooks/useStreamingChatDB.ts`
-
-```typescript
-const updateMessageStatus = useCallback(async (messageId: string, status: string) => {
-  // Update local state immediately for UI
-  setState(prev => ({
-    ...prev,
-    messageStatuses: { ...prev.messageStatuses, [messageId]: status }
-  }));
-
-  // Persist to database
-  try {
-    await supabase
-      .from('ai_messages')
-      .update({ message_status: status })
-      .eq('id', messageId);
-  } catch (error) {
-    console.error('Failed to persist message status:', error);
-  }
-}, []);
-```
-
----
-
-## Phase 4: Complete Incomplete Features (Medium Priority)
-
-### Issue D1: filterMessagesByType is a Stub
-
-**Current Problem:**
-```typescript
-// useEnhancedStreamingChat.ts:135-138
-const filterMessagesByType = useCallback((type: 'user' | 'assistant' | 'system' | 'all') => {
-  console.log('Filtering messages by type:', type);  // DOES NOTHING
-}, []);
-```
-
-**Solution:** Implement actual filtering
-
-**File:** `src/hooks/useEnhancedStreamingChat.ts`
-
-```typescript
-const [typeFilter, setTypeFilter] = useState<'user' | 'assistant' | 'system' | 'all'>('all');
-
-const filterMessagesByType = useCallback((type: 'user' | 'assistant' | 'system' | 'all') => {
-  setTypeFilter(type);
-}, []);
-
-const filteredMessages = useMemo(() => {
-  let filtered = streamingChat.messages;
-
-  // Apply type filter
-  if (typeFilter !== 'all') {
-    filtered = filtered.filter(msg => msg.role === typeFilter);
-  }
-
-  // Apply search filter
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filtered = filtered.filter(msg => 
-      msg.content.toLowerCase().includes(query)
-    );
-  }
-
-  return filtered;
-}, [streamingChat.messages, typeFilter, searchQuery]);
-```
-
----
-
-### Issue D2: Message Reactions Not Persisted
-
-**Current Problem:**
-```typescript
-// useEnhancedStreamingChat.ts:146-157
-const addMessageReaction = useCallback(async (messageId: string, emoji: string) => {
-  toast({ title: "Reaction Added" });  // JUST A TOAST, NO PERSISTENCE
-}, []);
-```
-
-**Solution:** Create reactions table and persist
-
-**Database Migration:**
-```sql
-CREATE TABLE IF NOT EXISTS ai_message_reactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  message_id UUID NOT NULL REFERENCES ai_messages(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL,
-  emoji TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(message_id, user_id, emoji)
-);
-```
-
-**Hook Implementation:**
-```typescript
-const addMessageReaction = useCallback(async (messageId: string, emoji: string) => {
-  if (!user) return;
-
-  try {
-    const { error } = await supabase
-      .from('ai_message_reactions')
-      .insert({
-        message_id: messageId,
-        user_id: user.id,
-        emoji
-      });
-
-    if (error) throw error;
-
-    // Update local state
-    setState(prev => ({
-      ...prev,
-      messageReactions: {
-        ...prev.messageReactions,
-        [messageId]: [
-          ...(prev.messageReactions[messageId] || []),
-          { userId: user.id, emoji }
-        ]
-      }
-    }));
-
-    toast({ title: "Reaction Added" });
-  } catch (error) {
-    toast({ title: "Failed to add reaction", variant: "destructive" });
-  }
-}, [user, toast]);
-```
-
----
-
-### Issue D3: SmartSuggestionsPanel Commented Out
-
-**Current Problem:**
-```typescript
-// StreamingChatInterface.tsx:239-243
-{/* <SmartSuggestionsPanel
-  suggestions={suggestions}
-  onSuggestionClick={handleSuggestionClick}
-  isLoading={isGenerating}
-/> */}
-```
-
-**Solution:** Enable and wire up properly
-
-**File:** `src/components/ai-chat/StreamingChatInterface.tsx`
-
-1. Uncomment the SmartSuggestionsPanel
-2. Wire up to useSmartSuggestions hook
-3. Generate suggestions based on:
-   - Last AI response content
-   - Current context/workflow state
-   - Historical patterns
-
----
-
-### Issue D4: filterMessagesByDate is a Stub
-
-**Current Problem:**
-```typescript
-// useEnhancedStreamingChat.ts:140-143
-const filterMessagesByDate = useCallback((startDate: Date, endDate: Date) => {
-  console.log('Filtering messages by date:', startDate, endDate);  // DOES NOTHING
-}, []);
-```
-
-**Solution:** Implement actual date filtering
-
-```typescript
-const [dateFilter, setDateFilter] = useState<{ start: Date | null; end: Date | null }>({ 
-  start: null, 
-  end: null 
-});
-
-const filterMessagesByDate = useCallback((startDate: Date, endDate: Date) => {
-  setDateFilter({ start: startDate, end: endDate });
-}, []);
-
-// In filteredMessages useMemo:
-if (dateFilter.start && dateFilter.end) {
-  filtered = filtered.filter(msg => {
-    const msgDate = new Date(msg.timestamp);
-    return msgDate >= dateFilter.start! && msgDate <= dateFilter.end!;
-  });
-}
-```
-
----
-
-### Issue D5: Conversation Analytics Mock Data
-
-**Current Problem:**
-```typescript
-// EnhancedStreamingInterface.tsx:73-87
 const getAnalytics = async () => {
-  // Mock analytics data - in real implementation, this would fetch from API
+  if (!activeConversationId) return null;
+  
+  const { data: messages } = await supabase
+    .from('ai_messages')
+    .select('role, content, created_at, message_status')
+    .eq('conversation_id', activeConversationId)
+    .order('created_at', { ascending: true });
+    
+  if (!messages?.length) return null;
+  
+  const userMessages = messages.filter(m => m.role === 'user');
+  const assistantMessages = messages.filter(m => m.role === 'assistant');
+  const firstMsg = new Date(messages[0].created_at);
+  const lastMsg = new Date(messages[messages.length - 1].created_at);
+  
   return {
-    totalMessages: 25,  // HARDCODED
-    // ...
+    totalMessages: messages.length,
+    userMessages: userMessages.length,
+    assistantMessages: assistantMessages.length,
+    averageMessageLength: Math.round(
+      messages.reduce((sum, m) => sum + m.content.length, 0) / messages.length
+    ),
+    conversationDuration: lastMsg.getTime() - firstMsg.getTime(),
+    actionsTriggered: messages.filter(m => m.message_status === 'action_triggered').length
   };
 };
 ```
 
-**Solution:** Use real analytics from useEnhancedStreamingChat
+---
+
+### Issue A3: Dashboard Stats Mock User ID
+
+**Current Problem:**
+```typescript
+// src/components/dashboard/RealTimeDashboardStats.tsx:30-31
+const userId = 'current-user';  // MOCK
+```
+
+**Solution:**
+Use actual authenticated user from AuthContext:
 
 ```typescript
-const { getConversationAnalytics } = useEnhancedStreamingChat();
+const { user } = useAuth();
 
-// Replace mock with:
-const getAnalytics = async () => {
-  return await getConversationAnalytics();
+useEffect(() => {
+  if (user?.id) {
+    loadRealTimeStats(user.id);
+  }
+}, [user?.id]);
+```
+
+---
+
+### Issue A4: SERP Predictive Intelligence Uses Random Scores
+
+**Current Problem:**
+```typescript
+// src/services/serpPredictiveIntelligence.ts:322-327
+private static calculateTrendMomentum(serpData: EnhancedSerpResult): number {
+  return Math.random() * 100; // Placeholder
+}
+private static calculateSeasonalityScore(serpData: EnhancedSerpResult): number {
+  return Math.random() * 100; // Placeholder
+}
+```
+
+**Solution:**
+Calculate from actual SERP tracking history:
+
+```typescript
+private static calculateTrendMomentum(serpData: EnhancedSerpResult): number {
+  // Use historical position changes from serp_tracking_history
+  const positions = serpData.historicalRankings || [];
+  if (positions.length < 2) return 50; // Neutral if insufficient data
+  
+  const recentAvg = positions.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+  const olderAvg = positions.slice(-3).reduce((a, b) => a + b, 0) / 3;
+  
+  // Higher score = improving rankings (lower position numbers)
+  const improvement = ((olderAvg - recentAvg) / olderAvg) * 100;
+  return Math.max(0, Math.min(100, 50 + improvement));
+}
+
+private static calculateSeasonalityScore(serpData: EnhancedSerpResult): number {
+  // Use search volume trends if available from SERP data
+  const volumeTrend = serpData.volumeTrend || [];
+  if (volumeTrend.length < 12) return 50;
+  
+  const stdDev = calculateStandardDeviation(volumeTrend);
+  const avgVolume = volumeTrend.reduce((a, b) => a + b, 0) / volumeTrend.length;
+  
+  // High variance = high seasonality
+  return Math.min(100, (stdDev / avgVolume) * 100);
+}
+```
+
+---
+
+### Issue A5: Action Analytics Uses LocalStorage Instead of Database
+
+**Current Problem:**
+```typescript
+// src/services/actionAnalyticsService.ts:39-55
+// Mock implementation - store in localStorage temporarily
+const analyticsData = {...};
+localStorage.setItem('ai-action-analytics', JSON.stringify(analytics));
+```
+
+**Solution:**
+Create `ai_action_analytics` table and persist to database:
+
+**Database Table:**
+```sql
+CREATE TABLE ai_action_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  action_id TEXT NOT NULL,
+  action_type TEXT NOT NULL,
+  action_label TEXT NOT NULL,
+  conversation_id UUID REFERENCES ai_conversations(id),
+  triggered_at TIMESTAMPTZ DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  success BOOLEAN DEFAULT false,
+  effectiveness_score NUMERIC(4,2),
+  interaction_data JSONB,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_action_analytics_user ON ai_action_analytics(user_id);
+CREATE INDEX idx_action_analytics_triggered ON ai_action_analytics(triggered_at);
+```
+
+---
+
+### Issue A6: SERP Top Stories Count Hardcoded
+
+**Current Problem:**
+```typescript
+// src/components/content/serp-analysis/SerpAnalysisContainer.tsx:241
+count: 3, // Mock count for demo
+```
+
+**Solution:**
+Calculate from actual SERP data:
+
+```typescript
+count: serpData?.top_stories?.length || 0,
+```
+
+---
+
+### Issue A7: Sidebar Skeleton Width Random
+
+**Current Problem:**
+```typescript
+// src/components/ui/sidebar.tsx:651-654
+const width = React.useMemo(() => {
+  return `${Math.floor(Math.random() * 40) + 50}%`
+}, [])
+```
+
+**Solution:**
+Use deterministic widths based on index for consistent skeleton:
+
+```typescript
+const widths = ['80%', '65%', '90%', '70%', '85%'];
+const width = widths[index % widths.length];
+```
+
+---
+
+### Issue A8: Enterprise GDPR Export Uses Sample Data
+
+**Current Problem:**
+```typescript
+// src/components/enterprise/SecurityCompliancePanel.tsx:217-220
+data: {
+  profile: { email: user?.email, created: '2024-01-01' },
+  content: ['Sample content item 1', 'Sample content item 2'],
+  analytics: { totalViews: 1500, totalEngagement: 250 }
+}
+```
+
+**Solution:**
+Fetch actual user data from database:
+
+```typescript
+const exportUserData = async () => {
+  const [contentItems, analyticsData, profileData] = await Promise.all([
+    supabase.from('content_items').select('*').eq('user_id', user.id),
+    supabase.from('content_analytics').select('*').eq('user_id', user.id),
+    supabase.from('profiles').select('*').eq('id', user.id).single()
+  ]);
+
+  const userData = {
+    user: user?.email,
+    exportDate: new Date().toISOString(),
+    data: {
+      profile: profileData.data,
+      content: contentItems.data || [],
+      analytics: analyticsData.data || []
+    }
+  };
+  // ... download logic
 };
 ```
 
 ---
 
-## Phase 5: State Management Fixes (Medium Priority)
+## Phase 2: Technical Review Scores - Replace Hardcoded Values (High)
 
-### Issue E1: Conversation Selection Not Synced
+### Issue B1-B4: Performance, Accessibility, Mobile, Schema Scores
 
-When user selects conversation in ChatHistorySidebar, the streaming interface doesn't load messages.
+**Current Problem:**
+```typescript
+// src/components/content-builder/final-review/technical/EnhancedTechnicalTabContent.tsx:33-36
+const performanceScore = 78;    // HARDCODED
+const accessibilityScore = 72;  // HARDCODED
+const schemaScore = hasDocumentStructure ? 65 : 40;
+const mobileScore = 85;         // HARDCODED
+```
 
-**Solution:** Unified selection handler
-
-**File:** `src/components/ai-chat/EnhancedChatInterface.tsx`
+**Solution:**
+Calculate real scores based on content analysis:
 
 ```typescript
-const handleSelectConversation = useCallback(async (conversationId: string) => {
-  // 1. Update context
-  updateActiveConversation(conversationId);
+const calculateTechnicalScores = () => {
+  const hasMetaTitle = metaTitle && metaTitle.length > 0;
+  const hasMetaDescription = metaDescription && metaDescription.length > 0;
+  const hasDocumentStructure = documentStructure && Object.keys(documentStructure).length > 0;
   
-  // 2. Load messages from database
-  await loadMessagesFromDB(conversationId);
-  
-  // 3. If using WebSocket, reconnect to new conversation
-  if (isConnected) {
-    websocketRef.current?.send(JSON.stringify({
-      type: 'join_conversation',
-      conversationId
-    }));
+  // SEO Score - based on actual meta analysis
+  let seoScore = 0;
+  if (hasMetaTitle) {
+    seoScore += 25;
+    if (metaTitle.length >= 30 && metaTitle.length <= 60) seoScore += 15;
   }
-}, [updateActiveConversation, loadMessagesFromDB, isConnected]);
+  if (hasMetaDescription) {
+    seoScore += 25;
+    if (metaDescription.length >= 120 && metaDescription.length <= 160) seoScore += 15;
+  }
+  if (documentStructure?.h1?.length === 1) seoScore += 10;
+  if (documentStructure?.h2?.length >= 2) seoScore += 10;
+  
+  // Performance Score - based on content size and structure
+  let performanceScore = 100;
+  const contentLength = documentStructure?.totalWordCount || 0;
+  if (contentLength > 3000) performanceScore -= 15; // Long content loads slower
+  if (!documentStructure?.images?.every(img => img.hasAlt)) performanceScore -= 10;
+  if (documentStructure?.externalLinks?.length > 10) performanceScore -= 5;
+  
+  // Accessibility Score - check heading hierarchy, alt text, link text
+  let accessibilityScore = 50;
+  const hasProperHeadingHierarchy = checkHeadingHierarchy(documentStructure);
+  if (hasProperHeadingHierarchy) accessibilityScore += 25;
+  if (documentStructure?.images?.every(img => img.hasAlt)) accessibilityScore += 15;
+  if (documentStructure?.links?.every(link => link.text?.length > 0)) accessibilityScore += 10;
+  
+  // Schema Score - based on structured data opportunities
+  let schemaScore = 0;
+  if (hasDocumentStructure) schemaScore += 30;
+  if (hasMetaTitle && hasMetaDescription) schemaScore += 20;
+  if (documentStructure?.lists?.length > 0) schemaScore += 15; // FAQ potential
+  if (documentStructure?.h2?.length >= 3) schemaScore += 15; // Article structure
+  
+  // Mobile Score - content-based estimates
+  let mobileScore = 80;
+  if (contentLength < 2000) mobileScore += 10; // Shorter loads faster
+  if (documentStructure?.tables?.length > 2) mobileScore -= 15; // Tables break mobile
+  if (documentStructure?.images?.length <= 5) mobileScore += 10;
+  
+  return {
+    seo: Math.min(100, Math.max(0, seoScore)),
+    performance: Math.min(100, Math.max(0, performanceScore)),
+    accessibility: Math.min(100, Math.max(0, accessibilityScore)),
+    schema: Math.min(100, Math.max(0, schemaScore)),
+    mobile: Math.min(100, Math.max(0, mobileScore))
+  };
+};
 ```
 
 ---
 
-### Issue E2: Real-time Updates Don't Trigger Re-renders
+### Issue B5: SEO Score Calculator Uses Basic Heuristics
 
 **Current Problem:**
-Real-time subscriptions update state but UI doesn't always reflect changes.
+```typescript
+// src/components/approval/seo/SeoRecommendations.tsx:171-180
+function calculateSeoScore(content: ContentItemType): number {
+  // Dummy calculation
+  let score = 50;
+  if (content.content && content.content.length > 0) score += 10;
+  // ...
+}
+```
 
-**Solution:** Ensure proper dependency arrays and state updates
-
-Review all useEffect/useCallback hooks to ensure:
-- State updates are immutable (spread operators)
-- Dependency arrays include all used values
-- Memoization is used appropriately
-
----
-
-### Issue E3: Context State Lost on Page Refresh
-
-**Current Problem:**
-`contextState` in `useEnhancedStreamingChat` is lost on refresh.
-
-**Solution:** Already has `loadContextState` on mount, ensure it's called
+**Solution:**
+Use the existing comprehensive SEO analysis from useSeoAnalysis hook:
 
 ```typescript
-// useEnhancedStreamingChat.ts:257-259
-useEffect(() => {
-  loadContextState();
-}, [loadContextState]);
+const { analyzeSeo } = useSeoAnalysis();
+
+const calculateSeoScore = async (content: ContentItemType) => {
+  const analysis = await analyzeSeo(content.content, {
+    keyword: content.keywords?.[0],
+    metaTitle: content.title,
+    metaDescription: content.meta_description
+  });
+  
+  return analysis.overallScore;
+};
 ```
 
-Verify this runs and consider adding to sessionStorage as backup.
-
 ---
 
-### Issue E4: Multiple Real-time Channels
+### Issue B6: Performance Card Uses Static Default Metrics
 
 **Current Problem:**
-Both `useStreamingChatDB` and `EnhancedStreamingInterface` create real-time channels.
+```typescript
+// src/components/content-builder/final-review/technical/PerformanceAnalysisCard.tsx:29-51
+const defaultMetrics: PerformanceMetric[] = [
+  { name: 'Largest Contentful Paint', value: 2.1, ... },  // STATIC
+  { name: 'First Input Delay', value: 45, ... },
+  { name: 'Cumulative Layout Shift', value: 0.08, ... }
+];
+```
 
-**Solution:** Centralize in single hook
+**Solution:**
+Calculate estimated metrics from content analysis or show "N/A - requires live page" message:
 
-Only `useStreamingChatDB` should manage real-time subscriptions. Other components should consume state from it.
+```typescript
+// If content is published and has a URL, fetch real metrics
+// Otherwise, show estimates or "pending" state
+
+const estimatePerformanceMetrics = (content: string, images: number): PerformanceMetric[] => {
+  const wordCount = content.split(/\s+/).length;
+  const estimatedSize = wordCount * 6; // ~6 bytes per word average
+  
+  // LCP estimate based on content size
+  const lcpEstimate = 1.5 + (images * 0.3) + (estimatedSize / 50000);
+  
+  return [
+    {
+      name: 'Largest Contentful Paint (Estimated)',
+      value: Math.min(4.0, Math.max(1.0, lcpEstimate)),
+      unit: 's',
+      score: lcpEstimate < 2.5 ? 90 : lcpEstimate < 4.0 ? 60 : 30,
+      threshold: { good: 2.5, needs_improvement: 4.0 },
+      isEstimated: true
+    },
+    // ... similar for other metrics
+  ];
+};
+```
 
 ---
 
-## Implementation Order
+## Phase 3: API Status - Replace Random Simulation (High)
 
-| Phase | Issues | Estimated Time | Dependencies |
-|-------|--------|----------------|--------------|
-| Phase 1 | A1-A6 (Responsive) | 4 hours | None |
-| Phase 2 | B1-B3 (Consolidation) | 6 hours | None |
-| Phase 3 | C1-C5 (Backend) | 5 hours | None |
-| Phase 4 | D1-D5 (Features) | 3 hours | Phase 2 |
-| Phase 5 | E1-E4 (State) | 2 hours | Phase 2, 3 |
+### Issue C1-C2: API Provider Status Uses Math.random()
 
-**Total Estimated Time: 20 hours**
+**Current Problem:**
+```typescript
+// src/components/settings/APISettings.tsx:141-145
+// src/components/settings/api/ApiStatusDashboard.tsx:25-30
+const random = Math.random();
+const status = provider.required 
+  ? (random > 0.3 ? 'connected' : random > 0.1 ? 'warning' : 'error')
+  : (random > 0.5 ? 'connected' : random > 0.2 ? 'warning' : 'error');
+```
+
+**Solution:**
+Check actual API key validity from `ai_service_providers` table:
+
+```typescript
+const getProviderStatus = async (provider: ApiProvider): Promise<'connected' | 'warning' | 'error' | 'unknown'> => {
+  const { data, error } = await supabase
+    .from('ai_service_providers')
+    .select('is_active, last_validated_at, api_key')
+    .eq('provider', provider.id)
+    .eq('user_id', user.id)
+    .single();
+    
+  if (error || !data) return 'unknown';
+  if (!data.api_key) return 'error';
+  if (!data.is_active) return 'warning';
+  
+  // Check if last validation was recent (within 1 hour)
+  const lastValidated = new Date(data.last_validated_at);
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  
+  if (lastValidated < hourAgo) {
+    return 'warning'; // Needs re-validation
+  }
+  
+  return 'connected';
+};
+
+// Batch check all providers on mount
+useEffect(() => {
+  const checkAllStatuses = async () => {
+    const statuses = await Promise.all(
+      providers.map(async (p) => ({
+        id: p.id,
+        status: await getProviderStatus(p)
+      }))
+    );
+    setProviderStatuses(Object.fromEntries(statuses.map(s => [s.id, s.status])));
+  };
+  
+  checkAllStatuses();
+}, [providers, user?.id]);
+```
+
+---
+
+### Issue C3: Third-Party Webhook Uses Sample Data
+
+**Current Problem:**
+```typescript
+// src/components/enterprise/ThirdPartyIntegrations.tsx:230-235
+data: {
+  content_type: 'blog_post',
+  title: 'Sample AI Generated Content',
+  word_count: 1200,
+  seo_score: 85
+}
+```
+
+**Solution:**
+Use actual recent content data for webhook test:
+
+```typescript
+const testWebhook = async (webhookUrl: string) => {
+  // Fetch most recent content item for realistic test
+  const { data: recentContent } = await supabase
+    .from('content_items')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+    
+  const testData = recentContent ? {
+    content_type: recentContent.content_type,
+    title: recentContent.title,
+    word_count: recentContent.content?.split(/\s+/).length || 0,
+    seo_score: recentContent.seo_score
+  } : {
+    // If no content exists, explain in the payload
+    note: 'No content available - create content first for realistic tests',
+    content_type: 'test',
+    title: 'Webhook Test',
+    word_count: 0,
+    seo_score: 0
+  };
+  
+  await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      timestamp: new Date().toISOString(),
+      triggered_from: window.location.origin,
+      event_type: 'ai_content_generated',
+      data: testData
+    }),
+  });
+};
+```
+
+---
+
+## Phase 4: Export & Download - Make Functional (High)
+
+### Issue D1: Content Download is Fake
+
+**Current Problem:**
+```typescript
+// src/components/content-builder/steps/save/useSaveStep.ts:212-220
+setTimeout(() => {
+  const link = document.createElement('a');
+  link.href = '#';  // EMPTY HREF - DOWNLOADS NOTHING
+  link.download = `${title}.${format}`;
+  link.click();
+}, 1000);
+```
+
+**Solution:**
+Generate actual file content for each format:
+
+```typescript
+const handleDownload = async (format: 'pdf' | 'docx' | 'html') => {
+  try {
+    let blob: Blob;
+    let mimeType: string;
+    
+    switch (format) {
+      case 'html':
+        const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${sanitizeHtml(title)}</title>
+  ${metaDescription ? `<meta name="description" content="${sanitizeHtml(metaDescription)}">` : ''}
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+    h1 { color: #1a1a1a; } h2 { color: #333; margin-top: 2em; }
+    p { margin: 1em 0; } img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <article>
+    <h1>${sanitizeHtml(title)}</h1>
+    ${content}
+  </article>
+</body>
+</html>`;
+        blob = new Blob([htmlContent], { type: 'text/html' });
+        mimeType = 'text/html';
+        break;
+        
+      case 'docx':
+        // Use mammoth library (already installed) in reverse or docx library
+        const docxContent = await generateDocx(title, content);
+        blob = new Blob([docxContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        break;
+        
+      case 'pdf':
+        // Use html2canvas + jsPDF or call edge function
+        const pdfBuffer = await generatePdf(title, content);
+        blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+        mimeType = 'application/pdf';
+        break;
+    }
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title.replace(/\s+/g, '-').toLowerCase()}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success(`Content exported as ${format.toUpperCase()}`);
+  } catch (error) {
+    console.error('Export failed:', error);
+    toast.error(`Failed to export as ${format.toUpperCase()}`);
+  }
+};
+```
+
+---
+
+### Issue D2: SEO Analysis Simulates with Delay
+
+**Current Problem:**
+```typescript
+// src/contexts/content-builder/actions/seoActions.ts:12-16
+await new Promise(resolve => setTimeout(resolve, 1000));
+dispatch({ type: 'SET_SEO_SCORE', payload: 75 });  // HARDCODED 75
+```
+
+**Solution:**
+Call actual SEO analysis function:
+
+```typescript
+const analyzeSeo = async (content: string) => {
+  dispatch({ type: 'SET_SEO_ANALYZING', payload: true });
+  
+  try {
+    // Call the real SEO analysis hook/service
+    const analysis = await performSeoAnalysis(content, {
+      keyword: state.keyword,
+      metaTitle: state.metaTitle,
+      metaDescription: state.metaDescription
+    });
+    
+    dispatch({ type: 'SET_SEO_SCORE', payload: analysis.overallScore });
+    dispatch({ type: 'SET_SEO_IMPROVEMENTS', payload: analysis.improvements });
+    dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+  } catch (error) {
+    console.error('SEO analysis failed:', error);
+    toast.error('SEO analysis failed. Please try again.');
+  } finally {
+    dispatch({ type: 'SET_SEO_ANALYZING', payload: false });
+  }
+};
+```
+
+---
+
+### Issue D3: Content Rewriter Has Simulated Delay
+
+**Current Problem:**
+```typescript
+// src/hooks/useContentRewriter.ts:90
+}, 1500); // Simulated delay
+```
+
+**Solution:**
+The delay is wrapped around actual AI content generation. Remove the setTimeout wrapper and let the actual API call duration serve as the natural loading time:
+
+```typescript
+const generateRewrite = useCallback(async () => {
+  if (!content || !selectedRecommendationId) return;
+  
+  setIsRewriting(true);
+  
+  try {
+    const result = await generateContent({
+      prompt: `Improve the following content based on this recommendation: ${recommendation}\n\nContent:\n${content}`,
+      type: 'improvement'
+    });
+    
+    setRewrittenContent(result || content);
+    // ... rest of logic
+  } catch (error) {
+    console.error('Error generating rewritten content:', error);
+    toast.error('Failed to generate improved content.');
+    setRewrittenContent(content);
+  } finally {
+    setIsRewriting(false);
+  }
+}, [content, selectedRecommendationId, recommendation]);
+```
+
+---
+
+## Phase 5: Edge Function Mock Data (Medium)
+
+### Issue E1: Intelligent Workflow Returns Mock Keyword Data
+
+**Current Problem:**
+```typescript
+// supabase/functions/intelligent-workflow-executor/index.ts:1116-1122
+const keywordData = [
+  { name: 'Primary Keywords', difficulty: 45, volume: 1200, opportunity: 85 },
+  { name: 'Long-tail Keywords', difficulty: 25, volume: 800, opportunity: 92 },
+  // ... STATIC DATA
+];
+```
+
+**Solution:**
+Parse actual keyword data from SERP analysis or user's keyword library:
+
+```typescript
+// Query user's actual keyword data
+const { data: keywords } = await supabaseClient
+  .from('serp_tracking_history')
+  .select('keyword, search_volume, keyword_difficulty, competition_score')
+  .eq('user_id', userId)
+  .order('created_at', { ascending: false })
+  .limit(20);
+
+const keywordData = keywords?.length > 0 
+  ? aggregateKeywordsByType(keywords)
+  : []; // Return empty if no data, let frontend show "no data" state
+
+function aggregateKeywordsByType(keywords: any[]) {
+  const primary = keywords.filter(k => k.keyword_difficulty > 40);
+  const longTail = keywords.filter(k => k.keyword.split(' ').length >= 4);
+  const brand = keywords.filter(k => k.competition_score < 30);
+  
+  return [
+    { 
+      name: 'Primary Keywords', 
+      count: primary.length,
+      avgDifficulty: average(primary.map(k => k.keyword_difficulty)),
+      avgVolume: average(primary.map(k => k.search_volume))
+    },
+    // ... similar for other categories
+  ];
+}
+```
+
+---
+
+### Issue E2: API Proxy Returns Mock Score
+
+**Current Problem:**
+```typescript
+// supabase/functions/api-proxy/index.ts:2095
+score: 0.7 // Mock score for now
+```
+
+**Solution:**
+Extract confidence/quality score from AI response or calculate from response analysis:
+
+```typescript
+const analysis = data.choices[0].message.content;
+
+// Calculate quality score based on response characteristics
+const calculateQualityScore = (response: string): number => {
+  let score = 0.5; // Base score
+  
+  // Length quality
+  if (response.length > 500) score += 0.1;
+  if (response.length > 1000) score += 0.1;
+  
+  // Structure quality (has sections, lists)
+  if (response.includes('##') || response.includes('**')) score += 0.1;
+  if (response.includes('- ') || response.includes('1. ')) score += 0.1;
+  
+  // No error indicators
+  if (!response.toLowerCase().includes('error') && 
+      !response.toLowerCase().includes('unable')) score += 0.1;
+  
+  return Math.min(1.0, score);
+};
+
+return new Response(JSON.stringify({ 
+  success: true,
+  data: {
+    analysis,
+    score: calculateQualityScore(analysis)
+  }
+}), ...);
+```
+
+---
+
+### Issue E3: AI Streaming Simulates Chunks
+
+**Current Problem:**
+```typescript
+// supabase/functions/ai-streaming-chat/index.ts:256-267
+for (let i = 0; i < words.length; i++) {
+  await new Promise(resolve => setTimeout(resolve, 50)); // FAKE STREAMING
+}
+```
+
+**Solution:**
+Implement true streaming from AI provider:
+
+```typescript
+// Request streaming from provider
+const response = await fetch(providerUrl, {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ ...params, stream: true })
+});
+
+const reader = response.body?.getReader();
+const decoder = new TextDecoder();
+let fullContent = '';
+
+while (reader) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+  
+  for (const line of lines) {
+    const data = line.slice(6);
+    if (data === '[DONE]') continue;
+    
+    try {
+      const parsed = JSON.parse(data);
+      const delta = parsed.choices?.[0]?.delta?.content || '';
+      fullContent += delta;
+      
+      socket.send(JSON.stringify({
+        type: 'ai_response_delta',
+        delta,
+        fullContent,
+        timestamp: Date.now()
+      }));
+    } catch (e) { /* skip malformed chunks */ }
+  }
+}
+```
+
+---
+
+### Issue E4: Outline Generation Simulates API Delay
+
+**Current Problem:**
+```typescript
+// src/components/content-builder/outline/outlineGenerationUtils.ts:37-38
+await new Promise(resolve => setTimeout(resolve, 3000));
+```
+
+**Solution:**
+If local processing is sufficient, remove the delay. If AI is intended, call actual AI service:
+
+```typescript
+export async function generateOutlineFromSelections(
+  mainKeyword: string,
+  selectedItems: SerpSelection[],
+  customInstructions: string
+): Promise<OutlineSection[]> {
+  const itemsByType = { /* grouping logic */ };
+
+  // Option 1: Local processing (no delay needed)
+  if (!customInstructions) {
+    return createOutlineSections(mainKeyword, itemsByType);
+  }
+  
+  // Option 2: AI-enhanced outline with custom instructions
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-outline', {
+      body: { mainKeyword, selectedItems, customInstructions }
+    });
+    
+    if (error) throw error;
+    return data.outline;
+  } catch (error) {
+    console.error('AI outline generation failed, using local:', error);
+    return createOutlineSections(mainKeyword, itemsByType);
+  }
+}
+```
+
+---
+
+## Phase 6: Stub Functions - Implement TODOs (Low)
+
+### Issue G1: ContentStrategyContext TODO
+
+**Location:** `src/contexts/ContentStrategyContext.tsx:121`
+```typescript
+setContentItems([]); // TODO: Load from content service when available
+```
+
+**Solution:**
+```typescript
+const { data: contentData } = await supabase
+  .from('content_items')
+  .select('*')
+  .eq('user_id', user.id)
+  .in('status', ['draft', 'approved']);
+  
+setContentItems(contentData || []);
+```
+
+---
+
+### Issue G2: SelectedProposalsSidebar View Details TODO
+
+**Location:** `src/components/research/content-strategy/SelectedProposalsSidebar.tsx:265`
+
+**Solution:**
+Navigate to proposal detail page or open detail modal:
+
+```typescript
+onClick={(e) => {
+  e.stopPropagation();
+  navigate(`/content-strategy/proposal/${proposal.id}`);
+  // OR
+  setSelectedProposalId(proposal.id);
+  setShowDetailModal(true);
+}}
+```
+
+---
+
+### Issue G3: Provider Switching Logic TODO
+
+**Location:** `src/services/serpPerformanceMonitoring.ts:230`
+
+**Solution:**
+Implement provider failover:
+
+```typescript
+if (bestProvider.successRate > 95) {
+  await supabase
+    .from('user_preferences')
+    .upsert({
+      user_id: userId,
+      preference_key: 'preferred_serp_provider',
+      preference_value: bestProvider.provider
+    });
+  
+  console.log(`🔄 Switched to provider: ${bestProvider.provider}`);
+}
+```
+
+---
+
+### Issue G4: Proposal Lifecycle Logging TODO
+
+**Location:** `src/services/proposalLifecycleService.ts:297`
+
+**Solution:**
+```typescript
+private async logLifecycleUpdate(update: ProposalStatusUpdate): Promise<void> {
+  await supabase
+    .from('proposal_lifecycle_logs')
+    .insert({
+      proposal_id: update.proposalId,
+      from_status: update.fromStatus,
+      to_status: update.toStatus,
+      changed_by: update.userId,
+      reason: update.reason,
+      metadata: update.metadata
+    });
+}
+```
+
+---
+
+## Implementation Priority & Timeline
+
+| Phase | Focus | Issues | Time |
+|-------|-------|--------|------|
+| 1 | Analytics & Metrics | A1-A8 | 6 hours |
+| 2 | Technical Review Scores | B1-B6 | 4 hours |
+| 3 | API Status | C1-C3 | 2 hours |
+| 4 | Export & Download | D1-D3 | 4 hours |
+| 5 | Edge Functions | E1-E4 | 4 hours |
+| 6 | Stub Functions | G1-G4 | 2 hours |
+
+**Total: ~22 hours**
 
 ---
 
@@ -764,35 +998,36 @@ Only `useStreamingChatDB` should manage real-time subscriptions. Other component
 
 | File | Phase | Changes |
 |------|-------|---------|
-| `src/components/ai-chat/VisualizationSidebar.tsx` | 1 | Responsive layout, mobile overlay |
-| `src/components/ai-chat/ChatHistorySidebar.tsx` | 1 | Responsive layout, swipe gestures |
-| `src/components/ai-chat/EnhancedChatInterface.tsx` | 1, 2 | Responsive margins, merge features |
-| `src/components/ai-chat/EnhancedMessageBubble.tsx` | 1 | Responsive bubble widths |
-| `src/components/ai-chat/ContextAwareMessageInput.tsx` | 1 | Mobile-optimized actions |
-| `src/components/ai-chat/StreamingChatInterface.tsx` | 2 | Merge into Enhanced |
-| `src/hooks/useStreamingChatDB.ts` | 3 | Dynamic URL, reconnection, status persistence |
-| `src/hooks/useEnhancedStreamingChat.ts` | 4 | Complete filter/reaction implementations |
-| `src/contexts/ChatContextBridge.tsx` | 5 | Single source of truth |
-| `supabase/functions/ai-streaming-chat/index.ts` | 3 | True streaming support |
+| `src/services/analytics/socialAnalyticsService.ts` | 1 | Real API integration |
+| `src/components/ai-chat/EnhancedStreamingInterface.tsx` | 1 | Query real conversation stats |
+| `src/components/dashboard/RealTimeDashboardStats.tsx` | 1 | Use authenticated user ID |
+| `src/services/serpPredictiveIntelligence.ts` | 1 | Real trend calculations |
+| `src/services/actionAnalyticsService.ts` | 1 | Database persistence |
+| `src/components/content/serp-analysis/SerpAnalysisContainer.tsx` | 1 | Dynamic counts |
+| `src/components/ui/sidebar.tsx` | 1 | Deterministic skeleton widths |
+| `src/components/enterprise/SecurityCompliancePanel.tsx` | 1 | Real GDPR export |
+| `src/components/content-builder/final-review/technical/EnhancedTechnicalTabContent.tsx` | 2 | Calculated scores |
+| `src/components/approval/seo/SeoRecommendations.tsx` | 2 | Real SEO scoring |
+| `src/components/content-builder/final-review/technical/PerformanceAnalysisCard.tsx` | 2 | Estimated metrics |
+| `src/components/settings/APISettings.tsx` | 3 | Real provider status |
+| `src/components/settings/api/ApiStatusDashboard.tsx` | 3 | Database status check |
+| `src/components/enterprise/ThirdPartyIntegrations.tsx` | 3 | Real content for webhooks |
+| `src/components/content-builder/steps/save/useSaveStep.ts` | 4 | Real file generation |
+| `src/contexts/content-builder/actions/seoActions.ts` | 4 | Real SEO analysis |
+| `src/hooks/useContentRewriter.ts` | 4 | Remove simulated delay |
+| `supabase/functions/intelligent-workflow-executor/index.ts` | 5 | Real keyword data |
+| `supabase/functions/api-proxy/index.ts` | 5 | Calculated quality score |
+| `supabase/functions/ai-streaming-chat/index.ts` | 5 | True streaming |
+| `src/components/content-builder/outline/outlineGenerationUtils.ts` | 5 | Remove fake delay |
 
 ---
 
-## Files to Create
+## Database Tables to Create
 
-| File | Purpose |
-|------|---------|
-| `src/hooks/useUnifiedChatDB.ts` | Single unified chat hook |
-| `src/hooks/useResponsiveBreakpoint.ts` | Shared responsive detection |
-| `src/components/ai-chat/MobileActionsSheet.tsx` | Mobile input actions |
-
----
-
-## Database Changes Required
-
-| Table | Change |
-|-------|--------|
-| `ai_message_reactions` | Create new table |
-| `ai_messages` | Add index on `message_status` |
+| Table | Purpose |
+|-------|---------|
+| `ai_action_analytics` | Store action tracking (replace localStorage) |
+| `proposal_lifecycle_logs` | Track proposal status changes |
 
 ---
 
@@ -800,13 +1035,13 @@ Only `useStreamingChatDB` should manage real-time subscriptions. Other component
 
 After implementation, verify:
 
-- [ ] Mobile (375px): Both sidebars overlay, don't push content
-- [ ] Tablet (768px): Sidebars overlay with proper widths
-- [ ] Desktop (1440px): Side-by-side layout works
-- [ ] Swipe gestures close sidebars on touch devices
-- [ ] WebSocket reconnects automatically on disconnect
-- [ ] Message statuses persist across page refreshes
-- [ ] Reactions save to database
-- [ ] Conversation selection syncs across all hooks
-- [ ] Real-time updates appear without page refresh
-- [ ] Search and filter work correctly
+- [ ] Social analytics show "Connect account" if no API tokens, not random numbers
+- [ ] Conversation analytics show real message counts
+- [ ] Dashboard uses authenticated user ID
+- [ ] API status reflects actual connection state (persists on refresh)
+- [ ] Downloaded files contain actual content in correct format
+- [ ] SEO scores change based on content analysis
+- [ ] Technical review scores reflect document structure
+- [ ] No random numbers appear in UI (grep for Math.random)
+- [ ] No simulated delays without actual backend processing
+- [ ] Edge functions return real data or clear "no data" states
