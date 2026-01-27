@@ -12,6 +12,7 @@ import { ErrorMessageBubble } from './ErrorMessageBubble';
 import { FormattedResponseRenderer } from './FormattedResponseRenderer';
 import { Button } from '@/components/ui/button';
 import { ThinkingIndicator } from './ThinkingIndicator';
+import { MessageActions } from './MessageActions';
 
 interface EnhancedMessageBubbleProps {
   message: EnhancedChatMessage;
@@ -22,7 +23,9 @@ interface EnhancedMessageBubbleProps {
   onSendMessage?: (message: string) => void;
   thinkingContent?: string;
   isThinking?: boolean;
-  onExpandVisualization?: (visualData: any, chartConfig: ChartConfiguration) => void; // NEW
+  onExpandVisualization?: (visualData: any, chartConfig: ChartConfiguration) => void;
+  onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
+  onDeleteMessage?: (messageId: string) => Promise<void>;
 }
 
 export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
@@ -34,7 +37,9 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
   onSendMessage,
   thinkingContent,
   isThinking = false,
-  onExpandVisualization
+  onExpandVisualization,
+  onEditMessage,
+  onDeleteMessage
 }) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
 
@@ -104,7 +109,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
       variants={bubbleVariants}
       initial="hidden"
       animate="visible"
-      className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`group flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       {/* Avatar (only for AI messages) */}
       {!isUser && (
@@ -145,7 +150,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
           )}
 
           {/* Message Content - Premium Minimal Styling */}
-          <Card className={`shadow-sm ${
+          <Card className={`shadow-sm relative ${
             isUser 
               ? 'bg-primary/10 text-foreground border border-primary/20 ml-4' 
               : 'bg-card border border-border/50 mr-4'
@@ -165,6 +170,18 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
                   />
                 )}
               </div>
+            </div>
+            
+            {/* Message Actions (Edit/Delete/Copy) */}
+            <div className="absolute top-2 right-2">
+              <MessageActions
+                messageId={message.id}
+                content={message.content}
+                isUser={isUser}
+                timestamp={message.timestamp}
+                onEdit={onEditMessage}
+                onDelete={onDeleteMessage}
+              />
             </div>
           </Card>
 
