@@ -1,13 +1,57 @@
 export interface QueryIntent {
-  scope: 'summary' | 'detailed' | 'full';
+  scope: 'summary' | 'detailed' | 'full' | 'conversational';
   categories: string[]; // ['content', 'keywords', 'solutions', 'proposals', 'seo', 'campaigns', 'competitors', 'analytics', 'performance']
   estimatedTokens: number;
   requiresVisualData: boolean;
   confidence: number;
+  isConversational: boolean; // Issue #5: Fast-path flag
+}
+
+// Issue #5 Fix: Patterns for simple conversational queries that don't need data
+const CONVERSATIONAL_PATTERNS = [
+  /^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening|day))[\s!.?]*$/i,
+  /^(thanks|thank\s*you|thx|ty|ok|okay|got\s*it|understood|sure|great|perfect|awesome|cool)[\s!.?]*$/i,
+  /^(test|testing|check)[\s!.?]*$/i,
+  /^(yes|no|maybe|yep|nope|yeah|nah)[\s!.?]*$/i,
+  /^(who are you|what are you|what can you do|help|capabilities)[\s!?.]*$/i,
+  /^(bye|goodbye|see you|later|cya)[\s!.?]*$/i,
+];
+
+function isConversationalQuery(query: string): boolean {
+  const trimmed = query.trim();
+  
+  // Check explicit patterns
+  if (CONVERSATIONAL_PATTERNS.some(p => p.test(trimmed))) {
+    return true;
+  }
+  
+  // Very short queries (1-2 words) without action verbs are likely conversational
+  const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+  if (words.length <= 2 && !/\?$/.test(trimmed)) {
+    const actionVerbs = /show|get|find|analyze|compare|create|generate|list|display|fetch|search/i;
+    if (!actionVerbs.test(trimmed)) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 export function analyzeQueryIntent(query: string): QueryIntent {
   const q = query.toLowerCase();
+  
+  // Issue #5 Fix: Fast-path for conversational queries
+  if (isConversationalQuery(query)) {
+    console.log('⚡ Conversational query detected - using fast-path');
+    return {
+      scope: 'conversational',
+      categories: [],
+      estimatedTokens: 500, // Minimal tokens
+      requiresVisualData: false,
+      confidence: 0.95,
+      isConversational: true
+    };
+  }
   
   // Detect what data categories user needs
   const needsContent = /content|article|blog|post|writing|publish/i.test(q);
@@ -23,7 +67,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   const needsPerformance = /performing|performance|how.*(doing|going)|status|health/i.test(q);
   
   // Detect scope level
-  let scope: 'summary' | 'detailed' | 'full' = 'summary';
+  let scope: 'summary' | 'detailed' | 'full' | 'conversational' = 'summary';
   
   if (/all|everything|complete|full|comprehensive|detailed|entire/i.test(q)) {
     scope = 'full';
@@ -53,7 +97,8 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   const tokenEstimates = {
     summary: 5000,
     detailed: 25000,
-    full: 80000
+    full: 80000,
+    conversational: 500
   };
   
   // VISUAL-FIRST: Trigger visualizations for any analytical query
@@ -73,6 +118,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
     categories,
     estimatedTokens: tokenEstimates[scope],
     requiresVisualData,
-    confidence: categories.length > 0 ? 0.8 : 0.5
+    confidence: categories.length > 0 ? 0.8 : 0.5,
+    isConversational: false
   };
 }
