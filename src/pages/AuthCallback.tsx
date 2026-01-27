@@ -45,9 +45,12 @@ const AuthCallback: React.FC = () => {
 
           if (data.session) {
             setStatus('success');
+            // Check if user is new (no tour completed flag)
+            const isNewUser = !localStorage.getItem('grand-tour-completed') && 
+                              !localStorage.getItem('has-seen-onboarding');
             // Brief delay to show success state
             setTimeout(() => {
-              navigate('/dashboard', { replace: true });
+              navigate(isNewUser ? '/dashboard?welcome=true' : '/dashboard', { replace: true });
             }, 1500);
             return;
           }
@@ -57,8 +60,10 @@ const AuthCallback: React.FC = () => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'SIGNED_IN' && session) {
             setStatus('success');
+            const isNewUser = !localStorage.getItem('grand-tour-completed') && 
+                              !localStorage.getItem('has-seen-onboarding');
             setTimeout(() => {
-              navigate('/dashboard', { replace: true });
+              navigate(isNewUser ? '/dashboard?welcome=true' : '/dashboard', { replace: true });
             }, 1500);
           }
         });
