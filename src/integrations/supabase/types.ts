@@ -3966,6 +3966,39 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_setup: {
+        Row: {
+          company_url: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          intel_status: string | null
+          setup_data: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_url?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          intel_status?: string | null
+          setup_data?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_url?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          intel_status?: string | null
+          setup_data?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       opportunity_assignments: {
         Row: {
           assigned_at: string
