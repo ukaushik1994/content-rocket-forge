@@ -3,6 +3,7 @@ import { EnhancedStatCard } from './EnhancedStatCard';
 import { motion } from 'framer-motion';
 import { realTimeIntegrationService } from '@/services/realTimeIntegrationService';
 import { useAnalyticsData } from '@/hooks/useAnalyticsData';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardStats {
   totalContent: number;
@@ -15,6 +16,8 @@ interface DashboardStats {
 
 export const RealTimeDashboardStats: React.FC = () => {
   const { loading: analyticsLoading } = useAnalyticsData();
+  const { user } = useAuth();
+  
   // Temp: Using placeholder metrics until dashboard refactor
   const metrics = { views: 0, engagement: 0, revenue: 0, change: { views: 0, engagement: 0, revenue: 0 } };
   const [stats, setStats] = useState<DashboardStats>({
@@ -27,14 +30,11 @@ export const RealTimeDashboardStats: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Mock user ID for now - will be replaced with real auth
-  const userId = 'current-user';
-
-  const loadRealTimeStats = async () => {
+  const loadRealTimeStats = async (userId: string) => {
     try {
       setLoading(true);
       
-      // Fetch real content metrics
+      // Fetch real content metrics using authenticated user ID
       const contentMetrics = await realTimeIntegrationService.fetchRealContentMetrics(userId);
       
       // Combine with analytics data
@@ -63,21 +63,27 @@ export const RealTimeDashboardStats: React.FC = () => {
   };
 
   useEffect(() => {
-    loadRealTimeStats();
+    // Only load stats if we have an authenticated user
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-    // Subscribe to real-time updates
+    loadRealTimeStats(user.id);
+
+    // Subscribe to real-time updates with actual user ID
     const subscription = realTimeIntegrationService.subscribeToContentUpdates(
-      userId,
+      user.id,
       () => {
         // Reload stats when content changes
-        loadRealTimeStats();
+        loadRealTimeStats(user.id);
       }
     );
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [userId, metrics]);
+  }, [user?.id, metrics]);
 
   const containerVariants = {
     hidden: { opacity: 0 },

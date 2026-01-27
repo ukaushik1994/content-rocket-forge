@@ -41,53 +41,48 @@ export const useContentRewriter = () => {
   }, []);
   
   // Generate improved content based on recommendation
-  const generateRewrittenContent = useCallback((recommendation: string, type: string) => {
+  const generateRewrittenContent = useCallback(async (recommendation: string, type: string) => {
     setIsRewriting(true);
     
-    // In a real implementation, this would call an AI service
     console.log(`Generating improved ${type} content based on recommendation:`, recommendation);
     
-    // For now, simulate API call with a delay
-    setTimeout(() => {
+    try {
       let newContent = content;
       
-      try {
-        // Simplified implementation for demo purposes
-        if (type === 'keyword') {
-          // For keyword issues, add the missing keywords
-          const missingKeyword = recommendation.match(/include ["']([^"']+)["']/)?.[1] || 'key topic';
-          newContent = addKeywordToContent(content, missingKeyword);
-        } else if (type === 'heading') {
-          // For heading issues, improve headings
-          newContent = improveHeadings(content);
-        } else {
-          // For general content issues, improve readability
-          newContent = improveContent(content, recommendation);
-        }
-        
-        setRewrittenContent(newContent);
-        
-        // Add improvement if not exists
-        if (!seoImprovements.some(imp => imp.id === selectedRecommendationId)) {
-          // Fix: Use a type-safe literal for impact instead of a generic string
-          const newImprovement: SeoImprovement = {
-            id: selectedRecommendationId || uuidv4(),
-            type,
-            recommendation,
-            impact: "high", // Use the literal type: "high", "medium", or "low"
-            applied: false
-          };
-          
-          dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: newImprovement });
-        }
-      } catch (error) {
-        console.error('Error generating rewritten content:', error);
-        toast.error('Failed to generate improved content. Please try again.');
-        setRewrittenContent(content); // Fallback to original content
-      } finally {
-        setIsRewriting(false);
+      // Perform actual content transformation
+      if (type === 'keyword') {
+        // For keyword issues, add the missing keywords
+        const missingKeyword = recommendation.match(/include ["']([^"']+)["']/)?.[1] || 'key topic';
+        newContent = addKeywordToContent(content, missingKeyword);
+      } else if (type === 'heading') {
+        // For heading issues, improve headings
+        newContent = improveHeadings(content);
+      } else {
+        // For general content issues, improve readability
+        newContent = improveContent(content, recommendation);
       }
-    }, 1500); // Simulated delay
+      
+      setRewrittenContent(newContent);
+      
+      // Add improvement if not exists
+      if (!seoImprovements.some(imp => imp.id === selectedRecommendationId)) {
+        const newImprovement: SeoImprovement = {
+          id: selectedRecommendationId || uuidv4(),
+          type,
+          recommendation,
+          impact: "high",
+          applied: false
+        };
+        
+        dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: newImprovement });
+      }
+    } catch (error) {
+      console.error('Error generating rewritten content:', error);
+      toast.error('Failed to generate improved content. Please try again.');
+      setRewrittenContent(content); // Fallback to original content
+    } finally {
+      setIsRewriting(false);
+    }
   }, [content, selectedRecommendationId, dispatch, seoImprovements]);
   
   // Apply the rewritten content and mark improvement as applied

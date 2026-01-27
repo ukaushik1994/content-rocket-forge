@@ -1,4 +1,5 @@
 import { ContextualAction } from '@/services/aiService';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ActionAnalytics {
   id: string;
@@ -27,7 +28,7 @@ export interface ActionEffectiveness {
 
 class ActionAnalyticsService {
   /**
-   * Track when an action is triggered (mock implementation until Supabase types update)
+   * Track when an action is triggered - persists to database
    */
   async trackActionTrigger(
     action: ContextualAction,
@@ -36,25 +37,27 @@ class ActionAnalyticsService {
     additionalData?: Record<string, any>
   ): Promise<string | null> {
     try {
-      // Mock implementation - store in localStorage temporarily
-      const analyticsData = {
-        id: `analytics-${Date.now()}`,
-        action_id: action.id,
-        action_type: action.type,
-        action_label: action.label,
-        user_id: userId,
-        conversation_id: conversationId,
-        triggered_at: new Date().toISOString(),
-        success: false,
-        interaction_data: additionalData || {}
-      };
+      const { data, error } = await supabase
+        .from('action_analytics')
+        .insert({
+          action_id: action.id,
+          action_type: action.type,
+          action_label: action.label,
+          user_id: userId,
+          conversation_id: conversationId || null,
+          triggered_at: new Date().toISOString(),
+          success: false,
+          interaction_data: additionalData || {}
+        })
+        .select('id')
+        .single();
 
-      const stored = localStorage.getItem('ai-action-analytics') || '[]';
-      const analytics = JSON.parse(stored);
-      analytics.push(analyticsData);
-      localStorage.setItem('ai-action-analytics', JSON.stringify(analytics));
+      if (error) {
+        console.error('Error tracking action trigger:', error);
+        return null;
+      }
 
-      return analyticsData.id;
+      return data?.id || null;
     } catch (error) {
       console.error('Error tracking action trigger:', error);
       return null;
@@ -62,7 +65,7 @@ class ActionAnalyticsService {
   }
 
   /**
-   * Track when an action is completed (mock implementation)
+   * Track when an action is completed - updates database record
    */
   async trackActionCompletion(
     analyticsId: string,
@@ -71,18 +74,37 @@ class ActionAnalyticsService {
     completionData?: Record<string, any>
   ): Promise<void> {
     try {
-      const stored = localStorage.getItem('ai-action-analytics') || '[]';
-      const analytics = JSON.parse(stored);
-      
-      const index = analytics.findIndex((item: any) => item.id === analyticsId);
-      if (index !== -1) {
-        analytics[index].completed_at = new Date().toISOString();
-        analytics[index].success = success;
-        analytics[index].effectiveness_score = effectivenessScore;
-        if (completionData) {
-          analytics[index].interaction_data = { ...analytics[index].interaction_data, ...completionData };
-        }
-        localStorage.setItem('ai-action-analytics', JSON.stringify(analytics));
+      const updateData: Record<string, any> = {
+        completed_at: new Date().toISOString(),
+        success,
+        updated_at: new Date().toISOString()
+      };
+
+      if (effectivenessScore !== undefined) {
+        updateData.effectiveness_score = effectivenessScore;
+      }
+
+      if (completionData) {
+        // Merge with existing interaction_data
+        const { data: existing } = await supabase
+          .from('action_analytics')
+          .select('interaction_data')
+          .eq('id', analyticsId)
+          .single();
+
+        updateData.interaction_data = {
+          ...(existing?.interaction_data as Record<string, any> || {}),
+          ...completionData
+        };
+      }
+
+      const { error } = await supabase
+        .from('action_analytics')
+        .update(updateData)
+        .eq('id', analyticsId);
+
+      if (error) {
+        console.error('Error tracking action completion:', error);
       }
     } catch (error) {
       console.error('Error tracking action completion:', error);
@@ -90,19 +112,28 @@ class ActionAnalyticsService {
   }
 
   /**
-   * Get action effectiveness data for a user (mock implementation)
+   * Get action effectiveness data for a user from database
    */
   async getActionEffectiveness(userId: string, limit: number = 50): Promise<ActionEffectiveness[]> {
     try {
-      const stored = localStorage.getItem('ai-action-analytics') || '[]';
-      const analytics = JSON.parse(stored);
-      
-      const userAnalytics = analytics
-        .filter((item: any) => item.user_id === userId)
-        .slice(0, limit);
+      const { data: analytics, error } = await supabase
+        .from('action_analytics')
+        .select('*')
+        .eq('user_id', userId)
+        .order('triggered_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching action analytics:', error);
+        return [];
+      }
+
+      if (!analytics || analytics.length === 0) {
+        return [];
+      }
 
       // Group by action_id and calculate effectiveness
-      const actionGroups = userAnalytics.reduce((acc: any, record: any) => {
+      const actionGroups = analytics.reduce((acc: Record<string, any>, record) => {
         const key = record.action_id;
         if (!acc[key]) {
           acc[key] = {
@@ -205,7 +236,7 @@ class ActionAnalyticsService {
   }
 
   /**
-   * Track action patterns for learning (mock implementation)
+   * Track action patterns for learning - persists to database
    */
   async trackActionPattern(
     userId: string,
@@ -214,18 +245,18 @@ class ActionAnalyticsService {
     context?: Record<string, any>
   ): Promise<void> {
     try {
-      const patternData = {
-        user_id: userId,
-        action_sequence: actionSequence,
-        outcome,
-        context: context || {},
-        created_at: new Date().toISOString()
-      };
+      const { error } = await supabase
+        .from('action_patterns')
+        .insert({
+          user_id: userId,
+          action_sequence: actionSequence,
+          outcome,
+          context: context || {}
+        });
 
-      const stored = localStorage.getItem('ai-action-patterns') || '[]';
-      const patterns = JSON.parse(stored);
-      patterns.push(patternData);
-      localStorage.setItem('ai-action-patterns', JSON.stringify(patterns));
+      if (error) {
+        console.error('Error tracking action pattern:', error);
+      }
     } catch (error) {
       console.error('Error tracking action pattern:', error);
     }
@@ -276,13 +307,31 @@ class ActionAnalyticsService {
 
   private async getRecentActivity(userId: string, limit: number): Promise<ActionAnalytics[]> {
     try {
-      const stored = localStorage.getItem('ai-action-analytics') || '[]';
-      const analytics = JSON.parse(stored);
-      
-      return analytics
-        .filter((item: any) => item.user_id === userId)
-        .sort((a: any, b: any) => new Date(b.triggered_at).getTime() - new Date(a.triggered_at).getTime())
-        .slice(0, limit);
+      const { data, error } = await supabase
+        .from('action_analytics')
+        .select('*')
+        .eq('user_id', userId)
+        .order('triggered_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching recent activity:', error);
+        return [];
+      }
+
+      return (data || []).map(item => ({
+        id: item.id,
+        action_id: item.action_id,
+        action_type: item.action_type,
+        action_label: item.action_label,
+        user_id: item.user_id,
+        conversation_id: item.conversation_id || undefined,
+        triggered_at: item.triggered_at,
+        completed_at: item.completed_at || undefined,
+        success: item.success,
+        interaction_data: item.interaction_data as Record<string, any> || undefined,
+        effectiveness_score: item.effectiveness_score || undefined
+      }));
     } catch (error) {
       console.error('Error fetching recent activity:', error);
       return [];
@@ -291,19 +340,27 @@ class ActionAnalyticsService {
 
   private async generateTrendData(userId: string, days: number): Promise<any[]> {
     try {
-      const stored = localStorage.getItem('ai-action-analytics') || '[]';
-      const analytics = JSON.parse(stored);
-      
-      const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - days);
+      startDate.setDate(startDate.getDate() - days);
 
-      const filteredData = analytics.filter((item: any) => {
-        const itemDate = new Date(item.triggered_at);
-        return item.user_id === userId && itemDate >= startDate && itemDate <= endDate;
-      });
+      const { data, error } = await supabase
+        .from('action_analytics')
+        .select('triggered_at, success')
+        .eq('user_id', userId)
+        .gte('triggered_at', startDate.toISOString())
+        .order('triggered_at', { ascending: true });
 
-      const dailyData = filteredData.reduce((acc: any, record: any) => {
+      if (error) {
+        console.error('Error generating trend data:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      // Group by date
+      const dailyData = data.reduce((acc: Record<string, any>, record) => {
         const date = new Date(record.triggered_at).toISOString().split('T')[0];
         if (!acc[date]) {
           acc[date] = { date, total: 0, successful: 0 };
