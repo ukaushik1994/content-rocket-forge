@@ -63,6 +63,7 @@ import { imageGenOrchestrator } from '@/services/imageGenOrchestrator';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentEditingToolbar, ContentQualityDashboard, VersionHistoryPanel } from '@/components/content/editing';
 import { useContentEditing } from '@/hooks/useContentEditing';
+import { OptimizationSuggestionsBanner } from '@/components/content/optimization/OptimizationSuggestionsBanner';
 
 interface ContentDetailModalProps {
   content: ContentItemType | null;
