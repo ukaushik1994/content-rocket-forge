@@ -2489,6 +2489,7 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           metadata: Json | null
+          pending_optimizations_count: number | null
           performance_metrics: Json | null
           published_url: string | null
           review_deadline: string | null
@@ -2515,6 +2516,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           metadata?: Json | null
+          pending_optimizations_count?: number | null
           performance_metrics?: Json | null
           published_url?: string | null
           review_deadline?: string | null
@@ -2541,6 +2543,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           metadata?: Json | null
+          pending_optimizations_count?: number | null
           performance_metrics?: Json | null
           published_url?: string | null
           review_deadline?: string | null
@@ -2719,6 +2722,7 @@ export type Database = {
           predicted_impact: Json | null
           status: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           applied_at?: string | null
@@ -2732,6 +2736,7 @@ export type Database = {
           predicted_impact?: Json | null
           status?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           applied_at?: string | null
@@ -2745,6 +2750,7 @@ export type Database = {
           predicted_impact?: Json | null
           status?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
