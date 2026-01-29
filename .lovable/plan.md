@@ -1,275 +1,302 @@
 
-# Self-Learning Content Engine: Complete Integration Plan
+# Self-Learning Content Engine: Simplified Integration Plan
 
-## Current State Assessment
+## Core Philosophy
 
-### What's Already Built
+**"Content is art, not a spreadsheet."**
 
-| Integration | Status | Notes |
-|------------|--------|-------|
-| **GA4** | ⚠️ Partial | Edge function exists but uses legacy Universal Analytics API (v3). GA4 requires Data API v1. Currently falls back to mock data. |
-| **GSC** | ⚠️ Partial | Edge function exists and can fetch search analytics, but requires Service Account JSON in Settings. |
-| **PageSpeed Insights** | ❌ Missing | Only pre-publication estimates exist. No live PSI API integration. |
-| **Heatmap (Hotjar/Clarity)** | ❌ Missing | No integration. Architecture is ready for it. |
-| **Image Generation** | ✅ Complete | OpenAI DALL-E, Gemini Image, LM Studio all working. |
-| **Video Generation** | ✅ Complete | Runway ML, Kling AI, Replicate all working with async polling. |
-
-### Critical Issue Found
-The `google-analytics-fetch` edge function uses the **deprecated Universal Analytics API** (`ga:pageviews`, `ga:sessions`). Universal Analytics was sunset in July 2023. For GA4 properties, you need the **Google Analytics Data API v1** with different field names (`sessions`, `screenPageViews`, etc.).
+All technical analysis (GA4, GSC, PageSpeed, Heatmaps) happens invisibly in the backend. Users only see plain-language suggestions when their content needs attention.
 
 ---
 
-## Phase 1: Fix Analytics Connections (Foundation)
+## What Changes
 
-### 1.1 Upgrade GA4 Edge Function
-**File:** `supabase/functions/google-analytics-fetch/index.ts`
-
-Update to use GA4 Data API v1:
-- Change endpoint: `analyticsdata.googleapis.com/v1beta`
-- Use GA4 metrics: `screenPageViews`, `sessions`, `engagementRate`
-- Support Property ID format: `properties/123456789` (not View ID)
-- Use Service Account authentication (already supported in shared/auth.ts)
-
-### 1.2 Add Property ID Selection
-**New Component:** `src/components/settings/integrations/GooglePropertySelector.tsx`
-
-After Service Account is validated, allow user to:
-- List available GA4 properties
-- Select which property to track
-- Store selection in `api_keys` metadata
-
-### 1.3 GSC Site Verification
-Ensure GSC connection includes:
-- Site URL verification (user must add service account email to GSC)
-- Clear setup instructions in Settings UI
+| Area | Change |
+|------|--------|
+| **Repository Cards** | Small badge showing "X improvements suggested" when AI has recommendations |
+| **Content Detail Modal** | Collapsible banner at top showing AI suggestions with checkboxes to pick and choose |
+| **Backend** | Scheduled job that automatically checks published content weekly |
+| **Notifications** | Push notification when content needs optimization |
+| **Analytics Page** | No changes (keep current analytics only) |
 
 ---
 
-## Phase 2: PageSpeed Insights Integration
-
-### 2.1 New Edge Function
-**File:** `supabase/functions/pagespeed-insights/index.ts`
+## Architecture Overview
 
 ```text
-Input:  { url: string }
-Output: {
-  performance: 0-100,
-  accessibility: 0-100,
-  bestPractices: 0-100,
-  seo: 0-100,
-  coreWebVitals: {
-    LCP: { value, score },
-    FID: { value, score },
-    CLS: { value, score },
-    TTFB: { value, score }
-  },
-  opportunities: [
-    { id, title, description, savings }
-  ]
-}
+┌─────────────────────────────────────────────────────────────────┐
+│                    SCHEDULED BACKGROUND JOB                      │
+│                    (Runs weekly for each user)                   │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              For each PUBLISHED content piece:                   │
+│                                                                  │
+│   1. Fetch GA4 data (bounce rate, session duration)             │
+│   2. Fetch GSC data (position, CTR)                             │
+│   3. Fetch PageSpeed data (Core Web Vitals)                     │
+│   4. Fetch Heatmap data (scroll depth, rage clicks)             │
+│                                                                  │
+│   All data flows to AI → "What needs to change?"                │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    AI CONTENT OPTIMIZER                          │
+│                                                                  │
+│   Receives: All performance data (user never sees raw data)     │
+│   Returns:                                                       │
+│     - Plain language suggestions                                 │
+│     - Improved content drafts for each suggestion                │
+│     - Priority (high/medium/low)                                 │
+│                                                                  │
+│   Example output:                                                │
+│   "Your headline isn't grabbing attention. 70% of visitors      │
+│    leave within 10 seconds. Try this stronger opening..."       │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                ┌───────────────┴───────────────┐
+                │                               │
+                ▼                               ▼
+┌─────────────────────────┐     ┌─────────────────────────────────┐
+│     NOTIFICATION         │     │  CONTENT_OPTIMIZATION_HISTORY   │
+│   (dashboard_alerts)     │     │         (database)               │
+│                          │     │                                  │
+│  "3 content pieces need  │     │  Stores all pending suggestions │
+│   your attention"        │     │  with status: pending_review    │
+│                          │     │                                  │
+│  [View Suggestions]      │     │  Ready for user to review       │
+└─────────────────────────┘     └─────────────────────────────────┘
 ```
 
-Uses Google PageSpeed Insights API (free, just needs API key).
+---
 
-### 2.2 Performance Dashboard
-**New Component:** `src/components/analytics/PagePerformanceDashboard.tsx`
+## User Experience Flow
 
-- Display Core Web Vitals with pass/fail badges
-- Show performance opportunities from PSI
-- Track historical performance over time
-- Trigger automatic optimization suggestions
+### Step 1: Badge on Content Card
 
-### 2.3 Database Table
-**New Table:** `page_performance_metrics`
+When AI has pending suggestions for a content piece, a subtle badge appears:
 
+```text
+┌─────────────────────────────────────────────┐
+│  [Published] [SEO: 85]     [•••]            │
+│                                             │
+│  How to Optimize Your Landing Page          │
+│  Landing pages are crucial for...           │
+│                                             │
+│  [2 improvements suggested] ← NEW BADGE     │
+│  Updated 3 days ago                         │
+└─────────────────────────────────────────────┘
+```
+
+- Subtle amber/yellow glow or badge
+- Only appears when there are pending suggestions
+- Clicking opens the content detail modal
+
+### Step 2: Suggestions Banner in Content Detail Modal
+
+When user opens content with pending suggestions, a collapsible banner appears at the top:
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  [How to Optimize Your Landing Page]                            │
+│  Blog • Published                                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌─ AI Suggestions ─────────────────────────────────────────┐   │
+│  │  Based on recent performance, here's what we recommend:   │   │
+│  │                                                           │   │
+│  │  ☐ Strengthen your headline                               │   │
+│  │    70% of visitors leave within 10 seconds. A more       │   │
+│  │    compelling hook could improve engagement.              │   │
+│  │    [Preview Change]                                       │   │
+│  │                                                           │   │
+│  │  ☐ Move CTA above the fold                                │   │
+│  │    Only 35% of readers scroll past the intro. Your main  │   │
+│  │    call-to-action should be visible immediately.          │   │
+│  │    [Preview Change]                                       │   │
+│  │                                                           │   │
+│  │  [Apply Selected] [Dismiss All]                           │   │
+│  └───────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ▼ Content Preview                                              │
+│  ▼ Keywords                                                     │
+│  ▼ Media Assets                                                 │
+│  ...                                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- Each suggestion has a checkbox
+- "Preview Change" shows before/after comparison
+- "Apply Selected" creates a new draft with chosen improvements
+- "Dismiss All" marks suggestions as acknowledged
+
+### Step 3: Notification Alert
+
+Users get notified when new suggestions are available:
+
+```text
+┌─────────────────────────────────────────────┐
+│  🔔 Content Optimization Available          │
+│                                             │
+│  3 content pieces could perform better      │
+│  with a few tweaks.                         │
+│                                             │
+│  [View in Repository]                       │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## Implementation Details
+
+### Phase 1: Background Performance Check Job
+
+**New Edge Function:** `content-performance-check`
+
+This runs on a schedule (weekly by default) and:
+1. Fetches all published content for the user
+2. For each piece, gathers performance data from all sources
+3. Sends data to content-optimizer AI
+4. Stores suggestions in `content_optimization_history`
+5. Pushes notification if suggestions exist
+
+**Trigger:** pg_cron scheduled job
+
+### Phase 2: Optimization Suggestions Badge
+
+**Modified File:** `src/components/content/repository/card/ContentCardHeader.tsx`
+
+Add a new `OptimizationBadge` component that:
+- Queries `content_optimization_history` for pending suggestions
+- Displays count badge if suggestions exist
+- Uses subtle amber/yellow color to draw attention
+
+**New Component:** `src/components/content/repository/card/OptimizationBadge.tsx`
+
+### Phase 3: Suggestions Banner in Modal
+
+**Modified File:** `src/components/repository/ContentDetailModal.tsx`
+
+Add a new collapsible section at the very top that:
+- Fetches pending suggestions from `content_optimization_history`
+- Displays each suggestion with checkbox
+- Shows plain-language explanation (not technical metrics)
+- Preview button shows side-by-side comparison
+- Apply creates new draft version
+- Dismiss marks as acknowledged
+
+**New Component:** `src/components/content/optimization/OptimizationSuggestionsBanner.tsx`
+
+### Phase 4: Notification Integration
+
+Use existing `pushEnhancedAlert` from `enhancedNotificationsService`:
+
+```text
+pushEnhancedAlert({
+  userId,
+  title: 'Content Optimization Available',
+  message: '3 content pieces could perform better with a few tweaks.',
+  module: 'content_optimizer',
+  priority: 'medium',
+  notificationType: 'info',
+  actionButtons: [
+    {
+      id: 'view_suggestions',
+      label: 'View in Repository',
+      action: 'navigate',
+      url: '/repository?filter=needs_optimization',
+      variant: 'primary'
+    }
+  ]
+});
+```
+
+---
+
+## External Tool Links
+
+For power users who want to see the raw data, we add simple external links (not dashboards):
+
+- "View in Google Analytics" button (opens GA4 in new tab)
+- "View in Search Console" button (opens GSC in new tab)
+- "View in Clarity/Hotjar" button (opens heatmap tool in new tab)
+
+These appear in Settings under the configured integration, not in the Repository.
+
+---
+
+## Database Changes
+
+**No new tables needed.** Use existing:
+- `content_optimization_history` - already has all needed columns
+- `dashboard_alerts` - for notifications
+
+**Add one column to `content_items`:**
 ```sql
-CREATE TABLE page_performance_metrics (
-  id UUID PRIMARY KEY,
-  content_id UUID REFERENCES content_items(id),
-  published_url TEXT NOT NULL,
-  performance_score INTEGER,
-  accessibility_score INTEGER,
-  core_web_vitals JSONB,
-  opportunities JSONB,
-  measured_at TIMESTAMPTZ DEFAULT now()
-);
+ALTER TABLE content_items 
+ADD COLUMN IF NOT EXISTS pending_optimizations_count INTEGER DEFAULT 0;
 ```
+
+This count is updated by the background job and used for quick badge display without extra queries.
 
 ---
 
-## Phase 3: Heatmap Integration (Hotjar/Clarity)
-
-### 3.1 Provider Selection
-**New Settings Section:** `src/components/settings/integrations/HeatmapIntegration.tsx`
-
-Support two providers:
-- **Microsoft Clarity** (free, easier API)
-- **Hotjar** (paid, richer data)
-
-### 3.2 Clarity Edge Function
-**File:** `supabase/functions/clarity-fetch/index.ts`
-
-Fetch from Clarity API:
-- Dead clicks (users clicking non-interactive elements)
-- Rage clicks (frustration indicators)
-- Scroll depth (how far users read)
-- Session recordings metadata
-
-### 3.3 Unified Behavior Model
-Normalize heatmap data into standardized format:
-
-```text
-{
-  engagement: {
-    avgScrollDepth: 0.65,
-    deadClicks: [],
-    rageClicks: [],
-    topInteractions: []
-  },
-  insights: [
-    "65% of users don't scroll past the 3rd section",
-    "CTA button has 23 dead clicks (users expect it to be clickable)"
-  ]
-}
-```
-
----
-
-## Phase 4: Self-Learning Content Engine
-
-### 4.1 Performance Monitor Service
-**File:** `src/services/performanceMonitorService.ts`
-
-Orchestrates all data sources:
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                  PERFORMANCE MONITOR                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   GA4 ──────┐                                               │
-│             │                                               │
-│   GSC ──────┼──► Unified Performance Model ──► AI Analysis │
-│             │                                               │
-│   PSI ──────┤                                               │
-│             │                                               │
-│   Heatmap ──┘                                               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 4.2 AI Optimization Engine
-**New Edge Function:** `supabase/functions/content-optimizer/index.ts`
-
-Takes performance data + content → generates improved draft:
-
-**Input:**
-```json
-{
-  "contentId": "uuid",
-  "currentContent": "...",
-  "performanceData": {
-    "ga4": { "bounceRate": 0.72, "avgEngagement": 45 },
-    "gsc": { "avgPosition": 12.3, "ctr": 0.02 },
-    "psi": { "lcp": 4.2, "opportunities": [...] },
-    "heatmap": { "scrollDepth": 0.35, "rageClicks": [...] }
-  }
-}
-```
-
-**Output:**
-```json
-{
-  "optimizedContent": "...",
-  "changes": [
-    { "type": "headline", "original": "...", "improved": "...", "reason": "Low CTR suggests headline isn't compelling" },
-    { "type": "cta_placement", "action": "Move above fold", "reason": "Only 35% scroll past fold" }
-  ],
-  "predictedImpact": {
-    "bounceRate": "-15%",
-    "ctr": "+40%"
-  }
-}
-```
-
-### 4.3 Auto-Draft Workflow
-**New Component:** `src/components/content/OptimizationSuggestions.tsx`
-
-User flow:
-1. System detects underperforming content (configurable thresholds)
-2. Background job fetches all performance data
-3. AI generates optimized draft
-4. User receives notification: "3 content pieces need optimization"
-5. Review side-by-side comparison
-6. One-click approve or edit further
-
----
-
-## Phase 5: Image/Video Verification
-
-### 5.1 Provider Health Check
-**New Service:** `src/services/mediaHealthService.ts`
-
-Test all configured media providers:
-- OpenAI Image: Generate test image
-- Gemini Image: Generate test image
-- Runway/Kling/Replicate: Submit test job and verify callback
-
-### 5.2 Settings Status Dashboard
-**Update:** `src/components/settings/api/ApiKeyCard.tsx`
-
-Add visual health indicators:
-- ✅ Connected & Working
-- ⚠️ Connected but Quota Exhausted
-- ❌ Invalid Credentials
-
-### 5.3 Interactive Test
-Allow users to run a quick test:
-- "Generate a test image" button
-- Shows result or error message
-- Logs to troubleshoot issues
-
----
-
-## Implementation Order
-
-| Step | Task | Priority | Dependency |
-|------|------|----------|------------|
-| 1 | Fix GA4 edge function to use Data API v1 | Critical | None |
-| 2 | Add PageSpeed Insights edge function | High | None |
-| 3 | Create page_performance_metrics table | High | None |
-| 4 | Build Performance Dashboard component | High | Steps 1-3 |
-| 5 | Add Clarity/Hotjar integration | Medium | None |
-| 6 | Build content-optimizer edge function | High | Step 4 |
-| 7 | Create OptimizationSuggestions UI | High | Step 6 |
-| 8 | Add media health check service | Medium | None |
-| 9 | Scheduled performance monitoring job | Medium | Steps 1-5 |
-
----
-
-## File Summary
+## Files to Create/Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `supabase/functions/google-analytics-fetch/index.ts` | Modify | Upgrade to GA4 Data API v1 |
-| `supabase/functions/pagespeed-insights/index.ts` | Create | Fetch Core Web Vitals from PSI |
-| `supabase/functions/clarity-fetch/index.ts` | Create | Fetch heatmap data from Clarity |
-| `supabase/functions/content-optimizer/index.ts` | Create | AI-powered content optimization |
-| `supabase/migrations/xxx_page_performance.sql` | Create | New performance metrics table |
-| `src/services/performanceMonitorService.ts` | Create | Orchestrate all data sources |
-| `src/services/mediaHealthService.ts` | Create | Test media generation providers |
-| `src/components/analytics/PagePerformanceDashboard.tsx` | Create | Display Core Web Vitals |
-| `src/components/content/OptimizationSuggestions.tsx` | Create | Show AI improvement drafts |
-| `src/components/settings/integrations/HeatmapIntegration.tsx` | Create | Configure Clarity/Hotjar |
+| `supabase/functions/content-performance-check/index.ts` | Create | Scheduled job that checks all published content |
+| `src/components/content/repository/card/OptimizationBadge.tsx` | Create | Badge showing suggestion count |
+| `src/components/content/repository/card/ContentCardHeader.tsx` | Modify | Add OptimizationBadge |
+| `src/components/content/optimization/OptimizationSuggestionsBanner.tsx` | Create | Collapsible banner with checkboxes |
+| `src/components/repository/ContentDetailModal.tsx` | Modify | Add OptimizationSuggestionsBanner at top |
+| `src/hooks/useOptimizationSuggestions.ts` | Create | Hook to fetch/manage suggestions |
+| Migration SQL | Create | Add pending_optimizations_count column |
 
 ---
 
-## Immediate Next Step
+## What We Are NOT Building
 
-Since you mentioned you're "partially connected" - before building new features, we should verify what's actually working. I recommend:
+To keep the tool simple and focused:
 
-1. **Test current GA4/GSC connections** in Settings to see exact error
-2. **Verify image generation** by generating a test image
-3. **Then proceed** with the Phase 1 fixes
+- No PagePerformanceDashboard component (technical data stays hidden)
+- No Core Web Vitals visualization (backend uses it, user doesn't see it)
+- No heatmap visualization (backend digests it into plain suggestions)
+- No UnifiedPerformanceView (no new pages)
+- No new tabs in Analytics page
 
-This ensures we're building on a solid foundation.
+**The AI does the technical thinking. Users just see:**
+"Here's what you should change, and here's why in plain English."
+
+---
+
+## Example AI Suggestion (What User Sees)
+
+Instead of showing:
+```
+Bounce Rate: 72% ⚠️ HIGH
+LCP: 4.2s ⚠️ POOR
+Scroll Depth: 35%
+```
+
+User sees:
+```
+"Your readers are leaving quickly. Based on how people interact 
+with your page, they're not finding what they expected from the 
+headline. Here's a stronger opening that matches their intent..."
+```
+
+---
+
+## Success Criteria
+
+1. User opens Repository and immediately sees which content needs attention
+2. User clicks content card, sees plain-language suggestions at the top
+3. User can preview each change before applying
+4. User selects which suggestions to apply (pick and choose)
+5. Updated content is saved as new draft for review
+6. No technical metrics shown in the UI
+7. No new pages added
+8. Seamless integration into existing workflow
