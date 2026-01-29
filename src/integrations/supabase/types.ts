@@ -2706,6 +2706,56 @@ export type Database = {
           },
         ]
       }
+      content_optimization_history: {
+        Row: {
+          applied_at: string | null
+          changes: Json | null
+          content_id: string | null
+          created_at: string
+          id: string
+          optimized_content: string | null
+          original_content: string | null
+          performance_data: Json | null
+          predicted_impact: Json | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string | null
+          changes?: Json | null
+          content_id?: string | null
+          created_at?: string
+          id?: string
+          optimized_content?: string | null
+          original_content?: string | null
+          performance_data?: Json | null
+          predicted_impact?: Json | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string | null
+          changes?: Json | null
+          content_id?: string | null
+          created_at?: string
+          id?: string
+          optimized_content?: string | null
+          original_content?: string | null
+          performance_data?: Json | null
+          predicted_impact?: Json | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_optimization_history_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_optimization_logs: {
         Row: {
           content_id: string | null
@@ -3432,6 +3482,59 @@ export type Database = {
             columns: ["glossary_id"]
             isOneToOne: false
             referencedRelation: "glossaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      heatmap_data: {
+        Row: {
+          avg_time_on_page: number | null
+          content_id: string | null
+          created_at: string
+          dead_clicks: Json | null
+          fetched_at: string
+          id: string
+          insights: Json | null
+          provider: string
+          published_url: string
+          rage_clicks: Json | null
+          scroll_depth: number | null
+          top_interactions: Json | null
+        }
+        Insert: {
+          avg_time_on_page?: number | null
+          content_id?: string | null
+          created_at?: string
+          dead_clicks?: Json | null
+          fetched_at?: string
+          id?: string
+          insights?: Json | null
+          provider?: string
+          published_url: string
+          rage_clicks?: Json | null
+          scroll_depth?: number | null
+          top_interactions?: Json | null
+        }
+        Update: {
+          avg_time_on_page?: number | null
+          content_id?: string | null
+          created_at?: string
+          dead_clicks?: Json | null
+          fetched_at?: string
+          id?: string
+          insights?: Json | null
+          provider?: string
+          published_url?: string
+          rage_clicks?: Json | null
+          scroll_depth?: number | null
+          top_interactions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "heatmap_data_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
         ]
@@ -4239,6 +4342,62 @@ export type Database = {
             columns: ["strategy_id"]
             isOneToOne: false
             referencedRelation: "content_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_performance_metrics: {
+        Row: {
+          accessibility_score: number | null
+          best_practices_score: number | null
+          content_id: string | null
+          core_web_vitals: Json | null
+          created_at: string
+          diagnostics: Json | null
+          id: string
+          measured_at: string
+          opportunities: Json | null
+          performance_score: number | null
+          published_url: string
+          seo_score: number | null
+          strategy: string | null
+        }
+        Insert: {
+          accessibility_score?: number | null
+          best_practices_score?: number | null
+          content_id?: string | null
+          core_web_vitals?: Json | null
+          created_at?: string
+          diagnostics?: Json | null
+          id?: string
+          measured_at?: string
+          opportunities?: Json | null
+          performance_score?: number | null
+          published_url: string
+          seo_score?: number | null
+          strategy?: string | null
+        }
+        Update: {
+          accessibility_score?: number | null
+          best_practices_score?: number | null
+          content_id?: string | null
+          core_web_vitals?: Json | null
+          created_at?: string
+          diagnostics?: Json | null
+          id?: string
+          measured_at?: string
+          opportunities?: Json | null
+          performance_score?: number | null
+          published_url?: string
+          seo_score?: number | null
+          strategy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_performance_metrics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
         ]
