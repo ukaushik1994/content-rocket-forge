@@ -1,302 +1,117 @@
 
-# Self-Learning Content Engine: Simplified Integration Plan
+# Fix: API Key Storage and Provider Tag Visibility
 
-## Core Philosophy
+## Problem Summary
 
-**"Content is art, not a spreadsheet."**
+### 1. API Key Storage Fails with RLS Violation
+The database logs show `new row violates row-level security policy for table "api_keys"`.
 
-All technical analysis (GA4, GSC, PageSpeed, Heatmaps) happens invisibly in the backend. Users only see plain-language suggestions when their content needs attention.
+**Root Cause**: The `api_keys` table uses UPSERT, but the SELECT policy is `USING (false)` to prevent encrypted key exposure. UPSERT requires a SELECT to check for conflicts, which is blocked by this policy.
 
----
+### 2. Provider Tag Shows When It Shouldn't
+The "OpenAI" tag in the header displays even when no API key is actually stored.
 
-## What Changes
-
-| Area | Change |
-|------|--------|
-| **Repository Cards** | Small badge showing "X improvements suggested" when AI has recommendations |
-| **Content Detail Modal** | Collapsible banner at top showing AI suggestions with checkboxes to pick and choose |
-| **Backend** | Scheduled job that automatically checks published content weekly |
-| **Notifications** | Push notification when content needs optimization |
-| **Analytics Page** | No changes (keep current analytics only) |
+**Root Cause**: `ActiveProviderIndicator` checks `ai_service_providers.status = 'active'` but doesn't verify an actual API key exists in `api_keys`.
 
 ---
 
-## Architecture Overview
+## Solution
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    SCHEDULED BACKGROUND JOB                      │
-│                    (Runs weekly for each user)                   │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              For each PUBLISHED content piece:                   │
-│                                                                  │
-│   1. Fetch GA4 data (bounce rate, session duration)             │
-│   2. Fetch GSC data (position, CTR)                             │
-│   3. Fetch PageSpeed data (Core Web Vitals)                     │
-│   4. Fetch Heatmap data (scroll depth, rage clicks)             │
-│                                                                  │
-│   All data flows to AI → "What needs to change?"                │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    AI CONTENT OPTIMIZER                          │
-│                                                                  │
-│   Receives: All performance data (user never sees raw data)     │
-│   Returns:                                                       │
-│     - Plain language suggestions                                 │
-│     - Improved content drafts for each suggestion                │
-│     - Priority (high/medium/low)                                 │
-│                                                                  │
-│   Example output:                                                │
-│   "Your headline isn't grabbing attention. 70% of visitors      │
-│    leave within 10 seconds. Try this stronger opening..."       │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                ┌───────────────┴───────────────┐
-                │                               │
-                ▼                               ▼
-┌─────────────────────────┐     ┌─────────────────────────────────┐
-│     NOTIFICATION         │     │  CONTENT_OPTIMIZATION_HISTORY   │
-│   (dashboard_alerts)     │     │         (database)               │
-│                          │     │                                  │
-│  "3 content pieces need  │     │  Stores all pending suggestions │
-│   your attention"        │     │  with status: pending_review    │
-│                          │     │                                  │
-│  [View Suggestions]      │     │  Ready for user to review       │
-└─────────────────────────┘     └─────────────────────────────────┘
-```
+### Fix 1: Update RLS to Allow UPSERT Conflict Check
 
----
+Add a SELECT policy that allows users to check if THEIR OWN rows exist (for upsert), but excludes the sensitive `encrypted_key` column from being readable.
 
-## User Experience Flow
-
-### Step 1: Badge on Content Card
-
-When AI has pending suggestions for a content piece, a subtle badge appears:
-
-```text
-┌─────────────────────────────────────────────┐
-│  [Published] [SEO: 85]     [•••]            │
-│                                             │
-│  How to Optimize Your Landing Page          │
-│  Landing pages are crucial for...           │
-│                                             │
-│  [2 improvements suggested] ← NEW BADGE     │
-│  Updated 3 days ago                         │
-└─────────────────────────────────────────────┘
-```
-
-- Subtle amber/yellow glow or badge
-- Only appears when there are pending suggestions
-- Clicking opens the content detail modal
-
-### Step 2: Suggestions Banner in Content Detail Modal
-
-When user opens content with pending suggestions, a collapsible banner appears at the top:
-
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  [How to Optimize Your Landing Page]                            │
-│  Blog • Published                                               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌─ AI Suggestions ─────────────────────────────────────────┐   │
-│  │  Based on recent performance, here's what we recommend:   │   │
-│  │                                                           │   │
-│  │  ☐ Strengthen your headline                               │   │
-│  │    70% of visitors leave within 10 seconds. A more       │   │
-│  │    compelling hook could improve engagement.              │   │
-│  │    [Preview Change]                                       │   │
-│  │                                                           │   │
-│  │  ☐ Move CTA above the fold                                │   │
-│  │    Only 35% of readers scroll past the intro. Your main  │   │
-│  │    call-to-action should be visible immediately.          │   │
-│  │    [Preview Change]                                       │   │
-│  │                                                           │   │
-│  │  [Apply Selected] [Dismiss All]                           │   │
-│  └───────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  ▼ Content Preview                                              │
-│  ▼ Keywords                                                     │
-│  ▼ Media Assets                                                 │
-│  ...                                                            │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-- Each suggestion has a checkbox
-- "Preview Change" shows before/after comparison
-- "Apply Selected" creates a new draft with chosen improvements
-- "Dismiss All" marks suggestions as acknowledged
-
-### Step 3: Notification Alert
-
-Users get notified when new suggestions are available:
-
-```text
-┌─────────────────────────────────────────────┐
-│  🔔 Content Optimization Available          │
-│                                             │
-│  3 content pieces could perform better      │
-│  with a few tweaks.                         │
-│                                             │
-│  [View in Repository]                       │
-└─────────────────────────────────────────────┘
-```
-
----
-
-## Implementation Details
-
-### Phase 1: Background Performance Check Job
-
-**New Edge Function:** `content-performance-check`
-
-This runs on a schedule (weekly by default) and:
-1. Fetches all published content for the user
-2. For each piece, gathers performance data from all sources
-3. Sends data to content-optimizer AI
-4. Stores suggestions in `content_optimization_history`
-5. Pushes notification if suggestions exist
-
-**Trigger:** pg_cron scheduled job
-
-### Phase 2: Optimization Suggestions Badge
-
-**Modified File:** `src/components/content/repository/card/ContentCardHeader.tsx`
-
-Add a new `OptimizationBadge` component that:
-- Queries `content_optimization_history` for pending suggestions
-- Displays count badge if suggestions exist
-- Uses subtle amber/yellow color to draw attention
-
-**New Component:** `src/components/content/repository/card/OptimizationBadge.tsx`
-
-### Phase 3: Suggestions Banner in Modal
-
-**Modified File:** `src/components/repository/ContentDetailModal.tsx`
-
-Add a new collapsible section at the very top that:
-- Fetches pending suggestions from `content_optimization_history`
-- Displays each suggestion with checkbox
-- Shows plain-language explanation (not technical metrics)
-- Preview button shows side-by-side comparison
-- Apply creates new draft version
-- Dismiss marks as acknowledged
-
-**New Component:** `src/components/content/optimization/OptimizationSuggestionsBanner.tsx`
-
-### Phase 4: Notification Integration
-
-Use existing `pushEnhancedAlert` from `enhancedNotificationsService`:
-
-```text
-pushEnhancedAlert({
-  userId,
-  title: 'Content Optimization Available',
-  message: '3 content pieces could perform better with a few tweaks.',
-  module: 'content_optimizer',
-  priority: 'medium',
-  notificationType: 'info',
-  actionButtons: [
-    {
-      id: 'view_suggestions',
-      label: 'View in Repository',
-      action: 'navigate',
-      url: '/repository?filter=needs_optimization',
-      variant: 'primary'
-    }
-  ]
-});
-```
-
----
-
-## External Tool Links
-
-For power users who want to see the raw data, we add simple external links (not dashboards):
-
-- "View in Google Analytics" button (opens GA4 in new tab)
-- "View in Search Console" button (opens GSC in new tab)
-- "View in Clarity/Hotjar" button (opens heatmap tool in new tab)
-
-These appear in Settings under the configured integration, not in the Repository.
-
----
-
-## Database Changes
-
-**No new tables needed.** Use existing:
-- `content_optimization_history` - already has all needed columns
-- `dashboard_alerts` - for notifications
-
-**Add one column to `content_items`:**
 ```sql
-ALTER TABLE content_items 
-ADD COLUMN IF NOT EXISTS pending_optimizations_count INTEGER DEFAULT 0;
+-- Drop the overly restrictive SELECT policy
+DROP POLICY IF EXISTS "No direct SELECT access to api_keys" ON api_keys;
+
+-- Create a new policy that allows existence checks for upsert
+-- Users can only see metadata about their own keys (not the encrypted content)
+CREATE POLICY "Users can check their own API key existence"
+  ON api_keys
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Note: The api_keys_metadata VIEW remains the recommended way for clients 
+-- to check key status (excludes encrypted_key column for security)
 ```
 
-This count is updated by the background job and used for quick badge display without extra queries.
+The encrypted key is still protected because:
+- The VIEW `api_keys_metadata` (without encrypted_key) should be used for status checks
+- Client code already uses the metadata view for display purposes
+- Only the secure-api-key edge function with service role can decrypt
 
----
+### Fix 2: Update ActiveProviderIndicator Visibility Logic
 
-## Files to Create/Modify
+Only show the provider tag when BOTH conditions are true:
+1. `ai_service_providers.status = 'active'`
+2. An actual API key exists in `api_keys` table (via metadata view)
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `supabase/functions/content-performance-check/index.ts` | Create | Scheduled job that checks all published content |
-| `src/components/content/repository/card/OptimizationBadge.tsx` | Create | Badge showing suggestion count |
-| `src/components/content/repository/card/ContentCardHeader.tsx` | Modify | Add OptimizationBadge |
-| `src/components/content/optimization/OptimizationSuggestionsBanner.tsx` | Create | Collapsible banner with checkboxes |
-| `src/components/repository/ContentDetailModal.tsx` | Modify | Add OptimizationSuggestionsBanner at top |
-| `src/hooks/useOptimizationSuggestions.ts` | Create | Hook to fetch/manage suggestions |
-| Migration SQL | Create | Add pending_optimizations_count column |
+```text
+Modified File: src/components/ai/ActiveProviderIndicator.tsx
 
----
-
-## What We Are NOT Building
-
-To keep the tool simple and focused:
-
-- No PagePerformanceDashboard component (technical data stays hidden)
-- No Core Web Vitals visualization (backend uses it, user doesn't see it)
-- No heatmap visualization (backend digests it into plain suggestions)
-- No UnifiedPerformanceView (no new pages)
-- No new tabs in Analytics page
-
-**The AI does the technical thinking. Users just see:**
-"Here's what you should change, and here's why in plain English."
-
----
-
-## Example AI Suggestion (What User Sees)
-
-Instead of showing:
-```
-Bounce Rate: 72% ⚠️ HIGH
-LCP: 4.2s ⚠️ POOR
-Scroll Depth: 35%
-```
-
-User sees:
-```
-"Your readers are leaving quickly. Based on how people interact 
-with your page, they're not finding what they expected from the 
-headline. Here's a stronger opening that matches their intent..."
+Changes:
+- Add a check against api_keys_metadata to verify key exists
+- Only render the tag when both provider is active AND key exists
+- Update the real-time subscription to watch both tables
 ```
 
 ---
 
-## Success Criteria
+## Files to Modify
 
-1. User opens Repository and immediately sees which content needs attention
-2. User clicks content card, sees plain-language suggestions at the top
-3. User can preview each change before applying
-4. User selects which suggestions to apply (pick and choose)
-5. Updated content is saved as new draft for review
-6. No technical metrics shown in the UI
-7. No new pages added
-8. Seamless integration into existing workflow
+| File | Change |
+|------|--------|
+| Database Migration | Update RLS policy to allow SELECT for user's own rows |
+| `src/components/ai/ActiveProviderIndicator.tsx` | Add key existence check before showing tag |
+
+---
+
+## Technical Details
+
+### Database Migration SQL
+
+```sql
+-- Fix UPSERT by allowing users to SELECT their own rows
+DROP POLICY IF EXISTS "No direct SELECT access to api_keys" ON api_keys;
+
+CREATE POLICY "Users can select their own API keys"
+  ON api_keys
+  FOR SELECT
+  USING (auth.uid() = user_id);
+```
+
+### ActiveProviderIndicator Logic Update
+
+```text
+Current:
+1. Query ai_service_providers WHERE status = 'active'
+2. If found, show tag
+
+Updated:
+1. Query ai_service_providers WHERE status = 'active'
+2. Query api_keys_metadata WHERE user_id = current_user AND service = provider AND is_active = true
+3. Only show tag if BOTH queries return results
+```
+
+---
+
+## Expected Outcome
+
+1. API keys can be stored successfully (UPSERT works)
+2. Provider tag only appears when:
+   - Provider status is 'active' in ai_service_providers
+   - AND a valid API key exists in api_keys table
+3. If user deletes their API key, the tag disappears
+4. Security maintained: encrypted keys only accessible via edge function
+
+---
+
+## Alternative Consideration
+
+If you want to be extra cautious about encrypted key exposure, we could instead move the entire upsert logic into the `secure-api-key` edge function (using service role). This keeps all writes server-side but requires more refactoring.
+
+The proposed RLS fix is simpler and maintains security because:
+- Clients use the `api_keys_metadata` view for status checks
+- Decryption only happens via edge function with service role
+- The encrypted_key column is still protected in transit by the view pattern
