@@ -17,63 +17,104 @@ const PROVIDER_LABELS: Record<string, string> = {
   lmstudio: "LM Studio"
 };
 
-const PROVIDER_ICONS: Record<string, string> = {
-  openrouter: "🔀",
-  gemini: "✨",
-  openai: "🤖",
-  anthropic: "🧠",
-  mistral: "🌪️",
-  lmstudio: "🖥️"
-};
-
 export function ActiveProviderIndicator() {
   const [activeProvider, setActiveProvider] = useState<ActiveProvider | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchActiveProvider = async () => {
+  const fetchActiveProviderAndKey = async () => {
     try {
-      const { data, error } = await supabase
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setActiveProvider(null);
+        setHasApiKey(false);
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch active provider
+      const { data: providerData, error: providerError } = await supabase
         .from('ai_service_providers')
         .select('provider, preferred_model')
         .eq('status', 'active')
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching active provider:', error);
+      if (providerError) {
+        console.error('Error fetching active provider:', providerError);
         setActiveProvider(null);
+        setHasApiKey(false);
+        setIsLoading(false);
+        return;
+      }
+
+      setActiveProvider(providerData);
+
+      // If we have an active provider, check if API key exists
+      if (providerData?.provider) {
+        const { data: keyData, error: keyError } = await supabase
+          .from('api_keys_metadata')
+          .select('is_active')
+          .eq('service', providerData.provider)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (keyError) {
+          console.error('Error checking API key:', keyError);
+          setHasApiKey(false);
+        } else {
+          setHasApiKey(!!keyData);
+        }
       } else {
-        setActiveProvider(data);
+        setHasApiKey(false);
       }
     } catch (error) {
-      console.error('Error fetching active provider:', error);
+      console.error('Error fetching provider status:', error);
       setActiveProvider(null);
+      setHasApiKey(false);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchActiveProvider();
+    fetchActiveProviderAndKey();
 
     // Subscribe to real-time changes on ai_service_providers
-    const channel = supabase
+    const providerChannel = supabase
       .channel('active-provider-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'ai_service_providers',
-          filter: 'status=eq.active'
+          table: 'ai_service_providers'
         },
         () => {
-          fetchActiveProvider();
+          fetchActiveProviderAndKey();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to real-time changes on api_keys
+    const keysChannel = supabase
+      .channel('api-keys-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'api_keys'
+        },
+        () => {
+          fetchActiveProviderAndKey();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(providerChannel);
+      supabase.removeChannel(keysChannel);
     };
   }, []);
 
@@ -85,12 +126,12 @@ export function ActiveProviderIndicator() {
     );
   }
 
-  if (!activeProvider) {
+  // Only show if BOTH provider is active AND API key exists
+  if (!activeProvider || !hasApiKey) {
     return null;
   }
 
   const providerLabel = PROVIDER_LABELS[activeProvider.provider] || activeProvider.provider;
-  const providerIcon = PROVIDER_ICONS[activeProvider.provider] || "🤖";
 
   return (
     <TooltipProvider>
