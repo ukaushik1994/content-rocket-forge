@@ -159,3 +159,12 @@ verify_jwt = false
 
 [functions.edit-image]
 verify_jwt = false
+
+[functions.pagespeed-insights]
+verify_jwt = false
+
+[functions.clarity-fetch]
+verify_jwt = false
+
+[functions.content-optimizer]
+verify_jwt = true
