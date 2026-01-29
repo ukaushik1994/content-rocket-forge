@@ -29,17 +29,27 @@ export function useOptimizationSuggestions(contentId: string | null) {
     try {
       const { data, error } = await supabase
         .from('content_optimization_history')
-        .select('*')
+        .select('id, content_id, suggestion_type, original_content, suggested_content, reason, status, metadata, created_at')
         .eq('content_id', contentId)
         .eq('status', 'pending_review')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      setSuggestions((data || []).map(item => ({
-        ...item,
-        metadata: item.metadata as Record<string, any> | null
-      })));
+      // Map the data to our interface (handle nullable fields from new columns)
+      const mappedData: OptimizationSuggestion[] = (data || []).map(item => ({
+        id: item.id,
+        content_id: item.content_id,
+        suggestion_type: item.suggestion_type || 'general',
+        original_content: item.original_content,
+        suggested_content: item.suggested_content,
+        reason: item.reason,
+        status: item.status,
+        metadata: item.metadata as Record<string, any> | null,
+        created_at: item.created_at
+      }));
+      
+      setSuggestions(mappedData);
     } catch (error) {
       console.error('Failed to fetch optimization suggestions:', error);
       setSuggestions([]);

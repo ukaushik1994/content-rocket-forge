@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { ContentItemType } from '@/contexts/content';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from './StatusBadge';
 import { ScoreBadge } from './ScoreBadge';
+import { OptimizationBadge } from './card/OptimizationBadge';
 import { formatDistanceToNow } from 'date-fns';
 import { MoreHorizontal, Edit, BarChart2, Archive, Trash } from 'lucide-react';
 import {
@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface ContentCardProps {
   item: ContentItemType;
@@ -56,18 +57,22 @@ export const ContentCard: React.FC<ContentCardProps> = ({
   };
   
   return (
-    <Card
-      className={`p-4 cursor-pointer hover:shadow-md transition-all ${
-        isSelected ? 'border-primary bg-primary/5' : 'border-border'
-      }`}
-      onClick={handleCardClick}
-    >
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex flex-wrap gap-2">
-          <StatusBadge status={item.status} />
-          <ScoreBadge score={item.seo_score || 0} />
-        </div>
-        <DropdownMenu>
+    <TooltipProvider>
+      <Card
+        className={`p-4 cursor-pointer hover:shadow-md transition-all ${
+          isSelected ? 'border-primary bg-primary/5' : 'border-border'
+        }`}
+        onClick={handleCardClick}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <StatusBadge status={item.status} />
+            <ScoreBadge score={item.seo_score || 0} />
+            {(item as any).pending_optimizations_count > 0 && (
+              <OptimizationBadge count={(item as any).pending_optimizations_count} />
+            )}
+          </div>
+          <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <MoreHorizontal className="h-4 w-4" />
@@ -130,6 +135,7 @@ export const ContentCard: React.FC<ContentCardProps> = ({
       <div className="text-xs text-muted-foreground mt-2">
         Updated {formatDate(item.updated_at)}
       </div>
-    </Card>
+      </Card>
+    </TooltipProvider>
   );
 };

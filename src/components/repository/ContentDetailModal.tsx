@@ -475,6 +475,18 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   </Badge>
                 )}
               </div>
+              
+              {/* AI Optimization Suggestions Banner */}
+              {content.status === 'published' && (
+                <OptimizationSuggestionsBanner
+                  contentId={content.id}
+                  currentContent={localContent || content.content}
+                  onContentUpdate={(newContent) => {
+                    setLocalContent(newContent);
+                    toast.success('Content updated with AI suggestions');
+                  }}
+                />
+              )}
             </div>
             
             {/* Two-Column Layout */}

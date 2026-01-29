@@ -2716,11 +2716,15 @@ export type Database = {
           content_id: string | null
           created_at: string
           id: string
+          metadata: Json | null
           optimized_content: string | null
           original_content: string | null
           performance_data: Json | null
           predicted_impact: Json | null
+          reason: string | null
           status: string | null
+          suggested_content: string | null
+          suggestion_type: string | null
           updated_at: string
           user_id: string | null
         }
@@ -2730,11 +2734,15 @@ export type Database = {
           content_id?: string | null
           created_at?: string
           id?: string
+          metadata?: Json | null
           optimized_content?: string | null
           original_content?: string | null
           performance_data?: Json | null
           predicted_impact?: Json | null
+          reason?: string | null
           status?: string | null
+          suggested_content?: string | null
+          suggestion_type?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -2744,11 +2752,15 @@ export type Database = {
           content_id?: string | null
           created_at?: string
           id?: string
+          metadata?: Json | null
           optimized_content?: string | null
           original_content?: string | null
           performance_data?: Json | null
           predicted_impact?: Json | null
+          reason?: string | null
           status?: string | null
+          suggested_content?: string | null
+          suggestion_type?: string | null
           updated_at?: string
           user_id?: string | null
         }
