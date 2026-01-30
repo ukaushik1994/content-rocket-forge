@@ -99,59 +99,126 @@ class EnhancedAIService {
         apiKeys
       };
 
-      console.log('🔄 Calling enhanced-ai-chat with comprehensive context:', {
+      console.log('🔄 Calling ai-streaming with SSE for real-time response:', {
         messagesCount: data.messages.length,
         contextKeys: Object.keys(enhancedContext || {}),
         features: data.features
       });
 
-      const { data: response, error } = await supabase.functions.invoke('enhanced-ai-chat', {
-        body: data
+      // Use SSE streaming for real-time response
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      
+      if (!token) {
+        return this.createErrorMessage('Authentication token not available. Please re-login.');
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://oqehxicwngpmgsrqrebi.supabase.co';
+      
+      const streamResponse = await fetch(`${supabaseUrl}/functions/v1/ai-streaming`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...data,
+          stream: true
+        })
       });
 
-      if (error) {
-        console.error('Enhanced AI Chat Error:', error);
+      if (!streamResponse.ok) {
+        const errorText = await streamResponse.text();
+        console.error('Streaming request failed:', errorText);
         
         if (retryCount < 2) {
           console.log(`🔄 Retrying enhanced message processing (attempt ${retryCount + 1})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
           return this.processEnhancedMessage(message, conversationHistory, userId, onStreamUpdate, retryCount + 1);
         }
-        return this.createErrorMessage(`AI service error: ${error.message}. Please check your API key configuration in Settings.`);
+        return this.createErrorMessage(`AI service error: ${errorText}. Please check your API key configuration in Settings.`);
       }
 
-      const responseContent = response?.message || response?.content || response?.response;
-      if (!responseContent) {
-        console.error('No content in enhanced AI response:', response);
+      // Parse SSE stream
+      let fullContent = '';
+      let visualData: any = undefined;
+      let actions: any[] = [];
+      let workflowContext: any = undefined;
+      let serpData: any = undefined;
+
+      const reader = streamResponse.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) {
+        return this.createErrorMessage('Unable to read response stream');
+      }
+
+      let buffer = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
         
-        // Check if we have an error message from the backend
-        if (response?.error) {
-          return this.createErrorMessage(response.message || response.error);
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+          if (!jsonStr) continue;
+          
+          try {
+            const parsed = JSON.parse(jsonStr);
+            
+            if (parsed.type === 'token' && parsed.content) {
+              fullContent += parsed.content;
+              // Call streaming callback if provided
+              if (onStreamUpdate) {
+                onStreamUpdate(fullContent);
+              }
+            } else if (parsed.type === 'complete') {
+              // Final message with metadata
+              if (parsed.visualData) visualData = parsed.visualData;
+              if (parsed.actions) actions = parsed.actions;
+              if (parsed.workflowContext) workflowContext = parsed.workflowContext;
+              if (parsed.serpData) serpData = parsed.serpData;
+            } else if (parsed.type === 'error') {
+              console.error('Stream error:', parsed.message);
+              return this.createErrorMessage(parsed.message || 'Streaming error occurred');
+            }
+          } catch (parseError) {
+            console.warn('Failed to parse SSE chunk:', jsonStr);
+          }
         }
-        
+      }
+
+      if (!fullContent) {
+        console.error('No content received from stream');
         return this.createErrorMessage('No response content received. Please try again or contact support if this persists.');
       }
 
-      console.log('✅ Enhanced AI Response received with context awareness');
+      console.log('✅ Enhanced AI Response received via streaming');
 
       // Create enhanced message with validated visual data
-      // Phase 1: Store ALL charts in allVisualData, display first in visualData
-      const validatedData = this.validateVisualData(response.visualData);
+      const validatedData = this.validateVisualData(visualData);
       const enhancedMessage: EnhancedChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: responseContent,
+        content: fullContent,
         timestamp: new Date(),
         visualData: Array.isArray(validatedData) ? validatedData[0] : validatedData,
-        allVisualData: Array.isArray(validatedData) ? validatedData : (validatedData ? [validatedData] : undefined), // Store all charts
-        serpData: response.serpData,
-        actions: response.actions || [],
-        workflowContext: response.workflowContext,
+        allVisualData: Array.isArray(validatedData) ? validatedData : (validatedData ? [validatedData] : undefined),
+        serpData,
+        actions: actions || [],
+        workflowContext,
         metadata: {
-          reasoning: response.reasoning,
-          confidence: response.confidence,
-          sources: response.sources,
-          actionResults: response.actionResults
+          reasoning: undefined,
+          confidence: undefined,
+          sources: undefined,
+          actionResults: undefined
         }
       };
 
