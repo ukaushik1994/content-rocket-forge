@@ -617,10 +617,10 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
   }, [activeConversationId, saveMessageToDB, toast]);
 
   // ============================================
-  // SEND MESSAGE (Both Modes)
+  // SEND MESSAGE (Both Modes - with SSE Streaming for HTTP)
   // ============================================
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, useStreaming: boolean = true) => {
     if (!user) return;
     
     const conversationId = state.activeConversation || activeConversationId;
@@ -678,8 +678,177 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
         })),
         conversationId: targetConversationId
       }));
+    } else if (useStreaming) {
+      // HTTP mode with SSE streaming - TRUE STREAMING
+      try {
+        console.log('🚀 Starting SSE streaming request...');
+        
+        // Create placeholder AI message
+        const aiMessageId = `ai-${Date.now()}`;
+        const aiMessage: EnhancedChatMessage = {
+          id: aiMessageId,
+          role: 'assistant',
+          content: '',
+          timestamp: new Date(),
+          isStreaming: true,
+          messageStatus: 'sending'
+        };
+
+        setState(prev => ({ ...prev, messages: [...prev.messages, aiMessage] }));
+        currentMessageRef.current = aiMessage;
+
+        // Get auth token
+        const session = await supabase.auth.getSession();
+        const token = session.data.session?.access_token;
+        
+        if (!token) {
+          throw new Error('Not authenticated');
+        }
+
+        // Call streaming endpoint
+        const streamUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-streaming`;
+        
+        const response = await fetch(streamUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            messages: [...state.messages, userMessage].map(msg => ({
+              role: msg.role,
+              content: msg.content
+            })),
+            userId: user.id
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+          throw new Error(errorData.error || `Request failed: ${response.status}`);
+        }
+
+        // Check for SSE stream
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('text/event-stream') && response.body) {
+          // Process SSE stream
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let fullContent = '';
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Process complete lines
+            let newlineIndex: number;
+            while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+              let line = buffer.slice(0, newlineIndex);
+              buffer = buffer.slice(newlineIndex + 1);
+
+              if (line.endsWith('\r')) line = line.slice(0, -1);
+              if (line.trim() === '' || line.startsWith(':')) continue;
+
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') continue;
+
+                try {
+                  const parsed = JSON.parse(data);
+                  
+                  if (parsed.type === 'token' && parsed.content) {
+                    fullContent += parsed.content;
+                    
+                    // Update the message content progressively
+                    setState(prev => ({
+                      ...prev,
+                      messages: prev.messages.map(msg => 
+                        msg.id === aiMessageId 
+                          ? { ...msg, content: fullContent }
+                          : msg
+                      )
+                    }));
+                  } else if (parsed.type === 'complete') {
+                    if (parsed.content) fullContent = parsed.content;
+                    console.log('✅ Stream complete:', fullContent.length, 'chars');
+                  } else if (parsed.type === 'error') {
+                    throw new Error(parsed.error || 'Stream error');
+                  }
+                } catch (e) {
+                  if (e instanceof SyntaxError) {
+                    buffer = line + '\n' + buffer;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
+          // Finalize the message
+          const parsedFromContent = parseVisualDataFromContent(fullContent);
+          const finalMessage: EnhancedChatMessage = {
+            id: aiMessageId,
+            role: 'assistant',
+            content: parsedFromContent.content || fullContent,
+            timestamp: new Date(),
+            isStreaming: false,
+            visualData: parsedFromContent.visualData?.[0],
+            messageStatus: 'sent'
+          };
+
+          setState(prev => ({
+            ...prev,
+            messages: prev.messages.map(msg => 
+              msg.id === aiMessageId ? finalMessage : msg
+            ),
+            isTyping: false
+          }));
+
+          await saveMessageToDB(finalMessage, targetConversationId);
+          currentMessageRef.current = null;
+          
+        } else {
+          // Fallback: non-streaming JSON response
+          const data = await response.json();
+          
+          const finalMessage: EnhancedChatMessage = {
+            id: aiMessageId,
+            role: 'assistant',
+            content: data.content || data.message || '',
+            timestamp: new Date(),
+            actions: data.actions || [],
+            visualData: data.visualData,
+            messageStatus: 'sent'
+          };
+
+          setState(prev => ({
+            ...prev,
+            messages: prev.messages.map(msg => 
+              msg.id === aiMessageId ? finalMessage : msg
+            ),
+            isTyping: false
+          }));
+
+          await saveMessageToDB(finalMessage, targetConversationId);
+          currentMessageRef.current = null;
+        }
+
+      } catch (error: any) {
+        console.error('Error in streaming message:', error);
+        setState(prev => ({ ...prev, isTyping: false }));
+        currentMessageRef.current = null;
+        
+        toast({
+          title: "Error",
+          description: error.message || "Failed to send message",
+          variant: "destructive"
+        });
+      }
     } else {
-      // HTTP mode - use edge function
+      // HTTP mode without streaming - fallback to enhanced-ai-chat
       try {
         const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
           body: {
@@ -710,7 +879,7 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
         }));
 
         await saveMessageToDB(aiMessage, targetConversationId);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error sending message:', error);
         setState(prev => ({ ...prev, isTyping: false }));
         toast({
