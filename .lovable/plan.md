@@ -1,191 +1,175 @@
 
+# Fix: AI Chat Campaign Intelligence + Visual Insights
 
-# Streaming Implementation Plan for AI Chat
+## Problem Summary
 
-## What We're Building
+Two issues are preventing you from seeing campaign trends and visual insights:
 
-We're going to make your AI chat respond **instantly** - word by word as the AI thinks, just like ChatGPT or Claude.
+1. **Wrong Data Source**: When you ask about "trends" in campaigns/strategies, the AI routes to SERP (external search data) instead of your internal campaign data
+2. **Missing Charts**: The AI is responding with plain text instead of generating visual charts and insights
 
 ---
 
-## Current State vs Goal
+## What You'll See After the Fix
 
 ```text
-TODAY (What You Experience)
-┌─────────────────────────────────────────────┐
-│  You: "Analyze my content performance"      │
-│                                             │
-│  [────────────  10-15 seconds  ─────────]   │
-│       (blank screen, waiting...)            │
-│                                             │
-│  AI: [FULL RESPONSE APPEARS AT ONCE]        │
-└─────────────────────────────────────────────┘
+TODAY (Your Experience)
+┌────────────────────────────────────────────────────────────────┐
+│  You: "Tell me about the trends in AI proposals"              │
+│                                                                │
+│  AI: "I notice specific data isn't available..."              │
+│       [No charts, no visual insights, plain text only]         │
+└────────────────────────────────────────────────────────────────┘
 
-AFTER (What You'll Experience)  
-┌─────────────────────────────────────────────┐
-│  You: "Analyze my content performance"      │
-│                                             │
-│  AI: "Based on..." ← appears in 0.5 seconds │
-│  AI: "Based on your data..." ← keeps typing │
-│  AI: "Based on your data, I can see..."     │
-│       (words flow naturally like typing)    │
-│                                             │
-│  [Charts appear when ready]                 │
-└─────────────────────────────────────────────┘
+AFTER (What You'll See)  
+┌────────────────────────────────────────────────────────────────┐
+│  You: "Tell me about the trends in AI proposals"              │
+│                                                                │
+│  AI: "Based on your 10 AI proposals, here's the analysis..."  │
+│       [Bar chart: Proposals by Impressions]                    │
+│       [Metric Cards: Total Proposals, Avg Impressions, etc.]   │
+│       [Insights: "Top performer has 4,975 impressions"]        │
+│       [Actions: "View Top Proposals", "Create New Strategy"]   │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Implementation Overview
+## Root Causes Identified
 
-### What Needs to Change
+### Issue 1: SERP Detection Hijacking Campaign Queries
 
-| Component | Current | After |
-|-----------|---------|-------|
-| `enhanced-ai-chat` | Waits for full response | Streams tokens via SSE |
-| `ai-proxy` | Returns complete JSON | Passes through AI provider stream |
-| `useUnifiedChatDB` | Waits for response | Updates UI per token |
-| Chat UI | Shows message when complete | Renders text progressively |
+| Query | Expected | Actual |
+|-------|----------|--------|
+| "trends in campaigns" | Use campaign tools | Routes to SERP analysis |
+| "strategy trends" | Use proposal data | Routes to SERP analysis |
+| "how is my campaign performing" | Campaign intelligence | May route to SERP |
 
----
+**Why this happens:**
+The SERP detection uses broad patterns like `/trend\w*/` that catch ANY mention of "trends", even when you're asking about your own internal data.
 
-## Phase 1: Backend Streaming (Edge Functions)
+### Issue 2: No Visualizations Generated
 
-### 1.1 Modify `ai-proxy/index.ts`
-
-Add streaming handlers for each provider (OpenAI, OpenRouter, Anthropic, Gemini):
-
-- Detect when `stream: true` is requested
-- Instead of waiting for full response, return the raw SSE stream from the AI provider
-- Pass through tokens as they arrive
-
-### 1.2 Modify `enhanced-ai-chat/index.ts`
-
-Add a new streaming mode:
-
-- Accept `stream: true` parameter in request
-- When streaming enabled:
-  - Send context/charts separately via initial SSE event
-  - Stream AI text response token-by-token
-  - Send completion event with final metadata
-- Keep existing non-streaming path as fallback
+Looking at your last 4 AI messages - **all have `visual_data: null`**. The AI is:
+- Sometimes using tool calls (which skip the chart generation format)
+- Not following the "Visual-First" instructions in the prompt
+- Falling back to plain text without charts
 
 ---
 
-## Phase 2: Frontend Streaming
+## Solution Overview
 
-### 2.1 Modify `useUnifiedChatDB.ts`
+### Fix 1: Smarter Intent Detection
 
-Update the HTTP mode to support streaming:
+Make the system distinguish between:
+- **Internal trends** ("my campaign trends", "proposal performance") → Use your data
+- **External trends** ("trending keywords", "what's popular in SEO") → Use SERP
 
-- Detect when response is `text/event-stream`
-- Parse SSE events line-by-line as they arrive
-- Update the assistant message content progressively
-- Handle charts/actions when they arrive in completion event
+**Changes:**
+- Add campaign/proposal exclusion patterns to SERP detection
+- Prioritize internal data when user says "my", "our", or references known entities
 
-### 2.2 Update Message Rendering
+### Fix 2: Force Visual Generation
 
-Ensure `StreamingMessageBubble` and `EnhancedMessageBubble` handle:
-
-- Partial content that's still being received
-- Smooth text rendering without flickering
-- Cursor/typing indicator while streaming
-
----
-
-## Files to Create/Modify
-
-| File | Change Type | Description |
-|------|-------------|-------------|
-| `supabase/functions/ai-proxy/index.ts` | Modify | Add streaming handlers per provider |
-| `supabase/functions/enhanced-ai-chat/index.ts` | Modify | Add SSE streaming response mode |
-| `src/hooks/useUnifiedChatDB.ts` | Modify | Add SSE parsing for streaming responses |
-| `src/hooks/useStreamingAI.ts` | Modify | Update to use enhanced-ai-chat streaming |
-| `src/components/ai-chat/StreamingMessageBubble.tsx` | Modify | Improve progressive rendering |
+Ensure EVERY analytical query produces charts by:
+- Adding a post-processing step that generates charts from tool call results
+- Creating fallback chart generation when AI returns plain text with data
+- Injecting stronger visual-first instructions when campaign/proposal data is detected
 
 ---
 
-## How Streaming Will Work
+## Technical Implementation
 
-```text
-User sends message
-       │
-       ▼
-┌──────────────────┐
-│ Frontend sends   │
-│ stream: true     │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ enhanced-ai-chat │
-│ edge function    │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐     ┌─────────────────┐
-│ ai-proxy calls   │────▶│ OpenAI/etc with │
-│ provider         │     │ stream: true    │
-└────────┬─────────┘     └────────┬────────┘
-         │                        │
-         │◀───────────────────────┘
-         │  (tokens flow back)
-         ▼
-┌──────────────────┐
-│ SSE events sent  │
-│ to frontend      │
-│                  │
-│ data: {"token"}  │
-│ data: {"token"}  │
-│ data: [DONE]     │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│ UI updates       │
-│ word by word     │
-└──────────────────┘
-```
+### Files to Modify
 
----
+| File | Change | Purpose |
+|------|--------|---------|
+| `serp-intelligence.ts` | Add campaign exclusion patterns | Prevent SERP hijacking internal queries |
+| `query-analyzer.ts` | Prioritize internal data categories | Better intent classification |
+| `index.ts` | Add fallback chart generation | Ensure visualizations always appear |
+| `campaign-intelligence-tool.ts` | Enhanced tool result formatting | Include chart-ready data |
 
-## Technical Details
+### Fix 1: SERP Intelligence Update (serp-intelligence.ts)
 
-### SSE Event Format
+Add exclusion logic before SERP pattern matching:
 
 ```javascript
-// Token event (sent many times)
-data: {"type":"token","content":"Based "}
+// NEW: Check if query is about internal data first
+const INTERNAL_DATA_PATTERNS = [
+  /\b(my|our)\s+(campaign|proposal|content|strategy)/i,
+  /campaign\s+(trend|performance|status)/i,
+  /proposal\s+(trend|performance|analysis)/i,
+  /strategy\s+(trend|performance|insight)/i,
+  /how (is|are) (my|our|the) (campaign|proposal|content)/i
+];
 
-data: {"type":"token","content":"on "}
+function isInternalDataQuery(query: string): boolean {
+  return INTERNAL_DATA_PATTERNS.some(pattern => pattern.test(query));
+}
 
-data: {"type":"token","content":"your "}
-
-// Completion event (sent once at end)
-data: {"type":"complete","visualData":[...],"actions":[...]}
-
-// Done signal
-data: [DONE]
-```
-
-### Frontend Parsing
-
-```javascript
-// Parse SSE line-by-line as bytes arrive
-while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-  let line = textBuffer.slice(0, newlineIndex);
-  textBuffer = textBuffer.slice(newlineIndex + 1);
-  
-  if (!line.startsWith("data: ")) continue;
-  
-  const jsonStr = line.slice(6).trim();
-  if (jsonStr === "[DONE]") break;
-  
-  const parsed = JSON.parse(jsonStr);
-  if (parsed.type === "token") {
-    // Append token to message content
-    updateMessageContent(prev => prev + parsed.content);
+// In analyzeSerpIntent function:
+export function analyzeSerpIntent(query: string) {
+  // NEW: Skip SERP for internal data queries
+  if (isInternalDataQuery(query)) {
+    console.log('📊 Internal data query detected - skipping SERP routing');
+    return null; // Force use of internal tools instead
   }
+  
+  // ... existing SERP detection logic
+}
+```
+
+### Fix 2: Fallback Chart Generation (index.ts)
+
+After AI response processing, generate charts from tool results if none exist:
+
+```javascript
+// After parsing AI response, before returning:
+if (!visualData && toolCallResults) {
+  console.log('📊 No visualData from AI - generating from tool results');
+  visualData = generateChartFromToolResults(toolCallResults, userQuery);
+}
+
+function generateChartFromToolResults(results: any, query: string) {
+  // Check what data we have
+  if (results.proposals && results.proposals.length > 0) {
+    return {
+      type: 'chart',
+      title: 'AI Proposals Analysis',
+      chartConfig: {
+        type: 'bar',
+        data: results.proposals.slice(0, 10).map(p => ({
+          name: p.title.substring(0, 30),
+          impressions: p.estimated_impressions,
+          status: p.status
+        })),
+        categories: ['name'],
+        series: [{ dataKey: 'impressions', name: 'Est. Impressions' }]
+      },
+      metricCards: [
+        { title: 'Total Proposals', value: results.proposals.length },
+        { title: 'Avg Impressions', value: average(results.proposals.map(p => p.estimated_impressions)) }
+      ]
+    };
+  }
+  
+  // Similar fallbacks for campaigns, content, etc.
+  return null;
+}
+```
+
+### Fix 3: Enhanced Query Analyzer (query-analyzer.ts)
+
+Strengthen campaign/proposal detection:
+
+```javascript
+// Add explicit trend detection for internal data
+const needsInternalTrends = /trend|trending|performing|performance|progress|status/i.test(q) && 
+  (needsCampaigns || /campaign|proposal|strategy|content/i.test(q));
+
+if (needsInternalTrends) {
+  categories.push('campaigns', 'performance');
+  // Force internal data fetching, not SERP
 }
 ```
 
@@ -195,22 +179,26 @@ while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
 
 | Metric | Before | After |
 |--------|--------|-------|
-| Time to first word | 5-15 seconds | Under 1 second |
-| Perceived responsiveness | Slow, feels broken | Instant, natural |
-| User experience | Frustrating wait | Engaging conversation |
+| Campaign trend queries | Routes to SERP | Uses campaign data |
+| Chart generation rate | ~0% | ~90%+ |
+| Visual insights | None | 2-4 per response |
+| Metric cards | None | 2-4 per response |
+| Actionable items | Basic nav only | Contextual actions |
 
 ---
 
-## Rollout Safety
+## Implementation Order
 
-- **Fallback Mode**: If streaming fails, automatically fall back to current HTTP mode
-- **Error Handling**: Graceful degradation if connection drops mid-stream
-- **Cancel Support**: Users can stop generation mid-response
-- **Provider Compatibility**: Works with all configured AI providers
+1. **First**: Fix SERP detection to exclude internal data queries
+2. **Second**: Add fallback chart generation from tool results
+3. **Third**: Enhance query analyzer for better intent classification
+4. **Fourth**: Test with your campaign/proposal queries
 
 ---
 
 ## Summary
 
-This implementation will transform your AI chat from a "wait and see" experience to a fluid, real-time conversation that feels as responsive as ChatGPT.
-
+This fix will ensure:
+- Questions about YOUR campaigns/proposals use YOUR data (not external SERP)
+- Every analytical response includes charts, metrics, and insights
+- The AI follows the "Visual-First" design principle consistently
