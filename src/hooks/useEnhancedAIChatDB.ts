@@ -259,43 +259,16 @@ export const useEnhancedAIChatDB = () => {
     // Save user message to database
     await saveMessage(userMessage, conversationId);
 
-    // Create placeholder AI message for streaming
-    const aiMessageId = `ai-${Date.now()}`;
-    const placeholderMessage: EnhancedChatMessage = {
-      id: aiMessageId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      isStreaming: true
-    };
-    
-    setMessages(prev => [...prev, placeholderMessage]);
-
     try {
-      // Streaming callback to update message progressively
-      const onStreamUpdate = (streamContent: string) => {
-        setMessages(prev => prev.map(msg => 
-          msg.id === aiMessageId 
-            ? { ...msg, content: streamContent }
-            : msg
-        ));
-      };
-
-      // Get enhanced AI response with streaming
+      // Get enhanced AI response (send actual content to AI, not display content)
       const aiResponse = await enhancedAIService.processEnhancedMessage(
         content,
         [...messages, userMessage],
-        user.id,
-        onStreamUpdate
+        user.id
       );
 
-      // Replace placeholder with final response (includes visualData, actions, etc.)
-      setMessages(prev => prev.map(msg => 
-        msg.id === aiMessageId 
-          ? { ...aiResponse, id: aiMessageId, isStreaming: false }
-          : msg
-      ));
-      
+      // Update messages and save AI response
+      setMessages(prev => [...prev, aiResponse]);
       await saveMessage(aiResponse, conversationId);
 
       // Show workflow progress if this was part of a workflow
