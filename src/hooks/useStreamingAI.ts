@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from 'react';
-import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -41,32 +40,40 @@ export const useStreamingAI = () => {
     });
 
     try {
-      console.log('🚀 Starting streaming request...');
+      console.log('🚀 Starting TRUE streaming request...');
 
-      // Get Supabase project URL
-      const streamUrl = 'https://iqiundzzcepmuykcnfbc.supabase.co/functions/v1/ai-streaming';
+      // Get auth token
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Use the streaming endpoint
+      const streamUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-streaming`;
 
       const response = await fetch(streamUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           messages,
           context,
           userId,
-          features: ['visual_data', 'solution_intelligence', 'context_awareness'],
+          features: ['streaming'],
         }),
         signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Streaming request failed');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `Request failed: ${response.status}`);
       }
 
-      // Check if we have a readable stream
+      // Check if we have a readable stream (SSE)
       if (!response.body) {
         throw new Error('No response body received');
       }
@@ -76,7 +83,7 @@ export const useStreamingAI = () => {
       let fullContent = '';
       let buffer = '';
 
-      console.log('📡 Starting to read stream...');
+      console.log('📡 Starting to read SSE stream...');
 
       while (true) {
         const { done, value } = await reader.read();
@@ -88,12 +95,22 @@ export const useStreamingAI = () => {
 
         // Decode the chunk
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
         
-        // Keep the last incomplete line in the buffer
-        buffer = lines.pop() || '';
+        // Process complete lines
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
 
-        for (const line of lines) {
+          // Handle CRLF
+          if (line.endsWith('\r')) {
+            line = line.slice(0, -1);
+          }
+
+          // Skip empty lines and comments
+          if (line.trim() === '' || line.startsWith(':')) continue;
+
+          // Parse SSE data
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim();
 
@@ -113,12 +130,44 @@ export const useStreamingAI = () => {
                   currentMessage: fullContent,
                 }));
 
-                // Call the token callback
+                // Call the token callback immediately for real-time rendering
                 onToken(parsed.content, fullContent);
+              } else if (parsed.type === 'complete') {
+                // Use the complete content from server if available
+                if (parsed.content) {
+                  fullContent = parsed.content;
+                }
+                console.log('✅ Received completion event');
+              } else if (parsed.type === 'error') {
+                throw new Error(parsed.error || 'Stream error');
               }
             } catch (e) {
+              // If JSON parse fails, it might be a partial line - put it back
+              if (e instanceof SyntaxError) {
+                buffer = line + '\n' + buffer;
+                break;
+              }
               console.error('Error parsing SSE data:', e, data);
             }
+          }
+        }
+      }
+
+      // Process any remaining buffer
+      if (buffer.trim()) {
+        const lines = buffer.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]' || data === '') continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.type === 'token' && parsed.content) {
+              fullContent += parsed.content;
+              onToken(parsed.content, fullContent);
+            }
+          } catch (e) {
+            // Ignore parse errors for leftover data
           }
         }
       }
