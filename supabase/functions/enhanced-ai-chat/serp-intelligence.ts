@@ -121,11 +121,68 @@ export const SERP_QUERY_PATTERNS: SerpQueryPattern[] = [
   }
 ];
 
+// =============================================================================
+// INTERNAL DATA EXCLUSION PATTERNS (Fix: Campaign/Proposal hijacking)
+// =============================================================================
+// These patterns identify when users are asking about THEIR OWN data
+// rather than external market research. When detected, skip SERP routing.
+const INTERNAL_DATA_PATTERNS = [
+  // Possessive indicators - user asking about their own data
+  /\b(my|our)\s+(campaign|proposal|content|strategy|strategies|article|post)/i,
+  
+  // Direct internal entity references
+  /\b(campaign|proposal|strategy)\s+(trend|trends|performance|status|progress|health|overview)/i,
+  
+  // Performance of internal items
+  /\bhow\s+(is|are|did|does)\s+(my|our|the)\s+(campaign|proposal|content|strategy)/i,
+  
+  // Internal status queries
+  /\b(campaign|proposal|content)\s+(performance|analytics|metrics|stats|statistics)/i,
+  
+  // AI proposals specific patterns
+  /\bai\s+proposal/i,
+  /\bstrategy\s+(session|proposal)/i,
+  
+  // Internal trend analysis (not market trends)
+  /\b(trend|trending)\s+(in|of|for)\s+(my|our)\s/i,
+  /\b(my|our)\s+.{0,20}\s+trend/i,
+  
+  // Queue and generation queries
+  /\b(queue|generation|generating)\s+(status|progress)/i,
+  
+  // Explicit internal data requests
+  /\bshow\s+(me\s+)?(my|our)\s+(campaign|proposal|content|strategy)/i,
+  /\bwhat\s+(campaign|proposal|content|strategy)\s+do\s+I\s+have/i,
+];
+
+/**
+ * Check if query is asking about internal/user data rather than external SERP data
+ */
+function isInternalDataQuery(query: string): boolean {
+  const isInternal = INTERNAL_DATA_PATTERNS.some(pattern => pattern.test(query));
+  if (isInternal) {
+    console.log('📊 Internal data query detected - skipping SERP routing');
+  }
+  return isInternal;
+}
+
 /**
  * Analyze query to determine if SERP data is needed
  */
 export function analyzeSerpIntent(query: string): SerpIntelligence {
   console.log('🧠 Analyzing query for SERP intent:', query);
+  
+  // FIX: Check for internal data queries FIRST - skip SERP for these
+  if (isInternalDataQuery(query)) {
+    console.log('✅ Routing to internal data tools instead of SERP');
+    return {
+      shouldTriggerSerp: false,
+      queryType: 'internal_data',
+      keywords: [],
+      priority: 0,
+      suggestedAnalysis: []
+    };
+  }
   
   let bestMatch: { pattern: SerpQueryPattern; match: RegExpMatchArray } | null = null;
   let highestPriority = 0;
