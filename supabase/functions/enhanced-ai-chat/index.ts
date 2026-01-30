@@ -1405,15 +1405,15 @@ serve(async (req) => {
       const conversationalResponse = generateConversationalResponse(userQuery);
       
       return new Response(JSON.stringify({
-        success: true,
-        choices: [{
-          message: {
-            role: 'assistant',
-            content: conversationalResponse
-          }
-        }],
+        message: conversationalResponse,
+        content: conversationalResponse,
         fastPath: true,
-        queryType: 'conversational'
+        queryType: 'conversational',
+        metadata: {
+          processed_at: new Date().toISOString(),
+          has_actions: false,
+          has_visual_data: false
+        }
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
