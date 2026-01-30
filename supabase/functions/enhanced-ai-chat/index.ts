@@ -2020,6 +2020,141 @@ serve(async (req) => {
       
       aiMessage = secondCallResult.data?.choices?.[0]?.message?.content;
       console.log(`✅ Received final AI response after tool execution (${aiMessage?.length || 0} chars)`);
+      
+      // =============================================================================
+      // FIX: FALLBACK CHART GENERATION FROM TOOL RESULTS
+      // =============================================================================
+      // If AI didn't generate visualData, create charts from tool results automatically
+      const generateFallbackChartFromToolResults = (results: any[], userQuery: string): any => {
+        // Parse tool results
+        for (const result of results) {
+          try {
+            const data = JSON.parse(result.content);
+            const toolName = result.name;
+            
+            // Skip empty results
+            if (!data || (Array.isArray(data) && data.length === 0)) continue;
+            
+            console.log(`📊 Generating fallback chart from ${toolName} tool (${Array.isArray(data) ? data.length : 1} items)`);
+            
+            // Generate chart based on tool type
+            if (toolName === 'get_proposals' && Array.isArray(data) && data.length > 0) {
+              return {
+                type: 'chart',
+                title: 'AI Strategy Proposals Analysis',
+                chartConfig: {
+                  type: 'bar',
+                  data: data.slice(0, 10).map((p: any) => ({
+                    name: (p.title || 'Untitled').substring(0, 35),
+                    impressions: p.estimated_impressions || 0,
+                    status: p.status || 'draft'
+                  })),
+                  categories: ['name'],
+                  series: [{ dataKey: 'impressions', name: 'Est. Impressions' }]
+                },
+                summaryInsights: {
+                  metricCards: [
+                    { id: '1', title: 'Total Proposals', value: data.length.toString(), icon: 'FileText', color: 'blue' },
+                    { id: '2', title: 'Avg Impressions', value: Math.round(data.reduce((s: number, p: any) => s + (p.estimated_impressions || 0), 0) / data.length).toLocaleString(), icon: 'TrendingUp', color: 'green' },
+                    { id: '3', title: 'Available', value: data.filter((p: any) => p.status === 'available').length.toString(), icon: 'CheckCircle', color: 'emerald' }
+                  ],
+                  bulletPoints: [
+                    `${data.length} total AI strategy proposals in your database`,
+                    `Top proposal: "${(data[0]?.title || 'N/A').substring(0, 40)}" with ${(data[0]?.estimated_impressions || 0).toLocaleString()} est. impressions`,
+                    data.filter((p: any) => p.status === 'available').length > 0 
+                      ? `${data.filter((p: any) => p.status === 'available').length} proposals ready for action`
+                      : 'Consider scheduling proposals for content generation'
+                  ]
+                },
+                actionableItems: [
+                  { id: '1', title: 'View Strategy Proposals', actionType: 'navigate', targetUrl: '/content-strategy', icon: 'FileText' },
+                  { id: '2', title: 'Create New Strategy', actionType: 'navigate', targetUrl: '/content-strategy?new=true', icon: 'Plus' }
+                ],
+                deepDivePrompts: [
+                  'Which proposal has the best potential?',
+                  'Show me proposals by content type',
+                  'What keywords are these proposals targeting?'
+                ]
+              };
+            }
+            
+            if (toolName === 'get_content_items' && Array.isArray(data) && data.length > 0) {
+              return {
+                type: 'chart',
+                title: 'Content Performance Overview',
+                chartConfig: {
+                  type: 'bar',
+                  data: data.slice(0, 10).map((c: any) => ({
+                    name: (c.title || 'Untitled').substring(0, 30),
+                    seoScore: c.seo_score || 0,
+                    wordCount: c.word_count || 0
+                  })),
+                  categories: ['name'],
+                  series: [{ dataKey: 'seoScore', name: 'SEO Score' }]
+                },
+                summaryInsights: {
+                  metricCards: [
+                    { id: '1', title: 'Total Content', value: data.length.toString(), icon: 'FileText', color: 'blue' },
+                    { id: '2', title: 'Avg SEO Score', value: Math.round(data.reduce((s: number, c: any) => s + (c.seo_score || 0), 0) / data.length).toString(), icon: 'Search', color: 'amber' },
+                    { id: '3', title: 'Published', value: data.filter((c: any) => c.status === 'published').length.toString(), icon: 'Globe', color: 'green' }
+                  ]
+                },
+                actionableItems: [
+                  { id: '1', title: 'View All Content', actionType: 'navigate', targetUrl: '/content', icon: 'FileText' },
+                  { id: '2', title: 'Create New Content', actionType: 'navigate', targetUrl: '/content-builder', icon: 'Plus' }
+                ]
+              };
+            }
+            
+            if (toolName === 'get_campaign_intelligence' && data) {
+              const campaigns = Array.isArray(data) ? data : [data];
+              if (campaigns.length > 0 && campaigns[0].campaign) {
+                return {
+                  type: 'chart',
+                  title: 'Campaign Intelligence Dashboard',
+                  chartConfig: {
+                    type: 'bar',
+                    data: campaigns.slice(0, 5).map((c: any) => ({
+                      name: (c.campaign?.name || 'Campaign').substring(0, 25),
+                      completed: c.queueStatus?.completed || 0,
+                      pending: c.queueStatus?.pending || 0,
+                      failed: c.queueStatus?.failed || 0
+                    })),
+                    categories: ['name'],
+                    series: [
+                      { dataKey: 'completed', name: 'Completed' },
+                      { dataKey: 'pending', name: 'Pending' }
+                    ]
+                  },
+                  summaryInsights: {
+                    metricCards: [
+                      { id: '1', title: 'Active Campaigns', value: campaigns.length.toString(), icon: 'Zap', color: 'purple' },
+                      { id: '2', title: 'Content Generated', value: campaigns.reduce((s: number, c: any) => s + (c.queueStatus?.completed || 0), 0).toString(), icon: 'CheckCircle', color: 'green' },
+                      { id: '3', title: 'Queue Pending', value: campaigns.reduce((s: number, c: any) => s + (c.queueStatus?.pending || 0), 0).toString(), icon: 'Clock', color: 'amber' }
+                    ]
+                  },
+                  actionableItems: [
+                    { id: '1', title: 'View Campaigns', actionType: 'navigate', targetUrl: '/campaigns', icon: 'Zap' }
+                  ]
+                };
+              }
+            }
+            
+          } catch (e) {
+            console.warn('Failed to parse tool result for chart generation:', e);
+          }
+        }
+        return null;
+      };
+      
+      // Store fallback chart data for later use
+      const fallbackChartData = generateFallbackChartFromToolResults(toolResults, userQuery);
+      if (fallbackChartData) {
+        console.log('📊 Generated fallback chart from tool results - will use if AI response lacks visualData');
+      }
+      
+      // Attach to scope for later access
+      (globalThis as any).__fallbackChartData = fallbackChartData;
     }
 
     // Remove <think> tags AGGRESSIVELY before any other processing
@@ -2684,6 +2819,15 @@ serve(async (req) => {
       }
     }
 
+    // =============================================================================
+    // FIX: USE FALLBACK CHART DATA IF AI DIDN'T GENERATE VISUALDATA
+    // =============================================================================
+    if (!visualData && (globalThis as any).__fallbackChartData) {
+      console.log('📊 AI response lacks visualData - injecting fallback chart from tool results');
+      visualData = (globalThis as any).__fallbackChartData;
+      delete (globalThis as any).__fallbackChartData; // Clean up
+    }
+    
     // Only provide basic contextual actions if AI didn't return structured data
     // NO MOCK DATA GENERATION - Let the AI create appropriate responses based on real data
     if (!actions && !visualData) {
@@ -2696,6 +2840,20 @@ serve(async (req) => {
         action: "navigate:/dashboard",
         data: {}
       }];
+    } else if (!actions && visualData) {
+      // If we have visualData but no actions, generate contextual actions
+      console.log("📊 VisualData present but no actions - generating contextual actions");
+      
+      const actionsFromVisualData = visualData.actionableItems || [];
+      if (actionsFromVisualData.length > 0) {
+        actions = actionsFromVisualData.map((item: any) => ({
+          id: item.id || `action-${Math.random().toString(36).substr(2, 9)}`,
+          label: item.title || item.label,
+          type: "button",
+          action: item.actionType === 'navigate' ? `navigate:${item.targetUrl}` : item.actionType,
+          data: item
+        }));
+      }
     }
 
     console.log(`✅ Parsed response: { hasActions: ${!!actions}, hasVisualData: ${!!visualData}, messageLength: ${cleanedResponse?.length || aiMessage.length} }`);

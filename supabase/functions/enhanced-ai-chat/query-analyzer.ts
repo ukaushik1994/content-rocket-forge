@@ -66,6 +66,15 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   const needsAnalytics = /analytics|metrics|views|clicks|conversion|traffic|engagement/i.test(q);
   const needsPerformance = /performing|performance|how.*(doing|going)|status|health/i.test(q);
   
+  // FIX: Detect internal trend requests (prioritize over SERP trends)
+  const needsInternalTrends = /trend|trending/i.test(q) && 
+    (/campaign|proposal|strategy|content|my|our/i.test(q) || needsCampaigns || needsProposals);
+  
+  // FIX: If asking about internal trends, force campaigns/performance categories
+  if (needsInternalTrends) {
+    console.log('📊 Internal trend analysis detected - prioritizing campaign/proposal data');
+  }
+  
   // Detect scope level
   let scope: 'summary' | 'detailed' | 'full' | 'conversational' = 'summary';
   
@@ -78,14 +87,14 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   // Build categories array
   const categories: string[] = [];
   if (needsContent) categories.push('content');
-  if (needsKeywords) categories.push('keywords');
+  if (needsKeywords && !needsInternalTrends) categories.push('keywords'); // Skip external keywords if internal trends
   if (needsSolutions) categories.push('solutions');
   if (needsProposals) categories.push('proposals');
-  if (needsSEO) categories.push('seo');
-  if (needsCampaigns) categories.push('campaigns');
+  if (needsSEO && !needsInternalTrends) categories.push('seo'); // Skip SEO if internal trends
+  if (needsCampaigns || needsInternalTrends) categories.push('campaigns'); // Force campaigns for internal trends
   if (needsCompetitors) categories.push('competitors');
   if (needsAnalytics) categories.push('analytics');
-  if (needsPerformance) categories.push('performance');
+  if (needsPerformance || needsInternalTrends) categories.push('performance'); // Force performance for internal trends
   
   // If no specific category detected, include core data at summary level
   if (categories.length === 0) {
