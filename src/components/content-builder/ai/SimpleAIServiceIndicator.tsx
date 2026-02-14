@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
 import { Sparkles } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SimpleAIServiceIndicatorProps {
   size?: 'sm' | 'md' | 'lg';
@@ -14,6 +16,7 @@ export function SimpleAIServiceIndicator({
   className = ''
 }: SimpleAIServiceIndicatorProps) {
   const { isEnabled, hasProviders, activeProviders, isLoading } = useAIServiceStatus();
+  const navigate = useNavigate();
   
   const isActive = isEnabled && hasProviders && activeProviders > 0;
   
@@ -42,12 +45,16 @@ export function SimpleAIServiceIndicator({
     );
   }
 
-  return (
-    <div className={`flex items-center gap-2 rounded-full border backdrop-blur-sm ${getSizeClasses()} ${className} ${
-      isActive 
-        ? 'bg-primary/10 text-primary border-primary/20' 
-        : 'bg-muted/30 text-muted-foreground border-border/30'
-    }`}>
+  const indicator = (
+    <div 
+      className={`flex items-center gap-2 rounded-full border backdrop-blur-sm ${getSizeClasses()} ${className} ${
+        isActive 
+          ? 'bg-primary/10 text-primary border-primary/20' 
+          : 'bg-muted/30 text-muted-foreground border-border/30 cursor-pointer hover:bg-muted/50 hover:border-border/50 transition-colors'
+      }`}
+      onClick={!isActive ? () => navigate('/settings') : undefined}
+      role={!isActive ? 'button' : undefined}
+    >
       <div className={`rounded-full ${
         isActive ? 'bg-green-400' : 'bg-red-400'
       } ${size === 'sm' ? 'w-2 h-2' : 'w-2 h-2'} ${isActive ? 'animate-pulse' : ''}`} />
@@ -59,4 +66,19 @@ export function SimpleAIServiceIndicator({
       )}
     </div>
   );
+
+  if (!isActive) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{indicator}</TooltipTrigger>
+          <TooltipContent>
+            <p>Configure your AI API key in Settings to enable this service</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return indicator;
 }
