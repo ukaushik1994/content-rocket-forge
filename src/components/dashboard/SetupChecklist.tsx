@@ -70,7 +70,7 @@ export function SetupChecklist() {
           label: 'Configure AI API keys',
           description: 'Connect OpenAI or another AI provider',
           icon: Key,
-          route: '/settings',
+          route: '/ai-settings',
           completed: (apiKeysRes.data?.length ?? 0) > 0,
         },
         {
@@ -78,7 +78,7 @@ export function SetupChecklist() {
           label: 'Run your first research',
           description: 'Start with keyword or competitor research',
           icon: Search,
-          route: '/research',
+          route: '/research/research-hub',
           completed: false, // Always show as incomplete to encourage exploration
         },
       ];

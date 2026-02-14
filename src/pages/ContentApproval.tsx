@@ -19,7 +19,7 @@ const ContentApproval = () => {
       <AnimatedBackground intensity="medium" />
       
       <Helmet>
-        <title>Content Approval | ContentRocketForge</title>
+        <title>Content Approval | Creaiter</title>
         <meta name="description" content="Review and approve content submissions with advanced workflow management" />
       </Helmet>
       

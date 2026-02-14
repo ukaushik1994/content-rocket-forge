@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { enhancedAIService } from '@/services/enhancedAIService';
 import { useToast } from '@/hooks/use-toast';
@@ -225,7 +225,7 @@ export const useEnhancedAIChatDB = () => {
     }
   }, []);
 
-  // Send message with enhanced features
+  // Send message with streaming SSE support + fallback to blocking
   const sendMessage = useCallback(async (content: string, displayContent?: string) => {
     if (!user) {
       toast({
@@ -246,41 +246,154 @@ export const useEnhancedAIChatDB = () => {
     setIsLoading(true);
     setIsTyping(true);
 
-    // Add user message with display content if provided
+    // Add user message
     const userMessage: EnhancedChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: displayContent || content, // Show display content in chat
+      content: displayContent || content,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-
-    // Save user message to database
     await saveMessage(userMessage, conversationId);
 
+    // Create placeholder assistant message for streaming
+    const assistantId = `assistant-${Date.now()}`;
+    const placeholderMessage: EnhancedChatMessage = {
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, placeholderMessage]);
+
     try {
-      // Get enhanced AI response (send actual content to AI, not display content)
-      const aiResponse = await enhancedAIService.processEnhancedMessage(
-        content,
-        [...messages, userMessage],
-        user.id
-      );
+      // Try streaming first
+      let streamSuccess = false;
+      
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session.data.session?.access_token;
+        
+        if (!token) throw new Error('No auth token');
 
-      // Update messages and save AI response
-      setMessages(prev => [...prev, aiResponse]);
-      await saveMessage(aiResponse, conversationId);
+        const streamUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-streaming`;
 
-      // Show workflow progress if this was part of a workflow
-      if (aiResponse.workflowContext?.currentWorkflow) {
-        toast({
-          title: "Workflow Progress",
-          description: `${aiResponse.workflowContext.currentWorkflow.replace(/-/g, ' ')} workflow updated`,
-          duration: 1500
+        // Build conversation history for the AI
+        const conversationHistory = [...messages, userMessage].slice(-10).map(m => ({
+          role: m.role,
+          content: m.content
+        }));
+
+        const response = await fetch(streamUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            messages: conversationHistory,
+            context: { conversationId },
+            userId: user.id,
+            features: ['streaming'],
+          }),
         });
+
+        if (!response.ok || !response.body) {
+          throw new Error(`Stream failed: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          let newlineIndex: number;
+          while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+            let line = buffer.slice(0, newlineIndex);
+            buffer = buffer.slice(newlineIndex + 1);
+
+            if (line.endsWith('\r')) line = line.slice(0, -1);
+            if (line.trim() === '' || line.startsWith(':')) continue;
+
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.type === 'token' && parsed.content) {
+                  fullContent += parsed.content;
+                  // Update the placeholder message progressively
+                  setMessages(prev =>
+                    prev.map(m =>
+                      m.id === assistantId
+                        ? { ...m, content: fullContent }
+                        : m
+                    )
+                  );
+                } else if (parsed.type === 'complete' && parsed.content) {
+                  fullContent = parsed.content;
+                } else if (parsed.type === 'error') {
+                  throw new Error(parsed.error || 'Stream error');
+                }
+              } catch (e) {
+                if (e instanceof SyntaxError) {
+                  buffer = line + '\n' + buffer;
+                  break;
+                }
+                throw e;
+              }
+            }
+          }
+        }
+
+        if (fullContent) {
+          streamSuccess = true;
+          const finalMessage: EnhancedChatMessage = {
+            ...placeholderMessage,
+            content: fullContent,
+          };
+          setMessages(prev =>
+            prev.map(m => m.id === assistantId ? finalMessage : m)
+          );
+          await saveMessage(finalMessage, conversationId);
+        }
+      } catch (streamError) {
+        console.warn('Streaming failed, falling back to blocking call:', streamError);
       }
 
-      // Update conversation title if it's the first exchange
+      // Fallback to blocking call if streaming didn't work
+      if (!streamSuccess) {
+        const aiResponse = await enhancedAIService.processEnhancedMessage(
+          content,
+          [...messages, userMessage],
+          user.id
+        );
+
+        // Replace placeholder with actual response
+        setMessages(prev =>
+          prev.map(m => m.id === assistantId ? { ...aiResponse, id: assistantId } : m)
+        );
+        await saveMessage({ ...aiResponse, id: assistantId }, conversationId);
+
+        if (aiResponse.workflowContext?.currentWorkflow) {
+          toast({
+            title: "Workflow Progress",
+            description: `${aiResponse.workflowContext.currentWorkflow.replace(/-/g, ' ')} workflow updated`,
+            duration: 1500
+          });
+        }
+      }
+
+      // Update conversation title if first exchange
       if (messages.length === 0) {
         const title = content.slice(0, 50) + (content.length > 50 ? '...' : '');
         await supabase
@@ -298,6 +411,8 @@ export const useEnhancedAIChatDB = () => {
       }
     } catch (error) {
       console.error('Error sending enhanced message:', error);
+      // Remove placeholder on total failure
+      setMessages(prev => prev.filter(m => m.id !== assistantId));
       
       toast({
         title: "Error",
@@ -356,11 +471,11 @@ export const useEnhancedAIChatDB = () => {
             break;
           case 'keyword-research':
             console.log('🔍 Opening keyword research');
-            navigate('/research');
+            navigate('/research/research-hub');
             break;
           case 'content-strategy':
             console.log('📊 Opening content strategy');
-            navigate('/strategies');
+            navigate('/research/content-strategy');
             break;
           case 'navigate-content-builder':
             navigate('/content-builder');
@@ -369,10 +484,10 @@ export const useEnhancedAIChatDB = () => {
             navigate('/analytics');
             break;
           case 'navigate-keyword-research':
-            navigate('/research');
+            navigate('/research/research-hub');
             break;
           case 'navigate-strategy':
-            navigate('/strategies');
+            navigate('/research/content-strategy');
             break;
           default:
             console.warn('❓ Unknown action:', actionString);
