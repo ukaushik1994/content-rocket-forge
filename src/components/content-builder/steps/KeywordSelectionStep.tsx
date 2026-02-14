@@ -9,8 +9,7 @@ import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { Search, ChevronRight, Sparkles, Loader2, TrendingUp, BarChart3, Eye, Settings, Zap, Rocket, Target, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EnhancedSerpStatus } from '@/components/content-builder/serp/EnhancedSerpStatus';
-import { EnhancedAiStatus } from '@/components/content-builder/ai/EnhancedAiStatus';
+import { ServiceCheckModal } from '@/components/content-builder/ServiceCheckModal';
 import { InlineSerpAnalysis } from './keyword-analysis/InlineSerpAnalysis';
 import { SerpAnalysisModal } from './keyword-analysis/SerpAnalysisModal';
 import { SelectionManagerModal } from './keyword-analysis/SelectionManagerModal';
@@ -74,10 +73,7 @@ export const KeywordSelectionStep = () => {
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
 
-  // Handle status updates from the EnhancedSerpStatus component
-  const handleStatusChange = (status: ApiKeysStatus) => {
-    setApiKeysStatus(status);
-  };
+  // Handle status updates (kept for compatibility)
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     // Set the main keyword
     dispatch({
@@ -213,8 +209,7 @@ export const KeywordSelectionStep = () => {
           }}>
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-60" />
               <div className="relative bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-2 shadow-2xl">
-                <EnhancedSerpStatus onStatusChange={handleStatusChange} />
-                <EnhancedAiStatus />
+                <ServiceCheckModal />
                 <div className="mt-4">
                   <KeywordSearch initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
                 </div>
