@@ -169,9 +169,9 @@ export function useWritingStep() {
     dispatch({ type: 'SET_WORD_COUNT_MODE', payload: mode });
     
     if (mode === 'ai') {
-      toast.info(`Using AI estimate: ${aiEstimatedWordCount || 1500} words`);
+      toast.info(`Using AI estimate: ${aiEstimatedWordCount || 1500} words`, { id: 'word-count-mode' });
     } else {
-      toast.info(`Using custom word count: ${wordCountLimit} words`);
+      toast.info(`Using custom word count: ${wordCountLimit} words`, { id: 'word-count-mode' });
     }
   };
   

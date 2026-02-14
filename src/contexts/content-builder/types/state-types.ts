@@ -90,6 +90,14 @@ export interface ContentBuilderState {
   } | null;
 
   // Word Count Management
-  aiEstimatedWordCount: number | null;  // AI's calculated estimate from outline
-  wordCountMode: 'ai' | 'custom';       // User's selected mode
+  aiEstimatedWordCount: number | null;
+  wordCountMode: 'ai' | 'custom';
+
+  // Content Brief
+  contentBrief: {
+    targetAudience: string;
+    contentGoal: string;
+    tone: string;
+    specificPoints: string;
+  } | null;
 }

@@ -8,6 +8,52 @@ import { supabase } from '@/integrations/supabase/client';
 import { ComprehensiveSerpData, SerpMetrics, CompetitorAnalysis, RankingOpportunities, SerpSelectionStats } from '@/types/serp-metrics';
 
 
+// AI preamble patterns that indicate a title is actually AI response text
+const AI_PREAMBLE_PATTERNS = [
+  /^here\s+are/i,
+  /^sure[,!]/i,
+  /^i['']ll/i,
+  /^let\s+me/i,
+  /^certainly/i,
+  /^of\s+course/i,
+  /^great[,!]/i,
+  /^absolutely/i,
+  /^\d+\s+(unique|creative|compelling|engaging)/i,
+];
+
+function sanitizeTitle(
+  contentTitle: string | null | undefined,
+  metaTitle: string | null | undefined,
+  mainKeyword: string | null | undefined,
+  content: string | null | undefined
+): string {
+  // Check if contentTitle looks like AI preamble
+  if (contentTitle) {
+    const isAIPreamble = contentTitle.length > 100 || 
+      AI_PREAMBLE_PATTERNS.some(p => p.test(contentTitle));
+    
+    if (!isAIPreamble) {
+      return contentTitle.substring(0, 120);
+    }
+  }
+  
+  // Fall back to metaTitle
+  if (metaTitle && metaTitle.length <= 120) {
+    return metaTitle;
+  }
+  
+  // Try extracting from content H1
+  if (content) {
+    const h1Match = content.match(/^#\s+(.+)$/m);
+    if (h1Match && h1Match[1].length <= 120) {
+      return h1Match[1];
+    }
+  }
+  
+  // Final fallback
+  return mainKeyword || 'Untitled Content';
+}
+
 /**
  * Hook for managing content saving and publishing functionality
  */
@@ -162,8 +208,16 @@ export const useSaveContent = () => {
       const optimizationMetadata = null;
       
       // Prepare content for saving with extended metadata
+      // Sanitize title: strip AI preamble and truncate
+      const sanitizedTitle = sanitizeTitle(
+        state.contentTitle, 
+        state.metaTitle, 
+        state.mainKeyword, 
+        state.content
+      );
+      
       const saveParams: SaveContentParams = {
-        title: state.contentTitle || state.metaTitle || state.mainKeyword,
+        title: sanitizedTitle,
         content: state.content,
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,

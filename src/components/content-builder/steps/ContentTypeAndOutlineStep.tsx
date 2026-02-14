@@ -4,6 +4,7 @@ import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderCont
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ContentTypeStep } from './ContentTypeStep';
 import { ContentOutlineSection } from '../outline/ContentOutlineSection';
+import { ContentBriefQuestions } from './ContentBriefQuestions';
 import { Separator } from '@/components/ui/separator';
 import { Settings } from 'lucide-react';
 
@@ -32,6 +33,11 @@ export const ContentTypeAndOutlineStep = () => {
           <ContentTypeStep />
         </CardContent>
       </Card>
+
+      <Separator className="bg-white/10" />
+
+      {/* Content Brief Questionnaire */}
+      <ContentBriefQuestions />
 
       <Separator className="bg-white/10" />
 

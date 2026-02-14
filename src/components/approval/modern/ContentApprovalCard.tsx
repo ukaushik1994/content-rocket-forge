@@ -35,6 +35,7 @@ interface ContentApprovalCardProps {
   onAnalyzeAI?: (content: ContentItemType) => void;
   onAssignReviewer?: (content: ContentItemType) => void;
   onViewHistory?: (content: ContentItemType) => void;
+  onSubmitForReview?: (id: string) => void;
   aiScore?: number;
   analyzedAt?: string;
   isAnalyzing?: boolean;
@@ -94,6 +95,7 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
   onAnalyzeAI,
   onAssignReviewer,
   onViewHistory,
+  onSubmitForReview,
   aiScore,
   analyzedAt,
   isAnalyzing = false
@@ -395,7 +397,29 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               </TooltipProvider>
             )}
             
-            {status === 'pending_review' && onApprove && (
+            {/* Submit for Review button for draft items */}
+            {status === 'draft' && onSubmitForReview && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSubmitForReview(content.id)}
+                      className="bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/30 text-yellow-400"
+                    >
+                      <Zap className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Submit</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Submit for Review</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {(status === 'pending_review' || status === 'in_review') && onApprove && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

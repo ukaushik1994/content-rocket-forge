@@ -156,27 +156,46 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     }
   }, [contentItems, showReviewModal]);
 
+  const [analyzeProgress, setAnalyzeProgress] = useState({ current: 0, total: 0 });
+
   const handleAnalyzeAll = async () => {
     if (contentItems.length === 0) return;
     setIsAnalyzingAll(true);
-    toast.info('Starting AI analysis for all content items...');
-    try {
-      for (const item of contentItems) {
+    const total = contentItems.length;
+    setAnalyzeProgress({ current: 0, total });
+    toast.info(`Starting AI analysis for ${total} items...`, { id: 'analyze-all-progress' });
+    
+    // Process in batches of 2 with delays
+    const batchSize = 2;
+    for (let i = 0; i < total; i += batchSize) {
+      const batch = contentItems.slice(i, i + batchSize);
+      const promises = batch.map(async (item) => {
         setAnalyzingItems(prev => new Set(prev).add(item.id));
-        const rec = await contentAiAnalysisService.reanalyze(item);
-        const score = (rec?.analysis?.overallScore as number | undefined) ?? (rec?.seo_score ?? 0);
-        const analyzedAt = (rec?.analyzed_at as string | undefined) ?? new Date().toISOString();
-        setAiScores(prev => ({ ...prev, [item.id]: score }));
-        setAiAnalyzedAt(prev => ({ ...prev, [item.id]: analyzedAt }));
-        setAnalyzingItems(prev => { const s = new Set(prev); s.delete(item.id); return s; });
+        try {
+          const rec = await contentAiAnalysisService.reanalyze(item);
+          const score = (rec?.analysis?.overallScore as number | undefined) ?? (rec?.seo_score ?? 0);
+          const analyzedAt = (rec?.analyzed_at as string | undefined) ?? new Date().toISOString();
+          setAiScores(prev => ({ ...prev, [item.id]: score }));
+          setAiAnalyzedAt(prev => ({ ...prev, [item.id]: analyzedAt }));
+        } catch (error) {
+          console.warn(`Analysis failed for "${item.title}":`, error);
+        } finally {
+          setAnalyzingItems(prev => { const s = new Set(prev); s.delete(item.id); return s; });
+        }
+      });
+      
+      await Promise.allSettled(promises);
+      setAnalyzeProgress({ current: Math.min(i + batchSize, total), total });
+      toast.info(`Analyzing ${Math.min(i + batchSize, total)}/${total}...`, { id: 'analyze-all-progress' });
+      
+      // Delay between batches to avoid rate limits
+      if (i + batchSize < total) {
+        await new Promise(r => setTimeout(r, 2000));
       }
-      toast.success('AI analysis completed for all content items!');
-    } catch (error) {
-      toast.error('Failed to complete AI analysis');
-      console.error(error);
-    } finally {
-      setIsAnalyzingAll(false);
     }
+    
+    toast.success('AI analysis completed for all content items!', { id: 'analyze-all-progress' });
+    setIsAnalyzingAll(false);
   };
 
   const handleAnalyzeContent = async (content: ContentItemType) => {
@@ -235,6 +254,17 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
       toast.success('Change request sent to author');
     } catch (error) {
       toast.error('Failed to request changes');
+      console.error(error);
+    }
+  };
+
+  const handleSubmitForReview = async (id: string) => {
+    try {
+      await updateContentItem(id, { approval_status: 'pending_review' });
+      await refreshContent();
+      toast.success('Content submitted for review');
+    } catch (error) {
+      toast.error('Failed to submit for review');
       console.error(error);
     }
   };
@@ -382,6 +412,7 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                       onAnalyzeAI={handleAnalyzeContent}
                       onAssignReviewer={handleAssign}
                       onViewHistory={handleViewHistory}
+                      onSubmitForReview={handleSubmitForReview}
                       aiScore={aiScores[item.id]}
                       isAnalyzing={analyzingItems.has(item.id)}
                       analyzedAt={aiAnalyzedAt[item.id]}
