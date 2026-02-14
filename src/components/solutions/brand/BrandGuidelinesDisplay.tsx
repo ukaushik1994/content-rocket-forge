@@ -4,10 +4,14 @@ import { motion } from 'framer-motion';
 import { BrandGuidelines } from '@/contexts/content-builder/types/company-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, ExternalLink, FileText, Palette, Plus, Sparkles } from 'lucide-react';
+import { Edit, ExternalLink, FileText, Loader2, Palette, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { BrandGuidelinesDialog } from './BrandGuidelinesDialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { BrandGuidelinesForm } from './BrandGuidelinesForm';
+import { extractAndSaveBrandGuidelines } from '@/services/brandIntelService';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface BrandGuidelinesDisplayProps {
   guidelines: BrandGuidelines | null;
@@ -22,6 +26,8 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
 }) => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isExtracting, setIsExtracting] = React.useState(false);
+  const { user } = useAuth();
   
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -34,6 +40,40 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
   const handleSaveFromSheet = (formData: BrandGuidelines) => {
     onSave(formData);
     setIsSheetOpen(false);
+  };
+
+  const handleReExtract = async () => {
+    if (!user || !companyId) return;
+    
+    try {
+      setIsExtracting(true);
+      toast.info('Re-extracting brand guidelines from your website...');
+      
+      // Get company website
+      const { data: companyData } = await supabase
+        .from('company_info')
+        .select('website')
+        .eq('id', companyId)
+        .single();
+
+      if (!companyData?.website) {
+        toast.error('No website found in company info');
+        return;
+      }
+
+      const result = await extractAndSaveBrandGuidelines(companyData.website, user.id, companyId);
+      if (result) {
+        onSave(result);
+        toast.success('Brand guidelines re-extracted successfully');
+      } else {
+        toast.error('Could not extract brand guidelines');
+      }
+    } catch (error) {
+      console.error('Re-extraction error:', error);
+      toast.error('Failed to re-extract brand guidelines');
+    } finally {
+      setIsExtracting(false);
+    }
   };
   
   // Animation variants
@@ -369,6 +409,24 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
           </div>
           
           <div className="flex gap-2">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button 
+                onClick={handleReExtract}
+                variant="outline"
+                className="gap-1"
+                disabled={isExtracting || !companyId}
+              >
+                {isExtracting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Re-extract from Website
+              </Button>
+            </motion.div>
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

@@ -410,7 +410,7 @@ async function detectProducts(
     return `URL: ${p.url}\nCategory: ${p.category}\nTitle: ${content.title}\nMeta: ${content.metaDescription}\nHeadings: ${content.headings.slice(0, 8).join(', ')}\nText: ${content.mainText.slice(0, 1500)}`;
   }).join('\n\n---\n\n');
 
-  const prompt = `Analyze this website and identify all distinct products/solutions offered.
+  const prompt = `Analyze this website and identify all distinct products, services, and offerings.
 
 Website: ${domain}
 Pages analyzed: ${pages.length}
@@ -418,14 +418,15 @@ Pages analyzed: ${pages.length}
 Content:
 ${pageSummaries}
 
-Return a JSON array with comprehensive product detection:
+Return a JSON array with comprehensive offering detection:
 {
   "products": [
     {
-      "product_name": "Full product name",
-      "product_url": "Direct URL to product page",
+      "product_name": "Full offering name",
+      "product_url": "Direct URL to offering page",
       "brief_description": "One clear sentence",
-      "category": "Primary category (e.g., Analytics, CRM, HR Tech, Marketing)",
+      "category": "Primary category (e.g., SaaS Product, Professional Service, Consulting, Training, Physical Product, Subscription, Course, Platform)",
+      "offering_type": "product|service|subscription|course|consulting|platform|hybrid",
       "target_audience": "Who it's for (e.g., Enterprise HR Teams, Small Business Owners)",
       "key_benefits": ["3-5 main benefits"],
       "confidence_score": 0-100
@@ -433,13 +434,14 @@ Return a JSON array with comprehensive product detection:
   ]
 }
 
-${detectMultiple ? 'Identify ALL separate products/solutions offered (not features of one product).' : 'Identify only the PRIMARY product/solution.'}
+${detectMultiple ? 'Identify ALL separate products, services, consulting offerings, training programs, courses, subscription products, and any monetizable offering (not features of one product).' : 'Identify only the PRIMARY product/solution.'}
 
 Rules:
-- Only include distinct products (not features of the same product)
+- Detect ALL types of offerings: SaaS products, professional services, consulting, physical products, subscriptions, training/courses, platforms
+- Only include distinct offerings (not features of the same product)
 - Must have confidence >= 75
 - Extract category and target audience from context
-- Identify key benefits that differentiate the product
+- Identify key benefits that differentiate the offering
 - Return valid JSON only`;
 
   try {

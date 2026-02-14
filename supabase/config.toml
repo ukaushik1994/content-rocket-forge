@@ -168,3 +168,6 @@ verify_jwt = false
 
 [functions.content-optimizer]
 verify_jwt = true
+
+[functions.brand-intel]
+verify_jwt = false
