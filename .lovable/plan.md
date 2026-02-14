@@ -1,43 +1,53 @@
 
 
-# Improve SolutionSelectionModal - Opaque Background & Polished Design
+# Replace Inline Content Config with a Floating Selection Modal
 
-## Issues from Screenshot
+## What Changes
 
-1. The modal overlay is semi-transparent -- page content bleeds through making it hard to read
-2. The modal itself has `bg-background/80` which also lets content show behind it
-3. The dropdown menu for content types appears separately from the modal (floating off to the side)
-4. Solution avatars section looks sparse and unpolished
+### 1. Remove the inline ContentTypeStep card
+The glassmorphic card currently sitting below the search bar (lines 251-256 in KeywordSelectionStep) gets removed entirely from the page layout.
 
-## Changes
+### 2. New floating modal: SolutionSelectionModal
+A centered Radix Dialog that auto-opens when the user lands on this step **if they haven't yet selected a solution + content type**. It contains:
 
-### 1. Make the overlay nearly opaque/black
-In `SolutionSelectionModal.tsx`, pass a custom overlay class to the Dialog that uses `bg-black/95` instead of the default `bg-black/80`. This will be done by overriding the DialogContent's overlay via a className prop on DialogOverlay or by wrapping with a custom overlay.
+- The solution avatars (same avatar row from ContentTypeStep) -- clicking one opens the content type dropdown (same DropdownMenu behavior)
+- Company info header (if available) -- compact, same avatar + name + "Active" badge, but **no Edit button**
+- Once the user picks a solution + content type, the modal auto-closes with a subtle success toast
 
-### 2. Make the modal body fully opaque
-Change the modal content from `bg-background/80 backdrop-blur-xl` to `bg-background backdrop-blur-xl` (fully opaque background, no transparency).
+The modal can be manually reopened via a small pill/chip near the search bar showing the current selection (e.g., "Apple Inc. | Blog Post" with a change icon). This lets the user switch their choice anytime.
 
-### 3. Polish the layout
-- Remove the separate gradient header section -- merge it into a single cohesive card
-- Make solution avatars slightly larger and add labels below each
-- Add a subtle selected state with a glow effect on the chosen solution
-- Show content type inline within the modal after selection (not as a separate floating dropdown that overlaps other elements)
-- Add a "Confirm" footer button instead of relying purely on auto-close (keeps auto-close as backup)
+### 3. Gating behavior
+The keyword search bar remains always visible and usable -- no hard block. But the modal surfaces first to guide the user. If they dismiss without selecting, a subtle reminder chip stays visible.
 
-### 4. Better empty/loading states
-- Skeleton loaders instead of a single spinner
-- Better "no solutions" messaging with a link to add solutions
+### 4. Design continuity
+- Same glassmorphism: `bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl`
+- Same gradient header: `bg-gradient-to-r from-neon-purple/20 via-neon-blue/20 to-neon-purple/20`
+- Same solution avatars with ring highlight on selection
+- Same DropdownMenu for content type per solution
+- Same framer-motion fade/scale-in animation
+- Same lucide icons (Building2, CheckCircle2, Palette)
+- **No Edit button** -- removed
+
+---
 
 ## Technical Details
 
-### File: `src/components/content-builder/SolutionSelectionModal.tsx`
-- Line 164: Change `bg-background/80` to `bg-background` for fully opaque modal body
-- Add a custom `DialogOverlay` override with `bg-black/95` class
-- Use a custom portal structure: render `DialogPortal` manually with `DialogOverlay` having `className="bg-black/95"` and then `DialogPrimitive.Content`
-- Restructure the inner layout: single section with compact header, solution grid, and selection confirmation
-- Keep the DropdownMenu for content types but ensure `side="bottom"` and `align="start"` so it renders inside the modal area
-- Keep auto-close logic but add 800ms delay instead of 500ms for smoother UX
+### New file: `src/components/content-builder/SolutionSelectionModal.tsx`
+- Extracts the solution avatar grid + content type dropdown logic from ContentTypeStep
+- Wraps it in a Radix Dialog with glassmorphism styling
+- Auto-opens via a prop or internal state check: `!selectedSolution || !contentType`
+- On selection complete (both solution + contentType set), auto-closes after 500ms delay
+- Compact layout -- no large cards, just a focused selection interface
+- Reuses the same data-fetching logic (solutions from Supabase, company info)
+- Dispatches same actions: `SELECT_SOLUTION`, `SET_CONTENT_TYPE`, `SET_ADDITIONAL_INSTRUCTIONS`
 
-### File: No other files need changes
-The dialog.tsx overlay already uses `bg-black/80` as default -- we override it at the component level.
+### Modified: `src/components/content-builder/steps/KeywordSelectionStep.tsx`
+- Remove the `ContentTypeStep` import and its rendering block (lines 251-256)
+- Import and render `SolutionSelectionModal` instead
+- Add a small selection indicator chip above or beside the search bar showing current solution + content type (clickable to reopen modal)
+
+### Untouched
+- `ContentTypeStep.tsx` -- stays as-is (still used in Step 2 ContentTypeAndOutlineStep)
+- All context, reducer, actions, save hooks, Repository, Approvals -- zero changes
+- `SerpAnalysisModal`, `ServiceCheckModal` -- no changes
 
