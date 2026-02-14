@@ -113,7 +113,7 @@ export class EnhancedChatErrorBoundary extends Component<Props, State> {
       icon: Settings,
       onClick: () => {
         // Use proper navigation
-        window.location.href = '/settings';
+        window.location.href = '/ai-settings';
       },
       variant: 'default' as const,
       disabled: false

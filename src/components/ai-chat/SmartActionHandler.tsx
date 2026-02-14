@@ -47,8 +47,8 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
           break;
 
         case 'navigate:/settings':
-          navigate('/settings');
-          result = { navigated: true, route: '/settings' };
+          navigate('/ai-settings');
+          result = { navigated: true, route: '/ai-settings' };
           break;
 
         // Content Builder integration

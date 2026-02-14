@@ -24,11 +24,14 @@ import { campaignService, SavedCampaign } from '@/services/campaignService';
 import { createCampaignAtomic } from '@/services/campaignTransactions';
 import { campaignCleanupService } from '@/services/campaignCleanupService';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, AlertTriangle, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Inner component that uses the context
 const CampaignsInner = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { generateStrategies, isGenerating } = useCampaignStrategies();
   const { campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns, deleteCampaign, updateCampaignName, updateCampaignStatus } = useCampaigns();
   const { generateAllContent } = useCampaignContentGeneration();
@@ -43,7 +46,23 @@ const CampaignsInner = () => {
   const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+  const [hasAIProvider, setHasAIProvider] = useState<boolean | null>(null);
   const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/campaigns` : '/campaigns';
+
+  // Check if AI provider is configured
+  useEffect(() => {
+    const checkAIProvider = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('ai_service_providers')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1);
+      setHasAIProvider(data && data.length > 0);
+    };
+    checkAIProvider();
+  }, [user]);
 
   // Clean up duplicate campaigns on mount
   useEffect(() => {
@@ -479,7 +498,28 @@ const CampaignsInner = () => {
         onStartConversation={handleStartConversation}
         onExpressMode={handleExpressMode}
       />
-          
+
+          {/* AI Provider Pre-check Banner */}
+          {hasAIProvider === false && (
+            <Alert className="border-yellow-500/30 bg-yellow-500/5">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <AlertDescription className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Configure your AI API key to start creating campaigns.
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/ai-settings')}
+                  className="ml-4 gap-1.5"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                  Configure
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <AnimatePresence mode="wait">
             {viewMode === 'list' ? (
               <motion.div
