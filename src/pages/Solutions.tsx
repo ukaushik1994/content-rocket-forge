@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { extractAndSaveBrandGuidelines } from '@/services/brandIntelService';
 
 // Import SolutionManager directly to avoid Router context issues with lazy loading
 import { SolutionManager } from '@/components/solutions/manager';
@@ -209,6 +210,23 @@ const Solutions = () => {
       });
 
       toast.success('Company information saved successfully');
+
+      // Auto-trigger brand extraction in background if website exists and no brand guidelines yet
+      const savedWebsite = info.website;
+      if (savedWebsite && !brandGuidelines) {
+        const companyId = savedCompany.id;
+        toast.info('Extracting brand guidelines from your website...');
+        extractAndSaveBrandGuidelines(savedWebsite, user.id, companyId)
+          .then((result) => {
+            if (result) {
+              setBrandGuidelines(result);
+              toast.success('Brand guidelines extracted from your website');
+            }
+          })
+          .catch((err) => {
+            console.warn('Brand extraction failed:', err);
+          });
+      }
     } catch (error: any) {
       console.error('Error saving company info:', error);
       toast.error('Failed to save company information: ' + error.message);

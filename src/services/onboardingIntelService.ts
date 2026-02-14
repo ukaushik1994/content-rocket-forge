@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { discoverCompanyInfo } from './companyIntelService';
 import { autoFillFromWebsite as competitorAutoFill } from './competitorIntelService';
 import { autoFillFromWebsite as solutionAutoFill } from './solutionIntelService';
+import { extractAndSaveBrandGuidelines } from './brandIntelService';
 import { toast } from '@/hooks/use-toast';
 
 export interface OnboardingSetupData {
@@ -86,6 +87,34 @@ export async function processOnboardingSetup(
           // Still save user-provided solutions
           return saveSolutions(userId, data.solutions, []);
         })
+    );
+
+    // 4. Brand Intel - extract brand guidelines from company website
+    promises.push(
+      (async (): Promise<IntelResult> => {
+        try {
+          // We need company ID for brand guidelines - try to get it after company intel saves
+          // Use a small delay to let company save complete first
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          const { data: companyData } = await supabase
+            .from('company_info')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          const companyId = companyData?.id || '';
+          const result = await extractAndSaveBrandGuidelines(data.companyUrl, userId, companyId);
+          
+          if (result) {
+            return { type: 'company' as const, success: true, data: result };
+          }
+          return { type: 'company' as const, success: false, error: 'No brand data returned' };
+        } catch (error: any) {
+          console.warn('Brand intel failed:', error);
+          return { type: 'company' as const, success: false, error: error.message };
+        }
+      })()
     );
 
     // Wait for all to complete (non-blocking from user perspective)
