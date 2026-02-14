@@ -164,7 +164,7 @@ const NotificationSettings: React.FC = () => {
       transition={{ duration: 0.5 }}
     >
       <Helmet>
-        <title>Notification Settings | CreAiter</title>
+        <title>Notification Settings | Creaiter</title>
         <meta name="description" content="Manage your notification preferences and settings" />
       </Helmet>
       

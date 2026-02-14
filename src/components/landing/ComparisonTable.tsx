@@ -39,7 +39,7 @@ export const ComparisonTable = () => {
             viewport={{ once: true }}
             className="text-4xl md:text-5xl font-bold mb-6"
           >
-            CreAiter vs
+            Creaiter vs
             <span className="bg-gradient-to-r from-primary via-neon-blue to-neon-pink bg-clip-text text-transparent"> Generic AI Tools</span>
           </motion.h2>
           <motion.p 
@@ -72,7 +72,7 @@ export const ComparisonTable = () => {
                 <div className="text-xs text-muted-foreground">(ChatGPT, Jasper, etc.)</div>
               </div>
               <div className="text-center">
-                <div className="text-sm font-medium bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent mb-1">CreAiter</div>
+                <div className="text-sm font-medium bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent mb-1">Creaiter</div>
                 <div className="text-xs text-primary">Self-Learning Engine</div>
               </div>
             </div>
@@ -137,7 +137,7 @@ export const ComparisonTable = () => {
             <div className="relative z-10">
               <div className="text-center mb-4">
                 <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent">
-                  CreAiter Learning Engine
+                  Creaiter Learning Engine
                 </h3>
                 <p className="text-sm text-primary">Exponential improvement over time</p>
               </div>
@@ -210,7 +210,7 @@ export const ComparisonTable = () => {
           className="text-center mt-16"
         >
           <p className="text-xl font-medium text-muted-foreground max-w-3xl mx-auto">
-            "Traditional AI platforms deliver static results. CreAiter delivers a continuously evolving intelligence engine tailored to your business."
+            "Traditional AI platforms deliver static results. Creaiter delivers a continuously evolving intelligence engine tailored to your business."
           </p>
         </motion.div>
       </Container>

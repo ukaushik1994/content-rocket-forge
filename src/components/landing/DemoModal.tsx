@@ -58,7 +58,7 @@ export const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-border/50">
                 <div>
-                  <h2 className="text-2xl font-bold">CreAiter Platform Demo</h2>
+                  <h2 className="text-2xl font-bold">Creaiter Platform Demo</h2>
                   <p className="text-muted-foreground">See how creators scale their content with AI</p>
                 </div>
                 <Button
@@ -80,7 +80,7 @@ export const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
                       <Play className="h-10 w-10 text-white ml-1" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">Interactive Demo Coming Soon</h3>
-                    <p className="text-muted-foreground">Experience the full CreAiter platform</p>
+                    <p className="text-muted-foreground">Experience the full Creaiter platform</p>
                   </div>
                 </div>
 
@@ -149,7 +149,7 @@ export const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
               <div className="p-6 border-t border-border/50 flex flex-col sm:flex-row gap-4 justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    Ready to get started? Join thousands of creators already using CreAiter.
+                    Ready to get started? Join thousands of creators already using Creaiter.
                   </p>
                 </div>
                 <div className="flex gap-3">

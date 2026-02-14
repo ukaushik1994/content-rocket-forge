@@ -115,7 +115,7 @@ const Auth = () => {
         duration: 0.6,
         delay: 1
       }}>
-          <p>Powered by AI • build by U for creators</p>
+          <p>Powered by AI • Built for creators</p>
         </motion.div>
       </div>
     </div>;
