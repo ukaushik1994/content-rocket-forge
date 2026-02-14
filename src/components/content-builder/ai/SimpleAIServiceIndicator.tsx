@@ -52,7 +52,7 @@ export function SimpleAIServiceIndicator({
           ? 'bg-primary/10 text-primary border-primary/20' 
           : 'bg-muted/30 text-muted-foreground border-border/30 cursor-pointer hover:bg-muted/50 hover:border-border/50 transition-colors'
       }`}
-      onClick={!isActive ? () => navigate('/settings') : undefined}
+      onClick={!isActive ? () => navigate('/ai-settings') : undefined}
       role={!isActive ? 'button' : undefined}
     >
       <div className={`rounded-full ${

@@ -63,7 +63,7 @@ const ContentBuilderPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Helmet>
-        <title>Content Builder | SEO Platform</title>
+        <title>Content Builder | Creaiter</title>
         <meta name="description" content={initialKeyword ? `Build content for ${initialKeyword} with SERP-aware outline and SEO.` : 'AI-powered content builder with SERP analysis and SEO optimization.'} />
         <link rel="canonical" href={typeof window !== 'undefined' ? `${window.location.origin}/content-builder` : '/content-builder'} />
       </Helmet>

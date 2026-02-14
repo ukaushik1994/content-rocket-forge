@@ -174,7 +174,7 @@ export const LandingFooter = () => {
         once: true
       }} className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border/50">
           <div className="flex items-center gap-2 text-muted-foreground mb-4 md:mb-0">
-            <span>© 2024 Fluxel. Made with</span>
+            <span>© 2026 Creaiter. Made with</span>
             <Heart className="h-4 w-4 text-red-500 fill-current" />
             <span>for creators worldwide.</span>
           </div>

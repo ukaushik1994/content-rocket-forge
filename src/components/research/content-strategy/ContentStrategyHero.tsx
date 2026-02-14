@@ -95,7 +95,7 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               />
               <Target className="h-5 w-5 mr-2 relative z-10" />
-              <span className="relative z-10">Set Strategy Goals</span>
+              <span className="relative z-10">Create Strategy</span>
               <Sparkles className="h-5 w-5 ml-2 relative z-10" />
             </Button>
           </motion.div>

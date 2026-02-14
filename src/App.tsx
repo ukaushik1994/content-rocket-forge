@@ -171,6 +171,10 @@ const App = () => (
                    {/* Notification Demo */}
                    <Route path="/notifications/demo" element={<ProtectedRoute><NotificationDemo /></ProtectedRoute>} />
                    
+                   {/* Redirects for legacy routes */}
+                   <Route path="/settings" element={<Navigate to="/ai-settings" replace />} />
+                   <Route path="/research" element={<Navigate to="/research/research-hub" replace />} />
+                   
                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

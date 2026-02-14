@@ -25,8 +25,9 @@ const ContentStrategy = () => {
         <Navbar />
         
         {/* Service Status Indicators */}
-        <div className="relative z-20 flex justify-center pt-20 pb-2">
-          
+        <div className="relative z-20 flex justify-center gap-3 pt-20 pb-2">
+          <SimpleAIServiceIndicator size="sm" />
+          <SimpleSerpServiceIndicator size="sm" />
         </div>
         
         {/* Animated Background - matching Repository design */}
