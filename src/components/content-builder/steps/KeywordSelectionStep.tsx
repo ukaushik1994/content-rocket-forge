@@ -7,14 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
-import { Search, ChevronRight, Sparkles, Loader2, TrendingUp, BarChart3, Eye, Settings, Zap, Rocket, Target, Plus } from 'lucide-react';
+import { Search, ChevronRight, Sparkles, Loader2, TrendingUp, BarChart3, Eye, Settings, Zap, Rocket, Target, Plus, CheckCircle2, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ServiceCheckModal } from '@/components/content-builder/ServiceCheckModal';
 import { SerpAnalysisModal } from './keyword-analysis/SerpAnalysisModal';
 import { SelectionManagerModal } from './keyword-analysis/SelectionManagerModal';
 import { FloatingSelectionWindow } from './keyword-analysis/FloatingSelectionWindow';
-import { ContentTypeStep } from './ContentTypeStep';
+import { SolutionSelectionModal } from '../SolutionSelectionModal';
 import { toast } from 'sonner';
+import { contentFormats } from '@/components/content-repurposing/formats';
+import { ContentType } from '@/contexts/content-builder/types';
 interface ApiKeysStatus {
   serpApi: {
     configured: boolean;
@@ -37,9 +39,12 @@ export const KeywordSelectionStep = () => {
     selectedKeywords,
     serpData,
     serpSelections,
-    isAnalyzing
+    isAnalyzing,
+    selectedSolution,
+    contentType
   } = state;
   const [hasSearched, setHasSearched] = useState(false);
+  const [showSolutionModal, setShowSolutionModal] = useState(false);
   const [apiKeysStatus, setApiKeysStatus] = useState<ApiKeysStatus>({
     serpApi: {
       configured: false,
@@ -69,6 +74,13 @@ export const KeywordSelectionStep = () => {
     }
     prevSerpDataRef.current = serpData;
   }, [serpData, hasSearched]);
+
+  // Auto-open solution modal if no selection made
+  useEffect(() => {
+    if (!selectedSolution || !contentType) {
+      setShowSolutionModal(true);
+    }
+  }, []);
 
   // Handle status updates (kept for compatibility)
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
@@ -248,12 +260,47 @@ export const KeywordSelectionStep = () => {
           </div>
         </motion.div>
 
-        {/* Content Configuration Section */}
-        <motion.div className="max-w-3xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-          <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
-            <ContentTypeStep />
-          </div>
-        </motion.div>
+        {/* Selection Chip */}
+        {(selectedSolution || contentType) && (
+          <motion.div 
+            className="flex justify-center mt-6" 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }}
+          >
+            <button
+              onClick={() => setShowSolutionModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 text-sm hover:border-primary/50 transition-all group"
+            >
+              {selectedSolution && contentType ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+                  <span className="text-foreground">{selectedSolution.name}</span>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="text-primary">{contentFormats.find(f => f.id === contentType)?.name}</span>
+                  <Palette className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </>
+              ) : (
+                <>
+                  <Palette className="h-3.5 w-3.5 text-primary animate-pulse" />
+                  <span className="text-muted-foreground">Select solution & content type</span>
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
+
+        {/* Reminder chip if dismissed without selecting */}
+        {!selectedSolution && !contentType && (
+          <motion.div className="flex justify-center mt-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <button
+              onClick={() => setShowSolutionModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 backdrop-blur-xl rounded-full border border-primary/30 text-sm hover:bg-primary/20 transition-all"
+            >
+              <Palette className="h-3.5 w-3.5 text-primary animate-pulse" />
+              <span className="text-primary">Select solution & content type to begin</span>
+            </button>
+          </motion.div>
+        )}
       </div>
 
       {/* Floating Selection Window */}
@@ -271,5 +318,7 @@ export const KeywordSelectionStep = () => {
     }} />
 
       <SelectionManagerModal isOpen={showSelectionManagerModal} onClose={() => setShowSelectionManagerModal(false)} serpSelections={serpSelections} onToggleSelection={handleToggleSelection} onClearAll={handleClearAllSelections} onGenerateOutline={handleGenerateOutline} />
+
+      <SolutionSelectionModal isOpen={showSolutionModal} onOpenChange={setShowSolutionModal} />
     </>;
 };
