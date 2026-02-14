@@ -1,55 +1,53 @@
 
 
-# Redesign KeywordSelectionStep - Cleaner Layout with Auto-Popup
+# Replace Inline Content Config with a Floating Selection Modal
 
 ## What Changes
 
-### 1. Move Stats Above the Search Bar
-The 3 stat badges (15+ SERP Features, 200+ Data Points, < 30s Analysis Time) move from **below** the search bar to **above** it, sitting between the subtitle text and the search input.
+### 1. Remove the inline ContentTypeStep card
+The glassmorphic card currently sitting below the search bar (lines 251-256 in KeywordSelectionStep) gets removed entirely from the page layout.
 
-### 2. Remove Everything Below the Search Bar
-Delete the entire "Dynamic Content Area" below the search bar:
-- The "Ready to Analyze" welcome state (spinning search icon, text)
-- The inline SERP results area (the big glassmorphic card with "SERP Intelligence", InlineSerpAnalysis, DataSourceIndicator)
-- The loading/analyzing spinner state
-- The "No Data Available" empty state
+### 2. New floating modal: SolutionSelectionModal
+A centered Radix Dialog that auto-opens when the user lands on this step **if they haven't yet selected a solution + content type**. It contains:
 
-The page becomes clean -- just hero + stats + search bar + content config below.
+- The solution avatars (same avatar row from ContentTypeStep) -- clicking one opens the content type dropdown (same DropdownMenu behavior)
+- Company info header (if available) -- compact, same avatar + name + "Active" badge, but **no Edit button**
+- Once the user picks a solution + content type, the modal auto-closes with a subtle success toast
 
-### 3. Auto-Open SERP Modal After Search
-When `analyzeKeyword` completes and `serpData` becomes available, automatically open the existing `SerpAnalysisModal` popup. The user gets all their SERP data (volume, questions, headings, gaps, keywords) in the familiar centered modal instead of inline.
+The modal can be manually reopened via a small pill/chip near the search bar showing the current selection (e.g., "Apple Inc. | Blog Post" with a change icon). This lets the user switch their choice anytime.
 
-### 4. Add Content Type/Solution Selector Below Search
-Move the `ContentTypeStep` component (solution avatars + content type dropdown) from Step 2 into this page, placed below the search bar in a compact glassmorphic card. This eliminates the need to go to Step 2 just to pick a solution.
+### 3. Gating behavior
+The keyword search bar remains always visible and usable -- no hard block. But the modal surfaces first to guide the user. If they dismiss without selecting, a subtle reminder chip stays visible.
+
+### 4. Design continuity
+- Same glassmorphism: `bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl`
+- Same gradient header: `bg-gradient-to-r from-neon-purple/20 via-neon-blue/20 to-neon-purple/20`
+- Same solution avatars with ring highlight on selection
+- Same DropdownMenu for content type per solution
+- Same framer-motion fade/scale-in animation
+- Same lucide icons (Building2, CheckCircle2, Palette)
+- **No Edit button** -- removed
 
 ---
 
 ## Technical Details
 
-### File Modified: `src/components/content-builder/steps/KeywordSelectionStep.tsx`
+### New file: `src/components/content-builder/SolutionSelectionModal.tsx`
+- Extracts the solution avatar grid + content type dropdown logic from ContentTypeStep
+- Wraps it in a Radix Dialog with glassmorphism styling
+- Auto-opens via a prop or internal state check: `!selectedSolution || !contentType`
+- On selection complete (both solution + contentType set), auto-closes after 500ms delay
+- Compact layout -- no large cards, just a focused selection interface
+- Reuses the same data-fetching logic (solutions from Supabase, company info)
+- Dispatches same actions: `SELECT_SOLUTION`, `SET_CONTENT_TYPE`, `SET_ADDITIONAL_INSTRUCTIONS`
 
-**Structural changes:**
-- Lines 220-253 (stats section): Move above the search input (before line 199)
-- Lines 258-456 (entire AnimatePresence block with welcome state, loading state, SERP results, empty state): Remove completely
-- Add `useEffect` watching `serpData` -- when it transitions from null to populated after a search, set `showSerpAnalysisModal = true`
-- Import and render `ContentTypeStep` below the search bar in a new compact card
-- Keep: FloatingSelectionWindow, SerpAnalysisModal, SelectionManagerModal, ServiceCheckModal (all stay as-is)
+### Modified: `src/components/content-builder/steps/KeywordSelectionStep.tsx`
+- Remove the `ContentTypeStep` import and its rendering block (lines 251-256)
+- Import and render `SolutionSelectionModal` instead
+- Add a small selection indicator chip above or beside the search bar showing current solution + content type (clickable to reopen modal)
 
-**New layout order inside the hero section:**
-1. "AI-Powered SERP Intelligence" pill badge
-2. "Discover Content Opportunities" heading + subtitle
-3. Stats row (15+ SERP Features, 200+ Data Points, < 30s Analysis Time)
-4. Search bar (KeywordSearch)
-5. Content Configuration card (ContentTypeStep) -- compact glassmorphic card below search
-
-**Auto-popup logic:**
-```
-useEffect -- when serpData changes from null/undefined to a valid object AND hasSearched is true, auto-open the SERP modal
-```
-
-### Files Untouched
-- `SerpAnalysisModal.tsx` -- no changes, just auto-triggered
-- `ContentTypeStep.tsx` -- reused as-is, just rendered in a new location
-- All context, reducer, save hooks, Repository, Approvals -- zero impact
-- `ContentTypeAndOutlineStep.tsx` -- still renders ContentTypeStep in Step 2 as well (user can change selection there too)
+### Untouched
+- `ContentTypeStep.tsx` -- stays as-is (still used in Step 2 ContentTypeAndOutlineStep)
+- All context, reducer, actions, save hooks, Repository, Approvals -- zero changes
+- `SerpAnalysisModal`, `ServiceCheckModal` -- no changes
 
