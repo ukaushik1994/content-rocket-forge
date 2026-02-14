@@ -739,7 +739,7 @@ useEffect(() => {
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isSubmitting || isLoadingData || !formData.name?.trim()}
+              disabled={isSubmitting || parentIsSubmitting || isLoadingData || !formData.name?.trim()}
               className="min-w-[120px] bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple hover:shadow-neon"
             >
               {isSubmitting ? (

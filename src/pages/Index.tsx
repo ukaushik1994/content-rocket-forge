@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import { EnhancedWelcomeSection } from '@/components/dashboard/EnhancedWelcomeSection';
 import { QuickActions } from '@/components/dashboard/QuickActions';
+import { SetupChecklist } from '@/components/dashboard/SetupChecklist';
 import { OnboardingProvider, useOnboarding } from '@/components/onboarding/OnboardingContext';
 import { OnboardingCarousel } from '@/components/onboarding/OnboardingCarousel';
 import { motion } from 'framer-motion';
@@ -140,6 +141,11 @@ const DashboardContent = ({ isLoaded }: { isLoaded: boolean }) => {
             {/* Enhanced Welcome/Hero Section */}
             <motion.section variants={sectionVariants}>
               <EnhancedWelcomeSection navigate={navigate} />
+            </motion.section>
+
+            {/* Setup Checklist for new users */}
+            <motion.section variants={sectionVariants}>
+              <SetupChecklist />
             </motion.section>
             
             {/* Quick Actions */}
