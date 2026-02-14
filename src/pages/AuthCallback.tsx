@@ -185,7 +185,7 @@ const AuthCallback: React.FC = () => {
 
         {/* Footer */}
         <p className="text-xs text-muted-foreground">
-          Need help? Contact support@creaiter.com
+          Need help? Contact hello@creaiter.com
         </p>
       </div>
     </div>

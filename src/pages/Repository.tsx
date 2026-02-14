@@ -25,22 +25,13 @@ const Repository = () => {
   useEffect(() => {
     // Force refresh of content items when the page loads
     refreshContent();
-    console.log('[Repository] Component mounted, refreshing content...');
-    console.log('[Repository] Content items at load:', contentItems.length);
+    refreshContent();
 
-    // Check if we're coming from the content builder, glossary builder, or strategy builder
     const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
     const glossarySaved = sessionStorage.getItem('glossary_saved');
     const strategyContentSaved = sessionStorage.getItem('strategy_content_saved');
-    const saveTimestamp = sessionStorage.getItem('content_save_timestamp');
-    
-    console.log('[Repository] contentDraftSaved flag:', contentDraftSaved);
-    console.log('[Repository] glossarySaved flag:', glossarySaved);
-    console.log('[Repository] strategyContentSaved flag:', strategyContentSaved);
-    console.log('[Repository] saveTimestamp:', saveTimestamp);
     
     if (contentDraftSaved === 'true' || glossarySaved === 'true' || strategyContentSaved === 'true') {
-      console.log('[Repository] Content saved, refreshing content...');
       
       // Show a loading toast while we refresh
       const toastMessage = strategyContentSaved === 'true' 
@@ -50,9 +41,7 @@ const Repository = () => {
       
       // Double-check with a slight delay to ensure DB operations have completed
       setTimeout(async () => {
-        console.log('[Repository] Refreshing content after timeout');
         await refreshContent();
-        console.log('[Repository] Content items after refresh:', contentItems.length);
         
         const successMessage = strategyContentSaved === 'true'
           ? 'Strategy content saved and published successfully!'
@@ -69,19 +58,12 @@ const Repository = () => {
       sessionStorage.removeItem('from_content_builder');
       sessionStorage.removeItem('from_glossary_builder');
       sessionStorage.removeItem('content_save_timestamp');
-      console.log('[Repository] Cleanup: session storage flags cleared');
     };
   }, [refreshContent, contentItems.length]);
 
   const handleOpenDetailView = (content: ContentItemType) => {
     // Look up the latest version of the content from context to ensure fresh data
     const freshContent = contentItems.find(item => item.id === content.id) || content;
-    console.log('[Repository] Opening detail view with fresh content:', {
-      id: freshContent.id,
-      meta_title: freshContent.meta_title,
-      meta_description: freshContent.meta_description,
-      hasFreshData: freshContent !== content
-    });
     setSelectedContent(freshContent);
     setDetailViewOpen(true);
   };
@@ -94,7 +76,7 @@ const Repository = () => {
       transition={{ duration: 0.8 }}
     >
       <Helmet>
-        <title>Content Repository — Manage & Analyze Your Content</title>
+        <title>Content Repository | Creaiter</title>
         <meta name="description" content="Centralized content repository with advanced filtering, AI analysis, and performance tracking. Manage all your content in one powerful workspace." />
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>

@@ -30,7 +30,7 @@ const Landing = () => {
         <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://creaiter.lovable.app/og-image.png" />
-        <link rel="canonical" href="https://creaiter.com" />
+        <link rel="canonical" href="https://creaiter.lovable.app" />
       </Helmet>
 
       <div className="min-h-screen relative overflow-hidden">
