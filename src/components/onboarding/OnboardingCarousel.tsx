@@ -119,7 +119,7 @@ const getStepConfigs = (): StepConfig[] => [
     benefits: ['WordPress & Wix', 'GA4 & GSC', 'Multi-AI support', 'Slack alerts'],
     illustration: <IntegrationsIllustration />,
     icon: <Puzzle className="w-7 h-7" />,
-    route: '/settings',
+    route: '/ai-settings',
     actionLabel: 'Configure Integrations',
     gradient: 'from-indigo-500 via-purple-500 to-indigo-500',
   },

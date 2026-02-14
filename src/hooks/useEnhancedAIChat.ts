@@ -119,11 +119,11 @@ export const useEnhancedAIChat = () => {
     switch (action) {
       case 'navigate_to_settings':
         console.log('Navigating to settings...', data);
-        window.location.href = '/settings';
+        window.location.href = '/ai-settings';
         break;
       case 'open_settings':
         console.log('Opening settings...');
-        window.location.href = '/settings';
+        window.location.href = '/ai-settings';
         break;
       case 'optimize-content-gaps':
         // Handle content gap optimization

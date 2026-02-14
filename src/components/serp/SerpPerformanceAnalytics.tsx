@@ -120,7 +120,7 @@ export const SerpPerformanceAnalytics = () => {
         case 'no-api-keys':
           return {
             label: 'Configure API Keys',
-            onClick: () => window.location.href = '/settings/api-keys'
+            onClick: () => window.location.href = '/ai-settings'
           };
         case 'api-error':
         case 'database-error':
