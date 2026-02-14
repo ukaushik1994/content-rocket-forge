@@ -38,9 +38,9 @@ interface StepConfig {
 
 const getStepConfigs = (): StepConfig[] => [
   {
-    title: 'Welcome to CreAiter',
+    title: 'Welcome to Creaiter',
     subtitle: 'The Self-Learning Content Engine',
-    description: 'CreAiter is an AI-powered content platform that learns from your results. Every piece of content you create makes the system smarter, delivering increasingly personalized recommendations.',
+    description: 'Creaiter is an AI-powered content platform that learns from your results. Every piece of content you create makes the system smarter, delivering increasingly personalized recommendations.',
     benefits: ['AI that learns your style', 'Data-driven insights', 'End-to-end workflow', 'Continuous optimization'],
     illustration: <WelcomeIllustration />,
     icon: <SparklesIcon className="w-7 h-7" />,

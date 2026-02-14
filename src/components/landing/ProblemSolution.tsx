@@ -52,7 +52,7 @@ export const ProblemSolution = () => {
             transition={{ delay: 0.2 }}
             className="text-xl text-muted-foreground max-w-2xl mx-auto"
           >
-            Content creation shouldn't feel like managing a startup. CreAiter brings everything into one intelligent system that learns from your results.
+            Content creation shouldn't feel like managing a startup. Creaiter brings everything into one intelligent system that learns from your results.
           </motion.p>
         </div>
 
@@ -118,7 +118,7 @@ export const ProblemSolution = () => {
                     <Check className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">The CreAiter Way</h3>
+                    <h3 className="text-2xl font-bold">The Creaiter Way</h3>
                     <p className="text-sm text-primary">All-in-one content OS</p>
                   </div>
                 </div>

@@ -18,10 +18,10 @@ const Landing = () => {
   return (
     <>
       <Helmet>
-        <title>CreAiter - The Self-Learning Content Engine That Gets Smarter With Every Post</title>
-        <meta name="description" content="Not just AI content creation. CreAiter learns from YOUR results, adapts to YOUR audience, and creates content that gets exponentially better over time. Be among the first creators with personalized AI engines." />
+        <title>Creaiter - The Self-Learning Content Engine That Gets Smarter With Every Post</title>
+        <meta name="description" content="Not just AI content creation. Creaiter learns from YOUR results, adapts to YOUR audience, and creates content that gets exponentially better over time. Be among the first creators with personalized AI engines." />
         <meta name="keywords" content="AI content creation, SERP data, keyword research, content strategy, self-learning AI, business content" />
-        <meta property="og:title" content="CreAiter - AI-Powered Content Creation Platform" />
+        <meta property="og:title" content="Creaiter - AI-Powered Content Creation Platform" />
         <meta property="og:description" content="The self-learning content engine that gets smarter with every post. AI-powered content creation with team collaboration and enterprise-grade features." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://creaiter.lovable.app" />

@@ -64,7 +64,7 @@ export const GrandTourProvider = ({ children }: { children: ReactNode }) => {
   const steps: TourStep[] = [
     {
       id: 'grand-welcome',
-      title: '🚀 Welcome to CreAiter',
+      title: '🚀 Welcome to Creaiter',
       phase: 'welcome',
       gradient: 'from-neon-purple via-neon-blue to-neon-pink',
       particles: 'cosmic',

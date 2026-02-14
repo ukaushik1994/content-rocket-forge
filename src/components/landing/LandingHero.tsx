@@ -47,7 +47,7 @@ export const LandingHero = () => {
     {
       headline: "AI That Understands",
       highlightedText: "YOUR Audience",
-      description: "Not generic AI. CreAiter learns what works for",
+      description: "Not generic AI. Creaiter learns what works for",
       highlightedPhrases: [
         { text: "YOUR content", color: "text-primary" },
         { text: "YOUR audience", color: "text-neon-blue" },

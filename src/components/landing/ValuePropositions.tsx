@@ -79,7 +79,7 @@ export const ValuePropositions = () => {
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Whether you're a solo creator, growing influencer, or enterprise team, 
-            CreAiter adapts to your needs and scales with your ambitions.
+            Creaiter adapts to your needs and scales with your ambitions.
           </p>
         </motion.div>
 

@@ -100,7 +100,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
             }} transition={{
               duration: 0.5,
               delay: 0.4
-            }}>CreAiter</motion.span>
+            }}>Creaiter</motion.span>
             </motion.div>
           </h1>
           

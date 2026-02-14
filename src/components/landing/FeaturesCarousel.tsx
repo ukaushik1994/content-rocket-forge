@@ -34,7 +34,7 @@ export const FeaturesCarousel = () => {
       icon: Brain,
       illustration: BrainNetworkIllustration,
       benefits: ['Learns from YOUR performance', 'Adapts to YOUR audience', 'Improves quality over time', 'Personalized strategy'],
-      preview: 'Every piece of content you publish teaches the AI what works for YOUR audience. Your 100th post will be exponentially better than your 1st because CreAiter learns from every result.',
+      preview: 'Every piece of content you publish teaches the AI what works for YOUR audience. Your 100th post will be exponentially better than your 1st because Creaiter learns from every result.',
       gradient: 'from-primary to-neon-pink',
       badge: '⭐ CORE DIFFERENTIATOR'
     },
@@ -56,7 +56,7 @@ export const FeaturesCarousel = () => {
       icon: Search,
       illustration: SearchResultsIllustration,
       benefits: ['Live SERP analysis', 'Content gap detection', 'Question mining (PAA)', 'Keyword intelligence'],
-      preview: 'Know exactly what will rank before you write. CreAiter analyzes live search results to find gaps, questions, and opportunities that your competitors miss.',
+      preview: 'Know exactly what will rank before you write. Creaiter analyzes live search results to find gaps, questions, and opportunities that your competitors miss.',
       gradient: 'from-neon-pink to-neon-orange',
       badge: null
     },
@@ -105,7 +105,7 @@ export const FeaturesCarousel = () => {
             <span className="bg-gradient-to-r from-primary to-neon-blue bg-clip-text text-transparent"> That Learns From Your Results</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Not just another AI tool. CreAiter creates a personalized content strategy that gets smarter every time you publish.
+            Not just another AI tool. Creaiter creates a personalized content strategy that gets smarter every time you publish.
           </p>
         </div>
 

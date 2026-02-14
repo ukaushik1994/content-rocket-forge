@@ -24,7 +24,7 @@ export const HowItWorks = () => {
     {
       number: '02',
       title: 'Publish & Track',
-      description: 'Publish to your site and CreAiter automatically tracks performance',
+      description: 'Publish to your site and Creaiter automatically tracks performance',
       icon: Globe,
       features: ['One-click publishing', 'Real-time analytics', 'Traffic monitoring', 'Engagement tracking'],
       color: 'from-neon-blue to-neon-pink'
