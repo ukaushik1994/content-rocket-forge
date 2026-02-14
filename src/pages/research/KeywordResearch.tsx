@@ -169,7 +169,7 @@ const KeywordResearch = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Helmet>
-        <title>Keyword Research | AI Content Platform</title>
+        <title>Keyword Research | Creaiter</title>
       </Helmet>
       
       <Navbar />

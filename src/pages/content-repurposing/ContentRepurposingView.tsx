@@ -95,7 +95,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   return (
     <div className="min-h-screen flex flex-col bg-black">
       <Helmet>
-        <title>Content Repurposing | Content Platform</title>
+        <title>Content Repurposing | Creaiter</title>
       </Helmet>
       
       <Navbar />

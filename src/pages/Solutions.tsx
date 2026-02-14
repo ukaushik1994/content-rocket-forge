@@ -351,7 +351,7 @@ const Solutions = () => {
   
   return <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
       <Helmet>
-        <title>Business Solutions | CreAiter</title>
+        <title>Business Solutions | Creaiter</title>
         <meta name="description" content="Manage your business solutions for content creation" />
       </Helmet>
       

@@ -40,7 +40,7 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
   return (
     <div className="min-h-screen flex flex-col bg-black relative overflow-hidden">
       <Helmet>
-        <title>Content Repurposing | Content Platform</title>
+        <title>Content Repurposing | Creaiter</title>
       </Helmet>
       
       {/* Background Effects */}

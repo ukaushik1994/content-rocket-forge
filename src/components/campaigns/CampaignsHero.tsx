@@ -234,6 +234,36 @@ export const CampaignsHero = React.memo(({
             </div>
           </motion.div>
 
+          {/* Mode Toggle */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0, duration: 0.4 }}
+            className="mt-6 flex justify-center"
+          >
+            <div className="inline-flex items-center gap-1 p-1 bg-background/60 backdrop-blur-xl rounded-full border border-border/50">
+              <button
+                onClick={() => setMode('conversation')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  mode === 'conversation' 
+                    ? 'bg-primary text-primary-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Conversation
+              </button>
+              <button
+                onClick={() => setMode('express')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  mode === 'express' 
+                    ? 'bg-primary text-primary-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Express Mode
+              </button>
+            </div>
+          </motion.div>
 
           {/* Campaign Idea Input - Conversation Mode */}
           {mode === 'conversation' && <motion.div initial={{

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Github, Twitter, Linkedin, Mail, Globe, ArrowUp } from 'lucide-react';
+import { Heart, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 export const DashboardFooter: React.FC = () => {
   const scrollToTop = () => {
@@ -31,69 +31,6 @@ export const DashboardFooter: React.FC = () => {
       }
     }
   };
-  const socialLinks = [{
-    icon: Github,
-    href: "#",
-    label: "GitHub"
-  }, {
-    icon: Twitter,
-    href: "#",
-    label: "Twitter"
-  }, {
-    icon: Linkedin,
-    href: "#",
-    label: "LinkedIn"
-  }, {
-    icon: Mail,
-    href: "#",
-    label: "Email"
-  }];
-  const footerLinks = [{
-    title: "Product",
-    links: [{
-      name: "Content Builder",
-      href: "/content-builder"
-    }, {
-      name: "Glossary Builder",
-      href: "/glossary-builder"
-    }, {
-      name: "Analytics",
-      href: "/analytics"
-    }, {
-      name: "API",
-      href: "/api"
-    }]
-  }, {
-    title: "Resources",
-    links: [{
-      name: "Documentation",
-      href: "/docs"
-    }, {
-      name: "Tutorials",
-      href: "/tutorials"
-    }, {
-      name: "Blog",
-      href: "/blog"
-    }, {
-      name: "Community",
-      href: "/community"
-    }]
-  }, {
-    title: "Company",
-    links: [{
-      name: "About",
-      href: "/about"
-    }, {
-      name: "Careers",
-      href: "/careers"
-    }, {
-      name: "Contact",
-      href: "/contact"
-    }, {
-      name: "Privacy",
-      href: "/privacy"
-    }]
-  }];
   return <motion.footer className="relative mt-32 bg-gradient-to-b from-transparent to-slate-950/50 border-t border-white/10" initial="hidden" whileInView="visible" viewport={{
     once: true
   }} variants={footerVariants}>

@@ -136,7 +136,7 @@ export default function GlossaryBuilder() {
     <GlossaryBuilderProvider>
       <div className="min-h-screen flex flex-col bg-background">
         <Helmet>
-          <title>Glossary Builder | CreAiter</title>
+          <title>Glossary Builder | Creaiter</title>
         </Helmet>
         
         <Navbar />
