@@ -68,9 +68,9 @@ export const LandingHero = () => {
   const currentMessage = heroMessages[currentMessageIndex];
 
   const stats = [
-    { icon: Users, value: '10k+', label: 'Creators' },
+    { icon: Users, value: 'Early Access', label: 'Now Open' },
     { icon: Star, value: '4.9', label: 'Rating' },
-    { icon: Zap, value: '100M+', label: 'Words Generated' },
+    { icon: Zap, value: 'AI-Powered', label: 'Content Engine' },
   ];
 
   return (

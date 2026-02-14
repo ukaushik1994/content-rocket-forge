@@ -4,76 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/button';
 import { CreAiterLogo } from '@/components/brand/CreAiterLogo';
-import { Twitter, Github, Linkedin, Mail, ArrowRight, Sparkles, Heart } from 'lucide-react';
+import { Mail, ArrowRight, Sparkles, Heart } from 'lucide-react';
 export const LandingFooter = () => {
   const navigate = useNavigate();
-  const footerLinks = {
-    product: [{
-      name: 'Features',
-      href: '#features'
-    }, {
-      name: 'Pricing',
-      href: '#pricing'
-    }, {
-      name: 'API',
-      href: '#api'
-    }, {
-      name: 'Integrations',
-      href: '#integrations'
-    }],
-    company: [{
-      name: 'About',
-      href: '#about'
-    }, {
-      name: 'Blog',
-      href: '#blog'
-    }, {
-      name: 'Careers',
-      href: '#careers'
-    }, {
-      name: 'Press',
-      href: '#press'
-    }],
-    resources: [{
-      name: 'Documentation',
-      href: '#docs'
-    }, {
-      name: 'Help Center',
-      href: '#help'
-    }, {
-      name: 'Community',
-      href: '#community'
-    }, {
-      name: 'Status',
-      href: '#status'
-    }],
-    legal: [{
-      name: 'Privacy',
-      href: '#privacy'
-    }, {
-      name: 'Terms',
-      href: '#terms'
-    }, {
-      name: 'Security',
-      href: '#security'
-    }, {
-      name: 'Cookies',
-      href: '#cookies'
-    }]
-  };
   const socialLinks = [{
-    icon: Twitter,
-    href: 'https://twitter.com/creaiter',
-    label: 'Twitter'
-  }, {
-    icon: Github,
-    href: 'https://github.com/creaiter',
-    label: 'GitHub'
-  }, {
-    icon: Linkedin,
-    href: 'https://linkedin.com/company/creaiter',
-    label: 'LinkedIn'
-  }, {
     icon: Mail,
     href: 'mailto:hello@creaiter.com',
     label: 'Email'
@@ -81,10 +15,8 @@ export const LandingFooter = () => {
   return <footer className="relative py-20 px-4 border-t border-border/50">
       <Container>
         {/* Main Footer Content */}
-        <div className="grid lg:grid-cols-6 gap-12 mb-12">
-          {/* Brand Section */}
-          <div className="lg:col-span-2">
-            <motion.div initial={{
+        <div className="max-w-2xl mx-auto text-center mb-12">
+          <motion.div initial={{
             opacity: 0,
             y: 20
           }} whileInView={{
@@ -95,43 +27,18 @@ export const LandingFooter = () => {
           }} viewport={{
             once: true
           }}>
-              <CreAiterLogo showText className="mb-6" />
+              <CreAiterLogo showText className="mb-6 mx-auto" />
               <p className="text-muted-foreground mb-6 leading-relaxed">
                 Empowering creators worldwide with self-learning AI that gets smarter with every post. 
                 Transform your content strategy with an engine that learns from YOUR results and YOUR audience.
               </p>
               
-              {/* CTA */}
               <Button onClick={() => navigate('/auth?mode=signup')} className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 neon-glow">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Start Creating
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>
-          </div>
-
-          {/* Links Sections */}
-          {Object.entries(footerLinks).map(([category, links], index) => <motion.div key={category} initial={{
-          opacity: 0,
-          y: 20
-        }} whileInView={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.8,
-          delay: index * 0.1
-        }} viewport={{
-          once: true
-        }}>
-              <h3 className="font-semibold mb-4 capitalize">{category}</h3>
-              <ul className="space-y-3">
-                {links.map(link => <li key={link.name}>
-                    <a href={link.href} className="text-muted-foreground hover:text-primary transition-colors duration-200">
-                      {link.name}
-                    </a>
-                  </li>)}
-              </ul>
-            </motion.div>)}
         </div>
 
         {/* Newsletter Signup */}
@@ -148,7 +55,7 @@ export const LandingFooter = () => {
         once: true
       }} className="glass-card p-8 rounded-2xl mb-12">
           <div className="text-center max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">Join 10,000+ Creators with Self-Learning AI</h3>
+            <h3 className="text-2xl font-bold mb-4">Be Among the First Creators with Self-Learning AI</h3>
             <p className="text-muted-foreground mb-6">
               Get exclusive insights on how to train your AI engine for maximum content performance. 
               Tips on leveraging the learning loop to 10x your results.

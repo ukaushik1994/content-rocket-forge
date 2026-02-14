@@ -306,7 +306,7 @@ export const InvestorSection = () => {
                   <Button
                     size="lg"
                     className="bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 text-lg px-8 py-6 shadow-xl hover:shadow-neon-strong"
-                    onClick={() => window.location.href = 'mailto:investors@creaiter.com'}
+                    onClick={() => window.location.href = 'mailto:hello@creaiter.com'}
                   >
                     Schedule Discussion
                     <ArrowRight className="ml-2 h-5 w-5" />

@@ -193,7 +193,7 @@ export const ContentAnalyticsTab = () => {
                 variant="ghost"
                 size="sm"
                 className="text-blue-200/70"
-                onClick={() => window.open('https://docs.lovable.dev/analytics', '_blank')}
+                onClick={() => window.open('https://creaiter.lovable.app/analytics', '_blank')}
               >
                 <BookOpen className="h-4 w-4 mr-2" />
                 Learn More
