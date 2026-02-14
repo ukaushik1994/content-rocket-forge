@@ -197,7 +197,7 @@ const AnswerThePeople = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white relative overflow-hidden">
       <Helmet>
-        <title>Answer The People | Research Platform</title>
+        <title>Answer The People | Creaiter</title>
       </Helmet>
       
       <Navbar />

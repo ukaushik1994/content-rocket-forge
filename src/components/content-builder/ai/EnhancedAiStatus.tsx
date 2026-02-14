@@ -121,14 +121,23 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
               Configure OpenAI, Anthropic, or other AI providers for content generation
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => openSettings('api')}
-          >
-            <Settings className="h-4 w-4 mr-1" />
-            Configure
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openSettings('api')}
+            >
+              <Settings className="h-4 w-4 mr-1" />
+              Configure
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => window.location.href = '/ai-settings'}
+            >
+              AI Settings
+            </Button>
+          </div>
         </div>
 
         {/* Content Generation Capability Indicator */}

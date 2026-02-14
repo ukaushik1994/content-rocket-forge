@@ -177,13 +177,6 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
               className="flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 hover:bg-background/80 transition-all duration-300"
               whileHover={{ scale: 1.05 }}
             >
-              <TrendingUp className="h-4 w-4 text-purple-400" />
-              <span className="text-muted-foreground">Production Pipeline</span>
-            </motion.div>
-            <motion.div 
-              className="flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-xl rounded-full border border-border/50 hover:bg-background/80 transition-all duration-300"
-              whileHover={{ scale: 1.05 }}
-            >
               <BarChart3 className="h-4 w-4 text-green-400" />
               <span className="text-muted-foreground">Editorial Calendar</span>
             </motion.div>
