@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useContentBuilder, ContentBuilderProvider } from '@/contexts/content-builder/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 'lucide-react';
@@ -172,13 +172,15 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
         });
       }
 
-      // Show breadcrumb info for source navigation
+      // Show breadcrumb info for source navigation (once only)
       if (sourceInfo?.type === 'proposal') {
         toast.success('Content builder loaded with proposal data', {
+          id: 'source-info-toast',
           description: 'Title, keywords, and instructions have been pre-populated from your proposal.'
         });
       } else if (sourceInfo?.type === 'calendar') {
         toast.success('Content builder loaded with calendar item data', {
+          id: 'source-info-toast',
           description: 'Basic information has been pre-populated from your calendar item.'
         });
       }
@@ -231,8 +233,6 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
 
   // Handle next step navigation
   const handleNextStep = () => {
-    console.log("Attempting to navigate to next step from", currentStepId);
-    console.log("Current step complete:", currentStepComplete);
     if (hasUnsavedChanges && currentStepId === 3) {
       // Writing step (now id 3)
       setPendingNavigation(activeStep + 1);
@@ -285,16 +285,11 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
     }
   };
 
-  // Debug step completion status
-  useEffect(() => {
-    console.log("Current step:", steps[activeStep]);
-    console.log("Steps status:", steps.map(s => `${s.id}: ${s.name} - Completed: ${s.completed}, Analyzed: ${s.analyzed}`));
-  }, [activeStep, steps]);
-
-  // Display API key status warning when needed
+  // Display API key status warning when needed (with dedup IDs)
   useEffect(() => {
     if (apiKeyStatus === 'not-found' && (activeStep === 0 || currentStepId === 2)) {
       toast.warning("No SERP API key found. Please add your API key in Settings to see real data.", {
+        id: 'serp-api-warning',
         duration: 8000,
         action: {
           label: "Go to Settings",
@@ -305,6 +300,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
       });
     } else if (apiKeyStatus === 'error' && (activeStep === 0 || currentStepId === 2)) {
       toast.error("Error checking for SERP API key. You'll see mock data instead.", {
+        id: 'serp-api-error',
         duration: 8000
       });
     }

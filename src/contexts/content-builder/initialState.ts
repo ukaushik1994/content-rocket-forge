@@ -75,5 +75,8 @@ export const initialState: ContentBuilderState = {
 
   // Word Count Management
   aiEstimatedWordCount: null,
-  wordCountMode: 'ai'
+  wordCountMode: 'ai',
+
+  // Content Brief
+  contentBrief: null
 };

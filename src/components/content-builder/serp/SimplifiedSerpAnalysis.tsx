@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -134,7 +134,7 @@ export const SimplifiedSerpAnalysis: React.FC<SimplifiedSerpAnalysisProps> = ({
           });
         }
         
-        toast.success('SERP data loaded from proposal');
+        toast.success('SERP data loaded from proposal', { id: 'serp-proposal-loaded' });
       } else {
         console.log('🔍 Fetching fresh SERP data');
         setIsLoading(true);

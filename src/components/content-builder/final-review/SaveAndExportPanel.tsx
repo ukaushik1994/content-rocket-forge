@@ -59,7 +59,7 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
         }).limit(1).single();
         if (contentItem) {
           setSavedContentId(contentItem.id);
-          setShowUrlDialog(true);
+          // Don't show URL dialog on draft save - only on publish
         }
       }
     } catch (error) {
@@ -68,11 +68,7 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
     }
   };
   const handlePublish = async () => {
-    if (completionPercentage < 60 && !confirm('Your content is not fully optimized. Are you sure you want to publish?')) {
-      return;
-    }
-    
-    // Show confirmation dialog
+    // Show confirmation dialog (it will display a warning if score is low)
     setShowPublishDialog(true);
   };
 

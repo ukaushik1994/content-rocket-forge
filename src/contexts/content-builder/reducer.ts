@@ -335,6 +335,11 @@ export const contentBuilderReducer = (
       };
     }
 
+    case 'SET_CONTENT_BRIEF':
+      return {
+        ...state,
+        contentBrief: action.payload
+      };
       
     default:
       return state;

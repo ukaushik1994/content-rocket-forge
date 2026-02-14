@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { toast } from 'sonner';
 
@@ -34,9 +34,11 @@ export const useFinalReview = () => {
   // Debug logging
   useDebugLogging(metaTitle, contentTitle);
   
-  // Check if step can be completed
+  // Check if step can be completed - only notify once
+  const hasNotifiedOptimized = useRef(false);
   useEffect(() => {
-    if (checkStepCompletion()) {
+    if (checkStepCompletion() && !hasNotifiedOptimized.current) {
+      hasNotifiedOptimized.current = true;
       toast.success("Content fully optimized! You can proceed to the next step.", {
         id: "content-optimized",
       });

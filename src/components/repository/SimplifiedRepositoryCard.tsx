@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,13 +11,37 @@ import {
   Edit, 
   Eye,
   Image as ImageIcon,
-  Film
+  Film,
+  Pencil
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { extractTitleFromContent } from '@/utils/content/extractTitle';
 import { VideoComingSoonBadge } from '@/components/content/VideoPlaceholder';
+import { useNavigate } from 'react-router-dom';
+
+// AI preamble patterns for display-level title sanitization
+const AI_PREAMBLE_PATTERNS = [
+  /^here\s+are/i, /^sure[,!]/i, /^i['']ll/i, /^let\s+me/i,
+  /^certainly/i, /^of\s+course/i, /^great[,!]/i, /^absolutely/i,
+  /^\d+\s+(unique|creative|compelling)/i,
+];
+
+function getDisplayTitle(content: ContentItemType): string {
+  const extracted = extractTitleFromContent(content.content);
+  if (extracted && extracted.length <= 120) return extracted;
+  
+  const metaTitle = content.metadata?.metaTitle;
+  if (metaTitle && typeof metaTitle === 'string' && metaTitle.length <= 120) return metaTitle;
+  
+  const title = content.title;
+  if (title && !AI_PREAMBLE_PATTERNS.some(p => p.test(title)) && title.length <= 120) return title;
+  
+  // Fallback: truncate title
+  if (title) return title.substring(0, 100) + '...';
+  return 'Untitled Content';
+}
 
 interface SimplifiedRepositoryCardProps {
   content: ContentItemType;
@@ -28,17 +52,7 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
   content, 
   onView 
 }) => {
-  // Debug logging for title extraction
-  useEffect(() => {
-    const extracted = extractTitleFromContent(content.content);
-    console.log('[RepositoryCard] Title extraction debug:', {
-      contentId: content.id,
-      extractedTitle: extracted,
-      fallbackTitle: content.title,
-      metaTitle: content.metadata?.metaTitle,
-      contentPreview: content.content?.substring(0, 100) || 'NO CONTENT'
-    });
-  }, [content]);
+  const navigate = useNavigate();
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
@@ -202,7 +216,7 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
             <h3 className="text-lg font-semibold text-foreground group-hover:text-primary 
               transition-all duration-300 line-clamp-2 leading-tight
               group-hover:drop-shadow-[0_0_8px_rgba(155,135,245,0.6)]">
-              {extractTitleFromContent(content.content) || content.metadata?.metaTitle || content.title}
+              {getDisplayTitle(content)}
             </h3>
             
             {content.metadata?.description && (
@@ -219,20 +233,45 @@ export const SimplifiedRepositoryCard: React.FC<SimplifiedRepositoryCardProps> =
               Updated {formatDistanceToNow(new Date(content.updated_at), { addSuffix: true })}
             </span>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onView}
-              className="glass-card border-primary/30 text-primary-foreground hover:border-primary/60 
-                hover:text-primary hover:shadow-[0_0_20px_rgba(155,135,245,0.4)]
-                transition-all duration-300 group-hover:scale-105 backdrop-blur-sm
-                hover:bg-primary/10 relative overflow-hidden
-                before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary/20 before:to-transparent
-                before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300"
-            >
-              <Eye className="h-4 w-4 mr-2 relative z-10" />
-              <span className="relative z-10">View</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  sessionStorage.setItem('contentBuilderPayload', JSON.stringify({
+                    content: content.content,
+                    mainKeyword: (content.metadata as any)?.mainKeyword || '',
+                    selectedKeywords: (content.metadata as any)?.secondaryKeywords || [],
+                    outline: (content.metadata as any)?.outline || [],
+                    serpSelections: (content.metadata as any)?.serpSelections || [],
+                    contentTitle: content.title,
+                    metaTitle: content.metadata?.metaTitle || '',
+                    metaDescription: content.metadata?.metaDescription || '',
+                    contentType: (content.metadata as any)?.contentType || 'blog',
+                  }));
+                  navigate('/content-builder');
+                }}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Pencil className="h-4 w-4 mr-1" />
+                <span className="text-xs">Edit</span>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onView}
+                className="glass-card border-primary/30 text-primary-foreground hover:border-primary/60 
+                  hover:text-primary hover:shadow-[0_0_20px_rgba(155,135,245,0.4)]
+                  transition-all duration-300 group-hover:scale-105 backdrop-blur-sm
+                  hover:bg-primary/10 relative overflow-hidden
+                  before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary/20 before:to-transparent
+                  before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300"
+              >
+                <Eye className="h-4 w-4 mr-2 relative z-10" />
+                <span className="relative z-10">View</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

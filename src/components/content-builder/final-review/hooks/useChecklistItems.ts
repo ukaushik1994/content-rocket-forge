@@ -1,6 +1,6 @@
 
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useContentAnalysis } from '@/hooks/final-review/useContentAnalysis';
 import { useContentCompliance } from '@/hooks/useContentCompliance';
 import { generateAIChecklistItems } from '@/services/aiContentQualityService';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
  * Custom hook to generate and manage the checklist items for the final review
  */
 export const useChecklistItems = (allDataReady: boolean = false) => {
-  const { state } = useContentBuilder();
+  const { state, dispatch } = useContentBuilder();
   const { 
     mainKeyword,
     metaTitle, 
@@ -184,41 +184,38 @@ export const useChecklistItems = (allDataReady: boolean = false) => {
     aiQualityResult
   ]);
   
+  // Guard to prevent running analysis more than once
+  const hasRunAnalysis = useRef(false);
+
   // Comprehensive analysis function
   const runFullAnalysis = useCallback(async () => {
-    console.log('[useChecklistItems] Running comprehensive analysis');
+    if (hasRunAnalysis.current) return;
     
     if (!state.content || !mainKeyword) {
-      toast.error('Content and main keyword are required for analysis');
       return;
     }
 
+    hasRunAnalysis.current = true;
+
     try {
-      toast.info('Running comprehensive content analysis...');
-      
-      // Use existing solution metrics from state (already analyzed in prerequisite step)
+      // Use existing solution metrics from state
       if (state.selectedSolution && state.solutionIntegrationMetrics) {
         setLocalSolutionMetrics(state.solutionIntegrationMetrics);
-        console.log('[useChecklistItems] Using existing solution metrics:', state.solutionIntegrationMetrics);
       }
       
       // Run compliance analysis (includes AI analysis)
-      await runComplianceAnalysis();
+      try {
+        await runComplianceAnalysis();
+      } catch (complianceError) {
+        console.warn('[useChecklistItems] Compliance analysis failed silently:', complianceError);
+      }
       
       // Trigger checklist recalculation
       setRefreshTrigger(prev => prev + 1);
-      
-      // Show success message
-      if (aiQualityResult) {
-        toast.success(`Analysis complete! AI Grade: ${aiQualityResult.overall.grade}`);
-      } else {
-        toast.success('Content analysis complete!');
-      }
     } catch (error) {
-      console.error('[useChecklistItems] Full analysis failed:', error);
-      toast.error('Analysis failed. Please try again.');
+      console.warn('[useChecklistItems] Full analysis failed:', error);
     }
-  }, [runComplianceAnalysis, state.content, state.selectedSolution, mainKeyword, aiQualityResult]);
+  }, [runComplianceAnalysis, state.content, state.selectedSolution, mainKeyword]);
 
   // Function to trigger a refresh of checklist items
   const refreshChecklist = useCallback(async () => {
@@ -227,8 +224,7 @@ export const useChecklistItems = (allDataReady: boolean = false) => {
 
   // Only run when parent signals all prerequisites are ready
   useEffect(() => {
-    if (allDataReady && state.content && mainKeyword) {
-      console.log('[useChecklistItems] All prerequisites ready, running checklist analysis...');
+    if (allDataReady && state.content && mainKeyword && !hasRunAnalysis.current) {
       runFullAnalysis();
     }
   }, [allDataReady, state.content, mainKeyword, runFullAnalysis]);
@@ -240,7 +236,14 @@ export const useChecklistItems = (allDataReady: boolean = false) => {
 
   const passedChecks = checklistItems.filter(check => check.passed).length;
   const totalChecks = checklistItems.length;
-  const completionPercentage = Math.round((passedChecks / totalChecks) * 100);
+  const completionPercentage = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
+
+  // Persist SEO score to state so it flows through to save
+  useEffect(() => {
+    if (completionPercentage > 0 && completionPercentage !== state.seoScore) {
+      dispatch({ type: 'SET_SEO_SCORE', payload: completionPercentage });
+    }
+  }, [completionPercentage, dispatch, state.seoScore]);
 
   return {
     checklistItems,
