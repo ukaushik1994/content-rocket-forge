@@ -1,144 +1,177 @@
 
-# Comprehensive End-to-End Audit & Fix Plan
 
-## Status of Previously Approved Fixes
-
-All critical navigation and branding fixes from the previous plan have been successfully implemented:
-- `/settings` routes corrected to `/ai-settings` across all components
-- `/research` routes corrected to `/research/research-hub`
-- "Fluxel", "ContentRocketForge", "Content Pro", "SEO Platform" all replaced with "Creaiter"
-- DashboardFooter and LandingFooter now say "Creaiter"
-- AI Chat streaming implemented with SSE + blocking fallback
-- Campaigns AI pre-check banner added
-- Setup Checklist created and integrated into dashboard
-- Service indicators restored on Strategy page
+# Comprehensive End-to-End Fix Plan
+## Content Builder -> Repository -> Approvals: 18-Issue Resolution
 
 ---
 
-## REMAINING ISSUES: 15 Items Across 3 Modules
+## Overview
+
+This plan merges the full audit findings with the desired user workflow: keyword input, SERP exploration (auto-open), SERP item selection, solution/content type selection, outline generation, content writing, optimize/review, save to repository, and verify in approvals. Every issue is mapped to exact file locations with specific fixes.
 
 ---
 
-### PHASE 1: Brand Inconsistency Sweep (8 page titles still wrong)
+## Phase 1: Critical Stability (Issues 1, 2, 14, 15)
+**Goal:** Stop toast spam, break SEO check loops, fix save/publish dialogs
 
-These pages use old/generic brand names in their `<title>` tags instead of "Creaiter":
+### Issue 1: Toast Notification Spam
+**Files to modify:**
+- `src/hooks/useFinalReview.ts` (line 40): Add ref guard so "Content fully optimized!" toast only fires once per session, not on every `metaTitle`/`metaDescription`/`documentStructure` change
+- `src/components/content-builder/final-review/hooks/useChecklistItems.ts` (line 197): Remove `toast.info('Running comprehensive content analysis...')` entirely -- this is an internal process
+- `src/components/content-builder/serp/SimplifiedSerpAnalysis.tsx` (line 137): Add `hasNotified` ref guard to "SERP data loaded from proposal" toast
+- `src/components/content-builder/ContentBuilder.tsx` (lines 177-183): Add `hasNotified` ref guard to source info toasts (proposal/calendar)
+- `src/components/content-builder/ContentBuilder.tsx` (lines 296-311): Add `id: 'serp-api-warning'` to API key warning toasts to prevent duplicates on step change
+- `src/components/content-builder/steps/writing/useWritingStep.ts` (lines 172-175): Add `id: 'word-count-mode'` to word count mode change toasts
 
-| File | Current Title | Fix To |
-|------|--------------|--------|
-| `src/pages/content-repurposing/ContentSelectionView.tsx` line 43 | "Content Repurposing \| Content Platform" | "Content Repurposing \| Creaiter" |
-| `src/pages/content-repurposing/ContentRepurposingView.tsx` line 98 | "Content Repurposing \| Content Platform" | "Content Repurposing \| Creaiter" |
-| `src/pages/research/AnswerThePeople.tsx` line 200 | "Answer The People \| Research Platform" | "Answer The People \| Creaiter" |
-| `src/pages/research/TopicClusters.tsx` line 202 | "Topic Clusters \| AI Content Platform" | "Topic Clusters \| Creaiter" |
-| `src/pages/research/KeywordResearch.tsx` line 172 | "Keyword Research \| AI Content Platform" | "Keyword Research \| Creaiter" |
-| `src/pages/NotificationDemo.tsx` line 10 | "Notification System Demo - Lovable" | "Notification System Demo \| Creaiter" |
-| `src/pages/Solutions.tsx` line 354 | "Business Solutions \| CreAiter" | "Business Solutions \| Creaiter" (capital A fix) |
-| `src/pages/GlossaryBuilder.tsx` line 139 | "Glossary Builder \| CreAiter" | "Glossary Builder \| Creaiter" (capital A fix) |
+### Issue 2: SEO Check Circular Dependency Loop
+**Files to modify:**
+- `src/components/content-builder/final-review/hooks/useChecklistItems.ts`:
+  - Add `hasRunRef = useRef(false)` guard to `runFullAnalysis` (line 188) so it only runs once
+  - Remove `aiQualityResult` from `runFullAnalysis` useCallback dependency array (line 221) -- it creates a circular re-trigger since the function sets this value
+  - Wrap `runComplianceAnalysis()` call (line 206) in try/catch that silently fails instead of showing error toasts
+  - Remove `toast.error('Analysis failed...')` at line 219 -- replace with silent console.warn
 
-**Effort:** Small -- 8 single-line edits
+### Issue 14: Published URL Dialog After Every Save
+**File:** `src/components/content-builder/final-review/SaveAndExportPanel.tsx`
+- Remove `setShowUrlDialog(true)` from `handleSave` function (line 62). The URL dialog should only appear after `handleConfirmPublish` (line 132), not after draft saves.
 
----
-
-### PHASE 2: Campaigns Module -- Express Mode Toggle (Issue #11 from previous plan)
-
-**Problem:** The CampaignsHero has a fully built Express Mode form (lines 334-430) with fields for idea, audience, timeline, and goal. The `mode` state (`'conversation' | 'express'`) exists at line 32. However, there is NO UI toggle to switch between modes. The Express Mode form is completely unreachable.
-
-**Fix:** Add a mode toggle between the description text and the input area. Two pills/tabs: "Conversation" and "Express Mode". When Express is selected, show the structured form. When Conversation is selected, show the current chat input.
-
-**File:** `src/components/campaigns/CampaignsHero.tsx` -- Add toggle UI around line 237 (before the conversation input section)
-
-**Effort:** Small -- add ~15 lines of toggle UI
-
----
-
-### PHASE 3: Content Builder -- SERP "Setup Required" Missing Settings Link
-
-**Problem:** The `EnhancedSerpStatus` component (`src/components/content-builder/serp/EnhancedSerpStatus.tsx`) shows "Setup Required" when SERP API keys are missing but has no clickable link to the settings page. The text says "Configure your SERP API keys in Settings" but "Settings" is plain text, not a link.
-
-**Fix:** Add a "Configure" button or make "Settings" a clickable link to `/ai-settings` inside the EnhancedSerpStatus component.
-
-**File:** `src/components/content-builder/serp/EnhancedSerpStatus.tsx` -- Add navigation link near line 228-230
-
-**Effort:** Small -- add a Button or Link component
+### Issue 15: window.confirm() Browser Dialog
+**File:** `src/components/content-builder/final-review/SaveAndExportPanel.tsx`
+- Replace `confirm('Your content is not fully optimized...')` at line 71 with a state-based approach: set `showPublishDialog(true)` and pass the low-score warning as a prop to the existing `PublishConfirmationDialog` component (already imported at line 10)
 
 ---
 
-### PHASE 4: Content Builder -- AI Status "Setup Required" Missing Link
+## Phase 2: Data Integrity (Issues 4, 5, 6)
+**Goal:** Fix titles, SEO scores, clean debug logs
 
-**Problem:** Same issue in `EnhancedAiStatus.tsx` -- shows "AI Provider Setup Required" (line 119) but no link to `/ai-settings`.
+### Issue 4: Title Sanitization Before Save
+**File:** `src/hooks/final-review/useSaveContent.ts` (line 166)
+- Before setting `title` in `saveParams`, add sanitization logic:
+  - If `state.contentTitle` length > 100 or matches AI preamble patterns (starts with "Here are", "Sure,", "I'll", "Let me"), fall back to `state.metaTitle`
+  - If `metaTitle` also unavailable, use `extractTitleFromContent(state.content)`
+  - Final fallback: `state.mainKeyword`
+  - Truncate to 120 characters max
 
-**Fix:** Add a "Configure" button linking to `/ai-settings`.
+### Issue 5: SEO Score Not Persisting to Database
+**File:** `src/components/content-builder/final-review/hooks/useChecklistItems.ts`
+- After `calculateChecklistItems()` completes and `completionPercentage` is computed, dispatch `SET_SEO_SCORE` with the value. Currently `completionPercentage` is calculated (line 243) but never dispatched to state.
+- Add a `useEffect` that calls `dispatch({ type: 'SET_SEO_SCORE', payload: completionPercentage })` when `completionPercentage` changes and is > 0
 
-**File:** `src/components/content-builder/ai/EnhancedAiStatus.tsx` -- Add navigation link near line 120-121
-
-**Effort:** Small -- add a Button component
-
----
-
-### PHASE 5: Strategy Page -- "Production Pipeline" Badge vs Missing Tab
-
-**Problem:** The ContentStrategyHero shows 3 metric badges: "Active Strategies", "Content Proposals", "Pipeline Items". Below that, 3 feature filter pills show: "AI Proposals", "Production Pipeline", "Editorial Calendar". But the actual ContentStrategyTabs only has: "Overview", "AI Proposals", "Calendar". There is no "Production Pipeline" tab, creating a disconnect where users see "Pipeline Items" count and a "Production Pipeline" pill but can't access it.
-
-**Fix:** Two options:
-- Option A: Remove the "Production Pipeline" filter pill from the hero (lines 176-182) since there's no corresponding tab
-- Option B: Rename the "Pipeline Items" stat card label to something that maps to the existing tabs
-
-Recommendation: Option A -- remove the orphan pill to avoid confusion.
-
-**File:** `src/components/research/content-strategy/ContentStrategyHero.tsx` lines 176-182
-
-**Effort:** Small -- remove 7 lines
+### Issue 6: Debug console.log Cleanup
+**Files to modify:**
+- `src/components/content-builder/ContentBuilder.tsx` (lines 234-235, 289-292): Remove debug step logs
+- `src/hooks/final-review/useDebugLogging.ts`: Remove the entire file or make it no-op in production
+- `src/hooks/final-review/useSaveContent.ts`: Remove ~15 console.log statements throughout
+- `src/components/content-builder/final-review/hooks/useChecklistItems.ts`: Remove console.log at lines 189, 202, 231
+- `src/components/content-builder/serp/SimplifiedSerpAnalysis.tsx`: Remove console.log at lines 89, 139, 144
 
 ---
 
-### PHASE 6: Content Approval -- Empty State Guidance
+## Phase 3: Approval Workflow (Issues 9, 10, 11, 12)
+**Goal:** Fix approval card actions, rate-limit AI analysis
 
-**Problem:** When no content exists, the Content Approval page shows "0 Content Items, 0 Pending Review, 0 Published" with no guidance on what to do next.
+### Issue 9: Add "Submit for Review" on Draft Cards
+**File:** `src/components/approval/modern/ContentApprovalCard.tsx` (line 398)
+- Currently only shows approve button for `pending_review` status
+- Add a "Submit for Review" button for `draft` status items that updates `approval_status` to `pending_review`
+- Show approve/reject buttons for both `pending_review` and `in_review` statuses
 
-**Fix:** Add an empty state banner inside `ContentApprovalView` that says: "Create content in the Content Builder to start the approval workflow" with a CTA button linking to `/content-type-selection`.
+### Issue 10: Dual Save Path in ReviewEditorModal
+**File:** `src/components/approval/modern/ReviewEditorModal.tsx`
+- Remove the duplicate `handleSave` function that conflicts with `ContentApprovalEditor`'s autosave
+- Rely solely on the autosave mechanism in `ContentApprovalEditor.tsx`
 
-**File:** `src/components/approval/ContentApprovalView.tsx` -- Add conditional empty state when items count is 0
+### Issue 11: Rate-Limit "Analyze All"
+**File:** `src/components/approval/modern/ModernContentApproval.tsx` (lines 159-180)
+- Replace the sequential `for` loop with a batched approach: process max 2 items concurrently with 2-second delays between batches
+- Add progress indicator state: `analyzingProgress` showing "Analyzing 3/10..."
+- Wrap each item's analysis in try/catch so one failure doesn't stop the batch
 
-**Effort:** Small
-
----
-
-### PHASE 7: Analytics -- Empty State Context
-
-**Problem:** Analytics page shows all zeros (0 Page Views, 0 Sessions, 0 Impressions) without explaining whether this is because no content is published or because Google Analytics isn't connected.
-
-**Fix:** Add a contextual empty state message when all metrics are zero: "Publish content and track performance here. Connect Google Analytics in Settings for external traffic data."
-
-**File:** `src/pages/Analytics.tsx` -- Add conditional banner after the hero section
-
-**Effort:** Small
-
----
-
-### PHASE 8: Dashboard Footer -- Dead Links
-
-**Problem:** The DashboardFooter has 12 footer links (Documentation, Tutorials, Blog, Community, About, Careers, Contact, Privacy, API, etc.) that all point to pages that don't exist, causing 404s.
-
-**Fix:** Remove the `footerLinks` array and its rendering block since the links aren't rendered in the current footer (the code defines them at lines 51-96 but never maps them to JSX). This is dead code that should be cleaned up.
-
-**File:** `src/components/layout/DashboardFooter.tsx` lines 51-96
-
-**Effort:** Small -- remove unused code
+### Issue 12: AI Analysis Service Error Handling
+**File:** `src/services/contentAiAnalysisService.ts`
+- Add proper error handling for 500/429 responses
+- Limit retries to 2 max
+- Return graceful fallback (null score) instead of throwing
 
 ---
 
-## Implementation Summary
+## Phase 4: AI Enrichment & SERP Enhancement (Issues 3, 16, 17)
+**Goal:** Richer SERP data with AI suggestions, interactive content brief
 
-| Phase | What | Files | Effort |
-|-------|------|-------|--------|
-| 1 | Fix 8 page titles to "Creaiter" | 8 files | 8 single-line edits |
-| 2 | Add Express/Conversation mode toggle | CampaignsHero.tsx | ~15 lines |
-| 3 | Add settings link to SERP status | EnhancedSerpStatus.tsx | ~5 lines |
-| 4 | Add settings link to AI status | EnhancedAiStatus.tsx | ~5 lines |
-| 5 | Remove orphan "Pipeline" pill | ContentStrategyHero.tsx | Remove 7 lines |
-| 6 | Content Approval empty state | ContentApprovalView.tsx | ~10 lines |
-| 7 | Analytics empty state | Analytics.tsx | ~10 lines |
-| 8 | Remove dead footer link code | DashboardFooter.tsx | Remove ~45 lines |
+### Issue 3 + 16: AI-Enriched SERP Data
+**New file:** `src/services/serpAIEnrichment.ts`
+- Create service that takes existing SERP data (keywords, FAQs, headings, content gaps) and calls `ai-proxy` edge function to generate:
+  - 10-15 additional long-tail keywords
+  - 5-8 short-tail keywords
+  - 5-10 supplementary FAQ questions
+- Returns enriched data with "AI Suggested" labels
 
-**Total: 15 issues, ~13 files, estimated 15-20 minutes**
+**File to modify:** `src/components/content-builder/steps/KeywordSelectionStep.tsx`
+- After SERP analysis completes (line 380, when `serpData` exists), render `SimplifiedSerpCategories` inline instead of just `InlineSerpAnalysis`
+- Add an "Enrich with AI" button that triggers the enrichment service
+- Display AI-suggested items in expandable sections with distinct styling
 
-All previously approved fixes (navigation, branding, streaming, AI pre-check) are confirmed deployed and working. These remaining items are the final polish pass to reach production quality.
+### Issue 17: Content Brief Questionnaire
+**New file:** `src/components/content-builder/steps/ContentBriefQuestions.tsx`
+- Add a brief questionnaire panel within Step 2 (Content Type & Outline) with:
+  - Target audience (dropdown: General, Professionals, Beginners, Enterprise)
+  - Content goal (dropdown: Educate, Convert, Engage, Rank)
+  - Tone (dropdown: Professional, Casual, Technical, Friendly)
+  - Specific points to include (text input)
+- Store responses in content builder state via new action `SET_CONTENT_BRIEF`
+- Pass brief data to content generation prompts for more targeted output
+
+**File to modify:** `src/components/content-builder/steps/ContentTypeAndOutlineStep.tsx`
+- Integrate `ContentBriefQuestions` component above the outline section
+
+**Files to modify for state:**
+- `src/contexts/content-builder/types/action-types.ts`: Add `SET_CONTENT_BRIEF` action
+- `src/contexts/content-builder/reducer.ts`: Handle `SET_CONTENT_BRIEF`
+- `src/contexts/content-builder/initialState.ts`: Add `contentBrief: null`
+
+---
+
+## Phase 5: Repository & Cross-Module Polish (Issues 7, 8, 13)
+**Goal:** Clean repository display, add "Continue Editing" action
+
+### Issue 7: Display-Level Title Fallback
+**File:** Repository card component (SimplifiedRepositoryCard)
+- Add display-level sanitization: if `title` length > 100 or matches AI preamble patterns, show `meta_title` from metadata instead
+
+### Issue 8: "Continue Editing" in Content Builder
+**File:** Repository card component
+- Add a "Continue Editing" button that:
+  - Stores content data (content, keywords, outline, SERP selections, metadata) in `sessionStorage` as `contentBuilderPayload`
+  - Navigates to `/content-builder`
+  - Content Builder already reads from `sessionStorage` (ContentBuilderPage.tsx lines 13-19)
+
+### Issue 13: Metadata Display (Low Priority)
+- Informational: The metadata IS being stored but Repository/Approval cards only read a subset. Can be enhanced later to show SERP selections count, solution data, and keyword coverage.
+
+---
+
+## Phase 6: Network & Silent Error Cleanup (From Live Testing)
+**Goal:** Fix 406 errors and reduce auth request duplication
+
+### Fix 406 Errors on `ai_context_state` and `content_strategies`
+- Search for all references to `ai_context_state` table and either create the table via migration or remove the queries
+- Fix `content_strategies` 406 errors similarly
+
+### Deduplicate Auth Requests
+- Audit components making independent `supabase.auth.getUser()` calls and consolidate to use shared auth context where possible
+
+---
+
+## Technical Summary
+
+| Phase | Issues | Files Changed | Impact |
+|-------|--------|---------------|--------|
+| 1 | 1, 2, 14, 15 | 6 files | Stops toast spam, breaks infinite loops, fixes save dialog |
+| 2 | 4, 5, 6 | 8+ files | Clean titles, accurate SEO scores, no debug noise |
+| 3 | 9, 10, 11, 12 | 4 files | Functional approval workflow |
+| 4 | 3, 16, 17 | 5 files (2 new) | AI-enriched SERP data, content brief |
+| 5 | 7, 8, 13 | 2 files | Repository polish |
+| 6 | Network | 3-4 files | Clean network, fewer errors |
+
+**Recommended execution order:** Phase 1 first (stability), then 2 (data), then 3 (approvals), then 4-6.
+
