@@ -13,7 +13,8 @@ import { NotificationSettings } from './NotificationSettings';
 import { FormatPromptSettings } from './FormatPromptSettings';
 import { ProfileSettingsTab } from './ProfileSettingsTab';
 import { HelpAndTourSettings } from './HelpAndTourSettings';
-import { Settings, Zap, Bell, MessageSquare, User, Globe, Compass } from 'lucide-react';
+import { EngageIntegrationSettings } from './engage/EngageIntegrationSettings';
+import { Settings, Zap, Bell, MessageSquare, User, Globe, Compass, Send } from 'lucide-react';
 import { WebsiteConnectionsSettings } from './websites/WebsiteConnectionsSettings';
 
 export const SettingsPopup = () => {
@@ -49,6 +50,12 @@ export const SettingsPopup = () => {
       label: 'Prompts',
       icon: <MessageSquare className="h-4 w-4" />,
       component: <FormatPromptSettings />
+    },
+    {
+      id: 'engage',
+      label: 'Engage',
+      icon: <Send className="h-4 w-4" />,
+      component: <EngageIntegrationSettings />
     },
     {
       id: 'helpTour',
