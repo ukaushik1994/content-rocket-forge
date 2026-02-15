@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ReactFlow, addEdge, useNodesState, useEdgesState, Controls, MiniMap, Background,
@@ -11,15 +11,13 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, Play, Pause, Plus, CheckCircle, Maximize, Users } from 'lucide-react';
+import { ArrowLeft, Save, Play, Pause, Plus, CheckCircle, Maximize, Users, Undo2, Redo2, BarChart3, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { customNodeTypes } from './nodes/CustomNodes';
 import { JourneyInspector } from './JourneyInspector';
+import { JourneyAnalytics } from './JourneyAnalytics';
 
-const nodeColors: Record<string, string> = {
-  trigger: '#8b5cf6', send_email: '#3b82f6', wait: '#f59e0b',
-  condition: '#10b981', update_contact: '#6366f1', webhook: '#ec4899', end: '#6b7280',
-};
+const MAX_HISTORY = 20;
 
 const JourneyBuilderInner = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,10 +25,70 @@ const JourneyBuilderInner = () => {
   const { currentWorkspaceId } = useWorkspace();
   const queryClient = useQueryClient();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const reactFlowInstance = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  // Undo/Redo
+  const historyRef = useRef<{ nodes: Node[]; edges: Edge[] }[]>([]);
+  const historyIndexRef = useRef(-1);
+  const skipHistoryRef = useRef(false);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  // Auto-save
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadRef = useRef(true);
+
+  const pushHistory = useCallback((n: Node[], e: Edge[]) => {
+    if (skipHistoryRef.current) { skipHistoryRef.current = false; return; }
+    const idx = historyIndexRef.current;
+    historyRef.current = historyRef.current.slice(0, idx + 1);
+    historyRef.current.push({ nodes: JSON.parse(JSON.stringify(n)), edges: JSON.parse(JSON.stringify(e)) });
+    if (historyRef.current.length > MAX_HISTORY) historyRef.current.shift();
+    historyIndexRef.current = historyRef.current.length - 1;
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(false);
+  }, []);
+
+  const undo = useCallback(() => {
+    if (historyIndexRef.current <= 0) return;
+    historyIndexRef.current--;
+    const state = historyRef.current[historyIndexRef.current];
+    skipHistoryRef.current = true;
+    setNodes(state.nodes);
+    setEdges(state.edges);
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(true);
+  }, [setNodes, setEdges]);
+
+  const redo = useCallback(() => {
+    if (historyIndexRef.current >= historyRef.current.length - 1) return;
+    historyIndexRef.current++;
+    const state = historyRef.current[historyIndexRef.current];
+    skipHistoryRef.current = true;
+    setNodes(state.nodes);
+    setEdges(state.edges);
+    setCanUndo(true);
+    setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+  }, [setNodes, setEdges]);
+
+  // Track changes for history + auto-save
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    pushHistory(nodes, edges);
+    // Trigger auto-save
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      if (nodes.length > 0) {
+        setAutoSaveStatus('saving');
+        doSave().then(() => setAutoSaveStatus('saved')).catch(() => setAutoSaveStatus('idle'));
+      }
+    }, 3000);
+  }, [nodes.length, edges.length]); // Simplified deps to avoid excessive triggers
 
   const { data: journey } = useQuery({
     queryKey: ['journey', id],
@@ -42,14 +100,10 @@ const JourneyBuilderInner = () => {
     enabled: !!id,
   });
 
-  // Enrollment stats
   const { data: enrollmentStats } = useQuery<{ active: number; completed: number; exited: number }>({
     queryKey: ['journey-enrollment-stats', id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('journey_enrollments')
-        .select('status')
-        .eq('journey_id', id!);
+      const { data } = await supabase.from('journey_enrollments').select('status').eq('journey_id', id!);
       const stats = { active: 0, completed: 0, exited: 0 };
       (data || []).forEach((e: any) => {
         if (e.status === 'active') stats.active++;
@@ -61,18 +115,12 @@ const JourneyBuilderInner = () => {
     enabled: !!id,
   });
 
-  // Node execution counts
   const { data: nodeExecCounts = {} } = useQuery<Record<string, number>>({
     queryKey: ['journey-node-exec-counts', id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('journey_steps' as any)
-        .select('node_id')
-        .eq('journey_id', id!);
+      const { data } = await supabase.from('journey_steps' as any).select('node_id').eq('journey_id', id!);
       const counts: Record<string, number> = {};
-      ((data as any[]) || []).forEach((s: any) => {
-        counts[s.node_id] = (counts[s.node_id] || 0) + 1;
-      });
+      ((data as any[]) || []).forEach((s: any) => { counts[s.node_id] = (counts[s.node_id] || 0) + 1; });
       return counts;
     },
     enabled: !!id,
@@ -86,40 +134,67 @@ const JourneyBuilderInner = () => {
         supabase.from('journey_edges').select('*').eq('journey_id', id!),
       ]);
 
-      if (dbNodes?.length) {
-        setNodes(dbNodes.map((n: any) => ({
-          id: n.node_id,
-          type: n.type,
-          position: typeof n.position === 'string' ? JSON.parse(n.position) : n.position,
-          data: { label: n.type.replace('_', ' '), config: n.config || {}, execCount: nodeExecCounts[n.node_id] || 0 },
-        })));
-      }
+      const loadedNodes = (dbNodes || []).map((n: any) => ({
+        id: n.node_id,
+        type: n.type,
+        position: typeof n.position === 'string' ? JSON.parse(n.position) : n.position,
+        data: { label: n.type.replace('_', ' '), config: n.config || {}, execCount: nodeExecCounts[n.node_id] || 0 },
+      }));
 
-      if (dbEdges?.length) {
-        setEdges(dbEdges.map((e: any) => ({
-          id: e.id,
-          source: e.source_node_id,
-          target: e.target_node_id,
-          label: e.condition_label || undefined,
-          markerEnd: { type: MarkerType.ArrowClosed },
-          style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 },
-          animated: true,
-        })));
-      }
+      const loadedEdges = (dbEdges || []).map((e: any) => ({
+        id: e.id,
+        source: e.source_node_id,
+        target: e.target_node_id,
+        label: e.condition_label || undefined,
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 },
+        animated: true,
+      }));
+
+      skipHistoryRef.current = true;
+      setNodes(loadedNodes);
+      setEdges(loadedEdges);
+
+      // Initialize history after load
+      setTimeout(() => {
+        historyRef.current = [{ nodes: JSON.parse(JSON.stringify(loadedNodes)), edges: JSON.parse(JSON.stringify(loadedEdges)) }];
+        historyIndexRef.current = 0;
+        initialLoadRef.current = false;
+      }, 100);
+
       return { dbNodes, dbEdges };
     },
     enabled: !!id,
   });
 
-  // Update node exec counts when they change
-  React.useEffect(() => {
+  useEffect(() => {
     if (Object.keys(nodeExecCounts).length > 0) {
-      setNodes(nds => nds.map(n => ({
-        ...n,
-        data: { ...n.data, execCount: nodeExecCounts[n.id] || 0 },
-      })));
+      setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, execCount: nodeExecCounts[n.id] || 0 } })));
     }
   }, [nodeExecCounts, setNodes]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' && selectedNode) {
+        handleDeleteNode(selectedNode.id);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveJourney.mutate();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedNode, undo, redo]);
 
   const onConnect = useCallback((connection: Connection) => {
     setEdges(eds => addEdge({
@@ -133,17 +208,21 @@ const JourneyBuilderInner = () => {
   const addNode = (type: string) => {
     const nodeId = `${type}_${Date.now()}`;
     const newNode: Node = {
-      id: nodeId,
-      type,
+      id: nodeId, type,
       position: { x: 250 + Math.random() * 100, y: 100 + nodes.length * 150 },
       data: { label: type.replace('_', ' '), config: {}, execCount: 0 },
     };
     setNodes(nds => [...nds, newNode]);
   };
 
-  const handleNodeClick = useCallback((_: any, node: Node) => {
-    setSelectedNode(node);
-  }, []);
+  const handleNodeClick = useCallback((_: any, node: Node) => setSelectedNode(node), []);
+
+  const handleEdgeDoubleClick = useCallback((_: any, edge: Edge) => {
+    const label = prompt('Edge label:', (edge.label as string) || '');
+    if (label !== null) {
+      setEdges(eds => eds.map(e => e.id === edge.id ? { ...e, label: label || undefined } : e));
+    }
+  }, [setEdges]);
 
   const handleNodeConfigUpdate = (nodeId: string, config: Record<string, any>) => {
     setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, config } } : n));
@@ -176,36 +255,33 @@ const JourneyBuilderInner = () => {
     toast.success('Journey is valid ✓');
   };
 
+  const doSave = async () => {
+    await supabase.from('journey_nodes').delete().eq('journey_id', id!);
+    await supabase.from('journey_edges').delete().eq('journey_id', id!);
+
+    if (nodes.length) {
+      const dbNodes = nodes.map(n => ({
+        workspace_id: currentWorkspaceId!, journey_id: id!,
+        node_id: n.id, type: n.type || 'trigger',
+        config: (n.data as any)?.config || {}, position: n.position,
+      }));
+      const { error } = await supabase.from('journey_nodes').insert(dbNodes);
+      if (error) throw error;
+    }
+
+    if (edges.length) {
+      const dbEdges = edges.map(e => ({
+        workspace_id: currentWorkspaceId!, journey_id: id!,
+        source_node_id: e.source, target_node_id: e.target,
+        condition_label: (e as any).label || null,
+      }));
+      const { error } = await supabase.from('journey_edges').insert(dbEdges);
+      if (error) throw error;
+    }
+  };
+
   const saveJourney = useMutation({
-    mutationFn: async () => {
-      await supabase.from('journey_nodes').delete().eq('journey_id', id!);
-      await supabase.from('journey_edges').delete().eq('journey_id', id!);
-
-      if (nodes.length) {
-        const dbNodes = nodes.map(n => ({
-          workspace_id: currentWorkspaceId!,
-          journey_id: id!,
-          node_id: n.id,
-          type: n.type || 'trigger',
-          config: (n.data as any)?.config || {},
-          position: n.position,
-        }));
-        const { error } = await supabase.from('journey_nodes').insert(dbNodes);
-        if (error) throw error;
-      }
-
-      if (edges.length) {
-        const dbEdges = edges.map(e => ({
-          workspace_id: currentWorkspaceId!,
-          journey_id: id!,
-          source_node_id: e.source,
-          target_node_id: e.target,
-          condition_label: (e as any).label || null,
-        }));
-        const { error } = await supabase.from('journey_edges').insert(dbEdges);
-        if (error) throw error;
-      }
-    },
+    mutationFn: doSave,
     onSuccess: () => toast.success('Journey saved'),
     onError: (e: any) => toast.error(e.message),
   });
@@ -216,10 +292,7 @@ const JourneyBuilderInner = () => {
       const { error } = await supabase.from('journeys').update({ status: newStatus }).eq('id', id!);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['journey', id] });
-      toast.success('Status updated');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['journey', id] }); toast.success('Status updated'); },
   });
 
   const statusBadgeClass = journey?.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
@@ -236,21 +309,27 @@ const JourneyBuilderInner = () => {
           </Button>
           <h2 className="font-semibold text-foreground">{journey?.name || 'Journey Builder'}</h2>
           <Badge variant="outline" className={statusBadgeClass}>{journey?.status || 'draft'}</Badge>
+          {autoSaveStatus === 'saving' && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Saving...</span>
+          )}
+          {autoSaveStatus === 'saved' && (
+            <span className="text-[10px] text-emerald-400">Auto-saved</span>
+          )}
           {enrollmentStats && (
             <div className="flex items-center gap-2 ml-2">
-              <Badge variant="secondary" className="text-[10px] gap-1">
-                <Users className="h-3 w-3" /> {enrollmentStats.active} active
-              </Badge>
-              <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400">
-                {enrollmentStats.completed} done
-              </Badge>
-              <Badge variant="secondary" className="text-[10px] gap-1 bg-muted/50">
-                {enrollmentStats.exited} exited
-              </Badge>
+              <Badge variant="secondary" className="text-[10px] gap-1"><Users className="h-3 w-3" /> {enrollmentStats.active} active</Badge>
+              <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400">{enrollmentStats.completed} done</Badge>
+              <Badge variant="secondary" className="text-[10px] gap-1 bg-muted/50">{enrollmentStats.exited} exited</Badge>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
+            <Redo2 className="h-3.5 w-3.5" />
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8"><Plus className="h-3.5 w-3.5 mr-1" /> Add Node</Button>
@@ -268,6 +347,9 @@ const JourneyBuilderInner = () => {
           <Button variant="outline" size="sm" className="h-8" onClick={() => reactFlowInstance.fitView({ padding: 0.2 })}>
             <Maximize className="h-3.5 w-3.5 mr-1" /> Fit
           </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowAnalytics(true)}>
+            <BarChart3 className="h-3.5 w-3.5 mr-1" /> Analytics
+          </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={validateJourney}>
             <CheckCircle className="h-3.5 w-3.5 mr-1" /> Validate
           </Button>
@@ -283,16 +365,11 @@ const JourneyBuilderInner = () => {
       {/* Canvas */}
       <div className="flex-1 relative">
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={handleNodeClick}
-          nodeTypes={customNodeTypes}
-          fitView
-          snapToGrid
-          snapGrid={[16, 16]}
+          nodes={nodes} edges={edges}
+          onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+          onConnect={onConnect} onNodeClick={handleNodeClick}
+          onEdgeDoubleClick={handleEdgeDoubleClick}
+          nodeTypes={customNodeTypes} fitView snapToGrid snapGrid={[16, 16]}
           proOptions={{ hideAttribution: true }}
         >
           <Controls className="!bg-card/90 !backdrop-blur-md !border-border/50 !rounded-xl !shadow-lg" />
@@ -301,13 +378,19 @@ const JourneyBuilderInner = () => {
         </ReactFlow>
 
         <JourneyInspector
-          node={selectedNode}
-          workspaceId={currentWorkspaceId}
-          onUpdate={handleNodeConfigUpdate}
-          onClose={() => setSelectedNode(null)}
+          node={selectedNode} workspaceId={currentWorkspaceId}
+          onUpdate={handleNodeConfigUpdate} onClose={() => setSelectedNode(null)}
           onDeleteNode={handleDeleteNode}
         />
       </div>
+
+      {/* Analytics Dialog */}
+      <JourneyAnalytics
+        journeyId={id!}
+        open={showAnalytics}
+        onOpenChange={setShowAnalytics}
+        nodes={nodes}
+      />
     </div>
   );
 };

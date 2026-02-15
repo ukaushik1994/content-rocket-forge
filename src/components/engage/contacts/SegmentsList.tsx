@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -10,7 +10,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter, Eye, Clock, Copy, Download } from 'lucide-react';
+import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter, Eye, Clock, Copy, Download, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -26,6 +26,7 @@ export const SegmentsList = () => {
   const [rules, setRules] = useState<Rule[]>([]);
   const [matchType, setMatchType] = useState<'all' | 'any'>('all');
   const [viewingSegment, setViewingSegment] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: segments = [], isLoading } = useQuery({
     queryKey: ['engage-segments', currentWorkspaceId],
@@ -40,6 +41,12 @@ export const SegmentsList = () => {
     },
     enabled: !!currentWorkspaceId,
   });
+
+  const filteredSegments = useMemo(() => {
+    if (!searchQuery.trim()) return segments;
+    const q = searchQuery.toLowerCase();
+    return segments.filter((s: any) => s.name?.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q));
+  }, [segments, searchQuery]);
 
   const { data: segmentMembers = [] } = useQuery({
     queryKey: ['segment-members', viewingSegment?.id],
@@ -71,11 +78,7 @@ export const SegmentsList = () => {
   const totalMembers = segments.reduce((sum: number, s: any) => sum + (s.engage_segment_memberships?.[0]?.count || 0), 0);
 
   const resetForm = () => {
-    setName('');
-    setDescription('');
-    setRules([]);
-    setMatchType('all');
-    setEditingSegment(null);
+    setName(''); setDescription(''); setRules([]); setMatchType('all'); setEditingSegment(null);
   };
 
   const openEdit = (segment: any) => {
@@ -106,8 +109,7 @@ export const SegmentsList = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['engage-segments'] });
-      setShowAdd(false);
-      resetForm();
+      setShowAdd(false); resetForm();
       toast.success(editingSegment ? 'Segment updated & evaluated' : 'Segment created & evaluated');
     },
     onError: (e: any) => toast.error(e.message),
@@ -118,10 +120,7 @@ export const SegmentsList = () => {
       const { error } = await supabase.from('engage_segments').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['engage-segments'] });
-      toast.success('Segment deleted');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['engage-segments'] }); toast.success('Segment deleted'); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -141,17 +140,12 @@ export const SegmentsList = () => {
   const duplicateSegment = useMutation({
     mutationFn: async (segment: any) => {
       const { error } = await supabase.from('engage_segments').insert({
-        workspace_id: currentWorkspaceId!,
-        name: `${segment.name} (Copy)`,
-        description: segment.description || null,
-        definition: segment.definition,
+        workspace_id: currentWorkspaceId!, name: `${segment.name} (Copy)`,
+        description: segment.description || null, definition: segment.definition,
       } as any);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['engage-segments'] });
-      toast.success('Segment duplicated');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['engage-segments'] }); toast.success('Segment duplicated'); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -166,10 +160,8 @@ export const SegmentsList = () => {
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `${viewingSegment?.name || 'segment'}-members.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = `${viewingSegment?.name || 'segment'}-members.csv`;
+    a.click(); URL.revokeObjectURL(url);
     toast.success('Members exported');
   };
 
@@ -224,6 +216,12 @@ export const SegmentsList = () => {
           )}
         </div>
       </motion.div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Search segments..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-background/40" />
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
@@ -297,17 +295,17 @@ export const SegmentsList = () => {
       {/* List */}
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
-      ) : segments.length === 0 ? (
+      ) : filteredSegments.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
           <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mx-auto">
             <Layers className="h-8 w-8 text-violet-400" />
           </div>
-          <p className="text-muted-foreground">No segments yet</p>
-          {canEdit && <Button size="sm" onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-1" /> Create First Segment</Button>}
+          <p className="text-muted-foreground">{searchQuery ? 'No matching segments' : 'No segments yet'}</p>
+          {canEdit && !searchQuery && <Button size="sm" onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-1" /> Create First Segment</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
-          {segments.map((s: any, i: number) => {
+          {filteredSegments.map((s: any, i: number) => {
             const memberCount = s.engage_segment_memberships?.[0]?.count || 0;
             return (
               <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
