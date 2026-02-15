@@ -1,118 +1,127 @@
 
 
-# Fix All Auto-Extraction: Use User's AI Provider Everywhere
+# Full Rename: Solutions to Offerings
 
-## Root Cause Summary
+## Overview
 
-Three critical issues are breaking extraction:
-
-1. **`solution-intel` crashes on boot** -- duplicate `const supabase` declaration at line 80 (already declared at line 47). The function literally cannot start.
-
-2. **`solution-intel` calls `enhanced-ai-chat`** instead of `ai-proxy` -- wrong pattern. It should fetch the user's AI provider from `ai_service_providers` and call `ai-proxy` directly (like `competitor-intel` does correctly).
-
-3. **`company-intel` and `brand-intel` use Lovable AI Gateway** (`ai.gateway.lovable.dev` with `LOVABLE_API_KEY`) instead of the user's configured AI provider. You want all functions to use the same AI service you configured in Settings.
-
-4. **`company-intel` URL filter is too strict** -- only accepts URLs containing `/about`, `/company`, `/our-story`, `/mission`, `/team`. Rejects the homepage itself, so if SERP returns `https://example.com`, it gets filtered out.
-
-5. **Missing `SERP_API_KEY` secret** -- needs to be added so SERP discovery works across all three functions.
-
-## The Fix
-
-### Pattern to Follow (from `competitor-intel`)
-
-All three edge functions will be updated to:
-1. Get user's active AI provider from `ai_service_providers` table
-2. Call `ai-proxy` with `{service, endpoint, apiKey, params}` format
-3. Parse response as `aiProxyResult.data.choices[0].message.content`
-
-This is the exact pattern `competitor-intel` already uses successfully.
+Rename "Solutions" to "Offerings" across the entire codebase -- UI text, routes, file names, component names, service names, and types. The database table stays as `solutions` (renaming live tables is destructive). The page title becomes **"Business Offerings Hub"**.
 
 ---
 
-### Step 0: Add SERP_API_KEY Secret
-- Request user's SerpAPI key via the add_secret tool
+## What Changes
 
-### Step 1: Fix `solution-intel/index.ts` (3 changes)
+### 1. Route Change
+- `/solutions` becomes `/offerings`
+- Add redirect: `/solutions` redirects to `/offerings` (prevents broken bookmarks)
+- Update all `navigate('/solutions')` calls across the app
 
-**Change A -- Remove duplicate client (line 80)**
-Delete `const supabase = createClient(supabaseUrl, supabaseServiceKey);` since line 47 already creates one.
+### 2. Page & Component Renames
 
-**Change B -- Fix `detectProducts` function (lines 447-481)**
-- Remove duplicate `createClient` call at line 448
-- Replace `supabase.functions.invoke('enhanced-ai-chat', ...)` with the correct pattern:
-  1. Fetch user's provider from `ai_service_providers` (using userId passed in)
-  2. Call `supabase.functions.invoke('ai-proxy', { body: { service, endpoint: 'chat', apiKey, params: { model, messages, temperature } } })`
-  3. Parse response as `aiProxyResult.data.choices[0].message.content`
+| Current File | New File |
+|---|---|
+| `src/pages/Solutions.tsx` | `src/pages/Offerings.tsx` |
+| `src/components/solutions/` (entire directory) | `src/components/offerings/` |
+| `src/components/solutions/SolutionCard.tsx` | `src/components/offerings/OfferingCard.tsx` |
+| `src/components/solutions/EnhancedSolutionCard.tsx` | `src/components/offerings/EnhancedOfferingCard.tsx` |
+| `src/components/solutions/EnhancedSolutionGrid.tsx` | `src/components/offerings/EnhancedOfferingGrid.tsx` |
+| `src/components/solutions/HeroSection.tsx` | `src/components/offerings/HeroSection.tsx` |
+| `src/components/solutions/SolutionUploader.tsx` | `src/components/offerings/OfferingUploader.tsx` |
+| `src/components/solutions/SolutionCompetitiveIntelDialog.tsx` | `src/components/offerings/OfferingCompetitiveIntelDialog.tsx` |
+| `src/components/solutions/manager/SolutionManager.tsx` | `src/components/offerings/manager/OfferingManager.tsx` |
+| `src/components/solutions/manager/SolutionFormDialog.tsx` | `src/components/offerings/manager/OfferingFormDialog.tsx` |
+| `src/components/solutions/manager/SolutionGrid.tsx` | `src/components/offerings/manager/OfferingGrid.tsx` |
+| `src/components/solutions/manager/SolutionsHeader.tsx` | `src/components/offerings/manager/OfferingsHeader.tsx` |
+| `src/components/solutions/manager/DeleteSolutionDialog.tsx` | `src/components/offerings/manager/DeleteOfferingDialog.tsx` |
+| `src/components/solutions/manager/EnhancedSolutionFormDialog.tsx` | `src/components/offerings/manager/EnhancedOfferingFormDialog.tsx` |
+| `src/components/solutions/manager/MultiSolutionPickerDialog.tsx` | `src/components/offerings/manager/MultiOfferingPickerDialog.tsx` |
+| `src/components/solutions/manager/EmptyState.tsx` | `src/components/offerings/manager/EmptyState.tsx` |
+| `src/components/solutions/hooks/useSolutionsData.ts` | `src/components/offerings/hooks/useOfferingsData.ts` |
 
-**Change C -- Fix `extractProductDetails` function (lines 697-808)**
-- Same fix as Change B: remove duplicate client, replace `enhanced-ai-chat` with `ai-proxy` using user's provider
+### 3. Service & Type Renames
 
-### Step 2: Fix `company-intel/index.ts` (2 changes)
+| Current File | New File |
+|---|---|
+| `src/services/solutionService.ts` | `src/services/offeringService.ts` |
+| `src/services/brandIntelService.ts` | No rename (brand-related, stays) |
+| `src/contexts/content-builder/types/solution-types.ts` | `src/contexts/content-builder/types/offering-types.ts` |
+| `src/contexts/content-builder/types/enhanced-solution-types.ts` | `src/contexts/content-builder/types/enhanced-offering-types.ts` |
+| `src/types/solution-intel.ts` | `src/types/offering-intel.ts` |
 
-**Change A -- Use user's AI provider instead of Lovable Gateway (lines 250-265)**
-- Add provider lookup from `ai_service_providers` table (same as competitor-intel)
-- Replace `fetch("https://ai.gateway.lovable.dev/v1/chat/completions", ...)` with `supabase.functions.invoke('ai-proxy', ...)`
-- Use user's configured provider, model, and API key
+### 4. Type/Interface Renames (inside files)
 
-**Change B -- Fix URL discovery filter (lines 154-167)**
-- Always include the homepage URL (the website parameter itself)
-- Broaden SERP queries to include `site:{domain}` (general search)
-- Remove the strict filter that rejects URLs not containing `/about`, `/company`, etc.
-- Accept any URL on the same domain
+| Current Name | New Name |
+|---|---|
+| `Solution` | `Offering` |
+| `EnhancedSolution` | `EnhancedOffering` |
+| `SolutionResource` | `OfferingResource` |
+| `SolutionPersona` | `OfferingPersona` |
+| `SolutionIntegrationMetrics` | `OfferingIntegrationMetrics` |
+| `SolutionIntelRequest` | `OfferingIntelRequest` |
+| `SolutionIntelResponse` | `OfferingIntelResponse` |
+| `SolutionManager` | `OfferingManager` |
+| `solutionService` | `offeringService` |
+| `selectedSolution` | `selectedOffering` |
+| `solutionId` | `offeringId` |
 
-### Step 3: Fix `brand-intel/index.ts` (1 change)
+### 5. UI Text Changes
 
-**Change A -- Use user's AI provider instead of Lovable Gateway (lines 288-303)**
-- Add provider lookup from `ai_service_providers` table
-- Replace `fetch("https://ai.gateway.lovable.dev/v1/chat/completions", ...)` with `supabase.functions.invoke('ai-proxy', ...)`
-- Use user's configured provider, model, and API key
+| Current | New |
+|---|---|
+| "Business Solutions Hub" | "Business Offerings Hub" |
+| "Business Solutions (N)" | "Business Offerings (N)" |
+| "Add New Solution" | "Add New Offering" |
+| "N Solutions Available" | "N Offerings Available" |
+| "Manage Solutions" | "Manage Offerings" |
+| "Add your solutions" | "Add your offerings" |
+| "Search solutions by name..." | "Search offerings by name..." |
+| "Loading solutions..." | "Loading offerings..." |
+| "Solution Uploader" | "Offering Uploader" |
+| Navbar menu: "Solutions" | "Offerings" |
+| "Add Your First Solution" | "Add Your First Offering" |
+| "Manage your products and solutions" | "Manage your products and offerings" |
 
-### Step 4: Redeploy all three edge functions
+### 6. Edge Functions (internal variable names only)
+- `solution-intel` edge function: keep the function name (it's deployed and referenced), but update internal comments and variable names where they face the user
+- Database queries still reference `solutions` table -- no change needed there
+
+### 7. Navigation & Cross-References
+Files that reference `/solutions` route or import from `solutions/`:
+
+- `src/App.tsx` -- route + import
+- `src/components/layout/Navbar.tsx` -- menu item
+- `src/components/dashboard/SetupChecklist.tsx` -- route reference
+- `src/components/dashboard/QuickActionsGrid.tsx` -- route + label
+- `src/components/ai-chat/QuickActionsPanel.tsx` -- label + action
+- `src/components/ai-chat/SmartActionHandler.tsx` -- route handler
+- `src/components/content-builder/steps/SolutionSelector.tsx` -- renamed to `OfferingSelector.tsx`
+- `src/components/content-builder/steps/ContentTypeStep.tsx` -- navigate call
+- `src/components/campaigns/` -- various imports and references
+- `src/components/content-builder/final-review/` -- SolutionIntegrationCard references
+
+### 8. Database Table
+- **NOT renamed** -- `solutions` table stays as-is in Supabase
+- All queries like `.from('solutions')` remain unchanged
+- This avoids any data loss or migration risk
 
 ---
 
-## Files Modified
+## Implementation Order
 
-| File | What Changes |
-|------|-------------|
-| `supabase/functions/solution-intel/index.ts` | Remove 2 duplicate `createClient` calls; replace 2 `enhanced-ai-chat` invocations with `ai-proxy` using user's provider |
-| `supabase/functions/company-intel/index.ts` | Replace Lovable Gateway AI call with `ai-proxy`; fix URL discovery to include homepage and broaden filter |
-| `supabase/functions/brand-intel/index.ts` | Replace Lovable Gateway AI call with `ai-proxy` using user's provider |
+1. Create new directory `src/components/offerings/` with all renamed files
+2. Create renamed service and type files
+3. Update all imports across the codebase
+4. Update route in `App.tsx` with redirect from old `/solutions`
+5. Update all UI-facing text strings
+6. Update navigation references (Navbar, QuickActions, SetupChecklist, AI Chat)
+7. Delete old `src/components/solutions/` directory
+8. Delete old service/type files
 
-## Secret to Add
-- `SERP_API_KEY` -- user's SerpAPI key
+---
 
-## No Database Changes Required
+## What Stays The Same
 
-## AI Provider Pattern (applied to all 3 functions)
-
-```text
-// 1. Fetch user's active provider
-const { data: provider } = await supabase
-  .from('ai_service_providers')
-  .select('provider, api_key, preferred_model, status')
-  .eq('user_id', userId)
-  .eq('status', 'active')
-  .order('priority', { ascending: true })
-  .limit(1)
-  .single();
-
-// 2. Call ai-proxy with user's credentials
-const { data: aiResult } = await supabase.functions.invoke('ai-proxy', {
-  body: {
-    service: provider.provider,
-    endpoint: 'chat',
-    apiKey: provider.api_key,
-    params: {
-      model: provider.preferred_model,
-      messages: [...],
-      temperature: 0.3,
-      max_tokens: 4000
-    }
-  }
-});
-
-// 3. Parse response
-const content = aiResult.data.choices[0].message.content;
-```
+- Database table name: `solutions` (all `.from('solutions')` queries unchanged)
+- Edge function names: `solution-intel`, `brand-intel`, `company-intel` (deployed names)
+- `supabase/functions/solution-intel/` directory (deployed function)
+- Campaign types that reference `solutionId` in the database column
 
