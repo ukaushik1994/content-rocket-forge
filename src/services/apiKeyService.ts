@@ -10,7 +10,8 @@ export type ApiProvider =
   | 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter' 
   | 'serp' | 'serpapi' | 'serpstack'
   | 'openai_image' | 'gemini_image' | 'lmstudio_image'
-  | 'runway_video' | 'kling_video' | 'replicate_video';
+  | 'runway_video' | 'kling_video' | 'replicate_video'
+  | 'resend';
 
 // Legacy type alias for backward compatibility
 export type ApiService = ApiProvider;

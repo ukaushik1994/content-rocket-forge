@@ -5,6 +5,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function getResendKey(supabase: any, workspaceId: string): Promise<string | null> {
+  // 1. Check env secret first
+  const envKey = Deno.env.get("RESEND_API_KEY");
+  if (envKey) return envKey;
+
+  // 2. Fallback: look up workspace owner, then query api_keys table
+  try {
+    const { data: owner } = await supabase
+      .from("team_members")
+      .select("user_id")
+      .eq("workspace_id", workspaceId)
+      .eq("role", "owner")
+      .limit(1)
+      .single();
+
+    if (!owner?.user_id) return null;
+
+    const { data: keyRow } = await supabase
+      .from("api_keys")
+      .select("encrypted_key")
+      .eq("user_id", owner.user_id)
+      .eq("service", "resend")
+      .eq("is_active", true)
+      .single();
+
+    return keyRow?.encrypted_key || null;
+  } catch (e) {
+    console.error("Error looking up Resend key from api_keys:", e);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -33,9 +65,9 @@ Deno.serve(async (req) => {
 
     for (const msg of messages) {
       try {
-        // Check if Resend API key is available
-        const resendKey = Deno.env.get("RESEND_API_KEY");
-        
+        // Resolve Resend key: env → api_keys table
+        const resendKey = await getResendKey(supabase, msg.workspace_id);
+
         if (resendKey && msg.email_provider_settings?.provider === "resend") {
           const res = await fetch("https://api.resend.com/emails", {
             method: "POST",

@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Save, Mail, Twitter, Linkedin, Instagram, Facebook, Check, AlertCircle, Database, CheckCircle, XCircle, Send, ExternalLink } from 'lucide-react';
+import { Save, Mail, Twitter, Linkedin, Instagram, Facebook, Check, AlertCircle, Database, CheckCircle, XCircle, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { loadSeedData } from '@/utils/engage/seedData';
 import { motion } from 'framer-motion';
+import { SimpleProviderCard } from '@/components/settings/api/SimpleProviderCard';
+import { API_PROVIDERS } from '@/components/settings/api/types';
 
 const socialProviders = [
   { id: 'twitter', label: 'X / Twitter', icon: Twitter, color: 'bg-foreground/10', iconColor: 'text-foreground' },
@@ -19,6 +20,9 @@ const socialProviders = [
   { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'bg-pink-500/10', iconColor: 'text-pink-400' },
   { id: 'facebook', label: 'Facebook', icon: Facebook, color: 'bg-blue-600/10', iconColor: 'text-blue-500' },
 ];
+
+// Find the Resend provider from the shared registry
+const resendProvider = API_PROVIDERS.find(p => p.id === 'resend')!;
 
 export const EngageIntegrationSettings = () => {
   const { user } = useAuth();
@@ -35,7 +39,8 @@ export const EngageIntegrationSettings = () => {
 
   const workspaceId = membership?.workspace_id;
 
-  const [emailForm, setEmailForm] = useState({ provider: 'resend', api_key: '', from_name: '', from_email: '', reply_to: '' });
+  // Sender config form (non-secret data only)
+  const [senderForm, setSenderForm] = useState({ from_name: '', from_email: '', reply_to: '' });
 
   const { data: emailSettings } = useQuery({
     queryKey: ['email-provider-settings-global', workspaceId],
@@ -46,11 +51,24 @@ export const EngageIntegrationSettings = () => {
     enabled: !!workspaceId,
   });
 
+  // Check if Resend API key is configured (via the standard api_keys table)
+  const { data: resendKeyConfigured } = useQuery({
+    queryKey: ['resend-key-status', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('api_keys_metadata')
+        .select('is_active')
+        .eq('user_id', user!.id)
+        .eq('service', 'resend')
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+  });
+
   useEffect(() => {
     if (emailSettings) {
-      setEmailForm({
-        provider: emailSettings.provider || 'resend',
-        api_key: (emailSettings.config as any)?.api_key || '',
+      setSenderForm({
         from_name: emailSettings.from_name || '',
         from_email: emailSettings.from_email || '',
         reply_to: emailSettings.reply_to || '',
@@ -58,12 +76,15 @@ export const EngageIntegrationSettings = () => {
     }
   }, [emailSettings]);
 
-  const saveEmail = useMutation({
+  const saveSenderConfig = useMutation({
     mutationFn: async () => {
       const payload = {
-        workspace_id: workspaceId!, provider: emailForm.provider,
-        config: { api_key: emailForm.api_key },
-        from_name: emailForm.from_name, from_email: emailForm.from_email, reply_to: emailForm.reply_to,
+        workspace_id: workspaceId!,
+        provider: 'resend',
+        config: {}, // No secrets here anymore
+        from_name: senderForm.from_name,
+        from_email: senderForm.from_email,
+        reply_to: senderForm.reply_to,
       };
       if (emailSettings) {
         await supabase.from('email_provider_settings').update(payload).eq('id', emailSettings.id);
@@ -71,15 +92,15 @@ export const EngageIntegrationSettings = () => {
         await supabase.from('email_provider_settings').insert(payload);
       }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['email-provider-settings-global'] }); toast.success('Email settings saved'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['email-provider-settings-global'] }); toast.success('Sender settings saved'); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const sendTestEmail = useMutation({
     mutationFn: async () => {
-      if (!emailForm.from_email) throw new Error('Set a from email first');
+      if (!senderForm.from_email) throw new Error('Set a from email first');
       const { data, error } = await supabase.functions.invoke('engage-email-send', {
-        body: { to: emailForm.from_email, subject: 'Creaiter Test Email', html: '<h1>It works!</h1><p>Your Engage email integration is configured correctly.</p>' },
+        body: { to: senderForm.from_email, subject: 'Creaiter Test Email', html: '<h1>It works!</h1><p>Your Engage email integration is configured correctly.</p>' },
       });
       if (error) throw error;
       return data;
@@ -106,8 +127,7 @@ export const EngageIntegrationSettings = () => {
     setLoadingDemo(false);
   };
 
-  const emailConfigured = !!emailSettings;
-  const apiKeySet = !!(emailSettings?.config as any)?.api_key;
+  const senderConfigured = !!emailSettings?.from_email;
 
   if (!workspaceId) {
     return (
@@ -126,71 +146,66 @@ export const EngageIntegrationSettings = () => {
           <h3 className="text-sm font-semibold text-foreground mb-3">Connection Status</h3>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-background/40 border border-border/30">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${emailConfigured ? 'bg-emerald-500/20' : 'bg-destructive/20'}`}>
-                {emailConfigured ? <CheckCircle className="h-4 w-4 text-emerald-400" /> : <XCircle className="h-4 w-4 text-destructive" />}
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${resendKeyConfigured ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
+                {resendKeyConfigured ? <CheckCircle className="h-4 w-4 text-emerald-400" /> : <AlertCircle className="h-4 w-4 text-amber-400" />}
               </div>
               <div>
-                <p className="text-xs font-medium text-foreground">Email Provider</p>
-                <p className="text-[10px] text-muted-foreground">{emailConfigured ? 'Configured' : 'Not configured'}</p>
+                <p className="text-xs font-medium text-foreground">Resend API Key</p>
+                <p className="text-[10px] text-muted-foreground">{resendKeyConfigured ? 'Configured' : 'Not configured'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-xl bg-background/40 border border-border/30">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${apiKeySet ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
-                {apiKeySet ? <CheckCircle className="h-4 w-4 text-emerald-400" /> : <AlertCircle className="h-4 w-4 text-amber-400" />}
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${senderConfigured ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
+                {senderConfigured ? <CheckCircle className="h-4 w-4 text-emerald-400" /> : <AlertCircle className="h-4 w-4 text-amber-400" />}
               </div>
               <div>
-                <p className="text-xs font-medium text-foreground">API Key</p>
-                <p className="text-[10px] text-muted-foreground">{apiKeySet ? 'Set' : 'Missing'}</p>
+                <p className="text-xs font-medium text-foreground">Sender Details</p>
+                <p className="text-[10px] text-muted-foreground">{senderConfigured ? 'Set' : 'Missing'}</p>
               </div>
             </div>
           </div>
         </GlassCard>
       </motion.div>
 
-      {/* Email Provider */}
+      {/* Resend API Key - uses the same SimpleProviderCard as other API keys */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <GlassCard className="p-5">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-4">
             <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
               <Mail className="h-4 w-4 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Email Provider</h3>
-              <p className="text-[10px] text-muted-foreground">Configure your email sending service</p>
+              <h3 className="text-sm font-semibold text-foreground">Email API Key</h3>
+              <p className="text-[10px] text-muted-foreground">Same encrypted storage as all other API keys</p>
+            </div>
+          </div>
+          <SimpleProviderCard provider={resendProvider} />
+        </GlassCard>
+      </motion.div>
+
+      {/* Sender Configuration (non-secret) */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <GlassCard className="p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-8 w-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
+              <Send className="h-4 w-4 text-violet-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Sender Details</h3>
+              <p className="text-[10px] text-muted-foreground">Configure your from name, email, and reply-to</p>
             </div>
           </div>
           <div className="space-y-3 mt-4">
-            <div>
-              <Label className="text-xs">Provider</Label>
-              <Select value={emailForm.provider} onValueChange={v => setEmailForm(f => ({ ...f, provider: v }))}>
-                <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="resend">Resend</SelectItem>
-                  <SelectItem value="smtp">SMTP</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">{emailForm.provider === 'resend' ? 'Resend API Key' : 'SMTP Connection String'}</Label>
-                {emailForm.provider === 'resend' && (
-                  <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
-                    Get key <ExternalLink className="h-2.5 w-2.5" />
-                  </a>
-                )}
-              </div>
-              <Input type="password" className="h-9 mt-1" value={emailForm.api_key} onChange={e => setEmailForm(f => ({ ...f, api_key: e.target.value }))} />
-            </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">From Name</Label><Input className="h-9 mt-1" value={emailForm.from_name} onChange={e => setEmailForm(f => ({ ...f, from_name: e.target.value }))} /></div>
-              <div><Label className="text-xs">From Email</Label><Input className="h-9 mt-1" value={emailForm.from_email} onChange={e => setEmailForm(f => ({ ...f, from_email: e.target.value }))} /></div>
+              <div><Label className="text-xs">From Name</Label><Input className="h-9 mt-1" value={senderForm.from_name} onChange={e => setSenderForm(f => ({ ...f, from_name: e.target.value }))} placeholder="Your Company" /></div>
+              <div><Label className="text-xs">From Email</Label><Input className="h-9 mt-1" value={senderForm.from_email} onChange={e => setSenderForm(f => ({ ...f, from_email: e.target.value }))} placeholder="hello@yourdomain.com" /></div>
             </div>
-            <div><Label className="text-xs">Reply To</Label><Input className="h-9 mt-1" value={emailForm.reply_to} onChange={e => setEmailForm(f => ({ ...f, reply_to: e.target.value }))} /></div>
+            <div><Label className="text-xs">Reply To</Label><Input className="h-9 mt-1" value={senderForm.reply_to} onChange={e => setSenderForm(f => ({ ...f, reply_to: e.target.value }))} placeholder="support@yourdomain.com" /></div>
             <div className="flex gap-2">
-              <Button onClick={() => saveEmail.mutate()} disabled={saveEmail.isPending} size="sm">
-                <Save className="h-3.5 w-3.5 mr-1" /> Save Settings
+              <Button onClick={() => saveSenderConfig.mutate()} disabled={saveSenderConfig.isPending} size="sm">
+                <Save className="h-3.5 w-3.5 mr-1" /> Save Sender Settings
               </Button>
-              <Button variant="outline" size="sm" onClick={() => sendTestEmail.mutate()} disabled={!emailConfigured || sendTestEmail.isPending}>
+              <Button variant="outline" size="sm" onClick={() => sendTestEmail.mutate()} disabled={!senderConfigured || sendTestEmail.isPending}>
                 <Send className="h-3.5 w-3.5 mr-1" /> Send Test Email
               </Button>
             </div>
@@ -199,7 +214,7 @@ export const EngageIntegrationSettings = () => {
       </motion.div>
 
       {/* Social Accounts */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
         <GlassCard className="p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
@@ -241,7 +256,7 @@ export const EngageIntegrationSettings = () => {
       </motion.div>
 
       {/* Seed Data */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <GlassCard className="p-5">
           <div className="flex items-center gap-2 mb-3">
             <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
