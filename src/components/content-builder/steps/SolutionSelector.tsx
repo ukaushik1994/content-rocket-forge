@@ -111,7 +111,7 @@ export const SolutionSelector = () => {
   };
 
   const handleNavigateToSolutions = () => {
-    navigate('/solutions');
+    navigate('/offerings');
   };
 
   const getInitials = (name: string) => {
@@ -146,7 +146,7 @@ export const SolutionSelector = () => {
           className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
         >
           <ExternalLink className="h-4 w-4 mr-2" />
-          Manage Solutions
+          Manage Offerings
         </Button>
       </div>
 
@@ -156,10 +156,10 @@ export const SolutionSelector = () => {
             <Building2 className="h-12 w-12 text-white/40 mx-auto mb-4" />
             <h4 className="text-lg font-medium text-white mb-2">No Solutions Found</h4>
             <p className="text-sm text-white/70 mb-4">
-              You need to add solutions before creating content.
+              You need to add offerings before creating content.
             </p>
             <Button onClick={handleNavigateToSolutions}>
-              Add Your First Solution
+              Add Your First Offering
             </Button>
           </CardContent>
         </Card>

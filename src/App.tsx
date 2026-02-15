@@ -132,7 +132,8 @@ const App = () => (
                   <Route path="/content-type-selection" element={<ProtectedRoute><ContentTypeSelection /></ProtectedRoute>} />
                   <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                   <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
-                  <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
+                  <Route path="/offerings" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
+                  <Route path="/solutions" element={<Navigate to="/offerings" replace />} />
                   <Route path="/keywords" element={<ProtectedRoute><KeywordsPage /></ProtectedRoute>} />
                   
                   <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />

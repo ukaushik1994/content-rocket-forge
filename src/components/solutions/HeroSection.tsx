@@ -89,23 +89,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <motion.div variants={itemVariants} className="inline-block">
               <div className="flex items-center space-x-2 bg-neon-purple/20 rounded-full px-3 py-1 text-sm font-medium text-neon-purple">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>Business Solutions Hub</span>
+                <span>Business Offerings Hub</span>
               </div>
             </motion.div>
             
             <motion.h1 variants={itemVariants} className="text-3xl md:text-4xl font-bold text-gradient">
-              Transform Your Content Strategy with Business Solutions
+              Transform Your Content Strategy with Business Offerings
             </motion.h1>
             
             <motion.p variants={itemVariants} className="text-muted-foreground text-lg">
               Create compelling content that highlights your products, services, and expertise. 
-              Our business solutions seamlessly integrate into your content creation workflow.
+              Your business offerings seamlessly integrate into your content creation workflow.
             </motion.p>
             
             <motion.div variants={itemVariants} className="flex gap-3 mt-2">
               <div className="relative w-full max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={searchTerm} onChange={e => onSearchChange(e.target.value)} placeholder="Search solutions by name, features, use cases..." className="pl-10 bg-background/50 border-white/10 backdrop-blur-sm w-full" />
+                <Input value={searchTerm} onChange={e => onSearchChange(e.target.value)} placeholder="Search offerings by name, features, use cases..." className="pl-10 bg-background/50 border-white/10 backdrop-blur-sm w-full" />
               </div>
               
               <Button variant="outline" size="icon" className="flex-shrink-0 bg-background/50 border-white/10 backdrop-blur-sm">
@@ -118,7 +118,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <motion.div variants={itemVariants} className="bg-glass text-center p-4 rounded-xl border border-white/10 min-w-[140px] backdrop-blur-sm py-[45px] mx-[23px] my-[44px]">
             <h3 className="text-3xl md:text-4xl font-bold text-gradient mb-1">{solutionCount}</h3>
             <p className="text-muted-foreground text-sm">
-              {solutionCount === 1 ? 'Solution' : 'Solutions'} Available
+              {solutionCount === 1 ? 'Offering' : 'Offerings'} Available
             </p>
           </motion.div>
         </div>

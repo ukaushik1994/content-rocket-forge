@@ -104,11 +104,11 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       glowColor: "shadow-[0_0_20px_rgb(34,197,94,0.3)]"
     },
     {
-      title: "Solution Management",
+      title: "Offering Management",
       description: "Upload and manage your products and services for content integration.",
       icon: <FileUp className="h-5 w-5 text-neon-pink" />,
-      action: () => navigate('/solutions'),
-      buttonText: "Manage Solutions",
+      action: () => navigate('/offerings'),
+      buttonText: "Manage Offerings",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-neon-pink/30 to-neon-blue/20",
       delay: 0.3,

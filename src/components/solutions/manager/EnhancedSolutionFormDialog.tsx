@@ -458,12 +458,12 @@ useEffect(() => {
         <DialogContent className="glass-panel sm:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col shadow-neon rounded-xl">
         <DialogHeader className="sticky top-0 z-10 bg-background/60 backdrop-blur-sm border-b border-border/50">
           <DialogTitle className="text-xl">
-            {solution ? `Edit ${solution.name}` : 'Add New Solution'}
+            {solution ? `Edit ${solution.name}` : 'Add New Offering'}
           </DialogTitle>
           <DialogDescription>
             {solution 
-              ? 'Update your business solution details below.'
-              : 'Create a comprehensive profile for your business solution.'}
+              ? 'Update your business offering details below.'
+              : 'Create a comprehensive profile for your business offering.'}
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-between mb-2">
@@ -604,7 +604,7 @@ useEffect(() => {
             <div className="flex items-center justify-center h-64">
               <div className="flex flex-col items-center gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Loading solution data...</p>
+                <p className="text-sm text-muted-foreground">Loading offering data...</p>
               </div>
             </div>
           ) : (
