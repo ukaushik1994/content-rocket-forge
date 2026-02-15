@@ -14,6 +14,7 @@ import {
 } from "../shared/url-utils.ts";
 import { extractPageContent, chunkText } from "../shared/content-extractor.ts";
 import { fetchRobotsTxt, parseRobotsTxt, isUrlAllowed } from "../shared/robots-parser.ts";
+import { getApiKey } from "../shared/apiKeyService.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -69,17 +70,15 @@ serve(async (req) => {
       );
     }
 
-
     console.log(`🚀 Starting solution intel for: ${website}`);
 
     const domain = normalizeDomain(website);
     const baseUrl = getBaseUrl(domain);
     const cacheKey = await generateCacheKey(domain + "_solutions");
 
-    // Check cache
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Check cache using competitor_cache table
     const { data: cached } = await supabase
-      .from('solution_cache')
+      .from('competitor_cache')
       .select('*')
       .eq('cache_key', cacheKey)
       .single();
@@ -93,8 +92,8 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: true,
-            solutions: cached.solutions_data,
-            multipleDetected: (cached.solutions_data as any[]).length > 1,
+            solutions: cached.profile_data,
+            multipleDetected: Array.isArray(cached.profile_data) && (cached.profile_data as any[]).length > 1,
             diagnostics: {
               ...cached.diagnostics,
               cache_hit: true
@@ -139,11 +138,11 @@ serve(async (req) => {
         .slice(0, maxPages);
     }
 
-    // Fallback to SERP if no sitemap
+    // Fallback to SERP if no sitemap - use user's SERP API key from DB
     if (selectedUrls.length === 0) {
       console.log('🔍 No sitemap found, using SERP fallback');
       usedSerp = true;
-      selectedUrls = await fetchUrlsFromSerp(domain, maxPages);
+      selectedUrls = await fetchUrlsFromSerp(domain, maxPages, userId);
     }
 
     console.log(`📊 Selected ${selectedUrls.length} URLs to fetch`);
@@ -156,18 +155,18 @@ serve(async (req) => {
 
     console.log(`📚 Successfully fetched ${pageContents.length} pages`);
 
-    // AI Analysis: Detect and extract solutions
+    // AI Analysis: Detect and extract solutions using user's AI provider
     const solutions = await analyzeSolutions(domain, pageContents, userId, detectMultiple);
 
-    // Cache the result
+    // Cache the result using competitor_cache table
     await supabase
-      .from('solution_cache')
+      .from('competitor_cache')
       .upsert({
         cache_key: cacheKey,
         domain,
         last_crawled_at: new Date().toISOString(),
         url_count: pageContents.length,
-        solutions_data: solutions,
+        profile_data: solutions,
         diagnostics: {
           used_sitemap: usedSitemap,
           used_serp: usedSerp,
@@ -247,7 +246,6 @@ function parseSitemapXml(xml: string, baseUrl: string): SitemapUrl[] {
         ? result.sitemapindex.sitemap 
         : [result.sitemapindex.sitemap];
       
-      // For sitemap indexes, return the sitemap URLs themselves
       return sitemaps.map((s: any) => ({
         loc: s.loc,
         category: 'sitemap',
@@ -281,21 +279,24 @@ function parseSitemapXml(xml: string, baseUrl: string): SitemapUrl[] {
   }
 }
 
-async function fetchUrlsFromSerp(domain: string, maxUrls: number): Promise<SitemapUrl[]> {
-  // Enhanced SERP discovery - prioritize important pages
-  const serpApiKey = Deno.env.get('SERP_API_KEY');
-  const serpstackKey = Deno.env.get('SERPSTACK_KEY');
+/**
+ * Fetch URLs from SERP using the user's configured SERP API key from the database
+ */
+async function fetchUrlsFromSerp(domain: string, maxUrls: number, userId: string): Promise<SitemapUrl[]> {
+  // Get the user's SERP API key from the database
+  const serpApiKey = await getApiKey('serp', userId);
+  const serpstackKey = !serpApiKey ? await getApiKey('serpstack', userId) : null;
   
   const discoveredUrls: SitemapUrl[] = [];
   
-  // Try SERP API to find important pages
   if (serpApiKey || serpstackKey) {
+    console.log(`🔑 Using user's ${serpApiKey ? 'SerpAPI' : 'Serpstack'} key for URL discovery`);
+    
     const queries = [
       `site:${domain} pricing OR plans`,
       `site:${domain} case study OR success story OR customer`,
       `site:${domain} features OR capabilities`,
       `site:${domain} product OR solution`,
-      // Competitive intelligence queries
       `site:${domain} vs OR versus OR compared to`,
       `site:${domain} why choose OR why us OR advantages`,
       `site:${domain} customers OR clients OR companies using`,
@@ -330,6 +331,8 @@ async function fetchUrlsFromSerp(domain: string, maxUrls: number): Promise<Sitem
         console.log(`SERP query failed for: ${query}`, error);
       }
     }
+  } else {
+    console.warn('⚠️ No SERP API key configured for user. Using fallback URLs.');
   }
   
   // Fallback to base URLs
@@ -399,6 +402,32 @@ async function analyzeSolutions(
   return solutions.filter(Boolean);
 }
 
+/**
+ * Call AI via ai-proxy edge function using the user's configured AI provider
+ */
+async function callAiProxy(prompt: string, userId: string): Promise<string> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data, error } = await supabase.functions.invoke('ai-proxy', {
+    body: {
+      params: {
+        input: prompt,
+        use_case: 'extraction',
+        temperature: 0.3,
+        max_tokens: 4000,
+        userId
+      }
+    }
+  });
+
+  if (error) {
+    console.error('AI proxy error:', error);
+    throw new Error(`AI analysis failed: ${error.message}`);
+  }
+
+  return data?.content || data?.response || '{}';
+}
+
 async function detectProducts(
   domain: string,
   pages: Array<{ url: string; category: string; content: any }>,
@@ -445,22 +474,7 @@ Rules:
 - Return valid JSON only`;
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
-      body: {
-        message: prompt,
-        conversationHistory: [],
-        userId
-      }
-    });
-
-    if (error) {
-      console.error('AI chat error:', error);
-      return [];
-    }
-
-    const aiResponse = data.response || '{}';
+    const aiResponse = await callAiProxy(prompt, userId);
     
     let parsed;
     try {
@@ -511,207 +525,63 @@ ${pageContent}
 
 Return complete structured JSON with these sections:
 
-==== BASIC INFO ====
 {
   "name": "${product.product_name}",
   "description": "2-3 detailed sentences about what this solution does and who it helps",
   "shortDescription": "One compelling sentence (max 150 chars)",
   "category": "${product.category || 'Business Solution'}",
-  
-  ==== COMPETITIVE POSITIONING ====
-  "positioning": {
-    "positioningStatement": "How they position themselves in 1-2 sentences (e.g., 'The only HR platform built specifically for enterprise manufacturing with predictive AI')",
-    "uniqueValuePropositions": [
-      "3-5 UVPs with evidence - what makes them unique and quantifiable (e.g., 'AI predicts turnover 12 months in advance with 94% accuracy')"
-    ],
-    "keyDifferentiators": [
-      "3-5 competitive advantages that set them apart (e.g., 'No SQL required - built for HR not IT')"
-    ]
-  },
-  
-  ==== FEATURES & BENEFITS ====
-  "features": [
-    "12-20 specific, detailed features (not just 'Analytics' but 'AI-powered predictive turnover analytics')"
-  ],
-  "benefits": [
-    "10-15 quantifiable OUTCOMES (not features) - format: 'Reduce X by Y%' or 'Achieve X in Y time' (e.g., 'Reduce employee turnover by 25% on average', 'Cut reporting time from 2 weeks to 15 minutes')"
-  ],
-  
-  ==== USE CASES & AUDIENCE ====
-  "useCases": [
-    "8-12 specific use cases with outcomes (e.g., 'Predict turnover 12 months early and reduce attrition by 25%')"
-  ],
-  "painPoints": [
-    "8-12 pain points in customer language (e.g., 'HR data scattered across 10+ systems')"
-  ],
-  "targetAudience": [
-    "8-12 specific audience segments (e.g., 'Chief Human Resources Officers at Fortune 500 companies')"
-  ],
-  
-  ==== PRICING ====
+  "positioningStatement": "How they position themselves in 1-2 sentences",
+  "uniqueValuePropositions": ["3-5 UVPs with evidence"],
+  "keyDifferentiators": ["3-5 competitive advantages"],
+  "features": ["12-20 specific, detailed features"],
+  "benefits": ["10-15 quantifiable OUTCOMES - format: 'Reduce X by Y%' or 'Achieve X in Y time'"],
+  "useCases": ["8-12 specific use cases with outcomes"],
+  "painPoints": ["8-12 pain points in customer language"],
+  "targetAudience": ["8-12 specific audience segments"],
   "pricing": {
     "model": "subscription|one-time|usage-based|freemium|enterprise|custom|contact-sales",
-    "startingPrice": "Extract if mentioned (e.g., '$99/month', 'Contact sales')",
+    "startingPrice": "Extract if mentioned",
     "freeTrialDuration": "Trial duration if mentioned",
-    "tiers": [
-      {
-        "name": "Tier name",
-        "price": "Monthly price if found",
-        "features": ["Key features in this tier"],
-        "limitations": ["Tier limitations if mentioned"]
-      }
-    ]
+    "tiers": [{"name": "Tier name", "price": "Monthly price if found", "features": ["Key features"], "limitations": ["Limitations"]}]
   },
-  
-  ==== TECHNICAL SPECS ====
   "technicalSpecs": {
-    "systemRequirements": ["Browser requirements, OS requirements, etc."],
-    "supportedPlatforms": ["Web, iOS, Android, Desktop, etc."],
-    "apiCapabilities": ["REST API, GraphQL, Webhooks, etc."],
-    "securityFeatures": ["SOC 2, GDPR, SSO, Encryption, etc."],
-    "performanceMetrics": ["Uptime, speed, reliability claims"],
-    "uptimeGuarantee": "SLA if mentioned (e.g., '99.99% uptime')"
+    "systemRequirements": [],
+    "supportedPlatforms": [],
+    "apiCapabilities": [],
+    "securityFeatures": [],
+    "performanceMetrics": [],
+    "uptimeGuarantee": ""
   },
-  
-  ==== INTEGRATIONS ====
-  "integrations": [
-    "15-25 named integrations (e.g., 'Salesforce', 'Slack', 'Workday', 'ADP', 'BambooHR')"
-  ],
-  
-  ==== MARKET INTELLIGENCE ====
+  "integrations": ["15-25 named integrations"],
   "marketData": {
-    "size": "Market size if mentioned (e.g., '$15B global HR tech market')",
-    "growthRate": "Market growth rate if mentioned (e.g., '12% CAGR through 2028')",
-    "geographicAvailability": ["Regions/countries where available"],
-    "complianceRequirements": ["Compliance standards: SOC 2, GDPR, HIPAA, etc."]
+    "size": "Market size if mentioned",
+    "growthRate": "Growth rate if mentioned",
+    "geographicAvailability": [],
+    "complianceRequirements": []
   },
-  
-  ==== COMPETITORS ====
-  "competitors": [
-    {
-      "name": "Competitor name if explicitly mentioned",
-      "strengths": ["Their advantages if discussed in comparison"],
-      "weaknesses": ["Their limitations if discussed"],
-      "marketShare": "If mentioned",
-      "pricing": "Comparative pricing if available"
-    }
-  ],
-  
-  ==== METRICS & PROOF ====
+  "competitors": [{"name": "Competitor name", "strengths": [], "weaknesses": [], "marketShare": "", "pricing": ""}],
   "metrics": {
-    "adoptionRate": "Customer count or growth (e.g., '10,000+ companies', '300% YoY growth')",
-    "customerSatisfaction": "Ratings/NPS (e.g., '4.8/5 on G2', 'NPS 72')",
-    "roi": "ROI claims (e.g., '3x ROI in 6 months', 'Payback in 90 days')",
-    "implementationTime": "Time to value (e.g., 'Live in 2 weeks', 'Setup in hours')",
-    "supportResponse": "Support SLA (e.g., '<1hr response time', '24/7 support')",
-    "usageAnalytics": [
-      {
-        "metric": "Specific metric name",
-        "value": "Value with units",
-        "trend": "up|down|stable"
-      }
-    ]
+    "adoptionRate": "",
+    "customerSatisfaction": "",
+    "roi": "",
+    "implementationTime": "",
+    "supportResponse": "",
+    "usageAnalytics": [{"metric": "", "value": "", "trend": "up|down|stable"}]
   },
-  
-  ==== CASE STUDIES ====
-  "caseStudies": [
-    {
-      "title": "Case study title if found",
-      "company": "Company name",
-      "industry": "Industry",
-      "challenge": "What problem they had",
-      "solution": "How the product helped",
-      "results": ["Quantifiable outcomes"],
-      "metrics": [
-        {
-          "label": "Metric label",
-          "value": "Value",
-          "improvement": "% or quantified improvement"
-        }
-      ],
-      "testimonial": {
-        "quote": "Customer quote if available",
-        "author": "Name",
-        "position": "Title"
-      }
-    }
-  ],
-  
-  ==== DISCOVERY TAGS ====
-  "tags": [
-    "15-20 searchable tags for discovery (e.g., 'workforce planning', 'HR analytics', 'turnover prediction')"
-  ]
+  "caseStudies": [{"title": "", "company": "", "industry": "", "challenge": "", "solution": "", "results": [], "metrics": [{"label": "", "value": "", "improvement": ""}], "testimonial": {"quote": "", "author": "", "position": ""}}],
+  "tags": ["15-20 searchable tags"]
 }
 
-CRITICAL EXTRACTION RULES:
-
-1. **Competitive Positioning (HIGH PRIORITY)**:
-   - Look for "unlike", "vs", "compared to", "only solution that" language
-   - Extract positioning statements from homepage hero sections
-   - Identify unique value props with quantifiable evidence
-   - Find differentiators in feature comparisons
-
-2. **Benefits vs Features**:
-   - Features = what it does ("Dashboard")
-   - Benefits = outcome you get ("Reduce reporting time by 90%")
-   - ALWAYS extract benefits as outcomes, not capabilities
-
-3. **Competitor Intelligence**:
-   - Extract only explicitly mentioned competitors
-   - Look for comparison pages, competitive analysis
-   - Don't invent competitors - only include if found in content
-
-4. **Market Data**:
-   - Extract market size claims from "About" or PR content
-   - Find geographic availability in footer, pricing, or legal pages
-   - Look for compliance badges/logos
-
-5. **Metrics & Social Proof**:
-   - Extract customer counts ("10,000+ companies")
-   - Find ratings from review sites mentioned
-   - Look for ROI claims in case studies
-   - Extract implementation timelines from onboarding content
-
-6. **Integrations**:
-   - Look for dedicated "Integrations" pages
-   - Extract logos/names from "Works with" sections
-   - Include in both techSpecs AND integrations array
-
-7. **Completeness**:
-   - Extract 12-20 detailed features (not generic)
-   - Find 10-15 quantifiable benefits with outcomes
-   - Identify 8-12 specific use cases with outcomes
-   - List 8-12 pain points in customer language
-   - Extract ALL pricing tiers with features
-   - Find case studies with metrics if available
-   - Include 15-20 tags for searchability
-
-8. **Validation**:
-   - Only include data you can verify from the content
-   - If pricing/competitors/case studies aren't found, return empty arrays
-   - ALWAYS fill: features, benefits, useCases, painPoints, targetAudience
-   - positioning, marketData, metrics, integrations should have at least partial data
-
-Return ONLY valid JSON. No markdown, no explanations.`;
+Rules:
+- Features = what it does. Benefits = outcome you get. Keep them separate.
+- Only include data you can verify from the content
+- If pricing/competitors/case studies aren't found, return empty arrays
+- ALWAYS fill: features, benefits, useCases, painPoints, targetAudience
+- Return ONLY valid JSON. No markdown, no explanations.`;
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
-      body: {
-        message: prompt,
-        conversationHistory: [],
-        userId
-      }
-    });
+    const aiResponse = await callAiProxy(prompt, userId);
 
-    if (error) {
-      console.error('AI chat error:', error);
-      return null;
-    }
-
-    const aiResponse = data.response || '{}';
-    
     let solution;
     try {
       const jsonMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
@@ -755,32 +625,20 @@ Return ONLY valid JSON. No markdown, no explanations.`;
       };
     }
     
-    // Post-processing validation
-    
-    // Ensure integrations is a first-class field
+    // Post-processing
     if (!solution.integrations && solution.technicalSpecs?.integrations) {
       solution.integrations = solution.technicalSpecs.integrations;
     }
     
-    // Ensure positioning statement exists
-    if (!solution.positioning?.positioningStatement && solution.description) {
-      solution.positioning = {
-        positioningStatement: `${solution.name}: ${solution.description.split('.')[0]}.`,
-        uniqueValuePropositions: solution.positioning?.uniqueValuePropositions || [],
-        keyDifferentiators: solution.positioning?.keyDifferentiators || []
-      };
+    if (!solution.positioningStatement && !solution.positioning?.positioningStatement && solution.description) {
+      solution.positioningStatement = `${solution.name}: ${solution.description.split('.')[0]}.`;
     }
     
-    // Validate benefits are outcomes, not features
-    if (solution.benefits && Array.isArray(solution.benefits) && solution.benefits.length > 0) {
-      solution.benefits = solution.benefits.filter((b: string) => 
-        b.toLowerCase().includes('reduce') ||
-        b.toLowerCase().includes('increase') ||
-        b.toLowerCase().includes('improve') ||
-        b.toLowerCase().includes('save') ||
-        b.toLowerCase().includes('%') ||
-        /\d+/.test(b) // Contains numbers
-      );
+    // Flatten positioning if nested
+    if (solution.positioning) {
+      solution.positioningStatement = solution.positioningStatement || solution.positioning.positioningStatement;
+      solution.uniqueValuePropositions = solution.uniqueValuePropositions || solution.positioning.uniqueValuePropositions || [];
+      solution.keyDifferentiators = solution.keyDifferentiators || solution.positioning.keyDifferentiators || [];
     }
     
     // Add UUIDs to case studies
@@ -817,7 +675,7 @@ function calculateCompleteness(solution: any): number {
     useCases: 10,
     painPoints: 10,
     targetAudience: 8,
-    positioning: 7,
+    positioningStatement: 7,
     uniqueValuePropositions: 8,
     keyDifferentiators: 7,
     pricing: 5,
@@ -833,11 +691,9 @@ function calculateCompleteness(solution: any): number {
   let score = 0;
   let maxScore = Object.values(weights).reduce((a, b) => a + b, 0);
   
-  // Check basic fields
   if (solution.name) score += weights.name;
   if (solution.description) score += weights.description;
   
-  // Check array fields
   if (solution.features && solution.features.length > 0) score += weights.features;
   if (solution.benefits && solution.benefits.length > 0) score += weights.benefits;
   if (solution.useCases && solution.useCases.length > 0) score += weights.useCases;
@@ -847,33 +703,15 @@ function calculateCompleteness(solution: any): number {
   if (solution.caseStudies && solution.caseStudies.length > 0) score += weights.caseStudies;
   if (solution.tags && solution.tags.length > 0) score += weights.tags;
   
-  // Check positioning object
-  if (solution.positioning && solution.positioning.positioningStatement) {
-    score += weights.positioning;
-  }
-  if (solution.positioning && solution.positioning.uniqueValuePropositions && solution.positioning.uniqueValuePropositions.length > 0) {
-    score += weights.uniqueValuePropositions;
-  }
-  if (solution.positioning && solution.positioning.keyDifferentiators && solution.positioning.keyDifferentiators.length > 0) {
-    score += weights.keyDifferentiators;
-  }
+  if (solution.positioningStatement) score += weights.positioningStatement;
+  if (solution.uniqueValuePropositions && solution.uniqueValuePropositions.length > 0) score += weights.uniqueValuePropositions;
+  if (solution.keyDifferentiators && solution.keyDifferentiators.length > 0) score += weights.keyDifferentiators;
   
-  // Check object fields
-  if (solution.pricing && (solution.pricing.model || solution.pricing.tiers?.length > 0)) {
-    score += weights.pricing;
-  }
-  if (solution.technicalSpecs && Object.keys(solution.technicalSpecs).some(k => solution.technicalSpecs[k]?.length > 0)) {
-    score += weights.technicalSpecs;
-  }
-  if (solution.marketData && Object.keys(solution.marketData).length > 0) {
-    score += weights.marketData;
-  }
-  if (solution.competitors && solution.competitors.length > 0) {
-    score += weights.competitors;
-  }
-  if (solution.metrics && Object.keys(solution.metrics).length > 0) {
-    score += weights.metrics;
-  }
+  if (solution.pricing && (solution.pricing.model || solution.pricing.tiers?.length > 0)) score += weights.pricing;
+  if (solution.technicalSpecs && Object.keys(solution.technicalSpecs).some((k: string) => solution.technicalSpecs[k]?.length > 0)) score += weights.technicalSpecs;
+  if (solution.marketData && Object.keys(solution.marketData).length > 0) score += weights.marketData;
+  if (solution.competitors && solution.competitors.length > 0) score += weights.competitors;
+  if (solution.metrics && Object.keys(solution.metrics).length > 0) score += weights.metrics;
   
   return Math.round((score / maxScore) * 100);
 }
