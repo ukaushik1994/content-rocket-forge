@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Zap, MoreVertical, Trash2, Play, Pause } from 'lucide-react';
+import { Plus, Zap, MoreVertical, Trash2, Play, Pause, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -31,12 +31,29 @@ const actionLabels: Record<string, string> = {
   webhook: 'Webhook',
 };
 
+interface ActionItem {
+  type: string;
+  config: Record<string, string>;
+}
+
+interface AutomationForm {
+  name: string;
+  trigger_type: string;
+  trigger_value: string;
+  actions: ActionItem[];
+}
+
+const defaultForm: AutomationForm = {
+  name: '', trigger_type: 'segment_entry', trigger_value: '', actions: [{ type: 'send_email', config: {} }],
+};
+
 export const AutomationsList = () => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', trigger_type: 'segment_entry', action_type: 'send_email' });
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<AutomationForm>({ ...defaultForm });
 
   const { data: automations = [], isLoading } = useQuery({
     queryKey: ['engage-automations', currentWorkspaceId],
@@ -51,20 +68,76 @@ export const AutomationsList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  const createAutomation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('engage_automations').insert({
-        workspace_id: currentWorkspaceId!, name: form.name,
-        trigger_config: { type: form.trigger_type },
-        actions: [{ type: form.action_type }],
-        created_by: user?.id,
+  const { data: templates = [] } = useQuery({
+    queryKey: ['auto-templates', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase.from('email_templates').select('id, name').eq('workspace_id', currentWorkspaceId!);
+      return data || [];
+    },
+    enabled: !!currentWorkspaceId,
+  });
+
+  const { data: journeys = [] } = useQuery({
+    queryKey: ['auto-journeys', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase.from('journeys').select('id, name').eq('workspace_id', currentWorkspaceId!).eq('status', 'active');
+      return data || [];
+    },
+    enabled: !!currentWorkspaceId,
+  });
+
+  const { data: segmentsList = [] } = useQuery({
+    queryKey: ['auto-segments', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase.from('engage_segments').select('id, name').eq('workspace_id', currentWorkspaceId!);
+      return data || [];
+    },
+    enabled: !!currentWorkspaceId,
+  });
+
+  const openDialog = (automation?: any) => {
+    if (automation) {
+      setEditingId(automation.id);
+      const tc = automation.trigger_config || {};
+      const acts = (automation.actions || []).map((a: any) => ({
+        type: a.type || 'send_email',
+        config: a.config || {},
+      }));
+      setForm({
+        name: automation.name,
+        trigger_type: tc.type || 'segment_entry',
+        trigger_value: tc.value || '',
+        actions: acts.length ? acts : [{ type: 'send_email', config: {} }],
       });
-      if (error) throw error;
+    } else {
+      setEditingId(null);
+      setForm({ ...defaultForm, actions: [{ type: 'send_email', config: {} }] });
+    }
+    setShowDialog(true);
+  };
+
+  const saveAutomation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: form.name,
+        trigger_config: { type: form.trigger_type, value: form.trigger_value || undefined },
+        actions: form.actions.map(a => ({ type: a.type, config: a.config })),
+      };
+
+      if (editingId) {
+        const { error } = await supabase.from('engage_automations').update(payload).eq('id', editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('engage_automations').insert({
+          ...payload, workspace_id: currentWorkspaceId!, created_by: user?.id,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['engage-automations'] });
-      setShowCreate(false); setForm({ name: '', trigger_type: 'segment_entry', action_type: 'send_email' });
-      toast.success('Automation created');
+      setShowDialog(false);
+      toast.success(editingId ? 'Automation updated' : 'Automation created');
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -87,10 +160,63 @@ export const AutomationsList = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['engage-automations'] }),
   });
 
+  const addAction = () => setForm(f => ({ ...f, actions: [...f.actions, { type: 'send_email', config: {} }] }));
+  const removeAction = (idx: number) => setForm(f => ({ ...f, actions: f.actions.filter((_, i) => i !== idx) }));
+  const updateAction = (idx: number, key: string, val: any) => {
+    setForm(f => ({
+      ...f,
+      actions: f.actions.map((a, i) => i === idx ? (key === 'type' ? { type: val, config: {} } : { ...a, config: { ...a.config, [key]: val } }) : a),
+    }));
+  };
+
   const stats = {
     active: automations.filter((a: any) => a.status === 'active').length,
     paused: automations.filter((a: any) => a.status === 'paused').length,
     total: automations.length,
+  };
+
+  const renderActionConfig = (action: ActionItem, idx: number) => {
+    switch (action.type) {
+      case 'send_email':
+        return (
+          <Select value={action.config.template_id || ''} onValueChange={v => updateAction(idx, 'template_id', v)}>
+            <SelectTrigger className="h-8"><SelectValue placeholder="Pick template" /></SelectTrigger>
+            <SelectContent>{templates.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+          </Select>
+        );
+      case 'add_tag':
+      case 'remove_tag':
+        return <Input className="h-8" placeholder="Tag name" value={action.config.tag || ''} onChange={e => updateAction(idx, 'tag', e.target.value)} />;
+      case 'enroll_journey':
+        return (
+          <Select value={action.config.journey_id || ''} onValueChange={v => updateAction(idx, 'journey_id', v)}>
+            <SelectTrigger className="h-8"><SelectValue placeholder="Pick journey" /></SelectTrigger>
+            <SelectContent>{journeys.map((j: any) => <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>)}</SelectContent>
+          </Select>
+        );
+      case 'webhook':
+        return <Input className="h-8" placeholder="https://..." value={action.config.url || ''} onChange={e => updateAction(idx, 'url', e.target.value)} />;
+      default:
+        return null;
+    }
+  };
+
+  const renderTriggerValue = () => {
+    switch (form.trigger_type) {
+      case 'tag_added':
+        return <Input className="h-8 mt-1" placeholder="Tag name" value={form.trigger_value} onChange={e => setForm(f => ({ ...f, trigger_value: e.target.value }))} />;
+      case 'segment_entry':
+        return (
+          <Select value={form.trigger_value} onValueChange={v => setForm(f => ({ ...f, trigger_value: v }))}>
+            <SelectTrigger className="h-8 mt-1"><SelectValue placeholder="Pick segment" /></SelectTrigger>
+            <SelectContent>{segmentsList.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+          </Select>
+        );
+      case 'event_occurred':
+        return <Input className="h-8 mt-1" placeholder="Event name" value={form.trigger_value} onChange={e => setForm(f => ({ ...f, trigger_value: e.target.value }))} />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -102,44 +228,63 @@ export const AutomationsList = () => {
           <p className="text-sm text-muted-foreground">Rule-based triggers and actions</p>
         </div>
         {canEdit && (
-          <Dialog open={showCreate} onOpenChange={setShowCreate}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Automation</Button>
-            </DialogTrigger>
-            <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50">
-              <DialogHeader><DialogTitle>Create Automation</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-                <div>
-                  <Label>Trigger</Label>
-                  <Select value={form.trigger_type} onValueChange={v => setForm(f => ({ ...f, trigger_type: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="segment_entry">Segment Entry</SelectItem>
-                      <SelectItem value="tag_added">Tag Added</SelectItem>
-                      <SelectItem value="event_occurred">Event Occurred</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Action</Label>
-                  <Select value={form.action_type} onValueChange={v => setForm(f => ({ ...f, action_type: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="send_email">Send Email</SelectItem>
-                      <SelectItem value="add_tag">Add Tag</SelectItem>
-                      <SelectItem value="remove_tag">Remove Tag</SelectItem>
-                      <SelectItem value="enroll_journey">Enroll in Journey</SelectItem>
-                      <SelectItem value="webhook">Webhook</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={() => createAutomation.mutate()} disabled={!form.name} className="w-full">Create</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> New Automation</Button>
         )}
       </div>
+
+      {/* Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editingId ? 'Edit Automation' : 'Create Automation'}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+
+            {/* Trigger */}
+            <div className="space-y-1">
+              <Label>Trigger</Label>
+              <Select value={form.trigger_type} onValueChange={v => setForm(f => ({ ...f, trigger_type: v, trigger_value: '' }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="segment_entry">Segment Entry</SelectItem>
+                  <SelectItem value="tag_added">Tag Added</SelectItem>
+                  <SelectItem value="event_occurred">Event Occurred</SelectItem>
+                </SelectContent>
+              </Select>
+              {renderTriggerValue()}
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Actions</Label>
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addAction}><Plus className="h-3 w-3 mr-1" /> Add</Button>
+              </div>
+              {form.actions.map((action, idx) => (
+                <GlassCard key={idx} className="p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Select value={action.type} onValueChange={v => updateAction(idx, 'type', v)}>
+                      <SelectTrigger className="h-8 flex-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(actionLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {form.actions.length > 1 && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeAction(idx)}>
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  {renderActionConfig(action, idx)}
+                </GlassCard>
+              ))}
+            </div>
+
+            <Button onClick={() => saveAutomation.mutate()} disabled={!form.name || saveAutomation.isPending} className="w-full">
+              {editingId ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       {automations.length > 0 && (
@@ -173,7 +318,7 @@ export const AutomationsList = () => {
             <Zap className="h-8 w-8 text-amber-400" />
           </div>
           <p className="text-muted-foreground">No automations yet</p>
-          {canEdit && <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Automation</Button>}
+          {canEdit && <Button size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
@@ -193,7 +338,7 @@ export const AutomationsList = () => {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Trigger: {triggerLabels[triggerType] || triggerType}</span>
+                        <span>Trigger: {triggerLabels[triggerType] || triggerType}{a.trigger_config?.value ? ` (${a.trigger_config.value})` : ''}</span>
                         <span>•</span>
                         <span>{actions.map((act: any) => actionLabels[act.type] || act.type).join(', ')}</span>
                         <span>•</span>
@@ -213,6 +358,9 @@ export const AutomationsList = () => {
                             <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openDialog(a)}>
+                              <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}>
                               <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                             </DropdownMenuItem>

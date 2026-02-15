@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Save, Mail, Activity, X, UserCheck, UserX, Tag } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Save, Mail, Activity, X, UserCheck, UserX, Tag, Route } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -24,6 +26,7 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ first_name: '', last_name: '', phone: '', tags: '' });
   const [newTag, setNewTag] = useState('');
+  const [showJourneyPicker, setShowJourneyPicker] = useState(false);
 
   useEffect(() => {
     if (contact) {
@@ -40,11 +43,9 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
     queryKey: ['contact-events', contact?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from('engage_events')
-        .select('*')
+        .from('engage_events').select('*')
         .eq('contact_id', contact!.id)
-        .order('occurred_at', { ascending: false })
-        .limit(50);
+        .order('occurred_at', { ascending: false }).limit(50);
       return data || [];
     },
     enabled: !!contact?.id,
@@ -54,14 +55,22 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
     queryKey: ['contact-activity', contact?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from('engage_activity_log')
-        .select('*')
+        .from('engage_activity_log').select('*')
         .eq('contact_id', contact!.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false }).limit(50);
       return data || [];
     },
     enabled: !!contact?.id,
+  });
+
+  const { data: activeJourneys = [] } = useQuery({
+    queryKey: ['active-journeys-for-enroll', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase.from('journeys').select('id, name, nodes')
+        .eq('workspace_id', currentWorkspaceId!).eq('status', 'active');
+      return data || [];
+    },
+    enabled: !!currentWorkspaceId && showJourneyPicker,
   });
 
   const updateContact = useMutation({
@@ -96,15 +105,44 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
     },
   });
 
+  const enrollInJourney = useMutation({
+    mutationFn: async (journey: any) => {
+      // Create enrollment
+      const { error: enrollErr } = await supabase.from('journey_enrollments').insert({
+        workspace_id: currentWorkspaceId!,
+        journey_id: journey.id,
+        contact_id: contact.id,
+        status: 'active',
+      });
+      if (enrollErr) throw enrollErr;
+
+      // Find trigger node and create first step
+      const nodes = (journey.nodes || []) as any[];
+      const triggerNode = nodes.find((n: any) => n.type === 'triggerNode' || n.data?.nodeType === 'trigger');
+      if (triggerNode) {
+        await supabase.from('journey_steps').insert({
+          enrollment_id: enrollErr ? '' : 'pending', // will be replaced below
+          node_id: triggerNode.id,
+          status: 'pending',
+          scheduled_for: new Date().toISOString(),
+          workspace_id: currentWorkspaceId!,
+        } as any);
+      }
+    },
+    onSuccess: () => {
+      setShowJourneyPicker(false);
+      toast.success('Contact enrolled in journey');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (!contact) return null;
 
   const tags = form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
-
   const removeTag = (tag: string) => {
     const updated = tags.filter(t => t !== tag).join(', ');
     setForm(f => ({ ...f, tags: updated }));
   };
-
   const addTag = () => {
     if (!newTag.trim()) return;
     const updated = [...tags, newTag.trim()].join(', ');
@@ -158,9 +196,7 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
                 {tags.map(tag => (
                   <Badge key={tag} variant="secondary" className="text-xs gap-1">
                     {tag}
-                    {canEdit && (
-                      <X className="h-2.5 w-2.5 cursor-pointer hover:text-destructive" onClick={() => removeTag(tag)} />
-                    )}
+                    {canEdit && <X className="h-2.5 w-2.5 cursor-pointer hover:text-destructive" onClick={() => removeTag(tag)} />}
                   </Badge>
                 ))}
               </div>
@@ -171,6 +207,36 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
                 </div>
               )}
             </div>
+
+            {/* Enroll in Journey */}
+            {canEdit && (
+              <Popover open={showJourneyPicker} onOpenChange={setShowJourneyPicker}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full gap-1.5">
+                    <Route className="h-3.5 w-3.5" /> Enroll in Journey
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="start">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Active Journeys</p>
+                  {activeJourneys.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2 text-center">No active journeys</p>
+                  ) : (
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {activeJourneys.map((j: any) => (
+                        <button
+                          key={j.id}
+                          onClick={() => enrollInJourney.mutate(j)}
+                          className="w-full text-left px-2 py-1.5 rounded-md text-xs hover:bg-muted/50 transition-colors"
+                          disabled={enrollInJourney.isPending}
+                        >
+                          {j.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            )}
 
             {/* Metadata */}
             <GlassCard className="p-3">
