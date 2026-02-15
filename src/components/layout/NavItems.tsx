@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book, Megaphone } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, MessageSquare, Globe, Book, Megaphone, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -172,9 +172,13 @@ export default function NavItems() {
         active={location.pathname === '/campaigns'} 
       />
       
-      
-      
-      
+      {/* Engage - Marketing Hub */}
+      <NavItem 
+        to="/engage" 
+        icon={<Send className="h-4 w-4" />} 
+        label="Engage" 
+        active={location.pathname.startsWith('/engage')} 
+      />
       <NavItem to="/analytics" icon={<BarChart3 className="h-4 w-4" />} label="Analytics" active={location.pathname === '/analytics'} />
     </div>
   );

@@ -29,6 +29,7 @@ import TopicClusters from "./pages/research/TopicClusters";
 import ContentGapsPage from "./pages/research/ContentGaps";
 import CalendarPage from "./pages/research/Calendar";
 import Campaigns from "./pages/Campaigns";
+import Engage from "./pages/Engage";
 // Pipeline route removed - integrated into Content Strategy
 
 
@@ -161,6 +162,9 @@ const App = () => (
                    
                    {/* Campaigns */}
                    <Route path="/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
+                   
+                   {/* Engage */}
+                   <Route path="/engage/*" element={<ProtectedRoute><Engage /></ProtectedRoute>} />
                   
 
                    {/* Smart Actions Analytics */}

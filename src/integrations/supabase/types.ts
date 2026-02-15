@@ -3377,6 +3377,504 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaigns: {
+        Row: {
+          audience_definition: Json | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          scheduled_at: string | null
+          started_at: string | null
+          stats: Json | null
+          status: string
+          template_id: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          audience_definition?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          stats?: Json | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          audience_definition?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          stats?: Json | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_messages: {
+        Row: {
+          body_html: string | null
+          campaign_id: string | null
+          contact_id: string | null
+          error: string | null
+          id: string
+          provider_message_id: string | null
+          queued_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          to_email: string
+          workspace_id: string
+        }
+        Insert: {
+          body_html?: string | null
+          campaign_id?: string | null
+          contact_id?: string | null
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          queued_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          to_email: string
+          workspace_id: string
+        }
+        Update: {
+          body_html?: string | null
+          campaign_id?: string | null
+          contact_id?: string | null
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          queued_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_provider_settings: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          from_email: string | null
+          from_name: string | null
+          id: string
+          provider: string
+          reply_to: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          provider?: string
+          reply_to?: string | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          provider?: string
+          reply_to?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_provider_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          subject: string
+          updated_at: string | null
+          variables: string[] | null
+          workspace_id: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          subject?: string
+          updated_at?: string | null
+          variables?: string[] | null
+          workspace_id: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          subject?: string
+          updated_at?: string | null
+          variables?: string[] | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engage_activity_log: {
+        Row: {
+          channel: string
+          contact_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          message: string
+          payload: Json | null
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          channel?: string
+          contact_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          message: string
+          payload?: Json | null
+          type: string
+          workspace_id: string
+        }
+        Update: {
+          channel?: string
+          contact_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          message?: string
+          payload?: Json | null
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engage_activity_log_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engage_activity_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engage_automations: {
+        Row: {
+          actions: Json | null
+          conditions: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          status: string
+          trigger_config: Json | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          status?: string
+          trigger_config?: Json | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          actions?: Json | null
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          status?: string
+          trigger_config?: Json | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engage_automations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engage_contacts: {
+        Row: {
+          attributes: Json | null
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          tags: string[] | null
+          unsubscribed: boolean | null
+          unsubscribed_at: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          attributes?: Json | null
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          unsubscribed?: boolean | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          attributes?: Json | null
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          unsubscribed?: boolean | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engage_contacts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engage_events: {
+        Row: {
+          contact_id: string
+          id: string
+          occurred_at: string | null
+          payload: Json | null
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          contact_id: string
+          id?: string
+          occurred_at?: string | null
+          payload?: Json | null
+          type: string
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string
+          id?: string
+          occurred_at?: string | null
+          payload?: Json | null
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engage_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engage_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engage_segment_memberships: {
+        Row: {
+          computed_at: string | null
+          contact_id: string
+          id: string
+          segment_id: string
+          workspace_id: string
+        }
+        Insert: {
+          computed_at?: string | null
+          contact_id: string
+          id?: string
+          segment_id: string
+          workspace_id: string
+        }
+        Update: {
+          computed_at?: string | null
+          contact_id?: string
+          id?: string
+          segment_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engage_segment_memberships_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engage_segment_memberships_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "engage_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engage_segment_memberships_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engage_segments: {
+        Row: {
+          created_at: string | null
+          definition: Json | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          definition?: Json | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          definition?: Json | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engage_segments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback: {
         Row: {
           created_at: string
@@ -3604,6 +4102,237 @@ export type Database = {
           workflow_type?: string
         }
         Relationships: []
+      }
+      journey_edges: {
+        Row: {
+          condition_label: string | null
+          id: string
+          journey_id: string
+          source_node_id: string
+          target_node_id: string
+          workspace_id: string
+        }
+        Insert: {
+          condition_label?: string | null
+          id?: string
+          journey_id: string
+          source_node_id: string
+          target_node_id: string
+          workspace_id: string
+        }
+        Update: {
+          condition_label?: string | null
+          id?: string
+          journey_id?: string
+          source_node_id?: string
+          target_node_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_edges_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_edges_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_enrollments: {
+        Row: {
+          contact_id: string
+          enrolled_at: string | null
+          id: string
+          journey_id: string
+          status: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          contact_id: string
+          enrolled_at?: string | null
+          id?: string
+          journey_id: string
+          status?: string
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string
+          enrolled_at?: string | null
+          id?: string
+          journey_id?: string
+          status?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_enrollments_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_enrollments_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_enrollments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_nodes: {
+        Row: {
+          config: Json | null
+          id: string
+          journey_id: string
+          node_id: string
+          position: Json | null
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          config?: Json | null
+          id?: string
+          journey_id: string
+          node_id: string
+          position?: Json | null
+          type: string
+          workspace_id: string
+        }
+        Update: {
+          config?: Json | null
+          id?: string
+          journey_id?: string
+          node_id?: string
+          position?: Json | null
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_nodes_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_nodes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_steps: {
+        Row: {
+          enrollment_id: string
+          error: string | null
+          executed_at: string | null
+          id: string
+          node_id: string
+          output: Json | null
+          scheduled_for: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          enrollment_id: string
+          error?: string | null
+          executed_at?: string | null
+          id?: string
+          node_id: string
+          output?: Json | null
+          scheduled_for?: string | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          enrollment_id?: string
+          error?: string | null
+          executed_at?: string | null
+          id?: string
+          node_id?: string
+          output?: Json | null
+          scheduled_for?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_steps_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "journey_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_steps_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journeys: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          status: string
+          trigger_config: Json | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          status?: string
+          trigger_config?: Json | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          status?: string
+          trigger_config?: Json | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journeys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       keyword_performance_cache: {
         Row: {
@@ -5353,6 +6082,143 @@ export type Database = {
           workflow_type?: string
         }
         Relationships: []
+      }
+      social_accounts: {
+        Row: {
+          auth_data: Json | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          provider: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          auth_data?: Json | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          provider: string
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          auth_data?: Json | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          provider?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_accounts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_post_targets: {
+        Row: {
+          account_id: string | null
+          error: string | null
+          id: string
+          post_id: string
+          provider: string
+          provider_post_id: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          error?: string | null
+          id?: string
+          post_id: string
+          provider: string
+          provider_post_id?: string | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string | null
+          error?: string | null
+          id?: string
+          post_id?: string
+          provider?: string
+          provider_post_id?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_targets_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_targets_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_targets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          media_urls: string[] | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          media_urls?: string[] | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          media_urls?: string[] | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       solution_cache: {
         Row: {
@@ -7159,6 +8025,7 @@ export type Database = {
             }
             Returns: Json
           }
+      evaluate_segment: { Args: { p_segment_id: string }; Returns: number }
       get_conversation_messages: {
         Args: { conv_id: string; limit_count?: number; offset_count?: number }
         Returns: {
@@ -7181,6 +8048,10 @@ export type Database = {
       get_serp_usage_count: {
         Args: { p_start_date: string; p_user_id: string }
         Returns: number
+      }
+      get_user_engage_workspace_ids: {
+        Args: { p_user_id: string }
+        Returns: string[]
       }
       get_user_role: { Args: { user_id: string }; Returns: string }
       group_notifications: {
