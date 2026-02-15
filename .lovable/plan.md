@@ -1,119 +1,147 @@
 
+# Continue Engage Implementation: Journey Builder, Automations, Campaigns, and Settings
 
-# Social Dashboard Critique and Redesign Plan
+## What We're Building
 
-## Current Issues
+The remaining Engage pages (Journeys, Automations, Email Campaigns) use plain Card components and lack the glassmorphism, framer-motion animations, and feature depth that the Social page now has. The Settings page also needs a proper connection flow so Engage actually works end-to-end.
 
-### 1. Design Quality Gap
-The Social Dashboard uses plain `Card` components with basic styling (`bg-card border-border`), while the rest of Creaiter (Campaigns, Strategy pages) uses:
-- **GlassCard** with glassmorphism (`bg-card/80 backdrop-blur-xl`)
-- **Framer Motion** animations (`motion.div` with staggered reveals)
-- **Gradient accents** on metrics (purple, blue, green, amber semantic colors)
-- **Hover micro-interactions** (`hover:scale-[1.02]`, `hover:border-primary/30`)
-- **Gradient text** on key values (`bg-gradient-to-r bg-clip-text text-transparent`)
-
-The Social page looks like a prototype next to the polished Campaigns page.
-
-### 2. Missing Features
-- **No stats/metrics header** -- Campaigns has stat cards (Active, Content, Completed); Social has nothing
-- **No post detail/edit** -- posts are display-only, no click-to-edit
-- **No delete post** -- no way to remove posts
-- **No media upload UI** -- `media_urls` column exists but there is no upload interface
-- **No character count** -- social posts need platform-specific limits
-- **Calendar has no click-to-create** -- clicking a day should open the create form pre-filled
-- **Empty state is plain** -- just an icon and text, no gradient or animation
-- **Connected Accounts section is non-functional** -- badges don't do anything on click
-
-### 3. No Connection to Other Engage Pages
-- Social posts could reference **Contacts** for audience targeting
-- No link to **Activity Log** for social events
-- No integration with **Campaigns** (e.g., "Create social post from campaign content")
-- No cross-navigation breadcrumbs or contextual links
-
-### 4. Calendar Issues
-- No week view option
-- No click-on-day to create post
-- No post detail popup on click
-- No drag-to-reschedule
-- Padding cells have no visual treatment
+This plan covers 4 areas:
+1. Journey Builder -- custom nodes, inspector panel, validation
+2. Campaigns -- audience selector, scheduling, polished cards
+3. Automations -- condition/action config, design upgrade
+4. Settings -- Resend API key integration, test connection, status indicators
 
 ---
 
-## Redesign Plan
+## 1. Journey Builder Upgrade
 
-### A. Page Header with Stats (match Campaigns Hero pattern)
-Add a compact hero section with framer-motion staggered animations:
-- **Gradient title**: "Social" with `bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent`
-- **Subtitle**: "Schedule and manage social posts across all channels"
-- **3 stat cards** (glassmorphism style):
-  - Scheduled Posts (blue icon)
-  - Posted (green icon)  
-  - Connected Accounts (purple icon)
-- Each card: `bg-background/40 backdrop-blur-xl border border-border/50 rounded-2xl hover:scale-105`
+**Current state**: Generic colored rectangles, no inspector, no node config forms, no validation.
 
-### B. Connected Accounts Section Upgrade
-- Replace plain Card with glassmorphism container
-- Each provider gets its own mini-card with:
-  - Provider icon with colored background (Twitter=blue, LinkedIn=blue, Instagram=gradient, Facebook=blue)
-  - Status: "Connected" (green dot) or "Connect" button
-  - Subtle hover animation
-- Add "Coming Soon" tooltip for OAuth placeholder
+**Changes to `JourneyBuilder.tsx`**:
+- Replace generic `type: 'default'` nodes with custom React Flow node components per type (Trigger, SendEmail, Wait, Condition, UpdateContact, Webhook, End)
+- Each custom node renders with its own icon, colored header bar, and a summary of its config
+- Clicking a node opens a right-side inspector panel
 
-### C. Post Cards Redesign (match EnhancedCampaignCard)
-Replace plain Card list with GlassCard-based post cards:
-- `GlassCard` with `backdrop-blur-xl` and gradient hover border
-- Status badge with semantic colors and icons (same pattern as campaign statusConfig)
-- Channel icons row (like distribution channels in campaign cards)
-- Character count indicator
-- Scheduled time with calendar icon
-- Hover: `hover:scale-[1.01] hover:border-primary/30 hover:shadow-xl`
-- Actions: Edit, Delete via dropdown menu (MoreVertical pattern from campaigns)
-- Framer Motion stagger animation on the grid
+**New file: `src/components/engage/journeys/nodes/CustomNodes.tsx`**
+- 7 custom node components using React Flow's `Handle` for source/target ports
+- Each has a glassmorphism card style: rounded corners, backdrop-blur, colored top border
+- Icons: Mail for SendEmail, Clock for Wait, GitBranch for Condition, User for UpdateContact, Globe for Webhook, Flag for End, Zap for Trigger
 
-### D. Create Post Dialog Upgrade
-- Glassmorphism dialog styling
-- Character count with platform-specific limits (Twitter 280, LinkedIn 3000, etc.)
-- Channel selector as styled chips (not checkboxes)
-- Preview section showing how post looks per platform
-- Media URL input with preview
+**New file: `src/components/engage/journeys/JourneyInspector.tsx`**
+- Slide-in panel on the right (w-80) when a node is selected
+- Per-node config forms:
+  - **Trigger**: select trigger type (manual, segment_entry, event)
+  - **SendEmail**: template picker dropdown (queries email_templates)
+  - **Wait**: duration input (number + unit: minutes/hours/days)
+  - **Condition**: field/operator/value rule builder
+  - **UpdateContact**: tag add/remove, attribute set
+  - **Webhook**: URL input + method select
+  - **End**: just a label
+- Save button updates the node's `config` in local state
+- Close button deselects
 
-### E. Calendar Upgrade
-- Wrap in GlassCard container
-- Add click-on-day to open create dialog with pre-filled date
-- Post indicators: show channel icons instead of just dots
-- Click on post to open detail/edit popup
-- Today highlight with primary gradient ring
-- Smooth month transition animation
+**Journey validation** (added to toolbar):
+- "Validate" button checks: at least 1 trigger, no orphan nodes (every node must be reachable from trigger), all branches end at an End node
+- Shows toast with errors or "Journey is valid"
 
-### F. Empty State Upgrade
-- Gradient icon background (like campaigns hero)
-- Animated entry with framer-motion
-- Quick action buttons: "Create First Post", "Connect Account"
-- Subtle background gradient glow
-
-### G. Cross-Page Integration
-- Add "Recent Social Activity" link to Activity Log (filtered to channel=social)
-- Add breadcrumb-style context: "Engage > Social"
-- Show contact count if audience targeting is available
+**Manual enroll button**:
+- Opens dialog to pick a contact from engage_contacts
+- Inserts into journey_enrollments + creates first journey_step for the trigger node
 
 ---
 
-## Technical Details
+## 2. Campaigns List and Wizard Upgrade
 
-### Files Modified
-1. **`src/components/engage/social/SocialDashboard.tsx`** -- Complete redesign with GlassCard, framer-motion, stat cards, upgraded post cards, better empty state, provider mini-cards
-2. **`src/components/engage/social/SocialCalendar.tsx`** -- GlassCard wrapper, click-to-create callback, channel icons in day cells, smooth transitions
-3. **`src/components/engage/social/SocialPostCard.tsx`** (NEW) -- Extracted post card component matching EnhancedCampaignCard quality with edit/delete actions
+**Changes to `CampaignsList.tsx`**:
+- Upgrade to GlassCard + framer-motion stagger animation
+- Add stat cards header: Draft, Sending, Complete counts with gradient icons
+- Campaign cards get: status badge with icons, template name, scheduled time, recipient count, action dropdown (Edit, Delete, Duplicate)
 
-### Design Tokens Used (from existing codebase)
-- Glassmorphism: `bg-background/40 backdrop-blur-xl border border-border/50`
-- Hover: `hover:border-primary/30 hover:scale-[1.02] hover:shadow-2xl`
-- Gradients: `bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent`
-- Animations: `animate-fade-in`, framer-motion `initial/animate` with stagger
-- Stat cards: Colored icon backgrounds (`bg-blue-500/20`, `bg-green-500/20`, etc.)
-- Status badges: `bg-info/10 text-info border-info/30` pattern
+**Audience selection** (in create/edit dialog):
+- Step 1: Name + Template (existing)
+- Step 2: Audience -- choose "All contacts", a specific segment, or filter by tags
+- Show estimated recipient count based on selection
+- Step 3: Schedule -- "Send now" or pick date/time
 
-### Dependencies
-- No new packages needed
-- Uses existing: `framer-motion`, `GlassCard`, `lucide-react`, `date-fns`
+**Changes to launch logic**:
+- If audience is a segment, query engage_segment_memberships for contact_ids
+- If audience is tag-based, filter engage_contacts by tags
+- Respect scheduled_at: if future date, set status to "scheduled" instead of "sending"
 
+---
+
+## 3. Automations List Upgrade
+
+**Changes to `AutomationsList.tsx`**:
+- GlassCard + framer-motion stagger
+- Hero section with stat cards: Active, Paused, Total count
+- Automation cards get: trigger type badge, action summary, last run timestamp, edit/delete dropdown
+
+**Expanded create/edit dialog**:
+- Trigger config: type selector + value input (e.g., segment name for segment_entry, tag name for tag_added, event name for event_occurred)
+- Condition builder (optional): field/operator/value to further filter
+- Actions list: support multiple actions with type-specific config:
+  - send_email: template picker
+  - add_tag / remove_tag: tag input
+  - enroll_journey: journey picker
+  - webhook: URL + method
+
+---
+
+## 4. Settings -- Making Engage Work
+
+**Current state**: Email provider form exists but saves API key in the database `email_provider_settings.config` column (plain JSON). No RESEND_API_KEY secret exists.
+
+**What needs to happen for email to actually send**:
+The `engage-email-send` edge function reads `Deno.env.get("RESEND_API_KEY")`. This secret needs to be added.
+
+**Changes to `EngageIntegrationSettings.tsx`**:
+- Add a "Connection Status" section at the top showing:
+  - Email: Connected/Not configured (based on email_provider_settings existence)
+  - API Key: Configured/Missing (based on whether the form has been saved)
+- Add a "Test Connection" button that:
+  - Calls the `engage-email-send` edge function with a test payload
+  - Shows success/error toast
+- Add a "Send Test Email" button that queues a single test email_message and invokes the edge function
+- Upgrade styling to glassmorphism to match the rest of Engage
+- Add helper text explaining: "Get your Resend API key from resend.com/api-keys" with a link
+
+**Secret management**:
+- The Resend API key will be requested via the add_secret tool during implementation
+- This gets stored as a Supabase Edge Function secret (RESEND_API_KEY)
+- The edge function already reads it -- no code change needed there
+
+**Social accounts section**:
+- Keep "Coming Soon" badges but upgrade to glassmorphism card style
+- Each provider card shows its icon with colored background
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/engage/journeys/nodes/CustomNodes.tsx` | 7 custom React Flow node components |
+| `src/components/engage/journeys/JourneyInspector.tsx` | Right-side config panel |
+| `src/components/engage/shared/RuleBuilder.tsx` | Reusable field/operator/value rule component |
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/engage/journeys/JourneyBuilder.tsx` | Custom nodes, inspector, validation, enroll |
+| `src/components/engage/journeys/JourneysList.tsx` | GlassCard, framer-motion, stats, delete action |
+| `src/components/engage/email/campaigns/CampaignsList.tsx` | GlassCard, stats, audience selector, scheduling |
+| `src/components/engage/automations/AutomationsList.tsx` | GlassCard, stats, expanded config, delete |
+| `src/components/settings/engage/EngageIntegrationSettings.tsx` | Connection status, test button, glassmorphism |
+
+## Implementation Order
+
+1. RuleBuilder shared component (used by Journey Condition + Automation conditions)
+2. Custom journey nodes + inspector
+3. JourneyBuilder integration (wire custom nodes, inspector, validation, enroll)
+4. JourneysList design upgrade
+5. CampaignsList upgrade with audience + scheduling
+6. AutomationsList upgrade with expanded config
+7. EngageIntegrationSettings upgrade with connection status + test
+8. Add RESEND_API_KEY secret (will prompt you for the key)
