@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Activity, Mail, GitBranch, Zap, Share2, Search, CalendarDays, Download, Eye } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const channelIcons: Record<string, any> = {
   email: Mail,
@@ -27,6 +28,14 @@ const channelColors: Record<string, string> = {
   automation: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   social: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   system: 'bg-muted text-muted-foreground border-border/30',
+};
+
+const chartColors: Record<string, string> = {
+  email: 'hsl(210, 80%, 60%)',
+  journey: 'hsl(270, 60%, 60%)',
+  automation: 'hsl(40, 80%, 55%)',
+  social: 'hsl(150, 60%, 50%)',
+  system: 'hsl(0, 0%, 55%)',
 };
 
 export const ActivityLog = () => {
@@ -67,7 +76,15 @@ export const ActivityLog = () => {
     return name || c.email;
   };
 
-  // Stats
+  // Chart data
+  const chartData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    logs.forEach((l: any) => { counts[l.channel] = (counts[l.channel] || 0) + 1; });
+    return Object.entries(counts).map(([channel, count]) => ({
+      channel, count, fill: chartColors[channel] || chartColors.system,
+    }));
+  }, [logs]);
+
   const emailCount = logs.filter((l: any) => l.channel === 'email').length;
   const journeyCount = logs.filter((l: any) => l.channel === 'journey').length;
   const totalCount = logs.length;
@@ -129,6 +146,34 @@ export const ActivityLog = () => {
         ))}
       </div>
 
+      {/* Activity Distribution Chart */}
+      {chartData.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <GlassCard className="p-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Activity by Channel</h3>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={chartData} layout="vertical">
+                <XAxis type="number" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis dataKey="channel" type="category" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={80} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {chartData.map((entry, idx) => (
+                    <Cell key={idx} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </GlassCard>
+        </motion.div>
+      )}
+
       {/* Filters */}
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -172,9 +217,7 @@ export const ActivityLog = () => {
         </motion.div>
       ) : (
         <div className="relative">
-          {/* Timeline line */}
           <div className="absolute left-[19px] top-4 bottom-4 w-px bg-border/50" />
-
           <div className="space-y-1">
             {filtered.map((log: any, i: number) => {
               const Icon = channelIcons[log.channel] || Activity;

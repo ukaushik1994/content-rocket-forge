@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter, Eye, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
 
@@ -23,6 +25,7 @@ export const SegmentsList = () => {
   const [description, setDescription] = useState('');
   const [rules, setRules] = useState<Rule[]>([]);
   const [matchType, setMatchType] = useState<'all' | 'any'>('all');
+  const [viewingSegment, setViewingSegment] = useState<any>(null);
 
   const { data: segments = [], isLoading } = useQuery({
     queryKey: ['engage-segments', currentWorkspaceId],
@@ -36,6 +39,35 @@ export const SegmentsList = () => {
       return data || [];
     },
     enabled: !!currentWorkspaceId,
+  });
+
+  // Segment members for viewing
+  const { data: segmentMembers = [] } = useQuery({
+    queryKey: ['segment-members', viewingSegment?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('engage_segment_memberships')
+        .select('contact_id, computed_at, engage_contacts(email, first_name, last_name)')
+        .eq('segment_id', viewingSegment!.id)
+        .limit(100);
+      return data || [];
+    },
+    enabled: !!viewingSegment?.id,
+  });
+
+  // Last evaluated time
+  const { data: lastEvaluated } = useQuery({
+    queryKey: ['segment-last-eval', viewingSegment?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('engage_segment_memberships')
+        .select('computed_at')
+        .eq('segment_id', viewingSegment!.id)
+        .order('computed_at', { ascending: false })
+        .limit(1);
+      return data?.[0]?.computed_at || null;
+    },
+    enabled: !!viewingSegment?.id,
   });
 
   const totalMembers = segments.reduce((sum: number, s: any) => sum + (s.engage_segment_memberships?.[0]?.count || 0), 0);
@@ -60,21 +92,26 @@ export const SegmentsList = () => {
   const createSegment = useMutation({
     mutationFn: async () => {
       const definition = { match: matchType, rules: rules.map(r => ({ ...r })) } as any;
+      let segmentId: string;
       if (editingSegment) {
         const { error } = await supabase.from('engage_segments').update({ name, description: description || null, definition }).eq('id', editingSegment.id);
         if (error) throw error;
+        segmentId = editingSegment.id;
       } else {
-        const { error } = await supabase.from('engage_segments').insert({
+        const { data, error } = await supabase.from('engage_segments').insert({
           workspace_id: currentWorkspaceId!, name, description: description || null, definition,
-        } as any);
+        } as any).select('id').single();
         if (error) throw error;
+        segmentId = data.id;
       }
+      // Auto-evaluate after save
+      await supabase.rpc('evaluate_segment', { p_segment_id: segmentId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['engage-segments'] });
       setShowAdd(false);
       resetForm();
-      toast.success(editingSegment ? 'Segment updated' : 'Segment created');
+      toast.success(editingSegment ? 'Segment updated & evaluated' : 'Segment created & evaluated');
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -132,8 +169,6 @@ export const SegmentsList = () => {
                 <div className="space-y-4">
                   <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
                   <div><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
-
-                  {/* Match Type */}
                   <div className="flex gap-2 items-center">
                     <Label className="text-xs">Match:</Label>
                     <div className="flex gap-1">
@@ -144,15 +179,12 @@ export const SegmentsList = () => {
                       ))}
                     </div>
                   </div>
-
-                  {/* Rule Builder */}
                   <div>
                     <Label className="text-xs flex items-center gap-1 mb-2"><Filter className="h-3 w-3" /> Rules</Label>
                     <RuleBuilder rules={rules} onChange={setRules} />
                   </div>
-
-                  <Button onClick={() => createSegment.mutate()} disabled={!name} className="w-full">
-                    {editingSegment ? 'Update Segment' : 'Create Segment'}
+                  <Button onClick={() => createSegment.mutate()} disabled={!name || createSegment.isPending} className="w-full">
+                    {createSegment.isPending ? 'Saving & Evaluating...' : (editingSegment ? 'Update Segment' : 'Create Segment')}
                   </Button>
                 </div>
               </DialogContent>
@@ -180,6 +212,48 @@ export const SegmentsList = () => {
           </motion.div>
         ))}
       </div>
+
+      {/* Segment Members Viewer */}
+      <Dialog open={!!viewingSegment} onOpenChange={() => setViewingSegment(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-violet-400" />
+              {viewingSegment?.name} — Members
+            </DialogTitle>
+          </DialogHeader>
+          {lastEvaluated && (
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" /> Last evaluated: {format(new Date(lastEvaluated), 'MMM d, yyyy HH:mm')}
+            </p>
+          )}
+          {segmentMembers.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No members. Try evaluating the segment.</p>
+          ) : (
+            <GlassCard className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/30">
+                    <TableHead className="text-xs">Email</TableHead>
+                    <TableHead className="text-xs">Name</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {segmentMembers.map((m: any) => {
+                    const c = m.engage_contacts || {};
+                    return (
+                      <TableRow key={m.contact_id} className="border-border/20">
+                        <TableCell className="text-xs">{c.email || '—'}</TableCell>
+                        <TableCell className="text-xs">{[c.first_name, c.last_name].filter(Boolean).join(' ') || '—'}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </GlassCard>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* List */}
       {isLoading ? (
@@ -212,6 +286,9 @@ export const SegmentsList = () => {
                       <p className="text-[10px] text-muted-foreground/70 font-mono truncate">{getRuleSummary(s)}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewingSegment(s)} title="View members">
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
                       {canEdit && (
                         <>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => evaluateSegment.mutate(s.id)} disabled={evaluateSegment.isPending}>

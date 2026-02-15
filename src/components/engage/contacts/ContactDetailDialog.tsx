@@ -9,9 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Save, Mail, Activity, X, UserCheck, UserX, Tag, Route } from 'lucide-react';
+import { Save, Mail, Activity, X, UserCheck, UserX, Tag, Route, Plus, Trash2, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -27,6 +26,8 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
   const [form, setForm] = useState({ first_name: '', last_name: '', phone: '', tags: '' });
   const [newTag, setNewTag] = useState('');
   const [showJourneyPicker, setShowJourneyPicker] = useState(false);
+  const [attrKey, setAttrKey] = useState('');
+  const [attrVal, setAttrVal] = useState('');
 
   useEffect(() => {
     if (contact) {
@@ -63,10 +64,34 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
     enabled: !!contact?.id,
   });
 
+  const { data: emails = [] } = useQuery({
+    queryKey: ['contact-emails', contact?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('email_messages').select('id, to_email, subject, status, sent_at, queued_at')
+        .eq('contact_id', contact!.id)
+        .order('queued_at', { ascending: false }).limit(50);
+      return data || [];
+    },
+    enabled: !!contact?.id,
+  });
+
+  const { data: segmentMemberships = [] } = useQuery({
+    queryKey: ['contact-segments', contact?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('engage_segment_memberships')
+        .select('segment_id, computed_at, engage_segments(name)')
+        .eq('contact_id', contact!.id);
+      return data || [];
+    },
+    enabled: !!contact?.id,
+  });
+
   const { data: activeJourneys = [] } = useQuery({
     queryKey: ['active-journeys-for-enroll', currentWorkspaceId],
     queryFn: async () => {
-      const { data } = await supabase.from('journeys').select('id, name, nodes')
+      const { data } = await supabase.from('journeys').select('id, name')
         .eq('workspace_id', currentWorkspaceId!).eq('status', 'active');
       return data || [];
     },
@@ -90,6 +115,18 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateAttributes = useMutation({
+    mutationFn: async (attrs: Record<string, any>) => {
+      const { error } = await supabase.from('engage_contacts').update({ attributes: attrs }).eq('id', contact.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engage-contacts'] });
+      toast.success('Attributes updated');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const toggleUnsubscribe = useMutation({
     mutationFn: async () => {
       const newVal = !contact.unsubscribed;
@@ -107,26 +144,29 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
 
   const enrollInJourney = useMutation({
     mutationFn: async (journey: any) => {
-      // Create enrollment
-      const { error: enrollErr } = await supabase.from('journey_enrollments').insert({
+      // Create enrollment and get back the ID
+      const { data: enrollment, error: enrollErr } = await supabase.from('journey_enrollments').insert({
         workspace_id: currentWorkspaceId!,
         journey_id: journey.id,
         contact_id: contact.id,
         status: 'active',
-      });
+      }).select('id').single();
       if (enrollErr) throw enrollErr;
 
-      // Find trigger node and create first step
-      const nodes = (journey.nodes || []) as any[];
-      const triggerNode = nodes.find((n: any) => n.type === 'triggerNode' || n.data?.nodeType === 'trigger');
-      if (triggerNode) {
+      // Query journey_nodes for the trigger node
+      const { data: nodes } = await supabase.from('journey_nodes').select('id, type, config')
+        .eq('journey_id', journey.id).eq('workspace_id', currentWorkspaceId!);
+      
+      const triggerNode = (nodes || []).find((n: any) => n.type === 'triggerNode' || n.type === 'trigger');
+      if (triggerNode && enrollment) {
         await supabase.from('journey_steps').insert({
-          enrollment_id: enrollErr ? '' : 'pending', // will be replaced below
+          workspace_id: currentWorkspaceId!,
+          enrollment_id: enrollment.id,
           node_id: triggerNode.id,
           status: 'pending',
           scheduled_for: new Date().toISOString(),
-          workspace_id: currentWorkspaceId!,
-        } as any);
+          output: {},
+        });
       }
     },
     onSuccess: () => {
@@ -150,6 +190,27 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
     setNewTag('');
   };
 
+  const attributes = contact.attributes || {};
+  const addAttribute = () => {
+    if (!attrKey.trim()) return;
+    const updated = { ...attributes, [attrKey.trim()]: attrVal };
+    updateAttributes.mutate(updated);
+    setAttrKey('');
+    setAttrVal('');
+  };
+  const removeAttribute = (key: string) => {
+    const updated = { ...attributes };
+    delete updated[key];
+    updateAttributes.mutate(updated);
+  };
+
+  const emailStatusColors: Record<string, string> = {
+    queued: 'bg-muted/50 text-muted-foreground',
+    sent: 'bg-blue-500/10 text-blue-400',
+    delivered: 'bg-emerald-500/10 text-emerald-400',
+    failed: 'bg-destructive/10 text-destructive',
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
@@ -165,6 +226,7 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
             <TabsTrigger value="details" className="text-xs">Details</TabsTrigger>
             <TabsTrigger value="activity" className="text-xs">Activity ({activity.length})</TabsTrigger>
             <TabsTrigger value="events" className="text-xs">Events ({events.length})</TabsTrigger>
+            <TabsTrigger value="emails" className="text-xs">Emails ({emails.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="mt-4 space-y-4">
@@ -204,6 +266,47 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
                 <div className="flex gap-2 mt-2">
                   <Input className="h-8 text-xs" value={newTag} onChange={e => setNewTag(e.target.value)} placeholder="Add tag..." onKeyDown={e => e.key === 'Enter' && addTag()} />
                   <Button size="sm" variant="outline" className="h-8 text-xs" onClick={addTag}>Add</Button>
+                </div>
+              )}
+            </div>
+
+            {/* Segment Memberships */}
+            {segmentMemberships.length > 0 && (
+              <div>
+                <Label className="text-xs flex items-center gap-1"><Layers className="h-3 w-3" /> Segments</Label>
+                <div className="flex gap-1.5 flex-wrap mt-2">
+                  {segmentMemberships.map((m: any) => (
+                    <Badge key={m.segment_id} variant="outline" className="text-xs text-violet-400 border-violet-500/30 bg-violet-500/10">
+                      {(m.engage_segments as any)?.name || 'Unknown'}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Attributes Editor */}
+            <div>
+              <Label className="text-xs">Custom Attributes</Label>
+              {Object.keys(attributes).length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {Object.entries(attributes).map(([key, val]) => (
+                    <div key={key} className="flex items-center gap-2 text-xs">
+                      <span className="font-mono text-muted-foreground min-w-[80px]">{key}:</span>
+                      <span className="text-foreground flex-1 truncate">{String(val)}</span>
+                      {canEdit && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeAttribute(key)}>
+                          <Trash2 className="h-2.5 w-2.5 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {canEdit && (
+                <div className="flex gap-2 mt-2">
+                  <Input className="h-8 text-xs flex-1" value={attrKey} onChange={e => setAttrKey(e.target.value)} placeholder="Key" />
+                  <Input className="h-8 text-xs flex-1" value={attrVal} onChange={e => setAttrVal(e.target.value)} placeholder="Value" onKeyDown={e => e.key === 'Enter' && addAttribute()} />
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={addAttribute}><Plus className="h-3 w-3" /></Button>
                 </div>
               )}
             </div>
@@ -289,6 +392,32 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
                       <p className="text-sm font-medium text-foreground">{e.type}</p>
                       <pre className="text-[10px] text-muted-foreground mt-1 overflow-hidden text-ellipsis">{JSON.stringify(e.payload, null, 2).slice(0, 200)}</pre>
                       <span className="text-[10px] text-muted-foreground">{format(new Date(e.occurred_at), 'MMM d, HH:mm')}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="emails" className="mt-4">
+            {emails.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                <Mail className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                No emails sent
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {emails.map((e: any) => (
+                  <div key={e.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/20 border border-border/20">
+                    <Mail className="h-3.5 w-3.5 mt-0.5 text-blue-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground truncate">{e.subject}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className={`text-[10px] ${emailStatusColors[e.status] || ''}`}>{e.status}</Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(new Date(e.sent_at || e.queued_at), 'MMM d, HH:mm')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}

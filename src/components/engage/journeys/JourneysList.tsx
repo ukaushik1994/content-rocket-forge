@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause } from 'lucide-react';
+import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause, Copy, Pencil, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -29,6 +29,8 @@ export const JourneysList = () => {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const { data: journeys = [], isLoading } = useQuery({
     queryKey: ['journeys', currentWorkspaceId],
@@ -39,6 +41,22 @@ export const JourneysList = () => {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
+    },
+    enabled: !!currentWorkspaceId,
+  });
+
+  // Enrollment counts per journey
+  const { data: enrollmentCounts = {} } = useQuery({
+    queryKey: ['journey-enrollment-counts', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('journey_enrollments')
+        .select('journey_id')
+        .eq('workspace_id', currentWorkspaceId!)
+        .eq('status', 'active');
+      const counts: Record<string, number> = {};
+      (data || []).forEach((e: any) => { counts[e.journey_id] = (counts[e.journey_id] || 0) + 1; });
+      return counts;
     },
     enabled: !!currentWorkspaceId,
   });
@@ -70,6 +88,70 @@ export const JourneysList = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const duplicateJourney = useMutation({
+    mutationFn: async (journey: any) => {
+      // Create new journey
+      const { data: newJ, error } = await supabase.from('journeys').insert({
+        workspace_id: currentWorkspaceId!, name: `${journey.name} (Copy)`, created_by: user?.id,
+      }).select().single();
+      if (error) throw error;
+
+      // Copy nodes
+      const { data: nodes } = await supabase.from('journey_nodes').select('*').eq('journey_id', journey.id);
+      const nodeIdMap: Record<string, string> = {};
+      if (nodes?.length) {
+        for (const n of nodes) {
+          const newNodeId = crypto.randomUUID();
+          nodeIdMap[n.node_id] = newNodeId;
+          await supabase.from('journey_nodes').insert({
+            workspace_id: currentWorkspaceId!, journey_id: newJ.id, node_id: newNodeId,
+            type: n.type, config: n.config, position: n.position,
+          });
+        }
+      }
+
+      // Copy edges
+      const { data: edges } = await supabase.from('journey_edges').select('*').eq('journey_id', journey.id);
+      if (edges?.length) {
+        for (const e of edges) {
+          await supabase.from('journey_edges').insert({
+            workspace_id: currentWorkspaceId!, journey_id: newJ.id,
+            source_node_id: nodeIdMap[e.source_node_id] || e.source_node_id,
+            target_node_id: nodeIdMap[e.target_node_id] || e.target_node_id,
+            condition_label: e.condition_label,
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journeys'] });
+      toast.success('Journey duplicated');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleStatus = useMutation({
+    mutationFn: async ({ id, current }: { id: string; current: string }) => {
+      const next = current === 'active' ? 'paused' : 'active';
+      const { error } = await supabase.from('journeys').update({ status: next }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['journeys'] }),
+  });
+
+  const renameJourney = useMutation({
+    mutationFn: async () => {
+      if (!renamingId || !renameValue.trim()) return;
+      const { error } = await supabase.from('journeys').update({ name: renameValue.trim() }).eq('id', renamingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['journeys'] });
+      setRenamingId(null);
+      toast.success('Journey renamed');
+    },
+  });
+
   const stats = {
     active: journeys.filter((j: any) => j.status === 'active').length,
     draft: journeys.filter((j: any) => j.status === 'draft').length,
@@ -99,6 +181,17 @@ export const JourneysList = () => {
           </Dialog>
         )}
       </div>
+
+      {/* Rename Dialog */}
+      <Dialog open={!!renamingId} onOpenChange={() => setRenamingId(null)}>
+        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-sm">
+          <DialogHeader><DialogTitle>Rename Journey</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Input value={renameValue} onChange={e => setRenameValue(e.target.value)} />
+            <Button onClick={() => renameJourney.mutate()} disabled={!renameValue.trim()} className="w-full">Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       {journeys.length > 0 && (
@@ -133,6 +226,7 @@ export const JourneysList = () => {
         <div className="grid gap-3">
           {journeys.map((j: any, i: number) => {
             const sc = statusConfig[j.status] || statusConfig.draft;
+            const enrolled = enrollmentCounts[j.id] || 0;
             return (
               <motion.div key={j.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <GlassCard
@@ -146,16 +240,32 @@ export const JourneysList = () => {
                         <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} /> {j.status}
                         </Badge>
+                        {enrolled > 0 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Users className="h-2.5 w-2.5" /> {enrolled} enrolled
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">{format(new Date(j.created_at), 'MMM d, yyyy')}</p>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      {canEdit && j.status !== 'draft' && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleStatus.mutate({ id: j.id, current: j.status })}>
+                          {j.status === 'active' ? <Pause className="h-3.5 w-3.5 text-amber-400" /> : <Play className="h-3.5 w-3.5 text-emerald-400" />}
+                        </Button>
+                      )}
                       {canEdit && (
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                          <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setRenamingId(j.id); setRenameValue(j.name); }}>
+                              <Pencil className="h-3.5 w-3.5 mr-1" /> Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => duplicateJourney.mutate(j)}>
+                              <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => deleteJourney.mutate(j.id)}>
                               <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                             </DropdownMenuItem>
