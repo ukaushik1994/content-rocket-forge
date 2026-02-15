@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Trash2, Eye, Variable, Send } from 'lucide-react';
+import { Plus, FileText, Trash2, Eye, Variable, Send, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 
 const VARIABLES = [
@@ -26,7 +27,8 @@ export const TemplatesList = () => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [showCreate, setShowCreate] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', subject: '', body_html: '' });
   const [editorTab, setEditorTab] = useState('code');
   const [showTestSend, setShowTestSend] = useState<string | null>(null);
@@ -46,27 +48,62 @@ export const TemplatesList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  const createTemplate = useMutation({
+  const openEditor = (template?: any) => {
+    if (template) {
+      setEditingId(template.id);
+      setForm({ name: template.name, subject: template.subject, body_html: template.body_html || '' });
+    } else {
+      setEditingId(null);
+      setForm({ name: '', subject: '', body_html: '' });
+    }
+    setEditorTab('code');
+    setShowEditor(true);
+  };
+
+  const saveTemplate = useMutation({
     mutationFn: async () => {
       const variables = (form.body_html.match(/\{\{(\w+)\}\}/g) || []).map(v => v.replace(/[{}]/g, ''));
-      const { error } = await supabase.from('email_templates').insert({
+      const payload = {
         workspace_id: currentWorkspaceId!,
         name: form.name,
         subject: form.subject,
         body_html: form.body_html,
         body_text: form.body_html.replace(/<[^>]*>/g, ''),
         variables: [...new Set(variables)],
+      };
+      if (editingId) {
+        const { error } = await supabase.from('email_templates').update(payload).eq('id', editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('email_templates').insert({ ...payload, created_by: user?.id });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+      setShowEditor(false);
+      toast.success(editingId ? 'Template updated' : 'Template created');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const duplicateTemplate = useMutation({
+    mutationFn: async (template: any) => {
+      const { error } = await supabase.from('email_templates').insert({
+        workspace_id: currentWorkspaceId!,
+        name: `${template.name} (Copy)`,
+        subject: template.subject,
+        body_html: template.body_html,
+        body_text: template.body_text,
+        variables: template.variables,
         created_by: user?.id,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
-      setShowCreate(false);
-      setForm({ name: '', subject: '', body_html: '' });
-      toast.success('Template created');
+      toast.success('Template duplicated');
     },
-    onError: (e: any) => toast.error(e.message),
   });
 
   const deleteTemplate = useMutation({
@@ -84,7 +121,6 @@ export const TemplatesList = () => {
     mutationFn: async (templateId: string) => {
       const template = templates.find((t: any) => t.id === templateId);
       if (!template) throw new Error('Template not found');
-
       const { error } = await supabase.from('email_messages').insert({
         workspace_id: currentWorkspaceId!,
         to_email: testEmail,
@@ -97,7 +133,7 @@ export const TemplatesList = () => {
     onSuccess: () => {
       setShowTestSend(null);
       setTestEmail('');
-      toast.success('Test email queued! It will be sent on the next job run.');
+      toast.success('Test email queued!');
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -120,86 +156,40 @@ export const TemplatesList = () => {
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">{templates.length} templates</p>
         {canEdit && (
-          <Dialog open={showCreate} onOpenChange={setShowCreate}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Template</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-              <DialogHeader><DialogTitle>Create Email Template</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-                <div>
-                  <Label>Subject *</Label>
-                  <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Use {{first_name}} for variables" />
-                </div>
-
-                {/* Variable Inserter */}
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Insert Variable</Label>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {VARIABLES.map(v => (
-                      <Button key={v.key} variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => insertVariable(v.key)}>
-                        <Variable className="h-3 w-3" /> {v.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Code / Preview Tabs */}
-                <Tabs value={editorTab} onValueChange={setEditorTab}>
-                  <TabsList className="h-8">
-                    <TabsTrigger value="code" className="text-xs">Code</TabsTrigger>
-                    <TabsTrigger value="preview" className="text-xs"><Eye className="h-3 w-3 mr-1" /> Preview</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="code">
-                    <Textarea
-                      value={form.body_html}
-                      onChange={e => setForm(f => ({ ...f, body_html: e.target.value }))}
-                      rows={12}
-                      className="font-mono text-xs"
-                      placeholder="<h1>Hello {{first_name}}</h1><p>Welcome...</p>"
-                    />
-                  </TabsContent>
-                  <TabsContent value="preview">
-                    <div className="border border-border rounded-lg p-4 min-h-[200px] bg-background">
-                      {form.body_html ? (
-                        <div dangerouslySetInnerHTML={{ __html: getPreviewHtml(form.body_html) }} />
-                      ) : (
-                        <p className="text-muted-foreground text-sm text-center py-8">Write some HTML to see a preview</p>
-                      )}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-
-                <Button onClick={() => createTemplate.mutate()} disabled={!form.name || !form.subject} className="w-full">
-                  Create Template
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button size="sm" onClick={() => openEditor()}>
+            <Plus className="h-4 w-4 mr-1" /> New Template
+          </Button>
         )}
       </div>
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : templates.length === 0 ? (
-        <div className="text-center py-12 space-y-2">
-          <FileText className="h-10 w-10 mx-auto text-muted-foreground/50" />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 space-y-3">
+          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto">
+            <FileText className="h-7 w-7 text-blue-400" />
+          </div>
           <p className="text-muted-foreground">No templates yet</p>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {templates.map((t: any) => (
-            <Card key={t.id} className="bg-card border-border">
-              <CardContent className="p-4 space-y-2">
+          {templates.map((t: any, i: number) => (
+            <motion.div key={t.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+              <GlassCard
+                className="p-4 space-y-2 cursor-pointer hover:border-primary/30 hover:scale-[1.01] transition-all duration-200"
+                onClick={() => canEdit && openEditor(t)}
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-medium text-foreground">{t.name}</h3>
                     <p className="text-xs text-muted-foreground">Subject: {t.subject}</p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                     {canEdit && (
                       <>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicateTemplate.mutate(t)}>
+                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowTestSend(t.id); setTestEmail(''); }}>
                           <Send className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>
@@ -218,11 +208,56 @@ export const TemplatesList = () => {
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">{format(new Date(t.created_at), 'MMM d, yyyy')}</p>
-              </CardContent>
-            </Card>
+              </GlassCard>
+            </motion.div>
           ))}
         </div>
       )}
+
+      {/* Editor Dialog */}
+      <Dialog open={showEditor} onOpenChange={setShowEditor}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
+          <DialogHeader><DialogTitle>{editingId ? 'Edit Template' : 'Create Email Template'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div>
+              <Label>Subject *</Label>
+              <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Use {{first_name}} for variables" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Insert Variable</Label>
+              <div className="flex gap-1.5 flex-wrap">
+                {VARIABLES.map(v => (
+                  <Button key={v.key} variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => insertVariable(v.key)}>
+                    <Variable className="h-3 w-3" /> {v.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <Tabs value={editorTab} onValueChange={setEditorTab}>
+              <TabsList className="h-8">
+                <TabsTrigger value="code" className="text-xs">Code</TabsTrigger>
+                <TabsTrigger value="preview" className="text-xs"><Eye className="h-3 w-3 mr-1" /> Preview</TabsTrigger>
+              </TabsList>
+              <TabsContent value="code">
+                <Textarea value={form.body_html} onChange={e => setForm(f => ({ ...f, body_html: e.target.value }))} rows={12} className="font-mono text-xs" placeholder="<h1>Hello {{first_name}}</h1><p>Welcome...</p>" />
+              </TabsContent>
+              <TabsContent value="preview">
+                <div className="border border-border rounded-lg p-4 min-h-[200px] bg-background">
+                  {form.body_html ? (
+                    <div dangerouslySetInnerHTML={{ __html: getPreviewHtml(form.body_html) }} />
+                  ) : (
+                    <p className="text-muted-foreground text-sm text-center py-8">Write some HTML to see a preview</p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+            <Button onClick={() => saveTemplate.mutate()} disabled={!form.name || !form.subject} className="w-full">
+              {editingId ? 'Update Template' : 'Create Template'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Test Send Modal */}
       <Dialog open={!!showTestSend} onOpenChange={() => setShowTestSend(null)}>
