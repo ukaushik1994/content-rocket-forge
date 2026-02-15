@@ -130,6 +130,7 @@ export const AuditLog = () => {
             <Shield className="h-8 w-8 text-primary" />
           </div>
           <p className="text-muted-foreground">No audit events recorded</p>
+          <p className="text-xs text-muted-foreground">Actions like creating contacts, templates, and journeys will be tracked here</p>
         </div>
       ) : (
         <div className="space-y-1">

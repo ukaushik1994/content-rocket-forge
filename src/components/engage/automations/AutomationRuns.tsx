@@ -72,9 +72,14 @@ export const AutomationRuns = () => {
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-foreground">Automation Runs</h3>
-            <p className="text-sm text-muted-foreground">Execution audit trail</p>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => window.history.back()}>
+              ← Back
+            </Button>
+            <div>
+              <h3 className="text-lg font-bold text-foreground">Automation Runs</h3>
+              <p className="text-sm text-muted-foreground">Execution audit trail</p>
+            </div>
           </div>
           <Button variant="outline" size="sm" onClick={exportCSV} disabled={filtered.length === 0}>
             <Download className="h-3.5 w-3.5 mr-1" /> Export
