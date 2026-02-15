@@ -969,6 +969,45 @@ export type Database = {
           },
         ]
       }
+      automation_runs: {
+        Row: {
+          actions_executed: Json | null
+          automation_id: string
+          contact_id: string | null
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          status: string
+          trigger_event: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          actions_executed?: Json | null
+          automation_id: string
+          contact_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          status?: string
+          trigger_event?: Json | null
+          workspace_id: string
+        }
+        Update: {
+          actions_executed?: Json | null
+          automation_id?: string
+          contact_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          status?: string
+          trigger_event?: Json | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       automation_triggers: {
         Row: {
           action_config: Json
@@ -3452,6 +3491,7 @@ export type Database = {
           sent_at: string | null
           status: string
           subject: string
+          thread_id: string | null
           to_email: string
           workspace_id: string
         }
@@ -3466,6 +3506,7 @@ export type Database = {
           sent_at?: string | null
           status?: string
           subject: string
+          thread_id?: string | null
           to_email: string
           workspace_id: string
         }
@@ -3480,6 +3521,7 @@ export type Database = {
           sent_at?: string | null
           status?: string
           subject?: string
+          thread_id?: string | null
           to_email?: string
           workspace_id?: string
         }
@@ -3496,6 +3538,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
             referencedColumns: ["id"]
           },
           {
@@ -3598,6 +3647,144 @@ export type Database = {
           },
         ]
       }
+      email_thread_messages: {
+        Row: {
+          attachments: Json | null
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          direction: string
+          from_email: string
+          id: string
+          subject: string
+          thread_id: string
+          to_email: string
+          tracking: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          direction?: string
+          from_email?: string
+          id?: string
+          subject?: string
+          thread_id: string
+          to_email?: string
+          tracking?: Json | null
+          workspace_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          direction?: string
+          from_email?: string
+          id?: string
+          subject?: string
+          thread_id?: string
+          to_email?: string
+          tracking?: Json | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_thread_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_thread_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          thread_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          thread_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          thread_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_thread_notes_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_threads: {
+        Row: {
+          assigned_to: string | null
+          contact_id: string | null
+          created_at: string
+          id: string
+          last_activity_at: string
+          sentiment: string | null
+          sla_deadline: string | null
+          status: string
+          subject: string
+          tags: string[] | null
+          workspace_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_activity_at?: string
+          sentiment?: string | null
+          sla_deadline?: string | null
+          status?: string
+          subject?: string
+          tags?: string[] | null
+          workspace_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          last_activity_at?: string
+          sentiment?: string | null
+          sla_deadline?: string | null
+          status?: string
+          subject?: string
+          tags?: string[] | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_threads_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engage_activity_log: {
         Row: {
           channel: string
@@ -3656,8 +3843,10 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          error_routing: Json | null
           id: string
           name: string
+          rate_limit: Json | null
           status: string
           trigger_config: Json | null
           updated_at: string | null
@@ -3669,8 +3858,10 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          error_routing?: Json | null
           id?: string
           name: string
+          rate_limit?: Json | null
           status?: string
           trigger_config?: Json | null
           updated_at?: string | null
@@ -3682,8 +3873,10 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          error_routing?: Json | null
           id?: string
           name?: string
+          rate_limit?: Json | null
           status?: string
           trigger_config?: Json | null
           updated_at?: string | null
@@ -4303,9 +4496,12 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          scheduling_config: Json | null
           status: string
+          suppression_rules: Json | null
           trigger_config: Json | null
           updated_at: string | null
+          version: number
           workspace_id: string
         }
         Insert: {
@@ -4314,9 +4510,12 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          scheduling_config?: Json | null
           status?: string
+          suppression_rules?: Json | null
           trigger_config?: Json | null
           updated_at?: string | null
+          version?: number
           workspace_id: string
         }
         Update: {
@@ -4325,9 +4524,12 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          scheduling_config?: Json | null
           status?: string
+          suppression_rules?: Json | null
           trigger_config?: Json | null
           updated_at?: string | null
+          version?: number
           workspace_id?: string
         }
         Relationships: [

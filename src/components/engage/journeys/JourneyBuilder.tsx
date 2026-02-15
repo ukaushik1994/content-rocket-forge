@@ -11,11 +11,13 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, Play, Pause, Plus, CheckCircle, Maximize, Users, Undo2, Redo2, BarChart3, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Play, Pause, Plus, CheckCircle, Maximize, Users, Undo2, Redo2, BarChart3, Loader2, TrendingUp, ListChecks } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { customNodeTypes } from './nodes/CustomNodes';
 import { JourneyInspector } from './JourneyInspector';
 import { JourneyAnalytics } from './JourneyAnalytics';
+import { JourneyEnrollments } from './JourneyEnrollments';
+import { JourneyPerformance } from './JourneyPerformance';
 
 const MAX_HISTORY = 20;
 
@@ -26,6 +28,8 @@ const JourneyBuilderInner = () => {
   const queryClient = useQueryClient();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showEnrollments, setShowEnrollments] = useState(false);
+  const [showPerformance, setShowPerformance] = useState(false);
   const reactFlowInstance = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -80,7 +84,6 @@ const JourneyBuilderInner = () => {
   useEffect(() => {
     if (initialLoadRef.current) return;
     pushHistory(nodes, edges);
-    // Trigger auto-save
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(() => {
       if (nodes.length > 0) {
@@ -88,7 +91,7 @@ const JourneyBuilderInner = () => {
         doSave().then(() => setAutoSaveStatus('saved')).catch(() => setAutoSaveStatus('idle'));
       }
     }, 3000);
-  }, [nodes.length, edges.length]); // Simplified deps to avoid excessive triggers
+  }, [nodes.length, edges.length]);
 
   const { data: journey } = useQuery({
     queryKey: ['journey', id],
@@ -155,7 +158,6 @@ const JourneyBuilderInner = () => {
       setNodes(loadedNodes);
       setEdges(loadedEdges);
 
-      // Initialize history after load
       setTimeout(() => {
         historyRef.current = [{ nodes: JSON.parse(JSON.stringify(loadedNodes)), edges: JSON.parse(JSON.stringify(loadedEdges)) }];
         historyIndexRef.current = 0;
@@ -176,21 +178,10 @@ const JourneyBuilderInner = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Delete' && selectedNode) {
-        handleDeleteNode(selectedNode.id);
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        saveJourney.mutate();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        redo();
-      }
+      if (e.key === 'Delete' && selectedNode) handleDeleteNode(selectedNode.id);
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveJourney.mutate(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -307,8 +298,14 @@ const JourneyBuilderInner = () => {
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/engage/journeys')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h2 className="font-semibold text-foreground">{journey?.name || 'Journey Builder'}</h2>
-          <Badge variant="outline" className={statusBadgeClass}>{journey?.status || 'draft'}</Badge>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-foreground">{journey?.name || 'Journey Builder'}</h2>
+              <Badge variant="outline" className={statusBadgeClass}>{journey?.status || 'draft'}</Badge>
+              {(journey as any)?.version && <Badge variant="secondary" className="text-[9px] h-4">v{(journey as any).version}</Badge>}
+            </div>
+            {journey?.description && <p className="text-[10px] text-muted-foreground">{journey.description}</p>}
+          </div>
           {autoSaveStatus === 'saving' && (
             <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Saving...</span>
           )}
@@ -347,6 +344,12 @@ const JourneyBuilderInner = () => {
           <Button variant="outline" size="sm" className="h-8" onClick={() => reactFlowInstance.fitView({ padding: 0.2 })}>
             <Maximize className="h-3.5 w-3.5 mr-1" /> Fit
           </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowEnrollments(true)}>
+            <ListChecks className="h-3.5 w-3.5 mr-1" /> Enrollments
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowPerformance(true)}>
+            <TrendingUp className="h-3.5 w-3.5 mr-1" /> Performance
+          </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={() => setShowAnalytics(true)}>
             <BarChart3 className="h-3.5 w-3.5 mr-1" /> Analytics
           </Button>
@@ -384,13 +387,10 @@ const JourneyBuilderInner = () => {
         />
       </div>
 
-      {/* Analytics Dialog */}
-      <JourneyAnalytics
-        journeyId={id!}
-        open={showAnalytics}
-        onOpenChange={setShowAnalytics}
-        nodes={nodes}
-      />
+      {/* Dialogs */}
+      <JourneyAnalytics journeyId={id!} open={showAnalytics} onOpenChange={setShowAnalytics} nodes={nodes} />
+      <JourneyEnrollments journeyId={id!} open={showEnrollments} onOpenChange={setShowEnrollments} />
+      <JourneyPerformance journeyId={id!} open={showPerformance} onOpenChange={setShowPerformance} nodes={nodes} />
     </div>
   );
 };
