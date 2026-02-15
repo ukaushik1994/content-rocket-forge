@@ -1,60 +1,44 @@
 
-# Diagnosis: All Engage Pages Are Fully Functional
 
-## What I Found
+# Fix Seed Data & Column Mismatches Across Engage Module
 
-After reviewing every component across all 7 modules, **all pages have complete frontend and backend wiring**. Here is the status of each:
+## Problem Identified
 
-| Page | Create | Read | Update | Delete | Status |
-|------|--------|------|--------|--------|--------|
-| Email (Inbox/Sent/Scheduled/Drafts/Templates/Campaigns/Reports/Settings) | Yes | Yes | Yes | Yes | Full 8-tab dashboard |
-| Contacts | Yes (single + CSV bulk) | Yes (paginated, searchable) | Yes (detail dialog) | Yes (single + bulk) | Working |
-| Segments | Yes (with RuleBuilder) | Yes (with member viewer) | Yes | Yes (with confirm) | Working |
-| Journeys | Yes (with 3 templates) | Yes (with enrollment counts) | Yes (rename, status toggle) | Yes (with cleanup) | Working |
-| Journey Builder | Yes (visual React Flow) | Yes (loads nodes/edges) | Yes (auto-save, undo/redo) | Yes | Working |
-| Automations | Yes (trigger + conditions + multi-action) | Yes (with exec counts) | Yes (edit dialog) | Yes | Working |
-| Automation Runs | -- | Yes (audit trail) | -- | -- | Working |
-| Social (Publish/Inbox/Analytics) | Yes (posts + inbox items) | Yes | Yes | Yes | Working |
-| Activity (Feed/Health/Audit) | -- | Yes (all 3 views) | -- | -- | Working |
-| Settings | -- | Yes (all config) | Yes (sender, workspace) | Yes (danger zone) | Working |
+The seed data utility (`seedData.ts`) and several component mutations reference **columns that don't exist** in the actual database tables. This causes the "Load Demo Data" function to fail silently, leaving all pages empty. Additionally, some component CRUD operations (social account linking) use wrong column names, so even manual creation would fail.
 
-## Why You See Empty States
+## Root Cause: Column Name Mismatches
 
-You are seeing "No journeys yet", "No contacts yet" etc. because **there is no data in the workspace yet** -- not because the pages are broken. Every page has proper create buttons and forms.
+| Table | Seed Data / Component Uses | Actual DB Column | Fix |
+|-------|---------------------------|-------------------|-----|
+| `social_posts` | `platform` | *(doesn't exist)* | Remove `platform` from seed inserts |
+| `engage_automations` | `trigger_type`, `is_active` | *(don't exist)* -- uses `trigger_config`, `status` | Map to correct columns |
+| `social_inbox_items` | `contact_id`, `channel` | `linked_contact_id`, *(no channel)* | Fix column names |
+| `social_accounts` (link mutation) | `account_name`, `access_token`, `status` | `display_name`, `auth_data` | Fix SocialDashboard linkAccount mutation |
 
-## Quick Fix: Load Demo Data
+## Implementation Steps
 
-Go to **Engage > Settings** (bottom of sidebar) and click **"Load Demo Data"**. This seeds your workspace with sample contacts, segments, templates, and a journey so you can immediately see all pages populated.
+### Step 1: Fix Seed Data (`src/utils/engage/seedData.ts`)
 
-## What I Will Implement
+- **Social posts** (line ~203-228): Remove `platform` field from all 3 post objects
+- **Automations** (line ~86-109): Replace `trigger_type` and `is_active` with proper `trigger_config` (already has it as nested) and `status` (`'active'`/`'paused'`)
+- **Social inbox items** (line ~152-191): Rename `contact_id` to `linked_contact_id`, remove `channel` field
 
-Since the PDF document you uploaded provides a comprehensive architecture reference, I will use it to add the remaining missing pieces:
+### Step 2: Fix Social Account Linking (`src/components/engage/social/SocialDashboard.tsx`)
 
-### 1. Seed Data Enhancement
-- Expand the existing `loadSeedData` utility to also seed: social posts, automations, activity logs, and email threads so ALL pages show data after loading demo
+- The `linkAccount` mutation (line ~202-220) inserts `account_name`, `access_token`, `status` which don't exist on `social_accounts`
+- Fix to use `display_name` instead of `account_name` and wrap token in `auth_data` JSON instead of `access_token`
+- Remove `status` field (doesn't exist on table)
 
-### 2. Journey Enrollments & Performance Pages
-- Add navigation links from JourneysList to the already-built JourneyEnrollments and JourneyPerformance components (they exist but have no route links)
-- Add routes for `/engage/journeys/:id/enrollments` and `/engage/journeys/:id/performance`
+### Step 3: Verify & Test
 
-### 3. Missing UI Polish
-- Add "Create First..." CTAs on empty states that are missing them (Social Inbox, Audit Log)
-- Ensure the Automation Runs page has a back-link to the main Automations list
+After fixing the column mappings, the "Load Demo Data" button in Settings will successfully populate all tables and every module page will show data.
 
-### 4. PDF Architecture Alignment
-- The document recommends idempotency keys for webhooks and message events -- will add `idempotency_key` support to the email webhook processing
-- Add unsubscribe header compliance (List-Unsubscribe) to the email send function per RFC 2369/8058 recommendations
+## Files to Modify
 
-## Technical Details
+1. `src/utils/engage/seedData.ts` -- fix all column name mismatches
+2. `src/components/engage/social/SocialDashboard.tsx` -- fix linkAccount mutation columns
 
-### Files to Create
-- None (all component files already exist)
+## No Database Changes Required
 
-### Files to Modify
-- `src/utils/engage/seedData.ts` -- expand demo data seeding
-- `src/pages/Engage.tsx` -- add routes for journey sub-pages
-- `src/components/engage/journeys/JourneysList.tsx` -- add links to enrollments/performance
-- `supabase/functions/engage-email-send/index.ts` -- add List-Unsubscribe headers
+All tables have the correct schema already. Only the frontend code references need correction.
 
-### Database Changes
-- None required (all tables already exist)
