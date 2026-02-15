@@ -39,9 +39,9 @@ export const DeleteSolutionDialog: React.FC<DeleteSolutionDialogProps> = ({
       <DialogContent className="glass-panel sm:max-w-md">
         <DialogHeader>
           <AlertTriangle className="h-6 w-6 text-red-500 mb-2" />
-          <DialogTitle className="text-red-500">Delete Solution</DialogTitle>
+          <DialogTitle className="text-red-500">Delete Offering</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete this solution? This action cannot be undone.
+            Are you sure you want to delete this offering? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         

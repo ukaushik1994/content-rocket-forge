@@ -54,15 +54,15 @@ export function SetupChecklist() {
           label: 'Set up your company',
           description: 'Add your company name, website, and industry',
           icon: Building2,
-          route: '/solutions',
+          route: '/offerings',
           completed: (companyRes.data?.length ?? 0) > 0,
         },
         {
           id: 'solutions',
-          label: 'Add your solutions',
+          label: 'Add your offerings',
           description: 'Define the products or services you offer',
           icon: Package,
-          route: '/solutions',
+          route: '/offerings',
           completed: (solutionsRes.data?.length ?? 0) > 0,
         },
         {

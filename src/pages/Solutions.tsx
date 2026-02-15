@@ -36,7 +36,7 @@ const LoadingFallback = () => <div className="flex flex-col justify-center items
         <Loader2 className="h-8 w-8 text-neon-purple animate-pulse" />
       </div>
     </div>
-    <span className="text-lg font-medium text-gradient">Loading solutions...</span>
+    <span className="text-lg font-medium text-gradient">Loading offerings...</span>
   </div>;
 
 // Error fallback component
@@ -53,7 +53,7 @@ const ErrorFallback = ({
       </div>
       <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
       <p className="text-muted-foreground mb-6 max-w-md">
-        There was an error loading the solutions: {error.message}
+        There was an error loading the offerings: {error.message}
       </p>
       <Button onClick={resetErrorBoundary} variant="destructive">
         Try again
@@ -369,8 +369,8 @@ const Solutions = () => {
   
   return <motion.div className="min-h-screen bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
       <Helmet>
-        <title>Business Solutions | Creaiter</title>
-        <meta name="description" content="Manage your business solutions for content creation" />
+        <title>Business Offerings Hub | Creaiter</title>
+        <meta name="description" content="Manage your business offerings for content creation" />
       </Helmet>
       
       <Navbar />

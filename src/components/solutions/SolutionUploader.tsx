@@ -53,9 +53,9 @@ export function SolutionUploader() {
   return (
     <Card className="overflow-hidden neon-border">
       <CardHeader>
-        <CardTitle className="text-gradient">Solution Uploader</CardTitle>
+        <CardTitle className="text-gradient">Offering Uploader</CardTitle>
         <CardDescription>
-          Upload your business solutions to include them in your content
+          Upload your business offerings to include them in your content
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -179,7 +179,7 @@ export function SolutionUploader() {
           Cancel
         </Button>
         <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
-          Add Solution
+          Add Offering
         </Button>
       </CardFooter>
     </Card>

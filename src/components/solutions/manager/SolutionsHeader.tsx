@@ -17,7 +17,7 @@ export const SolutionsHeader: React.FC<SolutionsHeaderProps> = ({
   return (
     <div className="flex justify-between items-center mb-6">
       <h2 className="text-xl font-bold">
-        Business Solutions ({solutionCount})
+        Business Offerings ({solutionCount})
         {searchTerm && <span className="text-base ml-2 font-normal text-muted-foreground">filtered by "{searchTerm}"</span>}
       </h2>
       <Button 
@@ -25,7 +25,7 @@ export const SolutionsHeader: React.FC<SolutionsHeaderProps> = ({
         className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
       >
         <Plus className="mr-2 h-4 w-4" />
-        Add New Solution
+        Add New Offering
       </Button>
     </div>
   );

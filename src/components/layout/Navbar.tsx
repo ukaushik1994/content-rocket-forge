@@ -90,9 +90,9 @@ const Navbar = () => {
                 <span className="text-xs text-muted-foreground">{userEmail}</span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/solutions')}>
+              <DropdownMenuItem onClick={() => navigate('/offerings')}>
                 <Puzzle className="mr-2 h-4 w-4" />
-                <span>Solutions</span>
+                <span>Offerings</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openSettings()}>
                 <Settings className="mr-2 h-4 w-4" />

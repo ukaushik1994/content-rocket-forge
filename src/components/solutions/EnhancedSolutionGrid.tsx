@@ -44,7 +44,7 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
         <Tabs value={filter} onValueChange={setFilter} className="w-full md:w-auto">
           <TabsList className="bg-background/20 backdrop-blur-sm border border-white/10 w-full md:w-auto">
             <TabsTrigger value="all" className="data-[state=active]:bg-neon-purple/20">
-              All Solutions
+              All Offerings
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -58,9 +58,10 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
             {view === 'grid' ? 'List View' : 'Grid View'}
           </Button>
           
-          <Button onClick={onAddNew} className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple hover:shadow-neon">
+           <Button onClick={onAddNew} className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple hover:shadow-neon">
             <PlusCircle className="mr-2 h-4 w-4" />
-            Add Solution
+            Add Offering
+            
           </Button>
         </div>
       </div>
@@ -96,13 +97,13 @@ const EmptySolutionsState: React.FC<{
     }}>
         <Shuffle className="w-12 h-12 text-primary" />
       </motion.div>
-      <h3 className="text-2xl font-bold text-gradient">Start Creating Solutions</h3>
-      <p className="text-muted-foreground max-w-md mx-auto">
-        Add your first business solution to start generating content that highlights your products and services.
+       <h3 className="text-2xl font-bold text-gradient">Start Creating Offerings</h3>
+       <p className="text-muted-foreground max-w-md mx-auto">
+         Add your first business offering to start generating content that highlights your products and services.
       </p>
       <Button onClick={onAddNew} size="lg" className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
         <PlusCircle className="mr-2 h-5 w-5" />
-        Add Your First Solution
+        Add Your First Offering
       </Button>
     </motion.div>;
 };

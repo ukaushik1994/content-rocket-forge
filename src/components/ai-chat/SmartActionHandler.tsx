@@ -37,8 +37,9 @@ export const useSmartActionHandler = ({ onActionExecuted }: SmartActionHandlerPr
           break;
 
         case 'navigate:/solutions':
-          navigate('/solutions');
-          result = { navigated: true, route: '/solutions' };
+        case 'navigate:/offerings':
+          navigate('/offerings');
+          result = { navigated: true, route: '/offerings' };
           break;
 
         case 'navigate:/analytics':
