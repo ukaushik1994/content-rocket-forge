@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Mail, Clock, GitBranch, User, Globe, Zap, Flag } from 'lucide-react';
+import { X, Save, Mail, Clock, GitBranch, User, Globe, Zap, Flag, Trash2, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ interface JourneyInspectorProps {
   workspaceId: string | null;
   onUpdate: (nodeId: string, config: Record<string, any>) => void;
   onClose: () => void;
+  onDeleteNode?: (nodeId: string) => void;
 }
 
 const nodeIcons: Record<string, any> = {
@@ -27,7 +28,12 @@ const nodeColors: Record<string, string> = {
   condition: 'bg-emerald-500', update_contact: 'bg-indigo-500', webhook: 'bg-pink-500', end: 'bg-gray-500',
 };
 
-export const JourneyInspector = ({ node, workspaceId, onUpdate, onClose }: JourneyInspectorProps) => {
+const defaultLabels: Record<string, string> = {
+  trigger: 'Trigger', send_email: 'Send Email', wait: 'Wait',
+  condition: 'Condition', update_contact: 'Update Contact', webhook: 'Webhook', end: 'End',
+};
+
+export const JourneyInspector = ({ node, workspaceId, onUpdate, onClose, onDeleteNode }: JourneyInspectorProps) => {
   const [config, setConfig] = useState<Record<string, any>>({});
   const nodeType = node?.type || '';
 
@@ -42,6 +48,15 @@ export const JourneyInspector = ({ node, workspaceId, onUpdate, onClose }: Journ
       return data || [];
     },
     enabled: !!workspaceId && nodeType === 'send_email',
+  });
+
+  const { data: segments = [] } = useQuery({
+    queryKey: ['segments-inspector', workspaceId],
+    queryFn: async () => {
+      const { data } = await supabase.from('engage_segments').select('id, name').eq('workspace_id', workspaceId!);
+      return data || [];
+    },
+    enabled: !!workspaceId && nodeType === 'trigger',
   });
 
   const handleSave = () => {
@@ -76,19 +91,43 @@ export const JourneyInspector = ({ node, workspaceId, onUpdate, onClose }: Journ
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Custom Label (all node types) */}
+            <div>
+              <Label className="text-xs flex items-center gap-1"><Tag className="h-3 w-3" /> Custom Label</Label>
+              <Input
+                className="h-8 text-xs mt-1"
+                value={config.label || ''}
+                onChange={e => setConfig(c => ({ ...c, label: e.target.value }))}
+                placeholder={defaultLabels[nodeType] || 'Node label'}
+              />
+            </div>
+
             {nodeType === 'trigger' && (
-              <div>
-                <Label className="text-xs">Trigger Type</Label>
-                <Select value={config.type || 'manual'} onValueChange={v => setConfig(c => ({ ...c, type: v }))}>
-                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual</SelectItem>
-                    <SelectItem value="segment_entry">Segment Entry</SelectItem>
-                    <SelectItem value="event">Event</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs">Trigger Type</Label>
+                  <Select value={config.type || 'manual'} onValueChange={v => setConfig(c => ({ ...c, type: v, segment_id: undefined }))}>
+                    <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="segment_entry">Segment Entry</SelectItem>
+                      <SelectItem value="event">Event</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {config.type === 'segment_entry' && (
+                  <div>
+                    <Label className="text-xs">Segment</Label>
+                    <Select value={config.segment_id || ''} onValueChange={v => setConfig(c => ({ ...c, segment_id: v }))}>
+                      <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Select segment" /></SelectTrigger>
+                      <SelectContent>
+                        {segments.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 {config.type === 'event' && (
-                  <div className="mt-2">
+                  <div>
                     <Label className="text-xs">Event Name</Label>
                     <Input className="h-8 text-xs mt-1" value={config.event_name || ''} onChange={e => setConfig(c => ({ ...c, event_name: e.target.value }))} placeholder="e.g. purchase_completed" />
                   </div>
@@ -187,13 +226,18 @@ export const JourneyInspector = ({ node, workspaceId, onUpdate, onClose }: Journ
           </div>
 
           {/* Footer */}
-          {nodeType !== 'end' && (
-            <div className="p-4 border-t border-border/50">
+          <div className="p-4 border-t border-border/50 space-y-2">
+            {nodeType !== 'end' && (
               <Button size="sm" className="w-full" onClick={handleSave}>
                 <Save className="h-3.5 w-3.5 mr-1" /> Save Config
               </Button>
-            </div>
-          )}
+            )}
+            {onDeleteNode && (
+              <Button variant="destructive" size="sm" className="w-full" onClick={() => { onDeleteNode(node!.id); onClose(); }}>
+                <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete Node
+              </Button>
+            )}
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
