@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Plus, Send, Megaphone, MoreVertical, Trash2, Mail, CheckCircle, Clock, AlertTriangle, ChevronRight, ChevronLeft, Copy, Pencil, Users, CalendarIcon } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Send, Megaphone, MoreVertical, Trash2, Mail, CheckCircle, Clock, AlertTriangle, ChevronRight, ChevronLeft, Copy, Pencil, Users, CalendarIcon, BarChart3, X, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -50,6 +52,7 @@ export const CampaignsList = () => {
   const [form, setForm] = useState<WizardForm>({ ...defaultForm });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
+  const [detailCampaign, setDetailCampaign] = useState<any>(null);
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['email-campaigns', currentWorkspaceId],
@@ -83,7 +86,20 @@ export const CampaignsList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  // Estimate recipient count when audience changes
+  // Campaign detail messages
+  const { data: detailMessages = [] } = useQuery({
+    queryKey: ['campaign-messages', detailCampaign?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('email_messages')
+        .select('id, to_email, subject, status, sent_at, error')
+        .eq('campaign_id', detailCampaign!.id)
+        .order('queued_at', { ascending: false })
+        .limit(100);
+      return data || [];
+    },
+    enabled: !!detailCampaign?.id,
+  });
+
   const estimateRecipients = async (audienceType: AudienceType, segmentId?: string, tags?: string) => {
     try {
       if (audienceType === 'all') {
@@ -191,6 +207,22 @@ export const CampaignsList = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const cancelCampaign = useMutation({
+    mutationFn: async (campaignId: string) => {
+      // Delete queued messages
+      await supabase.from('email_messages').delete().eq('campaign_id', campaignId).eq('status', 'queued');
+      // Update campaign status
+      const { error } = await supabase.from('email_campaigns').update({ status: 'failed' }).eq('id', campaignId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['campaign-messages'] });
+      toast.success('Campaign cancelled');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const launchCampaign = useMutation({
     mutationFn: async (campaignId: string) => {
       const campaign = campaigns.find((c: any) => c.id === campaignId);
@@ -243,6 +275,23 @@ export const CampaignsList = () => {
     draft: campaigns.filter((c: any) => c.status === 'draft').length,
     sending: campaigns.filter((c: any) => c.status === 'sending').length,
     complete: campaigns.filter((c: any) => c.status === 'complete').length,
+  };
+
+  // Campaign detail stats
+  const getDetailStats = (campaign: any) => {
+    const s = campaign?.stats || {};
+    const sent = s.sent || 0;
+    const delivered = s.delivered || 0;
+    const opened = s.opened || 0;
+    const clicked = s.clicked || 0;
+    const bounced = s.bounced || 0;
+    const failed = s.failed || 0;
+    const total = sent || 1;
+    return { sent, delivered, opened, clicked, bounced, failed, total,
+      deliveryRate: Math.round((delivered / total) * 100),
+      openRate: Math.round((opened / total) * 100),
+      clickRate: Math.round((opened ? clicked / opened : 0) * 100),
+    };
   };
 
   return (
@@ -335,6 +384,88 @@ export const CampaignsList = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Campaign Detail Dialog */}
+      <Dialog open={!!detailCampaign} onOpenChange={() => setDetailCampaign(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              {detailCampaign?.name} — Stats
+            </DialogTitle>
+          </DialogHeader>
+          {detailCampaign && (() => {
+            const ds = getDetailStats(detailCampaign);
+            return (
+              <div className="space-y-4">
+                {/* Stat bars */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Sent', value: ds.sent, color: 'text-blue-400' },
+                    { label: 'Delivered', value: ds.delivered, pct: ds.deliveryRate, color: 'text-emerald-400' },
+                    { label: 'Opened', value: ds.opened, pct: ds.openRate, color: 'text-violet-400' },
+                  ].map(s => (
+                    <GlassCard key={s.label} className="p-3">
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                      <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+                      {s.pct !== undefined && <Progress value={s.pct} className="h-1 mt-1" />}
+                    </GlassCard>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Clicked', value: ds.clicked, pct: ds.clickRate, color: 'text-cyan-400' },
+                    { label: 'Bounced', value: ds.bounced, color: 'text-amber-400' },
+                    { label: 'Failed', value: ds.failed, color: 'text-destructive' },
+                  ].map(s => (
+                    <GlassCard key={s.label} className="p-3">
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                      <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+                      {s.pct !== undefined && <Progress value={s.pct} className="h-1 mt-1" />}
+                    </GlassCard>
+                  ))}
+                </div>
+
+                {/* Message log */}
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">Message Log ({detailMessages.length})</h4>
+                  {detailMessages.length > 0 ? (
+                    <GlassCard className="overflow-hidden max-h-[300px] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border/30">
+                            <TableHead className="text-xs">Recipient</TableHead>
+                            <TableHead className="text-xs">Subject</TableHead>
+                            <TableHead className="text-xs">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {detailMessages.map((m: any) => (
+                            <TableRow key={m.id} className="border-border/20">
+                              <TableCell className="text-xs">{m.to_email}</TableCell>
+                              <TableCell className="text-xs truncate max-w-[200px]">{m.subject}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`text-[10px] ${
+                                  m.status === 'delivered' ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' :
+                                  m.status === 'failed' ? 'text-destructive border-destructive/30 bg-destructive/10' :
+                                  m.status === 'sent' ? 'text-blue-400 border-blue-500/30 bg-blue-500/10' :
+                                  'text-muted-foreground'
+                                }`}>{m.status}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </GlassCard>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-4">No messages recorded</p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Stats */}
       {campaigns.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
@@ -374,9 +505,13 @@ export const CampaignsList = () => {
           {campaigns.map((c: any, i: number) => {
             const sc = statusConfig[c.status] || statusConfig.draft;
             const campaignStats = c.stats || {};
+            const isClickable = c.status !== 'draft';
             return (
               <motion.div key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <GlassCard className="p-4 hover:border-primary/30 hover:scale-[1.01] transition-all duration-200">
+                <GlassCard
+                  className={`p-4 hover:border-primary/30 hover:scale-[1.01] transition-all duration-200 ${isClickable ? 'cursor-pointer' : ''}`}
+                  onClick={() => isClickable && setDetailCampaign(c)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
@@ -385,6 +520,7 @@ export const CampaignsList = () => {
                         <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} /> {c.status}
                         </Badge>
+                        {isClickable && <BarChart3 className="h-3 w-3 text-muted-foreground" />}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {c.email_templates?.name || 'No template'} • {format(new Date(c.created_at), 'MMM d, yyyy')}
@@ -404,10 +540,15 @@ export const CampaignsList = () => {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                       {c.status === 'draft' && canEdit && (
                         <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => launchCampaign.mutate(c.id)}>
                           <Send className="h-3 w-3 mr-1" /> Launch
+                        </Button>
+                      )}
+                      {c.status === 'sending' && canEdit && (
+                        <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => cancelCampaign.mutate(c.id)}>
+                          <XCircle className="h-3 w-3 mr-1" /> Cancel
                         </Button>
                       )}
                       {canEdit && (
