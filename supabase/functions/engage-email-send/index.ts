@@ -108,6 +108,14 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Build List-Unsubscribe headers for compliance (RFC 2369/8058)
+        const unsubHeaders: Record<string, string> = {};
+        if (msg.contact_id) {
+          const unsubUrl = `${baseUrl}/functions/v1/engage-unsubscribe?contact_id=${msg.contact_id}`;
+          unsubHeaders["List-Unsubscribe"] = `<${unsubUrl}>`;
+          unsubHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
+        }
+
         if (resendKey && msg.email_provider_settings?.provider === "resend") {
           const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -117,6 +125,7 @@ Deno.serve(async (req) => {
               to: [msg.to_email],
               subject: msg.subject,
               html: bodyHtml,
+              headers: unsubHeaders,
             }),
           });
 
