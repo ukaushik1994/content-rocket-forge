@@ -26,10 +26,7 @@ const statusDot: Record<string, string> = {
 };
 
 const channelIcons: Record<string, React.ElementType> = {
-  twitter: Twitter,
-  linkedin: Linkedin,
-  instagram: Instagram,
-  facebook: Facebook,
+  twitter: Twitter, linkedin: Linkedin, instagram: Instagram, facebook: Facebook,
 };
 
 export const SocialCalendar: React.FC<SocialCalendarProps> = ({ posts, onDayClick }) => {
@@ -85,7 +82,6 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({ posts, onDayClic
           transition={{ duration: 0.2 }}
           className="grid grid-cols-7 gap-px bg-border/50 rounded-lg overflow-hidden"
         >
-          {/* Padding */}
           {Array.from({ length: startPadding }).map((_, i) => (
             <div key={`pad-${i}`} className="bg-background/20 min-h-[80px] p-1.5" />
           ))}
@@ -94,6 +90,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({ posts, onDayClic
             const key = format(day, 'yyyy-MM-dd');
             const dayPosts = postsByDay[key] || [];
             const isToday = isSameDay(day, new Date());
+            const postCount = dayPosts.length;
 
             return (
               <div
@@ -103,9 +100,16 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({ posts, onDayClic
                   isToday ? 'ring-1 ring-inset ring-primary/50 bg-primary/5' : ''
                 }`}
               >
-                <span className={`text-xs font-medium ${isToday ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                  {format(day, 'd')}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-medium ${isToday ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+                    {format(day, 'd')}
+                  </span>
+                  {postCount >= 2 && (
+                    <span className="text-[9px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded-full leading-none">
+                      {postCount}
+                    </span>
+                  )}
+                </div>
                 <div className="mt-1 space-y-0.5">
                   {dayPosts.slice(0, 3).map(p => {
                     const targets = p.social_post_targets || [];

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -11,11 +11,12 @@ import { Switch } from '@/components/ui/switch';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Zap, MoreVertical, Trash2, Play, Pause, Pencil, X } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Zap, MoreVertical, Trash2, Play, Pause, Pencil, X, Copy, Clock, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
 
 const triggerLabels: Record<string, string> = {
   segment_entry: 'Segment Entry',
@@ -41,10 +42,11 @@ interface AutomationForm {
   trigger_type: string;
   trigger_value: string;
   actions: ActionItem[];
+  conditions: Rule[];
 }
 
 const defaultForm: AutomationForm = {
-  name: '', trigger_type: 'segment_entry', trigger_value: '', actions: [{ type: 'send_email', config: {} }],
+  name: '', trigger_type: 'segment_entry', trigger_value: '', actions: [{ type: 'send_email', config: {} }], conditions: [],
 };
 
 export const AutomationsList = () => {
@@ -54,6 +56,7 @@ export const AutomationsList = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AutomationForm>({ ...defaultForm });
+  const [showConditions, setShowConditions] = useState(false);
 
   const { data: automations = [], isLoading } = useQuery({
     queryKey: ['engage-automations', currentWorkspaceId],
@@ -64,6 +67,25 @@ export const AutomationsList = () => {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
+    },
+    enabled: !!currentWorkspaceId,
+  });
+
+  // Execution counts from activity log
+  const { data: execCounts = {} } = useQuery({
+    queryKey: ['automation-exec-counts', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('engage_activity_log')
+        .select('payload')
+        .eq('workspace_id', currentWorkspaceId!)
+        .eq('channel', 'automation');
+      const counts: Record<string, number> = {};
+      (data || []).forEach((log: any) => {
+        const aId = log.payload?.automation_id;
+        if (aId) counts[aId] = (counts[aId] || 0) + 1;
+      });
+      return counts;
     },
     enabled: !!currentWorkspaceId,
   });
@@ -103,25 +125,30 @@ export const AutomationsList = () => {
         type: a.type || 'send_email',
         config: a.config || {},
       }));
+      const conds = (automation.conditions || []) as Rule[];
       setForm({
         name: automation.name,
         trigger_type: tc.type || 'segment_entry',
         trigger_value: tc.value || '',
         actions: acts.length ? acts : [{ type: 'send_email', config: {} }],
+        conditions: conds,
       });
+      setShowConditions(conds.length > 0);
     } else {
       setEditingId(null);
-      setForm({ ...defaultForm, actions: [{ type: 'send_email', config: {} }] });
+      setForm({ ...defaultForm, actions: [{ type: 'send_email', config: {} }], conditions: [] });
+      setShowConditions(false);
     }
     setShowDialog(true);
   };
 
   const saveAutomation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const payload: Record<string, any> = {
         name: form.name,
-        trigger_config: { type: form.trigger_type, value: form.trigger_value || undefined },
-        actions: form.actions.map(a => ({ type: a.type, config: a.config })),
+        trigger_config: { type: form.trigger_type, value: form.trigger_value || undefined } as any,
+        actions: form.actions.map(a => ({ type: a.type, config: a.config })) as any,
+        conditions: form.conditions.length > 0 ? (form.conditions as any) : null,
       };
 
       if (editingId) {
@@ -130,7 +157,7 @@ export const AutomationsList = () => {
       } else {
         const { error } = await supabase.from('engage_automations').insert({
           ...payload, workspace_id: currentWorkspaceId!, created_by: user?.id,
-        });
+        } as any);
         if (error) throw error;
       }
     },
@@ -148,6 +175,26 @@ export const AutomationsList = () => {
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['engage-automations'] }); toast.success('Deleted'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const duplicateAutomation = useMutation({
+    mutationFn: async (a: any) => {
+      const { error } = await supabase.from('engage_automations').insert({
+        workspace_id: currentWorkspaceId!,
+        created_by: user?.id,
+        name: `${a.name} (Copy)`,
+        trigger_config: a.trigger_config,
+        actions: a.actions,
+        conditions: a.conditions,
+        status: 'paused',
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engage-automations'] });
+      toast.success('Automation duplicated');
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -253,6 +300,25 @@ export const AutomationsList = () => {
               {renderTriggerValue()}
             </div>
 
+            {/* Conditions */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1"><Filter className="h-3 w-3" /> Conditions (optional)</Label>
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowConditions(!showConditions)}>
+                  {showConditions ? 'Hide' : 'Add Conditions'}
+                </Button>
+              </div>
+              {showConditions && (
+                <GlassCard className="p-3">
+                  <p className="text-[10px] text-muted-foreground mb-2">Only run actions if contact matches these conditions:</p>
+                  <RuleBuilder
+                    rules={form.conditions}
+                    onChange={conditions => setForm(f => ({ ...f, conditions }))}
+                  />
+                </GlassCard>
+              )}
+            </div>
+
             {/* Actions */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -325,6 +391,8 @@ export const AutomationsList = () => {
           {automations.map((a: any, i: number) => {
             const triggerType = a.trigger_config?.type || 'none';
             const actions = (a.actions || []) as any[];
+            const execCount = execCounts[a.id] || 0;
+            const lastTriggered = a.updated_at;
             return (
               <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <GlassCard className="p-4 hover:border-primary/30 hover:scale-[1.01] transition-all duration-200">
@@ -336,13 +404,29 @@ export const AutomationsList = () => {
                         <Badge variant="outline" className={`text-[10px] gap-1 ${a.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-muted/50 text-muted-foreground border-border/50'}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${a.status === 'active' ? 'bg-emerald-400' : 'bg-muted-foreground'}`} /> {a.status}
                         </Badge>
+                        {execCount > 0 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Zap className="h-2.5 w-2.5" /> {execCount}×
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>Trigger: {triggerLabels[triggerType] || triggerType}{a.trigger_config?.value ? ` (${a.trigger_config.value})` : ''}</span>
                         <span>•</span>
                         <span>{actions.map((act: any) => actionLabels[act.type] || act.type).join(', ')}</span>
-                        <span>•</span>
-                        <span>{format(new Date(a.created_at), 'MMM d')}</span>
+                        {a.conditions && (a.conditions as any[]).length > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-0.5"><Filter className="h-2.5 w-2.5" /> {(a.conditions as any[]).length} conditions</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+                        <Clock className="h-2.5 w-2.5" />
+                        <span>Created {format(new Date(a.created_at), 'MMM d')}</span>
+                        {lastTriggered && lastTriggered !== a.created_at && (
+                          <span>• Last active {format(new Date(lastTriggered), 'MMM d, HH:mm')}</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -361,6 +445,10 @@ export const AutomationsList = () => {
                             <DropdownMenuItem onClick={() => openDialog(a)}>
                               <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => duplicateAutomation.mutate(a)}>
+                              <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}>
                               <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                             </DropdownMenuItem>

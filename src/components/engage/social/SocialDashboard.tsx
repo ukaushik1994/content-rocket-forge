@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +13,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Plus, Share2, Calendar, List, Twitter, Linkedin, Instagram, Facebook,
-  Clock, CheckCircle2, Zap, Send,
+  Clock, CheckCircle2, Zap, Send, Image, Hash, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -28,11 +28,10 @@ const providers = [
 ];
 
 const charLimits: Record<string, number> = {
-  twitter: 280,
-  linkedin: 3000,
-  instagram: 2200,
-  facebook: 63206,
+  twitter: 280, linkedin: 3000, instagram: 2200, facebook: 63206,
 };
+
+const commonHashtags = ['#marketing', '#socialmedia', '#growth', '#brand', '#content', '#digital', '#strategy'];
 
 const stagger = {
   container: { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } },
@@ -45,8 +44,11 @@ export const SocialDashboard = () => {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [view, setView] = useState<'list' | 'calendar'>('list');
-  const [form, setForm] = useState({ content: '', scheduled_at: '', channels: [] as string[] });
+  const [form, setForm] = useState({ content: '', scheduled_at: '', channels: [] as string[], media_urls: [] as string[] });
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [showHashtags, setShowHashtags] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['social-posts', currentWorkspaceId],
@@ -78,18 +80,50 @@ export const SocialDashboard = () => {
     }));
   };
 
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length || !user) return;
+    setUploading(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const ext = file.name.split('.').pop();
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error } = await supabase.storage.from('social-media').upload(path, file);
+        if (error) throw error;
+        const { data: { publicUrl } } = supabase.storage.from('social-media').getPublicUrl(path);
+        newUrls.push(publicUrl);
+      }
+      setForm(f => ({ ...f, media_urls: [...f.media_urls, ...newUrls] }));
+      toast.success(`${newUrls.length} file(s) uploaded`);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeMedia = (url: string) => {
+    setForm(f => ({ ...f, media_urls: f.media_urls.filter(u => u !== url) }));
+  };
+
+  const insertHashtag = (tag: string) => {
+    setForm(f => ({ ...f, content: f.content + (f.content.endsWith(' ') || !f.content ? '' : ' ') + tag + ' ' }));
+    setShowHashtags(false);
+    textareaRef.current?.focus();
+  };
+
   const savePost = useMutation({
     mutationFn: async () => {
       if (editingPostId) {
-        // UPDATE existing post
         const { error } = await supabase.from('social_posts').update({
           content: form.content,
           scheduled_at: form.scheduled_at || null,
           status: form.scheduled_at ? 'scheduled' : 'draft',
+          media_urls: form.media_urls.length > 0 ? form.media_urls : null,
         }).eq('id', editingPostId);
         if (error) throw error;
 
-        // Replace targets: delete old, insert new
         await supabase.from('social_post_targets').delete().eq('post_id', editingPostId);
         if (form.channels.length) {
           const targets = form.channels.map(ch => ({
@@ -101,13 +135,13 @@ export const SocialDashboard = () => {
           await supabase.from('social_post_targets').insert(targets);
         }
       } else {
-        // INSERT new post
         const { data: post, error } = await supabase.from('social_posts').insert({
           workspace_id: currentWorkspaceId!,
           content: form.content,
           scheduled_at: form.scheduled_at || null,
           status: form.scheduled_at ? 'scheduled' : 'draft',
           created_by: user?.id,
+          media_urls: form.media_urls.length > 0 ? form.media_urls : null,
         }).select().single();
         if (error) throw error;
 
@@ -125,7 +159,7 @@ export const SocialDashboard = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['social-posts'] });
       setShowCreate(false);
-      setForm({ content: '', scheduled_at: '', channels: [] });
+      setForm({ content: '', scheduled_at: '', channels: [], media_urls: [] });
       setEditingPostId(null);
       toast.success(editingPostId ? 'Post updated' : 'Post created');
     },
@@ -145,6 +179,17 @@ export const SocialDashboard = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const duplicatePost = (post: any) => {
+    setEditingPostId(null);
+    setForm({
+      content: post.content,
+      scheduled_at: '',
+      channels: post.social_post_targets?.map((t: any) => t.provider) || [],
+      media_urls: post.media_urls || [],
+    });
+    setShowCreate(true);
+  };
+
   const stats = useMemo(() => {
     const scheduled = posts.filter((p: any) => p.status === 'scheduled').length;
     const posted = posts.filter((p: any) => p.status === 'posted').length;
@@ -158,7 +203,7 @@ export const SocialDashboard = () => {
 
   const handleDayClick = (date: Date) => {
     setEditingPostId(null);
-    setForm(f => ({ ...f, scheduled_at: format(date, "yyyy-MM-dd'T'HH:mm") }));
+    setForm(f => ({ ...f, scheduled_at: format(date, "yyyy-MM-dd'T'HH:mm"), media_urls: [] }));
     setShowCreate(true);
   };
 
@@ -166,7 +211,7 @@ export const SocialDashboard = () => {
     setShowCreate(open);
     if (!open) {
       setEditingPostId(null);
-      setForm({ content: '', scheduled_at: '', channels: [] });
+      setForm({ content: '', scheduled_at: '', channels: [], media_urls: [] });
     }
   };
 
@@ -181,9 +226,7 @@ export const SocialDashboard = () => {
       {/* Hero Header */}
       <motion.div variants={stagger.item} className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-            Social
-          </h2>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Social</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Schedule and manage social posts across all channels</p>
         </div>
         <div className="flex items-center gap-2">
@@ -208,8 +251,23 @@ export const SocialDashboard = () => {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label>Content *</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Content *</Label>
+                      <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowHashtags(!showHashtags)}>
+                        <Hash className="h-3 w-3" /> Hashtags
+                      </Button>
+                    </div>
+                    {showHashtags && (
+                      <div className="flex gap-1 flex-wrap mt-1 mb-1">
+                        {commonHashtags.map(tag => (
+                          <button key={tag} onClick={() => insertHashtag(tag)} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <Textarea
+                      ref={textareaRef}
                       value={form.content}
                       onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                       rows={4}
@@ -224,6 +282,34 @@ export const SocialDashboard = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Media Upload */}
+                  <div>
+                    <Label className="flex items-center gap-1"><Image className="h-3 w-3" /> Media</Label>
+                    <div className="mt-1">
+                      <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border/50 cursor-pointer hover:border-primary/50 transition-colors">
+                        <Image className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">{uploading ? 'Uploading...' : 'Click to upload images'}</span>
+                        <input type="file" className="hidden" accept="image/*" multiple onChange={handleMediaUpload} disabled={uploading} />
+                      </label>
+                    </div>
+                    {form.media_urls.length > 0 && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {form.media_urls.map((url, i) => (
+                          <div key={i} className="relative group">
+                            <img src={url} alt="" className="h-16 w-16 object-cover rounded-lg border border-border/50" />
+                            <button
+                              onClick={() => removeMedia(url)}
+                              className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <Label>Schedule</Label>
                     <Input
@@ -319,9 +405,7 @@ export const SocialDashboard = () => {
 
       {/* Content Area */}
       {isLoading ? (
-        <motion.div variants={stagger.item} className="text-center py-12 text-muted-foreground">
-          Loading...
-        </motion.div>
+        <motion.div variants={stagger.item} className="text-center py-12 text-muted-foreground">Loading...</motion.div>
       ) : view === 'calendar' ? (
         <motion.div variants={stagger.item}>
           <SocialCalendar posts={posts} onDayClick={handleDayClick} />
@@ -341,11 +425,9 @@ export const SocialDashboard = () => {
               <p className="font-semibold text-foreground">No posts yet</p>
               <p className="text-sm text-muted-foreground">Create your first social post to get started</p>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => { setEditingPostId(null); setShowCreate(true); }} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Create First Post
-              </Button>
-            </div>
+            <Button size="sm" onClick={() => { setEditingPostId(null); setShowCreate(true); }} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Create First Post
+            </Button>
           </GlassCard>
         </motion.div>
       ) : (
@@ -361,10 +443,12 @@ export const SocialDashboard = () => {
                   content: post.content,
                   scheduled_at: post.scheduled_at ? format(new Date(post.scheduled_at), "yyyy-MM-dd'T'HH:mm") : '',
                   channels: post.social_post_targets?.map((t: any) => t.provider) || [],
+                  media_urls: post.media_urls || [],
                 });
                 setShowCreate(true);
               }}
               onDelete={(id) => deletePost.mutate(id)}
+              onDuplicate={duplicatePost}
             />
           ))}
         </motion.div>

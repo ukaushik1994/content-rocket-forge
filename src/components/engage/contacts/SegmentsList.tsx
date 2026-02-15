@@ -10,7 +10,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter, Eye, Clock } from 'lucide-react';
+import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter, Eye, Clock, Copy, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -41,7 +41,6 @@ export const SegmentsList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  // Segment members for viewing
   const { data: segmentMembers = [] } = useQuery({
     queryKey: ['segment-members', viewingSegment?.id],
     queryFn: async () => {
@@ -55,7 +54,6 @@ export const SegmentsList = () => {
     enabled: !!viewingSegment?.id,
   });
 
-  // Last evaluated time
   const { data: lastEvaluated } = useQuery({
     queryKey: ['segment-last-eval', viewingSegment?.id],
     queryFn: async () => {
@@ -104,7 +102,6 @@ export const SegmentsList = () => {
         if (error) throw error;
         segmentId = data.id;
       }
-      // Auto-evaluate after save
       await supabase.rpc('evaluate_segment', { p_segment_id: segmentId });
     },
     onSuccess: () => {
@@ -140,6 +137,41 @@ export const SegmentsList = () => {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const duplicateSegment = useMutation({
+    mutationFn: async (segment: any) => {
+      const { error } = await supabase.from('engage_segments').insert({
+        workspace_id: currentWorkspaceId!,
+        name: `${segment.name} (Copy)`,
+        description: segment.description || null,
+        definition: segment.definition,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engage-segments'] });
+      toast.success('Segment duplicated');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const exportMembersCSV = () => {
+    if (!segmentMembers.length) { toast.error('No members to export'); return; }
+    const rows = [['Email', 'First Name', 'Last Name']];
+    segmentMembers.forEach((m: any) => {
+      const c = m.engage_contacts || {};
+      rows.push([c.email || '', c.first_name || '', c.last_name || '']);
+    });
+    const csv = rows.map(r => r.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${viewingSegment?.name || 'segment'}-members.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Members exported');
+  };
 
   const getRuleSummary = (segment: any) => {
     const def = segment.definition || {};
@@ -222,11 +254,18 @@ export const SegmentsList = () => {
               {viewingSegment?.name} — Members
             </DialogTitle>
           </DialogHeader>
-          {lastEvaluated && (
-            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" /> Last evaluated: {format(new Date(lastEvaluated), 'MMM d, yyyy HH:mm')}
-            </p>
-          )}
+          <div className="flex items-center justify-between">
+            {lastEvaluated && (
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" /> Last evaluated: {format(new Date(lastEvaluated), 'MMM d, yyyy HH:mm')}
+              </p>
+            )}
+            {segmentMembers.length > 0 && (
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={exportMembersCSV}>
+                <Download className="h-3 w-3" /> Export CSV
+              </Button>
+            )}
+          </div>
           {segmentMembers.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No members. Try evaluating the segment.</p>
           ) : (
@@ -291,6 +330,9 @@ export const SegmentsList = () => {
                       </Button>
                       {canEdit && (
                         <>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicateSegment.mutate(s)} title="Duplicate">
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => evaluateSegment.mutate(s.id)} disabled={evaluateSegment.isPending}>
                             <RefreshCw className={`h-3.5 w-3.5 ${evaluateSegment.isPending ? 'animate-spin' : ''}`} />
                           </Button>

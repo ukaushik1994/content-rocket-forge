@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ReactFlow, addEdge, useNodesState, useEdgesState, Controls, MiniMap, Background,
-  BackgroundVariant, Connection, MarkerType, type Node, type Edge,
+  BackgroundVariant, Connection, MarkerType, type Node, type Edge, useReactFlow, ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, Play, Pause, Plus, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Play, Pause, Plus, CheckCircle, Maximize, Users } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { customNodeTypes } from './nodes/CustomNodes';
 import { JourneyInspector } from './JourneyInspector';
@@ -21,12 +21,13 @@ const nodeColors: Record<string, string> = {
   condition: '#10b981', update_contact: '#6366f1', webhook: '#ec4899', end: '#6b7280',
 };
 
-export const JourneyBuilder = () => {
+const JourneyBuilderInner = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentWorkspaceId } = useWorkspace();
   const queryClient = useQueryClient();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const reactFlowInstance = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -37,6 +38,42 @@ export const JourneyBuilder = () => {
       const { data, error } = await supabase.from('journeys').select('*').eq('id', id!).single();
       if (error) throw error;
       return data;
+    },
+    enabled: !!id,
+  });
+
+  // Enrollment stats
+  const { data: enrollmentStats } = useQuery<{ active: number; completed: number; exited: number }>({
+    queryKey: ['journey-enrollment-stats', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('journey_enrollments')
+        .select('status')
+        .eq('journey_id', id!);
+      const stats = { active: 0, completed: 0, exited: 0 };
+      (data || []).forEach((e: any) => {
+        if (e.status === 'active') stats.active++;
+        else if (e.status === 'completed') stats.completed++;
+        else stats.exited++;
+      });
+      return stats;
+    },
+    enabled: !!id,
+  });
+
+  // Node execution counts
+  const nodeExecQuery = useQuery({
+    queryKey: ['journey-node-exec-counts', id] as const,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('journey_steps')
+        .select('node_id')
+        .eq('journey_id', id!);
+      const counts: Record<string, number> = {};
+      (data || []).forEach((s: any) => {
+        counts[s.node_id] = (counts[s.node_id] || 0) + 1;
+      });
+      return counts;
     },
     enabled: !!id,
   });
@@ -54,7 +91,7 @@ export const JourneyBuilder = () => {
           id: n.node_id,
           type: n.type,
           position: typeof n.position === 'string' ? JSON.parse(n.position) : n.position,
-          data: { label: n.type.replace('_', ' '), config: n.config || {} },
+          data: { label: n.type.replace('_', ' '), config: n.config || {}, execCount: nodeExecCounts[n.node_id] || 0 },
         })));
       }
 
@@ -74,6 +111,16 @@ export const JourneyBuilder = () => {
     enabled: !!id,
   });
 
+  // Update node exec counts when they change
+  React.useEffect(() => {
+    if (Object.keys(nodeExecCounts).length > 0) {
+      setNodes(nds => nds.map(n => ({
+        ...n,
+        data: { ...n.data, execCount: nodeExecCounts[n.id] || 0 },
+      })));
+    }
+  }, [nodeExecCounts, setNodes]);
+
   const onConnect = useCallback((connection: Connection) => {
     setEdges(eds => addEdge({
       ...connection,
@@ -89,7 +136,7 @@ export const JourneyBuilder = () => {
       id: nodeId,
       type,
       position: { x: 250 + Math.random() * 100, y: 100 + nodes.length * 150 },
-      data: { label: type.replace('_', ' '), config: {} },
+      data: { label: type.replace('_', ' '), config: {}, execCount: 0 },
     };
     setNodes(nds => [...nds, newNode]);
   };
@@ -104,12 +151,18 @@ export const JourneyBuilder = () => {
     toast.success('Node config saved');
   };
 
+  const handleDeleteNode = (nodeId: string) => {
+    setNodes(nds => nds.filter(n => n.id !== nodeId));
+    setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
+    setSelectedNode(null);
+    toast.success('Node deleted');
+  };
+
   const validateJourney = () => {
     const triggers = nodes.filter(n => n.type === 'trigger');
     if (triggers.length === 0) { toast.error('Journey needs at least one Trigger node'); return; }
     const ends = nodes.filter(n => n.type === 'end');
     if (ends.length === 0) { toast.warning('Add an End node to mark journey completion'); return; }
-    // Check for orphan nodes
     const connected = new Set<string>();
     const queue = triggers.map(t => t.id);
     while (queue.length) {
@@ -183,6 +236,19 @@ export const JourneyBuilder = () => {
           </Button>
           <h2 className="font-semibold text-foreground">{journey?.name || 'Journey Builder'}</h2>
           <Badge variant="outline" className={statusBadgeClass}>{journey?.status || 'draft'}</Badge>
+          {enrollmentStats && (
+            <div className="flex items-center gap-2 ml-2">
+              <Badge variant="secondary" className="text-[10px] gap-1">
+                <Users className="h-3 w-3" /> {enrollmentStats.active} active
+              </Badge>
+              <Badge variant="secondary" className="text-[10px] gap-1 bg-emerald-500/10 text-emerald-400">
+                {enrollmentStats.completed} done
+              </Badge>
+              <Badge variant="secondary" className="text-[10px] gap-1 bg-muted/50">
+                {enrollmentStats.exited} exited
+              </Badge>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -199,6 +265,9 @@ export const JourneyBuilder = () => {
               <DropdownMenuItem onClick={() => addNode('end')}>🏁 End</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => reactFlowInstance.fitView({ padding: 0.2 })}>
+            <Maximize className="h-3.5 w-3.5 mr-1" /> Fit
+          </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={validateJourney}>
             <CheckCircle className="h-3.5 w-3.5 mr-1" /> Validate
           </Button>
@@ -236,8 +305,15 @@ export const JourneyBuilder = () => {
           workspaceId={currentWorkspaceId}
           onUpdate={handleNodeConfigUpdate}
           onClose={() => setSelectedNode(null)}
+          onDeleteNode={handleDeleteNode}
         />
       </div>
     </div>
   );
 };
+
+export const JourneyBuilder = () => (
+  <ReactFlowProvider>
+    <JourneyBuilderInner />
+  </ReactFlowProvider>
+);
