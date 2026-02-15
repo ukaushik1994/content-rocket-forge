@@ -9,10 +9,12 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Activity, Mail, GitBranch, Zap, Share2, Search, CalendarDays, Download, Eye } from 'lucide-react';
+import { Activity, Mail, GitBranch, Zap, Share2, Search, CalendarDays, Download, Eye, Shield, HeartPulse } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { SystemHealth } from './SystemHealth';
+import { AuditLog } from './AuditLog';
 
 const channelIcons: Record<string, any> = {
   email: Mail,
@@ -39,6 +41,7 @@ const chartColors: Record<string, string> = {
 };
 
 export const ActivityLog = () => {
+  const [activeView, setActiveView] = useState<'feed' | 'health' | 'audit'>('feed');
   const { currentWorkspaceId } = useWorkspace();
   const [channelFilter, setChannelFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -115,15 +118,35 @@ export const ActivityLog = () => {
               <Activity className="h-5 w-5 text-orange-400" />
             </div>
             <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Activity Log</h2>
-              <p className="text-sm text-muted-foreground">Everything that happened, in one timeline</p>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Activity</h2>
+              <p className="text-sm text-muted-foreground">Events, health, and audit trail</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV} disabled={filtered.length === 0}>
-            <Download className="h-3.5 w-3.5 mr-1" /> Export CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40">
+              {([
+                { key: 'feed' as const, icon: Activity, label: 'Feed' },
+                { key: 'health' as const, icon: HeartPulse, label: 'Health' },
+                { key: 'audit' as const, icon: Shield, label: 'Audit' },
+              ]).map(t => (
+                <Button key={t.key} variant={activeView === t.key ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-8 text-xs gap-1" onClick={() => setActiveView(t.key)}>
+                  <t.icon className="h-3 w-3" /> {t.label}
+                </Button>
+              ))}
+            </div>
+            {activeView === 'feed' && (
+              <Button variant="outline" size="sm" onClick={exportCSV} disabled={filtered.length === 0}>
+                <Download className="h-3.5 w-3.5 mr-1" /> Export CSV
+              </Button>
+            )}
+          </div>
         </div>
       </motion.div>
+
+      {activeView === 'health' && <SystemHealth />}
+      {activeView === 'audit' && <AuditLog />}
+
+      {activeView === 'feed' && <>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
@@ -282,6 +305,7 @@ export const ActivityLog = () => {
           )}
         </DialogContent>
       </Dialog>
+      </>}
     </div>
   );
 };
