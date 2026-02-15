@@ -4,15 +4,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { EmailInbox } from './inbox/EmailInbox';
+import { SentList } from './sent/SentList';
+import { ScheduledList } from './scheduled/ScheduledList';
+import { DraftsList } from './drafts/DraftsList';
 import { TemplatesList } from './templates/TemplatesList';
 import { CampaignsList } from './campaigns/CampaignsList';
+import { EmailReports } from './reports/EmailReports';
 import { EmailProviderSettings } from './settings/EmailProviderSettings';
-import { Mail, FileText, Megaphone, Send } from 'lucide-react';
+import { Mail, Inbox, Send, Clock, FileText, Megaphone, BarChart3, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const EmailDashboard = () => {
   const { currentWorkspaceId } = useWorkspace();
-  const [tab, setTab] = useState('templates');
+  const [tab, setTab] = useState('inbox');
 
   const { data: templateCount = 0 } = useQuery({
     queryKey: ['email-templates-count', currentWorkspaceId],
@@ -41,7 +46,17 @@ export const EmailDashboard = () => {
     enabled: !!currentWorkspaceId,
   });
 
+  const { data: threadCount = 0 } = useQuery({
+    queryKey: ['email-threads-count', currentWorkspaceId],
+    queryFn: async () => {
+      const { count } = await supabase.from('email_threads').select('*', { count: 'exact', head: true }).eq('workspace_id', currentWorkspaceId!);
+      return count || 0;
+    },
+    enabled: !!currentWorkspaceId,
+  });
+
   const stats = [
+    { label: 'Threads', count: threadCount, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: Inbox },
     { label: 'Templates', count: templateCount, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: FileText },
     { label: 'Campaigns', count: campaignCount, color: 'from-cyan-500/20 to-cyan-500/5', text: 'text-cyan-400', icon: Megaphone },
     { label: 'Emails Sent', count: emailsSent, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Send },
@@ -57,13 +72,13 @@ export const EmailDashboard = () => {
           </div>
           <div>
             <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Email</h2>
-            <p className="text-sm text-muted-foreground">Templates, campaigns, and delivery settings</p>
+            <p className="text-sm text-muted-foreground">Inbox, campaigns, templates, and delivery</p>
           </div>
         </div>
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {stats.map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
@@ -81,13 +96,23 @@ export const EmailDashboard = () => {
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="bg-card/50 border border-border/30 backdrop-blur-sm">
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+        <TabsList className="bg-card/50 border border-border/30 backdrop-blur-sm flex-wrap h-auto gap-0.5 p-1">
+          <TabsTrigger value="inbox" className="text-xs gap-1"><Inbox className="h-3 w-3" /> Inbox</TabsTrigger>
+          <TabsTrigger value="sent" className="text-xs gap-1"><Send className="h-3 w-3" /> Sent</TabsTrigger>
+          <TabsTrigger value="scheduled" className="text-xs gap-1"><Clock className="h-3 w-3" /> Scheduled</TabsTrigger>
+          <TabsTrigger value="drafts" className="text-xs gap-1"><FileText className="h-3 w-3" /> Drafts</TabsTrigger>
+          <TabsTrigger value="templates" className="text-xs">Templates</TabsTrigger>
+          <TabsTrigger value="campaigns" className="text-xs">Campaigns</TabsTrigger>
+          <TabsTrigger value="reports" className="text-xs gap-1"><BarChart3 className="h-3 w-3" /> Reports</TabsTrigger>
+          <TabsTrigger value="settings" className="text-xs gap-1"><Settings className="h-3 w-3" /> Settings</TabsTrigger>
         </TabsList>
+        <TabsContent value="inbox" className="mt-4"><EmailInbox /></TabsContent>
+        <TabsContent value="sent" className="mt-4"><SentList /></TabsContent>
+        <TabsContent value="scheduled" className="mt-4"><ScheduledList /></TabsContent>
+        <TabsContent value="drafts" className="mt-4"><DraftsList /></TabsContent>
         <TabsContent value="templates" className="mt-4"><TemplatesList /></TabsContent>
         <TabsContent value="campaigns" className="mt-4"><CampaignsList /></TabsContent>
+        <TabsContent value="reports" className="mt-4"><EmailReports /></TabsContent>
         <TabsContent value="settings" className="mt-4"><EmailProviderSettings /></TabsContent>
       </Tabs>
     </div>
