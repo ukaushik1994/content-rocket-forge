@@ -1,4 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SocialInbox } from './SocialInbox';
+import { SocialAnalytics } from './SocialAnalytics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -255,14 +258,31 @@ export const SocialDashboard = () => {
     { label: 'Connected', value: stats.connected, icon: Zap, color: 'text-purple-400', bg: 'bg-purple-500/10' },
   ];
 
+  const [mainTab, setMainTab] = useState('publish');
+
   return (
     <motion.div className="space-y-6" initial="hidden" animate="visible" variants={stagger.container}>
-      {/* Hero Header */}
+      {/* Header with tab switcher */}
       <motion.div variants={stagger.item} className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Social</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Schedule and manage social posts across all channels</p>
         </div>
+        <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40 backdrop-blur-sm">
+          {(['publish', 'inbox', 'analytics'] as const).map(t => (
+            <Button key={t} variant={mainTab === t ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-8 text-xs capitalize" onClick={() => setMainTab(t)}>
+              {t}
+            </Button>
+          ))}
+        </div>
+      </motion.div>
+
+      {mainTab === 'inbox' && <SocialInbox />}
+      {mainTab === 'analytics' && <SocialAnalytics />}
+
+      {mainTab === 'publish' && <React.Fragment>
+
+      <motion.div variants={stagger.item} className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40 backdrop-blur-sm">
             {[
@@ -546,6 +566,7 @@ export const SocialDashboard = () => {
           ))}
         </motion.div>
       )}
+      </React.Fragment>}
     </motion.div>
   );
 };
