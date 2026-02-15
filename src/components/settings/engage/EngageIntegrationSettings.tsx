@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Save, Mail, Twitter, Linkedin, Instagram, Facebook, Check, AlertCircle } from 'lucide-react';
+import { Save, Mail, Twitter, Linkedin, Instagram, Facebook, Check, AlertCircle, Database } from 'lucide-react';
 import { toast } from 'sonner';
+import { loadSeedData } from '@/utils/engage/seedData';
 
 const socialProviders = [
   { id: 'twitter', label: 'X / Twitter', icon: Twitter, color: 'text-foreground' },
@@ -102,11 +103,20 @@ export const EngageIntegrationSettings = () => {
     enabled: !!workspaceId,
   });
 
+  const [loadingDemo, setLoadingDemo] = useState(false);
+  const handleLoadDemo = async () => {
+    if (!workspaceId || !user) return;
+    setLoadingDemo(true);
+    await loadSeedData(workspaceId, user.id);
+    queryClient.invalidateQueries();
+    setLoadingDemo(false);
+  };
+
   if (!workspaceId) {
     return (
       <div className="text-center py-8">
         <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-        <p className="text-muted-foreground">No workspace found. Join or create a workspace first.</p>
+        <p className="text-muted-foreground">No workspace found. Visit Engage to auto-create one.</p>
       </div>
     );
   }
@@ -179,6 +189,19 @@ export const EngageIntegrationSettings = () => {
               );
             })}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Seed Data */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><Database className="h-4 w-4" /> Demo Data</CardTitle>
+          <CardDescription>Load sample contacts, segments, templates, and a journey for testing</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" size="sm" onClick={handleLoadDemo} disabled={loadingDemo}>
+            <Database className="h-3.5 w-3.5 mr-1" /> {loadingDemo ? 'Loading...' : 'Load Demo Data'}
+          </Button>
         </CardContent>
       </Card>
     </div>

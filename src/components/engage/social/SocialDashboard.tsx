@@ -10,10 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Share2, Calendar, Twitter, Linkedin, Instagram, Facebook } from 'lucide-react';
+import { Plus, Share2, Calendar, List, Twitter, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { SocialCalendar } from './SocialCalendar';
 
 const providers = [
   { id: 'twitter', label: 'X / Twitter', icon: Twitter },
@@ -34,6 +36,7 @@ export const SocialDashboard = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [view, setView] = useState<'list' | 'calendar'>('list');
   const [form, setForm] = useState({ content: '', scheduled_at: '', channels: [] as string[] });
 
   const { data: posts = [], isLoading } = useQuery({
@@ -103,32 +106,43 @@ export const SocialDashboard = () => {
           <h2 className="text-xl font-semibold text-foreground">Social</h2>
           <p className="text-sm text-muted-foreground">Schedule and manage social posts</p>
         </div>
-        {canEdit && (
-          <Dialog open={showCreate} onOpenChange={setShowCreate}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Post</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Create Social Post</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Content *</Label><Textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} rows={4} /></div>
-                <div><Label>Schedule</Label><Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} /></div>
-                <div>
-                  <Label>Channels</Label>
-                  <div className="flex gap-3 mt-1">
-                    {providers.map(p => (
-                      <label key={p.id} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                        <Checkbox checked={form.channels.includes(p.id)} onCheckedChange={() => toggleChannel(p.id)} />
-                        <p.icon className="h-3.5 w-3.5" /> {p.label}
-                      </label>
-                    ))}
+        <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-8" onClick={() => setView('list')}>
+              <List className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant={view === 'calendar' ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-8" onClick={() => setView('calendar')}>
+              <Calendar className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          {canEdit && (
+            <Dialog open={showCreate} onOpenChange={setShowCreate}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Post</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Create Social Post</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>Content *</Label><Textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} rows={4} /></div>
+                  <div><Label>Schedule</Label><Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} /></div>
+                  <div>
+                    <Label>Channels</Label>
+                    <div className="flex gap-3 mt-1">
+                      {providers.map(p => (
+                        <label key={p.id} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                          <Checkbox checked={form.channels.includes(p.id)} onCheckedChange={() => toggleChannel(p.id)} />
+                          <p.icon className="h-3.5 w-3.5" /> {p.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
+                  <Button onClick={() => createPost.mutate()} disabled={!form.content} className="w-full">Create Post</Button>
                 </div>
-                <Button onClick={() => createPost.mutate()} disabled={!form.content} className="w-full">Create Post</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {/* Connected Accounts */}
@@ -148,9 +162,11 @@ export const SocialDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Posts List */}
+      {/* Content Area */}
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
+      ) : view === 'calendar' ? (
+        <SocialCalendar posts={posts} />
       ) : posts.length === 0 ? (
         <div className="text-center py-12 space-y-2">
           <Share2 className="h-10 w-10 mx-auto text-muted-foreground/50" />

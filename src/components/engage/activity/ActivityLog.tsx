@@ -5,8 +5,8 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Activity, Mail, GitBranch, Zap, Share2, Search } from 'lucide-react';
-import { format } from 'date-fns';
+import { Activity, Mail, GitBranch, Zap, Share2, Search, CalendarDays } from 'lucide-react';
+import { format, subDays } from 'date-fns';
 
 const channelIcons: Record<string, any> = {
   email: Mail,
@@ -28,14 +28,16 @@ export const ActivityLog = () => {
   const { currentWorkspaceId } = useWorkspace();
   const [channelFilter, setChannelFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [dateRange, setDateRange] = useState('7');
 
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['engage-activity-log', currentWorkspaceId, channelFilter],
+    queryKey: ['engage-activity-log', currentWorkspaceId, channelFilter, dateRange],
     queryFn: async () => {
       let q = supabase
         .from('engage_activity_log')
-        .select('*')
+        .select('*, engage_contacts(first_name, last_name, email)')
         .eq('workspace_id', currentWorkspaceId!)
+        .gte('created_at', subDays(new Date(), parseInt(dateRange)).toISOString())
         .order('created_at', { ascending: false })
         .limit(200);
 
@@ -52,6 +54,13 @@ export const ActivityLog = () => {
     !search || l.message?.toLowerCase().includes(search.toLowerCase()) || l.type?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const getContactName = (log: any) => {
+    const c = log.engage_contacts;
+    if (!c) return null;
+    const name = [c.first_name, c.last_name].filter(Boolean).join(' ');
+    return name || c.email;
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -65,7 +74,7 @@ export const ActivityLog = () => {
           <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={channelFilter} onValueChange={setChannelFilter}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Channels</SelectItem>
             <SelectItem value="email">Email</SelectItem>
@@ -73,6 +82,18 @@ export const ActivityLog = () => {
             <SelectItem value="automation">Automation</SelectItem>
             <SelectItem value="social">Social</SelectItem>
             <SelectItem value="system">System</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={dateRange} onValueChange={setDateRange}>
+          <SelectTrigger className="w-32">
+            <CalendarDays className="h-3.5 w-3.5 mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">Last 24h</SelectItem>
+            <SelectItem value="7">Last 7 days</SelectItem>
+            <SelectItem value="30">Last 30 days</SelectItem>
+            <SelectItem value="90">Last 90 days</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -88,6 +109,7 @@ export const ActivityLog = () => {
         <div className="space-y-1">
           {filtered.map((log: any) => {
             const Icon = channelIcons[log.channel] || Activity;
+            const contactName = getContactName(log);
             return (
               <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors">
                 <div className={`p-1.5 rounded-md ${channelColors[log.channel] || channelColors.system}`}>
@@ -95,8 +117,11 @@ export const ActivityLog = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground">{log.message}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <Badge variant="outline" className="text-xs">{log.type}</Badge>
+                    {contactName && (
+                      <span className="text-xs text-primary/80">→ {contactName}</span>
+                    )}
                     <span className="text-xs text-muted-foreground">{format(new Date(log.created_at), 'MMM d, HH:mm')}</span>
                   </div>
                 </div>
