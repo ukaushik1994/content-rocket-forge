@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause, Copy, Pencil, Users } from 'lucide-react';
+import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause, Copy, Pencil, Users, Search, Workflow, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -22,6 +23,64 @@ const statusConfig: Record<string, { class: string; dot: string }> = {
   paused: { class: 'bg-amber-500/10 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
 };
 
+const journeyTemplates = [
+  {
+    name: 'Welcome Series',
+    description: 'Onboard new contacts with a multi-step welcome email flow',
+    nodes: [
+      { id: 'trigger_1', type: 'trigger', position: { x: 250, y: 50 }, data: { label: 'trigger', config: { segment: '' } } },
+      { id: 'send_email_1', type: 'send_email', position: { x: 250, y: 200 }, data: { label: 'send email', config: { subject: 'Welcome!' } } },
+      { id: 'wait_1', type: 'wait', position: { x: 250, y: 350 }, data: { label: 'wait', config: { duration: '2', unit: 'days' } } },
+      { id: 'send_email_2', type: 'send_email', position: { x: 250, y: 500 }, data: { label: 'send email', config: { subject: 'Getting Started' } } },
+      { id: 'end_1', type: 'end', position: { x: 250, y: 650 }, data: { label: 'end', config: {} } },
+    ],
+    edges: [
+      { source: 'trigger_1', target: 'send_email_1' },
+      { source: 'send_email_1', target: 'wait_1' },
+      { source: 'wait_1', target: 'send_email_2' },
+      { source: 'send_email_2', target: 'end_1' },
+    ],
+  },
+  {
+    name: 'Onboarding Flow',
+    description: 'Guide users through product setup with conditional branches',
+    nodes: [
+      { id: 'trigger_1', type: 'trigger', position: { x: 250, y: 50 }, data: { label: 'trigger', config: {} } },
+      { id: 'send_email_1', type: 'send_email', position: { x: 250, y: 200 }, data: { label: 'send email', config: { subject: 'Setup your account' } } },
+      { id: 'wait_1', type: 'wait', position: { x: 250, y: 350 }, data: { label: 'wait', config: { duration: '3', unit: 'days' } } },
+      { id: 'condition_1', type: 'condition', position: { x: 250, y: 500 }, data: { label: 'condition', config: { field: 'profile_completed' } } },
+      { id: 'send_email_2', type: 'send_email', position: { x: 100, y: 650 }, data: { label: 'send email', config: { subject: 'Complete your profile' } } },
+      { id: 'end_1', type: 'end', position: { x: 400, y: 650 }, data: { label: 'end', config: {} } },
+    ],
+    edges: [
+      { source: 'trigger_1', target: 'send_email_1' },
+      { source: 'send_email_1', target: 'wait_1' },
+      { source: 'wait_1', target: 'condition_1' },
+      { source: 'condition_1', target: 'send_email_2', label: 'No' },
+      { source: 'condition_1', target: 'end_1', label: 'Yes' },
+    ],
+  },
+  {
+    name: 'Re-engagement',
+    description: 'Win back inactive contacts with targeted emails',
+    nodes: [
+      { id: 'trigger_1', type: 'trigger', position: { x: 250, y: 50 }, data: { label: 'trigger', config: {} } },
+      { id: 'wait_1', type: 'wait', position: { x: 250, y: 200 }, data: { label: 'wait', config: { duration: '7', unit: 'days' } } },
+      { id: 'send_email_1', type: 'send_email', position: { x: 250, y: 350 }, data: { label: 'send email', config: { subject: 'We miss you!' } } },
+      { id: 'wait_2', type: 'wait', position: { x: 250, y: 500 }, data: { label: 'wait', config: { duration: '3', unit: 'days' } } },
+      { id: 'send_email_2', type: 'send_email', position: { x: 250, y: 650 }, data: { label: 'send email', config: { subject: 'Last chance offer' } } },
+      { id: 'end_1', type: 'end', position: { x: 250, y: 800 }, data: { label: 'end', config: {} } },
+    ],
+    edges: [
+      { source: 'trigger_1', target: 'wait_1' },
+      { source: 'wait_1', target: 'send_email_1' },
+      { source: 'send_email_1', target: 'wait_2' },
+      { source: 'wait_2', target: 'send_email_2' },
+      { source: 'send_email_2', target: 'end_1' },
+    ],
+  },
+];
+
 export const JourneysList = () => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
   const { user } = useAuth();
@@ -29,8 +88,11 @@ export const JourneysList = () => {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
 
   const { data: journeys = [], isLoading } = useQuery({
     queryKey: ['journeys', currentWorkspaceId],
@@ -45,7 +107,6 @@ export const JourneysList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  // Enrollment counts per journey
   const { data: enrollmentCounts = {} } = useQuery({
     queryKey: ['journey-enrollment-counts', currentWorkspaceId],
     queryFn: async () => {
@@ -61,17 +122,64 @@ export const JourneysList = () => {
     enabled: !!currentWorkspaceId,
   });
 
+  // Node counts per journey
+  const { data: nodeCounts = {} } = useQuery({
+    queryKey: ['journey-node-counts', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('journey_nodes')
+        .select('journey_id')
+        .in('journey_id', journeys.map((j: any) => j.id));
+      const counts: Record<string, number> = {};
+      (data || []).forEach((n: any) => { counts[n.journey_id] = (counts[n.journey_id] || 0) + 1; });
+      return counts;
+    },
+    enabled: journeys.length > 0,
+  });
+
+  const filteredJourneys = useMemo(() => {
+    if (!searchQuery.trim()) return journeys;
+    const q = searchQuery.toLowerCase();
+    return journeys.filter((j: any) =>
+      j.name?.toLowerCase().includes(q) || j.description?.toLowerCase().includes(q)
+    );
+  }, [journeys, searchQuery]);
+
   const createJourney = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.from('journeys').insert({
-        workspace_id: currentWorkspaceId!, name, created_by: user?.id,
+        workspace_id: currentWorkspaceId!, name, description: description || null, created_by: user?.id,
       }).select().single();
       if (error) throw error;
+
+      // If template selected, insert template nodes and edges
+      if (selectedTemplate !== null) {
+        const template = journeyTemplates[selectedTemplate];
+        const nodeInserts = template.nodes.map(n => ({
+          workspace_id: currentWorkspaceId!,
+          journey_id: data.id,
+          node_id: n.id,
+          type: n.type,
+          config: n.data.config || {},
+          position: n.position,
+        }));
+        await supabase.from('journey_nodes').insert(nodeInserts);
+
+        const edgeInserts = template.edges.map(e => ({
+          workspace_id: currentWorkspaceId!,
+          journey_id: data.id,
+          source_node_id: e.source,
+          target_node_id: e.target,
+          condition_label: (e as any).label || null,
+        }));
+        await supabase.from('journey_edges').insert(edgeInserts);
+      }
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['journeys'] });
-      setShowCreate(false); setName('');
+      setShowCreate(false); setName(''); setDescription(''); setSelectedTemplate(null);
       navigate(`/engage/journeys/${data.id}`);
     },
     onError: (e: any) => toast.error(e.message),
@@ -90,13 +198,11 @@ export const JourneysList = () => {
 
   const duplicateJourney = useMutation({
     mutationFn: async (journey: any) => {
-      // Create new journey
       const { data: newJ, error } = await supabase.from('journeys').insert({
-        workspace_id: currentWorkspaceId!, name: `${journey.name} (Copy)`, created_by: user?.id,
+        workspace_id: currentWorkspaceId!, name: `${journey.name} (Copy)`, description: journey.description || null, created_by: user?.id,
       }).select().single();
       if (error) throw error;
 
-      // Copy nodes
       const { data: nodes } = await supabase.from('journey_nodes').select('*').eq('journey_id', journey.id);
       const nodeIdMap: Record<string, string> = {};
       if (nodes?.length) {
@@ -110,7 +216,6 @@ export const JourneysList = () => {
         }
       }
 
-      // Copy edges
       const { data: edges } = await supabase.from('journey_edges').select('*').eq('journey_id', journey.id);
       if (edges?.length) {
         for (const e of edges) {
@@ -167,19 +272,54 @@ export const JourneysList = () => {
           <p className="text-sm text-muted-foreground">Visual customer journey flows</p>
         </div>
         {canEdit && (
-          <Dialog open={showCreate} onOpenChange={setShowCreate}>
+          <Dialog open={showCreate} onOpenChange={o => { setShowCreate(o); if (!o) { setName(''); setDescription(''); setSelectedTemplate(null); } }}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Journey</Button>
             </DialogTrigger>
-            <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50">
+            <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-lg">
               <DialogHeader><DialogTitle>Create Journey</DialogTitle></DialogHeader>
-              <div className="space-y-3">
+              <div className="space-y-4">
+                {/* Templates */}
+                <div>
+                  <Label className="text-xs flex items-center gap-1 mb-2"><Sparkles className="h-3 w-3" /> Start from Template</Label>
+                  <div className="grid gap-2">
+                    {journeyTemplates.map((t, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { setSelectedTemplate(selectedTemplate === i ? null : i); if (!name) setName(t.name); }}
+                        className={`text-left p-3 rounded-lg border transition-all ${
+                          selectedTemplate === i
+                            ? 'border-primary/50 bg-primary/5'
+                            : 'border-border/50 hover:border-border bg-background/30'
+                        }`}
+                      >
+                        <p className="text-sm font-medium text-foreground">{t.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">{t.nodes.length} nodes</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-                <Button onClick={() => createJourney.mutate()} disabled={!name} className="w-full">Create & Open Builder</Button>
+                <div><Label>Description</Label><Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Optional description..." /></div>
+                <Button onClick={() => createJourney.mutate()} disabled={!name} className="w-full">
+                  {selectedTemplate !== null ? 'Create from Template' : 'Create & Open Builder'}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
         )}
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search journeys..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="pl-9 bg-background/40"
+        />
       </div>
 
       {/* Rename Dialog */}
@@ -214,19 +354,20 @@ export const JourneysList = () => {
       {/* List */}
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
-      ) : journeys.length === 0 ? (
+      ) : filteredJourneys.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
           <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center mx-auto">
             <GitBranch className="h-8 w-8 text-purple-400" />
           </div>
-          <p className="text-muted-foreground">No journeys yet</p>
-          {canEdit && <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</Button>}
+          <p className="text-muted-foreground">{searchQuery ? 'No matching journeys' : 'No journeys yet'}</p>
+          {canEdit && !searchQuery && <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
-          {journeys.map((j: any, i: number) => {
+          {filteredJourneys.map((j: any, i: number) => {
             const sc = statusConfig[j.status] || statusConfig.draft;
             const enrolled = enrollmentCounts[j.id] || 0;
+            const nodeCount = nodeCounts[j.id] || 0;
             return (
               <motion.div key={j.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <GlassCard
@@ -234,8 +375,8 @@ export const JourneysList = () => {
                   onClick={() => navigate(`/engage/journeys/${j.id}`)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-medium text-foreground">{j.name}</h3>
                         <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} /> {j.status}
@@ -245,7 +386,13 @@ export const JourneysList = () => {
                             <Users className="h-2.5 w-2.5" /> {enrolled} enrolled
                           </Badge>
                         )}
+                        {nodeCount > 0 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1 bg-purple-500/10 text-purple-400 border-purple-500/30">
+                            <Workflow className="h-2.5 w-2.5" /> {nodeCount} nodes
+                          </Badge>
+                        )}
                       </div>
+                      {j.description && <p className="text-xs text-muted-foreground truncate">{j.description}</p>}
                       <p className="text-xs text-muted-foreground">{format(new Date(j.created_at), 'MMM d, yyyy')}</p>
                     </div>
                     <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>

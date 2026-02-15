@@ -3655,6 +3655,7 @@ export type Database = {
           conditions: Json | null
           created_at: string | null
           created_by: string | null
+          description: string | null
           id: string
           name: string
           status: string
@@ -3667,6 +3668,7 @@ export type Database = {
           conditions?: Json | null
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           name: string
           status?: string
@@ -3679,6 +3681,7 @@ export type Database = {
           conditions?: Json | null
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           name?: string
           status?: string
@@ -4297,6 +4300,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
+          description: string | null
           id: string
           name: string
           status: string
@@ -4307,6 +4311,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           name: string
           status?: string
@@ -4317,6 +4322,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           name?: string
           status?: string
