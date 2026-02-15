@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  const token = url.searchParams.get("token");
+  const token = url.searchParams.get("token") || url.searchParams.get("contact_id");
 
   if (!token) {
     return new Response(htmlPage("Invalid Link", "No unsubscribe token provided."), {

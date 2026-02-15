@@ -46,6 +46,7 @@ export const SocialDashboard = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [form, setForm] = useState({ content: '', scheduled_at: '', channels: [] as string[] });
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['social-posts', currentWorkspaceId],
@@ -77,32 +78,56 @@ export const SocialDashboard = () => {
     }));
   };
 
-  const createPost = useMutation({
+  const savePost = useMutation({
     mutationFn: async () => {
-      const { data: post, error } = await supabase.from('social_posts').insert({
-        workspace_id: currentWorkspaceId!,
-        content: form.content,
-        scheduled_at: form.scheduled_at || null,
-        status: form.scheduled_at ? 'scheduled' : 'draft',
-        created_by: user?.id,
-      }).select().single();
-      if (error) throw error;
+      if (editingPostId) {
+        // UPDATE existing post
+        const { error } = await supabase.from('social_posts').update({
+          content: form.content,
+          scheduled_at: form.scheduled_at || null,
+          status: form.scheduled_at ? 'scheduled' : 'draft',
+        }).eq('id', editingPostId);
+        if (error) throw error;
 
-      if (form.channels.length && post) {
-        const targets = form.channels.map(ch => ({
+        // Replace targets: delete old, insert new
+        await supabase.from('social_post_targets').delete().eq('post_id', editingPostId);
+        if (form.channels.length) {
+          const targets = form.channels.map(ch => ({
+            workspace_id: currentWorkspaceId!,
+            post_id: editingPostId,
+            provider: ch,
+            status: 'scheduled' as const,
+          }));
+          await supabase.from('social_post_targets').insert(targets);
+        }
+      } else {
+        // INSERT new post
+        const { data: post, error } = await supabase.from('social_posts').insert({
           workspace_id: currentWorkspaceId!,
-          post_id: post.id,
-          provider: ch,
-          status: 'scheduled' as const,
-        }));
-        await supabase.from('social_post_targets').insert(targets);
+          content: form.content,
+          scheduled_at: form.scheduled_at || null,
+          status: form.scheduled_at ? 'scheduled' : 'draft',
+          created_by: user?.id,
+        }).select().single();
+        if (error) throw error;
+
+        if (form.channels.length && post) {
+          const targets = form.channels.map(ch => ({
+            workspace_id: currentWorkspaceId!,
+            post_id: post.id,
+            provider: ch,
+            status: 'scheduled' as const,
+          }));
+          await supabase.from('social_post_targets').insert(targets);
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['social-posts'] });
       setShowCreate(false);
       setForm({ content: '', scheduled_at: '', channels: [] });
-      toast.success('Post created');
+      setEditingPostId(null);
+      toast.success(editingPostId ? 'Post updated' : 'Post created');
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -120,7 +145,6 @@ export const SocialDashboard = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Stats
   const stats = useMemo(() => {
     const scheduled = posts.filter((p: any) => p.status === 'scheduled').length;
     const posted = posts.filter((p: any) => p.status === 'posted').length;
@@ -133,8 +157,17 @@ export const SocialDashboard = () => {
     : 0;
 
   const handleDayClick = (date: Date) => {
+    setEditingPostId(null);
     setForm(f => ({ ...f, scheduled_at: format(date, "yyyy-MM-dd'T'HH:mm") }));
     setShowCreate(true);
+  };
+
+  const handleCloseDialog = (open: boolean) => {
+    setShowCreate(open);
+    if (!open) {
+      setEditingPostId(null);
+      setForm({ content: '', scheduled_at: '', channels: [] });
+    }
   };
 
   const statCards = [
@@ -163,14 +196,14 @@ export const SocialDashboard = () => {
             </Button>
           </div>
           {canEdit && (
-            <Dialog open={showCreate} onOpenChange={setShowCreate}>
+            <Dialog open={showCreate} onOpenChange={handleCloseDialog}>
               <DialogTrigger asChild>
-                <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> New Post</Button>
+                <Button size="sm" className="gap-1.5" onClick={() => setEditingPostId(null)}><Plus className="h-4 w-4" /> New Post</Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg bg-background/95 backdrop-blur-xl border-border/50">
                 <DialogHeader>
                   <DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                    Create Social Post
+                    {editingPostId ? 'Edit Post' : 'Create Social Post'}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -223,12 +256,12 @@ export const SocialDashboard = () => {
                     </div>
                   </div>
                   <Button
-                    onClick={() => createPost.mutate()}
-                    disabled={!form.content || createPost.isPending}
+                    onClick={() => savePost.mutate()}
+                    disabled={!form.content || savePost.isPending}
                     className="w-full gap-2"
                   >
                     <Send className="h-4 w-4" />
-                    {form.scheduled_at ? 'Schedule Post' : 'Save as Draft'}
+                    {editingPostId ? 'Update Post' : (form.scheduled_at ? 'Schedule Post' : 'Save as Draft')}
                   </Button>
                 </div>
               </DialogContent>
@@ -294,7 +327,6 @@ export const SocialDashboard = () => {
           <SocialCalendar posts={posts} onDayClick={handleDayClick} />
         </motion.div>
       ) : posts.length === 0 ? (
-        /* Empty State */
         <motion.div variants={stagger.item}>
           <GlassCard className="py-16 flex flex-col items-center justify-center space-y-4">
             <motion.div
@@ -310,14 +342,13 @@ export const SocialDashboard = () => {
               <p className="text-sm text-muted-foreground">Create your first social post to get started</p>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => setShowCreate(true)} className="gap-1.5">
+              <Button size="sm" onClick={() => { setEditingPostId(null); setShowCreate(true); }} className="gap-1.5">
                 <Plus className="h-4 w-4" /> Create First Post
               </Button>
             </div>
           </GlassCard>
         </motion.div>
       ) : (
-        /* Post Cards Grid */
         <motion.div variants={stagger.item} className="grid gap-3">
           {posts.map((p: any, i: number) => (
             <SocialPostCard
@@ -325,6 +356,7 @@ export const SocialDashboard = () => {
               post={p}
               index={i}
               onEdit={(post) => {
+                setEditingPostId(post.id);
                 setForm({
                   content: post.content,
                   scheduled_at: post.scheduled_at ? format(new Date(post.scheduled_at), "yyyy-MM-dd'T'HH:mm") : '',

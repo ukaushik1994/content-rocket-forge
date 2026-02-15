@@ -11,7 +11,8 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Send, Megaphone, MoreVertical, Trash2, Mail, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Plus, Send, Megaphone, MoreVertical, Trash2, Mail, CheckCircle, Clock, AlertTriangle, ChevronRight, ChevronLeft, Copy, Pencil, Users, CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -24,12 +25,31 @@ const statusConfig: Record<string, { class: string; icon: any; dot: string }> = 
   failed: { class: 'bg-destructive/10 text-destructive border-destructive/30', icon: AlertTriangle, dot: 'bg-destructive' },
 };
 
+type AudienceType = 'all' | 'segment' | 'tags';
+
+interface WizardForm {
+  name: string;
+  template_id: string;
+  audience_type: AudienceType;
+  segment_id: string;
+  tags: string;
+  schedule_type: 'now' | 'later';
+  scheduled_at: string;
+}
+
+const defaultForm: WizardForm = {
+  name: '', template_id: '', audience_type: 'all', segment_id: '', tags: '', schedule_type: 'now', scheduled_at: '',
+};
+
 export const CampaignsList = () => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', template_id: '' });
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [form, setForm] = useState<WizardForm>({ ...defaultForm });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [recipientCount, setRecipientCount] = useState<number | null>(null);
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['email-campaigns', currentWorkspaceId],
@@ -54,16 +74,110 @@ export const CampaignsList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  const createCampaign = useMutation({
+  const { data: segments = [] } = useQuery({
+    queryKey: ['engage-segments-select', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase.from('engage_segments').select('id, name').eq('workspace_id', currentWorkspaceId!);
+      return data || [];
+    },
+    enabled: !!currentWorkspaceId,
+  });
+
+  // Estimate recipient count when audience changes
+  const estimateRecipients = async (audienceType: AudienceType, segmentId?: string, tags?: string) => {
+    try {
+      if (audienceType === 'all') {
+        const { count } = await supabase.from('engage_contacts').select('*', { count: 'exact', head: true })
+          .eq('workspace_id', currentWorkspaceId!).eq('unsubscribed', false);
+        setRecipientCount(count || 0);
+      } else if (audienceType === 'segment' && segmentId) {
+        const { count } = await supabase.from('engage_segment_memberships').select('*', { count: 'exact', head: true })
+          .eq('segment_id', segmentId);
+        setRecipientCount(count || 0);
+      } else if (audienceType === 'tags' && tags) {
+        const tagArr = tags.split(',').map(t => t.trim()).filter(Boolean);
+        if (tagArr.length) {
+          const { count } = await supabase.from('engage_contacts').select('*', { count: 'exact', head: true })
+            .eq('workspace_id', currentWorkspaceId!).eq('unsubscribed', false).overlaps('tags', tagArr);
+          setRecipientCount(count || 0);
+        } else {
+          setRecipientCount(0);
+        }
+      } else {
+        setRecipientCount(null);
+      }
+    } catch { setRecipientCount(null); }
+  };
+
+  const openWizard = (campaign?: any) => {
+    if (campaign) {
+      setEditingId(campaign.id);
+      const audienceDef = campaign.audience_definition || {};
+      setForm({
+        name: campaign.name,
+        template_id: campaign.template_id || '',
+        audience_type: audienceDef.type || 'all',
+        segment_id: audienceDef.segment_id || '',
+        tags: (audienceDef.tags || []).join(', '),
+        schedule_type: campaign.scheduled_at ? 'later' : 'now',
+        scheduled_at: campaign.scheduled_at ? format(new Date(campaign.scheduled_at), "yyyy-MM-dd'T'HH:mm") : '',
+      });
+    } else {
+      setEditingId(null);
+      setForm({ ...defaultForm });
+    }
+    setWizardStep(1);
+    setRecipientCount(null);
+    setShowWizard(true);
+  };
+
+  const saveCampaign = useMutation({
     mutationFn: async () => {
+      const audienceDef: any = { type: form.audience_type };
+      if (form.audience_type === 'segment') audienceDef.segment_id = form.segment_id;
+      if (form.audience_type === 'tags') audienceDef.tags = form.tags.split(',').map(t => t.trim()).filter(Boolean);
+
+      const payload: any = {
+        name: form.name,
+        template_id: form.template_id || null,
+        audience_definition: audienceDef,
+        scheduled_at: form.schedule_type === 'later' && form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
+        status: form.schedule_type === 'later' && form.scheduled_at ? 'scheduled' : 'draft',
+      };
+
+      if (editingId) {
+        const { error } = await supabase.from('email_campaigns').update(payload).eq('id', editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('email_campaigns').insert({
+          ...payload, workspace_id: currentWorkspaceId!, created_by: user?.id,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+      setShowWizard(false);
+      toast.success(editingId ? 'Campaign updated' : 'Campaign created');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const duplicateCampaign = useMutation({
+    mutationFn: async (campaign: any) => {
       const { error } = await supabase.from('email_campaigns').insert({
-        workspace_id: currentWorkspaceId!, name: form.name, template_id: form.template_id || null, created_by: user?.id,
+        workspace_id: currentWorkspaceId!,
+        name: `${campaign.name} (Copy)`,
+        template_id: campaign.template_id,
+        audience_definition: campaign.audience_definition,
+        status: 'draft',
+        created_by: user?.id,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      setShowCreate(false); setForm({ name: '', template_id: '' }); toast.success('Campaign created');
+      toast.success('Campaign duplicated');
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -83,10 +197,29 @@ export const CampaignsList = () => {
       if (!campaign?.template_id) { toast.error('No template selected'); return; }
 
       const { data: template } = await supabase.from('email_templates').select('*').eq('id', campaign.template_id).single();
-      const { data: contacts } = await supabase.from('engage_contacts').select('id, email, first_name, last_name')
-        .eq('workspace_id', currentWorkspaceId!).eq('unsubscribed', false);
+      const audienceDef = (campaign.audience_definition || { type: 'all' }) as any;
 
-      if (!contacts?.length) { toast.error('No active contacts'); return; }
+      let contacts: any[] = [];
+      if (audienceDef.type === 'segment' && audienceDef.segment_id) {
+        const { data: memberships } = await supabase.from('engage_segment_memberships')
+          .select('contact_id').eq('segment_id', audienceDef.segment_id);
+        const contactIds = (memberships || []).map((m: any) => m.contact_id);
+        if (contactIds.length) {
+          const { data } = await supabase.from('engage_contacts').select('id, email, first_name, last_name')
+            .in('id', contactIds).eq('unsubscribed', false);
+          contacts = data || [];
+        }
+      } else if (audienceDef.type === 'tags' && audienceDef.tags?.length) {
+        const { data } = await supabase.from('engage_contacts').select('id, email, first_name, last_name')
+          .eq('workspace_id', currentWorkspaceId!).eq('unsubscribed', false).overlaps('tags', audienceDef.tags);
+        contacts = data || [];
+      } else {
+        const { data } = await supabase.from('engage_contacts').select('id, email, first_name, last_name')
+          .eq('workspace_id', currentWorkspaceId!).eq('unsubscribed', false);
+        contacts = data || [];
+      }
+
+      if (!contacts.length) { toast.error('No active contacts match audience'); return; }
 
       const messages = contacts.map((c: any) => ({
         workspace_id: currentWorkspaceId!, campaign_id: campaignId, contact_id: c.id, to_email: c.email,
@@ -121,27 +254,86 @@ export const CampaignsList = () => {
           <p className="text-sm text-muted-foreground">{campaigns.length} campaigns</p>
         </div>
         {canEdit && (
-          <Dialog open={showCreate} onOpenChange={setShowCreate}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Campaign</Button>
-            </DialogTrigger>
-            <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50">
-              <DialogHeader><DialogTitle>Create Campaign</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-                <div>
-                  <Label>Template</Label>
-                  <Select value={form.template_id} onValueChange={v => setForm(f => ({ ...f, template_id: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
-                    <SelectContent>{templates.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={() => createCampaign.mutate()} disabled={!form.name} className="w-full">Create Campaign</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button size="sm" onClick={() => openWizard()}><Plus className="h-4 w-4 mr-1" /> New Campaign</Button>
         )}
       </div>
+
+      {/* Wizard Dialog */}
+      <Dialog open={showWizard} onOpenChange={setShowWizard}>
+        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Edit Campaign' : 'Create Campaign'}</DialogTitle>
+            <div className="flex items-center gap-2 mt-2">
+              {[1, 2, 3].map(s => (
+                <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= wizardStep ? 'bg-primary' : 'bg-muted'}`} />
+              ))}
+            </div>
+          </DialogHeader>
+
+          {wizardStep === 1 && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground font-medium">Step 1: Name & Template</p>
+              <div><Label>Campaign Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+              <div>
+                <Label>Template</Label>
+                <Select value={form.template_id} onValueChange={v => setForm(f => ({ ...f, template_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
+                  <SelectContent>{templates.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <Button onClick={() => setWizardStep(2)} disabled={!form.name} className="w-full gap-1">
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {wizardStep === 2 && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground font-medium flex items-center gap-1"><Users className="h-3 w-3" /> Step 2: Audience</p>
+              <RadioGroup value={form.audience_type} onValueChange={(v: AudienceType) => { setForm(f => ({ ...f, audience_type: v })); estimateRecipients(v, form.segment_id, form.tags); }}>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="aud-all" /><Label htmlFor="aud-all">All contacts</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="segment" id="aud-seg" /><Label htmlFor="aud-seg">Specific segment</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="tags" id="aud-tags" /><Label htmlFor="aud-tags">Filter by tags</Label></div>
+              </RadioGroup>
+              {form.audience_type === 'segment' && (
+                <Select value={form.segment_id} onValueChange={v => { setForm(f => ({ ...f, segment_id: v })); estimateRecipients('segment', v); }}>
+                  <SelectTrigger><SelectValue placeholder="Pick segment" /></SelectTrigger>
+                  <SelectContent>{segments.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                </Select>
+              )}
+              {form.audience_type === 'tags' && (
+                <Input placeholder="e.g. newsletter, vip" value={form.tags} onChange={e => { setForm(f => ({ ...f, tags: e.target.value })); estimateRecipients('tags', undefined, e.target.value); }} />
+              )}
+              {recipientCount !== null && (
+                <p className="text-xs text-muted-foreground">Estimated recipients: <span className="font-semibold text-foreground">{recipientCount}</span></p>
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setWizardStep(1)} className="flex-1 gap-1"><ChevronLeft className="h-4 w-4" /> Back</Button>
+                <Button onClick={() => setWizardStep(3)} className="flex-1 gap-1">Next <ChevronRight className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          )}
+
+          {wizardStep === 3 && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground font-medium flex items-center gap-1"><CalendarIcon className="h-3 w-3" /> Step 3: Schedule</p>
+              <RadioGroup value={form.schedule_type} onValueChange={(v: 'now' | 'later') => setForm(f => ({ ...f, schedule_type: v }))}>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="now" id="sch-now" /><Label htmlFor="sch-now">Save as draft (launch manually)</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="later" id="sch-later" /><Label htmlFor="sch-later">Schedule for later</Label></div>
+              </RadioGroup>
+              {form.schedule_type === 'later' && (
+                <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setWizardStep(2)} className="flex-1 gap-1"><ChevronLeft className="h-4 w-4" /> Back</Button>
+                <Button onClick={() => saveCampaign.mutate()} disabled={saveCampaign.isPending} className="flex-1">
+                  {editingId ? 'Update' : 'Create'} Campaign
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       {campaigns.length > 0 && (
@@ -175,7 +367,7 @@ export const CampaignsList = () => {
             <Megaphone className="h-8 w-8 text-blue-400" />
           </div>
           <p className="text-muted-foreground">No campaigns yet</p>
-          {canEdit && <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Campaign</Button>}
+          {canEdit && <Button size="sm" onClick={() => openWizard()}><Plus className="h-4 w-4 mr-1" /> Create First Campaign</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
@@ -196,6 +388,13 @@ export const CampaignsList = () => {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {c.email_templates?.name || 'No template'} • {format(new Date(c.created_at), 'MMM d, yyyy')}
+                        {(() => {
+                          const ad = c.audience_definition as any;
+                          if (ad?.type && ad.type !== 'all') {
+                            return <> • Audience: {ad.type === 'segment' ? 'Segment' : `Tags: ${ad.tags?.join(', ')}`}</>;
+                          }
+                          return null;
+                        })()}
                       </p>
                       {c.status !== 'draft' && (
                         <div className="flex gap-3 text-xs text-muted-foreground">
@@ -217,6 +416,14 @@ export const CampaignsList = () => {
                             <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {c.status === 'draft' && (
+                              <DropdownMenuItem onClick={() => openWizard(c)}>
+                                <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => duplicateCampaign.mutate(c)}>
+                              <Copy className="h-3.5 w-3.5 mr-1" /> Duplicate
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => deleteCampaign.mutate(c.id)}>
                               <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                             </DropdownMenuItem>

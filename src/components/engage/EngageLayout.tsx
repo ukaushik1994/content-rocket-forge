@@ -1,5 +1,6 @@
 import React from 'react';
 import { EngageSidebar } from './EngageSidebar';
+import { EngageBreadcrumb } from './shared/EngageBreadcrumb';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Loader2 } from 'lucide-react';
@@ -21,7 +22,10 @@ export const EngageLayout: React.FC<EngageLayoutProps> = ({ children }) => {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            children
+            <>
+              <EngageBreadcrumb />
+              {children}
+            </>
           )}
         </div>
       </div>
