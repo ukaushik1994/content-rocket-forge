@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
-import { Save, Mail, Twitter, Linkedin, Instagram, Facebook, Check, AlertCircle, Database, CheckCircle, Send, Settings, Trash2, Shield } from 'lucide-react';
+import { Save, Mail, Twitter, Linkedin, Instagram, Facebook, Check, AlertCircle, Database, CheckCircle, Send, Settings, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { loadSeedData } from '@/utils/engage/seedData';
 import { motion } from 'framer-motion';
@@ -33,7 +33,7 @@ const fadeUp = (delay = 0) => ({
 
 export const EngageSettings = () => {
   const { user } = useAuth();
-  const { currentWorkspaceId, canManage } = useWorkspace();
+  const { currentWorkspaceId } = useWorkspace();
   const queryClient = useQueryClient();
   const workspaceId = currentWorkspaceId;
 
@@ -115,26 +115,6 @@ export const EngageSettings = () => {
     enabled: !!workspaceId,
   });
 
-  // Workspace settings
-  const { data: workspace } = useQuery({
-    queryKey: ['workspace-details', workspaceId],
-    queryFn: async () => {
-      const { data } = await supabase.from('team_workspaces').select('*').eq('id', workspaceId!).single();
-      return data;
-    },
-    enabled: !!workspaceId,
-  });
-
-  const [wsName, setWsName] = useState('');
-  useEffect(() => { if (workspace) setWsName(workspace.name || ''); }, [workspace]);
-
-  const renameWorkspace = useMutation({
-    mutationFn: async () => {
-      await supabase.from('team_workspaces').update({ name: wsName }).eq('id', workspaceId!);
-    },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['workspace'] }); toast.success('Workspace renamed'); },
-  });
-
   const [loadingDemo, setLoadingDemo] = useState(false);
   const handleLoadDemo = async () => {
     if (!workspaceId || !user) return;
@@ -172,7 +152,7 @@ export const EngageSettings = () => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground">Engage Settings</h2>
-            <p className="text-sm text-muted-foreground">API keys, sender config, workspace, and integrations</p>
+            <p className="text-sm text-muted-foreground">API keys, sender config, and integrations</p>
           </div>
         </div>
       </motion.div>
@@ -292,32 +272,6 @@ export const EngageSettings = () => {
         </GlassCard>
       </motion.div>
 
-      {/* Workspace Settings */}
-      <motion.div {...fadeUp(0.15)}>
-        <GlassCard className="p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Workspace</h3>
-              <p className="text-[10px] text-muted-foreground">Rename or manage your workspace</p>
-            </div>
-          </div>
-          <div className="flex gap-2 items-end">
-            <div className="flex-1">
-              <Label className="text-xs">Workspace Name</Label>
-              <Input className="h-9 mt-1" value={wsName} onChange={e => setWsName(e.target.value)} disabled={!canManage} />
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => renameWorkspace.mutate()} disabled={renameWorkspace.isPending}>
-                <Save className="h-3.5 w-3.5 mr-1" /> Save
-              </Button>
-            )}
-          </div>
-        </GlassCard>
-      </motion.div>
-
       {/* Demo Data */}
       <motion.div {...fadeUp(0.18)}>
         <GlassCard className="p-5">
@@ -337,42 +291,40 @@ export const EngageSettings = () => {
       </motion.div>
 
       {/* Danger Zone */}
-      {canManage && (
-        <motion.div {...fadeUp(0.21)}>
-          <GlassCard className="p-5 border-destructive/30">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 rounded-lg bg-destructive/20 flex items-center justify-center">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
-                <p className="text-[10px] text-muted-foreground">Irreversible actions</p>
-              </div>
+      <motion.div {...fadeUp(0.21)}>
+        <GlassCard className="p-5 border-destructive/30">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-8 w-8 rounded-lg bg-destructive/20 flex items-center justify-center">
+              <Trash2 className="h-4 w-4 text-destructive" />
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete All Contacts
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete all contacts?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently remove all contacts from this workspace. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => deleteAllContacts.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete All
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </GlassCard>
-        </motion.div>
-      )}
+            <div>
+              <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
+              <p className="text-[10px] text-muted-foreground">Irreversible actions</p>
+            </div>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete All Contacts
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete all contacts?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove all contacts. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteAllContacts.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </GlassCard>
+      </motion.div>
     </div>
   );
 };
