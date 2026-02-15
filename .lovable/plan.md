@@ -10,7 +10,7 @@ Replace `workspace_id` scoping with `user_id` scoping across all 18 Engage table
 
 ---
 
-## Phase 1: Database Migration -- Auto-Provision Workspace
+## Phase 1: Database Migration -- Auto-Provision Workspace ✅ DONE
 
 Instead of removing `workspace_id` (which would require dropping/recreating all 18 tables and RLS policies), we auto-create a personal workspace for each user on first visit:
 
@@ -25,7 +25,7 @@ This approach preserves all existing RLS policies, table structures, and the abi
 
 ---
 
-## Phase 2: Fix WorkspaceContext -- Remove Blocking State
+## Phase 2: Fix WorkspaceContext -- Remove Blocking State ✅ DONE
 
 Update `WorkspaceContext.tsx`:
 - When `fetchWorkspaces` returns empty, call `ensure_engage_workspace` RPC to auto-create
@@ -35,7 +35,7 @@ Update `WorkspaceContext.tsx`:
 
 ---
 
-## Phase 3: Edge Functions (Backend Processing)
+## Phase 3: Edge Functions (Backend Processing) ✅ DONE
 
 ### 3a. `engage-email-send`
 - Picks `email_messages` with status = 'queued' in batches of 50
@@ -132,23 +132,23 @@ Create a "Load Demo Data" button in Engage settings that inserts:
 
 ## Implementation Order
 
-| Step | What | Effort |
-|------|------|--------|
-| 1 | DB function `ensure_engage_workspace` + migration | Small |
-| 2 | Fix WorkspaceContext auto-provision + remove blocker | Small |
-| 3 | Edge function: `engage-email-send` | Medium |
-| 4 | Edge function: `engage-journey-processor` | Medium |
-| 5 | Edge function: `engage-social-poster` | Small |
-| 6 | Edge function: `engage-job-runner` (orchestrator) | Small |
-| 7 | Edge function: `engage-unsubscribe` (public) | Small |
-| 8 | pg_cron setup SQL for job runner | Small |
-| 9 | Template editor: variable inserter + preview + test send | Medium |
-| 10 | Campaign wizard: audience selector + schedule + review | Medium |
-| 11 | Journey builder: custom nodes + inspector + validation | Large |
-| 12 | Automation builder: conditions + action config | Medium |
-| 13 | Social calendar view | Medium |
-| 14 | Activity log: contact resolution + date filter | Small |
-| 15 | Seed data utility | Small |
+| Step | What | Effort | Status |
+|------|------|--------|--------|
+| 1 | DB function `ensure_engage_workspace` + migration | Small | ✅ |
+| 2 | Fix WorkspaceContext auto-provision + remove blocker | Small | ✅ |
+| 3 | Edge function: `engage-email-send` | Medium | ✅ |
+| 4 | Edge function: `engage-journey-processor` | Medium | ✅ |
+| 5 | Edge function: `engage-social-poster` | Small | ✅ |
+| 6 | Edge function: `engage-job-runner` (orchestrator) | Small | ✅ |
+| 7 | Edge function: `engage-unsubscribe` (public) | Small | ✅ |
+| 8 | pg_cron setup SQL for job runner | Small | |
+| 9 | Template editor: variable inserter + preview + test send | Medium | |
+| 10 | Campaign wizard: audience selector + schedule + review | Medium | |
+| 11 | Journey builder: custom nodes + inspector + validation | Large | |
+| 12 | Automation builder: conditions + action config | Medium | |
+| 13 | Social calendar view | Medium | |
+| 14 | Activity log: contact resolution + date filter | Small | |
+| 15 | Seed data utility | Small | |
 
 ---
 
@@ -183,4 +183,3 @@ Create a "Load Demo Data" button in Engage settings that inserts:
 
 **Config**:
 - `supabase/config.toml` -- Add verify_jwt settings for new edge functions
-

@@ -8025,6 +8025,7 @@ export type Database = {
             }
             Returns: Json
           }
+      ensure_engage_workspace: { Args: { p_user_id: string }; Returns: string }
       evaluate_segment: { Args: { p_segment_id: string }; Returns: number }
       get_conversation_messages: {
         Args: { conv_id: string; limit_count?: number; offset_count?: number }

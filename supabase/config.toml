@@ -171,3 +171,18 @@ verify_jwt = true
 
 [functions.brand-intel]
 verify_jwt = false
+
+[functions.engage-email-send]
+verify_jwt = false
+
+[functions.engage-journey-processor]
+verify_jwt = false
+
+[functions.engage-social-poster]
+verify_jwt = false
+
+[functions.engage-job-runner]
+verify_jwt = false
+
+[functions.engage-unsubscribe]
+verify_jwt = false
