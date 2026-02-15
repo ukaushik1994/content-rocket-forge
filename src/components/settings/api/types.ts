@@ -131,6 +131,16 @@ export const API_PROVIDERS: ApiProvider[] = [
     category: 'SEO & Analytics'
   },
   {
+    id: 'resend',
+    name: 'Resend',
+    description: 'Modern email API for transactional and marketing emails',
+    serviceKey: 'resend',
+    icon: Mail,
+    link: 'https://resend.com/api-keys',
+    required: false,
+    category: 'Communication'
+  },
+  {
     id: 'sendgrid',
     name: 'SendGrid',
     description: 'Email delivery and marketing automation',
