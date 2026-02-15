@@ -4,19 +4,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Layers, RefreshCw, Users } from 'lucide-react';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
 
 export const SegmentsList = () => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
   const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
+  const [editingSegment, setEditingSegment] = useState<any>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [matchType, setMatchType] = useState<'all' | 'any'>('all');
 
   const { data: segments = [], isLoading } = useQuery({
     queryKey: ['engage-segments', currentWorkspaceId],
@@ -32,22 +38,55 @@ export const SegmentsList = () => {
     enabled: !!currentWorkspaceId,
   });
 
+  const totalMembers = segments.reduce((sum: number, s: any) => sum + (s.engage_segment_memberships?.[0]?.count || 0), 0);
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setRules([]);
+    setMatchType('all');
+    setEditingSegment(null);
+  };
+
+  const openEdit = (segment: any) => {
+    setEditingSegment(segment);
+    setName(segment.name);
+    setDescription(segment.description || '');
+    const def = segment.definition || {};
+    setMatchType(def.match || 'all');
+    setRules(def.rules || []);
+  };
+
   const createSegment = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('engage_segments').insert({
-        workspace_id: currentWorkspaceId!,
-        name,
-        description: description || null,
-        definition: { match: 'all', rules: [] },
-      });
-      if (error) throw error;
+      const definition = { match: matchType, rules: rules.map(r => ({ ...r })) } as any;
+      if (editingSegment) {
+        const { error } = await supabase.from('engage_segments').update({ name, description: description || null, definition }).eq('id', editingSegment.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('engage_segments').insert({
+          workspace_id: currentWorkspaceId!, name, description: description || null, definition,
+        } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['engage-segments'] });
       setShowAdd(false);
-      setName('');
-      setDescription('');
-      toast.success('Segment created');
+      resetForm();
+      toast.success(editingSegment ? 'Segment updated' : 'Segment created');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteSegment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('engage_segments').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engage-segments'] });
+      toast.success('Segment deleted');
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -65,65 +104,145 @@ export const SegmentsList = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const getRuleSummary = (segment: any) => {
+    const def = segment.definition || {};
+    const r = def.rules || [];
+    if (r.length === 0) return 'No rules defined';
+    const summaries = r.slice(0, 3).map((rule: any) => `${rule.field} ${rule.operator} "${rule.value}"`);
+    const joiner = def.match === 'any' ? ' OR ' : ' AND ';
+    return summaries.join(joiner) + (r.length > 3 ? ` +${r.length - 3} more` : '');
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">Segments</h2>
-          <p className="text-sm text-muted-foreground">Group contacts by rules</p>
+    <div className="space-y-6">
+      {/* Hero */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">Segments</h2>
+            <p className="text-sm text-muted-foreground">Group contacts by rules</p>
+          </div>
+          {canEdit && (
+            <Dialog open={showAdd || !!editingSegment} onOpenChange={open => { if (!open) { setShowAdd(false); resetForm(); } else setShowAdd(true); }}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Segment</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg bg-card/95 backdrop-blur-xl border-border/50">
+                <DialogHeader><DialogTitle>{editingSegment ? 'Edit Segment' : 'Create Segment'}</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+                  <div><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
+
+                  {/* Match Type */}
+                  <div className="flex gap-2 items-center">
+                    <Label className="text-xs">Match:</Label>
+                    <div className="flex gap-1">
+                      {(['all', 'any'] as const).map(m => (
+                        <Button key={m} variant={matchType === m ? 'default' : 'outline'} size="sm" className="h-7 text-xs" onClick={() => setMatchType(m)}>
+                          {m === 'all' ? 'All rules (AND)' : 'Any rule (OR)'}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Rule Builder */}
+                  <div>
+                    <Label className="text-xs flex items-center gap-1 mb-2"><Filter className="h-3 w-3" /> Rules</Label>
+                    <RuleBuilder rules={rules} onChange={setRules} />
+                  </div>
+
+                  <Button onClick={() => createSegment.mutate()} disabled={!name} className="w-full">
+                    {editingSegment ? 'Update Segment' : 'Create Segment'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
-        {canEdit && (
-          <Dialog open={showAdd} onOpenChange={setShowAdd}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Segment</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Create Segment</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-                <div><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
-                <Button onClick={() => createSegment.mutate()} disabled={!name} className="w-full">Create</Button>
+      </motion.div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: 'Segments', count: segments.length, color: 'from-violet-500/20 to-violet-500/5', text: 'text-violet-400', icon: Layers },
+          { label: 'Total Members', count: totalMembers, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: Users },
+        ].map((s, i) => (
+          <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+            <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
+                </div>
+                <s.icon className={`h-5 w-5 ${s.text} opacity-50`} />
               </div>
-            </DialogContent>
-          </Dialog>
-        )}
+            </GlassCard>
+          </motion.div>
+        ))}
       </div>
 
+      {/* List */}
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : segments.length === 0 ? (
-        <div className="text-center py-12 space-y-2">
-          <Layers className="h-10 w-10 mx-auto text-muted-foreground/50" />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mx-auto">
+            <Layers className="h-8 w-8 text-violet-400" />
+          </div>
           <p className="text-muted-foreground">No segments yet</p>
-        </div>
+          {canEdit && <Button size="sm" onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-1" /> Create First Segment</Button>}
+        </motion.div>
       ) : (
         <div className="grid gap-3">
-          {segments.map((s: any) => {
+          {segments.map((s: any, i: number) => {
             const memberCount = s.engage_segment_memberships?.[0]?.count || 0;
             return (
-              <Card key={s.id} className="bg-card border-border">
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="space-y-1">
-                    <h3 className="font-medium text-foreground">{s.name}</h3>
-                    {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
+              <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                <GlassCard className="p-4 hover:border-primary/30 hover:scale-[1.005] transition-all duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-4 w-4 text-violet-400 shrink-0" />
+                        <h3 className="font-medium text-foreground">{s.name}</h3>
+                        <Badge variant="secondary" className="gap-1 text-xs">
+                          <Users className="h-3 w-3" /> {memberCount}
+                        </Badge>
+                      </div>
+                      {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
+                      <p className="text-[10px] text-muted-foreground/70 font-mono truncate">{getRuleSummary(s)}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {canEdit && (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => evaluateSegment.mutate(s.id)} disabled={evaluateSegment.isPending}>
+                            <RefreshCw className={`h-3.5 w-3.5 ${evaluateSegment.isPending ? 'animate-spin' : ''}`} />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openEdit(s); setShowAdd(true); }}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete segment?</AlertDialogTitle>
+                                <AlertDialogDescription>This will permanently remove "{s.name}" and all its memberships.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteSegment.mutate(s.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="gap-1">
-                      <Users className="h-3 w-3" /> {memberCount}
-                    </Badge>
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => evaluateSegment.mutate(s.id)}
-                        disabled={evaluateSegment.isPending}
-                      >
-                        <RefreshCw className={`h-4 w-4 ${evaluateSegment.isPending ? 'animate-spin' : ''}`} />
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                </GlassCard>
+              </motion.div>
             );
           })}
         </div>

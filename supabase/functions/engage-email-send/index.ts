@@ -6,11 +6,9 @@ const corsHeaders = {
 };
 
 async function getResendKey(supabase: any, workspaceId: string): Promise<string | null> {
-  // 1. Check env secret first
   const envKey = Deno.env.get("RESEND_API_KEY");
   if (envKey) return envKey;
 
-  // 2. Fallback: look up workspace owner, then query api_keys table
   try {
     const { data: owner } = await supabase
       .from("team_members")
@@ -37,6 +35,36 @@ async function getResendKey(supabase: any, workspaceId: string): Promise<string 
   }
 }
 
+async function updateCampaignStats(supabase: any, campaignId: string) {
+  if (!campaignId) return;
+  try {
+    const { data: messages } = await supabase
+      .from("email_messages")
+      .select("status")
+      .eq("campaign_id", campaignId);
+
+    if (!messages) return;
+
+    const stats = {
+      sent: messages.filter((m: any) => m.status === "sent").length,
+      delivered: messages.filter((m: any) => m.status === "delivered").length,
+      failed: messages.filter((m: any) => m.status === "failed").length,
+      opened: 0,
+      clicked: 0,
+      bounced: 0,
+    };
+
+    const allDone = messages.every((m: any) => m.status !== "queued");
+
+    await supabase.from("email_campaigns").update({
+      stats,
+      ...(allDone ? { status: "complete", completed_at: new Date().toISOString() } : {}),
+    }).eq("id", campaignId);
+  } catch (e) {
+    console.error("Error updating campaign stats:", e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -48,7 +76,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Pick queued messages in batches of 50
     const { data: messages, error: fetchErr } = await supabase
       .from("email_messages")
       .select("*, email_provider_settings!inner(provider, config, from_name, from_email)")
@@ -62,11 +89,24 @@ Deno.serve(async (req) => {
 
     let sent = 0;
     let failed = 0;
+    const campaignIds = new Set<string>();
+
+    // Get unsubscribe base URL
+    const baseUrl = Deno.env.get("SUPABASE_URL")!;
 
     for (const msg of messages) {
       try {
-        // Resolve Resend key: env → api_keys table
         const resendKey = await getResendKey(supabase, msg.workspace_id);
+
+        // Inject unsubscribe link if contact_id exists
+        let bodyHtml = msg.body_html || "";
+        if (msg.contact_id) {
+          const unsubLink = `${baseUrl}/functions/v1/engage-unsubscribe?contact_id=${msg.contact_id}`;
+          bodyHtml = bodyHtml.replace(/\{\{unsubscribe_link\}\}/g, unsubLink);
+          if (!bodyHtml.includes(unsubLink)) {
+            bodyHtml += `<p style="font-size:11px;color:#999;margin-top:24px;text-align:center;"><a href="${unsubLink}" style="color:#999;">Unsubscribe</a></p>`;
+          }
+        }
 
         if (resendKey && msg.email_provider_settings?.provider === "resend") {
           const res = await fetch("https://api.resend.com/emails", {
@@ -76,7 +116,7 @@ Deno.serve(async (req) => {
               from: `${msg.email_provider_settings.from_name} <${msg.email_provider_settings.from_email}>`,
               to: [msg.to_email],
               subject: msg.subject,
-              html: msg.body_html,
+              html: bodyHtml,
             }),
           });
 
@@ -87,36 +127,32 @@ Deno.serve(async (req) => {
 
           const resData = await res.json();
           await supabase.from("email_messages").update({
-            status: "sent",
-            sent_at: new Date().toISOString(),
-            provider_message_id: resData.id,
+            status: "sent", sent_at: new Date().toISOString(), provider_message_id: resData.id,
           }).eq("id", msg.id);
         } else {
-          // Mock mode - mark as sent without actually sending
           await supabase.from("email_messages").update({
-            status: "sent",
-            sent_at: new Date().toISOString(),
+            status: "sent", sent_at: new Date().toISOString(),
           }).eq("id", msg.id);
         }
 
-        // Log activity
         await supabase.from("engage_activity_log").insert({
-          workspace_id: msg.workspace_id,
-          contact_id: msg.contact_id,
-          channel: "email",
-          type: "email_sent",
-          message: `Email sent to ${msg.to_email}: ${msg.subject}`,
+          workspace_id: msg.workspace_id, contact_id: msg.contact_id, channel: "email",
+          type: "email_sent", message: `Email sent to ${msg.to_email}: ${msg.subject}`,
           payload: { message_id: msg.id, campaign_id: msg.campaign_id },
         });
 
+        if (msg.campaign_id) campaignIds.add(msg.campaign_id);
         sent++;
       } catch (e) {
-        await supabase.from("email_messages").update({
-          status: "failed",
-          error: e.message,
-        }).eq("id", msg.id);
+        await supabase.from("email_messages").update({ status: "failed", error: e.message }).eq("id", msg.id);
+        if (msg.campaign_id) campaignIds.add(msg.campaign_id);
         failed++;
       }
+    }
+
+    // Update campaign stats for all affected campaigns
+    for (const cid of campaignIds) {
+      await updateCampaignStats(supabase, cid);
     }
 
     return new Response(JSON.stringify({ processed: messages.length, sent, failed }), {

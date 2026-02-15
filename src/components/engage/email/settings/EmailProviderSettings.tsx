@@ -5,21 +5,16 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { toast } from 'sonner';
-import { Save } from 'lucide-react';
+import { Save, Settings, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 export const EmailProviderSettings = () => {
   const { currentWorkspaceId, canManage } = useWorkspace();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({
-    provider: 'resend',
-    api_key: '',
-    from_name: '',
-    from_email: '',
-    reply_to: '',
-  });
+  const [form, setForm] = useState({ from_name: '', from_email: '', reply_to: '' });
 
   const { data: settings } = useQuery({
     queryKey: ['email-provider-settings', currentWorkspaceId],
@@ -37,8 +32,6 @@ export const EmailProviderSettings = () => {
   useEffect(() => {
     if (settings) {
       setForm({
-        provider: settings.provider || 'resend',
-        api_key: (settings.config as any)?.api_key || '',
         from_name: settings.from_name || '',
         from_email: settings.from_email || '',
         reply_to: settings.reply_to || '',
@@ -50,13 +43,12 @@ export const EmailProviderSettings = () => {
     mutationFn: async () => {
       const payload = {
         workspace_id: currentWorkspaceId!,
-        provider: form.provider,
-        config: { api_key: form.api_key },
+        provider: 'resend',
+        config: {},
         from_name: form.from_name,
         from_email: form.from_email,
         reply_to: form.reply_to,
       };
-
       if (settings) {
         const { error } = await supabase.from('email_provider_settings').update(payload).eq('id', settings.id);
         if (error) throw error;
@@ -73,36 +65,45 @@ export const EmailProviderSettings = () => {
   });
 
   return (
-    <Card className="bg-card border-border">
-      <CardHeader>
-        <CardTitle className="text-base">Email Provider</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label>Provider</Label>
-          <Select value={form.provider} onValueChange={v => setForm(f => ({ ...f, provider: v }))} disabled={!canManage}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="resend">Resend</SelectItem>
-              <SelectItem value="smtp">SMTP</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>API Key</Label>
-          <Input type="password" value={form.api_key} onChange={e => setForm(f => ({ ...f, api_key: e.target.value }))} disabled={!canManage} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><Label>From Name</Label><Input value={form.from_name} onChange={e => setForm(f => ({ ...f, from_name: e.target.value }))} disabled={!canManage} /></div>
-          <div><Label>From Email</Label><Input value={form.from_email} onChange={e => setForm(f => ({ ...f, from_email: e.target.value }))} disabled={!canManage} /></div>
-        </div>
-        <div><Label>Reply To</Label><Input value={form.reply_to} onChange={e => setForm(f => ({ ...f, reply_to: e.target.value }))} disabled={!canManage} /></div>
-        {canManage && (
-          <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
-            <Save className="h-4 w-4 mr-1" /> Save Settings
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      {/* API Key Note */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-foreground">API Key Configuration</p>
+                <p className="text-xs text-muted-foreground">Manage your Resend API key in Engage Settings</p>
+              </div>
+            </div>
+            <Link to="/engage/settings">
+              <Button variant="outline" size="sm" className="gap-1">
+                Go to Settings <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* Sender Config */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <GlassCard className="p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Sender Configuration</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">From Name</Label><Input className="h-9 mt-1" value={form.from_name} onChange={e => setForm(f => ({ ...f, from_name: e.target.value }))} disabled={!canManage} /></div>
+              <div><Label className="text-xs">From Email</Label><Input className="h-9 mt-1" value={form.from_email} onChange={e => setForm(f => ({ ...f, from_email: e.target.value }))} disabled={!canManage} /></div>
+            </div>
+            <div><Label className="text-xs">Reply To</Label><Input className="h-9 mt-1" value={form.reply_to} onChange={e => setForm(f => ({ ...f, reply_to: e.target.value }))} disabled={!canManage} /></div>
+            {canManage && (
+              <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending} size="sm">
+                <Save className="h-3.5 w-3.5 mr-1" /> Save Settings
+              </Button>
+            )}
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
   );
 };
