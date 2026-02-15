@@ -1,18 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ReactFlow,
-  addEdge,
-  useNodesState,
-  useEdgesState,
-  Controls,
-  MiniMap,
-  Background,
-  BackgroundVariant,
-  Connection,
-  MarkerType,
-  type Node,
-  type Edge,
+  ReactFlow, addEdge, useNodesState, useEdgesState, Controls, MiniMap, Background,
+  BackgroundVariant, Connection, MarkerType, type Node, type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,32 +11,14 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, Play, Pause, Plus } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-const nodeTypes = {
-  trigger: 'trigger',
-  sendEmail: 'send_email',
-  wait: 'wait',
-  condition: 'condition',
-  updateContact: 'update_contact',
-  webhook: 'webhook',
-  end: 'end',
-};
+import { ArrowLeft, Save, Play, Pause, Plus, CheckCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { customNodeTypes } from './nodes/CustomNodes';
+import { JourneyInspector } from './JourneyInspector';
 
 const nodeColors: Record<string, string> = {
-  trigger: '#8b5cf6',
-  send_email: '#3b82f6',
-  wait: '#f59e0b',
-  condition: '#10b981',
-  update_contact: '#6366f1',
-  webhook: '#ec4899',
-  end: '#6b7280',
+  trigger: '#8b5cf6', send_email: '#3b82f6', wait: '#f59e0b',
+  condition: '#10b981', update_contact: '#6366f1', webhook: '#ec4899', end: '#6b7280',
 };
 
 export const JourneyBuilder = () => {
@@ -54,6 +26,7 @@ export const JourneyBuilder = () => {
   const navigate = useNavigate();
   const { currentWorkspaceId } = useWorkspace();
   const queryClient = useQueryClient();
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -68,7 +41,6 @@ export const JourneyBuilder = () => {
     enabled: !!id,
   });
 
-  // Load saved nodes/edges
   useQuery({
     queryKey: ['journey-nodes', id],
     queryFn: async () => {
@@ -80,19 +52,9 @@ export const JourneyBuilder = () => {
       if (dbNodes?.length) {
         setNodes(dbNodes.map((n: any) => ({
           id: n.node_id,
-          type: 'default',
+          type: n.type,
           position: typeof n.position === 'string' ? JSON.parse(n.position) : n.position,
-          data: {
-            label: `${n.type}${n.config?.label ? ': ' + n.config.label : ''}`,
-          },
-          style: {
-            background: nodeColors[n.type] || '#6b7280',
-            color: '#fff',
-            borderRadius: 8,
-            padding: '8px 16px',
-            border: 'none',
-            fontSize: 12,
-          },
+          data: { label: n.type.replace('_', ' '), config: n.config || {} },
         })));
       }
 
@@ -103,10 +65,10 @@ export const JourneyBuilder = () => {
           target: e.target_node_id,
           label: e.condition_label || undefined,
           markerEnd: { type: MarkerType.ArrowClosed },
-          style: { stroke: '#64748b' },
+          style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 },
+          animated: true,
         })));
       }
-
       return { dbNodes, dbEdges };
     },
     enabled: !!id,
@@ -116,7 +78,8 @@ export const JourneyBuilder = () => {
     setEdges(eds => addEdge({
       ...connection,
       markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: '#64748b' },
+      style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 },
+      animated: true,
     }, eds));
   }, [setEdges]);
 
@@ -124,24 +87,44 @@ export const JourneyBuilder = () => {
     const nodeId = `${type}_${Date.now()}`;
     const newNode: Node = {
       id: nodeId,
-      type: 'default',
-      position: { x: 250 + Math.random() * 100, y: 100 + nodes.length * 120 },
-      data: { label: type.replace('_', ' ') },
-      style: {
-        background: nodeColors[type] || '#6b7280',
-        color: '#fff',
-        borderRadius: 8,
-        padding: '8px 16px',
-        border: 'none',
-        fontSize: 12,
-      },
+      type,
+      position: { x: 250 + Math.random() * 100, y: 100 + nodes.length * 150 },
+      data: { label: type.replace('_', ' '), config: {} },
     };
     setNodes(nds => [...nds, newNode]);
   };
 
+  const handleNodeClick = useCallback((_: any, node: Node) => {
+    setSelectedNode(node);
+  }, []);
+
+  const handleNodeConfigUpdate = (nodeId: string, config: Record<string, any>) => {
+    setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, config } } : n));
+    setSelectedNode(prev => prev?.id === nodeId ? { ...prev, data: { ...prev.data, config } } : prev);
+    toast.success('Node config saved');
+  };
+
+  const validateJourney = () => {
+    const triggers = nodes.filter(n => n.type === 'trigger');
+    if (triggers.length === 0) { toast.error('Journey needs at least one Trigger node'); return; }
+    const ends = nodes.filter(n => n.type === 'end');
+    if (ends.length === 0) { toast.warning('Add an End node to mark journey completion'); return; }
+    // Check for orphan nodes
+    const connected = new Set<string>();
+    const queue = triggers.map(t => t.id);
+    while (queue.length) {
+      const current = queue.shift()!;
+      if (connected.has(current)) continue;
+      connected.add(current);
+      edges.filter(e => e.source === current).forEach(e => queue.push(e.target));
+    }
+    const orphans = nodes.filter(n => !connected.has(n.id));
+    if (orphans.length) { toast.error(`${orphans.length} node(s) not reachable from trigger`); return; }
+    toast.success('Journey is valid ✓');
+  };
+
   const saveJourney = useMutation({
     mutationFn: async () => {
-      // Delete old, insert new
       await supabase.from('journey_nodes').delete().eq('journey_id', id!);
       await supabase.from('journey_edges').delete().eq('journey_id', id!);
 
@@ -150,8 +133,8 @@ export const JourneyBuilder = () => {
           workspace_id: currentWorkspaceId!,
           journey_id: id!,
           node_id: n.id,
-          type: n.id.split('_')[0] || 'trigger',
-          config: { label: n.data?.label || '' },
+          type: n.type || 'trigger',
+          config: (n.data as any)?.config || {},
           position: n.position,
         }));
         const { error } = await supabase.from('journey_nodes').insert(dbNodes);
@@ -186,23 +169,27 @@ export const JourneyBuilder = () => {
     },
   });
 
+  const statusBadgeClass = journey?.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+    : journey?.status === 'paused' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+    : 'bg-muted text-muted-foreground';
+
   return (
-    <div className="h-full flex flex-col -m-6">
+    <div className="h-full flex flex-col -m-6 relative">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card/80 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border/50 bg-card/80 backdrop-blur-xl z-10">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/engage/journeys')}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/engage/journeys')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h2 className="font-medium text-foreground">{journey?.name || 'Journey Builder'}</h2>
-          <Badge variant="secondary">{journey?.status || 'draft'}</Badge>
+          <h2 className="font-semibold text-foreground">{journey?.name || 'Journey Builder'}</h2>
+          <Badge variant="outline" className={statusBadgeClass}>{journey?.status || 'draft'}</Badge>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5 mr-1" /> Add Node</Button>
+              <Button variant="outline" size="sm" className="h-8"><Plus className="h-3.5 w-3.5 mr-1" /> Add Node</Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-border/50">
               <DropdownMenuItem onClick={() => addNode('trigger')}>🎯 Trigger</DropdownMenuItem>
               <DropdownMenuItem onClick={() => addNode('send_email')}>📧 Send Email</DropdownMenuItem>
               <DropdownMenuItem onClick={() => addNode('wait')}>⏰ Wait</DropdownMenuItem>
@@ -212,31 +199,44 @@ export const JourneyBuilder = () => {
               <DropdownMenuItem onClick={() => addNode('end')}>🏁 End</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm" onClick={() => saveJourney.mutate()}>
+          <Button variant="outline" size="sm" className="h-8" onClick={validateJourney}>
+            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Validate
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => saveJourney.mutate()}>
             <Save className="h-3.5 w-3.5 mr-1" /> Save
           </Button>
-          <Button size="sm" onClick={() => toggleStatus.mutate()}>
+          <Button size="sm" className="h-8" onClick={() => toggleStatus.mutate()}>
             {journey?.status === 'active' ? <><Pause className="h-3.5 w-3.5 mr-1" /> Pause</> : <><Play className="h-3.5 w-3.5 mr-1" /> Publish</>}
           </Button>
         </div>
       </div>
 
       {/* Canvas */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeClick={handleNodeClick}
+          nodeTypes={customNodeTypes}
           fitView
           snapToGrid
           snapGrid={[16, 16]}
+          proOptions={{ hideAttribution: true }}
         >
-          <Controls className="!bg-card !border-border" />
-          <MiniMap className="!bg-card !border-border" />
+          <Controls className="!bg-card/90 !backdrop-blur-md !border-border/50 !rounded-xl !shadow-lg" />
+          <MiniMap className="!bg-card/90 !backdrop-blur-md !border-border/50 !rounded-xl" />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="hsl(var(--border))" />
         </ReactFlow>
+
+        <JourneyInspector
+          node={selectedNode}
+          workspaceId={currentWorkspaceId}
+          onUpdate={handleNodeConfigUpdate}
+          onClose={() => setSelectedNode(null)}
+        />
       </div>
     </div>
   );
