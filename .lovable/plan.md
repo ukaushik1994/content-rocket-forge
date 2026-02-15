@@ -1,44 +1,103 @@
 
+# Fix: Workspace Loading Failure (Root Cause of All Empty Pages)
 
-# Fix Seed Data & Column Mismatches Across Engage Module
+## The Real Problem
 
-## Problem Identified
+Every Engage page appears empty and has no create buttons because the **workspace never loads**. This is caused by two database-level bugs:
 
-The seed data utility (`seedData.ts`) and several component mutations reference **columns that don't exist** in the actual database tables. This causes the "Load Demo Data" function to fail silently, leaving all pages empty. Additionally, some component CRUD operations (social account linking) use wrong column names, so even manual creation would fail.
+### Bug 1: Infinite Recursion in RLS Policies (Error 42P17)
 
-## Root Cause: Column Name Mismatches
+The SELECT policies on `team_workspaces` and `team_members` reference each other, creating an infinite loop:
 
-| Table | Seed Data / Component Uses | Actual DB Column | Fix |
-|-------|---------------------------|-------------------|-----|
-| `social_posts` | `platform` | *(doesn't exist)* | Remove `platform` from seed inserts |
-| `engage_automations` | `trigger_type`, `is_active` | *(don't exist)* -- uses `trigger_config`, `status` | Map to correct columns |
-| `social_inbox_items` | `contact_id`, `channel` | `linked_contact_id`, *(no channel)* | Fix column names |
-| `social_accounts` (link mutation) | `account_name`, `access_token`, `status` | `display_name`, `auth_data` | Fix SocialDashboard linkAccount mutation |
+```text
+team_workspaces SELECT policy --> checks team_members table
+team_members SELECT policy --> checks team_workspaces table
+        --> INFINITE LOOP --> PostgreSQL error 42P17
+```
 
-## Implementation Steps
+### Bug 2: `ensure_engage_workspace` Function Missing `owner_id`
 
-### Step 1: Fix Seed Data (`src/utils/engage/seedData.ts`)
+The auto-provisioning function inserts into `team_workspaces` without setting `owner_id`, which is a NOT NULL column. This means even if RLS was fixed, workspace creation would fail.
 
-- **Social posts** (line ~203-228): Remove `platform` field from all 3 post objects
-- **Automations** (line ~86-109): Replace `trigger_type` and `is_active` with proper `trigger_config` (already has it as nested) and `status` (`'active'`/`'paused'`)
-- **Social inbox items** (line ~152-191): Rename `contact_id` to `linked_contact_id`, remove `channel` field
+## Impact
 
-### Step 2: Fix Social Account Linking (`src/components/engage/social/SocialDashboard.tsx`)
+Because `currentWorkspaceId` is never set:
+- `canEdit` is always `false` -- no create/edit buttons appear
+- All queries have `enabled: !!currentWorkspaceId` -- no data loads
+- "Load Demo Data" cannot work (needs workspace_id)
+- Every single Engage page is broken
 
-- The `linkAccount` mutation (line ~202-220) inserts `account_name`, `access_token`, `status` which don't exist on `social_accounts`
-- Fix to use `display_name` instead of `account_name` and wrap token in `auth_data` JSON instead of `access_token`
-- Remove `status` field (doesn't exist on table)
+## Fix Plan
 
-### Step 3: Verify & Test
+### Step 1: Fix RLS Policies (Database Migration)
 
-After fixing the column mappings, the "Load Demo Data" button in Settings will successfully populate all tables and every module page will show data.
+Replace the circular policies with non-recursive ones:
 
-## Files to Modify
+**`team_members` SELECT policy** -- Use the `get_user_engage_workspace_ids()` SECURITY DEFINER function (already exists) instead of querying `team_workspaces`:
 
-1. `src/utils/engage/seedData.ts` -- fix all column name mismatches
-2. `src/components/engage/social/SocialDashboard.tsx` -- fix linkAccount mutation columns
+```sql
+DROP POLICY "Users can view team members of workspaces they belong to" ON team_members;
+CREATE POLICY "Users can view their own team memberships"
+  ON team_members FOR SELECT
+  USING (user_id = auth.uid());
+```
 
-## No Database Changes Required
+**`team_workspaces` SELECT policy** -- Use the same SECURITY DEFINER function to avoid touching `team_members`:
 
-All tables have the correct schema already. Only the frontend code references need correction.
+```sql
+DROP POLICY "Users can view workspaces they own or are members of" ON team_workspaces;
+CREATE POLICY "Users can view workspaces they belong to"
+  ON team_workspaces FOR SELECT
+  USING (
+    owner_id = auth.uid()
+    OR id IN (SELECT get_user_engage_workspace_ids(auth.uid()))
+  );
+```
 
+Also fix the INSERT/UPDATE/DELETE policies on `team_members` that reference `team_workspaces`:
+
+```sql
+-- Use SECURITY DEFINER function or direct user_id check
+DROP POLICY "Users can create team members for workspaces they own" ON team_members;
+CREATE POLICY "Owners can manage team members"
+  ON team_members FOR INSERT
+  WITH CHECK (
+    workspace_id IN (
+      SELECT id FROM team_workspaces WHERE owner_id = auth.uid()
+    )
+  );
+```
+
+Wait -- this still references `team_workspaces`. The fix is to make `team_members` policies only check `user_id = auth.uid()` for SELECT, and use the SECURITY DEFINER function for write operations.
+
+### Step 2: Fix `ensure_engage_workspace` Function
+
+Update to include `owner_id`:
+
+```sql
+INSERT INTO public.team_workspaces (id, name, owner_id, created_at, updated_at)
+VALUES (v_workspace_id, 'My Workspace', p_user_id, now(), now());
+```
+
+### Step 3: No Frontend Changes Needed
+
+Once the database is fixed, the existing WorkspaceContext code will work correctly -- it already calls `ensure_engage_workspace` as a fallback and fetches team_members with the workspace join.
+
+## Technical Details
+
+### Files to Modify
+- Database migration only (no frontend file changes)
+
+### SQL Migration Steps
+1. Drop all 4 circular RLS policies on `team_members`
+2. Drop all 4 RLS policies on `team_workspaces`
+3. Recreate `team_members` policies using `user_id = auth.uid()` for SELECT and the SECURITY DEFINER function for write ops
+4. Recreate `team_workspaces` policies using `owner_id` check + SECURITY DEFINER function
+5. Replace `ensure_engage_workspace` function to include `owner_id = p_user_id`
+
+### Verification
+After the migration, navigating to any Engage page will:
+1. Query `team_members` successfully (no recursion)
+2. Auto-provision a workspace via `ensure_engage_workspace` (with owner_id set)
+3. Set `currentWorkspaceId` and `canEdit = true`
+4. Show all create buttons and enable data loading
