@@ -20,13 +20,6 @@ export const EngageLayout: React.FC<EngageLayoutProps> = ({ children }) => {
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : !currentWorkspaceId ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-2">
-                <p className="text-lg font-medium text-foreground">No workspace found</p>
-                <p className="text-sm text-muted-foreground">Create or join a workspace to use Engage.</p>
-              </div>
-            </div>
           ) : (
             children
           )}

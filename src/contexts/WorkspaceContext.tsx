@@ -46,16 +46,27 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         .select('workspace_id, role, team_workspaces(id, name)')
         .eq('user_id', user.id);
 
-      if (error || !data) {
+      if (error) {
         setLoading(false);
         return;
       }
 
-      const ws = data.map((m: any) => ({
+      let ws = (data || []).map((m: any) => ({
         id: m.workspace_id,
         name: m.team_workspaces?.name || 'Workspace',
         role: m.role || 'viewer',
       }));
+
+      // Auto-provision if no workspaces exist
+      if (ws.length === 0) {
+        const { data: wsId, error: rpcError } = await supabase.rpc('ensure_engage_workspace', {
+          p_user_id: user.id,
+        });
+
+        if (!rpcError && wsId) {
+          ws = [{ id: wsId, name: 'My Workspace', role: 'owner' }];
+        }
+      }
 
       setWorkspaces(ws);
       if (ws.length > 0 && !currentWorkspaceId) {
