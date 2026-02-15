@@ -204,9 +204,8 @@ export const SocialDashboard = () => {
       const { error } = await supabase.from('social_accounts').insert({
         workspace_id: currentWorkspaceId!,
         provider: linkForm.provider,
-        account_name: linkForm.account_name,
-        access_token: linkForm.access_token || null,
-        status: 'connected',
+        display_name: linkForm.account_name,
+        auth_data: linkForm.access_token ? { access_token: linkForm.access_token } : {},
       });
       if (error) throw error;
     },
