@@ -3836,6 +3836,39 @@ export type Database = {
           },
         ]
       }
+      engage_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          resource_id: string | null
+          resource_type: string
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          resource_id?: string | null
+          resource_type: string
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       engage_automations: {
         Row: {
           actions: Json | null
@@ -3895,11 +3928,16 @@ export type Database = {
       engage_contacts: {
         Row: {
           attributes: Json | null
+          company: string | null
+          consent_reason: string | null
+          consent_status: string | null
           created_at: string | null
           email: string
           first_name: string | null
           id: string
           last_name: string | null
+          lifecycle_stage: string | null
+          owner_id: string | null
           phone: string | null
           tags: string[] | null
           unsubscribed: boolean | null
@@ -3909,11 +3947,16 @@ export type Database = {
         }
         Insert: {
           attributes?: Json | null
+          company?: string | null
+          consent_reason?: string | null
+          consent_status?: string | null
           created_at?: string | null
           email: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          lifecycle_stage?: string | null
+          owner_id?: string | null
           phone?: string | null
           tags?: string[] | null
           unsubscribed?: boolean | null
@@ -3923,11 +3966,16 @@ export type Database = {
         }
         Update: {
           attributes?: Json | null
+          company?: string | null
+          consent_reason?: string | null
+          consent_status?: string | null
           created_at?: string | null
           email?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          lifecycle_stage?: string | null
+          owner_id?: string | null
           phone?: string | null
           tags?: string[] | null
           unsubscribed?: boolean | null
@@ -6329,6 +6377,66 @@ export type Database = {
           },
         ]
       }
+      social_inbox_items: {
+        Row: {
+          account_id: string | null
+          assigned_to: string | null
+          author_name: string | null
+          author_profile_url: string | null
+          content: string
+          created_at: string
+          id: string
+          linked_contact_id: string | null
+          provider_item_id: string | null
+          status: string
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          assigned_to?: string | null
+          author_name?: string | null
+          author_profile_url?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          linked_contact_id?: string | null
+          provider_item_id?: string | null
+          status?: string
+          type?: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string | null
+          assigned_to?: string | null
+          author_name?: string | null
+          author_profile_url?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          linked_contact_id?: string | null
+          provider_item_id?: string | null
+          status?: string
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_inbox_items_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_inbox_items_linked_contact_id_fkey"
+            columns: ["linked_contact_id"]
+            isOneToOne: false
+            referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_post_targets: {
         Row: {
           account_id: string | null
@@ -6386,6 +6494,7 @@ export type Database = {
       }
       social_posts: {
         Row: {
+          approval_status: string | null
           content: string | null
           created_at: string | null
           created_by: string | null
@@ -6397,6 +6506,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          approval_status?: string | null
           content?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -6408,6 +6518,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          approval_status?: string | null
           content?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -6427,6 +6538,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      social_saved_replies: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       solution_cache: {
         Row: {
