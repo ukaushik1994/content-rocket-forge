@@ -2,8 +2,6 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Mail, GitBranch, Zap, Share2, Activity, Users, Layers, Settings } from 'lucide-react';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
 const navItems = [
@@ -22,7 +20,6 @@ const bottomItems = [
 
 export const EngageSidebar = () => {
   const location = useLocation();
-  const { workspaces, currentWorkspaceId, switchWorkspace } = useWorkspace();
 
   const renderNavItem = (item: typeof navItems[0]) => {
     const isActive = location.pathname.startsWith(item.path);
@@ -45,24 +42,6 @@ export const EngageSidebar = () => {
 
   return (
     <div className="w-56 border-r border-border bg-card/50 flex flex-col">
-      {/* Workspace Switcher */}
-      {workspaces.length > 1 && (
-        <div className="p-3 border-b border-border">
-          <Select value={currentWorkspaceId || ''} onValueChange={switchWorkspace}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Workspace" />
-            </SelectTrigger>
-            <SelectContent>
-              {workspaces.map(ws => (
-                <SelectItem key={ws.id} value={ws.id} className="text-xs">
-                  {ws.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-0.5">
         {navItems.map(renderNavItem)}
