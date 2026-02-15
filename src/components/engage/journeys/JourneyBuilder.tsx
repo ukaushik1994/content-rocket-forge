@@ -62,15 +62,15 @@ const JourneyBuilderInner = () => {
   });
 
   // Node execution counts
-  const nodeExecQuery = useQuery({
-    queryKey: ['journey-node-exec-counts', id] as const,
+  const { data: nodeExecCounts = {} } = useQuery<Record<string, number>>({
+    queryKey: ['journey-node-exec-counts', id],
     queryFn: async () => {
       const { data } = await supabase
-        .from('journey_steps')
+        .from('journey_steps' as any)
         .select('node_id')
         .eq('journey_id', id!);
       const counts: Record<string, number> = {};
-      (data || []).forEach((s: any) => {
+      ((data as any[]) || []).forEach((s: any) => {
         counts[s.node_id] = (counts[s.node_id] || 0) + 1;
       });
       return counts;
