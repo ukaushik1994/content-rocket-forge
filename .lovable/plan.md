@@ -1,147 +1,72 @@
 
-# Continue Engage Implementation: Journey Builder, Automations, Campaigns, and Settings
 
-## What We're Building
+# Engage Settings: API Keys Integration
 
-The remaining Engage pages (Journeys, Automations, Email Campaigns) use plain Card components and lack the glassmorphism, framer-motion animations, and feature depth that the Social page now has. The Settings page also needs a proper connection flow so Engage actually works end-to-end.
+## Goal
+Make the Engage API keys (Resend for email) work exactly like the existing API key system (OpenRouter, SerpAPI, etc.) -- same storage, same encryption, same UI pattern -- but living in the Engage settings section.
 
-This plan covers 4 areas:
-1. Journey Builder -- custom nodes, inspector panel, validation
-2. Campaigns -- audience selector, scheduling, polished cards
-3. Automations -- condition/action config, design upgrade
-4. Settings -- Resend API key integration, test connection, status indicators
+## What Changes
 
----
+### 1. Add Resend to the API Key System
 
-## 1. Journey Builder Upgrade
+**File: `src/services/apiKeyService.ts`**
+- Add `'resend'` to the `ApiProvider` type union
 
-**Current state**: Generic colored rectangles, no inspector, no node config forms, no validation.
+**File: `src/components/settings/api/types.ts`**
+- Add a Resend entry to `API_PROVIDERS` array with category `'Communication'`, serviceKey `'resend'`, link to `https://resend.com/api-keys`
 
-**Changes to `JourneyBuilder.tsx`**:
-- Replace generic `type: 'default'` nodes with custom React Flow node components per type (Trigger, SendEmail, Wait, Condition, UpdateContact, Webhook, End)
-- Each custom node renders with its own icon, colored header bar, and a summary of its config
-- Clicking a node opens a right-side inspector panel
+This means Resend keys get encrypted and stored in the `api_keys` table just like every other provider -- same encryption, same RLS, same security model.
 
-**New file: `src/components/engage/journeys/nodes/CustomNodes.tsx`**
-- 7 custom node components using React Flow's `Handle` for source/target ports
-- Each has a glassmorphism card style: rounded corners, backdrop-blur, colored top border
-- Icons: Mail for SendEmail, Clock for Wait, GitBranch for Condition, User for UpdateContact, Globe for Webhook, Flag for End, Zap for Trigger
+### 2. Redesign Engage Integration Settings
 
-**New file: `src/components/engage/journeys/JourneyInspector.tsx`**
-- Slide-in panel on the right (w-80) when a node is selected
-- Per-node config forms:
-  - **Trigger**: select trigger type (manual, segment_entry, event)
-  - **SendEmail**: template picker dropdown (queries email_templates)
-  - **Wait**: duration input (number + unit: minutes/hours/days)
-  - **Condition**: field/operator/value rule builder
-  - **UpdateContact**: tag add/remove, attribute set
-  - **Webhook**: URL input + method select
-  - **End**: just a label
-- Save button updates the node's `config` in local state
-- Close button deselects
+**File: `src/components/settings/engage/EngageIntegrationSettings.tsx`**
 
-**Journey validation** (added to toolbar):
-- "Validate" button checks: at least 1 trigger, no orphan nodes (every node must be reachable from trigger), all branches end at an End node
-- Shows toast with errors or "Journey is valid"
+Replace the current manual API key input with the existing `SimpleProviderCard` component for Resend. The settings page will have:
 
-**Manual enroll button**:
-- Opens dialog to pick a contact from engage_contacts
-- Inserts into journey_enrollments + creates first journey_step for the trigger node
+- **Email Provider Section**: Uses `SimpleProviderCard` for Resend (same expand/collapse, save & test, enable/disable pattern as other API keys)
+- **Email Sender Config**: Separate glassmorphism card for from_name, from_email, reply_to (these aren't secrets, just config stored in `email_provider_settings`)
+- **Connection Status**: Shows whether the Resend key is configured (reads from `api_keys` table) and whether sender details are set
+- **Social Accounts**: Keep as-is with "Coming Soon" badges
+- **Demo Data**: Keep as-is
 
----
+### 3. Update Edge Function to Read Key from Database
 
-## 2. Campaigns List and Wizard Upgrade
+**File: `supabase/functions/engage-email-send/index.ts`**
 
-**Changes to `CampaignsList.tsx`**:
-- Upgrade to GlassCard + framer-motion stagger animation
-- Add stat cards header: Draft, Sending, Complete counts with gradient icons
-- Campaign cards get: status badge with icons, template name, scheduled time, recipient count, action dropdown (Edit, Delete, Duplicate)
+Currently reads `RESEND_API_KEY` from env only. Update to:
+1. First check `Deno.env.get("RESEND_API_KEY")` (for users who set it as a secret)
+2. If not found, query the `api_keys` table for the workspace owner's Resend key using the service role client
+3. This way it works whether the key is stored via the UI (in `api_keys` table) or as an env secret
 
-**Audience selection** (in create/edit dialog):
-- Step 1: Name + Template (existing)
-- Step 2: Audience -- choose "All contacts", a specific segment, or filter by tags
-- Show estimated recipient count based on selection
-- Step 3: Schedule -- "Send now" or pick date/time
+The edge function will look up the workspace owner from the email message's `workspace_id`, then query `api_keys` where `service = 'resend'` and `user_id = owner_id`.
 
-**Changes to launch logic**:
-- If audience is a segment, query engage_segment_memberships for contact_ids
-- If audience is tag-based, filter engage_contacts by tags
-- Respect scheduled_at: if future date, set status to "scheduled" instead of "sending"
+### 4. Remove Duplicate API Key Storage
+
+Currently the API key is stored in `email_provider_settings.config` as plain JSON. After this change:
+- The key goes through the standard encrypted `api_keys` table
+- `email_provider_settings` only stores non-secret config: provider name, from_name, from_email, reply_to
+- The save flow no longer writes `api_key` to the config column
 
 ---
 
-## 3. Automations List Upgrade
+## Technical Details
 
-**Changes to `AutomationsList.tsx`**:
-- GlassCard + framer-motion stagger
-- Hero section with stat cards: Active, Paused, Total count
-- Automation cards get: trigger type badge, action summary, last run timestamp, edit/delete dropdown
+### Files Modified
+| File | Change |
+|------|--------|
+| `src/services/apiKeyService.ts` | Add `'resend'` to ApiProvider type |
+| `src/components/settings/api/types.ts` | Add Resend to API_PROVIDERS array |
+| `src/components/settings/engage/EngageIntegrationSettings.tsx` | Use SimpleProviderCard for Resend key, separate sender config card |
+| `supabase/functions/engage-email-send/index.ts` | Add fallback to read key from api_keys table |
 
-**Expanded create/edit dialog**:
-- Trigger config: type selector + value input (e.g., segment name for segment_entry, tag name for tag_added, event name for event_occurred)
-- Condition builder (optional): field/operator/value to further filter
-- Actions list: support multiple actions with type-specific config:
-  - send_email: template picker
-  - add_tag / remove_tag: tag input
-  - enroll_journey: journey picker
-  - webhook: URL + method
+### How It Works End-to-End
+1. User goes to Settings > Engage
+2. Sees a Resend card (same pattern as OpenRouter card in API settings) -- clicks to expand, pastes key, clicks "Save & Test"
+3. Key gets encrypted and stored in `api_keys` table via `apiKeyService.storeApiKey('resend', key)`
+4. Below that, a separate card for sender details (from name, from email, reply-to) saved to `email_provider_settings`
+5. When `engage-email-send` runs, it checks env first, then falls back to querying `api_keys` for the workspace owner's Resend key
+6. Test Connection button invokes the edge function with a test payload
 
----
+### No New Dependencies
+Uses existing `SimpleProviderCard`, `apiKeyService`, `GlassCard`, `framer-motion`.
 
-## 4. Settings -- Making Engage Work
-
-**Current state**: Email provider form exists but saves API key in the database `email_provider_settings.config` column (plain JSON). No RESEND_API_KEY secret exists.
-
-**What needs to happen for email to actually send**:
-The `engage-email-send` edge function reads `Deno.env.get("RESEND_API_KEY")`. This secret needs to be added.
-
-**Changes to `EngageIntegrationSettings.tsx`**:
-- Add a "Connection Status" section at the top showing:
-  - Email: Connected/Not configured (based on email_provider_settings existence)
-  - API Key: Configured/Missing (based on whether the form has been saved)
-- Add a "Test Connection" button that:
-  - Calls the `engage-email-send` edge function with a test payload
-  - Shows success/error toast
-- Add a "Send Test Email" button that queues a single test email_message and invokes the edge function
-- Upgrade styling to glassmorphism to match the rest of Engage
-- Add helper text explaining: "Get your Resend API key from resend.com/api-keys" with a link
-
-**Secret management**:
-- The Resend API key will be requested via the add_secret tool during implementation
-- This gets stored as a Supabase Edge Function secret (RESEND_API_KEY)
-- The edge function already reads it -- no code change needed there
-
-**Social accounts section**:
-- Keep "Coming Soon" badges but upgrade to glassmorphism card style
-- Each provider card shows its icon with colored background
-
----
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/components/engage/journeys/nodes/CustomNodes.tsx` | 7 custom React Flow node components |
-| `src/components/engage/journeys/JourneyInspector.tsx` | Right-side config panel |
-| `src/components/engage/shared/RuleBuilder.tsx` | Reusable field/operator/value rule component |
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/engage/journeys/JourneyBuilder.tsx` | Custom nodes, inspector, validation, enroll |
-| `src/components/engage/journeys/JourneysList.tsx` | GlassCard, framer-motion, stats, delete action |
-| `src/components/engage/email/campaigns/CampaignsList.tsx` | GlassCard, stats, audience selector, scheduling |
-| `src/components/engage/automations/AutomationsList.tsx` | GlassCard, stats, expanded config, delete |
-| `src/components/settings/engage/EngageIntegrationSettings.tsx` | Connection status, test button, glassmorphism |
-
-## Implementation Order
-
-1. RuleBuilder shared component (used by Journey Condition + Automation conditions)
-2. Custom journey nodes + inspector
-3. JourneyBuilder integration (wire custom nodes, inspector, validation, enroll)
-4. JourneysList design upgrade
-5. CampaignsList upgrade with audience + scheduling
-6. AutomationsList upgrade with expanded config
-7. EngageIntegrationSettings upgrade with connection status + test
-8. Add RESEND_API_KEY secret (will prompt you for the key)
