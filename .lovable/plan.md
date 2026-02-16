@@ -1,105 +1,113 @@
 
 
-# Comprehensive Plan: AI Chat Awareness, Solutions Auto-Fill Fix, and Settings Engage Tab
+# Fix Plan: Engage Module Issues Found During Testing
 
-This plan covers three distinct issues that need to be addressed together.
+## Testing Summary
 
----
-
-## Issue 1: AI Chat Has No Awareness of the Engage Module
-
-**Current State:** The `enhanced-ai-chat` edge function has 13 tools covering content, keywords, proposals, solutions, competitors, campaigns, and SERP -- but zero tools for the Engage module (contacts, segments, journeys, automations, email campaigns, social).
-
-**What Needs to Happen:** Add Engage intelligence tools so the AI can answer questions like "How many contacts do I have?", "Show my active journeys", "What automations are running?", and "What's my email campaign status?".
-
-### Changes
-
-**New file: `supabase/functions/enhanced-ai-chat/engage-intelligence-tool.ts`**
-- Create 4 new tool definitions:
-  - `get_engage_contacts` -- Fetch contacts with filters (tags, subscription status, date range)
-  - `get_engage_segments` -- Fetch audience segments with member counts
-  - `get_engage_journeys` -- Fetch journeys with status and step counts
-  - `get_engage_automations` -- Fetch automation rules with trigger info
-- Each tool queries the appropriate `engage_*` tables scoped to the user's workspace (fetched via `team_members` table)
-- Returns structured data the AI can reason about
-
-**Edit: `supabase/functions/enhanced-ai-chat/tools.ts`**
-- Import the new engage tool definitions and executor
-- Add them to the `TOOL_DEFINITIONS` array
-- Add engage tool names to routing logic
-
-**Edit: `supabase/functions/enhanced-ai-chat/index.ts`**
-- Add Engage data counts to the system prompt context (contact count, segment count, journey count, automation count)
-- Add Engage examples to the tool usage instructions (e.g., "How many contacts?" -> `get_engage_contacts`)
-- Add Engage intent patterns to the query analyzer routing
-
-**Edit: `supabase/functions/enhanced-ai-chat/query-analyzer.ts`**
-- Add Engage-related intent patterns: "contacts", "segments", "journeys", "automations", "email", "engage"
-- Route these to the appropriate engage tools
+All 7 Engage subpages were tested (Email, Contacts, Segments, Journeys, Automations, Social, Activity, Settings). While every page loads its UI and shows create buttons, **no data can be created or loaded** because the workspace provisioning is completely broken.
 
 ---
 
-## Issue 2: Solutions and Company Info Auto-Fill Not Working
+## Critical Issue: `ensure_engage_workspace` RPC Fails with CHECK Constraint Violation
 
-**Current State:** The `solution-intel` and `company-intel` edge functions exist and are well-structured. They use the user's SERP API key (via `getApiKey('serp', userId)`) and AI proxy correctly. However, no logs appear at all -- the functions are never being called successfully.
+### Root Cause
 
-**Root Cause Analysis:** The edge functions are deployed but the `getApiKey` function reads from the `api_keys` table looking for `encrypted_key`. The issue is likely one of:
-1. No SERP API key is configured for the user (the function falls back to generic URLs, which may fail to fetch)
-2. The `ai-proxy` call may be failing silently (no AI provider configured)
-3. The function may not be deployed at all
+The `ensure_engage_workspace` database function inserts `role = 'owner'` into `team_members`, but the table has a CHECK constraint that only allows:
+- `'admin'`
+- `'manager'`
+- `'member'`
 
-### Changes
+This means **every new user who visits Engage gets a silent failure** -- no workspace is created, `currentWorkspaceId` stays `null`, and:
+- All queries with `.eq('workspace_id', currentWorkspaceId!)` return nothing
+- All create actions fail (they need a workspace_id)
+- The Settings page shows "No workspace found"
+- The global Settings Engage tab shows "Unable to initialize Engage"
 
-**Deploy edge functions:**
-- Ensure `solution-intel` and `company-intel` are deployed
-- Test them directly with curl to identify the actual failure point
+### Error from Supabase
 
-**Edit: `supabase/functions/solution-intel/index.ts`**
-- Add better error logging at each stage (SERP fallback, page fetch, AI proxy call)
-- When no SERP key exists, improve the fallback URL strategy to actually work (try fetching the homepage + common paths like /products, /solutions, /pricing, /features directly)
-- Add a timeout for page fetches (currently no timeout, could hang forever)
-- Return diagnostic info about which stage failed
+```text
+code: 23514
+message: new row for relation "team_members" violates check constraint "team_members_role_check"
+details: Failing row contains (..., owner, ...)
+```
 
-**Edit: `supabase/functions/company-intel/index.ts`**
-- Same improvements: better error logging, timeout handling
-- When no SERP key exists, improve fallback to try homepage + /about + /about-us + /team directly (instead of returning "no pages found")
-- Make the fallback path actually fetch content, not just add URLs to the list
+### Fix (Database Migration)
 
-**Edit: `src/services/solutionIntelService.ts`**
-- Add better error messages to surface to the user what went wrong (e.g., "No SERP API key configured -- using limited fallback")
+Update the `ensure_engage_workspace` function to use `'admin'` instead of `'owner'` (since `'admin'` is the highest allowed role in the CHECK constraint):
 
-**Edit: `src/services/companyIntelService.ts`**
-- Same: add descriptive error handling
+```sql
+CREATE OR REPLACE FUNCTION public.ensure_engage_workspace(p_user_id uuid)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_workspace_id uuid;
+BEGIN
+  SELECT workspace_id INTO v_workspace_id
+  FROM public.team_members
+  WHERE user_id = p_user_id
+  LIMIT 1;
+
+  IF v_workspace_id IS NOT NULL THEN
+    RETURN v_workspace_id;
+  END IF;
+
+  v_workspace_id := gen_random_uuid();
+  INSERT INTO public.team_workspaces (id, name, owner_id, created_at, updated_at)
+  VALUES (v_workspace_id, 'My Workspace', p_user_id, now(), now());
+
+  INSERT INTO public.team_members (workspace_id, user_id, role, joined_at)
+  VALUES (v_workspace_id, p_user_id, 'admin', now());
+
+  RETURN v_workspace_id;
+END;
+$$;
+```
+
+This is a single-line change: `'owner'` becomes `'admin'`.
 
 ---
 
-## Issue 3: Engage Section in Global Settings is Empty
+## Secondary Issues Found
 
-**Current State:** The `EngageIntegrationSettings` component at `src/components/settings/engage/EngageIntegrationSettings.tsx` shows a connection status summary and a "Go to Engage Settings" button. It works correctly when a workspace exists but shows "No workspace found" when one doesn't.
+### 1. Engage Settings Page (within sidebar) shows "No workspace found"
+- **Cause**: Same root cause -- `currentWorkspaceId` is `null` because provisioning failed
+- **Fix**: Automatically resolved once the database function is fixed
 
-**The Problem:** The component queries `team_members` to find a workspace, but if the user hasn't visited Engage yet, no workspace exists. Also, the component is very sparse -- just a status card with a redirect button. It should be more useful.
+### 2. Global Settings Engage Tab shows "Unable to initialize Engage"
+- **Cause**: Same root cause -- the RPC call in `EngageIntegrationSettings.tsx` also fails
+- **Fix**: Automatically resolved once the database function is fixed
 
-### Changes
-
-**Edit: `src/components/settings/engage/EngageIntegrationSettings.tsx`**
-- Instead of showing "No workspace found", auto-provision the workspace using the same RPC call (`ensure_engage_workspace`) that WorkspaceContext uses
-- Embed the full Engage settings inline (Resend API key, sender config, social accounts, demo data) rather than just showing a redirect button
-- Reuse the same components from `EngageSettings.tsx` or import `EngageSettings` directly as the content
-
-The simplest approach: replace the content of `EngageIntegrationSettings` with a direct render of the `EngageSettings` component (which already has all the settings UI). This way the global Settings popup shows the full Engage configuration inline.
+### 3. Some 406 errors on `content_strategies` and `ai_context_state`
+- These are pre-existing issues unrelated to Engage (likely schema mismatch for `is_active` filter)
+- Not blocking Engage functionality
 
 ---
 
 ## Technical Summary
 
-| Area | Files Changed | Complexity |
-|------|--------------|------------|
-| AI Chat Engage Awareness | 4 edge function files | Medium |
-| Solutions/Company Auto-Fill Fix | 2 edge functions + 2 services | Medium |
-| Settings Engage Tab | 1 component | Low |
+| What | Status | Fix |
+|------|--------|-----|
+| Email page | UI loads, no data (no workspace) | DB fix |
+| Contacts page | UI loads, "Add Contact" won't work | DB fix |
+| Segments page | UI loads, "New Segment" won't work | DB fix |
+| Journeys page | UI loads, "New Journey" won't work | DB fix |
+| Automations page | UI loads, "New Automation" won't work | DB fix |
+| Social page | UI loads, posts won't save | DB fix |
+| Activity page | UI loads, no events | DB fix |
+| Settings page (sidebar) | "No workspace found" | DB fix |
+| Global Settings Engage tab | "Unable to initialize Engage" | DB fix |
 
-### Execution Order
-1. Fix the Settings Engage tab (quick win, low risk)
-2. Fix the solutions/company auto-fill pipeline (deploy + debug + improve fallbacks)
-3. Add Engage intelligence tools to AI Chat (new capability)
+### Files to Change
+- **Database migration only**: Replace `'owner'` with `'admin'` in the `ensure_engage_workspace` function
+- **No frontend changes needed** -- all UI code is correct
+
+### After the Fix
+Once the migration runs, refreshing any Engage page will:
+1. Call `ensure_engage_workspace` successfully
+2. Create a workspace + team_members entry with role `'admin'`
+3. Set `currentWorkspaceId` in WorkspaceContext
+4. Enable all create buttons, data queries, and settings
 
