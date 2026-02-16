@@ -1,0 +1,1 @@
+DELETE FROM solutions WHERE id = 'c989fcdf-0a33-4ab0-9e35-e2121e9ae38c';
