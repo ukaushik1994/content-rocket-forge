@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send, Variable } from 'lucide-react';
+import { Send, Variable, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { EngageDialogHeader } from '../../shared/EngageDialogHeader';
+import { EngageButton } from '../../shared/EngageButton';
 
 interface ComposeDialogProps {
   open: boolean;
@@ -115,9 +117,7 @@ export const ComposeDialog: React.FC<ComposeDialogProps> = ({ open, onOpenChange
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Compose Email</DialogTitle>
-        </DialogHeader>
+        <EngageDialogHeader icon={Mail} title="Compose Email" gradientFrom="from-blue-400" gradientTo="to-cyan-400" iconColor="text-blue-400" />
         <div className="space-y-3">
           <div>
             <Label className="text-xs">To *</Label>
@@ -147,9 +147,9 @@ export const ComposeDialog: React.FC<ComposeDialogProps> = ({ open, onOpenChange
             </div>
             <Textarea value={body} onChange={e => setBody(e.target.value)} rows={6} className="text-sm" placeholder="Write your message..." />
           </div>
-          <Button onClick={() => sendEmail.mutate()} disabled={!to.trim() || !subject.trim() || sendEmail.isPending} className="w-full bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow">
+          <EngageButton onClick={() => sendEmail.mutate()} disabled={!to.trim() || !subject.trim() || sendEmail.isPending} className="w-full">
             <Send className="h-4 w-4 mr-1" /> Send Email
-          </Button>
+          </EngageButton>
         </div>
       </DialogContent>
     </Dialog>
