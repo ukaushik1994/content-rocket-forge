@@ -303,7 +303,7 @@ export const SocialDashboard = () => {
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-1.5" onClick={() => setEditingPostId(null)}><Plus className="h-4 w-4" /> New Post</Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg bg-background/95 backdrop-blur-xl border-border/50">
+              <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                     {editingPostId ? 'Edit Post' : 'Create Social Post'}
@@ -436,8 +436,8 @@ export const SocialDashboard = () => {
 
       {/* Link Account Dialog */}
       <Dialog open={showLinkAccount} onOpenChange={setShowLinkAccount}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-sm">
-          <DialogHeader><DialogTitle>Link Social Account</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Link Social Account</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Platform *</Label>

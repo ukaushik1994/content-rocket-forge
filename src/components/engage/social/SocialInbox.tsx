@@ -212,8 +212,8 @@ export const SocialInbox = () => {
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-lg bg-card/95 backdrop-blur-xl border-border/50">
-          <DialogHeader><DialogTitle>Inbox Item</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Inbox Item</DialogTitle></DialogHeader>
           {selectedItem && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -278,8 +278,8 @@ export const SocialInbox = () => {
 
       {/* Saved Replies Dialog */}
       <Dialog open={showSavedReplies} onOpenChange={setShowSavedReplies}>
-        <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/50">
-          <DialogHeader><DialogTitle>Saved Replies</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Saved Replies</DialogTitle></DialogHeader>
           <div className="space-y-3">
             {savedReplies.map((r: any) => (
               <GlassCard key={r.id} className="p-3 flex items-start justify-between">

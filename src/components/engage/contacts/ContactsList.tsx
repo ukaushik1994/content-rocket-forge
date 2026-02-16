@@ -241,8 +241,8 @@ export const ContactsList = () => {
                 <DialogTrigger asChild>
                   <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Contact</Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50">
-                  <DialogHeader><DialogTitle>Add Contacts</DialogTitle></DialogHeader>
+                <DialogContent>
+                  <DialogHeader><DialogTitle className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">Add Contacts</DialogTitle></DialogHeader>
                   <Tabs value={addTab} onValueChange={setAddTab}>
                     <TabsList className="h-8 w-full">
                       <TabsTrigger value="single" className="text-xs flex-1">Single</TabsTrigger>

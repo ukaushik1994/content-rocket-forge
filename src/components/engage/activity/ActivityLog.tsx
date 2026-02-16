@@ -265,8 +265,8 @@ export const ActivityLog = () => {
 
       {/* Payload Viewer */}
       <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-        <DialogContent className="max-w-lg bg-card/95 backdrop-blur-xl border-border/50">
-          <DialogHeader><DialogTitle>Activity Details</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Activity Details</DialogTitle></DialogHeader>
           {selectedLog && (
             <div className="space-y-3">
               <GlassCard className="p-3 space-y-2">
