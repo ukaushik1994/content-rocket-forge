@@ -123,7 +123,13 @@ serve(async (req) => {
  */
 async function discoverCompanyPages(companyName: string, website: string, userId: string): Promise<string[]> {
   const urls: string[] = [];
-  const domain = new URL(website).hostname;
+  let domain: string;
+  try {
+    domain = new URL(website.startsWith('http') ? website : `https://${website}`).hostname;
+  } catch {
+    domain = website.replace(/^https?:\/\//, '').split('/')[0];
+  }
+  const baseUrl = website.startsWith('http') ? website.replace(/\/$/, '') : `https://${website.replace(/\/$/, '')}`;
 
   // Get user's SERP API keys from the database
   const serpApiKey = await getApiKey('serp', userId);
@@ -144,34 +150,56 @@ async function discoverCompanyPages(companyName: string, website: string, userId
       const results2 = await querySerpstack(query2, serpstackKey);
       urls.push(...results1, ...results2);
     } else {
-      console.warn('[company-intel] No SERP API key configured for user. Trying direct URL patterns.');
-      // Fallback: try common about page URLs directly
-      const commonPaths = ['/about', '/about-us', '/company', '/our-story'];
-      for (const path of commonPaths) {
-        urls.push(`${website}${path}`);
-      }
+      console.warn('[company-intel] No SERP API key configured. Using direct URL fallback with actual page fetching.');
     }
   } catch (error) {
     console.error("[company-intel] SERP error:", error);
   }
 
-  // Filter for relevant URLs (only if we got SERP results, not fallback)
-  if (serpApiKey || serpstackKey) {
-    const relevantUrls = urls.filter((url) => {
-      const lowerUrl = url.toLowerCase();
-      return (
-        url.includes(domain) &&
-        (lowerUrl.includes("/about") ||
-          lowerUrl.includes("/company") ||
-          lowerUrl.includes("/our-story") ||
-          lowerUrl.includes("/mission") ||
-          lowerUrl.includes("/team"))
-      );
-    });
-    return [...new Set(relevantUrls)];
+  // Fallback: directly try common about page URLs (always add these as additional sources)
+  const commonPaths = ['/about', '/about-us', '/company', '/our-story', '/team', '/mission'];
+  const fallbackUrls: string[] = [];
+  for (const path of commonPaths) {
+    fallbackUrls.push(`${baseUrl}${path}`);
+  }
+  // Always include the homepage
+  fallbackUrls.unshift(baseUrl);
+
+  if (urls.length === 0) {
+    console.log('[company-intel] No SERP results - verifying fallback URLs are reachable');
+    // Verify which fallback URLs actually respond
+    const verifiedUrls = await Promise.all(
+      fallbackUrls.map(async (url) => {
+        try {
+          const resp = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(5000) });
+          if (resp.ok || resp.status === 301 || resp.status === 302) return url;
+        } catch { /* skip unreachable */ }
+        return null;
+      })
+    );
+    return verifiedUrls.filter(Boolean) as string[];
   }
 
-  return [...new Set(urls)];
+  // Filter SERP results for relevant URLs
+  const relevantUrls = urls.filter((url) => {
+    const lowerUrl = url.toLowerCase();
+    return (
+      url.includes(domain) &&
+      (lowerUrl.includes("/about") ||
+        lowerUrl.includes("/company") ||
+        lowerUrl.includes("/our-story") ||
+        lowerUrl.includes("/mission") ||
+        lowerUrl.includes("/team"))
+    );
+  });
+  
+  // If SERP returned results but none matched relevance filter, include homepage + fallbacks
+  if (relevantUrls.length === 0) {
+    console.log('[company-intel] SERP results not relevant enough, adding fallback URLs');
+    return [...new Set([baseUrl, ...fallbackUrls.slice(0, 3)])];
+  }
+  
+  return [...new Set(relevantUrls)];
 }
 
 async function querySerpApi(query: string, apiKey: string): Promise<string[]> {

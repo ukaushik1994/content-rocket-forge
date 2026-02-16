@@ -332,22 +332,46 @@ async function fetchUrlsFromSerp(domain: string, maxUrls: number, userId: string
       }
     }
   } else {
-    console.warn('⚠️ No SERP API key configured for user. Using fallback URLs.');
+    console.warn('⚠️ No SERP API key configured for user. Using fallback URLs with verification.');
   }
   
-  // Fallback to base URLs
+  // Fallback to base URLs - verify they're reachable
   if (discoveredUrls.length === 0) {
     const baseUrls = [
       { loc: `https://${domain}`, category: 'homepage', priority: 1 },
       { loc: `https://${domain}/products`, category: 'product/service', priority: 1 },
       { loc: `https://${domain}/solutions`, category: 'product/service', priority: 1 },
+      { loc: `https://${domain}/services`, category: 'product/service', priority: 1 },
       { loc: `https://${domain}/pricing`, category: 'product/service', priority: 2 },
       { loc: `https://${domain}/features`, category: 'product/service', priority: 2 },
+      { loc: `https://${domain}/platform`, category: 'product/service', priority: 2 },
       { loc: `https://${domain}/customers`, category: 'case-study', priority: 2 },
-      { loc: `https://${domain}/case-studies`, category: 'case-study', priority: 2 }
+      { loc: `https://${domain}/case-studies`, category: 'case-study', priority: 2 },
+      { loc: `https://${domain}/about`, category: 'about', priority: 3 },
     ];
     
-    return baseUrls.slice(0, maxUrls);
+    // Verify which URLs actually respond
+    console.log(`🔍 Verifying ${baseUrls.length} fallback URLs for ${domain}...`);
+    const verifiedUrls: SitemapUrl[] = [];
+    
+    await Promise.all(
+      baseUrls.map(async (urlObj) => {
+        try {
+          const resp = await fetch(urlObj.loc, { 
+            method: 'HEAD', 
+            redirect: 'follow', 
+            signal: AbortSignal.timeout(5000),
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SolutionIntelBot/1.0)' }
+          });
+          if (resp.ok || resp.status === 301 || resp.status === 302) {
+            verifiedUrls.push(urlObj);
+          }
+        } catch { /* skip unreachable */ }
+      })
+    );
+    
+    console.log(`✅ ${verifiedUrls.length}/${baseUrls.length} fallback URLs are reachable`);
+    return verifiedUrls.slice(0, maxUrls);
   }
   
   // Remove duplicates and sort by priority

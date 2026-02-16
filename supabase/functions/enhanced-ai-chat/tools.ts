@@ -8,6 +8,12 @@ import {
   executeCampaignIntelligenceTool 
 } from './campaign-intelligence-tool.ts';
 
+import {
+  ENGAGE_TOOL_DEFINITIONS,
+  ENGAGE_TOOL_NAMES,
+  executeEngageIntelligenceTool
+} from './engage-intelligence-tool.ts';
+
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Core data tools
@@ -239,10 +245,14 @@ const CORE_TOOL_DEFINITIONS = [
 // Campaign intelligence tools (imported from dedicated module)
 const CAMPAIGN_TOOLS = CAMPAIGN_INTELLIGENCE_TOOL_DEFINITIONS;
 
+// Engage intelligence tools (imported from dedicated module)
+const ENGAGE_TOOLS = ENGAGE_TOOL_DEFINITIONS;
+
 // Export combined tool definitions
 export const TOOL_DEFINITIONS = [
   ...CORE_TOOL_DEFINITIONS,
-  ...CAMPAIGN_TOOLS
+  ...CAMPAIGN_TOOLS,
+  ...ENGAGE_TOOLS
 ];
 
 // List of campaign tool names for routing
@@ -298,6 +308,13 @@ export async function executeToolCall(
           console.log(`[TOOL] ${toolName} | Routing to campaign intelligence handler`);
           const campaignResult = await executeCampaignIntelligenceTool(toolName, toolArgs, supabase, userId);
           return { data: campaignResult, error: null };
+        }
+        
+        // Route engage tools to dedicated handler
+        if (ENGAGE_TOOL_NAMES.includes(toolName)) {
+          console.log(`[TOOL] ${toolName} | Routing to engage intelligence handler`);
+          const engageResult = await executeEngageIntelligenceTool(toolName, toolArgs, supabase, userId);
+          return { data: engageResult, error: null };
         }
         
         switch (toolName) {

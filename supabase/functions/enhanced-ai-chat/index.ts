@@ -514,7 +514,12 @@ What would you like to explore today?`;
 - Generate performance reports
 - Show trend analysis
 
-Try asking something like "Show me my content performance" or "What keywords are trending?"`;
+## 📬 Engage CRM & Email
+- View contacts, segments, and audience data
+- Track email campaign performance (opens, clicks, bounces)
+- Monitor customer journeys and automations
+
+Try asking something like "Show me my content performance", "How many contacts do I have?", or "Show my email campaign stats"!`;
   }
   
   // Farewells
@@ -1189,7 +1194,9 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       queueResult,
       draftContentResult,
       publishedContentResult,
-      recentContentResult
+      recentContentResult,
+      // Phase 4: Engage module counts
+      engageWorkspaceResult
     ] = await Promise.all([
       supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('ai_strategy_proposals').select('*', { count: 'exact', head: true }).eq('user_id', userId),
@@ -1205,7 +1212,9 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'draft'),
       supabase.from('content_items').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'published'),
       // Phase 3: Recent activity
-      supabase.from('content_items').select('title, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5)
+      supabase.from('content_items').select('title, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+      // Phase 4: Engage workspace
+      supabase.from('team_members').select('workspace_id').eq('user_id', userId).limit(1).maybeSingle()
     ]);
 
     const contentCount = contentResult.count || 0;
@@ -1231,6 +1240,25 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
       ? `\n## Recent Activity:\n${recentContent.map(c => `• "${c.title}" (${new Date(c.created_at).toLocaleDateString()})`).join('\n')}`
       : '';
 
+    // Phase 4: Engage module counts
+    const engageWorkspaceId = engageWorkspaceResult.data?.workspace_id || null;
+    let engageContactCount = 0, engageSegmentCount = 0, engageJourneyCount = 0, engageAutomationCount = 0, engageEmailCampaignCount = 0;
+    
+    if (engageWorkspaceId) {
+      const [contactsR, segmentsR, journeysR, automationsR, emailCampaignsR] = await Promise.all([
+        supabase.from('engage_contacts').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+        supabase.from('engage_segments').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+        supabase.from('engage_journeys').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+        supabase.from('engage_automations').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+        supabase.from('engage_email_campaigns').select('*', { count: 'exact', head: true }).eq('workspace_id', engageWorkspaceId),
+      ]);
+      engageContactCount = contactsR.count || 0;
+      engageSegmentCount = segmentsR.count || 0;
+      engageJourneyCount = journeysR.count || 0;
+      engageAutomationCount = automationsR.count || 0;
+      engageEmailCampaignCount = emailCampaignsR.count || 0;
+    }
+
     // Build minimal context string with enhanced stats
     const contextString = `
 ## Available Data Summary (${new Date().toISOString()}):
@@ -1242,11 +1270,19 @@ async function fetchRealDataContext(userId: string, queryIntent: QueryIntent, us
 - **Competitor Solutions**: ${competitorSolutionCount} products analyzed
 - **Active Campaigns**: ${activeCampaignCount} running
 - **Queue Status**: ${pendingQueueCount} pending, ${processingQueueCount} processing, ${completedQueueCount} completed, ${failedQueueCount} failed
+${engageWorkspaceId ? `
+## Engage Module (CRM & Email Marketing):
+- **Contacts**: ${engageContactCount} in CRM
+- **Segments**: ${engageSegmentCount} audience segments
+- **Journeys**: ${engageJourneyCount} customer journeys
+- **Automations**: ${engageAutomationCount} automation rules
+- **Email Campaigns**: ${engageEmailCampaignCount} email campaigns
+` : ''}
 ${recentActivitySection}
 
 ## How to Access Detailed Data:
 
-You have access to 13 powerful tools to fetch exactly the data you need:
+You have access to 18 powerful tools to fetch exactly the data you need:
 
 **Core Tools:**
 1. **get_content_items** - Fetch content with filters (status, SEO score, type)
@@ -1265,12 +1301,20 @@ You have access to 13 powerful tools to fetch exactly the data you need:
 12. **trigger_content_generation** - Start content generation process
 13. **retry_failed_content** - Retry failed queue items
 
+**Engage CRM & Email Marketing Tools:**
+14. **get_engage_contacts** - Fetch contacts with tag/subscription filters
+15. **get_engage_segments** - Fetch audience segments with member counts
+16. **get_engage_journeys** - Fetch customer journeys with enrollment stats
+17. **get_engage_automations** - Fetch automation rules with execution stats
+18. **get_engage_email_campaigns** - Fetch email campaigns with delivery analytics (sent, opened, clicked, bounced)
+
 **CRITICAL INSTRUCTIONS:**
 - When user asks about specific data, USE TOOLS to fetch it
 - Start with small limits (5-10 items) unless user asks for "all"
 - Only fetch what you actually need to answer the question
 - Use filters to get precise data (e.g., status="published", min_seo_score=70)
 - For campaign queries, use campaign intelligence tools
+- For contacts, segments, journeys, automations, emails, use engage tools
 
 **Examples:**
 - User: "Show my best content" → Call get_content_items with min_seo_score=80, limit=5
@@ -1281,11 +1325,16 @@ You have access to 13 powerful tools to fetch exactly the data you need:
 - User: "How is my campaign doing?" → Call get_campaign_intelligence with campaign_name
 - User: "What's failing in my queue?" → Call get_queue_status
 - User: "Retry failed items" → Call retry_failed_content
+- User: "How many contacts do I have?" → Call get_engage_contacts with limit=1 (use totalCount)
+- User: "Show my audience segments" → Call get_engage_segments
+- User: "What journeys are active?" → Call get_engage_journeys with status="active"
+- User: "Show email campaign performance" → Call get_engage_email_campaigns with status="sent"
+- User: "What automations are running?" → Call get_engage_automations with is_active=true
 
 **Remember:** The counts above show total data available. Use tools to dive deeper when needed.
 `;
 
-    // Build counts object with all Phase 3 additions
+    // Build counts object with all Phase 3 + Phase 4 additions
     const counts = {
       contentCount,
       proposalCount,
@@ -1299,7 +1348,12 @@ You have access to 13 powerful tools to fetch exactly the data you need:
       pendingQueueCount,
       processingQueueCount,
       completedQueueCount,
-      failedQueueCount
+      failedQueueCount,
+      engageContactCount,
+      engageSegmentCount,
+      engageJourneyCount,
+      engageAutomationCount,
+      engageEmailCampaignCount
     };
 
     // Store counts for TOOL_USAGE_MODULE replacement
