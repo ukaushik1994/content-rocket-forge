@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Mail, GitBranch, Zap, Share2, Activity, Users, Layers, Settings } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Mail, GitBranch, Zap, Share2, Activity, Users, Layers } from 'lucide-react';
 
 const navItems = [
   { path: '/engage/email', label: 'Email', icon: Mail },
@@ -14,9 +13,6 @@ const navItems = [
   { path: '/engage/activity', label: 'Activity', icon: Activity },
 ];
 
-const bottomItems = [
-  { path: '/engage/settings', label: 'Settings', icon: Settings },
-];
 
 export const EngageSidebar = () => {
   const location = useLocation();
@@ -47,11 +43,6 @@ export const EngageSidebar = () => {
         {navItems.map(renderNavItem)}
       </nav>
 
-      {/* Bottom Items */}
-      <div className="p-2 space-y-0.5">
-        <Separator className="mb-2" />
-        {bottomItems.map(renderNavItem)}
-      </div>
     </div>
   );
 };
