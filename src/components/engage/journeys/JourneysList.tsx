@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause, Copy, Pencil, Users, Search, Workflow, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { EngageButton } from '../shared/EngageButton';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { EngageHero } from '../shared/EngageHero';
@@ -280,7 +281,7 @@ export const JourneysList = () => {
           canEdit ? (
             <Dialog open={showCreate} onOpenChange={o => { setShowCreate(o); if (!o) { setName(''); setDescription(''); setSelectedTemplate(null); } }}>
               <DialogTrigger asChild>
-                <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Journey</Button>
+                <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> New Journey</EngageButton>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Create Journey</DialogTitle></DialogHeader>

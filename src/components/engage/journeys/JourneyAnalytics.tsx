@@ -6,6 +6,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Users, TrendingDown, Clock, BarChart3 } from 'lucide-react';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import type { Node } from '@xyflow/react';
 
@@ -75,12 +76,8 @@ export const JourneyAnalytics: React.FC<JourneyAnalyticsProps> = ({ journeyId, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" /> Journey Analytics
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <EngageDialogHeader icon={BarChart3} title="Journey Analytics" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-4 gap-3">

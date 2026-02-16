@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContactDetailDialog } from './ContactDetailDialog';
+import { EngageButton } from '../shared/EngageButton';
 import { EngageHero } from '../shared/EngageHero';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
@@ -239,7 +240,7 @@ export const ContactsList = () => {
             {canEdit && (
               <Dialog open={showAdd} onOpenChange={setShowAdd}>
                 <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Contact</Button>
+                  <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> Add Contact</EngageButton>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">Add Contacts</DialogTitle></DialogHeader>

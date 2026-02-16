@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter, Eye, Clock, Copy, Download, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { EngageButton } from '../shared/EngageButton';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
@@ -191,7 +192,7 @@ export const SegmentsList = () => {
           canEdit ? (
             <Dialog open={showAdd || !!editingSegment} onOpenChange={open => { if (!open) { setShowAdd(false); resetForm(); } else setShowAdd(true); }}>
               <DialogTrigger asChild>
-                <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Segment</Button>
+                <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> New Segment</EngageButton>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">{editingSegment ? 'Edit Segment' : 'Create Segment'}</DialogTitle></DialogHeader>

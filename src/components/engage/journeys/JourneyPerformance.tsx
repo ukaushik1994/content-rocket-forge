@@ -6,6 +6,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, FunnelChart, Funnel, LabelList } from 'recharts';
 import { TrendingUp, Users, Timer, Target } from 'lucide-react';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import type { Node } from '@xyflow/react';
 
 interface JourneyPerformanceProps {
@@ -87,12 +88,8 @@ export const JourneyPerformance: React.FC<JourneyPerformanceProps> = ({ journeyI
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" /> Journey Performance
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <EngageDialogHeader icon={TrendingUp} title="Journey Performance" gradientFrom="from-emerald-400" gradientTo="to-blue-400" iconColor="text-emerald-400" />
 
         {/* Summary */}
         <div className="grid grid-cols-4 gap-3">

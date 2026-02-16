@@ -23,6 +23,7 @@ import {
   Clock, CheckCircle2, Zap, Send, Image, Hash, X, Search, ListOrdered, Trash2, Link2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { EngageButton } from '../shared/EngageButton';
 import { format, formatDistanceToNow, isFuture } from 'date-fns';
 import { SocialCalendar } from './SocialCalendar';
 import { SocialPostCard } from './SocialPostCard';
@@ -301,7 +302,7 @@ export const SocialDashboard = () => {
           {canEdit && (
             <Dialog open={showCreate} onOpenChange={handleCloseDialog}>
               <DialogTrigger asChild>
-                <Button size="sm" className="gap-1.5" onClick={() => setEditingPostId(null)}><Plus className="h-4 w-4" /> New Post</Button>
+                <EngageButton size="sm" className="gap-1.5" onClick={() => setEditingPostId(null)}><Plus className="h-4 w-4" /> New Post</EngageButton>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
