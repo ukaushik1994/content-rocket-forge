@@ -66,6 +66,9 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   const needsAnalytics = /analytics|metrics|views|clicks|conversion|traffic|engagement/i.test(q);
   const needsPerformance = /performing|performance|how.*(doing|going)|status|health/i.test(q);
   
+  // Engage module categories
+  const needsEngage = /contact|subscriber|audience|segment|journey|automation|email campaign|newsletter|crm|engage|drip|funnel|unsubscrib/i.test(q);
+  
   // FIX: Detect internal trend requests (prioritize over SERP trends)
   const needsInternalTrends = /trend|trending/i.test(q) && 
     (/campaign|proposal|strategy|content|my|our/i.test(q) || needsCampaigns || needsProposals);
@@ -95,6 +98,7 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   if (needsCompetitors) categories.push('competitors');
   if (needsAnalytics) categories.push('analytics');
   if (needsPerformance || needsInternalTrends) categories.push('performance'); // Force performance for internal trends
+  if (needsEngage) categories.push('engage'); // Engage module data
   
   // If no specific category detected, include core data at summary level
   if (categories.length === 0) {
