@@ -1,6 +1,7 @@
 import React from 'react';
 import { EngageSidebar } from './EngageSidebar';
 import { EngageBreadcrumb } from './shared/EngageBreadcrumb';
+import { EngageBackground } from './shared/EngageBackground';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Loader2 } from 'lucide-react';
@@ -14,9 +15,10 @@ export const EngageLayout: React.FC<EngageLayoutProps> = ({ children }) => {
 
   return (
     <PageLayout containerized={false} className="!p-0 !pt-16">
-      <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      <div className="flex h-[calc(100vh-4rem)] overflow-hidden relative">
+        <EngageBackground />
         <EngageSidebar />
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 relative z-0">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

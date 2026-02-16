@@ -15,6 +15,9 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
+import { EngageHero } from '../shared/EngageHero';
+import { EngageStatGrid } from '../shared/EngageStatCard';
+import { engageStagger } from '../shared/engageAnimations';
 
 export const SegmentsList = () => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
@@ -175,15 +178,17 @@ export const SegmentsList = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">Segments</h2>
-            <p className="text-sm text-muted-foreground">Group contacts by rules</p>
-          </div>
-          {canEdit && (
+    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <EngageHero
+        icon={Layers}
+        title="Segments"
+        subtitle="Group contacts by rules"
+        gradientFrom="from-violet-400"
+        gradientTo="to-purple-400"
+        glowFrom="from-violet-500/30"
+        glowTo="to-purple-500/10"
+        actions={
+          canEdit ? (
             <Dialog open={showAdd || !!editingSegment} onOpenChange={open => { if (!open) { setShowAdd(false); resetForm(); } else setShowAdd(true); }}>
               <DialogTrigger asChild>
                 <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Segment</Button>
@@ -213,35 +218,22 @@ export const SegmentsList = () => {
                 </div>
               </DialogContent>
             </Dialog>
-          )}
-        </div>
-      </motion.div>
+          ) : undefined
+        }
+      />
 
       {/* Search */}
-      <div className="relative">
+      <motion.div variants={engageStagger.item} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search segments..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-background/40" />
-      </div>
+        <Input placeholder="Search segments..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-white/[0.03] border-white/[0.06] backdrop-blur-sm" />
+      </motion.div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
+      <EngageStatGrid
+        stats={[
           { label: 'Segments', count: segments.length, color: 'from-violet-500/20 to-violet-500/5', text: 'text-violet-400', icon: Layers },
           { label: 'Total Members', count: totalMembers, color: 'from-purple-500/20 to-purple-500/5', text: 'text-purple-400', icon: Users },
-        ].map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                  <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
-                </div>
-                <s.icon className={`h-5 w-5 ${s.text} opacity-50`} />
-              </div>
-            </GlassCard>
-          </motion.div>
-        ))}
-      </div>
+        ]}
+      />
 
       {/* Segment Members Viewer */}
       <Dialog open={!!viewingSegment} onOpenChange={() => setViewingSegment(null)}>
@@ -364,6 +356,6 @@ export const SegmentsList = () => {
           })}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

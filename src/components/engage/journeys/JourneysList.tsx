@@ -16,6 +16,9 @@ import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause, Copy,
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { EngageHero } from '../shared/EngageHero';
+import { EngageStatGrid } from '../shared/EngageStatCard';
+import { engageStagger } from '../shared/engageAnimations';
 
 const statusConfig: Record<string, { class: string; dot: string }> = {
   draft: { class: 'bg-muted/50 text-muted-foreground border-border/50', dot: 'bg-muted-foreground' },
@@ -264,63 +267,61 @@ export const JourneysList = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Journeys</h2>
-          <p className="text-sm text-muted-foreground">Visual customer journey flows</p>
-        </div>
-        {canEdit && (
-          <Dialog open={showCreate} onOpenChange={o => { setShowCreate(o); if (!o) { setName(''); setDescription(''); setSelectedTemplate(null); } }}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Journey</Button>
-            </DialogTrigger>
-            <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-lg">
-              <DialogHeader><DialogTitle>Create Journey</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                {/* Templates */}
-                <div>
-                  <Label className="text-xs flex items-center gap-1 mb-2"><Sparkles className="h-3 w-3" /> Start from Template</Label>
-                  <div className="grid gap-2">
-                    {journeyTemplates.map((t, i) => (
-                      <button
-                        key={i}
-                        onClick={() => { setSelectedTemplate(selectedTemplate === i ? null : i); if (!name) setName(t.name); }}
-                        className={`text-left p-3 rounded-lg border transition-all ${
-                          selectedTemplate === i
-                            ? 'border-primary/50 bg-primary/5'
-                            : 'border-border/50 hover:border-border bg-background/30'
-                        }`}
-                      >
-                        <p className="text-sm font-medium text-foreground">{t.name}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>
-                        <p className="text-[10px] text-muted-foreground/60 mt-1">{t.nodes.length} nodes</p>
-                      </button>
-                    ))}
+    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <EngageHero
+        icon={GitBranch}
+        title="Journeys"
+        subtitle="Visual customer journey flows"
+        gradientFrom="from-purple-400"
+        gradientTo="to-blue-400"
+        glowFrom="from-purple-500/30"
+        glowTo="to-blue-500/10"
+        actions={
+          canEdit ? (
+            <Dialog open={showCreate} onOpenChange={o => { setShowCreate(o); if (!o) { setName(''); setDescription(''); setSelectedTemplate(null); } }}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Journey</Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-lg">
+                <DialogHeader><DialogTitle>Create Journey</DialogTitle></DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs flex items-center gap-1 mb-2"><Sparkles className="h-3 w-3" /> Start from Template</Label>
+                    <div className="grid gap-2">
+                      {journeyTemplates.map((t, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { setSelectedTemplate(selectedTemplate === i ? null : i); if (!name) setName(t.name); }}
+                          className={`text-left p-3 rounded-lg border transition-all ${
+                            selectedTemplate === i
+                              ? 'border-primary/50 bg-primary/5'
+                              : 'border-white/[0.06] hover:border-white/[0.12] bg-white/[0.02]'
+                          }`}
+                        >
+                          <p className="text-sm font-medium text-foreground">{t.name}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>
+                          <p className="text-[10px] text-muted-foreground/60 mt-1">{t.nodes.length} nodes</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                  <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+                  <div><Label>Description</Label><Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Optional description..." /></div>
+                  <Button onClick={() => createJourney.mutate()} disabled={!name} className="w-full">
+                    {selectedTemplate !== null ? 'Create from Template' : 'Create & Open Builder'}
+                  </Button>
                 </div>
-                <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-                <div><Label>Description</Label><Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Optional description..." /></div>
-                <Button onClick={() => createJourney.mutate()} disabled={!name} className="w-full">
-                  {selectedTemplate !== null ? 'Create from Template' : 'Create & Open Builder'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
+              </DialogContent>
+            </Dialog>
+          ) : undefined
+        }
+      />
 
       {/* Search */}
-      <div className="relative">
+      <motion.div variants={engageStagger.item} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search journeys..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="pl-9 bg-background/40"
-        />
-      </div>
+        <Input placeholder="Search journeys..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-white/[0.03] border-white/[0.06] backdrop-blur-sm" />
+      </motion.div>
 
       {/* Rename Dialog */}
       <Dialog open={!!renamingId} onOpenChange={() => setRenamingId(null)}>
@@ -335,20 +336,13 @@ export const JourneysList = () => {
 
       {/* Stats */}
       {journeys.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Active', count: stats.active, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400' },
-            { label: 'Draft', count: stats.draft, color: 'from-muted/40 to-muted/10', text: 'text-muted-foreground' },
-            { label: 'Paused', count: stats.paused, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400' },
-          ].map((s, i) => (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-                <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
-              </GlassCard>
-            </motion.div>
-          ))}
-        </div>
+        <EngageStatGrid
+          stats={[
+            { label: 'Active', count: stats.active, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Play },
+            { label: 'Draft', count: stats.draft, color: 'from-muted/40 to-muted/10', text: 'text-muted-foreground', icon: GitBranch },
+            { label: 'Paused', count: stats.paused, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: Pause },
+          ]}
+        />
       )}
 
       {/* List */}
@@ -428,6 +422,6 @@ export const JourneysList = () => {
           })}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
