@@ -11,8 +11,7 @@ import { DraftsList } from './drafts/DraftsList';
 import { TemplatesList } from './templates/TemplatesList';
 import { CampaignsList } from './campaigns/CampaignsList';
 import { EmailReports } from './reports/EmailReports';
-import { EmailProviderSettings } from './settings/EmailProviderSettings';
-import { Mail, Inbox, Send, Clock, FileText, Megaphone, BarChart3, Settings } from 'lucide-react';
+import { Mail, Inbox, Send, Clock, FileText, Megaphone, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const EmailDashboard = () => {
@@ -104,7 +103,7 @@ export const EmailDashboard = () => {
           <TabsTrigger value="templates" className="text-xs">Templates</TabsTrigger>
           <TabsTrigger value="campaigns" className="text-xs">Campaigns</TabsTrigger>
           <TabsTrigger value="reports" className="text-xs gap-1"><BarChart3 className="h-3 w-3" /> Reports</TabsTrigger>
-          <TabsTrigger value="settings" className="text-xs gap-1"><Settings className="h-3 w-3" /> Settings</TabsTrigger>
+          
         </TabsList>
         <TabsContent value="inbox" className="mt-4"><EmailInbox /></TabsContent>
         <TabsContent value="sent" className="mt-4"><SentList /></TabsContent>
@@ -113,7 +112,7 @@ export const EmailDashboard = () => {
         <TabsContent value="templates" className="mt-4"><TemplatesList /></TabsContent>
         <TabsContent value="campaigns" className="mt-4"><CampaignsList /></TabsContent>
         <TabsContent value="reports" className="mt-4"><EmailReports /></TabsContent>
-        <TabsContent value="settings" className="mt-4"><EmailProviderSettings /></TabsContent>
+        
       </Tabs>
     </div>
   );
