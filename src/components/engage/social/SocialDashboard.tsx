@@ -419,11 +419,14 @@ export const SocialDashboard = () => {
             {providers.map(p => {
               const connected = accounts.find((a: any) => a.provider === p.id);
               return (
-                <GlassCard key={p.id} className={`px-3 py-2 flex items-center gap-2 ${connected ? 'border-green-500/30' : ''}`}>
+                <GlassCard key={p.id} className={`px-3 py-2 flex items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 ${connected ? 'border-green-500/30 hover:border-green-500/50' : 'hover:border-white/[0.12]'}`}>
                   <div className={`p-1.5 rounded-lg ${p.bg}`}><p.icon className={`h-3.5 w-3.5 ${p.color}`} /></div>
                   <span className="text-xs font-medium text-foreground">{p.label}</span>
                   {connected ? (
-                    <div className="h-2 w-2 rounded-full bg-green-400" />
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                    </span>
                   ) : (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">Not linked</Badge>
                   )}
@@ -522,16 +525,19 @@ export const SocialDashboard = () => {
         </motion.div>
       ) : filteredPosts.length === 0 ? (
         <motion.div variants={stagger.item}>
-          <GlassCard className="py-16 flex flex-col items-center justify-center space-y-4">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }} className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20">
-              <Share2 className="h-8 w-8 text-purple-400" />
+          <GlassCard className="py-20 flex flex-col items-center justify-center space-y-4">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20, delay: 0.1 }} className="relative">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500/30 to-purple-500/30 blur-xl" />
+              <div className="relative p-5 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-white/[0.08]">
+                <Share2 className="h-9 w-9 text-pink-400" />
+              </div>
             </motion.div>
             <div className="text-center space-y-1">
               <p className="font-semibold text-foreground">{searchQuery || statusFilter !== 'all' ? 'No matching posts' : 'No posts yet'}</p>
               <p className="text-sm text-muted-foreground">Create your first social post to get started</p>
             </div>
             {!searchQuery && statusFilter === 'all' && (
-              <Button size="sm" onClick={() => { setEditingPostId(null); setShowCreate(true); }} className="gap-1.5">
+              <Button size="sm" className="gap-1.5 bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow" onClick={() => { setEditingPostId(null); setShowCreate(true); }}>
                 <Plus className="h-4 w-4" /> Create First Post
               </Button>
             )}
