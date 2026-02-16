@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { EngageButton } from '../shared/EngageButton';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { Input } from '@/components/ui/input';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Label } from '@/components/ui/label';
@@ -135,9 +137,9 @@ export const ActivityLog = () => {
               ))}
             </div>
             {activeView === 'feed' && (
-              <Button variant="outline" size="sm" onClick={exportCSV} disabled={filtered.length === 0}>
+              <EngageButton variant="outline" size="sm" onClick={exportCSV} disabled={filtered.length === 0}>
                 <Download className="h-3.5 w-3.5 mr-1" /> Export CSV
-              </Button>
+              </EngageButton>
             )}
           </div>
         }
@@ -272,7 +274,7 @@ export const ActivityLog = () => {
       {/* Payload Viewer */}
       <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Activity Details</DialogTitle></DialogHeader>
+          <EngageDialogHeader icon={Activity} title="Activity Details" gradientFrom="from-orange-400" gradientTo="to-amber-400" iconColor="text-orange-400" />
           {selectedLog && (
             <div className="space-y-3">
               <GlassCard className="p-3 space-y-2">
