@@ -18,6 +18,9 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
+import { EngageHero } from '../shared/EngageHero';
+import { EngageStatGrid } from '../shared/EngageStatCard';
+import { engageStagger } from '../shared/engageAnimations';
 
 const triggerLabels: Record<string, string> = {
   segment_entry: 'Segment Entry',
@@ -341,23 +344,23 @@ export const AutomationsList = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Automations</h2>
-          <p className="text-sm text-muted-foreground">Rule-based triggers and actions</p>
-        </div>
-        {canEdit && (
-          <Button size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> New Automation</Button>
-        )}
-      </div>
+    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <EngageHero
+        icon={Zap}
+        title="Automations"
+        subtitle="Rule-based triggers and actions"
+        gradientFrom="from-amber-400"
+        gradientTo="to-orange-400"
+        glowFrom="from-amber-500/30"
+        glowTo="to-orange-500/10"
+        actions={canEdit ? <Button size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> New Automation</Button> : undefined}
+      />
 
       {/* Search */}
-      <div className="relative">
+      <motion.div variants={engageStagger.item} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search automations..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-background/40" />
-      </div>
+        <Input placeholder="Search automations..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-white/[0.03] border-white/[0.06] backdrop-blur-sm" />
+      </motion.div>
 
       {/* Create/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
@@ -617,6 +620,6 @@ export const AutomationsList = () => {
           })}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

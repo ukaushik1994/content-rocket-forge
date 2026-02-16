@@ -4,6 +4,9 @@ import { SocialInbox } from './SocialInbox';
 import { SocialAnalytics } from './SocialAnalytics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { EngageHero } from '../shared/EngageHero';
+import { EngageStatGrid } from '../shared/EngageStatCard';
+import { engageStagger } from '../shared/engageAnimations';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,10 +42,7 @@ const commonHashtags = ['#marketing', '#socialmedia', '#growth', '#brand', '#con
 
 const statusFilters = ['all', 'draft', 'scheduled', 'posted', 'failed'] as const;
 
-const stagger = {
-  container: { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } },
-  item: { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35 } } },
-};
+const stagger = engageStagger;
 
 export const SocialDashboard = () => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
@@ -260,28 +260,32 @@ export const SocialDashboard = () => {
   const [mainTab, setMainTab] = useState('publish');
 
   return (
-    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={stagger.container}>
-      {/* Header with tab switcher */}
-      <motion.div variants={stagger.item} className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Social</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Schedule and manage social posts across all channels</p>
-        </div>
-        <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40 backdrop-blur-sm">
-          {(['publish', 'inbox', 'analytics'] as const).map(t => (
-            <Button key={t} variant={mainTab === t ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-8 text-xs capitalize" onClick={() => setMainTab(t)}>
-              {t}
-            </Button>
-          ))}
-        </div>
-      </motion.div>
+    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <EngageHero
+        icon={Share2}
+        title="Social"
+        subtitle="Schedule and manage social posts across all channels"
+        gradientFrom="from-pink-400"
+        gradientTo="to-purple-400"
+        glowFrom="from-pink-500/30"
+        glowTo="to-purple-500/10"
+        actions={
+          <div className="flex items-center border border-white/[0.06] rounded-lg overflow-hidden bg-white/[0.03] backdrop-blur-sm">
+            {(['publish', 'inbox', 'analytics'] as const).map(t => (
+              <Button key={t} variant={mainTab === t ? 'secondary' : 'ghost'} size="sm" className="rounded-none h-8 text-xs capitalize" onClick={() => setMainTab(t)}>
+                {t}
+              </Button>
+            ))}
+          </div>
+        }
+      />
 
       {mainTab === 'inbox' && <SocialInbox />}
       {mainTab === 'analytics' && <SocialAnalytics />}
 
       {mainTab === 'publish' && <React.Fragment>
 
-      <motion.div variants={stagger.item} className="flex items-center justify-end">
+      <motion.div variants={engageStagger.item} className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40 backdrop-blur-sm">
             {[

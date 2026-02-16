@@ -12,6 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Activity, Mail, GitBranch, Zap, Share2, Search, CalendarDays, Download, Eye, Shield, HeartPulse } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
+import { EngageHero } from '../shared/EngageHero';
+import { EngageStatGrid } from '../shared/EngageStatCard';
+import { engageStagger } from '../shared/engageAnimations';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { SystemHealth } from './SystemHealth';
 import { AuditLog } from './AuditLog';
@@ -109,21 +112,18 @@ export const ActivityLog = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500/30 to-amber-500/10 flex items-center justify-center">
-              <Activity className="h-5 w-5 text-orange-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Activity</h2>
-              <p className="text-sm text-muted-foreground">Events, health, and audit trail</p>
-            </div>
-          </div>
+    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <EngageHero
+        icon={Activity}
+        title="Activity"
+        subtitle="Events, health, and audit trail"
+        gradientFrom="from-orange-400"
+        gradientTo="to-amber-400"
+        glowFrom="from-orange-500/30"
+        glowTo="to-amber-500/10"
+        actions={
           <div className="flex items-center gap-2">
-            <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-background/40">
+            <div className="flex items-center border border-white/[0.06] rounded-lg overflow-hidden bg-white/[0.03]">
               {([
                 { key: 'feed' as const, icon: Activity, label: 'Feed' },
                 { key: 'health' as const, icon: HeartPulse, label: 'Health' },
@@ -140,34 +140,21 @@ export const ActivityLog = () => {
               </Button>
             )}
           </div>
-        </div>
-      </motion.div>
+        }
+      />
 
       {activeView === 'health' && <SystemHealth />}
       {activeView === 'audit' && <AuditLog />}
 
       {activeView === 'feed' && <>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
+      <EngageStatGrid
+        stats={[
           { label: 'Total Events', count: totalCount, color: 'from-orange-500/20 to-orange-500/5', text: 'text-orange-400', icon: Activity },
           { label: 'Emails', count: emailCount, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: Mail },
           { label: 'Journeys', count: journeyCount, color: 'from-primary/20 to-primary/5', text: 'text-primary', icon: GitBranch },
-        ].map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                  <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
-                </div>
-                <s.icon className={`h-5 w-5 ${s.text} opacity-50`} />
-              </div>
-            </GlassCard>
-          </motion.div>
-        ))}
-      </div>
+        ]}
+      />
 
       {/* Activity Distribution Chart */}
       {chartData.length > 0 && (
@@ -306,6 +293,6 @@ export const ActivityLog = () => {
         </DialogContent>
       </Dialog>
       </>}
-    </div>
+    </motion.div>
   );
 };

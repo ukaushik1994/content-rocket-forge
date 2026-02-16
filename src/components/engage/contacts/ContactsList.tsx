@@ -19,6 +19,9 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContactDetailDialog } from './ContactDetailDialog';
+import { EngageHero } from '../shared/EngageHero';
+import { EngageStatGrid } from '../shared/EngageStatCard';
+import { engageStagger } from '../shared/engageAnimations';
 
 type SortField = 'email' | 'first_name' | 'created_at';
 type SortDir = 'asc' | 'desc';
@@ -219,14 +222,16 @@ export const ContactsList = () => {
   const visibleTags = showAllTags ? allTags : allTags.slice(0, 5);
 
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">Contacts</h2>
-            <p className="text-sm text-muted-foreground">{totalCount} contacts in workspace</p>
-          </div>
+    <motion.div className="space-y-6" initial="hidden" animate="visible" variants={engageStagger.container}>
+      <EngageHero
+        icon={Users}
+        title="Contacts"
+        subtitle={`${totalCount} contacts in workspace`}
+        gradientFrom="from-emerald-400"
+        gradientTo="to-teal-400"
+        glowFrom="from-emerald-500/30"
+        glowTo="to-teal-500/10"
+        actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => exportContacts(filtered)}>
               <Download className="h-3.5 w-3.5 mr-1" /> Export
@@ -268,29 +273,16 @@ export const ContactsList = () => {
               </Dialog>
             )}
           </div>
-        </div>
-      </motion.div>
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
+      <EngageStatGrid
+        stats={[
           { label: 'Total', count: totalCount, color: 'from-emerald-500/20 to-emerald-500/5', text: 'text-emerald-400', icon: Users },
           { label: 'Active', count: activeCount, color: 'from-blue-500/20 to-blue-500/5', text: 'text-blue-400', icon: UserCheck },
           { label: 'Unsubscribed', count: unsubCount, color: 'from-amber-500/20 to-amber-500/5', text: 'text-amber-400', icon: UserX },
-        ].map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <GlassCard className={`p-3 bg-gradient-to-br ${s.color}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                  <p className={`text-xl font-bold ${s.text}`}>{s.count}</p>
-                </div>
-                <s.icon className={`h-5 w-5 ${s.text} opacity-50`} />
-              </div>
-            </GlassCard>
-          </motion.div>
-        ))}
-      </div>
+        ]}
+      />
 
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
@@ -477,6 +469,6 @@ export const ContactsList = () => {
         open={!!selectedContact}
         onOpenChange={open => { if (!open) setSelectedContact(null); }}
       />
-    </div>
+    </motion.div>
   );
 };
