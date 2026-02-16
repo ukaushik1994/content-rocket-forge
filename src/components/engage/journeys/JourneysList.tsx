@@ -282,8 +282,8 @@ export const JourneysList = () => {
               <DialogTrigger asChild>
                 <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Journey</Button>
               </DialogTrigger>
-              <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-lg">
-                <DialogHeader><DialogTitle>Create Journey</DialogTitle></DialogHeader>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Create Journey</DialogTitle></DialogHeader>
                 <div className="space-y-4">
                   <div>
                     <Label className="text-xs flex items-center gap-1 mb-2"><Sparkles className="h-3 w-3" /> Start from Template</Label>
@@ -325,8 +325,8 @@ export const JourneysList = () => {
 
       {/* Rename Dialog */}
       <Dialog open={!!renamingId} onOpenChange={() => setRenamingId(null)}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-sm">
-          <DialogHeader><DialogTitle>Rename Journey</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Rename Journey</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <Input value={renameValue} onChange={e => setRenameValue(e.target.value)} />
             <Button onClick={() => renameJourney.mutate()} disabled={!renameValue.trim()} className="w-full">Save</Button>

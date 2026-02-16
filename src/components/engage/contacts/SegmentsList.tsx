@@ -193,8 +193,8 @@ export const SegmentsList = () => {
               <DialogTrigger asChild>
                 <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Segment</Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg bg-card/95 backdrop-blur-xl border-border/50">
-                <DialogHeader><DialogTitle>{editingSegment ? 'Edit Segment' : 'Create Segment'}</DialogTitle></DialogHeader>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">{editingSegment ? 'Edit Segment' : 'Create Segment'}</DialogTitle></DialogHeader>
                 <div className="space-y-4">
                   <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
                   <div><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
@@ -237,11 +237,11 @@ export const SegmentsList = () => {
 
       {/* Segment Members Viewer */}
       <Dialog open={!!viewingSegment} onOpenChange={() => setViewingSegment(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-violet-400" />
-              {viewingSegment?.name} — Members
+              <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">{viewingSegment?.name} — Members</span>
             </DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-between">

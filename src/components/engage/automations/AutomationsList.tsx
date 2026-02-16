@@ -364,8 +364,8 @@ export const AutomationsList = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editingId ? 'Edit Automation' : 'Create Automation'}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">{editingId ? 'Edit Automation' : 'Create Automation'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Optional description..." /></div>
@@ -446,8 +446,8 @@ export const AutomationsList = () => {
 
       {/* Execution Log Dialog */}
       <Dialog open={!!showExecLog} onOpenChange={() => setShowExecLog(null)}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-md max-h-[70vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><List className="h-4 w-4" /> Execution Log</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md max-h-[70vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><List className="h-4 w-4 text-amber-400" /> <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Execution Log</span></DialogTitle></DialogHeader>
           {execLogs.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No executions recorded yet</p>
           ) : (
@@ -470,8 +470,8 @@ export const AutomationsList = () => {
 
       {/* Dry Run Dialog */}
       <Dialog open={!!dryRunTarget} onOpenChange={() => { setDryRunTarget(null); setDryRunResult(null); }}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-sm">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><TestTube2 className="h-4 w-4" /> Dry Run Test</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><TestTube2 className="h-4 w-4 text-amber-400" /> <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Dry Run Test</span></DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">Select a contact to simulate this automation:</p>
             <div className="max-h-40 overflow-y-auto space-y-1">

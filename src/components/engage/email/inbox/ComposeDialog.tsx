@@ -114,9 +114,9 @@ export const ComposeDialog: React.FC<ComposeDialogProps> = ({ open, onOpenChange
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-card/95 backdrop-blur-xl border-border/50">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Compose Email</DialogTitle>
+          <DialogTitle className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Compose Email</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -147,7 +147,7 @@ export const ComposeDialog: React.FC<ComposeDialogProps> = ({ open, onOpenChange
             </div>
             <Textarea value={body} onChange={e => setBody(e.target.value)} rows={6} className="text-sm" placeholder="Write your message..." />
           </div>
-          <Button onClick={() => sendEmail.mutate()} disabled={!to.trim() || !subject.trim() || sendEmail.isPending} className="w-full">
+          <Button onClick={() => sendEmail.mutate()} disabled={!to.trim() || !subject.trim() || sendEmail.isPending} className="w-full bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow">
             <Send className="h-4 w-4 mr-1" /> Send Email
           </Button>
         </div>
