@@ -528,12 +528,18 @@ export const AutomationsList = () => {
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : filteredAutomations.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto">
-            <Zap className="h-8 w-8 text-amber-400" />
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
+          <div className="relative h-20 w-20 mx-auto">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-500/30 to-orange-500/30 blur-xl" />
+            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-white/[0.08] flex items-center justify-center">
+              <Zap className="h-9 w-9 text-amber-400" />
+            </div>
           </div>
-          <p className="text-muted-foreground">{searchQuery ? 'No matching automations' : 'No automations yet'}</p>
-          {canEdit && !searchQuery && <Button size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</Button>}
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">{searchQuery ? 'No matching automations' : 'No automations yet'}</p>
+            <p className="text-sm text-muted-foreground">Set up trigger-based automations to engage contacts</p>
+          </div>
+          {canEdit && !searchQuery && <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
@@ -551,7 +557,11 @@ export const AutomationsList = () => {
                         <Zap className="h-4 w-4 text-amber-400" />
                         <h3 className="font-medium text-foreground">{a.name}</h3>
                         <Badge variant="outline" className={`text-[10px] gap-1 ${a.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-muted/50 text-muted-foreground border-border/50'}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${a.status === 'active' ? 'bg-emerald-400' : 'bg-muted-foreground'}`} /> {a.status}
+                          <span className="relative flex h-1.5 w-1.5">
+                            {a.status === 'active' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${a.status === 'active' ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
+                          </span>
+                          {a.status}
                         </Badge>
                         {execCount > 0 && (
                           <Badge

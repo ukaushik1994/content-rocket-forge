@@ -20,10 +20,10 @@ import { EngageHero } from '../shared/EngageHero';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
 
-const statusConfig: Record<string, { class: string; dot: string }> = {
-  draft: { class: 'bg-muted/50 text-muted-foreground border-border/50', dot: 'bg-muted-foreground' },
-  active: { class: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
-  paused: { class: 'bg-amber-500/10 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
+const statusConfig: Record<string, { class: string; dot: string; pulse: boolean }> = {
+  draft: { class: 'bg-muted/50 text-muted-foreground border-border/50', dot: 'bg-muted-foreground', pulse: false },
+  active: { class: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400', pulse: true },
+  paused: { class: 'bg-amber-500/10 text-amber-400 border-amber-500/30', dot: 'bg-amber-400', pulse: false },
 };
 
 const journeyTemplates = [
@@ -349,12 +349,18 @@ export const JourneysList = () => {
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : filteredJourneys.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center mx-auto">
-            <GitBranch className="h-8 w-8 text-purple-400" />
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
+          <div className="relative h-20 w-20 mx-auto">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/30 to-blue-500/30 blur-xl" />
+            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/[0.08] flex items-center justify-center">
+              <GitBranch className="h-9 w-9 text-purple-400" />
+            </div>
           </div>
-          <p className="text-muted-foreground">{searchQuery ? 'No matching journeys' : 'No journeys yet'}</p>
-          {canEdit && !searchQuery && <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</Button>}
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">{searchQuery ? 'No matching journeys' : 'No journeys yet'}</p>
+            <p className="text-sm text-muted-foreground">Build visual customer journeys to automate engagement</p>
+          </div>
+          {canEdit && !searchQuery && <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create First Journey</Button>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
@@ -373,7 +379,11 @@ export const JourneysList = () => {
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-medium text-foreground">{j.name}</h3>
                         <Badge variant="outline" className={`text-[10px] gap-1 ${sc.class}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} /> {j.status}
+                          <span className="relative flex h-1.5 w-1.5">
+                            {sc.pulse && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${sc.dot}`} />}
+                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${sc.dot}`} />
+                          </span>
+                          {j.status}
                         </Badge>
                         {enrolled > 0 && (
                           <Badge variant="secondary" className="text-[10px] gap-1">

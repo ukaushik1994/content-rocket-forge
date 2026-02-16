@@ -219,15 +219,21 @@ export const ActivityLog = () => {
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : filtered.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center mx-auto">
-            <Activity className="h-8 w-8 text-orange-400" />
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
+          <div className="relative h-20 w-20 mx-auto">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-500/30 to-amber-500/30 blur-xl" />
+            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-white/[0.08] flex items-center justify-center">
+              <Activity className="h-9 w-9 text-orange-400" />
+            </div>
           </div>
-          <p className="text-muted-foreground">No activity yet</p>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">No activity yet</p>
+            <p className="text-sm text-muted-foreground">Events will appear here as your workspace generates activity</p>
+          </div>
         </motion.div>
       ) : (
         <div className="relative">
-          <div className="absolute left-[19px] top-4 bottom-4 w-px bg-border/50" />
+          <div className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-primary/40 via-primary/20 to-transparent" />
           <div className="space-y-1">
             {filtered.map((log: any, i: number) => {
               const Icon = channelIcons[log.channel] || Activity;
@@ -239,7 +245,7 @@ export const ActivityLog = () => {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.02 }}
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/20 transition-colors cursor-pointer relative"
+                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-white/[0.04] hover:shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.08)] transition-all duration-200 cursor-pointer relative"
                   onClick={() => setSelectedLog(log)}
                 >
                   <div className={`p-1.5 rounded-md border ${colors} z-10 bg-card`}>

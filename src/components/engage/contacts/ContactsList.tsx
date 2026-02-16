@@ -365,12 +365,18 @@ export const ContactsList = () => {
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : filtered.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-3">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center mx-auto">
-            <Users className="h-8 w-8 text-emerald-400" />
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} className="text-center py-20 space-y-4">
+          <div className="relative h-20 w-20 mx-auto">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-teal-500/30 blur-xl" />
+            <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-white/[0.08] flex items-center justify-center">
+              <Users className="h-9 w-9 text-emerald-400" />
+            </div>
           </div>
-          <p className="text-muted-foreground">No contacts yet</p>
-          {canEdit && <Button size="sm" onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-1" /> Add First Contact</Button>}
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">No contacts yet</p>
+            <p className="text-sm text-muted-foreground">Import your contacts to start engaging</p>
+          </div>
+          {canEdit && <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow" onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-1" /> Add First Contact</Button>}
         </motion.div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -396,9 +402,9 @@ export const ContactsList = () => {
               </TableHeader>
               <TableBody>
                 {filtered.map((c: any) => (
-                  <TableRow
+                   <TableRow
                     key={c.id}
-                    className="border-border/20 cursor-pointer hover:bg-muted/20 transition-colors"
+                    className="border-border/20 cursor-pointer hover:bg-white/[0.04] hover:shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.1)] transition-all duration-200"
                     onClick={() => setSelectedContact(c)}
                   >
                     {canEdit && (
@@ -420,7 +426,13 @@ export const ContactsList = () => {
                       {c.unsubscribed ? (
                         <Badge variant="destructive" className="text-[10px]">Unsubscribed</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10">Active</Badge>
+                        <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10 gap-1">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                          </span>
+                          Active
+                        </Badge>
                       )}
                     </TableCell>
                     {canEdit && (
@@ -453,11 +465,11 @@ export const ContactsList = () => {
           {/* Pagination */}
           {totalCount > PAGE_SIZE && (
             <div className="flex justify-center gap-2 mt-4">
-              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>Previous</Button>
+              <Button variant="outline" size="sm" className="bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>Previous</Button>
               <span className="text-xs text-muted-foreground self-center">
                 Page {page + 1} of {Math.ceil(totalCount / PAGE_SIZE)}
               </span>
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={(page + 1) * PAGE_SIZE >= totalCount}>Next</Button>
+              <Button variant="outline" size="sm" className="bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06]" onClick={() => setPage(p => p + 1)} disabled={(page + 1) * PAGE_SIZE >= totalCount}>Next</Button>
             </div>
           )}
         </motion.div>
