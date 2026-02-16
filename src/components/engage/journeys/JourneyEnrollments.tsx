@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Play, Pause, SkipForward, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -91,12 +92,8 @@ export const JourneyEnrollments: React.FC<JourneyEnrollmentsProps> = ({ journeyI
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" /> Journey Enrollments
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <EngageDialogHeader icon={Users} title="Journey Enrollments" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
 
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3">

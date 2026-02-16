@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Zap, Search, Download, Eye, CheckCircle2, XCircle, Clock, Timer } from 'lucide-react';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
 
@@ -186,8 +187,8 @@ export const AutomationRuns = () => {
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedRun} onOpenChange={() => setSelectedRun(null)}>
-        <DialogContent className="max-w-lg bg-card/95 backdrop-blur-xl border-border/50">
-          <DialogHeader><DialogTitle>Run Details</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg">
+          <EngageDialogHeader icon={Zap} title="Run Details" gradientFrom="from-amber-400" gradientTo="to-orange-400" iconColor="text-amber-400" />
           {selectedRun && (
             <div className="space-y-3">
               <GlassCard className="p-3">

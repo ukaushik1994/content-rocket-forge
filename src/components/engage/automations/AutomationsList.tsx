@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, Zap, MoreVertical, Trash2, Play, Pause, Pencil, X, Copy, Clock, Filter, Search, List, Timer, TestTube2, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import { EngageButton } from '../shared/EngageButton';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
@@ -353,7 +354,7 @@ export const AutomationsList = () => {
         gradientTo="to-orange-400"
         glowFrom="from-amber-500/30"
         glowTo="to-orange-500/10"
-        actions={canEdit ? <Button size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> New Automation</Button> : undefined}
+        actions={canEdit ? <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> New Automation</EngageButton> : undefined}
       />
 
       {/* Search */}
