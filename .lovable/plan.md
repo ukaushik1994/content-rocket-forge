@@ -1,53 +1,22 @@
 
-# Remaining Implementation: Dialog Cleanup and EngageButton/EngageDialogHeader Integration
 
-## Current State
+# Final Integration: EngageButton and EngageDialogHeader in ActivityLog and ComposeDialog
 
-All 7 Engage pages render correctly with:
-- Animated gradient background (orbs + grid)
-- Premium EngageHero headers with glow icons
-- EngageStatCard grids with hover lift
-- Premium empty states with spring animations
-- Pulsing status dots on active items
-- Frosted glass search bars
+## What remains
 
-Two shared components were created but **never integrated**:
-- `EngageDialogHeader` -- exists but zero imports across the codebase
-- `EngageButton` -- exists but zero imports across the codebase
+Two files were missed in the previous round of EngageButton/EngageDialogHeader integration:
 
-Four dialog files still have **redundant old styling** (`bg-card/95 backdrop-blur-xl border-border/50`) that conflicts with the upgraded base `dialog.tsx` defaults, and **plain titles** without gradient styling.
+### 1. ActivityLog.tsx
+- **Export CSV button (line 138)**: Replace standard `<Button>` with `<EngageButton>` for spring-animated motion
+- **Activity Details dialog (line 273-299)**: Replace manual `DialogHeader`/`DialogTitle` with `<EngageDialogHeader>` using the Activity icon and orange-amber gradient (currently has inline gradient text but not the shared component with icon glow)
 
-## Files to Fix
-
-### 1. JourneyAnalytics.tsx (line 78)
-- Remove redundant `bg-card/95 backdrop-blur-xl border-border/50` from DialogContent
-- Add gradient title: `className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent"`
-
-### 2. JourneyPerformance.tsx (line 90)
-- Remove redundant `bg-card/95 backdrop-blur-xl border-border/50` from DialogContent
-- Add gradient title styling
-
-### 3. JourneyEnrollments.tsx (line 94)
-- Remove redundant `bg-card/95 backdrop-blur-xl border-border/50` from DialogContent
-- Add gradient title styling
-
-### 4. AutomationRuns.tsx (line 189)
-- Remove redundant `bg-card/95 backdrop-blur-xl border-border/50` from DialogContent
-- Add gradient title: `className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent"`
-
-### 5. Replace primary CTA buttons with EngageButton in key locations
-- **ContactsList.tsx**: "Add Contact" button
-- **JourneysList.tsx**: "New Journey" button
-- **AutomationsList.tsx**: "New Automation" button
-- **SocialDashboard.tsx**: "New Post" button
-- **SegmentsList.tsx**: "New Segment" button
-- **ActivityLog.tsx**: "Export CSV" button
-- **EmailDashboard.tsx**: "Compose" button (if applicable)
-
-These replacements swap `<Button>` with the spring-animated `<EngageButton>` for consistent motion feedback across all primary actions.
+### 2. ComposeDialog.tsx
+- **Compose Email dialog header (line 118-120)**: Replace manual gradient `DialogTitle` with `<EngageDialogHeader>` using Mail icon and blue-cyan gradient for consistency with the shared component (adds icon glow halo + separator line)
+- **Send Email button (line 150)**: Already has gradient styling inline -- wrap with `<EngageButton>` for spring animation on hover/tap
 
 ## Scope
-- 4 dialog files: remove old overrides + add gradient titles
-- 7 page files: swap primary CTA to EngageButton
-- Zero database changes
-- Zero breaking changes
+- 2 files modified
+- Add `EngageButton` and `EngageDialogHeader` imports
+- Swap 2 buttons and 2 dialog headers
+- Zero breaking changes, zero database changes
+
