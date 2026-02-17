@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import {
   Plus, Share2, Calendar, List, Twitter, Linkedin, Instagram, Facebook,
-  Clock, CheckCircle2, Zap, Send, Image, Hash, X, Search, ListOrdered, Trash2, Link2,
+  Clock, CheckCircle2, Zap, Send, Image, Hash, X, Search, ListOrdered, Trash2, Link2, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { EngageButton } from '../shared/EngageButton';
@@ -320,6 +320,7 @@ export const SocialDashboard = () => {
                         <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowHashtags(!showHashtags)}>
                           <Hash className="h-3 w-3" /> Hashtags
                       </Button>
+                      </div>
                     </div>
                     {showHashtags && (
                       <div className="flex gap-1 flex-wrap mt-1 mb-1">
@@ -580,6 +581,14 @@ export const SocialDashboard = () => {
         </motion.div>
       )}
       </React.Fragment>}
+      <AISocialWriterDialog
+        open={showAIWriter}
+        onOpenChange={setShowAIWriter}
+        onInsert={(content) => {
+          setForm(prev => ({ ...prev, content }));
+          setShowCreate(true);
+        }}
+      />
     </motion.div>
   );
 };
