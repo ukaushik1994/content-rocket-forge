@@ -67,25 +67,29 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
   const contextualNudge = useMemo(() => {
     if (summary.totalContent === 0) {
       return {
-        text: "Let's create your first piece of content together",
-        action: 'send:Help me create my first piece of content'
+        text: "Your platform is ready. Let me help you get started.",
+        action: 'send:Help me create my first piece of content',
+        buttonText: 'Get Started'
       };
     }
     if (summary.inReview > 0) {
       return {
         text: `You have ${summary.inReview} item${summary.inReview > 1 ? 's' : ''} awaiting review — want me to help?`,
-        action: 'send:Show me my content items in review and help me process them'
+        action: 'send:Show me my content items in review and help me process them',
+        buttonText: 'Review Now'
       };
     }
     if (summary.avgSeoScore > 0 && summary.avgSeoScore < 50) {
       return {
         text: 'Your SEO score could improve — let me suggest optimizations',
-        action: 'send:Analyze my content SEO scores and suggest improvements'
+        action: 'send:Analyze my content SEO scores and suggest improvements',
+        buttonText: 'Optimize'
       };
     }
     return {
       text: 'Ready to optimize? Let me take a look',
-      action: 'workflow:get-started'
+      action: 'workflow:get-started',
+      buttonText: "Let's Go"
     };
   }, [summary]);
 
@@ -129,23 +133,25 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
               </h3>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {metrics.map((metric, index) => (
-                <motion.div 
-                  key={metric.label}
-                  className="p-4 rounded-xl bg-muted/30 border border-border/30"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index, duration: 0.2 }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <metric.icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="text-2xl font-bold text-foreground">{metric.value}</div>
-                  <div className="text-xs text-muted-foreground">{metric.label}</div>
-                </motion.div>
-              ))}
-            </div>
+            {summary.totalContent > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {metrics.map((metric, index) => (
+                  <motion.div 
+                    key={metric.label}
+                    className="p-3 rounded-xl bg-muted/30 border border-border/30"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index, duration: 0.2 }}
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <metric.icon className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="text-xl font-bold text-foreground">{metric.value}</div>
+                    <div className="text-xs text-muted-foreground">{metric.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
 
             {/* Contextual Nudge */}
             <motion.div 
@@ -164,7 +170,7 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <ArrowRight className="h-4 w-4 mr-1" />
-                Let's Go
+                {contextualNudge.buttonText}
               </Button>
             </motion.div>
           </div>
