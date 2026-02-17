@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, FileText, CheckCircle, Clock, Target, ArrowRight, Sparkles } from 'lucide-react';
+import { TrendingUp, FileText, CheckCircle, Clock, Target, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -89,12 +89,6 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     };
   }, [summary]);
 
-  const capabilityHints = [
-    { text: 'Analyze trends', action: 'send:Analyze my content performance trends' },
-    { text: 'Create content', action: 'send:Help me create new content' },
-    { text: 'Check campaigns', action: 'send:Show me my campaign health and queue status' },
-  ];
-
   const metrics = [
     { label: 'Content', value: summary.totalContent, icon: FileText },
     { label: 'Published', value: summary.published, icon: CheckCircle },
@@ -152,26 +146,6 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
                 </motion.div>
               ))}
             </div>
-
-            {/* AI Capability Hints */}
-            <motion.div 
-              className="flex flex-wrap gap-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.35 }}
-            >
-              {capabilityHints.map((hint, index) => (
-                <Badge
-                  key={index}
-                  variant="outline"
-                  className="cursor-pointer px-2.5 py-1 text-xs bg-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-200 text-primary/80 hover:text-primary"
-                  onClick={() => onAction(hint.action, { displayText: hint.text })}
-                >
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  {hint.text}
-                </Badge>
-              ))}
-            </motion.div>
 
             {/* Contextual Nudge */}
             <motion.div 

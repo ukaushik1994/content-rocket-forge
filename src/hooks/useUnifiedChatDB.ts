@@ -1001,7 +1001,14 @@ export const useUnifiedChatDB = (options: UseUnifiedChatDBOptions = {}) => {
     },
     handleLegacyAction: (action: any) => {
       if (typeof action === 'string') {
-        sendMessage(action);
+        if (action.startsWith('send:')) {
+          sendMessage(action.substring(5));
+        } else if (action.startsWith('workflow:')) {
+          const workflow = action.substring(9).replace(/-/g, ' ');
+          sendMessage(`Help me with ${workflow}`);
+        } else {
+          sendMessage(action);
+        }
       }
     }
   };
