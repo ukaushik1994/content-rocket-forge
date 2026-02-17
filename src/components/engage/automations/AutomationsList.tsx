@@ -10,12 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, Zap, MoreVertical, Trash2, Play, Pause, Pencil, X, Copy, Clock, Filter, Search, List, Timer, TestTube2, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { EngageButton } from '../shared/EngageButton';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
@@ -366,7 +367,7 @@ export const AutomationsList = () => {
       {/* Create/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">{editingId ? 'Edit Automation' : 'Create Automation'}</DialogTitle></DialogHeader>
+          <EngageDialogHeader icon={Zap} title={editingId ? 'Edit Automation' : 'Create Automation'} gradientFrom="from-amber-400" gradientTo="to-orange-400" iconColor="text-amber-400" />
           <div className="space-y-4">
             <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Optional description..." /></div>
@@ -438,9 +439,9 @@ export const AutomationsList = () => {
               ))}
             </div>
 
-            <Button onClick={() => saveAutomation.mutate()} disabled={!form.name || saveAutomation.isPending} className="w-full">
+            <EngageButton onClick={() => saveAutomation.mutate()} disabled={!form.name || saveAutomation.isPending} className="w-full">
               {editingId ? 'Update' : 'Create'}
-            </Button>
+            </EngageButton>
           </div>
         </DialogContent>
       </Dialog>
@@ -448,7 +449,7 @@ export const AutomationsList = () => {
       {/* Execution Log Dialog */}
       <Dialog open={!!showExecLog} onOpenChange={() => setShowExecLog(null)}>
         <DialogContent className="max-w-md max-h-[70vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><List className="h-4 w-4 text-amber-400" /> <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Execution Log</span></DialogTitle></DialogHeader>
+          <EngageDialogHeader icon={List} title="Execution Log" gradientFrom="from-amber-400" gradientTo="to-orange-400" iconColor="text-amber-400" />
           {execLogs.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No executions recorded yet</p>
           ) : (
@@ -472,7 +473,7 @@ export const AutomationsList = () => {
       {/* Dry Run Dialog */}
       <Dialog open={!!dryRunTarget} onOpenChange={() => { setDryRunTarget(null); setDryRunResult(null); }}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><TestTube2 className="h-4 w-4 text-amber-400" /> <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Dry Run Test</span></DialogTitle></DialogHeader>
+          <EngageDialogHeader icon={TestTube2} title="Dry Run Test" gradientFrom="from-amber-400" gradientTo="to-orange-400" iconColor="text-amber-400" />
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">Select a contact to simulate this automation:</p>
             <div className="max-h-40 overflow-y-auto space-y-1">

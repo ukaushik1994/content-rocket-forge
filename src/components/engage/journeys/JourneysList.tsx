@@ -10,11 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, GitBranch, ExternalLink, MoreVertical, Trash2, Play, Pause, Copy, Pencil, Users, Search, Workflow, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { EngageButton } from '../shared/EngageButton';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { EngageHero } from '../shared/EngageHero';
@@ -284,7 +285,7 @@ export const JourneysList = () => {
                 <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> New Journey</EngageButton>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
-                <DialogHeader><DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Create Journey</DialogTitle></DialogHeader>
+                <EngageDialogHeader icon={GitBranch} title="Create Journey" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
                 <div className="space-y-4">
                   <div>
                     <Label className="text-xs flex items-center gap-1 mb-2"><Sparkles className="h-3 w-3" /> Start from Template</Label>
@@ -308,9 +309,9 @@ export const JourneysList = () => {
                   </div>
                   <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
                   <div><Label>Description</Label><Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Optional description..." /></div>
-                  <Button onClick={() => createJourney.mutate()} disabled={!name} className="w-full">
+                  <EngageButton onClick={() => createJourney.mutate()} disabled={!name} className="w-full">
                     {selectedTemplate !== null ? 'Create from Template' : 'Create & Open Builder'}
-                  </Button>
+                  </EngageButton>
                 </div>
               </DialogContent>
             </Dialog>
@@ -327,7 +328,7 @@ export const JourneysList = () => {
       {/* Rename Dialog */}
       <Dialog open={!!renamingId} onOpenChange={() => setRenamingId(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Rename Journey</DialogTitle></DialogHeader>
+          <EngageDialogHeader icon={Pencil} title="Rename Journey" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
           <div className="space-y-3">
             <Input value={renameValue} onChange={e => setRenameValue(e.target.value)} />
             <Button onClick={() => renameJourney.mutate()} disabled={!renameValue.trim()} className="w-full">Save</Button>

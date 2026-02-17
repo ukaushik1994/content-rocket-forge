@@ -17,7 +17,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import {
   Plus, Share2, Calendar, List, Twitter, Linkedin, Instagram, Facebook,
   Clock, CheckCircle2, Zap, Send, Image, Hash, X, Search, ListOrdered, Trash2, Link2,
@@ -305,11 +306,7 @@ export const SocialDashboard = () => {
                 <EngageButton size="sm" className="gap-1.5" onClick={() => setEditingPostId(null)}><Plus className="h-4 w-4" /> New Post</EngageButton>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                    {editingPostId ? 'Edit Post' : 'Create Social Post'}
-                  </DialogTitle>
-                </DialogHeader>
+                <EngageDialogHeader icon={Share2} title={editingPostId ? 'Edit Post' : 'Create Social Post'} gradientFrom="from-pink-400" gradientTo="to-purple-400" iconColor="text-pink-400" />
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between">
@@ -379,10 +376,10 @@ export const SocialDashboard = () => {
                       })}
                     </div>
                   </div>
-                  <Button onClick={() => savePost.mutate()} disabled={!form.content || savePost.isPending} className="w-full gap-2">
+                  <EngageButton onClick={() => savePost.mutate()} disabled={!form.content || savePost.isPending} className="w-full gap-2">
                     <Send className="h-4 w-4" />
                     {editingPostId ? 'Update Post' : (form.scheduled_at ? 'Schedule Post' : 'Save as Draft')}
-                  </Button>
+                  </EngageButton>
                 </div>
               </DialogContent>
             </Dialog>
@@ -441,7 +438,7 @@ export const SocialDashboard = () => {
       {/* Link Account Dialog */}
       <Dialog open={showLinkAccount} onOpenChange={setShowLinkAccount}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Link Social Account</DialogTitle></DialogHeader>
+          <EngageDialogHeader icon={Link2} title="Link Social Account" gradientFrom="from-pink-400" gradientTo="to-purple-400" iconColor="text-pink-400" />
           <div className="space-y-3">
             <div>
               <Label>Platform *</Label>
