@@ -2086,9 +2086,9 @@ serve(async (req) => {
           }
         } catch (_e) { /* not JSON, skip */ }
       }
-      // Store promoted actions for later merge into response
+      // Store promoted actions in request-scoped variable (no globalThis)
       if (promotedActions.length > 0) {
-        (globalThis as any).__promotedToolActions = promotedActions;
+        requestPromotedActions = promotedActions;
         console.log(`🎯 Promoted ${promotedActions.length} actions from tool results`);
       }
       
@@ -2465,6 +2465,7 @@ serve(async (req) => {
     let cleanedResponse: string;
     let actions: any[] | undefined;
     let visualData: any | undefined;
+    let requestPromotedActions: any[] = [];
     
     try {
       const parsedResponse = parseResponseWithFallback(aiMessage);
@@ -3011,12 +3012,10 @@ serve(async (req) => {
     // Access allVisualData from scope (includes expanded multi-perspective charts)
     const allCharts = typeof allVisualData !== 'undefined' && allVisualData.length > 1 ? allVisualData : undefined;
     
-    // Merge promoted tool actions into response actions
-    const promotedToolActions = (globalThis as any).__promotedToolActions || [];
-    if (promotedToolActions.length > 0) {
-      actions = [...(actions || []), ...promotedToolActions];
-      delete (globalThis as any).__promotedToolActions;
-      console.log(`🎯 Merged ${promotedToolActions.length} promoted tool actions into response`);
+    // Merge promoted tool actions into response actions (request-scoped, no globalThis)
+    if (requestPromotedActions.length > 0) {
+      actions = [...(actions || []), ...requestPromotedActions];
+      console.log(`🎯 Merged ${requestPromotedActions.length} promoted tool actions into response`);
     }
     
     const responseData = {
