@@ -76,7 +76,8 @@ Deno.serve(async (req) => {
 
           let contactsTriggered: string[] = [];
 
-          if (trigger.type === "tag_added" && trigger.tag) {
+          const triggerTag = trigger.value || trigger.tag;
+          if (trigger.type === "tag_added" && triggerTag) {
             const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
             const { data: events } = await supabase
               .from("engage_events")
@@ -114,6 +115,19 @@ Deno.serve(async (req) => {
               .gte("created_at", fiveMinAgo);
 
             contactsTriggered = (logs || []).map((l: any) => l.contact_id).filter(Boolean);
+          }
+
+          if (trigger.type === "event_occurred" && (trigger.value || trigger.event)) {
+            const eventName = trigger.value || trigger.event;
+            const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+            const { data: events } = await supabase
+              .from("engage_events")
+              .select("contact_id")
+              .eq("workspace_id", automation.workspace_id)
+              .eq("type", eventName)
+              .gte("occurred_at", fiveMinAgo);
+
+            contactsTriggered = (events || []).map((e: any) => e.contact_id);
           }
 
           // Execute actions for triggered contacts

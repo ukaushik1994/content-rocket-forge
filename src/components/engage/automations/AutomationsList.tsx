@@ -12,8 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Zap, MoreVertical, Trash2, Play, Pause, Pencil, X, Copy, Clock, Filter, Search, List, Timer, TestTube2, GripVertical } from 'lucide-react';
+import { Plus, Zap, MoreVertical, Trash2, Play, Pause, Pencil, X, Copy, Clock, Filter, Search, List, Timer, TestTube2, GripVertical, ExternalLink, Settings2, RotateCw, UserPlus, MailOpen, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { EngageButton } from '../shared/EngageButton';
 import { EngageDialogHeader } from '../shared/EngageDialogHeader';
@@ -23,10 +24,13 @@ import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
 import { EngageHero } from '../shared/EngageHero';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
+import { useNavigate } from 'react-router-dom';
 
 const triggerLabels: Record<string, string> = {
   segment_entry: 'Segment Entry',
   tag_added: 'Tag Added',
+  contact_created: 'Contact Created',
+  email_opened: 'Email Opened',
   event_occurred: 'Event Occurred',
 };
 
@@ -35,6 +39,7 @@ const actionLabels: Record<string, string> = {
   add_tag: 'Add Tag',
   remove_tag: 'Remove Tag',
   enroll_journey: 'Enroll in Journey',
+  update_field: 'Update Field',
   webhook: 'Webhook',
   wait: 'Wait / Delay',
 };
@@ -53,24 +58,32 @@ interface AutomationForm {
   trigger_value: string;
   actions: ActionItem[];
   conditions: Rule[];
+  rate_limit_per_day: string;
+  rate_limit_per_contact: string;
+  error_routing: string;
 }
 
 const defaultForm: AutomationForm = {
-  name: '', description: '', trigger_type: 'segment_entry', trigger_value: '', actions: [{ type: 'send_email', config: {} }], conditions: [],
+  name: '', description: '', trigger_type: 'segment_entry', trigger_value: '',
+  actions: [{ type: 'send_email', config: {} }], conditions: [],
+  rate_limit_per_day: '', rate_limit_per_contact: '', error_routing: 'continue',
 };
 
 export const AutomationsList = () => {
   const { currentWorkspaceId, canEdit } = useWorkspace();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showDialog, setShowDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AutomationForm>({ ...defaultForm });
   const [showConditions, setShowConditions] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showExecLog, setShowExecLog] = useState<string | null>(null);
   const [dryRunTarget, setDryRunTarget] = useState<string | null>(null);
   const [dryRunResult, setDryRunResult] = useState<any>(null);
+  const [runningNow, setRunningNow] = useState(false);
 
   const { data: automations = [], isLoading } = useQuery({
     queryKey: ['engage-automations', currentWorkspaceId],
@@ -89,13 +102,12 @@ export const AutomationsList = () => {
     queryKey: ['automation-exec-counts', currentWorkspaceId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('engage_activity_log')
-        .select('payload')
-        .eq('workspace_id', currentWorkspaceId!)
-        .eq('channel', 'automation');
+        .from('automation_runs')
+        .select('automation_id')
+        .eq('workspace_id', currentWorkspaceId!);
       const counts: Record<string, number> = {};
-      (data || []).forEach((log: any) => {
-        const aId = log.payload?.automation_id;
+      (data || []).forEach((run: any) => {
+        const aId = run.automation_id;
         if (aId) counts[aId] = (counts[aId] || 0) + 1;
       });
       return counts;
@@ -103,18 +115,18 @@ export const AutomationsList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  // Execution logs for viewer
+  // Execution logs from automation_runs table (richer data)
   const { data: execLogs = [] } = useQuery({
     queryKey: ['automation-exec-logs', showExecLog],
     queryFn: async () => {
       const { data } = await supabase
-        .from('engage_activity_log')
+        .from('automation_runs')
         .select('*')
         .eq('workspace_id', currentWorkspaceId!)
-        .eq('channel', 'automation')
+        .eq('automation_id', showExecLog!)
         .order('created_at', { ascending: false })
         .limit(50);
-      return (data || []).filter((l: any) => l.payload?.automation_id === showExecLog);
+      return data || [];
     },
     enabled: !!showExecLog,
   });
@@ -150,7 +162,7 @@ export const AutomationsList = () => {
   const { data: contacts = [] } = useQuery({
     queryKey: ['auto-contacts', currentWorkspaceId],
     queryFn: async () => {
-      const { data } = await supabase.from('engage_contacts').select('id, email, first_name').eq('workspace_id', currentWorkspaceId!).limit(50);
+      const { data } = await supabase.from('engage_contacts').select('id, email, first_name, last_name, tags, attributes, unsubscribed').eq('workspace_id', currentWorkspaceId!).limit(50);
       return data || [];
     },
     enabled: !!currentWorkspaceId && !!dryRunTarget,
@@ -168,6 +180,8 @@ export const AutomationsList = () => {
       const tc = automation.trigger_config || {};
       const acts = (automation.actions || []).map((a: any) => ({ type: a.type || 'send_email', config: a.config || {} }));
       const conds = (automation.conditions || []) as Rule[];
+      const rl = automation.rate_limit || {};
+      const er = automation.error_routing || {};
       setForm({
         name: automation.name,
         description: automation.description || '',
@@ -175,24 +189,35 @@ export const AutomationsList = () => {
         trigger_value: tc.value || '',
         actions: acts.length ? acts : [{ type: 'send_email', config: {} }],
         conditions: conds,
+        rate_limit_per_day: rl.max_per_day?.toString() || '',
+        rate_limit_per_contact: rl.max_per_contact_per_day?.toString() || '',
+        error_routing: er.on_failure || 'continue',
       });
       setShowConditions(conds.length > 0);
+      setShowAdvanced(!!(rl.max_per_day || rl.max_per_contact_per_day || er.on_failure));
     } else {
       setEditingId(null);
       setForm({ ...defaultForm, actions: [{ type: 'send_email', config: {} }], conditions: [] });
       setShowConditions(false);
+      setShowAdvanced(false);
     }
     setShowDialog(true);
   };
 
   const saveAutomation = useMutation({
     mutationFn: async () => {
+      const rateLimit: Record<string, number> = {};
+      if (form.rate_limit_per_day) rateLimit.max_per_day = parseInt(form.rate_limit_per_day);
+      if (form.rate_limit_per_contact) rateLimit.max_per_contact_per_day = parseInt(form.rate_limit_per_contact);
+
       const payload: Record<string, any> = {
         name: form.name,
         description: form.description || null,
         trigger_config: { type: form.trigger_type, value: form.trigger_value || undefined } as any,
         actions: form.actions.map(a => ({ type: a.type, config: a.config })) as any,
         conditions: form.conditions.length > 0 ? (form.conditions as any) : null,
+        rate_limit: Object.keys(rateLimit).length > 0 ? rateLimit : null,
+        error_routing: form.error_routing !== 'continue' ? { on_failure: form.error_routing } : null,
       };
       if (editingId) {
         const { error } = await supabase.from('engage_automations').update(payload).eq('id', editingId);
@@ -243,27 +268,73 @@ export const AutomationsList = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['engage-automations'] }),
   });
 
+  const runNow = async () => {
+    setRunningNow(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('engage-job-runner', { method: 'POST' });
+      if (error) throw error;
+      const triggered = data?.results?.automations?.triggered || 0;
+      toast.success(`Job runner completed — ${triggered} automation(s) triggered`);
+      queryClient.invalidateQueries({ queryKey: ['engage-automations'] });
+      queryClient.invalidateQueries({ queryKey: ['automation-exec-counts'] });
+    } catch (e: any) {
+      toast.error(`Run failed: ${e.message}`);
+    } finally {
+      setRunningNow(false);
+    }
+  };
+
   const runDryRun = (automationId: string) => {
     setDryRunTarget(automationId);
     setDryRunResult(null);
+  };
+
+  const evaluateCondition = (rule: Rule, contact: any): boolean => {
+    const { field, operator, value } = rule;
+    let actual: any;
+
+    // Resolve field value from contact
+    if (field === 'email') actual = contact.email || '';
+    else if (field === 'first_name') actual = contact.first_name || '';
+    else if (field === 'last_name') actual = contact.last_name || '';
+    else if (field === 'tags') actual = contact.tags || [];
+    else if (field === 'unsubscribed') actual = contact.unsubscribed ? 'true' : 'false';
+    else actual = contact.attributes?.[field] || '';
+
+    switch (operator) {
+      case 'equals': return String(actual).toLowerCase() === value.toLowerCase();
+      case 'not_equals': return String(actual).toLowerCase() !== value.toLowerCase();
+      case 'contains': return String(actual).toLowerCase().includes(value.toLowerCase());
+      case 'includes': return Array.isArray(actual) ? actual.includes(value) : String(actual).includes(value);
+      case 'gt': return parseFloat(actual) > parseFloat(value);
+      case 'lt': return parseFloat(actual) < parseFloat(value);
+      default: return false;
+    }
   };
 
   const executeDryRun = (contactId: string) => {
     const automation = automations.find((a: any) => a.id === dryRunTarget);
     if (!automation) return;
     const contact = contacts.find((c: any) => c.id === contactId);
+    if (!contact) return;
     const actions = (automation as any).actions || [];
     const conditions = ((automation as any).conditions || []) as Rule[];
 
-    // Simulate: check conditions against contact
-    const conditionsPassed = conditions.length === 0 || conditions.every(() => true); // Simplified - would need real eval
+    // Real condition evaluation against contact data
+    const conditionResults = conditions.map(rule => ({
+      rule: `${rule.field} ${rule.operator} ${rule.value}`,
+      passed: evaluateCondition(rule, contact),
+    }));
+    const conditionsPassed = conditions.length === 0 || conditionResults.every(r => r.passed);
+
     setDryRunResult({
-      contact: contact?.email || contactId,
+      contact: contact.email || contactId,
       conditionsPassed,
+      conditionResults: conditions.length > 0 ? conditionResults : null,
       actionsWouldRun: conditionsPassed ? actions.map((a: any) => actionLabels[a.type] || a.type) : [],
       message: conditionsPassed
-        ? `✅ Would execute ${actions.length} action(s) for ${contact?.email}`
-        : `❌ Conditions not met for ${contact?.email}`,
+        ? `✅ Would execute ${actions.length} action(s) for ${contact.email}`
+        : `❌ Conditions not met for ${contact.email}`,
     });
   };
 
@@ -310,6 +381,13 @@ export const AutomationsList = () => {
             <SelectContent>{journeys.map((j: any) => <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>)}</SelectContent>
           </Select>
         );
+      case 'update_field':
+        return (
+          <div className="flex gap-2">
+            <Input className="h-8 flex-1" placeholder="Field name" value={action.config.field || ''} onChange={e => updateAction(idx, 'field', e.target.value)} />
+            <Input className="h-8 flex-1" placeholder="Value" value={action.config.value || ''} onChange={e => updateAction(idx, 'value', e.target.value)} />
+          </div>
+        );
       case 'webhook':
         return <Input className="h-8" placeholder="https://..." value={action.config.url || ''} onChange={e => updateAction(idx, 'url', e.target.value)} />;
       case 'wait':
@@ -339,7 +417,10 @@ export const AutomationsList = () => {
           </Select>
         );
       case 'event_occurred':
-        return <Input className="h-8 mt-1" placeholder="Event name" value={form.trigger_value} onChange={e => setForm(f => ({ ...f, trigger_value: e.target.value }))} />;
+        return <Input className="h-8 mt-1" placeholder="Event name (e.g. purchase_completed)" value={form.trigger_value} onChange={e => setForm(f => ({ ...f, trigger_value: e.target.value }))} />;
+      case 'contact_created':
+      case 'email_opened':
+        return <p className="text-[10px] text-muted-foreground mt-1">Triggers automatically when this event occurs — no additional config needed.</p>;
       default:
         return null;
     }
@@ -355,7 +436,19 @@ export const AutomationsList = () => {
         gradientTo="to-orange-400"
         glowFrom="from-amber-500/30"
         glowTo="to-orange-500/10"
-        actions={canEdit ? <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> New Automation</EngageButton> : undefined}
+        actions={canEdit ? (
+          <div className="flex items-center gap-2">
+            <EngageButton size="sm" variant="outline" gradient={false} onClick={() => navigate('/engage/automations/runs')}>
+              <ExternalLink className="h-3.5 w-3.5 mr-1" /> View All Runs
+            </EngageButton>
+            <EngageButton size="sm" variant="outline" gradient={false} onClick={runNow} disabled={runningNow}>
+              <RotateCw className={`h-3.5 w-3.5 mr-1 ${runningNow ? 'animate-spin' : ''}`} /> {runningNow ? 'Running...' : 'Run Now'}
+            </EngageButton>
+            <EngageButton size="sm" onClick={() => openDialog()}>
+              <Plus className="h-4 w-4 mr-1" /> New Automation
+            </EngageButton>
+          </div>
+        ) : undefined}
       />
 
       {/* Search */}
@@ -380,6 +473,8 @@ export const AutomationsList = () => {
                 <SelectContent>
                   <SelectItem value="segment_entry">Segment Entry</SelectItem>
                   <SelectItem value="tag_added">Tag Added</SelectItem>
+                  <SelectItem value="contact_created">Contact Created</SelectItem>
+                  <SelectItem value="email_opened">Email Opened</SelectItem>
                   <SelectItem value="event_occurred">Event Occurred</SelectItem>
                 </SelectContent>
               </Select>
@@ -439,6 +534,38 @@ export const AutomationsList = () => {
               ))}
             </div>
 
+            {/* Advanced Settings */}
+            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 text-xs w-full justify-start gap-1">
+                  <Settings2 className="h-3 w-3" /> Advanced Settings {showAdvanced ? '▾' : '▸'}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <GlassCard className="p-3 mt-2 space-y-3">
+                  <div>
+                    <Label className="text-xs">Max executions per day</Label>
+                    <Input className="h-8 mt-1" type="number" min="1" placeholder="Unlimited" value={form.rate_limit_per_day} onChange={e => setForm(f => ({ ...f, rate_limit_per_day: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Max per contact per day</Label>
+                    <Input className="h-8 mt-1" type="number" min="1" placeholder="Unlimited" value={form.rate_limit_per_contact} onChange={e => setForm(f => ({ ...f, rate_limit_per_contact: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">On failure</Label>
+                    <Select value={form.error_routing} onValueChange={v => setForm(f => ({ ...f, error_routing: v }))}>
+                      <SelectTrigger className="h-8 mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="continue">Continue next actions</SelectItem>
+                        <SelectItem value="stop">Stop execution</SelectItem>
+                        <SelectItem value="notify">Stop & notify</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </GlassCard>
+              </CollapsibleContent>
+            </Collapsible>
+
             <EngageButton onClick={() => saveAutomation.mutate()} disabled={!form.name || saveAutomation.isPending} className="w-full">
               {editingId ? 'Update' : 'Create'}
             </EngageButton>
@@ -446,7 +573,7 @@ export const AutomationsList = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Execution Log Dialog */}
+      {/* Execution Log Dialog — now uses automation_runs */}
       <Dialog open={!!showExecLog} onOpenChange={() => setShowExecLog(null)}>
         <DialogContent className="max-w-md max-h-[70vh] overflow-y-auto">
           <EngageDialogHeader icon={List} title="Execution Log" gradientFrom="from-amber-400" gradientTo="to-orange-400" iconColor="text-amber-400" />
@@ -454,14 +581,29 @@ export const AutomationsList = () => {
             <p className="text-sm text-muted-foreground text-center py-8">No executions recorded yet</p>
           ) : (
             <div className="space-y-2">
-              {execLogs.map((log: any) => (
-                <GlassCard key={log.id} className="p-3">
+              {execLogs.map((run: any) => (
+                <GlassCard key={run.id} className="p-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-foreground">{log.event_type || 'Automation executed'}</p>
-                    <span className="text-[10px] text-muted-foreground">{format(new Date(log.created_at), 'MMM d, HH:mm')}</span>
+                    <Badge variant={run.status === 'success' ? 'default' : 'destructive'} className="text-[10px]">
+                      {run.status}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground">{format(new Date(run.created_at), 'MMM d, HH:mm')}</span>
                   </div>
-                  {log.payload?.contact_email && (
-                    <p className="text-[10px] text-muted-foreground mt-1">Contact: {log.payload.contact_email}</p>
+                  {run.duration_ms != null && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Duration: {run.duration_ms}ms</p>
+                  )}
+                  {run.contact_id && (
+                    <p className="text-[10px] text-muted-foreground">Contact: {run.contact_id.slice(0, 8)}...</p>
+                  )}
+                  {run.actions_executed && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {(run.actions_executed as any[]).map((a: any, i: number) => (
+                        <Badge key={i} variant="secondary" className="text-[9px]">{a.type}</Badge>
+                      ))}
+                    </div>
+                  )}
+                  {run.error && (
+                    <p className="text-[10px] text-destructive mt-1">{run.error}</p>
                   )}
                 </GlassCard>
               ))}
@@ -488,10 +630,20 @@ export const AutomationsList = () => {
               ))}
             </div>
             {dryRunResult && (
-              <GlassCard className="p-3">
+              <GlassCard className="p-3 space-y-2">
                 <p className="text-sm font-medium text-foreground">{dryRunResult.message}</p>
+                {dryRunResult.conditionResults && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground font-medium">Condition results:</p>
+                    {dryRunResult.conditionResults.map((cr: any, i: number) => (
+                      <p key={i} className={`text-[10px] ${cr.passed ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {cr.passed ? '✓' : '✗'} {cr.rule}
+                      </p>
+                    ))}
+                  </div>
+                )}
                 {dryRunResult.actionsWouldRun.length > 0 && (
-                  <div className="mt-2 space-y-1">
+                  <div className="space-y-1">
                     {dryRunResult.actionsWouldRun.map((a: string, i: number) => (
                       <Badge key={i} variant="secondary" className="text-[10px] mr-1">{i + 1}. {a}</Badge>
                     ))}
@@ -541,7 +693,7 @@ export const AutomationsList = () => {
             <p className="font-semibold text-foreground">{searchQuery ? 'No matching automations' : 'No automations yet'}</p>
             <p className="text-sm text-muted-foreground">Set up trigger-based automations to engage contacts</p>
           </div>
-          {canEdit && !searchQuery && <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/25 transition-shadow" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</Button>}
+          {canEdit && !searchQuery && <EngageButton size="sm" onClick={() => openDialog()}><Plus className="h-4 w-4 mr-1" /> Create First Automation</EngageButton>}
         </motion.div>
       ) : (
         <div className="grid gap-3">
@@ -616,6 +768,9 @@ export const AutomationsList = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => runDryRun(a.id)}>
                               <TestTube2 className="h-3.5 w-3.5 mr-1" /> Dry Run
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setShowExecLog(a.id)}>
+                              <List className="h-3.5 w-3.5 mr-1" /> View Runs
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}>
