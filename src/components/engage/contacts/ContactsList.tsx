@@ -74,8 +74,31 @@ export const ContactsList = () => {
     enabled: !!currentWorkspaceId,
   });
 
-  const activeCount = contacts.filter((c: any) => !c.unsubscribed).length;
-  const unsubCount = contacts.filter((c: any) => c.unsubscribed).length;
+  const { data: activeCount = 0 } = useQuery({
+    queryKey: ['engage-contacts-active-count', currentWorkspaceId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('engage_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('workspace_id', currentWorkspaceId!)
+        .eq('unsubscribed', false);
+      return count || 0;
+    },
+    enabled: !!currentWorkspaceId,
+  });
+
+  const { data: unsubCount = 0 } = useQuery({
+    queryKey: ['engage-contacts-unsub-count', currentWorkspaceId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('engage_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('workspace_id', currentWorkspaceId!)
+        .eq('unsubscribed', true);
+      return count || 0;
+    },
+    enabled: !!currentWorkspaceId,
+  });
   const allTags = [...new Set(contacts.flatMap((c: any) => c.tags || []))];
 
   const addContact = useMutation({

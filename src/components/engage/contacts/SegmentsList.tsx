@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Layers, RefreshCw, Users, Trash2, Pencil, Filter, Eye, Clock, Copy, Download, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { EngageButton } from '../shared/EngageButton';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { RuleBuilder, type Rule } from '@/components/engage/shared/RuleBuilder';
@@ -195,7 +196,7 @@ export const SegmentsList = () => {
                 <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> New Segment</EngageButton>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
-                <DialogHeader><DialogTitle className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">{editingSegment ? 'Edit Segment' : 'Create Segment'}</DialogTitle></DialogHeader>
+                <EngageDialogHeader icon={Layers} title={editingSegment ? 'Edit Segment' : 'Create Segment'} gradientFrom="from-violet-400" gradientTo="to-purple-400" iconColor="text-violet-400" />
                 <div className="space-y-4">
                   <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
                   <div><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
@@ -213,9 +214,9 @@ export const SegmentsList = () => {
                     <Label className="text-xs flex items-center gap-1 mb-2"><Filter className="h-3 w-3" /> Rules</Label>
                     <RuleBuilder rules={rules} onChange={setRules} />
                   </div>
-                  <Button onClick={() => createSegment.mutate()} disabled={!name || createSegment.isPending} className="w-full">
+                  <EngageButton onClick={() => createSegment.mutate()} disabled={!name || createSegment.isPending} className="w-full">
                     {createSegment.isPending ? 'Saving & Evaluating...' : (editingSegment ? 'Update Segment' : 'Create Segment')}
-                  </Button>
+                  </EngageButton>
                 </div>
               </DialogContent>
             </Dialog>
@@ -239,12 +240,7 @@ export const SegmentsList = () => {
       {/* Segment Members Viewer */}
       <Dialog open={!!viewingSegment} onOpenChange={() => setViewingSegment(null)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-violet-400" />
-              <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">{viewingSegment?.name} — Members</span>
-            </DialogTitle>
-          </DialogHeader>
+          <EngageDialogHeader icon={Users} title={`${viewingSegment?.name} — Members`} gradientFrom="from-violet-400" gradientTo="to-purple-400" iconColor="text-violet-400" />
           <div className="flex items-center justify-between">
             {lastEvaluated && (
               <p className="text-[10px] text-muted-foreground flex items-center gap-1">

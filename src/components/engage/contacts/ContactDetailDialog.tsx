@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -214,18 +215,7 @@ export const ContactDetailDialog = ({ contact, open, onOpenChange }: ContactDeta
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-lg blur-md opacity-40 bg-gradient-to-br from-emerald-400 to-teal-400" />
-              <div className="relative p-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08]">
-                <Mail className="h-4 w-4 text-emerald-400" />
-              </div>
-            </div>
-            <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">{contact.email}</span>
-          </DialogTitle>
-          <div className="h-px mt-2 bg-gradient-to-r from-emerald-400 to-teal-400 opacity-20" />
-        </DialogHeader>
+        <EngageDialogHeader icon={Mail} title={contact.email} gradientFrom="from-emerald-400" gradientTo="to-teal-400" iconColor="text-emerald-400" />
 
         <Tabs defaultValue="details" className="mt-2">
           <TabsList className="h-8">
