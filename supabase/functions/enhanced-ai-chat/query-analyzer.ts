@@ -69,6 +69,16 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   // Engage module categories
   const needsEngage = /contact|subscriber|audience|segment|journey|automation|email campaign|newsletter|crm|engage|drip|funnel|unsubscrib/i.test(q);
   
+  // Write/Action intent detection
+  const needsWriteAction = /create|add|make|build|write|draft|generate|new/i.test(q);
+  const needsUpdateAction = /update|edit|change|modify|rename/i.test(q);
+  const needsDeleteAction = /delete|remove|archive|trash/i.test(q);
+  const needsSendAction = /send|publish|schedule|activate|trigger|start|launch/i.test(q);
+  const needsApprovalAction = /approve|reject|review|submit/i.test(q);
+  const needsTagAction = /tag|label|categorize/i.test(q);
+  const needsCrossModule = /enroll|add to|move to|promote|repurpose|turn into|convert to/i.test(q);
+  const hasActionIntent = needsWriteAction || needsUpdateAction || needsDeleteAction || needsSendAction || needsApprovalAction || needsTagAction || needsCrossModule;
+  
   // FIX: Detect internal trend requests (prioritize over SERP trends)
   const needsInternalTrends = /trend|trending/i.test(q) && 
     (/campaign|proposal|strategy|content|my|our/i.test(q) || needsCampaigns || needsProposals);
@@ -76,6 +86,10 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   // FIX: If asking about internal trends, force campaigns/performance categories
   if (needsInternalTrends) {
     console.log('📊 Internal trend analysis detected - prioritizing campaign/proposal data');
+  }
+  
+  if (hasActionIntent) {
+    console.log('🎯 Action intent detected - write/update/delete/send operation');
   }
   
   // Detect scope level
@@ -90,15 +104,16 @@ export function analyzeQueryIntent(query: string): QueryIntent {
   // Build categories array
   const categories: string[] = [];
   if (needsContent) categories.push('content');
-  if (needsKeywords && !needsInternalTrends) categories.push('keywords'); // Skip external keywords if internal trends
+  if (needsKeywords && !needsInternalTrends) categories.push('keywords');
   if (needsSolutions) categories.push('solutions');
   if (needsProposals) categories.push('proposals');
-  if (needsSEO && !needsInternalTrends) categories.push('seo'); // Skip SEO if internal trends
-  if (needsCampaigns || needsInternalTrends) categories.push('campaigns'); // Force campaigns for internal trends
+  if (needsSEO && !needsInternalTrends) categories.push('seo');
+  if (needsCampaigns || needsInternalTrends) categories.push('campaigns');
   if (needsCompetitors) categories.push('competitors');
   if (needsAnalytics) categories.push('analytics');
-  if (needsPerformance || needsInternalTrends) categories.push('performance'); // Force performance for internal trends
-  if (needsEngage) categories.push('engage'); // Engage module data
+  if (needsPerformance || needsInternalTrends) categories.push('performance');
+  if (needsEngage) categories.push('engage');
+  if (hasActionIntent) categories.push('action');
   
   // If no specific category detected, include core data at summary level
   if (categories.length === 0) {

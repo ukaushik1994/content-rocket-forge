@@ -424,7 +424,7 @@ MANDATORY RESPONSE STRUCTURE:
 const TOOL_USAGE_MODULE = `
 🔧 TOOL-BASED ARCHITECTURE (CRITICAL):
 
-You have access to specialized tools to fetch data on-demand. Use them smartly:
+You have access to specialized tools to fetch AND act on data. Use them smartly:
 
 **Available Data Summary:**
 • Content Items: {contentCount} pieces ({draftCount} drafts, {publishedCount} published)
@@ -434,23 +434,31 @@ You have access to specialized tools to fetch data on-demand. Use them smartly:
 • Active Campaigns: {activeCampaignCount} running
 • Queue Status: {pendingQueueCount} pending, {completedQueueCount} completed, {failedQueueCount} failed
 
-**When to Use Tools:**
-1. User asks for specific data subsets (e.g., "top 5", "only published")
-2. User requests filtered/sorted data
-3. User asks about specific items by name or criteria
-4. You need detailed information beyond counts
+**📖 READ Tools (Fetch Data):**
+- get_content_items, get_keywords, get_proposals, get_solutions, get_seo_scores, get_serp_analysis
+- get_competitors, get_competitor_solutions
+- get_campaign_intelligence, get_queue_status, get_campaign_content
+- get_engage_contacts, get_engage_segments, get_engage_journeys, get_engage_automations, get_engage_email_campaigns
 
-**Tool Usage Examples:**
-- "Show my best content" → get_content_items with min_seo_score=80, limit=5
-- "Available proposals?" → get_proposals with status="available", limit=10  
-- "Keyword performance" → get_keywords with limit=20
-- "How is my campaign doing?" → get_campaign_intelligence with campaign_name
-- "What's the queue status?" → get_queue_status with campaign_id
-- "Show campaign content" → get_campaign_content with campaign_id
-- "Start generating content" → trigger_content_generation
-- "Retry failed items" → retry_failed_content
+**✏️ WRITE Tools (Take Actions):**
+Content: create_content_item, update_content_item, delete_content_item, generate_full_content, start_content_builder
+Approvals: submit_for_review, approve_content, reject_content
+Keywords: add_keywords, remove_keywords, trigger_serp_analysis, trigger_content_gap_analysis, create_topic_cluster
+Offerings: create_solution, update_solution, delete_solution, update_company_info, add_competitor, update_competitor, trigger_competitor_analysis
+Engage: create_contact, update_contact, tag_contacts, create_segment, create_email_campaign, send_email_campaign, create_journey, activate_journey, create_automation, toggle_automation, enroll_contacts_in_journey, send_quick_email
+Cross-Module: promote_content_to_campaign, content_to_email, campaign_content_to_engage, repurpose_for_social
 
-**Important:** Always check the counts above first. If a count is 0, inform the user no data exists rather than calling the tool.
+**Campaign Tools:** trigger_content_generation, retry_failed_content
+
+**When to Use Write Tools:**
+- User explicitly asks to create, add, update, edit, delete, remove, send, publish, schedule, approve, reject
+- User says "generate an article about X" → generate_full_content
+- User says "add contact john@example.com" → create_contact
+- User says "email this content to VIP contacts" → content_to_email
+- User says "create a segment of active users" → create_segment
+- User says "repurpose for social" → repurpose_for_social
+
+**Important:** Always check counts above first. If a count is 0, inform the user no data exists rather than calling the tool. For write operations, confirm the action with the user in your response.
 
 {proactiveInsights}
 `;
@@ -504,22 +512,33 @@ What would you like to explore today?`;
 - Track keyword rankings and opportunities
 - Monitor campaign progress and queue status
 
-## 📝 Content Strategy
-- Generate content proposals and briefs
-- Compare with competitors
-- Optimize SEO scores
+## 📝 Content Actions
+- **Create** content, articles, and blog posts
+- **Generate** full articles from keywords (end-to-end)
+- **Submit, approve, or reject** content for review
+- **Repurpose** content for social media
 
-## 📈 Visualizations
-- Create charts and dashboards
-- Generate performance reports
-- Show trend analysis
+## 🔑 Keywords & Research
+- **Add/remove** keywords from your library
+- **Trigger** SERP analysis and content gap analysis
+- **Build** topic clusters from pillar topics
+
+## 🏢 Business Intelligence
+- **Create/update** solutions, company info, and competitors
+- **Trigger** competitor analysis
 
 ## 📬 Engage CRM & Email
-- View contacts, segments, and audience data
-- Track email campaign performance (opens, clicks, bounces)
-- Monitor customer journeys and automations
+- **Create** contacts, segments, journeys, and automations
+- **Send** email campaigns and quick emails
+- **Enroll** contacts in journeys
+- **Toggle** automations on/off
 
-Try asking something like "Show me my content performance", "How many contacts do I have?", or "Show my email campaign stats"!`;
+## 🔗 Cross-Module
+- **Promote** content to campaigns
+- **Email** content to segments
+- **Repurpose** articles for social platforms
+
+Try asking "Generate an article about AI trends", "Create a segment of VIP contacts", or "Email my best content to subscribers"!`;
   }
   
   // Farewells
