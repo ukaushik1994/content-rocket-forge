@@ -1,175 +1,171 @@
 
+# Journeys Page -- Complete Audit & Powerhouse Enhancement Plan
 
-# Automations Powerhouse Enhancement Plan
+## Current State (What Already Works)
 
-## Current State Summary
+### JourneysList.tsx (439 lines)
+- CRUD: Create, Rename, Delete, Duplicate journeys
+- 3 pre-built templates (Welcome Series, Onboarding Flow, Re-engagement)
+- Toggle Active/Paused status
+- Search/filter
+- Enrollment count badges per journey
+- Node count badges per journey
+- Stats grid: Active / Draft / Paused
+- Premium UI: EngageHero, GlassCard, motion animations, ping dots
 
-The Automations module already has solid CRUD, 5 triggers, 7 action types, dry run, execution logs, rate limiting, advanced settings, and a Run Now button. This plan adds the features that separate a basic automation tool from a professional-grade marketing automation engine.
+### JourneyBuilder.tsx (402 lines)
+- React Flow v12 visual canvas with custom node types
+- 7 node types: Trigger, Send Email, Wait, Condition, Update Contact, Webhook, End
+- Undo/Redo (Ctrl+Z / Ctrl+Y) with 20-step history
+- Auto-save (3-second debounce)
+- Keyboard shortcuts (Delete node, Ctrl+S)
+- Node execution count overlays (for active journeys)
+- Edge label editing (double-click)
+- Snap-to-grid, MiniMap, Controls, Background
+- Validate journey (checks for trigger, end, orphan detection)
+- Enrollment stats badges in toolbar (active, done, exited)
+- 3 analytics dialogs: Analytics, Enrollments, Performance
 
----
+### JourneyInspector.tsx (245 lines)
+- Side panel for node config
+- Trigger: type (Manual, Segment Entry, Event) + segment picker + event name
+- Send Email: template picker
+- Wait: duration + unit (minutes/hours/days)
+- Condition: RuleBuilder
+- Update Contact: add_tag / remove_tag / set_attribute
+- Webhook: URL + method
+- Custom label for all nodes
 
-## Enhancement 1: Automation Analytics Dashboard
+### JourneyAnalytics.tsx
+- Enrollment timeline (30-day line chart)
+- Node conversion funnel (bar chart)
+- Summary cards: enrolled, active, completed, drop-off rate
 
-Currently, the stats grid only shows Active / Paused / Total counts. There is no visibility into performance trends, success rates over time, or which automations are performing best.
+### JourneyPerformance.tsx
+- Conversion funnel bar chart (passed vs failed per node)
+- Drop-off per node table
+- Summary: enrolled, active, completed, conversion rate
 
-**What gets added:**
-- A Recharts-based mini analytics section below the stats grid
-- Bar chart: executions per day (last 7 days) with success/fail stacking
-- Top 3 most-triggered automations (leaderboard)
-- Overall success rate percentage with a radial progress indicator
-- All data sourced from the existing `automation_runs` table -- no new DB tables needed
+### JourneyEnrollments.tsx
+- Enrollment list with contact names
+- Expandable step history per enrollment
+- Pause / Skip-to-end actions per enrollment
+- Step retry for failed steps
 
-**File:** `AutomationsList.tsx` -- new query + chart section between stats grid and automation list
+### engage-journey-processor (edge function, 296 lines)
+- Processes pending journey_steps
+- Suppression check (skip unsubscribed)
+- Scheduling window (send_window_start/end for emails)
+- Frequency cap (max emails per day)
+- Executes: send_email, wait, condition, update_contact, webhook, end
+- Condition branching with Yes/No edge labels
+- Activity logging
 
----
-
-## Enhancement 2: Automation Templates / Presets
-
-Users currently start from a blank form every time. There are no pre-built recipes to accelerate setup.
-
-**What gets added:**
-- A "Start from Template" button next to "New Automation" in the hero
-- A template picker dialog with 6-8 common recipes:
-  - Welcome Series (trigger: contact_created, actions: send_email + add_tag "welcomed")
-  - Re-engagement (trigger: segment_entry for inactive, actions: send_email)
-  - Tag-based Nurture (trigger: tag_added "lead", actions: wait 1 day + send_email)
-  - Event Follow-up (trigger: event_occurred, actions: send_email + webhook)
-  - VIP Upgrade (trigger: tag_added "vip", actions: update_field "tier" = "premium" + enroll_journey)
-  - Churn Prevention (trigger: segment_entry for at-risk, actions: send_email + add_tag "retention")
-- Selecting a template pre-fills the Create dialog -- user can customize before saving
-- No database changes needed -- templates are hardcoded recipe objects in a separate file
-
-**Files:**
-- New file: `src/components/engage/automations/automationPresets.ts` (data)
-- Modified: `AutomationsList.tsx` (template picker dialog + button)
-
----
-
-## Enhancement 3: Automation Version History
-
-There is no way to see what changed in an automation over time. If someone edits a trigger or modifies actions, the previous configuration is lost.
-
-**What gets added:**
-- Before saving edits, snapshot the current automation config into a new `automation_versions` table
-- "Version History" option in the dropdown menu per automation
-- A dialog showing timestamped versions with a diff view (what trigger/actions changed)
-- "Restore" button to revert to any previous version
-
-**Database change:** One new table `automation_versions` (automation_id, version_number, snapshot JSONB, created_at, created_by)
-
-**Files:**
-- DB migration for `automation_versions`
-- Modified: `AutomationsList.tsx` (save mutation snapshots + version dialog)
-
----
-
-## Enhancement 4: Conditional Branching (If/Else Actions)
-
-Currently, all actions run sequentially for every triggered contact. There is no way to say "if the contact has tag X, do action A, otherwise do action B."
-
-**What gets added:**
-- A new action type: `condition_branch`
-- When selected, the action card shows a RuleBuilder for the "if" condition, plus two sub-action slots (then / else)
-- The edge function evaluates the branch condition per-contact and executes the appropriate sub-action
-- This turns the linear action list into a lightweight decision tree
-
-**Files:**
-- Modified: `AutomationsList.tsx` (new action type UI with nested sub-actions)
-- Modified: `engage-job-runner/index.ts` (branch evaluation logic)
+### Database
+- `journeys`: id, workspace_id, name, status, trigger_config, description, version, scheduling_config, suppression_rules
+- `journey_nodes`: id, workspace_id, journey_id, node_id, type, config, position
+- `journey_edges`: id, workspace_id, journey_id, source_node_id, target_node_id, condition_label
+- `journey_enrollments`: id, workspace_id, journey_id, contact_id, status, enrolled_at, updated_at
+- `journey_steps`: id, workspace_id, enrollment_id, node_id, status, scheduled_for, executed_at, output, error
 
 ---
 
-## Enhancement 5: Bulk Actions on Automations
+## Issues & Missing Features
 
-With many automations, there is no way to activate, pause, or delete multiple at once.
+### Fix 1: Empty State Button Not Using EngageButton
+Line 365: "Create First Journey" uses standard `Button` with inline gradient. Should use `EngageButton` for consistency.
 
-**What gets added:**
-- Checkbox selection on each automation card
-- A floating action bar (bottom of screen) when items are selected
-- Bulk actions: Activate All, Pause All, Delete Selected
-- Select All / Deselect All toggle
+### Fix 2: No Manual Enrollment Button
+There is no way to manually enroll a contact into a journey from the UI. The Enrollments dialog shows existing enrollments but cannot add new ones. Users cannot test journeys without backend triggers.
 
-**File:** `AutomationsList.tsx` (selection state + bulk mutation + floating bar UI)
+### Fix 3: Journey Description Not Editable After Creation
+The description is set at creation time but cannot be updated from the list or builder. Only rename exists.
 
----
+### Fix 4: No "Run Processor" Button
+The journey processor edge function is invoked by the engage-job-runner, but there is no manual trigger. Unlike automations which now have "Run Now", journeys have no equivalent.
 
-## Enhancement 6: Success/Failure Rate Badge Per Automation
+### Fix 5: Update Contact Node Config Mismatch
+The Inspector saves `config.tag` and `config.action`, but the edge function reads `config.set_tag` and `config.set_field`. This means tags and attributes saved from the UI will never be applied by the processor.
 
-The execution count badge currently shows total runs only. There is no at-a-glance indicator of whether an automation is healthy or failing.
+### Fix 6: Condition Node Inspector Uses Simple RuleBuilder But Processor Expects Single Field
+The Inspector renders a full `RuleBuilder` (multi-rule) for conditions, but the processor only reads `config.field`, `config.operator`, `config.value` (single rule). Multi-rule conditions are silently ignored.
 
-**What gets added:**
-- Fetch success and failure counts per automation from `automation_runs`
-- Show a color-coded badge: green if >90% success, yellow 70-90%, red <70%
-- Tooltip on hover shows "23 success / 2 failed (92%)"
-- Uses the existing `automation_runs` table -- extends the current `execCounts` query
+### Fix 7: journey_steps Has No journey_id Column
+The Analytics, Performance, and Builder all query `journey_steps` filtering by `journey_id`, but the table only has `enrollment_id`. These queries silently return empty results. Need to either join through `journey_enrollments` or add a `journey_id` column to `journey_steps`.
 
-**File:** `AutomationsList.tsx` (enhanced query + badge rendering)
-
----
-
-## Enhancement 7: Scheduling Window (Time-of-Day Restrictions)
-
-The edge function currently fires automations at any time. There is no way to restrict execution to business hours or specific days.
-
-**What gets added:**
-- New fields in the Advanced Settings collapsible:
-  - Active days: checkboxes for Mon-Sun
-  - Active hours: start time / end time pickers
-- Stored in the existing `rate_limit` JSONB column (e.g., `{ schedule: { days: [1,2,3,4,5], start_hour: 9, end_hour: 17 } }`)
-- Edge function checks current time against schedule before executing
-- No new DB columns needed -- uses existing JSONB
-
-**Files:**
-- Modified: `AutomationsList.tsx` (schedule UI in Advanced Settings)
-- Modified: `engage-job-runner/index.ts` (schedule check before execution)
+### Fix 8: No Scheduling/Suppression Config UI in Builder
+The `journeys` table has `scheduling_config` and `suppression_rules` JSONB columns, and the edge function enforces them, but there is zero UI to configure them. These powerful features are completely inaccessible.
 
 ---
 
-## Enhancement 8: AutomationRuns Page Enhancements
+## Enhancements
 
-The runs audit trail page is functional but basic. It needs:
+### Enhancement 1: Journey Analytics on List Page
+Currently, the list only shows enrollment counts. Add a mini analytics row showing total enrollments, completion rate, and active contacts across all journeys -- similar to what was done for Automations.
 
-**What gets added:**
-- Recharts line chart at the top showing run volume over the selected date range
-- Retry button for failed runs (re-invokes the edge function for that specific automation + contact)
-- Pagination (currently limited to 200 rows with no paging)
-- EngageHero header with gradient styling (currently plain text)
-- EngageButton for export (currently standard Button)
+### Enhancement 2: Bulk Actions
+Multi-select journeys with checkboxes and a floating action bar for bulk Activate, Pause, Delete operations.
 
-**File:** `AutomationRuns.tsx`
+### Enhancement 3: Manual Contact Enrollment
+Add an "Enroll Contact" button in the builder toolbar. Opens a contact picker dialog. Enrolling creates a `journey_enrollment` record and the first `journey_step` for the trigger node, making the contact enter the flow immediately.
+
+### Enhancement 4: Scheduling & Suppression Settings Panel
+Add a settings drawer/dialog in the builder (gear icon in toolbar) exposing:
+- Send Window: enable + start/end hour
+- Frequency Cap: enable + max emails per day
+- Suppression: skip unsubscribed contacts toggle
+All stored in the existing `scheduling_config` and `suppression_rules` JSONB columns.
+
+### Enhancement 5: Journey Version Snapshots
+Before each save, snapshot the current nodes/edges into a `journey_versions` table. Add a "Version History" button in the toolbar showing timestamped snapshots with restore capability.
+
+### Enhancement 6: Node Copy/Paste
+Allow selecting a node and pressing Ctrl+C / Ctrl+V to duplicate it in-place. Useful for quickly building repetitive sequences.
+
+### Enhancement 7: Add Tag / Remove Tag Node Types
+Currently "Update Contact" combines 3 actions (add_tag, remove_tag, set_attribute). Split into dedicated "Add Tag" and "Remove Tag" node types for clearer visual flows. Keep "Update Contact" for set_attribute only.
+
+### Enhancement 8: Export Journey as JSON
+Add an "Export" button in the builder that downloads the journey definition (nodes + edges + config) as a JSON file. This enables backup and sharing between workspaces.
 
 ---
 
-## Implementation Priority & Sequencing
+## Implementation Summary
 
-| Priority | Enhancement | Complexity | New DB |
-|----------|------------|------------|--------|
-| 1 | Success/Failure Rate Badge | Low | No |
-| 2 | Automation Analytics Dashboard | Medium | No |
-| 3 | Automation Templates/Presets | Medium | No |
-| 4 | Bulk Actions | Medium | No |
-| 5 | Scheduling Window | Medium | No |
-| 6 | AutomationRuns Enhancements | Medium | No |
-| 7 | Version History | Medium | Yes (1 table) |
-| 8 | Conditional Branching | High | No |
-
----
-
-## Technical Summary
-
-### Files Created
-- `src/components/engage/automations/automationPresets.ts` (template recipes data)
-
-### Files Modified
-- `src/components/engage/automations/AutomationsList.tsx` (enhancements 1-7)
-- `src/components/engage/automations/AutomationRuns.tsx` (enhancement 8)
-- `supabase/functions/engage-job-runner/index.ts` (scheduling window + conditional branching)
+| # | Change | Type | Files |
+|---|--------|------|-------|
+| F1 | EngageButton in empty state | Fix | JourneysList.tsx |
+| F2 | Manual enrollment from builder | Fix + Feature | JourneyBuilder.tsx |
+| F3 | Editable description | Fix | JourneysList.tsx |
+| F4 | "Run Processor" manual trigger | Fix | JourneyBuilder.tsx |
+| F5 | Update Contact config key alignment | Fix | JourneyInspector.tsx OR engage-journey-processor |
+| F6 | Condition node: align single rule | Fix | JourneyInspector.tsx OR engage-journey-processor |
+| F7 | journey_steps queries join through enrollments | Fix | JourneyAnalytics.tsx, JourneyPerformance.tsx, JourneyBuilder.tsx |
+| F8 | Scheduling/Suppression settings UI | Feature | JourneyBuilder.tsx (new dialog) |
+| E1 | Analytics on list page | Feature | JourneysList.tsx |
+| E2 | Bulk actions | Feature | JourneysList.tsx |
+| E3 | Manual contact enrollment | Feature | JourneyBuilder.tsx |
+| E4 | Scheduling & Suppression panel | Feature | JourneyBuilder.tsx |
+| E5 | Version history snapshots | Feature | JourneyBuilder.tsx + DB migration |
+| E6 | Node copy/paste | Feature | JourneyBuilder.tsx |
+| E7 | Dedicated tag node types | Feature | CustomNodes.tsx, JourneyInspector.tsx, JourneyBuilder.tsx |
+| E8 | Export journey JSON | Feature | JourneyBuilder.tsx |
 
 ### Database Changes
-- 1 new table: `automation_versions` (for version history only)
-- Zero changes to existing tables (everything else uses existing JSONB columns)
+- 1 new table: `journey_versions` (journey_id, version_number, snapshot JSONB, created_at, created_by) with RLS
+- No changes to existing tables -- Fix 7 solved via query joins, Fix 5/F6 solved via edge function alignment
 
-### Dependencies
-- Recharts (already installed) for analytics charts
-- All other features use existing UI components (GlassCard, EngageButton, RuleBuilder, etc.)
+### Files Modified
+- `src/components/engage/journeys/JourneysList.tsx` (F1, F3, E1, E2)
+- `src/components/engage/journeys/JourneyBuilder.tsx` (F2, F4, E3, E4, E5, E6, E8)
+- `src/components/engage/journeys/JourneyInspector.tsx` (F5, F6, E7)
+- `src/components/engage/journeys/JourneyAnalytics.tsx` (F7)
+- `src/components/engage/journeys/JourneyPerformance.tsx` (F7)
+- `src/components/engage/journeys/nodes/CustomNodes.tsx` (E7)
+- `supabase/functions/engage-journey-processor/index.ts` (F5 alignment)
 
+### Priority Sequencing
+1. Critical Fixes First: F5 (config mismatch), F6 (condition mismatch), F7 (broken queries) -- these are silently broken
+2. UX Fixes: F1, F3, F4, F2
+3. Power Features: E4 (scheduling UI), E3 (manual enroll), E1 (list analytics)
+4. Advanced: E2 (bulk), E5 (versions), E6 (copy/paste), E7 (tag nodes), E8 (export)
