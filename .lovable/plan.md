@@ -1,61 +1,85 @@
 
 
-# Fix Plan: Remaining Issues from Today's Implementation
+# Welcome Screen Upgrade: AI Chat Command Center
 
-## Issues Found
+## Current State
 
-### Issue 1: `requestPromotedActions` Scoping Bug (CRITICAL)
+The welcome screen has two cards side by side:
+1. **PlatformSummaryCard** -- Shows 4 static metrics (Content count, Published, In Review, SEO Score) and a generic "Get Started" button
+2. **EnhancedQuickActions** -- Shows 4 workflow cards (Keyword Optimization, Content Creation, Performance Analysis, Solution Integration) plus 3 suggestion badges
 
-The variable `requestPromotedActions` is **declared at line 2468** (in the response parsing section), but **assigned at line 2091** (inside the `if (toolCalls)` block that ends at line 2294). Since `let` is block-scoped and the declaration is outside and after the assignment, the assignment at line 2091 either:
-- Creates an implicit global (non-strict mode)
-- Throws a ReferenceError (strict mode)
+**What's missing:**
+- No mention of the AI's ability to **take actions** (create content, add keywords, manage contacts, send emails, manage campaigns)
+- No mention of **cross-module orchestration** (promote content to campaign, repurpose across formats)
+- No mention of **Engage capabilities** (contacts, emails, automations, journeys)
+- No mention of **real-time data** (live queue tracking, campaign dashboards)
+- The suggestions are generic and don't hint at the AI's interactive power
+- The "Platform Overview" card shows raw numbers without telling the user *what the AI can do with them*
 
-Either way, promoted actions from tool results **never reach the response merge** at line 3016.
+## Design Approach
 
-**Fix:** Move `let requestPromotedActions: any[] = [];` to **before** the `if (toolCalls)` block (around line 1996), so it's in scope for both the assignment (line 2091) and the merge (line 3016).
+Keep the exact same visual language: `bg-card border-border/50` cards, `bg-primary/10` icon containers, `text-primary` accent color, `motion.div` stagger animations, Badge pills for suggestions. No new color schemes or design patterns.
 
-### Issue 2: `globalThis.__fallbackChartData` Pollution (MODERATE)
+## Changes
 
-Same pattern that was fixed for promoted actions still exists for fallback chart data:
-- Set at line 2293: `(globalThis as any).__fallbackChartData = fallbackChartData;`
-- Read at line 2962: `if (!visualData && (globalThis as any).__fallbackChartData)`
+### 1. Upgrade PlatformSummaryCard (same file, same look)
 
-This has the same race condition risk across requests sharing a Deno isolate.
+**Keep:** The live metrics grid (Content, Published, In Review, SEO Score) with real Supabase data. The loading skeleton. The card styling.
 
-**Fix:** Replace with a request-scoped `let fallbackChartData` variable declared before the `if (toolCalls)` block and used directly at line 2962.
+**Add below the metrics grid:** A compact "AI Capabilities" strip -- 3-4 small inline badges showing what the AI can do with this data context. Examples: "Ask me to analyze trends", "I can create content for you", "Check campaign health". These are clickable and trigger `send:` actions.
 
----
+**Replace** the generic "Ready to optimize? Get Started" footer with a smarter contextual nudge based on the actual data. For example:
+- If `inReview > 0`: "You have {n} items awaiting review -- want me to help?"
+- If `avgSeoScore < 50`: "Your SEO score could improve -- let me suggest optimizations"
+- If `totalContent === 0`: "Let's create your first piece of content together"
+- Default: "Ready to optimize? Get Started" (unchanged fallback)
+
+### 2. Upgrade EnhancedQuickActions (same file, same look)
+
+**Replace** the 4 workflow cards with 6 capability-grouped cards that accurately reflect what the action engine can do. Organized into two visual rows:
+
+Row 1 -- "Create & Build":
+- **Write Content** -- "Draft articles, social posts, emails -- I'll write and save them directly" (`workflow:content-creation`)
+- **Research Keywords** -- "Find, analyze, and add keywords to your library automatically" (`workflow:keyword-optimization`)
+- **Manage Solutions** -- "Add products, update offerings, link them to your content" (`workflow:solution-management`)
+
+Row 2 -- "Analyze & Engage":
+- **Campaign Intelligence** -- "Track queue health, view dashboards, retry failed content in real-time" (`workflow:campaign-intelligence`)
+- **Engage CRM** -- "Create contacts, draft emails, manage segments and automations" (`workflow:engage-actions`)
+- **Cross-Module Actions** -- "Promote content to campaigns, repurpose across formats automatically" (`workflow:cross-module`)
+
+**Replace** the 3 suggestion badges with 6 more powerful ones that showcase interactive capabilities:
+- "Write a blog post about [my solution]"
+- "Show my campaign dashboard"
+- "Add these keywords to my library"
+- "Draft an email for my latest content"
+- "What content is failing? Fix it"
+- "Create a contact segment for leads"
+
+### 3. Update the Welcome Hero subtitle (EnhancedChatInterface.tsx line 456)
+
+**Current:** "I'm here to help you optimize your content strategy, analyze performance, and discover new opportunities."
+
+**New:** "I can create content, manage keywords, run campaigns, handle your CRM, and take actions across your entire platform -- just ask."
+
+This single line immediately tells the user this isn't a passive chatbot.
 
 ## Files to Modify
 
 | File | Change |
 |---|---|
-| `supabase/functions/enhanced-ai-chat/index.ts` | Move `requestPromotedActions` declaration before `if (toolCalls)` block; replace `globalThis.__fallbackChartData` with request-scoped variable |
+| `src/components/ai-chat/PlatformSummaryCard.tsx` | Add contextual data-driven nudge replacing generic CTA; add capability hint badges below metrics |
+| `src/components/ai-chat/EnhancedQuickActions.tsx` | Expand from 4 to 6 capability cards covering all action domains; update suggestions to showcase interactive power |
+| `src/components/ai-chat/EnhancedChatInterface.tsx` | Update welcome subtitle text (line 456) |
 
-## Technical Details
+## What's Preserved
+- All existing metrics fetching logic (Supabase queries)
+- Card styling (`bg-card border-border/50`, hover states, motion animations)
+- Layout structure (2-column grid on desktop, stacked on mobile)
+- Color palette (primary accent, muted-foreground, border-border)
+- Animation patterns (stagger, spring, fade-in)
+- All `onAction` handler wiring
+- Loading skeletons
 
-### index.ts Changes
+## No Database or Backend Changes Required
 
-**Before line 1997** (before `if (toolCalls && toolCalls.length > 0)`), add:
-```
-let requestPromotedActions: any[] = [];
-let requestFallbackChartData: any = null;
-```
-
-**Line 2091:** Already correct (`requestPromotedActions = promotedActions;`) -- will now reference the outer declaration.
-
-**Line 2293:** Change from `(globalThis as any).__fallbackChartData = fallbackChartData;` to `requestFallbackChartData = fallbackChartData;`
-
-**Line 2468:** Remove `let requestPromotedActions: any[] = [];` (moved up).
-
-**Lines 2962-2966:** Replace `(globalThis as any).__fallbackChartData` references with `requestFallbackChartData`. Remove the `delete` line (not needed for local variables).
-
-## Deployment
-- Redeploy `enhanced-ai-chat` edge function after changes.
-
-## Everything Else is Complete
-- ModernActionButtons: fully supports confirm, navigate, send-message, destructive styling
-- useEnhancedAIChat: request body format, response field names, colon-separated parsing all correct
-- Content Builder sessionStorage bridge: already reads and consumes `contentBuilderPayload`
-- Cache invalidation: write tool mapping in tools.ts is complete
-- Destructive action safety guard: CONFIRMED prefix check in index.ts is correct
