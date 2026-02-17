@@ -1,84 +1,102 @@
 
-# Engage Module End-to-End Audit Report
+# Engage Module: Comprehensive Remaining Work Plan
 
-## Pages Tested (All 7 render successfully)
+## Current Status: All 7 pages render and load data correctly
 
-| Page | Status | Data |
-|------|--------|------|
-| Email (Inbox/Sent/Templates/Campaigns/Reports) | Renders | 0 threads, 0 templates, 0 campaigns |
-| Contacts | Renders | 1 contact (John CEO) |
-| Segments | Renders | 0 segments |
-| Journeys | Renders | 1 draft journey (5 nodes) |
-| Automations | Renders | 0 automations |
-| Social | Renders | 0 posts, 0 connected accounts |
-| Activity | Renders | 0 events |
+| Page | Renders | Data Loads | Visual Standard | Dialogs Use Shared Components |
+|------|---------|------------|-----------------|------------------------------|
+| Email (Inbox/Sent/Scheduled/Drafts/Templates/Campaigns/Reports) | Yes | Yes | Yes | Yes |
+| Contacts | Yes | Yes (1 contact) | Yes | Yes |
+| Segments | Yes | Yes (0 segments) | Partial | No (still uses plain DialogTitle) |
+| Journeys | Yes | Yes (1 journey) | Partial | No (still uses plain DialogTitle) |
+| Automations | Yes | Yes (0 automations) | Partial | No (still uses plain DialogTitle) |
+| Social | Yes | Yes (0 posts) | Partial | No (still uses plain DialogTitle) |
+| Activity (Feed/Health/Audit) | Yes | Yes | Yes | Yes |
 
-No console errors specific to Engage. All RLS policies are properly configured using `get_user_engage_workspace_ids(auth.uid())`.
-
----
-
-## Issues Found (Categorized)
-
-### A. Visual Consistency Gaps (5 files still have old styling)
-
-These files still use the redundant `bg-card/95 backdrop-blur-xl border-border/50` and plain `DialogTitle` without the shared `EngageDialogHeader` component:
-
-1. **TemplatesList.tsx** (line 271) - Editor dialog has old glass override + plain title
-2. **TemplatesList.tsx** (line 324) - Test Send dialog has plain title
-3. **CampaignsList.tsx** (line 312) - Wizard dialog has old glass override + plain title
-4. **CampaignsList.tsx** (line 389) - Campaign Detail dialog has old glass override + manual icon title
-5. **CampaignsList.tsx** (line 306) - "New Campaign" button uses standard `Button` instead of `EngageButton`
-6. **SentList.tsx** (line 96) - Detail dialog has old glass override + plain title
-7. **AuditLog.tsx** (line 173) - Detail dialog has old glass override + plain title
-8. **JourneyBuilder.tsx** (line 334) - Dropdown menu has old glass override (minor)
-9. **ContactsList.tsx** (line 260) - "Add Contact" submit button inside dialog uses standard `Button`
-
-### B. Backend/Edge Function Issues
-
-1. **No RESEND_API_KEY secret configured** - The `engage-email-send` edge function looks for `RESEND_API_KEY` env var or falls back to `api_keys` table. Without either, emails will be marked "sent" but never actually delivered via Resend.
-2. **No email_provider_settings rows exist** - The edge function joins `email_provider_settings!inner` but this table is empty AND has no FK from `email_messages`. This join will return 0 rows, meaning the email sender function will process 0 messages every run (all queued emails are silently skipped).
-3. **No `engage-email-webhook` edge function exists** - The memory states inbound email processing via webhook, but no such function directory exists in `supabase/functions/`. Inbound email replies cannot be received.
-4. **ComposeDialog sends with empty `from_email`** (line 81) - The outbound thread message has `from_email: ''`, which will show as blank in the thread reader.
-
-### C. Functional Gaps (Features referenced but incomplete)
-
-1. **Email sending pipeline is broken** - Due to issue B2 above, the `engage-email-send` function cannot process any queued messages. The entire email delivery flow (compose, campaigns, test sends) will queue messages but never deliver them.
-2. **Social posting edge function** - `engage-social-poster` exists but no social accounts are connected and no OAuth flow is implemented for connecting real accounts (Twitter, LinkedIn, etc.).
-3. **Journey processor** - `engage-journey-processor` edge function exists but there is no cron/scheduler to trigger it automatically. Journeys must be manually triggered.
-4. **Automation runner** - `engage-job-runner` exists but same cron issue - no automated trigger.
-
-### D. Data Sparsity (UX issue, not a bug)
-
-The workspace has almost no data (1 contact, 1 draft journey). The "Load Demo Data" feature mentioned in the memory would help demonstrate the platform's capabilities immediately.
+No Engage-specific console errors detected. All RLS policies work correctly via `get_user_engage_workspace_ids`.
 
 ---
 
-## What I Need From You
+## Phase 1: Visual Consistency (Remaining Dialog Headers)
 
-To fix the broken email pipeline and complete the module:
+5 files still use plain `DialogTitle` with manual gradient text instead of the shared `EngageDialogHeader` component with icon glow halo + separator line:
 
-1. **Resend API Key** - Do you have a Resend API key? I need it to configure the email sending secret so the `engage-email-send` function can actually deliver emails.
+### 1. SegmentsList.tsx (3 dialogs)
+- **Line 198**: Create/Edit Segment dialog -- replace `DialogHeader > DialogTitle` with `EngageDialogHeader` (icon: Layers, violet/purple gradient)
+- **Line 242-246**: Segment Members viewer dialog -- replace manual icon+gradient title with `EngageDialogHeader`
+- **Line 216**: "Create Segment" submit button -- replace standard `Button` with `EngageButton`
+- Add missing `EngageDialogHeader` import
 
-2. **Decision on email provider architecture** - The edge function expects `email_provider_settings` to be configured per-workspace, but the `email_messages` table has no FK to it. Should I:
-   - (a) Fix the edge function to work without the join (simpler), or
-   - (b) Add the FK relationship and create a settings setup flow (more robust)?
+### 2. JourneysList.tsx (2 dialogs)
+- **Line 287**: Create Journey dialog -- replace `DialogTitle` with `EngageDialogHeader` (icon: GitBranch, purple/blue gradient)
+- **Line 330**: Rename Journey dialog -- replace `DialogTitle` with `EngageDialogHeader`
+- **Line 311**: "Create from Template" button -- replace standard `Button` with `EngageButton`
+- Add `EngageDialogHeader` import
 
-3. **Decision on demo data** - Should I seed comprehensive demo data (contacts, templates, campaigns, activity logs) so you can immediately see the full platform in action?
+### 3. AutomationsList.tsx (3 dialogs)
+- **Line 369**: Create/Edit Automation dialog -- replace `DialogTitle` with `EngageDialogHeader` (icon: Zap, amber/orange gradient)
+- **Line ~540 (execution log dialog)**: Already uses a manual styled title -- replace with `EngageDialogHeader`
+- **Line ~580 (dry run dialog)**: Replace with `EngageDialogHeader`
+- Add `EngageDialogHeader` import
+
+### 4. SocialDashboard.tsx (2 dialogs)
+- **Line 309**: Create/Edit Post dialog -- replace `DialogTitle` with `EngageDialogHeader` (icon: Share2, purple/blue gradient)
+- **Link Account dialog**: Replace with `EngageDialogHeader`
+- Add `EngageDialogHeader` import
+
+### 5. ContactDetailDialog.tsx (1 dialog)
+- **Lines 217-228**: Currently has a manual icon glow implementation inline -- replace with `EngageDialogHeader` component to ensure consistency (emerald/teal gradient, Mail icon)
+- Add `EngageDialogHeader` import
 
 ---
 
-## Recommended Fix Priority
+## Phase 2: Functional Fixes
 
-### Phase 1 - Critical (email pipeline fix)
-- Fix `engage-email-send` to not require `email_provider_settings!inner` join
-- Set `from_email` in ComposeDialog from provider settings or a default
-- Configure RESEND_API_KEY secret (needs your key)
+### A. Contacts Page
+- **Active/Unsubscribed counts are local-page-only** (lines 77-78): These count only the current page of contacts (up to 50), not the total. When there are 200+ contacts across multiple pages, the stat cards will show incorrect numbers. Fix: add separate count queries filtered by `unsubscribed` status, like the existing `totalCount` query.
 
-### Phase 2 - Visual cleanup (5 remaining dialog files)
-- Apply `EngageDialogHeader` + remove old overrides in TemplatesList, CampaignsList, SentList, AuditLog
-- Swap remaining `Button` to `EngageButton` in CampaignsList
+### B. Segments Page -- Missing `EngageDialogHeader` import
+- The Segment Members viewer uses a manual `DialogTitle` with inline icon -- standardize.
 
-### Phase 3 - Demo data + polish
-- Seed demo data for a rich first-use experience
-- Wire up ComposeDialog `from_email` from settings
+### C. Social Dashboard -- Storage bucket may not exist
+- `handleMediaUpload` uploads to `social-media` storage bucket (line 121). If this bucket doesn't exist, uploads will fail silently. Verify bucket existence or add graceful error handling.
 
+### D. Email Compose -- `from_email` fallback
+- Currently defaults to `'noreply@engage.app'` -- this is fine for dev but should pull from `email_provider_settings` when available to match what the edge function uses.
+
+---
+
+## Phase 3: Data Seeding (Manual Add Approach)
+
+Since you chose to add data manually, here is the recommended order to verify the full flow:
+
+1. **Contacts**: Add 3-5 more contacts via the Add Contact dialog (email, name, tags like "newsletter", "vip")
+2. **Segments**: Create a segment with rule "tags includes newsletter" -- click the refresh icon to evaluate. The members viewer should populate.
+3. **Templates**: Create an email template with `{{first_name}}` variable, use the Preview tab to verify rendering
+4. **Campaigns**: Create a campaign using the template, select "All contacts" audience, and Launch. Messages should appear in the Sent tab (marked "sent" without Resend key).
+5. **Journeys**: Open the existing journey in the builder, verify the visual flow renders with React Flow nodes
+6. **Automations**: Create an automation with trigger "Tag Added" and action "Send Email"
+7. **Social**: Create a draft social post, try the calendar and queue views
+8. **Activity**: After the above actions, the Activity feed should show events from the `engage_activity_log` table
+
+---
+
+## Phase 4: Edge Function Completeness
+
+| Function | Status | Issue |
+|----------|--------|-------|
+| engage-email-send | Fixed | Works without `email_provider_settings` join. Mock-delivers without Resend key. |
+| engage-job-runner | Exists | No pg_cron trigger configured -- requires Supabase dashboard setup |
+| engage-journey-processor | Exists | Same -- needs cron or manual invoke |
+| engage-social-poster | Exists | No real OAuth -- accounts are "linked" manually with tokens |
+| engage-unsubscribe | Exists | Functional for one-click unsubscribe |
+| engage-email-webhook | Missing | Inbound email processing not implemented -- low priority |
+
+---
+
+## Summary of Changes
+
+- **8 files modified** (5 for EngageDialogHeader + EngageButton integration, 1 for contact count fix, 2 minor cleanups)
+- **Zero database changes** needed
+- **Zero edge function changes** needed
+- All changes are purely frontend visual standardization + 1 small logic fix for accurate contact stats
