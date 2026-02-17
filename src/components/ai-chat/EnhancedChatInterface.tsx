@@ -453,8 +453,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.4 }}
                       >
-                        I'm here to help you optimize your content strategy, analyze performance, 
-                        and discover new opportunities.
+                        I can create content, manage keywords, run campaigns, handle your CRM, and take actions across your entire platform — just ask.
                       </motion.p>
                     </motion.div>
 

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, FileText, CheckCircle, Clock, Target, ArrowRight } from 'lucide-react';
+import { TrendingUp, FileText, CheckCircle, Clock, Target, ArrowRight, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -63,27 +64,42 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     }
   };
 
-  const metrics = [
-    {
-      label: 'Content',
-      value: summary.totalContent,
-      icon: FileText,
-    },
-    {
-      label: 'Published',
-      value: summary.published,
-      icon: CheckCircle,
-    },
-    {
-      label: 'In Review',
-      value: summary.inReview,
-      icon: Clock,
-    },
-    {
-      label: 'SEO Score',
-      value: `${summary.avgSeoScore}%`,
-      icon: TrendingUp,
+  const contextualNudge = useMemo(() => {
+    if (summary.totalContent === 0) {
+      return {
+        text: "Let's create your first piece of content together",
+        action: 'send:Help me create my first piece of content'
+      };
     }
+    if (summary.inReview > 0) {
+      return {
+        text: `You have ${summary.inReview} item${summary.inReview > 1 ? 's' : ''} awaiting review — want me to help?`,
+        action: 'send:Show me my content items in review and help me process them'
+      };
+    }
+    if (summary.avgSeoScore > 0 && summary.avgSeoScore < 50) {
+      return {
+        text: 'Your SEO score could improve — let me suggest optimizations',
+        action: 'send:Analyze my content SEO scores and suggest improvements'
+      };
+    }
+    return {
+      text: 'Ready to optimize? Let me take a look',
+      action: 'workflow:get-started'
+    };
+  }, [summary]);
+
+  const capabilityHints = [
+    { text: 'Analyze trends', action: 'send:Analyze my content performance trends' },
+    { text: 'Create content', action: 'send:Help me create new content' },
+    { text: 'Check campaigns', action: 'send:Show me my campaign health and queue status' },
+  ];
+
+  const metrics = [
+    { label: 'Content', value: summary.totalContent, icon: FileText },
+    { label: 'Published', value: summary.published, icon: CheckCircle },
+    { label: 'In Review', value: summary.inReview, icon: Clock },
+    { label: 'SEO Score', value: `${summary.avgSeoScore}%`, icon: TrendingUp }
   ];
 
   if (isLoading) {
@@ -137,6 +153,27 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
               ))}
             </div>
 
+            {/* AI Capability Hints */}
+            <motion.div 
+              className="flex flex-wrap gap-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.35 }}
+            >
+              {capabilityHints.map((hint, index) => (
+                <Badge
+                  key={index}
+                  variant="outline"
+                  className="cursor-pointer px-2.5 py-1 text-xs bg-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-200 text-primary/80 hover:text-primary"
+                  onClick={() => onAction(hint.action, { displayText: hint.text })}
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {hint.text}
+                </Badge>
+              ))}
+            </motion.div>
+
+            {/* Contextual Nudge */}
             <motion.div 
               className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/30"
               initial={{ opacity: 0 }}
@@ -145,15 +182,15 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
             >
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm text-foreground">Ready to optimize?</span>
+                <span className="text-sm text-foreground">{contextualNudge.text}</span>
               </div>
               <Button
                 size="sm"
-                onClick={() => onAction('workflow:get-started')}
+                onClick={() => onAction(contextualNudge.action)}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <ArrowRight className="h-4 w-4 mr-1" />
-                Get Started
+                Let's Go
               </Button>
             </motion.div>
           </div>
