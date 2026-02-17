@@ -1994,6 +1994,9 @@ serve(async (req) => {
       'toggle_automation', 'activate_journey'
     ];
 
+    let requestPromotedActions: any[] = [];
+    let requestFallbackChartData: any = null;
+
     if (toolCalls && toolCalls.length > 0) {
       console.log(`🔧 AI requested ${toolCalls.length} tool calls`);
       
@@ -2290,7 +2293,7 @@ serve(async (req) => {
       }
       
       // Attach to scope for later access
-      (globalThis as any).__fallbackChartData = fallbackChartData;
+      requestFallbackChartData = fallbackChartData;
     }
 
     // Remove <think> tags AGGRESSIVELY before any other processing
@@ -2465,8 +2468,6 @@ serve(async (req) => {
     let cleanedResponse: string;
     let actions: any[] | undefined;
     let visualData: any | undefined;
-    let requestPromotedActions: any[] = [];
-    
     try {
       const parsedResponse = parseResponseWithFallback(aiMessage);
       cleanedResponse = parsedResponse.message;
@@ -2959,10 +2960,9 @@ serve(async (req) => {
     // =============================================================================
     // FIX: USE FALLBACK CHART DATA IF AI DIDN'T GENERATE VISUALDATA
     // =============================================================================
-    if (!visualData && (globalThis as any).__fallbackChartData) {
+    if (!visualData && requestFallbackChartData) {
       console.log('📊 AI response lacks visualData - injecting fallback chart from tool results');
-      visualData = (globalThis as any).__fallbackChartData;
-      delete (globalThis as any).__fallbackChartData; // Clean up
+      visualData = requestFallbackChartData;
     }
     
     // Only provide basic contextual actions if AI didn't return structured data
