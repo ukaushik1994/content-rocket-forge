@@ -112,47 +112,63 @@ export const useEnhancedAIChat = () => {
   const handleAction = useCallback(async (actionType: string, actionData: any) => {
     console.log('Action triggered:', actionType, actionData);
     
+    // Parse colon-separated action strings (e.g., "navigate:/path")
+    let parsedType = actionType;
+    let parsedData = actionData || {};
+    
+    if (actionType?.includes(':')) {
+      const colonIndex = actionType.indexOf(':');
+      parsedType = actionType.substring(0, colonIndex);
+      const colonValue = actionType.substring(colonIndex + 1);
+      
+      // Merge extracted value into data
+      if (parsedType === 'navigate' && !parsedData.url) {
+        parsedData = { ...parsedData, url: colonValue };
+      }
+    }
+    
     // Handle campaign-specific actions first
-    if (['retry_failed_content', 'trigger_content_generation'].includes(actionType)) {
-      await handleCampaignAction(actionType, actionData);
+    if (['retry_failed_content', 'trigger_content_generation'].includes(parsedType)) {
+      await handleCampaignAction(parsedType, parsedData);
       return;
     }
     
     // Handle different action types
-    switch (actionType) {
+    switch (parsedType) {
       case 'send_message':
-        if (actionData?.message) {
-          sendMessage(actionData.message);
+      case 'send-message':
+        if (parsedData?.message) {
+          sendMessage(parsedData.message);
         }
         break;
       case 'navigate':
-        if (actionData?.url) {
+        if (parsedData?.url) {
           // If payload exists, store in sessionStorage for the target page
-          if (actionData.payload) {
+          if (parsedData.payload) {
             try {
-              sessionStorage.setItem('contentBuilderPayload', JSON.stringify(actionData.payload));
-              console.log('📦 Stored payload in sessionStorage for navigation:', actionData.url);
+              sessionStorage.setItem('contentBuilderPayload', JSON.stringify(parsedData.payload));
+              console.log('📦 Stored payload in sessionStorage for navigation:', parsedData.url);
             } catch (e) {
               console.warn('Failed to store navigation payload:', e);
             }
           }
           // Use React Router for internal navigation
-          if (actionData.url.startsWith('/')) {
-            navigate(actionData.url);
+          if (parsedData.url.startsWith('/')) {
+            navigate(parsedData.url);
           } else {
-            window.location.href = actionData.url;
+            window.location.href = parsedData.url;
           }
         }
         break;
       case 'confirm_action':
         // Handle destructive action confirmation
-        if (actionData?.action && actionData?.args) {
-          const confirmMsg = `CONFIRMED: Execute ${actionData.action} with params: ${JSON.stringify(actionData.args)}`;
+        if (parsedData?.action && parsedData?.args) {
+          const confirmMsg = `CONFIRMED: Execute ${parsedData.action} with params: ${JSON.stringify(parsedData.args)}`;
           sendMessage(confirmMsg);
         }
         break;
       default:
-        console.warn('Unknown action type:', actionType);
+        console.warn('Unknown action type:', parsedType);
     }
   }, [sendMessage, navigate, handleCampaignAction]);
 
