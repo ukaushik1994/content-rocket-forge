@@ -10,13 +10,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Trash2, Eye, Variable, Send, Copy, Bold, Italic, Link, Heading, Image } from 'lucide-react';
+import { Plus, FileText, Trash2, Eye, Variable, Send, Copy, Bold, Italic, Link, Heading, Image, Sparkles, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { EngageButton } from '../../shared/EngageButton';
 import { EngageDialogHeader } from '../../shared/EngageDialogHeader';
+import { AIEmailWriterDialog } from './AIEmailWriterDialog';
+import { AISubjectLineDialog } from './AISubjectLineDialog';
 
 const VARIABLES = [
   { key: 'first_name', label: 'First Name' },
@@ -44,6 +46,8 @@ export const TemplatesList = () => {
   const [showTestSend, setShowTestSend] = useState<string | null>(null);
   const [testEmail, setTestEmail] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showAIWriter, setShowAIWriter] = useState(false);
+  const [showAISubjects, setShowAISubjects] = useState(false);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['email-templates', currentWorkspaceId],
@@ -275,7 +279,12 @@ export const TemplatesList = () => {
           <div className="space-y-3">
             <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div>
-              <Label>Subject *</Label>
+              <div className="flex items-center justify-between">
+                <Label>Subject *</Label>
+                <EngageButton variant="outline" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowAISubjects(true)}>
+                  <BarChart3 className="h-3 w-3" /> AI Subject Lines
+                </EngageButton>
+              </div>
               <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Use {{first_name}} for variables" />
             </div>
             <div>
@@ -287,6 +296,11 @@ export const TemplatesList = () => {
                   </Button>
                 ))}
               </div>
+            </div>
+            <div className="flex justify-end">
+              <EngageButton variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowAIWriter(true)}>
+                <Sparkles className="h-3 w-3" /> Write with AI
+              </EngageButton>
             </div>
             <Tabs value={editorTab} onValueChange={setEditorTab}>
               <TabsList className="h-8">
@@ -333,6 +347,19 @@ export const TemplatesList = () => {
           </div>
         </DialogContent>
       </Dialog>
+      <AIEmailWriterDialog
+        open={showAIWriter}
+        onOpenChange={setShowAIWriter}
+        onGenerated={(html) => setForm(f => ({ ...f, body_html: html }))}
+        existingHtml={form.body_html}
+      />
+      <AISubjectLineDialog
+        open={showAISubjects}
+        onOpenChange={setShowAISubjects}
+        onSelect={(subject) => setForm(f => ({ ...f, subject }))}
+        subject={form.subject}
+        bodyHtml={form.body_html}
+      />
     </div>
   );
 };

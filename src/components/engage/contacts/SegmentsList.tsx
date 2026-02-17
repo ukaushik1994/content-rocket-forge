@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { NLSegmentBuilder } from './NLSegmentBuilder';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
@@ -210,6 +211,7 @@ export const SegmentsList = () => {
                       ))}
                     </div>
                   </div>
+                  <NLSegmentBuilder onRulesGenerated={(newRules, match) => { setRules(newRules); setMatchType(match); }} />
                   <div>
                     <Label className="text-xs flex items-center gap-1 mb-2"><Filter className="h-3 w-3" /> Rules</Label>
                     <RuleBuilder rules={rules} onChange={setRules} />
