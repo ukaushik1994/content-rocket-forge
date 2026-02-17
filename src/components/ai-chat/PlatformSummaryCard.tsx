@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { TrendingUp, FileText, CheckCircle, Clock, Target, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,27 +67,27 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
   const contextualNudge = useMemo(() => {
     if (summary.totalContent === 0) {
       return {
-        text: "Ready to get started? I can help you create your first content.",
+        text: "Your platform is ready. Let me help you get started.",
         action: 'send:Help me create my first piece of content',
         buttonText: 'Get Started'
       };
     }
     if (summary.inReview > 0) {
       return {
-        text: `${summary.inReview} item${summary.inReview > 1 ? 's' : ''} in review`,
+        text: `You have ${summary.inReview} item${summary.inReview > 1 ? 's' : ''} awaiting review — want me to help?`,
         action: 'send:Show me my content items in review and help me process them',
-        buttonText: 'Review'
+        buttonText: 'Review Now'
       };
     }
     if (summary.avgSeoScore > 0 && summary.avgSeoScore < 50) {
       return {
-        text: 'SEO scores could improve',
+        text: 'Your SEO score could improve — let me suggest optimizations',
         action: 'send:Analyze my content SEO scores and suggest improvements',
         buttonText: 'Optimize'
       };
     }
     return {
-      text: 'Everything looks good',
+      text: 'Ready to optimize? Let me take a look',
       action: 'workflow:get-started',
       buttonText: "Let's Go"
     };
@@ -94,51 +97,85 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({
     { label: 'Content', value: summary.totalContent, icon: FileText },
     { label: 'Published', value: summary.published, icon: CheckCircle },
     { label: 'In Review', value: summary.inReview, icon: Clock },
-    { label: 'SEO', value: `${summary.avgSeoScore}%`, icon: TrendingUp }
+    { label: 'SEO Score', value: `${summary.avgSeoScore}%`, icon: TrendingUp }
   ];
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-6 py-2">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-4 w-16 bg-muted rounded animate-pulse" />
-        ))}
-      </div>
+      <Card className="bg-card border-border/50">
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-muted rounded w-1/3"></div>
+            <div className="grid grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-16 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {summary.totalContent > 0 && (
-        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground py-2">
-          {metrics.map((metric, index) => (
-            <React.Fragment key={metric.label}>
-              {index > 0 && <span className="text-border">·</span>}
-              <span className="flex items-center gap-1.5">
-                <metric.icon className="h-3.5 w-3.5 text-primary/70" />
-                <span className="font-medium text-foreground">{metric.value}</span>
-                <span>{metric.label}</span>
-              </span>
-            </React.Fragment>
-          ))}
-        </div>
-      )}
+      <Card className="bg-card border-border/50">
+        <CardContent className="p-6">
+          <div className="space-y-5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-medium text-foreground">
+                Platform Overview
+              </h3>
+            </div>
+            
+            {summary.totalContent > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {metrics.map((metric, index) => (
+                  <motion.div 
+                    key={metric.label}
+                    className="p-3 rounded-xl bg-muted/30 border border-border/30"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index, duration: 0.2 }}
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <metric.icon className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="text-xl font-bold text-foreground">{metric.value}</div>
+                    <div className="text-xs text-muted-foreground">{metric.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
 
-      <div className="flex items-center justify-center gap-2 py-2">
-        <Target className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">{contextualNudge.text}</span>
-        <button
-          onClick={() => onAction(contextualNudge.action)}
-          className="text-sm text-primary hover:text-primary/80 font-medium transition-colors flex items-center gap-1"
-        >
-          {contextualNudge.buttonText}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
+            {/* Contextual Nudge */}
+            <motion.div 
+              className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/30"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-sm text-foreground">{contextualNudge.text}</span>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => onAction(contextualNudge.action)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <ArrowRight className="h-4 w-4 mr-1" />
+                {contextualNudge.buttonText}
+              </Button>
+            </motion.div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

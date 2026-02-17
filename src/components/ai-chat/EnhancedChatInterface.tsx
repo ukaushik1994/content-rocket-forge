@@ -402,14 +402,42 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             <div className="max-w-6xl mx-auto py-6 space-y-8">
               {/* Welcome State - Premium Minimal */}
               <AnimatePresence>
-                {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
-                    {/* Welcome Hero - Minimal */}
-                    <motion.div className="text-center py-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
-                      <motion.h2 
-                        className="text-xl md:text-2xl font-medium text-foreground mb-2" 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                {messages.length === 0 && <motion.div variants={welcomeVariants} initial="hidden" animate="visible" exit="exit" className="space-y-10">
+                    {/* Welcome Hero - Clean and Minimal */}
+                    <motion.div className="text-center py-12" initial={{
+                    opacity: 0,
+                    y: 20
+                  }} animate={{
+                    opacity: 1,
+                    y: 0
+                  }} transition={{
+                    duration: 0.6,
+                    ease: "easeOut"
+                  }}>
+                      {/* Minimal Icon with Subtle Ring */}
+                      <motion.div 
+                        className="relative mx-auto w-fit mb-8"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.1, duration: 0.4 }}
+                      >
+                        <div className="p-4 rounded-2xl bg-card border border-border/50 shadow-sm">
+                          <Brain className="h-10 w-10 text-primary" />
+                        </div>
+                        {/* Subtle pulse ring */}
+                        <motion.div 
+                          className="absolute inset-0 rounded-2xl border border-primary/20"
+                          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0, 0.5] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                      </motion.div>
+                      
+                      {/* Time-based Greeting */}
+                      <motion.h2 
+                        className="text-2xl md:text-3xl font-semibold text-foreground mb-4" 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.4 }}
                       >
                         {(() => {
                           const hour = new Date().getHours();
@@ -420,21 +448,21 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       </motion.h2>
                       
                       <motion.p 
-                        className="text-muted-foreground text-sm" 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2, duration: 0.4 }}
+                        className="text-muted-foreground max-w-lg mx-auto leading-relaxed text-sm" 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
                       >
-                        Ask me anything or pick an action below.
+                        I can create content, manage keywords, run campaigns, handle your CRM, and take actions across your entire platform — just ask.
                       </motion.p>
                     </motion.div>
 
-                    {/* Platform Summary & Quick Actions */}
+                    {/* Platform Summary & Quick Actions - More Spacing */}
                     <motion.div 
-                      className="space-y-5" 
-                      initial={{ opacity: 0, y: 15 }}
+                      className="space-y-6" 
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3, duration: 0.4 }}
+                      transition={{ delay: 0.5, duration: 0.4 }}
                     >
                       <PlatformSummaryCard onAction={handleLegacyAction} />
                       <EnhancedQuickActions onAction={handleLegacyAction} />
