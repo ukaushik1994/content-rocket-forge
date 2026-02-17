@@ -2057,6 +2057,41 @@ serve(async (req) => {
       const totalToolTime = Date.now() - toolExecutionStart;
       console.log(`✅ All tools executed in ${totalToolTime}ms`);
       
+      // =============================================================================
+      // PROMOTE EMBEDDED NAVIGATION/CONFIRM ACTIONS FROM TOOL RESULTS
+      // =============================================================================
+      const promotedActions: any[] = [];
+      for (const result of toolResults) {
+        try {
+          const parsed = JSON.parse(result.content);
+          // Promote navigation actions from tool results
+          if (parsed?.action?.type === 'navigate' && parsed?.action?.url) {
+            promotedActions.push({
+              id: `tool-nav-${Date.now()}`,
+              label: parsed.action.label || 'Open',
+              type: 'button',
+              action: 'navigate',
+              data: { url: parsed.action.url, payload: parsed.action.payload || {} }
+            });
+          }
+          // Promote confirmation actions from destructive tool guards
+          if (parsed?.requires_confirmation) {
+            promotedActions.push({
+              id: `confirm-${Date.now()}`,
+              label: `Confirm: ${parsed.action || 'action'}`,
+              type: 'button',
+              action: 'confirm_action',
+              data: { action: parsed.action, args: parsed.args || {} }
+            });
+          }
+        } catch (_e) { /* not JSON, skip */ }
+      }
+      // Store promoted actions for later merge into response
+      if (promotedActions.length > 0) {
+        (globalThis as any).__promotedToolActions = promotedActions;
+        console.log(`🎯 Promoted ${promotedActions.length} actions from tool results`);
+      }
+      
       // Call AI again with tool results
       console.log(`🔧 Calling AI again with ${toolResults.length} tool results`);
       
@@ -2975,6 +3010,14 @@ serve(async (req) => {
 
     // Access allVisualData from scope (includes expanded multi-perspective charts)
     const allCharts = typeof allVisualData !== 'undefined' && allVisualData.length > 1 ? allVisualData : undefined;
+    
+    // Merge promoted tool actions into response actions
+    const promotedToolActions = (globalThis as any).__promotedToolActions || [];
+    if (promotedToolActions.length > 0) {
+      actions = [...(actions || []), ...promotedToolActions];
+      delete (globalThis as any).__promotedToolActions;
+      console.log(`🎯 Merged ${promotedToolActions.length} promoted tool actions into response`);
+    }
     
     const responseData = {
       message: finalContent,
