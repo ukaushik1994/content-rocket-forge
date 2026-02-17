@@ -1,184 +1,269 @@
 
 
-# Engage Module -- Remaining Pages Enhancement Plan
-## Contacts, Segments, Email, and Activity
+# AI-Powered Engage Module -- Feature Innovation Plan
+## Email, Contacts, Segments, Social, Activity
 
-This plan covers all four remaining Engage pages that haven't been given the "powerhouse" treatment yet. Each section lists critical fixes first, then enhancements.
-
----
-
-## Phase 1: Contacts & Segments
-
-### Current State
-- **Contacts**: CRUD, bulk import (CSV), bulk delete, bulk tag, export, pagination, search, tag filter, sort, contact detail dialog with events/activity/emails/segments/attributes/journey enrollment
-- **Segments**: CRUD, RuleBuilder, evaluate via RPC, duplicate, view members, export members CSV, search
-
-### Fixes
-
-**C-F1: Sorting is client-side only**
-Contacts sort by `created_at` server-side, but client-side sorting by `email` or `first_name` only applies to the 50 contacts on the current page. Users think they're sorting all contacts but only the visible page is reordered.
-- Fix: Move sorting into the Supabase query (`.order(sortField, { ascending: sortDir === 'asc' })`) and include `sortField`/`sortDir` in the query key.
-
-**C-F2: Tag filter is derived from current page only**
-`allTags` is built from `contacts` (current page of 50). Tags that exist on contacts on other pages never appear in the filter.
-- Fix: Add a dedicated query to fetch all distinct tags across the workspace (aggregate from DB or from a separate RPC/distinct query).
-
-**C-F3: Bulk CSV import has no error handling per row**
-If any row in the bulk insert fails (e.g., duplicate email), the entire batch fails silently.
-- Fix: Use `upsert` with `onConflict: 'workspace_id,email'` or insert rows individually with error collection.
-
-**C-F4: Empty state button in Segments uses standard Button**
-Line 299: "Create First Segment" uses `Button` with inline gradient instead of `EngageButton`.
-
-**C-F5: Contact detail "Save Changes" uses plain Button**
-Line 349: Uses standard `Button` instead of `EngageButton` for consistency.
-
-### Enhancements
-
-**C-E1: Contact Merge**
-When two contacts share overlapping data, allow selecting two contacts and merging them (keeping the primary email, combining tags and attributes).
-
-**C-E2: Contact Import with Column Mapping**
-Replace the rigid CSV format with a column mapping step -- detect headers and let users map columns to fields (email, first_name, last_name, tags).
-
-**C-E3: Segments -- Scheduled Auto-Evaluation**
-Add a toggle per segment to auto-evaluate daily. Store a `auto_evaluate` boolean on the segment row. The `engage-job-runner` can call `evaluate_segment` for segments with this flag.
-
-**C-E4: Segments -- Bulk Actions**
-Multi-select segments with checkboxes and floating action bar for bulk Evaluate, Duplicate, Delete.
-
-**C-E5: Contact Lifecycle Stage**
-Add a `lifecycle_stage` field to contacts (lead, prospect, customer, churned) with a visual pipeline view.
+This plan introduces AI-native capabilities across every Engage module, transforming it from a manual CRM into an intelligent, autonomous marketing engine. Every feature below uses the existing `ai-proxy` pattern (user's configured AI provider) with Lovable AI Gateway as fallback.
 
 ---
 
-## Phase 2: Email
+## Architecture: New Edge Functions
 
-### Current State
-- **Dashboard**: 7 tabs (Inbox, Sent, Scheduled, Drafts, Templates, Campaigns, Reports)
-- **Inbox**: 3-panel layout (Thread List, Thread Reader, Thread Context), compose dialog, status filters
-- **Templates**: CRUD, HTML toolbar, variable insertion, preview, test send, duplicate, usage counts
-- **Campaigns**: 3-step wizard (Setup, Audience, Schedule), launch, cancel, detail view with message table, recipient estimate
-- **Reports**: Summary cards, pie chart (status distribution), campaign performance bar chart, template leaderboard
-- **Sent/Scheduled/Drafts**: Basic list views with search and detail dialogs
+All AI features route through dedicated edge functions that call `ai-proxy`. Each function handles one domain to keep things modular and testable.
 
-### Fixes
-
-**E-F1: "Send Now" in ScheduledList does nothing**
-The `sendNow` mutation (line 44-48) only shows a toast. It doesn't actually trigger the processor or change any status. Users click it expecting immediate delivery.
-- Fix: Either invoke `engage-email-send` edge function directly, or update the message `queued_at` to `now()` to prioritize it.
-
-**E-F2: Campaign launch doesn't handle Supabase 1000-row limit**
-`launchCampaign` (line 228-273) does `select('id, email, first_name, last_name')` on contacts without pagination. If the audience has >1000 contacts, only the first 1000 get messages.
-- Fix: Implement pagination loop (fetch in batches of 1000) or move this logic to an edge function.
-
-**E-F3: DraftsList has no actions**
-Drafts are shown as read-only cards. Users can't edit, delete, or launch a draft campaign from this tab.
-- Fix: Add Edit, Delete, and Launch buttons to each draft card.
-
-**E-F4: Templates have no search**
-With many templates, there's no way to filter or search.
-
-**E-F5: Campaign detail dialog lacks navigation back to list**
-Once you open a campaign detail, there's no clear way to close or go back.
-
-### Enhancements
-
-**E-E1: Template Categories/Folders**
-Add a `category` field to templates (e.g., Welcome, Newsletter, Transactional) with filter tabs.
-
-**E-E2: A/B Testing for Campaigns**
-Allow creating two template variants for a campaign. Split the audience and track which performs better. Needs a `variant` field on `email_messages` and comparison metrics in Reports.
-
-**E-E3: Email Scheduling with Time Zone**
-Add timezone selection to the campaign scheduler so emails land at the right local time for recipients.
-
-**E-E4: Reports -- Date Range Filter**
-Reports currently show all-time data. Add a date range selector (7d, 30d, 90d, custom).
-
-**E-E5: Inbox -- Keyboard Navigation**
-Add Up/Down arrow keys to navigate threads, Enter to open, Escape to deselect.
-
-**E-E6: Template Starter Library**
-Pre-built template recipes (Welcome Email, Newsletter, Password Reset, etc.) similar to the automation presets.
+| Edge Function | Purpose |
+|---|---|
+| `engage-ai-writer` | Generates email bodies, subject lines, social posts from prompts |
+| `engage-ai-scoring` | Scores contacts, predicts churn, computes engagement health |
+| `engage-ai-segments` | Converts natural language to segment rules (JSON) |
+| `engage-ai-analytics` | Generates activity summaries, anomaly detection, next-best-action |
+| `engage-ai-social` | Repurposes content, suggests hashtags, recommends post times |
 
 ---
 
-## Phase 3: Activity Log, System Health & Audit
+## Phase 1: Email AI
 
-### Current State
-- **Activity Feed**: Timeline with channel filters, search, date range, CSV export, channel distribution bar chart, payload viewer dialog
-- **System Health**: Integration status, queue counts, deliverability trend chart
-- **Audit Log**: Action/resource filters, search, date range, CSV export, detail dialog
+### E-AI-1: AI Email Writer
+**What**: "Write with AI" button in the template editor. User provides a brief (topic, tone, length) and AI generates a full HTML email body matching their brand voice.
+- New dialog in `TemplatesList.tsx` with prompt input fields (topic, tone, CTA, length)
+- Calls `engage-ai-writer` edge function with `use_case: 'email_body'`
+- Returns structured HTML that populates the template editor
+- Also supports "Improve This" -- select existing body text, AI rewrites it
 
-### Fixes
+### E-AI-2: AI Subject Line Generator
+**What**: Generate 5 subject line variations with predicted engagement level (High/Medium/Low) based on best practices.
+- Button in template editor and campaign wizard
+- Calls `engage-ai-writer` with `use_case: 'subject_lines'` and email body context
+- Returns array of `{ subject: string, confidence: 'high' | 'medium' | 'low', reason: string }`
+- User picks one or regenerates
 
-**A-F1: Activity feed limited to 200 rows with no pagination**
-If there are >200 events in the date range, older events are silently lost.
-- Fix: Add cursor-based pagination (Load More button).
+### E-AI-3: Smart Send Time Optimization
+**What**: AI analyzes contact engagement history (open times, click times from `email_messages`) to recommend optimal send time per campaign.
+- New "Optimize Send Time" button in the campaign scheduler step
+- Calls `engage-ai-analytics` with aggregated open/click timestamp distributions
+- Returns recommended day + hour with reasoning
+- Users can accept or override
 
-**A-F2: System Health queue query may fail for large workspaces**
-The `journey_steps` count query uses `.eq('workspace_id', ...)` but `journey_steps` doesn't have a direct `workspace_id` column in some schemas -- it goes through `journey_enrollments`.
-- Fix: Join through `journey_enrollments` for accurate counts.
+### E-AI-4: Deliverability Intelligence
+**What**: AI reviews email content for spam triggers, readability, and compliance issues before sending.
+- "Check Deliverability" button in template preview
+- Calls `engage-ai-writer` with `use_case: 'deliverability_check'`
+- Returns score (0-100), issues list (spam words, missing unsubscribe, image-to-text ratio), and fix suggestions
+- Visual scorecard with red/yellow/green indicators
 
-**A-F3: Audit log has no user name resolution**
-Shows raw `user_id` UUIDs instead of names. Makes it hard to tell who did what.
-- Fix: Join with `profiles` to show display names.
+---
 
-### Enhancements
+## Phase 2: Contacts & Segments AI
 
-**A-E1: Real-Time Activity Stream**
-Subscribe to `engage_activity_log` inserts via Supabase Realtime for live updates without manual refresh.
+### C-AI-1: AI Contact Scoring (Lead Scoring)
+**What**: Automatically score every contact 0-100 based on engagement signals (email opens, clicks, events, journey completions, recency).
+- New `engagement_score` computed field displayed as a badge on contact cards
+- "Recalculate Scores" button calls `engage-ai-scoring` edge function
+- The function aggregates per-contact signals from `email_messages`, `engage_events`, `journey_enrollments`, and `engage_activity_log`
+- AI produces score + reasoning + recommended action (nurture, upsell, re-engage, archive)
+- Scores visible in contact list with sort capability
 
-**A-E2: Activity Feed -- Grouped by Day**
-Group timeline entries by date headers (Today, Yesterday, Mar 15, etc.) for easier scanning.
+### C-AI-2: Natural Language Segment Builder
+**What**: Type "Active users who opened an email in the last 7 days but haven't purchased" and AI generates the segment rules JSON.
+- New "Describe in English" input at the top of the segment creation dialog
+- Calls `engage-ai-segments` edge function with the natural language description
+- AI returns `SegmentDefinition` JSON (match + rules array) using tool calling for structured output
+- Rules auto-populate the existing `RuleBuilder` for user review and tweaking
+- User can still manually build rules as before
 
-**A-E3: System Health -- Auto-Refresh**
-Add a 30-second auto-refresh toggle for queue counts and integration status.
+### C-AI-3: Predictive Churn Detection
+**What**: AI identifies contacts at risk of disengagement based on declining activity patterns.
+- "Churn Risk" tab in Contacts list showing contacts sorted by risk score
+- Calls `engage-ai-scoring` with `use_case: 'churn_prediction'`
+- AI analyzes activity frequency trends (last 7d vs 30d vs 90d), email engagement decay, event frequency
+- Returns risk_level (low/medium/high/critical), predicted_churn_date, recommended_actions
+- One-click "Create Re-engagement Journey" from high-risk contacts
 
-**A-E4: Audit Log -- Diff Viewer**
-For "update" actions that include before/after snapshots in `details`, show a visual diff highlighting what changed.
+### C-AI-4: Smart Deduplication
+**What**: AI detects and suggests merging duplicate contacts using fuzzy matching.
+- "Find Duplicates" button in contacts toolbar
+- Edge function queries contacts and groups by similarity (email domain, name Levenshtein distance, phone patterns)
+- Presents merge candidates with confidence scores
+- User reviews and confirms merges (primary record selection, tag/attribute combination)
 
-**A-E5: Notification Rules**
-Let users configure alerts (e.g., "Notify me when delivery rate drops below 90%") stored in a lightweight `engage_alert_rules` table, evaluated by the job runner.
+---
+
+## Phase 3: Social AI
+
+### S-AI-1: AI Post Writer & Repurposer
+**What**: Generate platform-optimized social posts from a topic, URL, or existing content piece.
+- "Write with AI" button in the create post dialog
+- Input: topic/URL/paste content + select target platforms
+- Calls `engage-ai-social` with `use_case: 'generate_posts'`
+- Returns platform-specific versions respecting character limits (280 for Twitter, 3000 for LinkedIn, etc.)
+- Each version is pre-filled into the post editor with platform toggles
+- Also supports "Repurpose Email" -- select an email template and AI creates social posts from it
+
+### S-AI-2: Smart Scheduling & Best Time to Post
+**What**: AI recommends optimal posting times per platform based on audience engagement patterns.
+- "Suggest Best Time" button in the scheduling section
+- Calls `engage-ai-social` with `use_case: 'best_time'` + historical post performance data
+- Returns recommended times per platform with reasoning
+- Auto-fills the scheduler with one click
+
+### S-AI-3: Hashtag & Trend Intelligence
+**What**: AI suggests relevant, trending hashtags for post content.
+- "Suggest Hashtags" button next to the hashtag section in post editor
+- Calls `engage-ai-social` with post content + platform
+- Returns categorized hashtags: high_reach, niche, trending, branded
+- One-click insert into post content
+
+### S-AI-4: AI Engagement Assistant
+**What**: AI generates reply suggestions for social inbox mentions and comments.
+- In `SocialInbox.tsx`, each incoming message gets a "Suggest Reply" button
+- Calls `engage-ai-social` with `use_case: 'suggest_reply'` + message context + brand voice
+- Returns 3 tone variants: professional, friendly, witty
+- User picks and sends (or edits first)
+
+---
+
+## Phase 4: Activity & Analytics Intelligence
+
+### A-AI-1: AI Command Center / Daily Briefing
+**What**: AI-generated summary of everything that happened across all Engage channels in the last 24h/7d.
+- New "AI Briefing" card at the top of the Activity Log
+- Calls `engage-ai-analytics` with `use_case: 'briefing'`
+- Aggregates: emails sent/opened/bounced, journeys completed, automations triggered, social posts published/engaged
+- AI generates a narrative summary + 3 key insights + 3 recommended next actions
+- Auto-refreshes daily or on-demand
+
+### A-AI-2: Anomaly Detection & Proactive Alerts
+**What**: AI monitors key metrics and alerts when something deviates significantly.
+- Background check in `engage-job-runner` (runs every hour)
+- Compares current period metrics vs historical baseline (bounce rate, open rate, unsubscribe rate, automation failure rate)
+- When anomaly detected, inserts alert into `engage_activity_log` with type `ai_alert`
+- Activity feed shows these with a special AI badge and recommended actions
+- Example: "Bounce rate spiked to 12% (normally 3%) -- 47 emails bounced from campaign 'Spring Sale'. Check your sender domain."
+
+### A-AI-3: Next Best Action Engine
+**What**: AI proactively suggests what to do next based on current state of all channels.
+- Sidebar widget or card in Activity dashboard
+- Calls `engage-ai-analytics` with full workspace state summary
+- Returns prioritized action list with impact estimates:
+  - "Send follow-up to 234 contacts who opened but didn't click Campaign X" (High Impact)
+  - "Your Welcome Series journey has 40% drop-off at Step 3 -- try shortening the wait" (Medium Impact)
+  - "15 contacts tagged 'VIP' haven't been contacted in 30 days" (High Impact)
+- Each action has a one-click button to execute (create campaign, edit journey, create segment)
+
+### A-AI-4: Conversational CRM (Natural Language Analytics)
+**What**: Ask questions in plain English and get instant answers with charts.
+- Already partially exists via `enhanced-ai-chat` with engage tools
+- Enhancement: Add a mini chat input directly in the Activity tab header
+- Routes through existing `enhanced-ai-chat` with engage context pre-loaded
+- Example: "How many emails did we send last week?" returns a number + mini chart
+- Example: "Which campaign had the best open rate?" returns comparison visualization
+
+---
+
+## Database Changes
+
+```text
+-- Contact scoring results (cached, not recomputed every page load)
+New table: engage_contact_scores
+  id UUID PK
+  workspace_id UUID (FK team_workspaces)
+  contact_id UUID (FK engage_contacts)
+  engagement_score INTEGER (0-100)
+  churn_risk TEXT (low/medium/high/critical)
+  scoring_factors JSONB
+  recommended_actions TEXT[]
+  computed_at TIMESTAMPTZ
+  UNIQUE(workspace_id, contact_id)
+
+-- AI briefing cache (avoid regenerating on every page load)
+New table: engage_ai_briefings
+  id UUID PK
+  workspace_id UUID
+  period TEXT (daily/weekly)
+  summary TEXT
+  insights JSONB
+  actions JSONB
+  generated_at TIMESTAMPTZ
+```
+
+---
+
+## New Edge Functions (5 total)
+
+### 1. engage-ai-writer
+- Handles: email body generation, subject lines, deliverability checks
+- Uses ai-proxy with user's configured provider
+- Structured output via tool calling
+
+### 2. engage-ai-scoring
+- Handles: contact scoring, churn prediction
+- Aggregates signals from multiple tables
+- Returns structured scores via tool calling
+
+### 3. engage-ai-segments
+- Handles: natural language to segment rules conversion
+- Returns SegmentDefinition JSON via tool calling
+- Validates against known field names
+
+### 4. engage-ai-analytics
+- Handles: briefings, anomaly detection, next-best-action
+- Heavy data aggregation before AI call
+- Cached results in engage_ai_briefings
+
+### 5. engage-ai-social
+- Handles: post generation, repurposing, hashtag suggestions, reply suggestions
+- Platform-aware (respects character limits)
+- Returns platform-keyed content
 
 ---
 
 ## Implementation Priority
 
-The work is sequenced to fix broken things first, then add value:
+### Wave 1 -- Highest Impact (do first)
+- E-AI-1: AI Email Writer (most visible, immediate value)
+- S-AI-1: AI Post Writer & Repurposer (same pattern, reuses writer function)
+- C-AI-2: Natural Language Segment Builder (unique differentiator)
+- A-AI-1: AI Command Center / Briefing (wow factor)
 
-1. **Critical Fixes** (all modules): C-F1, C-F2, C-F3, E-F1, E-F2, E-F3, A-F1, A-F2
-2. **UI Consistency**: C-F4, C-F5, E-F4, A-F3
-3. **High-Value Features**: C-E4, E-E1, E-E4, E-E6, A-E2
-4. **Power Features**: C-E1, C-E2, C-E3, E-E2, E-E3, E-E5, A-E1, A-E3, A-E4
-5. **Advanced**: C-E5, E-E5, A-E5
+### Wave 2 -- Intelligence Layer
+- C-AI-1: AI Contact Scoring
+- E-AI-2: AI Subject Line Generator
+- A-AI-3: Next Best Action Engine
+- S-AI-3: Hashtag Intelligence
+
+### Wave 3 -- Predictive & Advanced
+- C-AI-3: Predictive Churn Detection
+- E-AI-3: Smart Send Time
+- A-AI-2: Anomaly Detection (background job)
+- S-AI-2: Best Time to Post
+
+### Wave 4 -- Polish
+- E-AI-4: Deliverability Intelligence
+- C-AI-4: Smart Deduplication
+- S-AI-4: AI Engagement Assistant
+- A-AI-4: Conversational CRM widget
 
 ---
 
-## Technical Details
+## Files Created
+- `supabase/functions/engage-ai-writer/index.ts`
+- `supabase/functions/engage-ai-scoring/index.ts`
+- `supabase/functions/engage-ai-segments/index.ts`
+- `supabase/functions/engage-ai-analytics/index.ts`
+- `supabase/functions/engage-ai-social/index.ts`
 
-### Database Changes
-- Add `category` column to `email_templates` (text, nullable, default null)
-- Add `auto_evaluate` column to `engage_segments` (boolean, default false)
-- No new tables needed for Phase 1-3 (leveraging existing JSONB columns and tables)
+## Files Modified
+- `src/components/engage/email/templates/TemplatesList.tsx` (AI writer + subject lines + deliverability)
+- `src/components/engage/email/campaigns/CampaignsList.tsx` (smart send time)
+- `src/components/engage/contacts/ContactsList.tsx` (scoring badges, churn tab, dedup)
+- `src/components/engage/contacts/SegmentsList.tsx` (NL segment builder)
+- `src/components/engage/social/SocialDashboard.tsx` (AI writer, hashtags, best time)
+- `src/components/engage/social/SocialInbox.tsx` (AI reply suggestions)
+- `src/components/engage/activity/ActivityLog.tsx` (AI briefing, anomaly alerts, NL chat)
+- `supabase/functions/engage-job-runner/index.ts` (anomaly detection loop, segment auto-eval)
 
-### Files Modified
-- `src/components/engage/contacts/ContactsList.tsx` (C-F1, C-F2, C-F3, C-F5, C-E1, C-E2, C-E4)
-- `src/components/engage/contacts/SegmentsList.tsx` (C-F4, C-E3, C-E4)
-- `src/components/engage/contacts/ContactDetailDialog.tsx` (C-F5)
-- `src/components/engage/email/EmailDashboard.tsx` (minor)
-- `src/components/engage/email/templates/TemplatesList.tsx` (E-F4, E-E1, E-E6)
-- `src/components/engage/email/campaigns/CampaignsList.tsx` (E-F2, E-F5)
-- `src/components/engage/email/drafts/DraftsList.tsx` (E-F3)
-- `src/components/engage/email/scheduled/ScheduledList.tsx` (E-F1)
-- `src/components/engage/email/reports/EmailReports.tsx` (E-E4)
-- `src/components/engage/email/inbox/EmailInbox.tsx` (E-E5)
-- `src/components/engage/activity/ActivityLog.tsx` (A-F1, A-E1, A-E2)
-- `src/components/engage/activity/SystemHealth.tsx` (A-F2, A-E3)
-- `src/components/engage/activity/AuditLog.tsx` (A-F3, A-E4)
-- `src/components/engage/shared/RuleBuilder.tsx` (minor operator additions)
-
-### Edge Function Updates
-- `engage-job-runner` -- add segment auto-evaluation loop for segments with `auto_evaluate = true`
-
+## Summary
+- 16 AI-powered features across 5 modules
+- 5 new edge functions (all using ai-proxy pattern)
+- 2 new database tables (scores cache + briefings cache)
+- 4 implementation waves, highest-impact features first
