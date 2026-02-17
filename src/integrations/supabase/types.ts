@@ -3645,6 +3645,7 @@ export type Database = {
         Row: {
           body_html: string | null
           body_text: string | null
+          category: string | null
           created_at: string | null
           created_by: string | null
           id: string
@@ -3657,6 +3658,7 @@ export type Database = {
         Insert: {
           body_html?: string | null
           body_text?: string | null
+          category?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
@@ -3669,6 +3671,7 @@ export type Database = {
         Update: {
           body_html?: string | null
           body_text?: string | null
+          category?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
@@ -3877,6 +3880,44 @@ export type Database = {
           },
         ]
       }
+      engage_ai_briefings: {
+        Row: {
+          actions: Json | null
+          generated_at: string
+          id: string
+          insights: Json | null
+          period: string
+          summary: string
+          workspace_id: string
+        }
+        Insert: {
+          actions?: Json | null
+          generated_at?: string
+          id?: string
+          insights?: Json | null
+          period?: string
+          summary: string
+          workspace_id: string
+        }
+        Update: {
+          actions?: Json | null
+          generated_at?: string
+          id?: string
+          insights?: Json | null
+          period?: string
+          summary?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engage_ai_briefings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engage_audit_log: {
         Row: {
           action: string
@@ -3959,6 +4000,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "engage_automations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "team_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engage_contact_scores: {
+        Row: {
+          churn_risk: string | null
+          computed_at: string
+          contact_id: string
+          engagement_score: number | null
+          id: string
+          recommended_actions: string[] | null
+          scoring_factors: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          churn_risk?: string | null
+          computed_at?: string
+          contact_id: string
+          engagement_score?: number | null
+          id?: string
+          recommended_actions?: string[] | null
+          scoring_factors?: Json | null
+          workspace_id: string
+        }
+        Update: {
+          churn_risk?: string | null
+          computed_at?: string
+          contact_id?: string
+          engagement_score?: number | null
+          id?: string
+          recommended_actions?: string[] | null
+          scoring_factors?: Json | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engage_contact_scores_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "engage_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engage_contact_scores_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "team_workspaces"
@@ -4124,6 +4213,7 @@ export type Database = {
       }
       engage_segments: {
         Row: {
+          auto_evaluate: boolean | null
           created_at: string | null
           definition: Json | null
           description: string | null
@@ -4133,6 +4223,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          auto_evaluate?: boolean | null
           created_at?: string | null
           definition?: Json | null
           description?: string | null
@@ -4142,6 +4233,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          auto_evaluate?: boolean | null
           created_at?: string | null
           definition?: Json | null
           description?: string | null

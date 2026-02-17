@@ -28,6 +28,7 @@ import { EngageButton } from '../shared/EngageButton';
 import { format, formatDistanceToNow, isFuture } from 'date-fns';
 import { SocialCalendar } from './SocialCalendar';
 import { SocialPostCard } from './SocialPostCard';
+import { AISocialWriterDialog } from './AISocialWriterDialog';
 
 const providers = [
   { id: 'twitter', label: 'X / Twitter', icon: Twitter, color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -62,6 +63,7 @@ export const SocialDashboard = () => {
   const [showLinkAccount, setShowLinkAccount] = useState(false);
   const [linkForm, setLinkForm] = useState({ provider: '', account_name: '', access_token: '' });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showAIWriter, setShowAIWriter] = useState(false);
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['social-posts', currentWorkspaceId],
@@ -311,8 +313,12 @@ export const SocialDashboard = () => {
                   <div>
                     <div className="flex items-center justify-between">
                       <Label>Content *</Label>
-                      <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowHashtags(!showHashtags)}>
-                        <Hash className="h-3 w-3" /> Hashtags
+                      <div className="flex gap-1">
+                        <EngageButton variant="outline" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowAIWriter(true)}>
+                          <Sparkles className="h-3 w-3" /> AI Writer
+                        </EngageButton>
+                        <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowHashtags(!showHashtags)}>
+                          <Hash className="h-3 w-3" /> Hashtags
                       </Button>
                     </div>
                     {showHashtags && (
