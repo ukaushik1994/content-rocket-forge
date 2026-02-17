@@ -1,125 +1,175 @@
 
 
-# Automations Page -- Complete Feature Audit & Implementation Plan
+# Automations Powerhouse Enhancement Plan
 
-## What Already Exists (Working)
+## Current State Summary
 
-The Automations page is surprisingly well-built. Here is everything currently functional:
-
-### Frontend (AutomationsList.tsx -- 637 lines)
-- CRUD: Create, Edit, Delete automations
-- Duplicate automation
-- Toggle active/paused via Switch
-- Search/filter automations
-- 3 trigger types: Segment Entry, Tag Added, Event Occurred
-- 6 action types: Send Email, Add Tag, Remove Tag, Enroll Journey, Webhook, Wait/Delay
-- Multi-action workflows with reordering (move up/down)
-- RuleBuilder-based conditions (optional filter layer)
-- Template and Journey picker dropdowns for action config
-- Execution count badges (from activity log)
-- Execution Log viewer dialog
-- Dry Run simulator (pick a contact, simulate actions)
-- Premium UI: EngageHero, EngageDialogHeader, EngageButton, GlassCard, motion animations, ping dots
-- Stats grid: Active / Paused / Total
-
-### Frontend (AutomationRuns.tsx -- 231 lines)
-- Full audit trail page at /engage/automations/runs
-- Date range filter (24h, 7d, 30d)
-- Status filter (all, success, failed)
-- Search by automation name or contact email
-- Stats: total runs, successful, failed, avg duration
-- CSV export of run history
-- Run detail dialog with trigger event + actions executed JSON viewer
-
-### Backend (engage-job-runner edge function -- 292 lines)
-- Evaluates all active automations every invocation
-- Supports triggers: tag_added, segment_entry, contact_created, email_opened
-- Executes actions: add_tag, remove_tag, send_email, enroll_journey, update_field, webhook, wait
-- Rate limiting (per-automation daily cap + per-contact daily cap)
-- Writes to automation_runs table with success/failure + duration
-- Updates automation.updated_at as "last triggered" timestamp
-
-### Database
-- `engage_automations` table with: id, workspace_id, name, status, trigger_config, conditions, actions, description, rate_limit, error_routing, created_by, timestamps
-- `automation_runs` table with: id, workspace_id, automation_id, contact_id, trigger_event, actions_executed, status, duration_ms, error, created_at
-- RLS policies via `get_user_engage_workspace_ids`
+The Automations module already has solid CRUD, 5 triggers, 7 action types, dry run, execution logs, rate limiting, advanced settings, and a Run Now button. This plan adds the features that separate a basic automation tool from a professional-grade marketing automation engine.
 
 ---
 
-## What Needs Fixing / Adding
+## Enhancement 1: Automation Analytics Dashboard
 
-### 1. Missing "View Runs" Link (Minor)
-The AutomationRuns page exists at `/engage/automations/runs` but there is no visible link or button to navigate there from the AutomationsList. Users cannot discover it.
+Currently, the stats grid only shows Active / Paused / Total counts. There is no visibility into performance trends, success rates over time, or which automations are performing best.
 
-**Fix**: Add a "View All Runs" button/link in the hero actions area or stats section.
+**What gets added:**
+- A Recharts-based mini analytics section below the stats grid
+- Bar chart: executions per day (last 7 days) with success/fail stacking
+- Top 3 most-triggered automations (leaderboard)
+- Overall success rate percentage with a radial progress indicator
+- All data sourced from the existing `automation_runs` table -- no new DB tables needed
 
-### 2. Trigger Type Mismatch (Backend vs Frontend)
-The edge function supports 4 triggers: `tag_added`, `segment_entry`, `contact_created`, `email_opened`. But the frontend only exposes 3: `segment_entry`, `tag_added`, `event_occurred`.
-
-- `contact_created` is missing from the UI
-- `email_opened` is missing from the UI
-- `event_occurred` exists in the UI but is not handled by the edge function
-
-**Fix**: Align the frontend trigger options with what the backend supports. Add `contact_created` and `email_opened` as selectable triggers. Either implement `event_occurred` in the edge function or remove it from the UI.
-
-### 3. Action Type Mismatch (Backend vs Frontend)
-The edge function handles `update_field` but the UI does not offer it. The UI has `wait` which the backend skips (just logs it).
-
-**Fix**: Add `update_field` as an action type in the UI with field name + value inputs.
-
-### 4. Trigger Config Key Mismatch
-The edge function checks `trigger.tag` for tag_added triggers, but the frontend saves as `trigger_config: { type: 'tag_added', value: 'tagname' }`. The key is `value` in the frontend but the backend expects `tag`.
-
-**Fix**: Update the edge function to read `trigger.value || trigger.tag` for backward compatibility, or update the frontend to save as `trigger.tag`.
-
-### 5. Rate Limit & Error Routing Not Exposed in UI
-The `engage_automations` table has `rate_limit` and `error_routing` JSONB columns. The edge function reads and enforces `rate_limit.max_per_day` and `rate_limit.max_per_contact_per_day`. But the Create/Edit dialog has no fields for these.
-
-**Fix**: Add an optional "Advanced Settings" collapsible section in the dialog with:
-- Max executions per day (number input)
-- Max per contact per day (number input)
-- Error routing: on failure, continue / stop / notify (select)
-
-### 6. Dry Run is Client-Side Only
-The dry run simulator currently does a simplified check: `conditions.every(() => true)` -- it always passes. It does not actually evaluate rules against the contact's data.
-
-**Fix**: Enhance `executeDryRun` to fetch the contact's full record and evaluate each condition rule against actual field values (email, tags, attributes, etc.). This makes the dry run meaningful.
-
-### 7. No "Run Now" / Manual Trigger Button
-There is no way to manually invoke the automation engine from the UI. Since `pg_cron` is not configured, automations never actually fire.
-
-**Fix**: Add a "Run Now" button (either per-automation or global) that calls the `engage-job-runner` edge function. This gives immediate feedback while `pg_cron` is not set up.
-
-### 8. Execution Log Queries Activity Log Instead of Runs Table
-The execution log viewer in AutomationsList queries `engage_activity_log` (channel=automation), not the `automation_runs` table which has richer data (duration, actions_executed, trigger_event, error). The AutomationRuns page correctly uses `automation_runs`.
-
-**Fix**: Update the inline execution log viewer to query `automation_runs` filtered by automation_id, giving consistent and richer data.
-
-### 9. Empty State Has Standard Button
-Line 544: The "Create First Automation" button in the empty state uses standard `Button` with inline gradient class instead of `EngageButton`.
-
-**Fix**: Replace with `EngageButton`.
+**File:** `AutomationsList.tsx` -- new query + chart section between stats grid and automation list
 
 ---
 
-## Implementation Summary
+## Enhancement 2: Automation Templates / Presets
 
-| Change | File(s) | Type |
-|--------|---------|------|
-| Add "View All Runs" link | AutomationsList.tsx | UI |
-| Align triggers (add contact_created, email_opened) | AutomationsList.tsx | UI + logic |
-| Add update_field action type | AutomationsList.tsx | UI |
-| Fix trigger config key mismatch | engage-job-runner/index.ts | Edge function |
-| Add Rate Limit + Error Routing UI | AutomationsList.tsx | UI |
-| Enhance dry run with real condition evaluation | AutomationsList.tsx | Logic |
-| Add "Run Now" manual trigger button | AutomationsList.tsx | UI + API call |
-| Switch exec log to automation_runs table | AutomationsList.tsx | Data query |
-| Replace empty state button with EngageButton | AutomationsList.tsx | UI |
+Users currently start from a blank form every time. There are no pre-built recipes to accelerate setup.
+
+**What gets added:**
+- A "Start from Template" button next to "New Automation" in the hero
+- A template picker dialog with 6-8 common recipes:
+  - Welcome Series (trigger: contact_created, actions: send_email + add_tag "welcomed")
+  - Re-engagement (trigger: segment_entry for inactive, actions: send_email)
+  - Tag-based Nurture (trigger: tag_added "lead", actions: wait 1 day + send_email)
+  - Event Follow-up (trigger: event_occurred, actions: send_email + webhook)
+  - VIP Upgrade (trigger: tag_added "vip", actions: update_field "tier" = "premium" + enroll_journey)
+  - Churn Prevention (trigger: segment_entry for at-risk, actions: send_email + add_tag "retention")
+- Selecting a template pre-fills the Create dialog -- user can customize before saving
+- No database changes needed -- templates are hardcoded recipe objects in a separate file
+
+**Files:**
+- New file: `src/components/engage/automations/automationPresets.ts` (data)
+- Modified: `AutomationsList.tsx` (template picker dialog + button)
+
+---
+
+## Enhancement 3: Automation Version History
+
+There is no way to see what changed in an automation over time. If someone edits a trigger or modifies actions, the previous configuration is lost.
+
+**What gets added:**
+- Before saving edits, snapshot the current automation config into a new `automation_versions` table
+- "Version History" option in the dropdown menu per automation
+- A dialog showing timestamped versions with a diff view (what trigger/actions changed)
+- "Restore" button to revert to any previous version
+
+**Database change:** One new table `automation_versions` (automation_id, version_number, snapshot JSONB, created_at, created_by)
+
+**Files:**
+- DB migration for `automation_versions`
+- Modified: `AutomationsList.tsx` (save mutation snapshots + version dialog)
+
+---
+
+## Enhancement 4: Conditional Branching (If/Else Actions)
+
+Currently, all actions run sequentially for every triggered contact. There is no way to say "if the contact has tag X, do action A, otherwise do action B."
+
+**What gets added:**
+- A new action type: `condition_branch`
+- When selected, the action card shows a RuleBuilder for the "if" condition, plus two sub-action slots (then / else)
+- The edge function evaluates the branch condition per-contact and executes the appropriate sub-action
+- This turns the linear action list into a lightweight decision tree
+
+**Files:**
+- Modified: `AutomationsList.tsx` (new action type UI with nested sub-actions)
+- Modified: `engage-job-runner/index.ts` (branch evaluation logic)
+
+---
+
+## Enhancement 5: Bulk Actions on Automations
+
+With many automations, there is no way to activate, pause, or delete multiple at once.
+
+**What gets added:**
+- Checkbox selection on each automation card
+- A floating action bar (bottom of screen) when items are selected
+- Bulk actions: Activate All, Pause All, Delete Selected
+- Select All / Deselect All toggle
+
+**File:** `AutomationsList.tsx` (selection state + bulk mutation + floating bar UI)
+
+---
+
+## Enhancement 6: Success/Failure Rate Badge Per Automation
+
+The execution count badge currently shows total runs only. There is no at-a-glance indicator of whether an automation is healthy or failing.
+
+**What gets added:**
+- Fetch success and failure counts per automation from `automation_runs`
+- Show a color-coded badge: green if >90% success, yellow 70-90%, red <70%
+- Tooltip on hover shows "23 success / 2 failed (92%)"
+- Uses the existing `automation_runs` table -- extends the current `execCounts` query
+
+**File:** `AutomationsList.tsx` (enhanced query + badge rendering)
+
+---
+
+## Enhancement 7: Scheduling Window (Time-of-Day Restrictions)
+
+The edge function currently fires automations at any time. There is no way to restrict execution to business hours or specific days.
+
+**What gets added:**
+- New fields in the Advanced Settings collapsible:
+  - Active days: checkboxes for Mon-Sun
+  - Active hours: start time / end time pickers
+- Stored in the existing `rate_limit` JSONB column (e.g., `{ schedule: { days: [1,2,3,4,5], start_hour: 9, end_hour: 17 } }`)
+- Edge function checks current time against schedule before executing
+- No new DB columns needed -- uses existing JSONB
+
+**Files:**
+- Modified: `AutomationsList.tsx` (schedule UI in Advanced Settings)
+- Modified: `engage-job-runner/index.ts` (schedule check before execution)
+
+---
+
+## Enhancement 8: AutomationRuns Page Enhancements
+
+The runs audit trail page is functional but basic. It needs:
+
+**What gets added:**
+- Recharts line chart at the top showing run volume over the selected date range
+- Retry button for failed runs (re-invokes the edge function for that specific automation + contact)
+- Pagination (currently limited to 200 rows with no paging)
+- EngageHero header with gradient styling (currently plain text)
+- EngageButton for export (currently standard Button)
+
+**File:** `AutomationRuns.tsx`
+
+---
+
+## Implementation Priority & Sequencing
+
+| Priority | Enhancement | Complexity | New DB |
+|----------|------------|------------|--------|
+| 1 | Success/Failure Rate Badge | Low | No |
+| 2 | Automation Analytics Dashboard | Medium | No |
+| 3 | Automation Templates/Presets | Medium | No |
+| 4 | Bulk Actions | Medium | No |
+| 5 | Scheduling Window | Medium | No |
+| 6 | AutomationRuns Enhancements | Medium | No |
+| 7 | Version History | Medium | Yes (1 table) |
+| 8 | Conditional Branching | High | No |
+
+---
+
+## Technical Summary
+
+### Files Created
+- `src/components/engage/automations/automationPresets.ts` (template recipes data)
 
 ### Files Modified
-- `src/components/engage/automations/AutomationsList.tsx` (primary -- 9 changes)
-- `supabase/functions/engage-job-runner/index.ts` (trigger config key fix + event_occurred handler)
+- `src/components/engage/automations/AutomationsList.tsx` (enhancements 1-7)
+- `src/components/engage/automations/AutomationRuns.tsx` (enhancement 8)
+- `supabase/functions/engage-job-runner/index.ts` (scheduling window + conditional branching)
 
-### No Database Changes Needed
-All columns (`rate_limit`, `error_routing`) already exist. The `automation_runs` table is fully structured.
+### Database Changes
+- 1 new table: `automation_versions` (for version history only)
+- Zero changes to existing tables (everything else uses existing JSONB columns)
+
+### Dependencies
+- Recharts (already installed) for analytics charts
+- All other features use existing UI components (GlassCard, EngageButton, RuleBuilder, etc.)
 
