@@ -1,102 +1,125 @@
 
-# Engage Module: Comprehensive Remaining Work Plan
 
-## Current Status: All 7 pages render and load data correctly
+# Automations Page -- Complete Feature Audit & Implementation Plan
 
-| Page | Renders | Data Loads | Visual Standard | Dialogs Use Shared Components |
-|------|---------|------------|-----------------|------------------------------|
-| Email (Inbox/Sent/Scheduled/Drafts/Templates/Campaigns/Reports) | Yes | Yes | Yes | Yes |
-| Contacts | Yes | Yes (1 contact) | Yes | Yes |
-| Segments | Yes | Yes (0 segments) | Partial | No (still uses plain DialogTitle) |
-| Journeys | Yes | Yes (1 journey) | Partial | No (still uses plain DialogTitle) |
-| Automations | Yes | Yes (0 automations) | Partial | No (still uses plain DialogTitle) |
-| Social | Yes | Yes (0 posts) | Partial | No (still uses plain DialogTitle) |
-| Activity (Feed/Health/Audit) | Yes | Yes | Yes | Yes |
+## What Already Exists (Working)
 
-No Engage-specific console errors detected. All RLS policies work correctly via `get_user_engage_workspace_ids`.
+The Automations page is surprisingly well-built. Here is everything currently functional:
 
----
+### Frontend (AutomationsList.tsx -- 637 lines)
+- CRUD: Create, Edit, Delete automations
+- Duplicate automation
+- Toggle active/paused via Switch
+- Search/filter automations
+- 3 trigger types: Segment Entry, Tag Added, Event Occurred
+- 6 action types: Send Email, Add Tag, Remove Tag, Enroll Journey, Webhook, Wait/Delay
+- Multi-action workflows with reordering (move up/down)
+- RuleBuilder-based conditions (optional filter layer)
+- Template and Journey picker dropdowns for action config
+- Execution count badges (from activity log)
+- Execution Log viewer dialog
+- Dry Run simulator (pick a contact, simulate actions)
+- Premium UI: EngageHero, EngageDialogHeader, EngageButton, GlassCard, motion animations, ping dots
+- Stats grid: Active / Paused / Total
 
-## Phase 1: Visual Consistency (Remaining Dialog Headers)
+### Frontend (AutomationRuns.tsx -- 231 lines)
+- Full audit trail page at /engage/automations/runs
+- Date range filter (24h, 7d, 30d)
+- Status filter (all, success, failed)
+- Search by automation name or contact email
+- Stats: total runs, successful, failed, avg duration
+- CSV export of run history
+- Run detail dialog with trigger event + actions executed JSON viewer
 
-5 files still use plain `DialogTitle` with manual gradient text instead of the shared `EngageDialogHeader` component with icon glow halo + separator line:
+### Backend (engage-job-runner edge function -- 292 lines)
+- Evaluates all active automations every invocation
+- Supports triggers: tag_added, segment_entry, contact_created, email_opened
+- Executes actions: add_tag, remove_tag, send_email, enroll_journey, update_field, webhook, wait
+- Rate limiting (per-automation daily cap + per-contact daily cap)
+- Writes to automation_runs table with success/failure + duration
+- Updates automation.updated_at as "last triggered" timestamp
 
-### 1. SegmentsList.tsx (3 dialogs)
-- **Line 198**: Create/Edit Segment dialog -- replace `DialogHeader > DialogTitle` with `EngageDialogHeader` (icon: Layers, violet/purple gradient)
-- **Line 242-246**: Segment Members viewer dialog -- replace manual icon+gradient title with `EngageDialogHeader`
-- **Line 216**: "Create Segment" submit button -- replace standard `Button` with `EngageButton`
-- Add missing `EngageDialogHeader` import
-
-### 2. JourneysList.tsx (2 dialogs)
-- **Line 287**: Create Journey dialog -- replace `DialogTitle` with `EngageDialogHeader` (icon: GitBranch, purple/blue gradient)
-- **Line 330**: Rename Journey dialog -- replace `DialogTitle` with `EngageDialogHeader`
-- **Line 311**: "Create from Template" button -- replace standard `Button` with `EngageButton`
-- Add `EngageDialogHeader` import
-
-### 3. AutomationsList.tsx (3 dialogs)
-- **Line 369**: Create/Edit Automation dialog -- replace `DialogTitle` with `EngageDialogHeader` (icon: Zap, amber/orange gradient)
-- **Line ~540 (execution log dialog)**: Already uses a manual styled title -- replace with `EngageDialogHeader`
-- **Line ~580 (dry run dialog)**: Replace with `EngageDialogHeader`
-- Add `EngageDialogHeader` import
-
-### 4. SocialDashboard.tsx (2 dialogs)
-- **Line 309**: Create/Edit Post dialog -- replace `DialogTitle` with `EngageDialogHeader` (icon: Share2, purple/blue gradient)
-- **Link Account dialog**: Replace with `EngageDialogHeader`
-- Add `EngageDialogHeader` import
-
-### 5. ContactDetailDialog.tsx (1 dialog)
-- **Lines 217-228**: Currently has a manual icon glow implementation inline -- replace with `EngageDialogHeader` component to ensure consistency (emerald/teal gradient, Mail icon)
-- Add `EngageDialogHeader` import
+### Database
+- `engage_automations` table with: id, workspace_id, name, status, trigger_config, conditions, actions, description, rate_limit, error_routing, created_by, timestamps
+- `automation_runs` table with: id, workspace_id, automation_id, contact_id, trigger_event, actions_executed, status, duration_ms, error, created_at
+- RLS policies via `get_user_engage_workspace_ids`
 
 ---
 
-## Phase 2: Functional Fixes
+## What Needs Fixing / Adding
 
-### A. Contacts Page
-- **Active/Unsubscribed counts are local-page-only** (lines 77-78): These count only the current page of contacts (up to 50), not the total. When there are 200+ contacts across multiple pages, the stat cards will show incorrect numbers. Fix: add separate count queries filtered by `unsubscribed` status, like the existing `totalCount` query.
+### 1. Missing "View Runs" Link (Minor)
+The AutomationRuns page exists at `/engage/automations/runs` but there is no visible link or button to navigate there from the AutomationsList. Users cannot discover it.
 
-### B. Segments Page -- Missing `EngageDialogHeader` import
-- The Segment Members viewer uses a manual `DialogTitle` with inline icon -- standardize.
+**Fix**: Add a "View All Runs" button/link in the hero actions area or stats section.
 
-### C. Social Dashboard -- Storage bucket may not exist
-- `handleMediaUpload` uploads to `social-media` storage bucket (line 121). If this bucket doesn't exist, uploads will fail silently. Verify bucket existence or add graceful error handling.
+### 2. Trigger Type Mismatch (Backend vs Frontend)
+The edge function supports 4 triggers: `tag_added`, `segment_entry`, `contact_created`, `email_opened`. But the frontend only exposes 3: `segment_entry`, `tag_added`, `event_occurred`.
 
-### D. Email Compose -- `from_email` fallback
-- Currently defaults to `'noreply@engage.app'` -- this is fine for dev but should pull from `email_provider_settings` when available to match what the edge function uses.
+- `contact_created` is missing from the UI
+- `email_opened` is missing from the UI
+- `event_occurred` exists in the UI but is not handled by the edge function
+
+**Fix**: Align the frontend trigger options with what the backend supports. Add `contact_created` and `email_opened` as selectable triggers. Either implement `event_occurred` in the edge function or remove it from the UI.
+
+### 3. Action Type Mismatch (Backend vs Frontend)
+The edge function handles `update_field` but the UI does not offer it. The UI has `wait` which the backend skips (just logs it).
+
+**Fix**: Add `update_field` as an action type in the UI with field name + value inputs.
+
+### 4. Trigger Config Key Mismatch
+The edge function checks `trigger.tag` for tag_added triggers, but the frontend saves as `trigger_config: { type: 'tag_added', value: 'tagname' }`. The key is `value` in the frontend but the backend expects `tag`.
+
+**Fix**: Update the edge function to read `trigger.value || trigger.tag` for backward compatibility, or update the frontend to save as `trigger.tag`.
+
+### 5. Rate Limit & Error Routing Not Exposed in UI
+The `engage_automations` table has `rate_limit` and `error_routing` JSONB columns. The edge function reads and enforces `rate_limit.max_per_day` and `rate_limit.max_per_contact_per_day`. But the Create/Edit dialog has no fields for these.
+
+**Fix**: Add an optional "Advanced Settings" collapsible section in the dialog with:
+- Max executions per day (number input)
+- Max per contact per day (number input)
+- Error routing: on failure, continue / stop / notify (select)
+
+### 6. Dry Run is Client-Side Only
+The dry run simulator currently does a simplified check: `conditions.every(() => true)` -- it always passes. It does not actually evaluate rules against the contact's data.
+
+**Fix**: Enhance `executeDryRun` to fetch the contact's full record and evaluate each condition rule against actual field values (email, tags, attributes, etc.). This makes the dry run meaningful.
+
+### 7. No "Run Now" / Manual Trigger Button
+There is no way to manually invoke the automation engine from the UI. Since `pg_cron` is not configured, automations never actually fire.
+
+**Fix**: Add a "Run Now" button (either per-automation or global) that calls the `engage-job-runner` edge function. This gives immediate feedback while `pg_cron` is not set up.
+
+### 8. Execution Log Queries Activity Log Instead of Runs Table
+The execution log viewer in AutomationsList queries `engage_activity_log` (channel=automation), not the `automation_runs` table which has richer data (duration, actions_executed, trigger_event, error). The AutomationRuns page correctly uses `automation_runs`.
+
+**Fix**: Update the inline execution log viewer to query `automation_runs` filtered by automation_id, giving consistent and richer data.
+
+### 9. Empty State Has Standard Button
+Line 544: The "Create First Automation" button in the empty state uses standard `Button` with inline gradient class instead of `EngageButton`.
+
+**Fix**: Replace with `EngageButton`.
 
 ---
 
-## Phase 3: Data Seeding (Manual Add Approach)
+## Implementation Summary
 
-Since you chose to add data manually, here is the recommended order to verify the full flow:
+| Change | File(s) | Type |
+|--------|---------|------|
+| Add "View All Runs" link | AutomationsList.tsx | UI |
+| Align triggers (add contact_created, email_opened) | AutomationsList.tsx | UI + logic |
+| Add update_field action type | AutomationsList.tsx | UI |
+| Fix trigger config key mismatch | engage-job-runner/index.ts | Edge function |
+| Add Rate Limit + Error Routing UI | AutomationsList.tsx | UI |
+| Enhance dry run with real condition evaluation | AutomationsList.tsx | Logic |
+| Add "Run Now" manual trigger button | AutomationsList.tsx | UI + API call |
+| Switch exec log to automation_runs table | AutomationsList.tsx | Data query |
+| Replace empty state button with EngageButton | AutomationsList.tsx | UI |
 
-1. **Contacts**: Add 3-5 more contacts via the Add Contact dialog (email, name, tags like "newsletter", "vip")
-2. **Segments**: Create a segment with rule "tags includes newsletter" -- click the refresh icon to evaluate. The members viewer should populate.
-3. **Templates**: Create an email template with `{{first_name}}` variable, use the Preview tab to verify rendering
-4. **Campaigns**: Create a campaign using the template, select "All contacts" audience, and Launch. Messages should appear in the Sent tab (marked "sent" without Resend key).
-5. **Journeys**: Open the existing journey in the builder, verify the visual flow renders with React Flow nodes
-6. **Automations**: Create an automation with trigger "Tag Added" and action "Send Email"
-7. **Social**: Create a draft social post, try the calendar and queue views
-8. **Activity**: After the above actions, the Activity feed should show events from the `engage_activity_log` table
+### Files Modified
+- `src/components/engage/automations/AutomationsList.tsx` (primary -- 9 changes)
+- `supabase/functions/engage-job-runner/index.ts` (trigger config key fix + event_occurred handler)
 
----
+### No Database Changes Needed
+All columns (`rate_limit`, `error_routing`) already exist. The `automation_runs` table is fully structured.
 
-## Phase 4: Edge Function Completeness
-
-| Function | Status | Issue |
-|----------|--------|-------|
-| engage-email-send | Fixed | Works without `email_provider_settings` join. Mock-delivers without Resend key. |
-| engage-job-runner | Exists | No pg_cron trigger configured -- requires Supabase dashboard setup |
-| engage-journey-processor | Exists | Same -- needs cron or manual invoke |
-| engage-social-poster | Exists | No real OAuth -- accounts are "linked" manually with tokens |
-| engage-unsubscribe | Exists | Functional for one-click unsubscribe |
-| engage-email-webhook | Missing | Inbound email processing not implemented -- low priority |
-
----
-
-## Summary of Changes
-
-- **8 files modified** (5 for EngageDialogHeader + EngageButton integration, 1 for contact count fix, 2 minor cleanups)
-- **Zero database changes** needed
-- **Zero edge function changes** needed
-- All changes are purely frontend visual standardization + 1 small logic fix for accurate contact stats
