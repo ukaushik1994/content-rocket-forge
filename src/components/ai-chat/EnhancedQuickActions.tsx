@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Search, 
   FileText, 
-  TrendingUp, 
+  Search,
   Target,
   BarChart3,
+  Users,
+  Shuffle,
   Lightbulb,
-  Settings,
   Zap
 } from 'lucide-react';
 
@@ -20,50 +20,73 @@ interface EnhancedQuickActionsProps {
 export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAction }) => {
   const quickActions = [
     {
-      id: 'keyword-optimization',
-      title: 'Keyword Optimization',
-      description: 'Find high-impact keywords and optimize your content',
-      icon: Search,
-      action: 'workflow:keyword-optimization'
-    },
-    {
       id: 'content-creation',
-      title: 'Content Creation',
-      description: 'Create high-performing content with AI assistance',
+      title: 'Write Content',
+      description: "Draft articles, social posts, emails — I'll write and save them directly",
       icon: FileText,
       action: 'workflow:content-creation'
     },
     {
-      id: 'performance-analysis',
-      title: 'Performance Analysis',
-      description: 'Analyze your content metrics and get optimization tips',
-      icon: BarChart3,
-      action: 'workflow:performance-analysis'
+      id: 'keyword-optimization',
+      title: 'Research Keywords',
+      description: 'Find, analyze, and add keywords to your library automatically',
+      icon: Search,
+      action: 'workflow:keyword-optimization'
     },
     {
-      id: 'solution-integration',
-      title: 'Solution Integration',
-      description: 'Better integrate your solutions into content strategy',
+      id: 'solution-management',
+      title: 'Manage Solutions',
+      description: 'Add products, update offerings, link them to your content',
       icon: Target,
-      action: 'workflow:solution-integration'
+      action: 'workflow:solution-management'
+    },
+    {
+      id: 'campaign-intelligence',
+      title: 'Campaign Intelligence',
+      description: 'Track queue health, view dashboards, retry failed content in real-time',
+      icon: BarChart3,
+      action: 'workflow:campaign-intelligence'
+    },
+    {
+      id: 'engage-actions',
+      title: 'Engage CRM',
+      description: 'Create contacts, draft emails, manage segments and automations',
+      icon: Users,
+      action: 'workflow:engage-actions'
+    },
+    {
+      id: 'cross-module',
+      title: 'Cross-Module Actions',
+      description: 'Promote content to campaigns, repurpose across formats automatically',
+      icon: Shuffle,
+      action: 'workflow:cross-module'
     }
   ];
 
   const suggestions = [
     {
-      text: "What's my content performance this month?",
-      displayText: "What's my content performance this month?",
-      action: 'send:Show me my content performance analytics for this month'
+      text: 'Write a blog post about my solution',
+      action: 'send:Write a blog post about my top solution'
     },
     {
-      text: "Find keyword opportunities",
-      displayText: "Find keyword opportunities",
-      action: 'send:Help me find high-opportunity keywords for my solutions'
+      text: 'Show my campaign dashboard',
+      action: 'send:Show me my campaign dashboard with live queue status'
     },
     {
-      text: "Optimize existing content",
-      displayText: "Optimize existing content",
-      action: 'send:Analyze my existing content and suggest optimizations'
+      text: 'Add keywords to my library',
+      action: 'send:Research and add high-opportunity keywords to my library'
+    },
+    {
+      text: 'Draft an email for my latest content',
+      action: 'send:Draft a promotional email for my most recent published content'
+    },
+    {
+      text: 'What content is failing? Fix it',
+      action: 'send:Show me any failed content in my queue and retry them'
+    },
+    {
+      text: 'Create a contact segment',
+      action: 'send:Create a new contact segment for my leads'
     }
   ];
 
@@ -73,9 +96,9 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
       <div>
         <h3 className="text-sm font-medium text-foreground mb-4 flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary" />
-          Quick Actions
+          What I Can Do For You
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {quickActions.map((action, index) => (
             <motion.div
               key={action.id}
@@ -84,7 +107,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
               transition={{ delay: 0.1 * index, duration: 0.3 }}
             >
               <Card 
-                className="cursor-pointer transition-all duration-200 bg-card border-border/50 hover:border-primary/30 group"
+                className="cursor-pointer transition-all duration-200 bg-card border-border/50 hover:border-primary/30 group h-full"
                 onClick={() => onAction(action.action, { displayText: action.title })}
               >
                 <CardContent className="p-5">
@@ -112,7 +135,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
       <div>
         <h3 className="text-sm font-medium text-foreground mb-4 flex items-center gap-2">
           <Lightbulb className="h-4 w-4 text-primary" />
-          Popular Questions
+          Try Asking
         </h3>
         <div className="flex flex-wrap gap-2">
           {suggestions.map((suggestion, index) => (
@@ -125,7 +148,7 @@ export const EnhancedQuickActions: React.FC<EnhancedQuickActionsProps> = ({ onAc
               <Badge 
                 variant="outline" 
                 className="cursor-pointer px-3 py-1.5 text-xs bg-card border-border/50 hover:border-primary/30 transition-all duration-200 text-muted-foreground hover:text-foreground"
-                onClick={() => onAction(suggestion.action, { displayText: suggestion.displayText })}
+                onClick={() => onAction(suggestion.action, { displayText: suggestion.text })}
               >
                 {suggestion.text}
               </Badge>
