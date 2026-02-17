@@ -18,6 +18,8 @@ import { Plus, Send, Megaphone, MoreVertical, Trash2, Mail, CheckCircle, Clock, 
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { EngageButton } from '../../shared/EngageButton';
+import { EngageDialogHeader } from '../../shared/EngageDialogHeader';
 
 const statusConfig: Record<string, { class: string; icon: any; dot: string }> = {
   draft: { class: 'bg-muted/50 text-muted-foreground border-border/50', icon: Clock, dot: 'bg-muted-foreground' },
@@ -303,21 +305,21 @@ export const CampaignsList = () => {
           <p className="text-sm text-muted-foreground">{campaigns.length} campaigns</p>
         </div>
         {canEdit && (
-          <Button size="sm" onClick={() => openWizard()}><Plus className="h-4 w-4 mr-1" /> New Campaign</Button>
+          <EngageButton size="sm" onClick={() => openWizard()}><Plus className="h-4 w-4 mr-1" /> New Campaign</EngageButton>
         )}
       </div>
 
       {/* Wizard Dialog */}
       <Dialog open={showWizard} onOpenChange={setShowWizard}>
-        <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit Campaign' : 'Create Campaign'}</DialogTitle>
+        <DialogContent className="max-w-lg">
+          <EngageDialogHeader icon={Megaphone} title={editingId ? 'Edit Campaign' : 'Create Campaign'} gradientFrom="from-blue-400" gradientTo="to-cyan-400" iconColor="text-blue-400" />
+          <div>
             <div className="flex items-center gap-2 mt-2">
               {[1, 2, 3].map(s => (
                 <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= wizardStep ? 'bg-primary' : 'bg-muted'}`} />
               ))}
             </div>
-          </DialogHeader>
+          </div>
 
           {wizardStep === 1 && (
             <div className="space-y-3">
@@ -386,13 +388,8 @@ export const CampaignsList = () => {
 
       {/* Campaign Detail Dialog */}
       <Dialog open={!!detailCampaign} onOpenChange={() => setDetailCampaign(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              {detailCampaign?.name} — Stats
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <EngageDialogHeader icon={BarChart3} title={`${detailCampaign?.name || 'Campaign'} — Stats`} gradientFrom="from-violet-400" gradientTo="to-purple-400" iconColor="text-violet-400" />
           {detailCampaign && (() => {
             const ds = getDetailStats(detailCampaign);
             return (

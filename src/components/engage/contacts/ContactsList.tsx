@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContactDetailDialog } from './ContactDetailDialog';
 import { EngageButton } from '../shared/EngageButton';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
 import { EngageHero } from '../shared/EngageHero';
 import { EngageStatGrid } from '../shared/EngageStatCard';
 import { engageStagger } from '../shared/engageAnimations';
@@ -243,7 +244,7 @@ export const ContactsList = () => {
                   <EngageButton size="sm"><Plus className="h-4 w-4 mr-1" /> Add Contact</EngageButton>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">Add Contacts</DialogTitle></DialogHeader>
+                  <EngageDialogHeader icon={Users} title="Add Contacts" gradientFrom="from-emerald-400" gradientTo="to-teal-400" iconColor="text-emerald-400" />
                   <Tabs value={addTab} onValueChange={setAddTab}>
                     <TabsList className="h-8 w-full">
                       <TabsTrigger value="single" className="text-xs flex-1">Single</TabsTrigger>
@@ -257,7 +258,7 @@ export const ContactsList = () => {
                       </div>
                       <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
                       <div><Label>Tags (comma separated)</Label><Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="lead, newsletter" /></div>
-                      <Button onClick={() => addContact.mutate()} disabled={!form.email} className="w-full">Add Contact</Button>
+                      <EngageButton onClick={() => addContact.mutate()} disabled={!form.email} className="w-full">Add Contact</EngageButton>
                     </TabsContent>
                     <TabsContent value="bulk" className="mt-3 space-y-3">
                       <div>
