@@ -1059,6 +1059,47 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_versions: {
+        Row: {
+          automation_id: string
+          change_summary: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          snapshot: Json
+          version_number: number
+          workspace_id: string
+        }
+        Insert: {
+          automation_id: string
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snapshot?: Json
+          version_number?: number
+          workspace_id: string
+        }
+        Update: {
+          automation_id?: string
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snapshot?: Json
+          version_number?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_versions_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "engage_automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       behavioral_analytics_sessions: {
         Row: {
           actions_performed: Json | null
