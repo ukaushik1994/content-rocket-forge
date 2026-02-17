@@ -90,10 +90,9 @@ Deno.serve(async (req) => {
           const startHour = schedulingConfig.send_window_start || 9;
           const endHour = schedulingConfig.send_window_end || 18;
           const now = new Date();
-          const currentHour = now.getUTCHours(); // Simplified: use UTC
+          const currentHour = now.getUTCHours();
 
           if (currentHour < startHour || currentHour >= endHour) {
-            // Reschedule to next valid window
             const nextSend = new Date();
             if (currentHour >= endHour) {
               nextSend.setUTCDate(nextSend.getUTCDate() + 1);
@@ -121,7 +120,6 @@ Deno.serve(async (req) => {
             .gte("queued_at", dayAgo);
 
           if ((count || 0) >= maxPerDay) {
-            // Reschedule to tomorrow
             const tomorrow = new Date(Date.now() + 24 * 3600000);
             await supabase.from("journey_steps").update({
               status: "pending",
@@ -162,7 +160,7 @@ Deno.serve(async (req) => {
           case "wait": {
             const duration = parseInt(node.config?.duration || "1", 10);
             const unit = node.config?.unit || "days";
-            let ms = duration * 3600000; // default hours
+            let ms = duration * 3600000;
             if (unit === "days") ms = duration * 86400000;
             if (unit === "minutes") ms = duration * 60000;
             const nextTime = new Date(Date.now() + ms).toISOString();
@@ -179,20 +177,24 @@ Deno.serve(async (req) => {
 
           case "condition": {
             const { data: contact } = await supabase.from("engage_contacts").select("*").eq("id", contactId).single();
-            const field = node.config?.field || "";
-            const op = node.config?.operator || "equals";
-            const value = node.config?.value || "";
+            // F6 FIX: Support both multi-rule (from RuleBuilder) and legacy single-field config
+            const rules = node.config?.rules as Array<{field: string; operator: string; value: string}> | undefined;
             let result = false;
+
             if (contact) {
-              const actual = contact.attributes?.[field] || (contact as any)[field] || "";
-              switch (op) {
-                case "equals": result = actual === value; break;
-                case "contains": result = String(actual).includes(value); break;
-                case "not_equals": result = actual !== value; break;
-                case "gt": result = Number(actual) > Number(value); break;
-                case "lt": result = Number(actual) < Number(value); break;
-                case "includes": result = Array.isArray(actual) && actual.includes(value); break;
-                default: result = false;
+              if (rules && rules.length > 0) {
+                // Multi-rule evaluation: all rules must pass (AND logic)
+                result = rules.every((rule) => {
+                  const actual = contact.attributes?.[rule.field] || (contact as any)[rule.field] || "";
+                  return evaluateCondition(actual, rule.operator, rule.value);
+                });
+              } else {
+                // Legacy single-field fallback
+                const field = node.config?.field || "";
+                const op = node.config?.operator || "equals";
+                const value = node.config?.value || "";
+                const actual = contact.attributes?.[field] || (contact as any)[field] || "";
+                result = evaluateCondition(actual, op, value);
               }
             }
 
@@ -214,20 +216,64 @@ Deno.serve(async (req) => {
           }
 
           case "update_contact": {
+            // F5 FIX: Support both UI keys (action/tag) and legacy keys (set_tag/set_field)
+            const action = node.config?.action || "add_tag";
+            const tagValue = node.config?.tag || node.config?.set_tag || "";
             const updates: Record<string, any> = {};
-            if (node.config?.set_tag) {
+
+            if (action === "add_tag" && tagValue) {
               const { data: contact } = await supabase.from("engage_contacts").select("tags").eq("id", contactId).single();
               const tags = contact?.tags || [];
-              if (!tags.includes(node.config.set_tag)) updates.tags = [...tags, node.config.set_tag];
+              if (!tags.includes(tagValue)) updates.tags = [...tags, tagValue];
+            } else if (action === "remove_tag" && tagValue) {
+              const { data: contact } = await supabase.from("engage_contacts").select("tags").eq("id", contactId).single();
+              const tags = contact?.tags || [];
+              updates.tags = tags.filter((t: string) => t !== tagValue);
+            } else if (action === "set_attribute") {
+              const keyVal = tagValue; // format: "key=value"
+              const field = node.config?.set_field;
+              const value = node.config?.set_value;
+              // Support both "key=value" format from tag field and explicit set_field/set_value
+              let attrKey = field;
+              let attrVal = value;
+              if (!attrKey && keyVal && keyVal.includes("=")) {
+                const [k, ...rest] = keyVal.split("=");
+                attrKey = k;
+                attrVal = rest.join("=");
+              }
+              if (attrKey) {
+                const { data: contact } = await supabase.from("engage_contacts").select("attributes").eq("id", contactId).single();
+                const attrs = contact?.attributes || {};
+                attrs[attrKey] = attrVal;
+                updates.attributes = attrs;
+              }
             }
-            if (node.config?.set_field && node.config?.set_value) {
-              const { data: contact } = await supabase.from("engage_contacts").select("attributes").eq("id", contactId).single();
-              const attrs = contact?.attributes || {};
-              attrs[node.config.set_field] = node.config.set_value;
-              updates.attributes = attrs;
-            }
+
             if (Object.keys(updates).length > 0) {
               await supabase.from("engage_contacts").update(updates).eq("id", contactId);
+            }
+            break;
+          }
+
+          // E7: Dedicated add_tag / remove_tag node types
+          case "add_tag": {
+            const tagValue = node.config?.tag || "";
+            if (tagValue) {
+              const { data: contact } = await supabase.from("engage_contacts").select("tags").eq("id", contactId).single();
+              const tags = contact?.tags || [];
+              if (!tags.includes(tagValue)) {
+                await supabase.from("engage_contacts").update({ tags: [...tags, tagValue] }).eq("id", contactId);
+              }
+            }
+            break;
+          }
+
+          case "remove_tag": {
+            const tagValue = node.config?.tag || "";
+            if (tagValue) {
+              const { data: contact } = await supabase.from("engage_contacts").select("tags").eq("id", contactId).single();
+              const tags = contact?.tags || [];
+              await supabase.from("engage_contacts").update({ tags: tags.filter((t: string) => t !== tagValue) }).eq("id", contactId);
             }
             break;
           }
@@ -237,7 +283,7 @@ Deno.serve(async (req) => {
             if (url) {
               const { data: contact } = await supabase.from("engage_contacts").select("email, first_name, last_name, attributes").eq("id", contactId).single();
               await fetch(url, {
-                method: "POST",
+                method: node.config?.method || "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contact_id: contactId, node_id: step.node_id, contact, journey_id: journeyId }),
               });
@@ -294,3 +340,21 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// Helper for condition evaluation
+function evaluateCondition(actual: any, operator: string, value: string): boolean {
+  switch (operator) {
+    case "equals": return String(actual) === value;
+    case "contains": return String(actual).includes(value);
+    case "not_equals": return String(actual) !== value;
+    case "not_contains": return !String(actual).includes(value);
+    case "gt": return Number(actual) > Number(value);
+    case "lt": return Number(actual) < Number(value);
+    case "starts_with": return String(actual).startsWith(value);
+    case "ends_with": return String(actual).endsWith(value);
+    case "is_empty": return !actual || actual === "";
+    case "is_not_empty": return !!actual && actual !== "";
+    case "includes": return Array.isArray(actual) && actual.includes(value);
+    default: return false;
+  }
+}

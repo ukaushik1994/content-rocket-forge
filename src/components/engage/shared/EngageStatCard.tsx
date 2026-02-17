@@ -5,7 +5,7 @@ import { engageStagger } from './engageAnimations';
 
 interface StatItem {
   label: string;
-  count: number;
+  count: number | string;
   icon: LucideIcon;
   color: string;   // e.g. "from-blue-500/20 to-blue-500/5"
   text: string;     // e.g. "text-blue-400"

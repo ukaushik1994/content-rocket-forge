@@ -8,16 +8,29 @@ import '@xyflow/react/dist/style.css';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, Play, Pause, Plus, CheckCircle, Maximize, Users, Undo2, Redo2, BarChart3, Loader2, TrendingUp, ListChecks } from 'lucide-react';
+import {
+  ArrowLeft, Save, Play, Pause, Plus, CheckCircle, Maximize, Users, Undo2, Redo2, BarChart3,
+  Loader2, TrendingUp, ListChecks, Settings, UserPlus, History, Download, Copy, Clipboard,
+} from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { customNodeTypes } from './nodes/CustomNodes';
 import { JourneyInspector } from './JourneyInspector';
 import { JourneyAnalytics } from './JourneyAnalytics';
 import { JourneyEnrollments } from './JourneyEnrollments';
 import { JourneyPerformance } from './JourneyPerformance';
+import { EngageDialogHeader } from '../shared/EngageDialogHeader';
+import { EngageButton } from '../shared/EngageButton';
+import { format } from 'date-fns';
 
 const MAX_HISTORY = 20;
 
@@ -25,12 +38,19 @@ const JourneyBuilderInner = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentWorkspaceId } = useWorkspace();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showEnrollments, setShowEnrollments] = useState(false);
   const [showPerformance, setShowPerformance] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showEnrollContact, setShowEnrollContact] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
   const reactFlowInstance = useReactFlow();
+
+  // E6: Copy/paste
+  const clipboardRef = useRef<Node | null>(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -46,6 +66,13 @@ const JourneyBuilderInner = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadRef = useRef(true);
+
+  // F8/E4: Scheduling config
+  const [schedulingConfig, setSchedulingConfig] = useState<any>({});
+  const [suppressionRules, setSuppressionRules] = useState<any>({});
+
+  // E3: Enroll contact
+  const [enrollContactId, setEnrollContactId] = useState('');
 
   const pushHistory = useCallback((n: Node[], e: Edge[]) => {
     if (skipHistoryRef.current) { skipHistoryRef.current = false; return; }
@@ -98,6 +125,8 @@ const JourneyBuilderInner = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from('journeys').select('*').eq('id', id!).single();
       if (error) throw error;
+      setSchedulingConfig((data as any)?.scheduling_config || {});
+      setSuppressionRules((data as any)?.suppression_rules || {});
       return data;
     },
     enabled: !!id,
@@ -118,15 +147,56 @@ const JourneyBuilderInner = () => {
     enabled: !!id,
   });
 
+  // F7 FIX: Get node exec counts by joining through enrollments
   const { data: nodeExecCounts = {} } = useQuery<Record<string, number>>({
     queryKey: ['journey-node-exec-counts', id],
     queryFn: async () => {
-      const { data } = await supabase.from('journey_steps' as any).select('node_id').eq('journey_id', id!);
+      // Get enrollment IDs for this journey first
+      const { data: enrollments } = await supabase
+        .from('journey_enrollments')
+        .select('id')
+        .eq('journey_id', id!);
+      if (!enrollments?.length) return {};
+      const enrollmentIds = enrollments.map(e => e.id);
+      const { data } = await supabase
+        .from('journey_steps')
+        .select('node_id')
+        .in('enrollment_id', enrollmentIds);
       const counts: Record<string, number> = {};
-      ((data as any[]) || []).forEach((s: any) => { counts[s.node_id] = (counts[s.node_id] || 0) + 1; });
+      (data || []).forEach((s: any) => { counts[s.node_id] = (counts[s.node_id] || 0) + 1; });
       return counts;
     },
     enabled: !!id,
+  });
+
+  // E5: Version history
+  const { data: versions = [] } = useQuery({
+    queryKey: ['journey-versions', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('journey_versions')
+        .select('*')
+        .eq('journey_id', id!)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      return data || [];
+    },
+    enabled: !!id && showVersions,
+  });
+
+  // E3: Contacts for enrollment
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['contacts-for-enroll', currentWorkspaceId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('engage_contacts')
+        .select('id, email, first_name, last_name')
+        .eq('workspace_id', currentWorkspaceId!)
+        .eq('unsubscribed', false)
+        .limit(50);
+      return data || [];
+    },
+    enabled: !!currentWorkspaceId && showEnrollContact,
   });
 
   useQuery({
@@ -175,13 +245,30 @@ const JourneyBuilderInner = () => {
     }
   }, [nodeExecCounts, setNodes]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts including E6 copy/paste
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Delete' && selectedNode) handleDeleteNode(selectedNode.id);
       if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveJourney.mutate(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+      // E6: Copy node
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedNode) {
+        clipboardRef.current = selectedNode;
+        toast.success('Node copied');
+      }
+      // E6: Paste node
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardRef.current) {
+        const src = clipboardRef.current;
+        const nodeId = `${src.type}_${Date.now()}`;
+        const newNode: Node = {
+          id: nodeId, type: src.type,
+          position: { x: src.position.x + 50, y: src.position.y + 80 },
+          data: { label: (src.data as any)?.label || src.type?.replace('_', ' '), config: { ...(src.data as any)?.config }, execCount: 0 },
+        };
+        setNodes(nds => [...nds, newNode]);
+        toast.success('Node pasted');
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -247,6 +334,25 @@ const JourneyBuilderInner = () => {
   };
 
   const doSave = async () => {
+    // E5: Snapshot before save
+    if (nodes.length > 0 && currentWorkspaceId) {
+      const { data: existingVersions } = await supabase
+        .from('journey_versions')
+        .select('version_number')
+        .eq('journey_id', id!)
+        .order('version_number', { ascending: false })
+        .limit(1);
+      const nextVersion = (existingVersions?.[0]?.version_number || 0) + 1;
+      await supabase.from('journey_versions').insert({
+        workspace_id: currentWorkspaceId,
+        journey_id: id!,
+        version_number: nextVersion,
+        snapshot: { nodes: nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: n.data })), edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target, label: e.label })) },
+        created_by: user?.id,
+        change_summary: `Auto-save v${nextVersion}`,
+      });
+    }
+
     await supabase.from('journey_nodes').delete().eq('journey_id', id!);
     await supabase.from('journey_edges').delete().eq('journey_id', id!);
 
@@ -285,6 +391,100 @@ const JourneyBuilderInner = () => {
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['journey', id] }); toast.success('Status updated'); },
   });
+
+  // F4: Run processor manually
+  const runProcessor = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('engage-journey-processor');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Processor ran: ${data?.processed || 0} processed, ${data?.skipped || 0} skipped`);
+      queryClient.invalidateQueries({ queryKey: ['journey-node-exec-counts', id] });
+      queryClient.invalidateQueries({ queryKey: ['journey-enrollment-stats', id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // F8/E4: Save scheduling config
+  const saveSettings = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('journeys').update({
+        scheduling_config: schedulingConfig,
+        suppression_rules: suppressionRules,
+      }).eq('id', id!);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success('Settings saved'); setShowSettings(false); },
+  });
+
+  // E3: Enroll contact
+  const enrollContact = useMutation({
+    mutationFn: async () => {
+      if (!enrollContactId) return;
+      const triggerNode = nodes.find(n => n.type === 'trigger');
+      if (!triggerNode) throw new Error('No trigger node found');
+
+      const { data: enrollment, error } = await supabase.from('journey_enrollments').insert({
+        workspace_id: currentWorkspaceId!, journey_id: id!, contact_id: enrollContactId, status: 'active',
+      }).select().single();
+      if (error) throw error;
+
+      // Create first step for trigger node
+      await supabase.from('journey_steps').insert({
+        workspace_id: currentWorkspaceId!, enrollment_id: enrollment.id,
+        node_id: triggerNode.id, status: 'pending', scheduled_for: new Date().toISOString(), output: {},
+      });
+    },
+    onSuccess: () => {
+      toast.success('Contact enrolled');
+      setShowEnrollContact(false);
+      setEnrollContactId('');
+      queryClient.invalidateQueries({ queryKey: ['journey-enrollment-stats', id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // E5: Restore version
+  const restoreVersion = async (version: any) => {
+    const snapshot = version.snapshot;
+    if (!snapshot?.nodes) return;
+    const restoredNodes = snapshot.nodes.map((n: any) => ({
+      ...n,
+      data: { ...n.data, execCount: 0 },
+    }));
+    const restoredEdges = (snapshot.edges || []).map((e: any) => ({
+      ...e,
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 },
+      animated: true,
+    }));
+    setNodes(restoredNodes);
+    setEdges(restoredEdges);
+    setShowVersions(false);
+    toast.success(`Restored to v${version.version_number}`);
+  };
+
+  // E8: Export as JSON
+  const exportJourney = () => {
+    const data = {
+      name: journey?.name,
+      description: journey?.description,
+      scheduling_config: (journey as any)?.scheduling_config,
+      suppression_rules: (journey as any)?.suppression_rules,
+      nodes: nodes.map(n => ({ id: n.id, type: n.type, position: n.position, config: (n.data as any)?.config })),
+      edges: edges.map(e => ({ source: e.source, target: e.target, label: e.label })),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${journey?.name || 'journey'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Journey exported');
+  };
 
   const statusBadgeClass = journey?.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
     : journey?.status === 'paused' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
@@ -337,27 +537,44 @@ const JourneyBuilderInner = () => {
               <DropdownMenuItem onClick={() => addNode('wait')}>⏰ Wait</DropdownMenuItem>
               <DropdownMenuItem onClick={() => addNode('condition')}>🔀 Condition</DropdownMenuItem>
               <DropdownMenuItem onClick={() => addNode('update_contact')}>👤 Update Contact</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addNode('add_tag')}>🏷️ Add Tag</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addNode('remove_tag')}>🗑️ Remove Tag</DropdownMenuItem>
               <DropdownMenuItem onClick={() => addNode('webhook')}>🔗 Webhook</DropdownMenuItem>
               <DropdownMenuItem onClick={() => addNode('end')}>🏁 End</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" size="sm" className="h-8" onClick={() => reactFlowInstance.fitView({ padding: 0.2 })}>
-            <Maximize className="h-3.5 w-3.5 mr-1" /> Fit
+            <Maximize className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowEnrollContact(true)} title="Enroll Contact">
+            <UserPlus className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowSettings(true)} title="Settings">
+            <Settings className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setShowVersions(true)} title="Version History">
+            <History className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={exportJourney} title="Export JSON">
+            <Download className="h-3.5 w-3.5" />
           </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={() => setShowEnrollments(true)}>
-            <ListChecks className="h-3.5 w-3.5 mr-1" /> Enrollments
+            <ListChecks className="h-3.5 w-3.5" />
           </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={() => setShowPerformance(true)}>
-            <TrendingUp className="h-3.5 w-3.5 mr-1" /> Performance
+            <TrendingUp className="h-3.5 w-3.5" />
           </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={() => setShowAnalytics(true)}>
-            <BarChart3 className="h-3.5 w-3.5 mr-1" /> Analytics
+            <BarChart3 className="h-3.5 w-3.5" />
           </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={validateJourney}>
-            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Validate
+            <CheckCircle className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => runProcessor.mutate()} disabled={runProcessor.isPending} title="Run Processor">
+            {runProcessor.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5 text-emerald-400" />}
           </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={() => saveJourney.mutate()}>
-            <Save className="h-3.5 w-3.5 mr-1" /> Save
+            <Save className="h-3.5 w-3.5" />
           </Button>
           <Button size="sm" className="h-8" onClick={() => toggleStatus.mutate()}>
             {journey?.status === 'active' ? <><Pause className="h-3.5 w-3.5 mr-1" /> Pause</> : <><Play className="h-3.5 w-3.5 mr-1" /> Publish</>}
@@ -391,6 +608,122 @@ const JourneyBuilderInner = () => {
       <JourneyAnalytics journeyId={id!} open={showAnalytics} onOpenChange={setShowAnalytics} nodes={nodes} />
       <JourneyEnrollments journeyId={id!} open={showEnrollments} onOpenChange={setShowEnrollments} />
       <JourneyPerformance journeyId={id!} open={showPerformance} onOpenChange={setShowPerformance} nodes={nodes} />
+
+      {/* F8/E4: Scheduling & Suppression Settings */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="max-w-md">
+          <EngageDialogHeader icon={Settings} title="Journey Settings" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
+          <div className="space-y-5">
+            {/* Send Window */}
+            <GlassCard className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Send Window</Label>
+                <Switch checked={schedulingConfig.send_window_enabled || false} onCheckedChange={v => setSchedulingConfig((c: any) => ({ ...c, send_window_enabled: v }))} />
+              </div>
+              {schedulingConfig.send_window_enabled && (
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <Label className="text-xs">Start Hour (UTC)</Label>
+                    <Select value={String(schedulingConfig.send_window_start || 9)} onValueChange={v => setSchedulingConfig((c: any) => ({ ...c, send_window_start: Number(v) }))}>
+                      <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>{String(i).padStart(2, '0')}:00</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-xs">End Hour (UTC)</Label>
+                    <Select value={String(schedulingConfig.send_window_end || 18)} onValueChange={v => setSchedulingConfig((c: any) => ({ ...c, send_window_end: Number(v) }))}>
+                      <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>{String(i).padStart(2, '0')}:00</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </GlassCard>
+
+            {/* Frequency Cap */}
+            <GlassCard className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Frequency Cap</Label>
+                <Switch checked={schedulingConfig.frequency_cap_enabled || false} onCheckedChange={v => setSchedulingConfig((c: any) => ({ ...c, frequency_cap_enabled: v }))} />
+              </div>
+              {schedulingConfig.frequency_cap_enabled && (
+                <div>
+                  <Label className="text-xs">Max emails per day</Label>
+                  <Input type="number" className="h-8 text-xs mt-1" value={schedulingConfig.max_emails_per_day || 3} onChange={e => setSchedulingConfig((c: any) => ({ ...c, max_emails_per_day: Number(e.target.value) }))} />
+                </div>
+              )}
+            </GlassCard>
+
+            {/* Suppression */}
+            <GlassCard className="p-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Skip Unsubscribed</Label>
+                <Switch checked={suppressionRules.skip_unsubscribed || false} onCheckedChange={v => setSuppressionRules((c: any) => ({ ...c, skip_unsubscribed: v }))} />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">Automatically skip contacts who have unsubscribed</p>
+            </GlassCard>
+
+            <EngageButton className="w-full" onClick={() => saveSettings.mutate()}>Save Settings</EngageButton>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* E3: Enroll Contact Dialog */}
+      <Dialog open={showEnrollContact} onOpenChange={setShowEnrollContact}>
+        <DialogContent className="max-w-sm">
+          <EngageDialogHeader icon={UserPlus} title="Enroll Contact" gradientFrom="from-emerald-400" gradientTo="to-blue-400" iconColor="text-emerald-400" />
+          <div className="space-y-3">
+            <Select value={enrollContactId} onValueChange={setEnrollContactId}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select a contact" /></SelectTrigger>
+              <SelectContent>
+                {contacts.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.first_name || ''} {c.last_name || ''} ({c.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <EngageButton className="w-full" onClick={() => enrollContact.mutate()} disabled={!enrollContactId || enrollContact.isPending}>
+              <UserPlus className="h-3.5 w-3.5 mr-1" /> Enroll
+            </EngageButton>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* E5: Version History Dialog */}
+      <Dialog open={showVersions} onOpenChange={setShowVersions}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <EngageDialogHeader icon={History} title="Version History" gradientFrom="from-purple-400" gradientTo="to-blue-400" iconColor="text-purple-400" />
+          <div className="space-y-2">
+            {versions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No versions saved yet. Versions are created automatically on each save.</p>
+            ) : (
+              versions.map((v: any) => (
+                <GlassCard key={v.id} className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-foreground">v{v.version_number}</p>
+                      <p className="text-[10px] text-muted-foreground">{format(new Date(v.created_at), 'MMM d, yyyy HH:mm')}</p>
+                      {v.change_summary && <p className="text-[10px] text-muted-foreground">{v.change_summary}</p>}
+                    </div>
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => restoreVersion(v)}>
+                      Restore
+                    </Button>
+                  </div>
+                </GlassCard>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
