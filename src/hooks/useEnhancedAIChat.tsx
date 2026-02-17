@@ -127,12 +127,28 @@ export const useEnhancedAIChat = () => {
         break;
       case 'navigate':
         if (actionData?.url) {
+          // If payload exists, store in sessionStorage for the target page
+          if (actionData.payload) {
+            try {
+              sessionStorage.setItem('contentBuilderPayload', JSON.stringify(actionData.payload));
+              console.log('📦 Stored payload in sessionStorage for navigation:', actionData.url);
+            } catch (e) {
+              console.warn('Failed to store navigation payload:', e);
+            }
+          }
           // Use React Router for internal navigation
           if (actionData.url.startsWith('/')) {
             navigate(actionData.url);
           } else {
             window.location.href = actionData.url;
           }
+        }
+        break;
+      case 'confirm_action':
+        // Handle destructive action confirmation
+        if (actionData?.action && actionData?.args) {
+          const confirmMsg = `CONFIRMED: Execute ${actionData.action} with params: ${JSON.stringify(actionData.args)}`;
+          sendMessage(confirmMsg);
         }
         break;
       default:
